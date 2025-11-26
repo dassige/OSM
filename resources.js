@@ -57,9 +57,28 @@ const enabledSkills = [
 ];
 const url = 'https://www.dashboardlive.nz/osm.php?bu=%7b1527694B-2642-4CEC-B9A8-773CA7B1B6CF%7d';
 
+// --- EMAIL CONFIGURATION ---
+// Replace these details with your specific email provider's settings.
+// For Gmail, you often need to use an "App Password" instead of your login password.
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail', // Use 'gmail' or provide host/port for other SMTP services
+    auth: {
+        user: 'your_email@gmail.com', // Your email address
+        pass: 'your_app_password'      // Your email password or App Password
+    }
+});
+const emailInfo = {
+      from: '"FENZ OSM Manager" <your_email@gmail.com>', // Sender address
+      subject: "FENZ OSM: Expiring Skills Notification",
+      text: "Hello, you have expiring Skills due in OSM. Please complete these ASAP.\r\n" //trailing text
+    };
+
 module.exports = {
     members,
     skillUrls,
     enabledSkills,
-    url
+    url,
+    transporter,
+    emailInfo
 };

@@ -1,15 +1,16 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const https = require('https');
+const nodemailer = require('nodemailer');
 
 // Import constants from the new resource file
-const { members, skillUrls, enabledSkills } = require('./resources.js');
+const { members, skillUrls, enabledSkills, emailInfo } = require('./resources.js');
 
 let osmData = [];
 
 async function getOIData() {
     console.log('Retreiving OI Data...');
-    
+   
 
     try {
      
@@ -47,11 +48,25 @@ async function getOIData() {
         return null; // Return null or an empty array if there's an error
     }
 }
-
+// --- NEW HELPER FUNCTION ---
+async function sendEmail(to, text) {
+    try {
+        const info = await transporter.sendMail({
+            from: emailInfo.from, // Sender address
+            to: to, // List of receivers
+            subject: emailInfo.subject, // Subject line
+            text: text, // Plain text body
+        });
+        console.log(`Email sent to ${to}: ${info.messageId}`);
+    } catch (error) {
+        console.error(`Failed to send email to ${to}:`, error);
+        throw error; // Re-throw so sendMessage knows it failed
+    }
+}
 async function sendMessage(member) {
     let enableSend = false;
     console.log(`Sending message to ${member.name}...`);
-    let message = 'Hello, you have expiring Skills due in OSM. Please complete these ASAP.\r\n'
+    let message = emailInfo.text;
     member.expiringSkills.forEach((skill) => {
         if (enabledSkills.includes(skill.skill)) {
             message = message + `\r\nSkill: '${skill.skill}' expires on ${skill.dueDate}`;
@@ -61,16 +76,16 @@ async function sendMessage(member) {
     });
     console.log(message);
     
+ // Updated sending logic
     if (enableSend){
-        console.log('Sending')
-        
-        //await sendEmail(member.email, message)
-        .then(() => {
-            console.log(`Message sent to ${member.name}`);
-        })
-        .catch((error) => {
-            console.error(error, error.message);
-        })
+        console.log('Sending email...')
+        try {
+            // Call the new helper function
+            await sendEmail(member.email, message);
+            console.log(`Message successfully sent to ${member.name}`);
+        } catch (error) {
+            console.error(`Error sending to ${member.name}:`, error.message);
+        }
     }
 }
 
