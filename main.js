@@ -92,7 +92,7 @@ async function checkExpiringSkills(member) {
 
     if (member.expiringSkills && member.expiringSkills.length > 0) {
         console.log(`Found ${member.expiringSkills.length} Expiring Skill(s) for ${member.name}`);
-        // await sendEmail(member); 
+        await sendMessage(member); 
         
     }
     else console.log(`No Expiring Skills for ${member.name}`);
