@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: fenz-osm-manager
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount resources.js so you can edit email settings without rebuilding
+      - ./resources.js:/app/resources.js
+      # Mount main.js so you can tweak logic without rebuilding
+      - ./main.js:/app/main.js
+      - ./server.js:/app/server.js
+    restart: unless-stopped
