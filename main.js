@@ -2,23 +2,24 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const https = require('https');
 
-// Import constants from the new resource file
-const {members,    skillUrls,    enabledSkills,    url,    transporter,    emailInfo } = require('./resources.js');
+// Import constants
+const {members, skillUrls, enabledSkills, url, transporter, emailInfo } = require('./resources.js');
+
+// --- 1. GLOBAL FLAG DEFINITION ---
+// This must be at the top level so sendMessage can see it
+const isTestMode = process.argv.includes('test');
+
+if (isTestMode) {
+    console.log('*** RUNNING IN TEST MODE - NO EMAILS WILL BE SENT ***');
+}
 
 let osmData = [];
 
 async function getOIData() {
     console.log('Retreiving OI Data...');
-   
-
     try {
-     
-        const response = await axios.get(url, { httpsAgent: new https.Agent({rejectUnauthorized: false })
-        });
-            
-         const $ = cheerio.load(response.data);
-
-        // Select all <tbody> tags
+        const response = await axios.get(url, { httpsAgent: new https.Agent({rejectUnauthorized: false }) });
+        const $ = cheerio.load(response.data);
         const osmStatusTable = $('tbody');
 
         let rows = [];
@@ -33,7 +34,6 @@ async function getOIData() {
             }
         });
 
-        // Add all skills to each member
         members.forEach((member) => {
             let filteredSkills = osmData.filter((item) => {
                 return item.name === member.name;
@@ -41,31 +41,35 @@ async function getOIData() {
             member.skills = filteredSkills;
         });
         console.log('OI Data retrieved!');
-        return rows; // Ensure rows are returned from the function
+        return rows;
     } catch (error) {
         console.error('Error fetching OI Data:', error);
-        return null; // Return null or an empty array if there's an error
+        return null;
     }
 }
-// --- NEW HELPER FUNCTION ---
+
 async function sendEmail(to, text) {
     try {
         const info = await transporter.sendMail({
-            from: emailInfo.from, // Sender address
-            to: to, // List of receivers
-            subject: emailInfo.subject, // Subject line
-            text: text, // Plain text body
+            from: emailInfo.from,
+            to: to,
+            subject: emailInfo.subject,
+            text: text,
         });
         console.log(`Email sent to ${to}: ${info.messageId}`);
     } catch (error) {
         console.error(`Failed to send email to ${to}:`, error);
-        throw error; // Re-throw so sendMessage knows it failed
+        throw error;
     }
 }
+
 async function sendMessage(member) {
     let enableSend = false;
     console.log(`Sending message to ${member.name}...`);
     let message = emailInfo.text;
+    
+    if (!member.expiringSkills) return;
+
     member.expiringSkills.forEach((skill) => {
         if (enabledSkills.includes(skill.skill)) {
             message = message + `\r\nSkill: '${skill.skill}' expires on ${skill.dueDate}`;
@@ -73,17 +77,20 @@ async function sendMessage(member) {
             enableSend = true;
         }
     });
-    console.log(message);
     
- // Updated sending logic
-    if (enableSend){
-        console.log('Sending email...')
-        try {
-            // Call the new helper function
-            await sendEmail(member.email, message);
-            console.log(`Message successfully sent to ${member.name}`);
-        } catch (error) {
-            console.error(`Error sending to ${member.name}:`, error.message);
+    if (enableSend) {
+        // --- 2. USAGE OF GLOBAL FLAG ---
+        if (isTestMode) {
+            console.log(`[TEST MODE] Would send email to: ${member.email}`);
+            console.log(`[TEST MODE] Message content: \n${message}\n`);
+        } else {
+            console.log('Sending email...')
+            try {
+                await sendEmail(member.email, message);
+                console.log(`Message successfully sent to ${member.name}`);
+            } catch (error) {
+                console.error(`Error sending to ${member.name}:`, error.message);
+            }
         }
     }
 }
@@ -98,16 +105,16 @@ async function checkExpiringSkills(member) {
         oneMonthLater.setMonth(currentDate.getMonth() + 1);
 
         if (skillExpiryDate <= oneMonthLater) {
-                 const retVal = skillUrls.find(skillUrl => skillUrl.name === skill.skill);
-                if (retVal) skill.url = retVal.url;
-            return skill;
+             const retVal = skillUrls.find(skillUrl => skillUrl.name === skill.skill);
+             if (retVal) skill.url = retVal.url;
+             return true;
         }
-    })
+        return false;
+    });
 
     if (member.expiringSkills && member.expiringSkills.length > 0) {
         console.log(`Found ${member.expiringSkills.length} Expiring Skill(s) for ${member.name}`);
         await sendMessage(member); 
-        
     }
     else console.log(`No Expiring Skills for ${member.name}`);
 }
@@ -119,9 +126,9 @@ async function processOIData(rows) {
     }
 
     for (const member of members) {
-        await checkExpiringSkills(member);  // Wait for checkExpiringSkills to finish
+        await checkExpiringSkills(member);
         console.log("Waiting...");
-        await new Promise(resolve => setTimeout(resolve, 15000));  // Wait for 15 seconds
+        await new Promise(resolve => setTimeout(resolve, 15000));
     }
 }
 

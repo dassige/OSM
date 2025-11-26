@@ -12,43 +12,46 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
     console.log('Web client connected');
     
-    // Store the child process reference within the socket scope
     let child = null;
 
-    socket.on('start-script', () => {
-        if (child) return; // Prevent multiple clicks from spawning multiple processes
+    // Accept 'testMode' argument from client
+    socket.on('start-script', (testMode) => {
+        if (child) return;
 
-        console.log('Spawning script process...');
+        const args = ['main.js'];
         
-        // Spawn the node process directly
-        child = spawn('node', ['main.js']);
+        // Add the 'test' argument if requested
+        if (testMode) {
+            console.log('Spawning script in TEST mode...');
+            args.push('test');
+        } else {
+            console.log('Spawning script in LIVE mode...');
+        }
+        
+        child = spawn('node', args);
 
-        // Capture standard output (console.log)
         child.stdout.on('data', (data) => {
             const output = data.toString();
             process.stdout.write(output);
             socket.emit('terminal-output', output);
         });
 
-        // Capture error output (console.error)
         child.stderr.on('data', (data) => {
             const output = data.toString();
             process.stderr.write(output);
             socket.emit('terminal-output', output);
         });
 
-        // Handle process exit
         child.on('close', (code) => {
             socket.emit('script-complete', code);
-            child = null; // Clean up reference
+            child = null;
         });
     });
 
     socket.on('stop-script', () => {
         if (child) {
             console.log('Killing script process...');
-            child.kill(); // Sends SIGTERM
-            // The 'close' event above will trigger, notifying the client
+            child.kill();
         }
     });
 });

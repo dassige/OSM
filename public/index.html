@@ -25,15 +25,21 @@
             transition: background-color 0.2s;
             margin-right: 10px;
         }
+        /* Live Run Button - Blue */
         #startBtn { background-color: #007bff; }
         #startBtn:hover { background-color: #0056b3; }
         #startBtn:disabled { background-color: #ccc; cursor: not-allowed; }
 
+        /* Test Run Button - Orange */
+        #testBtn { background-color: #fd7e14; }
+        #testBtn:hover { background-color: #d9660a; }
+        #testBtn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        /* Stop Button - Red */
         #stopBtn { background-color: #dc3545; }
         #stopBtn:hover { background-color: #a71d2a; }
         #stopBtn:disabled { background-color: #e2e6ea; color: #a0a0a0; cursor: not-allowed; }
         
-        /* Terminal Styling */
         #terminal {
             background-color: #1e1e1e;
             color: #d4d4d4;
@@ -53,7 +59,8 @@
     <h1>FENZ OSM Automation</h1>
     
     <div id="controls">
-        <button id="startBtn">Run Script</button>
+        <button id="startBtn">Run Live</button>
+        <button id="testBtn">Test Run</button>
         <button id="stopBtn" disabled>Stop Script</button>
         <span id="status" style="margin-left: 15px; font-weight: bold; color: #555;">Idle</span>
     </div>
@@ -64,38 +71,27 @@
     <script>
         const socket = io();
         const startBtn = document.getElementById('startBtn');
+        const testBtn = document.getElementById('testBtn');
         const stopBtn = document.getElementById('stopBtn');
         const terminal = document.getElementById('terminal');
         const statusSpan = document.getElementById('status');
 
-        startBtn.addEventListener('click', () => {
-            terminal.textContent = '> Starting process...\n';
-            
-            // Toggle Buttons
+        function setRunningState(isTest) {
             startBtn.disabled = true;
+            testBtn.disabled = true;
             stopBtn.disabled = false;
+            
+            terminal.textContent = isTest 
+                ? '> Starting TEST process (No emails will be sent)...\n' 
+                : '> Starting LIVE process...\n';
+            
+            statusSpan.innerText = isTest ? 'Running Test...' : 'Running Live...';
+            statusSpan.style.color = '#e67e22'; // Orange
+        }
 
-            statusSpan.innerText = 'Running...';
-            statusSpan.style.color = '#e67e22';
-            socket.emit('start-script');
-        });
-
-        stopBtn.addEventListener('click', () => {
-             // We don't change button states here immediately; 
-             // we wait for the 'script-complete' event from the server
-             // so we know the process actually died.
-             socket.emit('stop-script');
-             terminal.textContent += '> Stopping process...\n';
-        });
-
-        socket.on('terminal-output', (data) => {
-            terminal.textContent += data;
-            terminal.scrollTop = terminal.scrollHeight;
-        });
-
-        socket.on('script-complete', (code) => {
-            // Reset Buttons
+        function setIdleState(code) {
             startBtn.disabled = false;
+            testBtn.disabled = false;
             stopBtn.disabled = true;
 
             if (code === 0) {
@@ -111,6 +107,30 @@
                 statusSpan.style.color = 'red';
                 terminal.textContent += `\n> Process exited with error code ${code}`;
             }
+        }
+
+        startBtn.addEventListener('click', () => {
+            setRunningState(false);
+            socket.emit('start-script', false); // false = Live mode
+        });
+
+        testBtn.addEventListener('click', () => {
+            setRunningState(true);
+            socket.emit('start-script', true); // true = Test mode
+        });
+
+        stopBtn.addEventListener('click', () => {
+             socket.emit('stop-script');
+             terminal.textContent += '> Stopping process...\n';
+        });
+
+        socket.on('terminal-output', (data) => {
+            terminal.textContent += data;
+            terminal.scrollTop = terminal.scrollHeight;
+        });
+
+        socket.on('script-complete', (code) => {
+            setIdleState(code);
         });
     </script>
 </body>
