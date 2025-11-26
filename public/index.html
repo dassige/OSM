@@ -18,15 +18,20 @@
             padding: 12px 24px;
             font-size: 16px;
             font-weight: bold;
-            background-color: #007bff;
             color: white;
             border: none;
             cursor: pointer;
             border-radius: 6px;
             transition: background-color 0.2s;
+            margin-right: 10px;
         }
-        button:hover { background-color: #0056b3; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #startBtn { background-color: #007bff; }
+        #startBtn:hover { background-color: #0056b3; }
+        #startBtn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        #stopBtn { background-color: #dc3545; }
+        #stopBtn:hover { background-color: #a71d2a; }
+        #stopBtn:disabled { background-color: #e2e6ea; color: #a0a0a0; cursor: not-allowed; }
         
         /* Terminal Styling */
         #terminal {
@@ -39,7 +44,7 @@
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             font-size: 14px;
             line-height: 1.4;
-            white-space: pre-wrap; /* Preserves text formatting */
+            white-space: pre-wrap;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
     </style>
@@ -49,6 +54,7 @@
     
     <div id="controls">
         <button id="startBtn">Run Script</button>
+        <button id="stopBtn" disabled>Stop Script</button>
         <span id="status" style="margin-left: 15px; font-weight: bold; color: #555;">Idle</span>
     </div>
 
@@ -58,29 +64,48 @@
     <script>
         const socket = io();
         const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
         const terminal = document.getElementById('terminal');
         const statusSpan = document.getElementById('status');
 
         startBtn.addEventListener('click', () => {
-            terminal.textContent = '> Starting process...\n'; // Clear and start
+            terminal.textContent = '> Starting process...\n';
+            
+            // Toggle Buttons
             startBtn.disabled = true;
+            stopBtn.disabled = false;
+
             statusSpan.innerText = 'Running...';
-            statusSpan.style.color = '#e67e22'; // Orange for running
+            statusSpan.style.color = '#e67e22';
             socket.emit('start-script');
         });
 
+        stopBtn.addEventListener('click', () => {
+             // We don't change button states here immediately; 
+             // we wait for the 'script-complete' event from the server
+             // so we know the process actually died.
+             socket.emit('stop-script');
+             terminal.textContent += '> Stopping process...\n';
+        });
+
         socket.on('terminal-output', (data) => {
-            // Append text directly to maintain console look
             terminal.textContent += data;
-            terminal.scrollTop = terminal.scrollHeight; // Auto-scroll to bottom
+            terminal.scrollTop = terminal.scrollHeight;
         });
 
         socket.on('script-complete', (code) => {
+            // Reset Buttons
             startBtn.disabled = false;
+            stopBtn.disabled = true;
+
             if (code === 0) {
                 statusSpan.innerText = 'Completed Successfully';
                 statusSpan.style.color = 'green';
                 terminal.textContent += `\n> Process exited with code ${code}`;
+            } else if (code === null) {
+                statusSpan.innerText = 'Stopped by User';
+                statusSpan.style.color = 'red';
+                terminal.textContent += `\n> Process terminated by user`;
             } else {
                 statusSpan.innerText = 'Failed';
                 statusSpan.style.color = 'red';

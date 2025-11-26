@@ -11,31 +11,45 @@ app.use(express.static('public'));
 
 io.on('connection', (socket) => {
     console.log('Web client connected');
+    
+    // Store the child process reference within the socket scope
+    let child = null;
 
     socket.on('start-script', () => {
+        if (child) return; // Prevent multiple clicks from spawning multiple processes
+
         console.log('Spawning script process...');
         
         // Spawn the node process directly
-        const child = spawn('node', ['main.js']);
+        child = spawn('node', ['main.js']);
 
         // Capture standard output (console.log)
         child.stdout.on('data', (data) => {
             const output = data.toString();
-            process.stdout.write(output); // Mirror to server console
+            process.stdout.write(output);
             socket.emit('terminal-output', output);
         });
 
         // Capture error output (console.error)
         child.stderr.on('data', (data) => {
             const output = data.toString();
-            process.stderr.write(output); // Mirror to server console
+            process.stderr.write(output);
             socket.emit('terminal-output', output);
         });
 
         // Handle process exit
         child.on('close', (code) => {
             socket.emit('script-complete', code);
+            child = null; // Clean up reference
         });
+    });
+
+    socket.on('stop-script', () => {
+        if (child) {
+            console.log('Killing script process...');
+            child.kill(); // Sends SIGTERM
+            // The 'close' event above will trigger, notifying the client
+        }
     });
 });
 
