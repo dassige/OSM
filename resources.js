@@ -1,3 +1,5 @@
+const nodemailer = require('nodemailer');
+
 const members = [
     { "name": "QFF Paulin, N M", "email": "me@me.com", "skills": [] },
     { "name": "CFO Sweeting-Shaw, P J", "email": "me@me.com", "skills": [] },

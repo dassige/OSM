@@ -1,10 +1,9 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const https = require('https');
-const nodemailer = require('nodemailer');
 
 // Import constants from the new resource file
-const { members, skillUrls, enabledSkills, emailInfo } = require('./resources.js');
+const {members,    skillUrls,    enabledSkills,    url,    transporter,    emailInfo } = require('./resources.js');
 
 let osmData = [];
 
@@ -128,17 +127,15 @@ async function processOIData(rows) {
 
 const main = async () => {
     try {
-        // Directly fetch data without initializing WhatsApp
         const rows = await getOIData();
-        
         if (rows) {
             await processOIData(rows);
         } else {
             console.log('No OI Data retrieved.');
         }
-
     } catch (error) {
         console.error('Error in main process:', error.message);
     }
 }
+
 main();

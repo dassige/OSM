@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FENZ OSM Console</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 20px; 
+            max-width: 900px; 
+            margin: 0 auto; 
+            background-color: #f0f2f5;
+        }
+        h1 { color: #333; }
+        #controls { margin-bottom: 20px; }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        /* Terminal Styling */
+        #terminal {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 6px;
+            padding: 15px;
+            height: 500px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap; /* Preserves text formatting */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>FENZ OSM Automation</h1>
+    
+    <div id="controls">
+        <button id="startBtn">Run Script</button>
+        <span id="status" style="margin-left: 15px; font-weight: bold; color: #555;">Idle</span>
+    </div>
+
+    <div id="terminal"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const startBtn = document.getElementById('startBtn');
+        const terminal = document.getElementById('terminal');
+        const statusSpan = document.getElementById('status');
+
+        startBtn.addEventListener('click', () => {
+            terminal.textContent = '> Starting process...\n'; // Clear and start
+            startBtn.disabled = true;
+            statusSpan.innerText = 'Running...';
+            statusSpan.style.color = '#e67e22'; // Orange for running
+            socket.emit('start-script');
+        });
+
+        socket.on('terminal-output', (data) => {
+            // Append text directly to maintain console look
+            terminal.textContent += data;
+            terminal.scrollTop = terminal.scrollHeight; // Auto-scroll to bottom
+        });
+
+        socket.on('script-complete', (code) => {
+            startBtn.disabled = false;
+            if (code === 0) {
+                statusSpan.innerText = 'Completed Successfully';
+                statusSpan.style.color = 'green';
+                terminal.textContent += `\n> Process exited with code ${code}`;
+            } else {
+                statusSpan.innerText = 'Failed';
+                statusSpan.style.color = 'red';
+                terminal.textContent += `\n> Process exited with error code ${code}`;
+            }
+        });
+    </script>
+</body>
+</html>
