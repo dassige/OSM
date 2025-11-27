@@ -9,16 +9,38 @@ const {members, skillUrls, enabledSkills, url, transporter, emailInfo } = requir
 const args = process.argv.slice(2);
 const isTestMode = args.includes('test');
 const isViewMode = args.includes('view');
+const isSendSelectedMode = args.includes('send-selected');
+
+let allowedNames = [];
+if (isSendSelectedMode) {
+    try {
+        // The argument after 'send-selected' should be the JSON string of names
+        const idx = args.indexOf('send-selected');
+        if (idx !== -1 && args[idx + 1]) {
+            allowedNames = JSON.parse(args[idx + 1]);
+        }
+    } catch (e) {
+        console.error("Error parsing allowed names list:", e.message);
+    }
+}
 
 if (isTestMode) {
     console.log('*** RUNNING IN TEST MODE - NO EMAILS WILL BE SENT ***');
+}
+if (isSendSelectedMode) {
+    console.log(`*** RUNNING IN SELECTIVE MODE - Sending to ${allowedNames.length} selected member(s) ***`);
 }
 
 let osmData = [];
 let allResults = []; // Store results for View Mode
 
+// Helper for formatted timestamps
+function getTime() {
+    return new Date().toLocaleTimeString();
+}
+
 async function getOIData() {
-    if (!isViewMode) console.log('Retreiving OI Data...');
+    if (!isViewMode) console.log(`[${getTime()}] Retreiving OI Data from dashboard...`);
     try {
         const response = await axios.get(url, { httpsAgent: new https.Agent({rejectUnauthorized: false }) });
         const $ = cheerio.load(response.data);
@@ -42,15 +64,16 @@ async function getOIData() {
             })
             member.skills = filteredSkills;
         });
-        if (!isViewMode) console.log('OI Data retrieved!');
+        if (!isViewMode) console.log(`[${getTime()}] OI Data successfully retrieved (${rows.length} records).`);
         return rows;
     } catch (error) {
-        console.error('Error fetching OI Data:', error);
+        console.error(`[${getTime()}] Error fetching OI Data:`, error);
         return null;
     }
 }
 
 async function sendEmail(to, text) {
+    console.log(`   [${getTime()}] SMTP: Initializing transport...`);
     try {
         const info = await transporter.sendMail({
             from: emailInfo.from,
@@ -58,22 +81,43 @@ async function sendEmail(to, text) {
             subject: emailInfo.subject,
             text: text,
         });
-        console.log(`Email sent to ${to}: ${info.messageId}`);
+        console.log(`   [${getTime()}] SMTP: Payload accepted.`);
+        console.log(`   [${getTime()}] SMTP: Message ID: ${info.messageId}`);
+        console.log(`   [${getTime()}] SMTP: Server Response: ${info.response}`);
     } catch (error) {
-        console.error(`Failed to send email to ${to}:`, error);
+        console.error(`   [${getTime()}] SMTP ERROR: Failed to send to ${to}`);
+        console.error(`   [${getTime()}] Error Details:`, error.message);
         throw error;
     }
 }
 
 async function sendMessage(member) {
     let enableSend = false;
-    if (!isViewMode) console.log(`Sending message to ${member.name}...`);
     let message = emailInfo.text;
     
-    if (!member.expiringSkills) return;
+    // Skip detailed logs if just viewing
+    if (!isViewMode) {
+        console.log(`\n=============================================================`);
+        console.log(`PROCESSING MEMBER: ${member.name}`);
+        console.log(`=============================================================`);
+    }
+
+    if (!member.expiringSkills || member.expiringSkills.length === 0) {
+        if (!isViewMode) console.log(`   [${getTime()}] Status: No expiring skills found. Skipping.`);
+        return;
+    }
+
+    if (!isViewMode) console.log(`   [${getTime()}] Analysis: Found ${member.expiringSkills.length} expiring skill(s).`);
 
     member.expiringSkills.forEach((skill) => {
-        if (enabledSkills.includes(skill.skill)) {
+        const isIncluded = enabledSkills.includes(skill.skill);
+        if (!isViewMode) {
+            console.log(`      - Skill: "${skill.skill}"`);
+            console.log(`        Due Date: ${skill.dueDate}`);
+            console.log(`        Actionable: ${isIncluded ? 'YES' : 'NO'}`);
+        }
+
+        if (isIncluded) {
             message = message + `\r\nSkill: '${skill.skill}' expires on ${skill.dueDate}`;
             message = message + `\r\nTo complete the OI Click here : ${skill.url}`;
             enableSend = true;
@@ -82,25 +126,33 @@ async function sendMessage(member) {
     
     if (enableSend) {
         if (isViewMode) {
-            // In view mode, we don't send, we just report
+            // View mode: do nothing
+        } else if (isSendSelectedMode && !allowedNames.includes(member.name)) {
+            console.log(`   [${getTime()}] Decision: BLOCKED. Member not in user-selected list.`);
         } else if (isTestMode) {
-            console.log(`[TEST MODE] Would send email to: ${member.email}`);
-            console.log(`[TEST MODE] Message content: \n${message}\n`);
+            console.log(`   [${getTime()}] Mode: TEST. Simulating email send.`);
+            console.log(`   [${getTime()}] Target: ${member.email}`);
+            console.log(`   [${getTime()}] Content Preview:\n   --------------------\n${message.replace(/\r\n/g, '\n   ')}\n   --------------------`);
         } else {
-            console.log('Sending email...')
+            console.log(`   [${getTime()}] Decision: SENDING. Member is eligible and selected.`);
+            console.log(`   [${getTime()}] Target: ${member.email}`);
             try {
                 await sendEmail(member.email, message);
-                console.log(`Message successfully sent to ${member.name}`);
+                console.log(`   [${getTime()}] SUCCESS: Notification cycle complete for ${member.name}.`);
             } catch (error) {
-                console.error(`Error sending to ${member.name}:`, error.message);
+                console.error(`   [${getTime()}] FAILURE: Could not complete notification for ${member.name}.`);
             }
         }
+    } else {
+        if (!isViewMode) console.log(`   [${getTime()}] Decision: NO ACTION. Skills exist but none are in the 'Enabled Skills' list.`);
     }
 }
 
 async function checkExpiringSkills(member) {
-    if (!isViewMode) console.log(`Checking ${member.name} for Expiring Skills...`);
-
+    // In view mode we suppress the per-member check logs to keep the "Loading" phase clean
+    // or keep them if you want verbose logs even during "View". 
+    // Given the prompt, we'll keep detailed logs for the "Send" process primarily.
+    
     member.expiringSkills = member.skills.filter((skill) => {
         const skillExpiryDate = new Date(skill.dueDate);
         const currentDate = new Date();
@@ -117,12 +169,9 @@ async function checkExpiringSkills(member) {
 
     if (member.expiringSkills && member.expiringSkills.length > 0) {
         if (!isViewMode) {
-            console.log(`Found ${member.expiringSkills.length} Expiring Skill(s) for ${member.name}`);
             await sendMessage(member); 
         } else {
-            // --- NEW: Calculate Eligibility based on enabledSkills ---
             const isEmailEligible = member.expiringSkills.some(s => enabledSkills.includes(s.skill));
-
             allResults.push({
                 name: member.name,
                 skills: member.expiringSkills.map(s => ({
@@ -133,7 +182,6 @@ async function checkExpiringSkills(member) {
             });
         }
     } else {
-        if (!isViewMode) console.log(`No Expiring Skills for ${member.name}`);
         if (isViewMode) {
              allResults.push({
                 name: member.name,
@@ -154,7 +202,7 @@ async function processOIData(rows) {
         await checkExpiringSkills(member);
         
         if (!isViewMode) {
-            console.log("Waiting...");
+            console.log(`   [${getTime()}] Pausing for rate limit safety (15s)...`);
             await new Promise(resolve => setTimeout(resolve, 15000));
         }
     }
@@ -170,6 +218,8 @@ const main = async () => {
                 console.log('___JSON_START___');
                 console.log(JSON.stringify(allResults));
                 console.log('___JSON_END___');
+            } else {
+                console.log(`\n[${getTime()}] *** ALL PROCESSES COMPLETED ***`);
             }
         } else {
             console.log('No OI Data retrieved.');

@@ -26,18 +26,18 @@
             margin-right: 10px;
             margin-bottom: 10px;
         }
-        #startBtn { background-color: #007bff; }
-        #startBtn:hover { background-color: #0056b3; }
-        #startBtn:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        /* Send Emails Button - Blue */
+        #sendEmailsBtn { background-color: #007bff; }
+        #sendEmailsBtn:hover { background-color: #0056b3; }
+        #sendEmailsBtn:disabled { background-color: #ccc; cursor: not-allowed; }
 
-        #testBtn { background-color: #fd7e14; }
-        #testBtn:hover { background-color: #d9660a; }
-        #testBtn:disabled { background-color: #ccc; cursor: not-allowed; }
-
+        /* Stop Button - Red */
         #stopBtn { background-color: #dc3545; }
         #stopBtn:hover { background-color: #a71d2a; }
         #stopBtn:disabled { background-color: #e2e6ea; color: #a0a0a0; cursor: not-allowed; }
 
+        /* View Button - Green */
         #viewBtn { background-color: #28a745; }
         #viewBtn:hover { background-color: #218838; }
 
@@ -53,7 +53,7 @@
             line-height: 1.4;
             white-space: pre-wrap;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+            margin-top: 30px; /* Added spacing since it's at the bottom now */
         }
 
         /* Table Styling */
@@ -77,39 +77,27 @@
             vertical-align: middle;
         }
         th {
-            background-color: #343a40; /* Darker header for contrast */
+            background-color: #343a40;
             color: #fff;
             font-weight: bold;
         }
         
-        /* New Alternating Colors */
-        .row-even {
-            background-color: #f2f2f2; /* Light Grey */
-        }
-        .row-odd {
-            background-color: #faf0e6; /* Light Sand (Linen) */
-        }
+        /* Alternating Colors */
+        .row-even { background-color: #f2f2f2; }
+        .row-odd { background-color: #faf0e6; }
 
         .member-cell {
             vertical-align: top;
             font-weight: 600;
-            /* Removed background-color: #fff so row color shows */
         }
         .merged-cell {
             border-top: none;
             border-bottom: none;
         }
-        .skill-cell {
-            color: #333;
-        }
-        .date-cell {
-            color: #555;
-            white-space: nowrap;
-        }
-        .no-skill {
-            color: #28a745;
-            font-style: italic;
-        }
+        .skill-cell { color: #333; }
+        .date-cell { color: #555; white-space: nowrap; }
+        .no-skill { color: #28a745; font-style: italic; }
+        
         .email-label {
             display: flex;
             align-items: center;
@@ -128,14 +116,11 @@
     <h1>FENZ OSM Automation</h1>
     
     <div id="controls">
-        <button id="startBtn">Run Live</button>
-        <button id="testBtn">Test Run</button>
-        <button id="stopBtn" disabled>Stop Script</button>
         <button id="viewBtn">View Expiring Skills</button>
+        <button id="sendEmailsBtn" disabled>Send Emails</button>
+        <button id="stopBtn" disabled>Stop Script</button>
         <span id="status" style="margin-left: 15px; font-weight: bold; color: #555;">Idle</span>
     </div>
-
-    <div id="terminal"></div>
 
     <div id="tableContainer">
         <h2 style="margin-top: 0;">Expiring Skills Report</h2>
@@ -153,11 +138,12 @@
         </table>
     </div>
 
+    <div id="terminal"></div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const startBtn = document.getElementById('startBtn');
-        const testBtn = document.getElementById('testBtn');
+        const sendEmailsBtn = document.getElementById('sendEmailsBtn');
         const stopBtn = document.getElementById('stopBtn');
         const viewBtn = document.getElementById('viewBtn');
         const terminal = document.getElementById('terminal');
@@ -165,23 +151,22 @@
         const tableContainer = document.getElementById('tableContainer');
         const skillsTableBody = document.querySelector('#skillsTable tbody');
 
-        function setRunningState(isTest) {
-            startBtn.disabled = true;
-            testBtn.disabled = true;
+        function setRunningState() {
+            sendEmailsBtn.disabled = true;
             stopBtn.disabled = false;
             viewBtn.disabled = true;
-            terminal.textContent = isTest 
-                ? '> Starting TEST process (No emails will be sent)...\n' 
-                : '> Starting LIVE process...\n';
-            statusSpan.innerText = isTest ? 'Running Test...' : 'Running Live...';
+            
+            terminal.textContent = '> Starting Email Process...\n';
+            statusSpan.innerText = 'Sending Emails...';
             statusSpan.style.color = '#e67e22'; 
         }
 
         function setIdleState(code) {
-            startBtn.disabled = false;
-            testBtn.disabled = false;
+            // Only re-enable if table is visible, otherwise keep disabled
+            sendEmailsBtn.disabled = (tableContainer.style.display === 'none');
             stopBtn.disabled = true;
             viewBtn.disabled = false;
+
             if (code === 0) {
                 statusSpan.innerText = 'Completed Successfully';
                 statusSpan.style.color = 'green';
@@ -197,18 +182,27 @@
             }
         }
 
-        startBtn.addEventListener('click', () => {
-            setRunningState(false);
-            socket.emit('start-script', false);
+        sendEmailsBtn.addEventListener('click', () => {
+            // Gather selected names
+            const checkedBoxes = document.querySelectorAll('.email-checkbox:checked');
+            const selectedNames = Array.from(checkedBoxes).map(cb => cb.getAttribute('data-name'));
+            
+            if (selectedNames.length === 0) {
+                alert("No members selected for email.");
+                return;
+            }
+
+            if (confirm(`Are you sure you want to send emails to ${selectedNames.length} member(s)?`)) {
+                setRunningState();
+                socket.emit('run-send-selected', selectedNames);
+            }
         });
-        testBtn.addEventListener('click', () => {
-            setRunningState(true);
-            socket.emit('start-script', true);
-        });
+
         stopBtn.addEventListener('click', () => {
              socket.emit('stop-script');
              terminal.textContent += '> Stopping process...\n';
         });
+
         viewBtn.addEventListener('click', () => {
             viewBtn.disabled = true;
             viewBtn.textContent = "Loading Data...";
@@ -220,6 +214,7 @@
             terminal.textContent += data;
             terminal.scrollTop = terminal.scrollHeight;
         });
+
         socket.on('script-complete', (code) => {
             setIdleState(code);
         });
@@ -231,15 +226,15 @@
 
             skillsTableBody.innerHTML = '';
             
-            // Iterate with index to determine alternating colors
+            let eligibleCount = 0;
+
             data.forEach((member, index) => {
                 const skills = member.skills;
-                // Determine color class based on member index
                 const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
                 
                 // --- Row 1 ---
                 const tr = document.createElement('tr');
-                tr.className = rowClass; // Apply color class
+                tr.className = rowClass;
                 
                 // Name
                 const nameTd = document.createElement('td');
@@ -264,30 +259,30 @@
                 tr.appendChild(skillTd);
                 tr.appendChild(dateTd);
 
-                // Email Checkbox (Only on first row for member)
+                // Email Checkbox
                 const emailTd = document.createElement('td');
                 emailTd.className = 'member-cell';
                 if (member.emailEligible) {
                     const label = document.createElement('label');
                     label.className = 'email-label';
-                    label.innerHTML = `<input type="checkbox" checked> Send email`;
+                    // Added class 'email-checkbox' and data-name for selection logic
+                    label.innerHTML = `<input type="checkbox" class="email-checkbox" data-name="${member.name}" checked> Send email`;
                     emailTd.appendChild(label);
+                    eligibleCount++;
                 }
                 tr.appendChild(emailTd);
 
                 skillsTableBody.appendChild(tr);
 
-                // --- Subsequent Rows (Multi-skill) ---
+                // --- Subsequent Rows ---
                 for (let i = 1; i < skills.length; i++) {
                     const subTr = document.createElement('tr');
-                    subTr.className = rowClass; // Apply SAME color class
+                    subTr.className = rowClass;
                     
-                    // Empty Name (Merged look)
                     const emptyNameTd = document.createElement('td');
                     emptyNameTd.className = 'merged-cell';
                     subTr.appendChild(emptyNameTd);
 
-                    // Skill & Date
                     const subSkillTd = document.createElement('td');
                     subSkillTd.textContent = skills[i].skill;
                     subSkillTd.className = 'skill-cell';
@@ -299,7 +294,6 @@
                     subTr.appendChild(subSkillTd);
                     subTr.appendChild(subDateTd);
 
-                    // Empty Email (Merged look)
                     const emptyEmailTd = document.createElement('td');
                     emptyEmailTd.className = 'merged-cell';
                     subTr.appendChild(emptyEmailTd);
@@ -310,6 +304,13 @@
 
             tableContainer.style.display = 'block';
             tableContainer.scrollIntoView({ behavior: 'smooth' });
+
+            // Enable Send Button if there are eligible members
+            if (eligibleCount > 0) {
+                sendEmailsBtn.disabled = false;
+            } else {
+                sendEmailsBtn.disabled = true;
+            }
         });
     </script>
 </body>

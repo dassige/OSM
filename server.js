@@ -14,17 +14,13 @@ io.on('connection', (socket) => {
     
     let child = null;
 
-    // --- STANDARD START SCRIPT ---
-    socket.on('start-script', (testMode) => {
+    // --- NEW: RUN SELECTED (SEND EMAILS) ---
+    socket.on('run-send-selected', (selectedNames) => {
         if (child) return;
 
-        const args = ['main.js'];
-        if (testMode) {
-            console.log('Spawning script in TEST mode...');
-            args.push('test');
-        } else {
-            console.log('Spawning script in LIVE mode...');
-        }
+        console.log('Spawning script in SEND-SELECTED mode...');
+        // Pass the list of names as a JSON string argument
+        const args = ['main.js', 'send-selected', JSON.stringify(selectedNames)];
         
         child = spawn('node', args);
 
@@ -46,11 +42,10 @@ io.on('connection', (socket) => {
         });
     });
 
-    // --- NEW: VIEW EXPIRING SKILLS ---
+    // --- VIEW EXPIRING SKILLS ---
     socket.on('view-expiring-skills', () => {
         console.log('Fetching expiring skills (View Mode)...');
         
-        // Spawn independent process for viewing so it doesn't conflict with main runner variables
         const viewChild = spawn('node', ['main.js', 'view']);
         let outputBuffer = '';
 
@@ -60,7 +55,6 @@ io.on('connection', (socket) => {
 
         viewChild.on('close', (code) => {
             try {
-                // Extract JSON between delimiters
                 const startMarker = '___JSON_START___';
                 const endMarker = '___JSON_END___';
                 
