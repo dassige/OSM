@@ -6,6 +6,15 @@ const auth = {
     password: "password123", // Change this!
     sessionSecret: "change_this_to_a_random_string" 
 };
+// --- UI CUSTOMIZATION [NEW] ---
+const ui = {
+    // Path relative to 'public' folder (e.g., '/my-background.jpg') or a full URL
+    loginBackground: "", 
+    // Path relative to 'public' folder or full URL. Leave empty to hide.
+    loginLogo: "",       
+    // Title text displayed on the login form
+    loginTitle: "FENZ OSM Manager" 
+};
 // members names as they appear EXACTLY in the dashboard system
 const members = [
   { "name": "Member 1 name ", "email": "member1@yourdomain.com", "mobile": "","messengerId" : "","skills": [] },
@@ -54,6 +63,7 @@ const emailInfo = {
 
 module.exports = {
     auth,
+    ui,
     members,
     skillsConfig,
     url,

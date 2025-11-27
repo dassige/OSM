@@ -12,19 +12,34 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            /* Default background if none provided */
+            background-color: #f0f2f5; 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
         .login-container {
-            background: white;
+            background: rgba(255, 255, 255, 0.95); /* Slight transparency */
             padding: 40px;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             width: 100%;
             max-width: 400px;
             text-align: center;
+            backdrop-filter: blur(5px);
+        }
+        /* Logo Styling */
+        #loginLogo {
+            max-width: 150px;
+            max-height: 100px;
+            margin-bottom: 20px;
+            display: none; /* Hidden by default until loaded */
+            margin-left: auto;
+            margin-right: auto;
         }
         input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -32,15 +47,21 @@
         }
         button {
             width: 100%;
-            margin-top: 10px;
+            margin-top: 15px;
+            padding: 12px;
             background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
         }
         button:hover {
             background-color: #0056b3;
         }
         .error {
-            color: red;
-            margin-top: 10px;
+            color: #dc3545;
+            margin-top: 15px;
             font-size: 14px;
             display: none;
         }
@@ -48,8 +69,9 @@
 </head>
 <body>
     <div class="login-container">
-        <h1>Login</h1>
-        <p style="color: #666; margin-bottom: 20px;">FENZ OSM Manager</p>
+        <img id="loginLogo" alt="Logo">
+        
+        <h1 id="loginTitle">Login</h1>
         
         <form id="loginForm">
             <input type="text" id="username" placeholder="Username" required>
@@ -60,6 +82,31 @@
     </div>
 
     <script>
+        // [NEW] Fetch and Apply UI Configuration
+        fetch('/ui-config')
+            .then(response => response.json())
+            .then(config => {
+                // 1. Set Title
+                if (config.loginTitle) {
+                    document.getElementById('loginTitle').textContent = config.loginTitle;
+                    document.title = config.loginTitle + " - Login";
+                }
+                
+                // 2. Set Logo
+                if (config.loginLogo) {
+                    const logoImg = document.getElementById('loginLogo');
+                    logoImg.src = config.loginLogo;
+                    logoImg.style.display = 'block';
+                }
+
+                // 3. Set Background
+                if (config.loginBackground) {
+                    document.body.style.backgroundImage = `url('${config.loginBackground}')`;
+                }
+            })
+            .catch(err => console.error("Failed to load UI config:", err));
+
+        // Login Logic
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;

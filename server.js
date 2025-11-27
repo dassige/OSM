@@ -76,6 +76,11 @@ app.use((req, res, next) => {
     next();
 });
 
+// [NEW] Expose UI Config to Frontend
+app.get('/ui-config', (req, res) => {
+    res.json(config.ui || {});
+});
+
 // Serve Static Files
 app.use(express.static('public'));
 
