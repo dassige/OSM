@@ -5,18 +5,24 @@ const https = require('https');
 // Import constants
 const {members, skillUrls, enabledSkills, url, transporter, emailInfo } = require('./resources.js');
 
-// --- 1. GLOBAL FLAG DEFINITION ---
-// This must be at the top level so sendMessage can see it
-const isTestMode = process.argv.includes('test');
+// --- 1. GLOBAL FLAG DEFINITIONS ---
+const args = process.argv.slice(2);
+const isTestMode = args.includes('test');
+const isViewMode = args.includes('view'); // New flag for View Mode
 
 if (isTestMode) {
     console.log('*** RUNNING IN TEST MODE - NO EMAILS WILL BE SENT ***');
 }
+if (isViewMode) {
+    // In view mode, we suppress standard logs or just ignore them in the server parser
+    // We only care about the final JSON output
+}
 
 let osmData = [];
+let allResults = []; // Store results for View Mode
 
 async function getOIData() {
-    console.log('Retreiving OI Data...');
+    if (!isViewMode) console.log('Retreiving OI Data...');
     try {
         const response = await axios.get(url, { httpsAgent: new https.Agent({rejectUnauthorized: false }) });
         const $ = cheerio.load(response.data);
@@ -40,7 +46,7 @@ async function getOIData() {
             })
             member.skills = filteredSkills;
         });
-        console.log('OI Data retrieved!');
+        if (!isViewMode) console.log('OI Data retrieved!');
         return rows;
     } catch (error) {
         console.error('Error fetching OI Data:', error);
@@ -65,7 +71,7 @@ async function sendEmail(to, text) {
 
 async function sendMessage(member) {
     let enableSend = false;
-    console.log(`Sending message to ${member.name}...`);
+    if (!isViewMode) console.log(`Sending message to ${member.name}...`);
     let message = emailInfo.text;
     
     if (!member.expiringSkills) return;
@@ -78,9 +84,11 @@ async function sendMessage(member) {
         }
     });
     
+    // Logic split: View Mode vs Email Mode
     if (enableSend) {
-        // --- 2. USAGE OF GLOBAL FLAG ---
-        if (isTestMode) {
+        if (isViewMode) {
+            // Do nothing here, data is collected in checkExpiringSkills
+        } else if (isTestMode) {
             console.log(`[TEST MODE] Would send email to: ${member.email}`);
             console.log(`[TEST MODE] Message content: \n${message}\n`);
         } else {
@@ -96,7 +104,7 @@ async function sendMessage(member) {
 }
 
 async function checkExpiringSkills(member) {
-    console.log(`Checking ${member.name} for Expiring Skills...`);
+    if (!isViewMode) console.log(`Checking ${member.name} for Expiring Skills...`);
 
     member.expiringSkills = member.skills.filter((skill) => {
         const skillExpiryDate = new Date(skill.dueDate);
@@ -113,10 +121,25 @@ async function checkExpiringSkills(member) {
     });
 
     if (member.expiringSkills && member.expiringSkills.length > 0) {
-        console.log(`Found ${member.expiringSkills.length} Expiring Skill(s) for ${member.name}`);
-        await sendMessage(member); 
+        if (!isViewMode) {
+            console.log(`Found ${member.expiringSkills.length} Expiring Skill(s) for ${member.name}`);
+            await sendMessage(member); 
+        } else {
+            // In View Mode, add to results
+            allResults.push({
+                name: member.name,
+                skills: member.expiringSkills.map(s => s.skill)
+            });
+        }
+    } else {
+        if (!isViewMode) console.log(`No Expiring Skills for ${member.name}`);
+        if (isViewMode) {
+             allResults.push({
+                name: member.name,
+                skills: [] // Empty array signifies "NO expiring skills"
+            });
+        }
     }
-    else console.log(`No Expiring Skills for ${member.name}`);
 }
 
 async function processOIData(rows) {
@@ -127,8 +150,12 @@ async function processOIData(rows) {
 
     for (const member of members) {
         await checkExpiringSkills(member);
-        console.log("Waiting...");
-        await new Promise(resolve => setTimeout(resolve, 15000));
+        
+        // ONLY wait if NOT in view mode. View mode should be fast.
+        if (!isViewMode) {
+            console.log("Waiting...");
+            await new Promise(resolve => setTimeout(resolve, 15000));
+        }
     }
 }
 
@@ -137,6 +164,13 @@ const main = async () => {
         const rows = await getOIData();
         if (rows) {
             await processOIData(rows);
+            
+            // Output JSON for the server to pick up if in View Mode
+            if (isViewMode) {
+                console.log('___JSON_START___');
+                console.log(JSON.stringify(allResults));
+                console.log('___JSON_END___');
+            }
         } else {
             console.log('No OI Data retrieved.');
         }

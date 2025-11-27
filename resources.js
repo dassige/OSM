@@ -1,43 +1,44 @@
 const nodemailer = require('nodemailer');
 
 const members = [
-    { "name": "QFF Paulin, N M", "email": "me@me.com", "skills": [] },
-    { "name": "CFO Sweeting-Shaw, P J", "email": "me@me.com", "skills": [] },
-    { "name": "SFF Fouche, C D", "email": "me@me.com", "skills": [] },
-    { "name": "DCFO Milne, D S", "email": "me@me.com", "skills": [] },
-    { "name": "RFF Collins, S B", "email": "me@me.com", "skills": [] },
-    { "name": "FF Mason, J D", "email": "me@me.com", "skills": [] },
-    { "name": "FF Godfrey, D C", "email": "me@me.com", "skills": [] },
-    { "name": "FF Mollier-Alexander, C", "email": "me@me.com", "skills": [] },
-    { "name": "SFF Reilly, L B", "email": "me@me.com", "skills": [] },
-    { "name": "FF Fitzpatrick, R", "email": "me@me.com", "skills": [] },
-    { "name": "QFF Sparrow, M J", "email": "me@me.com", "skills": [] },
-    { "name": "OS-FF Iszard, A M", "email": "me@me.com", "skills": [] },
-    { "name": "SO Laloli, B J", "email": "me@me.com", "skills": [] },
-    { "name": "FF Hunter, W R", "email": "me@me.com", "skills": [] },
-    { "name": "RFF Hyde, C L", "email": "me@me.com", "skills": [] },
-    { "name": "RFF Walmsley, B G", "email": "me@me.com", "skills": [] },
-    { "name": "FF Crawley, P J", "email": "me@me.com", "skills": [] },
-    { "name": "OS-FF Sweeting-Shaw, B", "email": "me@me.com", "skills": [] },
-    { "name": "OS-FF Partington, A C", "email": "me@me.com", "skills": [] }
+  { "name": "SO Bandy, J", "email": "me@me.com", "skills": [] },
+  { "name": "SO Brady, D P", "email": "me@me.com", "skills": [] },
+  { "name": "SO Edwards, M T", "email": "me@me.com", "skills": [] },
+  { "name": "SO Tucker, W R", "email": "me@me.com", "skills": [] },
+  { "name": "SFF Garnham, P", "email": "me@me.com", "skills": [] },
+  { "name": "SFF Keith, A", "email": "me@me.com", "skills": [] },
+  { "name": "SFF Roberts, G", "email": "me@me.com", "skills": [] },
+  { "name": "SFF Walkinshaw, M G", "email": "me@me.com", "skills": [] },
+  { "name": "SFF Whybrow, R J", "email": "me@me.com", "skills": [] },
+  { "name": "QFF Busch, G", "email": "me@me.com", "skills": [] },
+  { "name": "QFF Claxton, P J", "email": "me@me.com", "skills": [] },
+  { "name": "QFF Dassi, G", "email": "me@me.com", "skills": [] },
+  { "name": "QFF Hansen, S", "email": "me@me.com", "skills": [] },
+  { "name": "QFF Price, S M", "email": "me@me.com", "skills": [] },
+  { "name": "FF Ryan, E", "email": "me@me.com", "skills": [] },
+  { "name": "RFF Calderon Bonilla, C", "email": "me@me.com", "skills": [] },
+  { "name": "RFF Edwards, M", "email": "me@me.com", "skills": [] },
+  { "name": "RFF Firestone, F", "email": "me@me.com", "skills": [] },
+  { "name": "RFF McLoughlin, S C", "email": "me@me.com", "skills": [] },
+  { "name": "RFF Romeril, C C", "email": "me@me.com", "skills": [] }
 ];
 
 const skillUrls = [
-    { "name": "OI (IS1) - Operational Safety (C)", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUM0VBMVBDU1VXUTI2RlZNSDM2RDZPVFlUMS4u" },
-    { "name": "OI (H6-1) - Bulk Flammable Gases", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUM0paSDJGWU45NFhFWllLSFROQzZBS0k4TC4u" },
-    { "name": "OI (H5) - Bulk Flammable Liquids", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUQk1ROVVLV0U2T0xMRlJaRkpDQkhMQUtaMy4u" },
-    { "name": "OI (FL2-1) - Use of FENZ Operational Vehicles", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUMlBCS1ZIRUk3QVM0SElPQVZCN1oxWTdBNi4u" },
-    { "name": "OI (E3-2) - Breathing Apparatus (C)", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUNzJMMlQ0Vk1MQkdYWjhQQlFFUEg5SjdDSC4u" },
-    { "name": "OI (G9) - Salvage", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUN0FQN0lJODMxT1NaSVIzSThMUzZYTkxBNy4u" },
-    { "name": "OSH - Safe Person Concept (C)", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RURFlDMUY5WURSN0tVMDROTVJYTkMxVTdCNS4u" },
-    { "name": "OI (H1-H6) - Hazardous Materials", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUM1FYRlZDV1FVRUpQNks4WDZDVThKOFEzWi4u" },
-    { "name": "OI (H6-2) - Portable gas cylinders and pressurised vessels", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUN0VDUjNaOTNTWU03WEhYMUJaS0I5NUJXOC4u" },
-    { "name": "OI (G2-1) - Emergency Medical Support", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUMEg2UUQ0VkxYME5RNEUwUTNLQ0ZBSVRNVy4u" },
-    { "name": "OI (IS3) - Working Near Roadways (C)", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUNjdIV0lROTRaTEhFTUFFVUdGQjlSQUhRNC4u" },
-    { "name": "OI (IS4) - Working Near Electrical Hazards (C)", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUQVFUUTJBRkdSNUxSNFBXUjQzWDlCVlkxVC4u" },
-    { "name": "OI (IS9) - Civil Disturbances", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUOExPWlhUSUZHNjQzUFkwVlJFWEJTSE5DWC4u" },
-    { "name": "OI (H7-1) - Clandestine Labs", "url": "https://forms.office.com/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUN0RWQjRTU0FXQTFVTDRTWFJOVFRWTjBGVi4u" },
-    { "name": "OI (G7) - Decontamination", "url": "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=pX8_-1gNx0GqJPcLmyIgxnmVztZMX6FPrvJPWanW91RUQUwwMk1UMk40MUkyWVlUNUxPNkU0OVdEWC4u" }
+    { "name": "OI (IS1) - Operational Safety (C)", "url": "https://docs.google.com/forms/d/e/1FAIpQLSfIPFllTJsWKaHUUFV5SbvckgmhRpQtKTlT7FVG87pi79pxoA/viewform?usp=pp_url&entry.892262364=" },
+    { "name": "OI (H6-1) - Bulk Flammable Gases", "url": "https://docs.google.com/forms/d/e/1FAIpQLSc5oMfRReFeEdhlpULz29J-6qoJSWE3clQWGUEql83NPLOJdA/viewform?usp=pp_url&entry.1609682703=" },
+    { "name": "OI (H5) - Bulk Flammable Liquids", "url": "https://docs.google.com/forms/d/e/1FAIpQLSe5_BVFrRsjqstUuutx-eGlYIgKgy2qjw71pkCs42LfyxroNg/viewform?usp=pp_url&entry.214035688=" },
+    { "name": "OI (FL2-1) - Use of FENZ Operational Vehicles", "url": "https://docs.google.com/forms/d/e/1FAIpQLScIu9Yjedq0XNZolgzsCTH2fzrc6J7qGeyQn9PGAn5kaRNXCA/viewform?usp=pp_url&entry.653383503=" },
+    { "name": "OI (E3-2) - Breathing Apparatus (C)", "url": "https://docs.google.com/forms/d/e/1FAIpQLSeXtRqS5GMPOJEiez42T53sLqAjKSrF6sbQWW6HqDFOPvrgiQ/viewform?usp=pp_url&entry.885055929=" },
+    { "name": "OI (G9) - Salvage", "url": "https://docs.google.com/forms/d/e/1FAIpQLSfpPx-Fj2N044Ao0lNbS4WhzPnRQQWgUxeu1kFMuZDGFDwoQg/viewform?usp=pp_url&entry.197149701=" },
+    { "name": "OSH - Safe Person Concept (C)", "url": "" },
+    { "name": "OI (H1-H6) - Hazardous Materials", "url": "https://docs.google.com/forms/d/e/1FAIpQLSf6IYkY_HMHqc_PHDkMktjvA0iVMWz122lw1SoflWRkG5VHuA/viewform?usp=pp_url&entry.1475319145=" },
+    { "name": "OI (H6-2) - Portable gas cylinders and pressurised vessels", "url": "https://docs.google.com/forms/d/e/1FAIpQLSdtA9ojP9QtDDb7Wz6tgWKJdmrH_midob5DotxZfpfE7NTAtg/viewform?usp=pp_url&entry.1434439767=" },
+    { "name": "OI (G2-1) - Emergency Medical Support", "url": "https://docs.google.com/forms/d/e/1FAIpQLSfJZG53Kc11JpYkrmfHmQ7K_fC7QcSf5wcohhfOwpiDBWPQ9Q/viewform?usp=pp_url&entry.1618257479=" },
+    { "name": "OI (IS3) - Working Near Roadways (C)", "url": "https://docs.google.com/forms/d/e/1FAIpQLScQLGXCucB5djzpCPx73PM6cgZq4XFz3Gn4dSBRF7RQTgch8w/viewform?usp=pp_url&entry.1567131598=" },
+    { "name": "OI (IS4) - Working Near Electrical Hazards (C)", "url": "https://docs.google.com/forms/d/e/1FAIpQLSeDy9TVc95JuzuMEycpKnscXc2880gBTPv4UDOCYIhJjI71HA/viewform?usp=pp_url&entry.436448477=" },
+    { "name": "OI (IS9) - Civil Disturbances", "url": "https://docs.google.com/forms/d/e/1FAIpQLSfqCyAeBjl_kn4IsLxB6PCthw2cWNxuJ_Un3Z6N3I4yQEW0Ow/viewform?usp=pp_url&entry.325088600=" },
+    { "name": "OI (H7-1) - Clandestine Labs", "url": "https://docs.google.com/forms/d/e/1FAIpQLSesZjOhw6J0bj4BPJw3Q3UxPocHCAMPhggs_DwapSKnzc50-w/viewform?usp=pp_url&entry.690920723=" },
+    { "name": "OI (G7) - Decontamination", "url": "https://docs.google.com/forms/d/e/1FAIpQLSem73QHh-CDGejwvu6XwIjbAXBkew6xP6qk6nTtjPPa0E71Lg/viewform?usp=pp_url&entry.836103460=" }
 ];
 
 const enabledSkills = [
@@ -57,7 +58,7 @@ const enabledSkills = [
     "OI (H7-1) - Clandestine Labs",
     "OI (G7) - Decontamination"
 ];
-const url = 'https://www.dashboardlive.nz/osm.php?bu=%7b1527694B-2642-4CEC-B9A8-773CA7B1B6CF%7d';
+const url = 'https://www.dashboardlive.nz/index.php?user=0qMLcjMPFEkDwWdbLsOiVV7H8D87oU3SQwkHCyxh';
 
 // --- EMAIL CONFIGURATION ---
 // Replace these details with your specific email provider's settings.
