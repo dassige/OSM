@@ -13,7 +13,6 @@ const hideNoUrlSkillsCheckbox = document.getElementById('hideNoUrlSkillsCheckbox
 const progressContainer = document.getElementById('progressContainer');
 const progressBar = document.getElementById('progressBar');
 
-// Store data globally for re-rendering
 let currentOsmData = [];
 
 // --- Helper Functions ---
@@ -22,12 +21,9 @@ function setRunningState() {
     sendEmailsBtn.disabled = true;
     viewBtn.disabled = true;
     selectAllCheckbox.disabled = true;
-    
     terminal.textContent = '> Starting Email Process...\n';
     statusSpan.innerText = 'Sending Emails...';
     statusSpan.style.color = '#e67e22'; 
-    
-    // Show and reset progress bar
     progressContainer.style.display = 'block';
     progressBar.style.width = '0%';
     progressBar.textContent = 'Starting...';
@@ -35,18 +31,14 @@ function setRunningState() {
 
 function setIdleState(code) {
     const isTableVisible = tableContainer.style.display !== 'none';
-    // Logic for send button enabling
     sendEmailsBtn.disabled = !isTableVisible || document.querySelectorAll('.email-checkbox:checked').length === 0;
     selectAllCheckbox.disabled = !isTableVisible;
-    
     viewBtn.disabled = false;
 
     if (code === 0) {
         statusSpan.innerText = 'Completed Successfully';
         statusSpan.style.color = 'green';
         terminal.textContent += `\n> Process exited with code ${code}`;
-        
-        // Set to 100% on success just in case
         progressBar.style.width = '100%';
         progressBar.textContent = 'Completed';
     } else if (code === null) {
@@ -58,8 +50,6 @@ function setIdleState(code) {
         statusSpan.style.color = 'red';
         terminal.textContent += `\n> Process exited with error code ${code}`;
     }
-
-    // Hide progress bar after 3 seconds
     setTimeout(() => {
         progressContainer.style.display = 'none';
     }, 3000);
@@ -96,12 +86,8 @@ function updateUIState() {
 
 function buildSkillHtml(skillObj) {
     let html = skillObj.skill;
-    if (skillObj.isCritical) {
-        html = `<b>${html}</b>`;
-    }
-    if (skillObj.hasUrl) {
-        html += ` <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; color: #007bff; margin-left: 4px;" title="Direct Form Link Available"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
-    }
+    if (skillObj.isCritical) html = `<b>${html}</b>`;
+    if (skillObj.hasUrl) html += ` <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; color: #007bff; margin-left: 4px;" title="Direct Form Link Available"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
     return html;
 }
 
@@ -117,34 +103,20 @@ function fetchData() {
 // --- Render Table Logic ---
 function renderTable() {
     skillsTableBody.innerHTML = '';
-    
     const hideNoSkills = hideNoSkillsCheckbox.checked;
     const hideNoUrl = hideNoUrlSkillsCheckbox.checked;
 
     currentOsmData.forEach((member, index) => {
-        // 1. Filter skills based on No URL checkbox
         let visibleSkills = member.skills;
-        if (hideNoUrl) {
-            visibleSkills = visibleSkills.filter(s => s.hasUrl);
-        }
-
-        // 2. Determine if member should be shown based on "Hide No Skills" checkbox
+        if (hideNoUrl) visibleSkills = visibleSkills.filter(s => s.hasUrl);
         const hasVisibleSkills = visibleSkills.length > 0;
         
-        // If the checkbox is checked, and we have no skills to show for this member, skip.
-        if (hideNoSkills && !hasVisibleSkills) {
-            return; 
-        }
+        if (hideNoSkills && !hasVisibleSkills) return; 
 
         const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
-        
-        // --- Row 1 (Main Row) ---
         const tr = document.createElement('tr');
         tr.className = rowClass;
-        
-        if (!hasVisibleSkills) {
-            tr.classList.add('no-skills-row');
-        }
+        if (!hasVisibleSkills) tr.classList.add('no-skills-row');
         
         const nameTd = document.createElement('td');
         nameTd.textContent = member.name;
@@ -179,58 +151,70 @@ function renderTable() {
 
         skillsTableBody.appendChild(tr);
 
-        // --- Subsequent Rows (Additional Skills) ---
         for (let i = 1; i < visibleSkills.length; i++) {
             const subTr = document.createElement('tr');
             subTr.className = rowClass;
-            
             const emptyNameTd = document.createElement('td');
             emptyNameTd.className = 'merged-cell';
             subTr.appendChild(emptyNameTd);
-
             const subSkillTd = document.createElement('td');
             subSkillTd.innerHTML = buildSkillHtml(visibleSkills[i]);
             subSkillTd.className = 'skill-cell';
-            
             const subDateTd = document.createElement('td');
             subDateTd.textContent = visibleSkills[i].dueDate;
             subDateTd.className = 'date-cell';
-
             subTr.appendChild(subSkillTd);
             subTr.appendChild(subDateTd);
-
             const emptyEmailTd = document.createElement('td');
             emptyEmailTd.className = 'merged-cell';
             subTr.appendChild(emptyEmailTd);
-            
             skillsTableBody.appendChild(subTr);
         }
     });
 
     const newCheckboxes = document.querySelectorAll('.email-checkbox');
-    newCheckboxes.forEach(cb => {
-        cb.addEventListener('change', updateUIState);
-    });
-    
+    newCheckboxes.forEach(cb => cb.addEventListener('change', updateUIState));
     updateUIState();
 }
 
-// --- Event Listeners ---
+// --- DB Persistence Listeners ---
 
-hideNoSkillsCheckbox.addEventListener('change', () => {
-    renderTable();
+// 1. Listen for Preference Changes in UI and Save
+daysInput.addEventListener('change', (e) => {
+    socket.emit('update-preference', { key: 'daysToExpiry', value: parseInt(e.target.value) });
 });
 
-hideNoUrlSkillsCheckbox.addEventListener('change', () => {
-    renderTable();
+hideNoSkillsCheckbox.addEventListener('change', (e) => {
+    socket.emit('update-preference', { key: 'hideNoSkills', value: e.target.checked });
+    renderTable(); // Re-render immediately on visual toggle
 });
+
+hideNoUrlSkillsCheckbox.addEventListener('change', (e) => {
+    socket.emit('update-preference', { key: 'hideNoUrl', value: e.target.checked });
+    renderTable(); // Re-render immediately on visual toggle
+});
+
+// 2. Load Preferences on Connect
+socket.on('connect', () => {
+    socket.emit('get-preferences');
+});
+
+socket.on('preferences-data', (prefs) => {
+    // Apply loaded preferences to UI
+    if (prefs.daysToExpiry !== undefined) daysInput.value = prefs.daysToExpiry;
+    if (prefs.hideNoSkills !== undefined) hideNoSkillsCheckbox.checked = prefs.hideNoSkills;
+    if (prefs.hideNoUrl !== undefined) hideNoUrlSkillsCheckbox.checked = prefs.hideNoUrl;
+
+    // Trigger initial fetch AFTER prefs are loaded to ensure we use the correct day count
+    fetchData();
+});
+
+// --- Standard Event Listeners ---
 
 selectAllCheckbox.addEventListener('change', (e) => {
     const isChecked = e.target.checked;
     const checkboxes = document.querySelectorAll('.email-checkbox');
-    checkboxes.forEach(cb => {
-        cb.checked = isChecked;
-    });
+    checkboxes.forEach(cb => cb.checked = isChecked);
     updateUIState();
 });
 
@@ -285,6 +269,3 @@ socket.on('expiring-skills-data', (data) => {
     renderTable();
     tableContainer.scrollIntoView({ behavior: 'smooth' });
 });
-
-// --- Load on Startup ---
-fetchData();

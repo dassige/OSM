@@ -4,6 +4,9 @@ FROM node:20-alpine
 # Set the working directory inside the container
 WORKDIR /app
 
+# Install build dependencies for native modules (like sqlite3)
+RUN apk add --no-cache python3 make g++
+
 # Copy package files first to leverage Docker caching
 COPY package*.json ./
 
@@ -11,6 +14,7 @@ COPY package*.json ./
 RUN npm install
 
 # Copy the rest of the application code
+# [FIXED] Added the second dot '.' to specify the destination
 COPY . .
 
 # Expose the port the app runs on

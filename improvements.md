@@ -25,8 +25,6 @@ Based on the current codebase, here is a suggested `improvement.md` file outlini
 - **Scraper Resilience**: The `cheerio` selectors in `getOIData` rely on specific table structures (`$('tbody')` -> `find('tr')`). If the external dashboard updates its layout, this will break. Adding validation steps to ensure the scraped data looks "correct" before processing would prevent silent failures.
 
 ## 5. New Features
-- **Database Integration**: Currently, data is fetched live every time. Adding a lightweight DB (SQLite or a JSON file db) could allow:
-    - History tracking (Who was emailed and when).
-    - caching dashboard data to reduce external requests.
+
 - **Scheduled Automation**: Instead of requiring a manual button press, integrate a scheduler (like `node-cron`) to automatically check and send emails on a weekly/monthly basis.
 - **Email Templating**: Move the hardcoded HTML strings in `sendMessage` to a template engine (EJS or Handlebars) to allow for easier design changes without touching code.
