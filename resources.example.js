@@ -1,26 +1,9 @@
 const nodemailer = require('nodemailer');
 
 const members = [
-  { "name": "SO Bandy, J", "email": "info@dassi.net", "skills": [] },
-  { "name": "SO Brady, D P", "email": "info@dassi.net", "skills": [] },
-  { "name": "SO Edwards, M T", "email": "info@dassi.net", "skills": [] },
-  { "name": "SO Tucker, W R", "email": "info@dassi.net", "skills": [] },
-  { "name": "SFF Garnham, P", "email": "info@dassi.net", "skills": [] },
-  { "name": "SFF Keith, A", "email": "info@dassi.net", "skills": [] },
-  { "name": "SFF Roberts, G", "email": "info@dassi.net", "skills": [] },
-  { "name": "SFF Walkinshaw, M G", "email": "info@dassi.net", "skills": [] },
-  { "name": "SFF Whybrow, R J", "email": "info@dassi.net", "skills": [] },
-  { "name": "QFF Busch, G", "email": "info@dassi.net", "skills": [] },
-  { "name": "QFF Claxton, P J", "email": "info@dassi.net", "skills": [] },
-  { "name": "QFF Dassi, G", "email": "info@dassi.net", "skills": [] },
-  { "name": "QFF Hansen, S", "email": "info@dassi.net", "skills": [] },
-  { "name": "QFF Price, S M", "email": "info@dassi.net", "skills": [] },
-  { "name": "FF Ryan, E", "email": "info@dassi.net", "skills": [] },
-  { "name": "RFF Calderon Bonilla, C", "email": "info@dassi.net", "skills": [] },
-  { "name": "RFF Edwards, M", "email": "info@dassi.net", "skills": [] },
-  { "name": "RFF Firestone, F", "email": "info@dassi.net", "skills": [] },
-  { "name": "RFF McLoughlin, S C", "email": "info@dassi.net", "skills": [] },
-  { "name": "RFF Romeril, C C", "email": "info@dassi.net", "skills": [] }
+  { "name": "Member 1 name ", "email": "member1@yourdomain.com", "skills": [] },
+  { "name": "Member 2 name", "email": "member2@yourdomain.com", "skills": [] },
+  { "name": "Member 3 name", "email": "member3@yourdomain.com", "skills": [] }
 ];
 
 const skillUrls = [
@@ -58,7 +41,7 @@ const enabledSkills = [
     "OI (H7-1) - Clandestine Labs",
     "OI (G7) - Decontamination"
 ];
-const url = 'https://www.dashboardlive.nz/index.php?user=0qMLcjMPFEkDwWdbLsOiVV7H8D87oU3SQwkHCyxh';
+const url = 'https://www.dashboardlive.nz/index.php?user=your-user-code';
 
 // --- EMAIL CONFIGURATION ---
 // Replace these details with your specific email provider's settings.
@@ -67,12 +50,12 @@ const url = 'https://www.dashboardlive.nz/index.php?user=0qMLcjMPFEkDwWdbLsOiVV7
 const transporter = nodemailer.createTransport({
     service: 'gmail', // Use 'gmail' or provide host/port for other SMTP services
     auth: {
-        user: 'webmaster@dvfb.org.nz', // Your email address
-        pass: 'dfvb!812'      // Your email password or App Password
+        user: 'sender@yourdomain.com', // Your email address
+        pass: 'your-password'      // Your email password or App Password
     }
 });
 const emailInfo = {
-      from: '"FENZ OSM Manager" <webmaster@dvfb.org.nz>', // Sender address
+      from: '"FENZ OSM Manager" <sender@yourdomain.com>', // Sender address
       subject: "FENZ OSM: Expiring Skills Notification",
       text: "Hello, you have expiring Skills due in OSM. Please complete these ASAP.\r\n" //trailing text
     };

@@ -193,21 +193,23 @@ async function checkExpiringSkills(member) {
 }
 
 async function processOIData(rows) {
-    if (!rows || rows.length === 0) {
-        console.log('No data to process.');
-        return;
-    }
-
+    // ...
     for (const member of members) {
+        // OPTIMIZATION: Skip processing entirely if we are in "Send Selected" mode and this user isn't selected
+        if (isSendSelectedMode && !allowedNames.includes(member.name)) {
+            continue; 
+        }
+
         await checkExpiringSkills(member);
         
+        // Only pause if we actually did something (and aren't in view mode)
         if (!isViewMode) {
-            console.log(`   [${getTime()}] Pausing for rate limit safety (15s)...`);
-            await new Promise(resolve => setTimeout(resolve, 15000));
+             // You might want to move this inside sendMessage so it only pauses after a successful send
+             console.log(`   [${getTime()}] Pausing for rate limit safety (5s)...`);
+             await new Promise(resolve => setTimeout(resolve, 5000)); // Reduced to 5s
         }
     }
 }
-
 const main = async () => {
     try {
         const rows = await getOIData();
