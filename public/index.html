@@ -32,11 +32,6 @@
         #sendEmailsBtn:hover { background-color: #0056b3; }
         #sendEmailsBtn:disabled { background-color: #ccc; cursor: not-allowed; }
 
-        /* Stop Button - Red */
-        #stopBtn { background-color: #dc3545; }
-        #stopBtn:hover { background-color: #a71d2a; }
-        #stopBtn:disabled { background-color: #e2e6ea; color: #a0a0a0; cursor: not-allowed; }
-
         /* View Button - Green */
         #viewBtn { background-color: #28a745; }
         #viewBtn:hover { background-color: #218838; }
@@ -53,7 +48,7 @@
             line-height: 1.4;
             white-space: pre-wrap;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            /* margin-top removed here, handled by the new Header margin */
+            margin-top: 30px; 
         }
 
         /* Table Styling */
@@ -131,7 +126,6 @@
     <div id="controls">
         <button id="viewBtn">View Expiring Skills</button>
         <button id="sendEmailsBtn" disabled>Send Emails</button>
-        <button id="stopBtn" disabled>Stop Script</button>
         <span id="status" style="margin-left: 15px; font-weight: bold; color: #555;">Idle</span>
     </div>
 
@@ -162,7 +156,6 @@
     <script>
         const socket = io();
         const sendEmailsBtn = document.getElementById('sendEmailsBtn');
-        const stopBtn = document.getElementById('stopBtn');
         const viewBtn = document.getElementById('viewBtn');
         const terminal = document.getElementById('terminal');
         const statusSpan = document.getElementById('status');
@@ -174,7 +167,6 @@
 
         function setRunningState() {
             sendEmailsBtn.disabled = true;
-            stopBtn.disabled = false;
             viewBtn.disabled = true;
             // Disable master checkbox during run
             selectAllCheckbox.disabled = true;
@@ -190,7 +182,6 @@
             sendEmailsBtn.disabled = !isTableVisible || document.querySelectorAll('.email-checkbox:checked').length === 0;
             selectAllCheckbox.disabled = !isTableVisible;
             
-            stopBtn.disabled = true;
             viewBtn.disabled = false;
 
             if (code === 0) {
@@ -265,11 +256,6 @@
                 setRunningState();
                 socket.emit('run-send-selected', selectedNames);
             }
-        });
-
-        stopBtn.addEventListener('click', () => {
-             socket.emit('stop-script');
-             terminal.textContent += '> Stopping process...\n';
         });
 
         viewBtn.addEventListener('click', () => {

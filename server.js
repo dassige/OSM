@@ -14,6 +14,38 @@ io.on('connection', (socket) => {
     
     let child = null;
 
+    // --- STANDARD START SCRIPT (Kept for compatibility if needed, though mostly replaced by run-send-selected) ---
+    socket.on('start-script', (testMode) => {
+        if (child) return;
+
+        const args = ['main.js'];
+        if (testMode) {
+            console.log('Spawning script in TEST mode...');
+            args.push('test');
+        } else {
+            console.log('Spawning script in LIVE mode...');
+        }
+        
+        child = spawn('node', args);
+
+        child.stdout.on('data', (data) => {
+            const output = data.toString();
+            process.stdout.write(output);
+            socket.emit('terminal-output', output);
+        });
+
+        child.stderr.on('data', (data) => {
+            const output = data.toString();
+            process.stderr.write(output);
+            socket.emit('terminal-output', output);
+        });
+
+        child.on('close', (code) => {
+            socket.emit('script-complete', code);
+            child = null;
+        });
+    });
+
     // --- NEW: RUN SELECTED (SEND EMAILS) ---
     socket.on('run-send-selected', (selectedNames) => {
         if (child) return;
@@ -46,6 +78,7 @@ io.on('connection', (socket) => {
     socket.on('view-expiring-skills', () => {
         console.log('Fetching expiring skills (View Mode)...');
         
+        // Spawn independent process for viewing so it doesn't conflict with main runner variables
         const viewChild = spawn('node', ['main.js', 'view']);
         let outputBuffer = '';
 
@@ -55,6 +88,7 @@ io.on('connection', (socket) => {
 
         viewChild.on('close', (code) => {
             try {
+                // Extract JSON between delimiters
                 const startMarker = '___JSON_START___';
                 const endMarker = '___JSON_END___';
                 
@@ -73,13 +107,6 @@ io.on('connection', (socket) => {
                 console.error('JSON Parse error:', e);
             }
         });
-    });
-
-    socket.on('stop-script', () => {
-        if (child) {
-            console.log('Killing script process...');
-            child.kill();
-        }
     });
 });
 
