@@ -72,14 +72,15 @@ async function getOIData() {
     }
 }
 
-async function sendEmail(to, text) {
+async function sendEmail(to, text, html) { // Added html parameter
     console.log(`   [${getTime()}] SMTP: Initializing transport...`);
     try {
         const info = await transporter.sendMail({
             from: emailInfo.from,
             to: to,
             subject: emailInfo.subject,
-            text: text,
+            text: text, // Plain text fallback
+            html: html, // HTML version
         });
         console.log(`   [${getTime()}] SMTP: Payload accepted.`);
         console.log(`   [${getTime()}] SMTP: Message ID: ${info.messageId}`);
@@ -93,9 +94,18 @@ async function sendEmail(to, text) {
 
 async function sendMessage(member) {
     let enableSend = false;
-    let message = emailInfo.text;
     
-    // Skip detailed logs if just viewing
+    // Initialize Plain Text Message (fallback)
+    let message = emailInfo.text;
+
+    // Initialize HTML Message
+    let htmlMessage = `
+        <div style="font-family: Arial, sans-serif; color: #333;">
+            <h2 style="color: #d32f2f;">Expiring Skills Notification</h2>
+            <p>Hello, you have expiring Skills due in OSM. Please complete these ASAP:</p>
+            <ul>
+    `;
+    
     if (!isViewMode) {
         console.log(`\n=============================================================`);
         console.log(`PROCESSING MEMBER: ${member.name}`);
@@ -118,12 +128,34 @@ async function sendMessage(member) {
         }
 
         if (isIncluded) {
+            // NEW: Construct the full URL by appending the encoded member name
+            // This assumes your URLs in resources.js end with '=' (e.g., ...entry.12345=)
+            const fullUrl = `${skill.url}${encodeURIComponent(member.name)}`;
+
+            // Build Plain Text
             message = message + `\r\nSkill: '${skill.skill}' expires on ${skill.dueDate}`;
-            message = message + `\r\nTo complete the OI Click here : ${skill.url}`;
+            message = message + `\r\nTo complete the OI Click here : ${fullUrl}`;
+
+            // Build HTML
+            htmlMessage += `
+                <li style="margin-bottom: 15px;">
+                    <strong>${skill.skill}</strong><br>
+                    <span style="color: #666;">Expires on: ${skill.dueDate}</span><br>
+                    <a href="${fullUrl}" style="color: #007bff; font-weight: bold; text-decoration: none;">Complete the form here</a>
+                </li>
+            `;
+            
             enableSend = true;
         }
     });
     
+    // Close HTML tags
+    htmlMessage += `
+            </ul>
+            <p style="font-size: 12px; color: #888;">This is an automated notification from FENZ OSM Manager.</p>
+        </div>
+    `;
+
     if (enableSend) {
         if (isViewMode) {
             // View mode: do nothing
@@ -132,12 +164,13 @@ async function sendMessage(member) {
         } else if (isTestMode) {
             console.log(`   [${getTime()}] Mode: TEST. Simulating email send.`);
             console.log(`   [${getTime()}] Target: ${member.email}`);
-            console.log(`   [${getTime()}] Content Preview:\n   --------------------\n${message.replace(/\r\n/g, '\n   ')}\n   --------------------`);
+            console.log(`   [${getTime()}] Content Preview (Plain Text):\n   --------------------\n${message.replace(/\r\n/g, '\n   ')}\n   --------------------`);
         } else {
             console.log(`   [${getTime()}] Decision: SENDING. Member is eligible and selected.`);
             console.log(`   [${getTime()}] Target: ${member.email}`);
             try {
-                await sendEmail(member.email, message);
+                // Ensure your sendEmail function accepts the third 'html' argument!
+                await sendEmail(member.email, message, htmlMessage);
                 console.log(`   [${getTime()}] SUCCESS: Notification cycle complete for ${member.name}.`);
             } catch (error) {
                 console.error(`   [${getTime()}] FAILURE: Could not complete notification for ${member.name}.`);
@@ -147,7 +180,6 @@ async function sendMessage(member) {
         if (!isViewMode) console.log(`   [${getTime()}] Decision: NO ACTION. Skills exist but none are in the 'Enabled Skills' list.`);
     }
 }
-
 async function checkExpiringSkills(member) {
     // In view mode we suppress the per-member check logs to keep the "Loading" phase clean
     // or keep them if you want verbose logs even during "View". 
