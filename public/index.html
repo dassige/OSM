@@ -138,7 +138,11 @@
         <h2 style="margin-top: 0;">Expiring Skills Report</h2>
         
         <p style="margin-top: -10px; margin-bottom: 15px; color: #666; font-size: 14px;">
-            <em>Skills displayed in <b>bold</b> have a direct form link available in the email.</em>
+            <em>Skills displayed in <b>bold</b> are configured as 'Critical'. 
+            <span style="display: inline-flex; align-items: center; vertical-align: bottom;">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #007bff;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </span> 
+            indicates a direct form link is available.</em>
         </p>
         <table id="skillsTable">
             <thead>
@@ -240,6 +244,22 @@
             }
         }
 
+        // --- Helper to build skill HTML ---
+        function buildSkillHtml(skillObj) {
+            let html = skillObj.skill;
+            
+            // Bold if critical
+            if (skillObj.isCritical) {
+                html = `<b>${html}</b>`;
+            }
+            
+            // Icon if URL exists
+            if (skillObj.hasUrl) {
+                html += ` <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; color: #007bff; margin-left: 4px;" title="Direct Form Link Available"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+            }
+            return html;
+        }
+
         // --- Event Listeners ---
 
         // Master Checkbox Toggle
@@ -314,18 +334,12 @@
                 const dateTd = document.createElement('td');
                 
                 if (skills.length > 0) {
-                    // --- UPDATED LOGIC ---
-                    if (skills[0].hasUrl) {
-                        skillTd.innerHTML = `<b>${skills[0].skill}</b>`;
-                    } else {
-                        skillTd.textContent = skills[0].skill;
-                    }
-                    // ---------------------
-                    
+                    skillTd.innerHTML = buildSkillHtml(skills[0]);
                     skillTd.className = 'skill-cell';
                     dateTd.textContent = skills[0].dueDate;
                     dateTd.className = 'date-cell';
-                } else {                    skillTd.textContent = "NO expiring skills";
+                } else {
+                    skillTd.textContent = "NO expiring skills";
                     skillTd.className = 'no-skill';
                     dateTd.textContent = ""; 
                 }
@@ -356,12 +370,7 @@
                     subTr.appendChild(emptyNameTd);
 
                     const subSkillTd = document.createElement('td');
-                    // --- UPDATED LOGIC ---
-                    if (skills[i].hasUrl) {
-                        subSkillTd.innerHTML = `<b>${skills[i].skill}</b>`;
-                    } else {
-                        subSkillTd.textContent = skills[i].skill;
-                    }
+                    subSkillTd.innerHTML = buildSkillHtml(skills[i]);
                     subSkillTd.className = 'skill-cell';
                     
                     const subDateTd = document.createElement('td');

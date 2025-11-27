@@ -217,9 +217,9 @@ async function checkExpiringSkills(member) {
              const retVal = skillsConfig.find(config => config.name === skill.skill);
              if (retVal) {
                  skill.url = retVal.url;
+                 skill.isCritical = retVal.critical_skill; // Capture critical status
              }
              // We return true so the skill is added to expiringSkills.
-             // sendMessage() will decide later if it's actionable based on whether it was found in skillsConfig.
              return true;
         }
         return false;
@@ -237,7 +237,8 @@ async function checkExpiringSkills(member) {
                 skills: member.expiringSkills.map(s => ({
                     skill: s.skill,
                     dueDate: s.dueDate,
-                    hasUrl: !!s.url // Checks if the URL was found in skillsConfig
+                    hasUrl: !!s.url, // Checks if the URL was found in skillsConfig
+                    isCritical: !!s.isCritical // Pass critical status to frontend
                 })),
                 emailEligible: isEmailEligible
             });
