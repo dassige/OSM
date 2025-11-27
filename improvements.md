@@ -22,7 +22,7 @@ Based on the current codebase, here is a suggested `improvement.md` file outlini
 - **Unit Tests**: Add a testing framework (Jest or Mocha).
     - Test the `checkExpiringSkills` logic to ensure date math is always correct.
     - Mock the scraper to test parser logic without hitting the live dashboard.
-- **Scraper Resilience**: The `cheerio` selectors in `getOIData` rely on specific table structures (`$('tbody')` -> `find('tr')`). If the external dashboard updates its layout, this will break. Adding validation steps to ensure the scraped data looks "correct" before processing would prevent silent failures.
+
 
 ## 5. New Features
 
