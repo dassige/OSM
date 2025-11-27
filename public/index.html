@@ -152,7 +152,7 @@
             <input type="number" id="daysInput" value="30" min="1" style="width: 50px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
         </div>
 
-        <button id="viewBtn">View Expiring Skills</button>
+        <button id="viewBtn">Reload Expiring Skills</button>
         <button id="sendEmailsBtn" disabled>Send Emails</button>
         <span id="status" style="margin-left: 15px; font-weight: bold; color: #555;">Idle</span>
     </div>
@@ -295,6 +295,16 @@
             return html;
         }
 
+        // --- Data Fetching Logic ---
+        function fetchData() {
+            const days = parseInt(daysInput.value) || 30;
+            viewBtn.disabled = true;
+            viewBtn.textContent = "Loading Data...";
+            // Use += to prevent overwriting existing logs
+            terminal.textContent += `> Fetching View Data (Threshold: ${days} days)... please wait.\n`;
+            socket.emit('view-expiring-skills', days); 
+        }
+
         // --- Event Listeners ---
 
         selectAllCheckbox.addEventListener('change', (e) => {
@@ -323,11 +333,7 @@
         });
 
         viewBtn.addEventListener('click', () => {
-            const days = parseInt(daysInput.value) || 30;
-            viewBtn.disabled = true;
-            viewBtn.textContent = "Loading Data...";
-            terminal.textContent = `> Fetching View Data (Threshold: ${days} days)... please wait.\n`;
-            socket.emit('view-expiring-skills', days); 
+            fetchData();
         });
 
         socket.on('terminal-output', (data) => {
@@ -347,14 +353,13 @@
             } else if (data.type === 'progress-tick') {
                 const percentage = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
                 progressBar.style.width = percentage + '%';
-                // Displaying "Sent to MemberName"
                 progressBar.textContent = `${percentage}% - Sent to ${data.member}`;
             }
         });
 
         socket.on('expiring-skills-data', (data) => {
             viewBtn.disabled = false;
-            viewBtn.textContent = "View Expiring Skills";
+            viewBtn.textContent = "Reload Expiring Skills"; // Updated Label
             terminal.textContent += '> Data fetched successfully.\n';
 
             skillsTableBody.innerHTML = '';
@@ -436,6 +441,9 @@
             tableContainer.style.display = 'block';
             tableContainer.scrollIntoView({ behavior: 'smooth' });
         });
+
+        // --- Load on Startup ---
+        fetchData();
     </script>
 </body>
 </html>
