@@ -1,0 +1,290 @@
+const socket = io();
+const sendEmailsBtn = document.getElementById('sendEmailsBtn');
+const viewBtn = document.getElementById('viewBtn');
+const terminal = document.getElementById('terminal');
+const statusSpan = document.getElementById('status');
+const tableContainer = document.getElementById('tableContainer');
+const skillsTableBody = document.querySelector('#skillsTable tbody');
+const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+const daysInput = document.getElementById('daysInput');
+const hideNoSkillsCheckbox = document.getElementById('hideNoSkillsCheckbox');
+const hideNoUrlSkillsCheckbox = document.getElementById('hideNoUrlSkillsCheckbox'); 
+
+const progressContainer = document.getElementById('progressContainer');
+const progressBar = document.getElementById('progressBar');
+
+// Store data globally for re-rendering
+let currentOsmData = [];
+
+// --- Helper Functions ---
+
+function setRunningState() {
+    sendEmailsBtn.disabled = true;
+    viewBtn.disabled = true;
+    selectAllCheckbox.disabled = true;
+    
+    terminal.textContent = '> Starting Email Process...\n';
+    statusSpan.innerText = 'Sending Emails...';
+    statusSpan.style.color = '#e67e22'; 
+    
+    // Show and reset progress bar
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressBar.textContent = 'Starting...';
+}
+
+function setIdleState(code) {
+    const isTableVisible = tableContainer.style.display !== 'none';
+    // Logic for send button enabling
+    sendEmailsBtn.disabled = !isTableVisible || document.querySelectorAll('.email-checkbox:checked').length === 0;
+    selectAllCheckbox.disabled = !isTableVisible;
+    
+    viewBtn.disabled = false;
+
+    if (code === 0) {
+        statusSpan.innerText = 'Completed Successfully';
+        statusSpan.style.color = 'green';
+        terminal.textContent += `\n> Process exited with code ${code}`;
+        
+        // Set to 100% on success just in case
+        progressBar.style.width = '100%';
+        progressBar.textContent = 'Completed';
+    } else if (code === null) {
+        statusSpan.innerText = 'Stopped by User';
+        statusSpan.style.color = 'red';
+        terminal.textContent += `\n> Process terminated by user`;
+    } else {
+        statusSpan.innerText = 'Failed';
+        statusSpan.style.color = 'red';
+        terminal.textContent += `\n> Process exited with error code ${code}`;
+    }
+
+    // Hide progress bar after 3 seconds
+    setTimeout(() => {
+        progressContainer.style.display = 'none';
+    }, 3000);
+}
+
+function updateUIState() {
+    const allCheckboxes = document.querySelectorAll('.email-checkbox');
+    const checkedCheckboxes = document.querySelectorAll('.email-checkbox:checked');
+    
+    if (checkedCheckboxes.length > 0) {
+        sendEmailsBtn.disabled = false;
+    } else {
+        sendEmailsBtn.disabled = true;
+    }
+
+    if (allCheckboxes.length === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.disabled = true;
+    } else if (checkedCheckboxes.length === allCheckboxes.length) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.disabled = false;
+    } else if (checkedCheckboxes.length === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.disabled = false;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+        selectAllCheckbox.disabled = false;
+    }
+}
+
+function buildSkillHtml(skillObj) {
+    let html = skillObj.skill;
+    if (skillObj.isCritical) {
+        html = `<b>${html}</b>`;
+    }
+    if (skillObj.hasUrl) {
+        html += ` <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; color: #007bff; margin-left: 4px;" title="Direct Form Link Available"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+    }
+    return html;
+}
+
+// --- Data Fetching Logic ---
+function fetchData() {
+    const days = parseInt(daysInput.value) || 30;
+    viewBtn.disabled = true;
+    viewBtn.textContent = "Loading Data...";
+    terminal.textContent += `> Fetching View Data (Threshold: ${days} days)... please wait.\n`;
+    socket.emit('view-expiring-skills', days); 
+}
+
+// --- Render Table Logic ---
+function renderTable() {
+    skillsTableBody.innerHTML = '';
+    
+    const hideNoSkills = hideNoSkillsCheckbox.checked;
+    const hideNoUrl = hideNoUrlSkillsCheckbox.checked;
+
+    currentOsmData.forEach((member, index) => {
+        // 1. Filter skills based on No URL checkbox
+        let visibleSkills = member.skills;
+        if (hideNoUrl) {
+            visibleSkills = visibleSkills.filter(s => s.hasUrl);
+        }
+
+        // 2. Determine if member should be shown based on "Hide No Skills" checkbox
+        const hasVisibleSkills = visibleSkills.length > 0;
+        
+        // If the checkbox is checked, and we have no skills to show for this member, skip.
+        if (hideNoSkills && !hasVisibleSkills) {
+            return; 
+        }
+
+        const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
+        
+        // --- Row 1 (Main Row) ---
+        const tr = document.createElement('tr');
+        tr.className = rowClass;
+        
+        if (!hasVisibleSkills) {
+            tr.classList.add('no-skills-row');
+        }
+        
+        const nameTd = document.createElement('td');
+        nameTd.textContent = member.name;
+        nameTd.className = 'member-cell';
+        tr.appendChild(nameTd);
+
+        const skillTd = document.createElement('td');
+        const dateTd = document.createElement('td');
+        
+        if (hasVisibleSkills) {
+            skillTd.innerHTML = buildSkillHtml(visibleSkills[0]);
+            skillTd.className = 'skill-cell';
+            dateTd.textContent = visibleSkills[0].dueDate;
+            dateTd.className = 'date-cell';
+        } else {
+            skillTd.textContent = "NO expiring skills" + (hideNoUrl && member.skills.length > 0 ? " (Hidden by filter)" : "");
+            skillTd.className = 'no-skill';
+            dateTd.textContent = ""; 
+        }
+        tr.appendChild(skillTd);
+        tr.appendChild(dateTd);
+
+        const emailTd = document.createElement('td');
+        emailTd.className = 'member-cell';
+        if (member.emailEligible && hasVisibleSkills) {
+            const label = document.createElement('label');
+            label.className = 'email-label';
+            label.innerHTML = `<input type="checkbox" class="email-checkbox" data-name="${member.name}" checked> Send email`;
+            emailTd.appendChild(label);
+        }
+        tr.appendChild(emailTd);
+
+        skillsTableBody.appendChild(tr);
+
+        // --- Subsequent Rows (Additional Skills) ---
+        for (let i = 1; i < visibleSkills.length; i++) {
+            const subTr = document.createElement('tr');
+            subTr.className = rowClass;
+            
+            const emptyNameTd = document.createElement('td');
+            emptyNameTd.className = 'merged-cell';
+            subTr.appendChild(emptyNameTd);
+
+            const subSkillTd = document.createElement('td');
+            subSkillTd.innerHTML = buildSkillHtml(visibleSkills[i]);
+            subSkillTd.className = 'skill-cell';
+            
+            const subDateTd = document.createElement('td');
+            subDateTd.textContent = visibleSkills[i].dueDate;
+            subDateTd.className = 'date-cell';
+
+            subTr.appendChild(subSkillTd);
+            subTr.appendChild(subDateTd);
+
+            const emptyEmailTd = document.createElement('td');
+            emptyEmailTd.className = 'merged-cell';
+            subTr.appendChild(emptyEmailTd);
+            
+            skillsTableBody.appendChild(subTr);
+        }
+    });
+
+    const newCheckboxes = document.querySelectorAll('.email-checkbox');
+    newCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateUIState);
+    });
+    
+    updateUIState();
+}
+
+// --- Event Listeners ---
+
+hideNoSkillsCheckbox.addEventListener('change', () => {
+    renderTable();
+});
+
+hideNoUrlSkillsCheckbox.addEventListener('change', () => {
+    renderTable();
+});
+
+selectAllCheckbox.addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    const checkboxes = document.querySelectorAll('.email-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = isChecked;
+    });
+    updateUIState();
+});
+
+sendEmailsBtn.addEventListener('click', () => {
+    const checkedBoxes = document.querySelectorAll('.email-checkbox:checked');
+    const selectedNames = Array.from(checkedBoxes).map(cb => cb.getAttribute('data-name'));
+    const days = parseInt(daysInput.value) || 30;
+    
+    if (selectedNames.length === 0) {
+        alert("No members selected for email.");
+        return;
+    }
+
+    if (confirm(`Are you sure you want to send emails to ${selectedNames.length} member(s)?\n(Expiry threshold: ${days} days)`)) {
+        setRunningState();
+        socket.emit('run-send-selected', selectedNames, days); 
+    }
+});
+
+viewBtn.addEventListener('click', () => {
+    fetchData();
+});
+
+socket.on('terminal-output', (data) => {
+    terminal.textContent += data;
+    terminal.scrollTop = terminal.scrollHeight;
+});
+
+socket.on('script-complete', (code) => {
+    setIdleState(code);
+});
+
+socket.on('progress-update', (data) => {
+    if (data.type === 'progress-start') {
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
+    } else if (data.type === 'progress-tick') {
+        const percentage = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
+        progressBar.style.width = percentage + '%';
+        progressBar.textContent = `${percentage}% - Sent to ${data.member}`;
+    }
+});
+
+socket.on('expiring-skills-data', (data) => {
+    viewBtn.disabled = false;
+    viewBtn.textContent = "Reload Expiring Skills";
+    terminal.textContent += '> Data fetched successfully.\n';
+
+    currentOsmData = data;
+    
+    tableContainer.style.display = 'block';
+    renderTable();
+    tableContainer.scrollIntoView({ behavior: 'smooth' });
+});
+
+// --- Load on Startup ---
+fetchData();

@@ -10,19 +10,13 @@ Based on the current codebase, here is a suggested `improvement.md` file outlini
 - **Web Interface Authentication**: The dashboard at `public/index.html` is open. Adding Basic Auth or a simple login mechanism (e.g., Passport.js) would prevent unauthorized users from triggering emails.
 
 ## 2. Architecture & Performance
-- **Remove Child Processes**: `server.js` currently uses `spawn` to run `main.js` as a separate shell command. This is resource-heavy and hard to debug.
-    - *Improvement*: Refactor `main.js` to export its functions (e.g., `getOIData`, `processOIData`) and call them directly from `server.js` as asynchronous functions.
-- **Modularization**: `main.js` currently handles scraping, business logic, and emailing.
-    - *Improvement*: Split into dedicated services:
-        - `services/scraper.js`: Handles Axios/Cheerio logic.
-        - `services/mailer.js`: Handles Nodemailer logic.
-        - `services/member-manager.js`: Handles member filtering and expiry logic.
+
 - **Logging**: Replace `console.log` with a structured logger like `winston` or `pino` to better handle logs in Docker/Production environments.
 
 ## 3. Frontend Enhancements
-- **Separate Assets**: Extract CSS and JavaScript from `index.html` into `public/styles.css` and `public/app.js` for better maintainability.
+
 - **Modern Framework**: If complexity grows, migrating the vanilla HTML/JS to a lightweight framework like Vue.js or React would make state management (handling the `skillsTable` and socket events) cleaner.
-- **Loading Indicators**: Replace the text-based log with a visual progress bar or spinner on the UI when fetching data.
+
 
 ## 4. Reliability & Testing
 - **Unit Tests**: Add a testing framework (Jest or Mocha).

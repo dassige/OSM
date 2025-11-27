@@ -1,0 +1,136 @@
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    padding: 20px; 
+    max-width: 900px; 
+    margin: 0 auto; 
+    background-color: #f0f2f5;
+}
+h1 { color: #333; }
+#controls { margin-bottom: 20px; }
+button {
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+/* Send Emails Button - Blue */
+#sendEmailsBtn { background-color: #007bff; }
+#sendEmailsBtn:hover { background-color: #0056b3; }
+#sendEmailsBtn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+/* Reload Button - Green */
+#viewBtn { background-color: #28a745; }
+#viewBtn:hover { background-color: #218838; }
+
+#terminal {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 6px;
+    padding: 15px;
+    height: 300px;
+    overflow-y: auto;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-top: 30px; 
+}
+
+/* Progress Bar Styling */
+#progressContainer {
+    display: none; /* Hidden by default */
+    margin-bottom: 20px;
+    background-color: #e9ecef;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 30px;
+    border: 1px solid #ccc;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+#progressBar {
+    width: 0%;
+    height: 100%;
+    background-color: #17a2b8; /* Info Blue/Cyan */
+    text-align: center;
+    line-height: 30px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    transition: width 0.3s ease;
+}
+
+/* Table Styling */
+#tableContainer {
+    margin-top: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: none;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+th, td {
+    border: 1px solid #dee2e6;
+    padding: 12px;
+    text-align: left;
+    vertical-align: middle;
+}
+th {
+    background-color: #343a40;
+    color: #fff;
+    font-weight: bold;
+}
+
+/* Alternating Colors */
+.row-even { background-color: #f2f2f2; }
+.row-odd { background-color: #faf0e6; }
+
+.member-cell {
+    vertical-align: top;
+    font-weight: 600;
+}
+.merged-cell {
+    border-top: none;
+    border-bottom: none;
+}
+.skill-cell { color: #333; }
+.date-cell { color: #555; white-space: nowrap; }
+.no-skill { color: #28a745; font-style: italic; }
+
+/* Checkbox Styling */
+.email-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: normal;
+    font-size: 14px;
+}
+.email-label input {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+}
+/* Header Checkbox specific style */
+.header-checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: white;
+}
+.header-checkbox-label input {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+}
