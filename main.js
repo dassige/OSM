@@ -2,8 +2,8 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const https = require('https');
 
-// Import constants
-const {members, skillUrls, enabledSkills, url, transporter, emailInfo } = require('./resources.js');
+// Import constants (updated to use skillsConfig instead of skillUrls/enabledSkills)
+const {members, skillsConfig, url, transporter, emailInfo } = require('./resources.js');
 
 // --- 1. GLOBAL FLAG DEFINITIONS ---
 const args = process.argv.slice(2);
@@ -24,6 +24,18 @@ if (isViewMode) {
     // "node main.js send-selected [json] 30" -> 30 is at index 2
     if (args[2] && !isNaN(args[2])) {
         daysThreshold = parseInt(args[2]);
+    }
+}
+
+// Retrieve allowed names if in selective mode
+let allowedNames = [];
+if (isSendSelectedMode) {
+    try {
+        // "node main.js send-selected [json] 30" -> JSON is at index 1
+        allowedNames = JSON.parse(args[1]);
+    } catch (e) {
+        console.error("Error parsing allowed names JSON:", e.message);
+        process.exit(1);
     }
 }
 
@@ -77,7 +89,7 @@ async function getOIData() {
     }
 }
 
-async function sendEmail(to, text, html) { // Added html parameter
+async function sendEmail(to, text, html) { 
     console.log(`   [${getTime()}] SMTP: Initializing transport...`);
     try {
         const info = await transporter.sendMail({
@@ -125,16 +137,23 @@ async function sendMessage(member) {
     if (!isViewMode) console.log(`   [${getTime()}] Analysis: Found ${member.expiringSkills.length} expiring skill(s).`);
 
     member.expiringSkills.forEach((skill) => {
-        const isIncluded = enabledSkills.includes(skill.skill);
+        // Find the skill definition in our config
+        const skillConfig = skillsConfig.find(config => config.name === skill.skill);
+        
+        // If the skill is in our config, it is considered "enabled" / actionable
+        const isIncluded = !!skillConfig;
+        
         if (!isViewMode) {
             console.log(`      - Skill: "${skill.skill}"`);
             console.log(`        Due Date: ${skill.dueDate}`);
             console.log(`        Actionable: ${isIncluded ? 'YES' : 'NO'}`);
+            if (skillConfig && skillConfig.critical_skill) {
+                console.log(`        CRITICAL: YES`);
+            }
         }
 
         if (isIncluded) {
             // NEW: Construct the full URL by appending the encoded member name
-            // This assumes your URLs in resources.js end with '=' (e.g., ...entry.12345=)
             const fullUrl = `${skill.url}${encodeURIComponent(member.name)}`;
 
             // Build Plain Text
@@ -144,7 +163,7 @@ async function sendMessage(member) {
             // Build HTML
             htmlMessage += `
                 <li style="margin-bottom: 15px;">
-                    <strong>${skill.skill}</strong><br>
+                    <strong>${skill.skill}</strong> ${skillConfig.critical_skill ? '(CRITICAL)' : ''}<br>
                     <span style="color: #666;">Expires on: ${skill.dueDate}</span><br>
                     <a href="${fullUrl}" style="color: #007bff; font-weight: bold; text-decoration: none;">Complete the form here</a>
                 </li>
@@ -174,7 +193,6 @@ async function sendMessage(member) {
             console.log(`   [${getTime()}] Decision: SENDING. Member is eligible and selected.`);
             console.log(`   [${getTime()}] Target: ${member.email}`);
             try {
-                // Ensure your sendEmail function accepts the third 'html' argument!
                 await sendEmail(member.email, message, htmlMessage);
                 console.log(`   [${getTime()}] SUCCESS: Notification cycle complete for ${member.name}.`);
             } catch (error) {
@@ -182,23 +200,26 @@ async function sendMessage(member) {
             }
         }
     } else {
-        if (!isViewMode) console.log(`   [${getTime()}] Decision: NO ACTION. Skills exist but none are in the 'Enabled Skills' list.`);
+        if (!isViewMode) console.log(`   [${getTime()}] Decision: NO ACTION. Skills exist but none are in the 'Skills Config' list.`);
     }
 }
+
 async function checkExpiringSkills(member) {
-    // ...
-    
     member.expiringSkills = member.skills.filter((skill) => {
         const skillExpiryDate = new Date(skill.dueDate);
         const currentDate = new Date();
         
-        // NEW DYNAMIC LOGIC
         const thresholdDate = new Date();
         thresholdDate.setDate(currentDate.getDate() + daysThreshold);
 
         if (skillExpiryDate <= thresholdDate) {
-             const retVal = skillUrls.find(skillUrl => skillUrl.name === skill.skill);
-             if (retVal) skill.url = retVal.url;
+             // Find matching config in the new skillsConfig array
+             const retVal = skillsConfig.find(config => config.name === skill.skill);
+             if (retVal) {
+                 skill.url = retVal.url;
+             }
+             // We return true so the skill is added to expiringSkills.
+             // sendMessage() will decide later if it's actionable based on whether it was found in skillsConfig.
              return true;
         }
         return false;
@@ -208,13 +229,15 @@ async function checkExpiringSkills(member) {
         if (!isViewMode) {
             await sendMessage(member); 
         } else {
-            const isEmailEligible = member.expiringSkills.some(s => enabledSkills.includes(s.skill));
+            // Check if ANY expiring skill is in our config (isEmailEligible)
+            const isEmailEligible = member.expiringSkills.some(s => skillsConfig.some(conf => conf.name === s.skill));
+            
             allResults.push({
                 name: member.name,
                 skills: member.expiringSkills.map(s => ({
                     skill: s.skill,
                     dueDate: s.dueDate,
-                    hasUrl: !!s.url // <--- ADD THIS LINE (checks if the URL was found in skillUrls)
+                    hasUrl: !!s.url // Checks if the URL was found in skillsConfig
                 })),
                 emailEligible: isEmailEligible
             });
@@ -231,23 +254,20 @@ async function checkExpiringSkills(member) {
 }
 
 async function processOIData(rows) {
-    // ...
     for (const member of members) {
-        // OPTIMIZATION: Skip processing entirely if we are in "Send Selected" mode and this user isn't selected
         if (isSendSelectedMode && !allowedNames.includes(member.name)) {
             continue; 
         }
 
         await checkExpiringSkills(member);
         
-        // Only pause if we actually did something (and aren't in view mode)
         if (!isViewMode) {
-             // You might want to move this inside sendMessage so it only pauses after a successful send
              console.log(`   [${getTime()}] Pausing for rate limit safety (5s)...`);
-             await new Promise(resolve => setTimeout(resolve, 5000)); // Reduced to 5s
+             await new Promise(resolve => setTimeout(resolve, 5000));
         }
     }
 }
+
 const main = async () => {
     try {
         const rows = await getOIData();
