@@ -1,26 +1,26 @@
 const nodemailer = require('nodemailer');
 
 const members = [
-  { "name": "SO Bandy, J", "email": "me@me.com", "skills": [] },
-  { "name": "SO Brady, D P", "email": "me@me.com", "skills": [] },
-  { "name": "SO Edwards, M T", "email": "me@me.com", "skills": [] },
-  { "name": "SO Tucker, W R", "email": "me@me.com", "skills": [] },
-  { "name": "SFF Garnham, P", "email": "me@me.com", "skills": [] },
-  { "name": "SFF Keith, A", "email": "me@me.com", "skills": [] },
-  { "name": "SFF Roberts, G", "email": "me@me.com", "skills": [] },
-  { "name": "SFF Walkinshaw, M G", "email": "me@me.com", "skills": [] },
-  { "name": "SFF Whybrow, R J", "email": "me@me.com", "skills": [] },
-  { "name": "QFF Busch, G", "email": "me@me.com", "skills": [] },
-  { "name": "QFF Claxton, P J", "email": "me@me.com", "skills": [] },
-  { "name": "QFF Dassi, G", "email": "me@me.com", "skills": [] },
-  { "name": "QFF Hansen, S", "email": "me@me.com", "skills": [] },
-  { "name": "QFF Price, S M", "email": "me@me.com", "skills": [] },
-  { "name": "FF Ryan, E", "email": "me@me.com", "skills": [] },
-  { "name": "RFF Calderon Bonilla, C", "email": "me@me.com", "skills": [] },
-  { "name": "RFF Edwards, M", "email": "me@me.com", "skills": [] },
-  { "name": "RFF Firestone, F", "email": "me@me.com", "skills": [] },
-  { "name": "RFF McLoughlin, S C", "email": "me@me.com", "skills": [] },
-  { "name": "RFF Romeril, C C", "email": "me@me.com", "skills": [] }
+  { "name": "SO Bandy, J", "email": "info@dassi.net", "skills": [] },
+  { "name": "SO Brady, D P", "email": "info@dassi.net", "skills": [] },
+  { "name": "SO Edwards, M T", "email": "info@dassi.net", "skills": [] },
+  { "name": "SO Tucker, W R", "email": "info@dassi.net", "skills": [] },
+  { "name": "SFF Garnham, P", "email": "info@dassi.net", "skills": [] },
+  { "name": "SFF Keith, A", "email": "info@dassi.net", "skills": [] },
+  { "name": "SFF Roberts, G", "email": "info@dassi.net", "skills": [] },
+  { "name": "SFF Walkinshaw, M G", "email": "info@dassi.net", "skills": [] },
+  { "name": "SFF Whybrow, R J", "email": "info@dassi.net", "skills": [] },
+  { "name": "QFF Busch, G", "email": "info@dassi.net", "skills": [] },
+  { "name": "QFF Claxton, P J", "email": "info@dassi.net", "skills": [] },
+  { "name": "QFF Dassi, G", "email": "info@dassi.net", "skills": [] },
+  { "name": "QFF Hansen, S", "email": "info@dassi.net", "skills": [] },
+  { "name": "QFF Price, S M", "email": "info@dassi.net", "skills": [] },
+  { "name": "FF Ryan, E", "email": "info@dassi.net", "skills": [] },
+  { "name": "RFF Calderon Bonilla, C", "email": "info@dassi.net", "skills": [] },
+  { "name": "RFF Edwards, M", "email": "info@dassi.net", "skills": [] },
+  { "name": "RFF Firestone, F", "email": "info@dassi.net", "skills": [] },
+  { "name": "RFF McLoughlin, S C", "email": "info@dassi.net", "skills": [] },
+  { "name": "RFF Romeril, C C", "email": "info@dassi.net", "skills": [] }
 ];
 
 const skillUrls = [
@@ -67,12 +67,12 @@ const url = 'https://www.dashboardlive.nz/index.php?user=0qMLcjMPFEkDwWdbLsOiVV7
 const transporter = nodemailer.createTransport({
     service: 'gmail', // Use 'gmail' or provide host/port for other SMTP services
     auth: {
-        user: 'your_email@gmail.com', // Your email address
-        pass: 'your_app_password'      // Your email password or App Password
+        user: 'webmaster@dvfb.org.nz', // Your email address
+        pass: 'dfvb!812'      // Your email password or App Password
     }
 });
 const emailInfo = {
-      from: '"FENZ OSM Manager" <your_email@gmail.com>', // Sender address
+      from: '"FENZ OSM Manager" <webmaster@dvfb.org.nz>', // Sender address
       subject: "FENZ OSM: Expiring Skills Notification",
       text: "Hello, you have expiring Skills due in OSM. Please complete these ASAP.\r\n" //trailing text
     };
