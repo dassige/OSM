@@ -12,4 +12,5 @@ services:
       # Mount main.js so you can tweak logic without rebuilding
       - ./main.js:/app/main.js
       - ./server.js:/app/server.js
+      - ./public/index.html:/app/public/index.html
     restart: unless-stopped

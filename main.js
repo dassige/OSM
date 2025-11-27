@@ -8,14 +8,10 @@ const {members, skillUrls, enabledSkills, url, transporter, emailInfo } = requir
 // --- 1. GLOBAL FLAG DEFINITIONS ---
 const args = process.argv.slice(2);
 const isTestMode = args.includes('test');
-const isViewMode = args.includes('view'); // New flag for View Mode
+const isViewMode = args.includes('view');
 
 if (isTestMode) {
     console.log('*** RUNNING IN TEST MODE - NO EMAILS WILL BE SENT ***');
-}
-if (isViewMode) {
-    // In view mode, we suppress standard logs or just ignore them in the server parser
-    // We only care about the final JSON output
 }
 
 let osmData = [];
@@ -84,10 +80,9 @@ async function sendMessage(member) {
         }
     });
     
-    // Logic split: View Mode vs Email Mode
     if (enableSend) {
         if (isViewMode) {
-            // Do nothing here, data is collected in checkExpiringSkills
+            // In view mode, we don't send, we just report
         } else if (isTestMode) {
             console.log(`[TEST MODE] Would send email to: ${member.email}`);
             console.log(`[TEST MODE] Message content: \n${message}\n`);
@@ -125,10 +120,16 @@ async function checkExpiringSkills(member) {
             console.log(`Found ${member.expiringSkills.length} Expiring Skill(s) for ${member.name}`);
             await sendMessage(member); 
         } else {
-            // In View Mode, add to results
+            // --- NEW: Calculate Eligibility based on enabledSkills ---
+            const isEmailEligible = member.expiringSkills.some(s => enabledSkills.includes(s.skill));
+
             allResults.push({
                 name: member.name,
-                skills: member.expiringSkills.map(s => s.skill)
+                skills: member.expiringSkills.map(s => ({
+                    skill: s.skill,
+                    dueDate: s.dueDate
+                })),
+                emailEligible: isEmailEligible
             });
         }
     } else {
@@ -136,7 +137,8 @@ async function checkExpiringSkills(member) {
         if (isViewMode) {
              allResults.push({
                 name: member.name,
-                skills: [] // Empty array signifies "NO expiring skills"
+                skills: [],
+                emailEligible: false
             });
         }
     }
@@ -151,7 +153,6 @@ async function processOIData(rows) {
     for (const member of members) {
         await checkExpiringSkills(member);
         
-        // ONLY wait if NOT in view mode. View mode should be fast.
         if (!isViewMode) {
             console.log("Waiting...");
             await new Promise(resolve => setTimeout(resolve, 15000));
@@ -165,7 +166,6 @@ const main = async () => {
         if (rows) {
             await processOIData(rows);
             
-            // Output JSON for the server to pick up if in View Mode
             if (isViewMode) {
                 console.log('___JSON_START___');
                 console.log(JSON.stringify(allResults));
