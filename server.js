@@ -3,7 +3,7 @@ const http = require('http');
 const { Server } = require("socket.io");
 
 // Configuration
-const resources = require('./resources.js');
+const resources = require('./config.js');
 
 // Services
 const { getOIData } = require('./services/scraper');
