@@ -41,6 +41,8 @@ const enabledSkills = [
     "OI (H7-1) - Clandestine Labs",
     "OI (G7) - Decontamination"
 ];
+
+// Dashboard URL with user code
 const url = 'https://www.dashboardlive.nz/index.php?user=your-user-code';
 
 // --- EMAIL CONFIGURATION ---
@@ -50,8 +52,8 @@ const url = 'https://www.dashboardlive.nz/index.php?user=your-user-code';
 const transporter = nodemailer.createTransport({
     service: 'gmail', // Use 'gmail' or provide host/port for other SMTP services
     auth: {
-        user: 'sender@yourdomain.com', // Your email address
-        pass: ''      // Your email password or App Password
+        user: 'sender@yourdomain.com', // Sender email address
+        pass: ''      // Sender email password or App Password
     }
 });
 const emailInfo = {
