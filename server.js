@@ -47,15 +47,18 @@ io.on('connection', (socket) => {
     });
 
     // --- NEW: RUN SELECTED (SEND EMAILS) ---
-    socket.on('run-send-selected', (selectedNames) => {
+socket.on('run-send-selected', (selectedNames, days) => { // Accept days param
         if (child) return;
 
-        console.log('Spawning script in SEND-SELECTED mode...');
-        // Pass the list of names as a JSON string argument
-        const args = ['main.js', 'send-selected', JSON.stringify(selectedNames)];
+        // Ensure we have a valid string for days, default to '30'
+        const daysArg = days ? String(days) : '30';
+
+        console.log(`Spawning script in SEND-SELECTED mode (Threshold: ${daysArg} days)...`);
+        
+        // Pass 'daysArg' as the 4th argument (index 3)
+        const args = ['main.js', 'send-selected', JSON.stringify(selectedNames), daysArg];
         
         child = spawn('node', args);
-
         child.stdout.on('data', (data) => {
             const output = data.toString();
             process.stdout.write(output);
@@ -75,12 +78,12 @@ io.on('connection', (socket) => {
     });
 
     // --- VIEW EXPIRING SKILLS ---
-    socket.on('view-expiring-skills', () => {
-        console.log('Fetching expiring skills (View Mode)...');
+    socket.on('view-expiring-skills', (days) => { // Accept days param
+        const daysArg = days ? String(days) : '30';
+        console.log(`Fetching expiring skills (View Mode, Threshold: ${daysArg})...`);
         
-        // Spawn independent process for viewing so it doesn't conflict with main runner variables
-        const viewChild = spawn('node', ['main.js', 'view']);
-        let outputBuffer = '';
+        // Pass 'daysArg' as the 3rd argument (index 2)
+        const viewChild = spawn('node', ['main.js', 'view', daysArg]);        let outputBuffer = '';
 
         viewChild.stdout.on('data', (data) => {
             outputBuffer += data.toString();

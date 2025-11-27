@@ -11,18 +11,23 @@ const isTestMode = args.includes('test');
 const isViewMode = args.includes('view');
 const isSendSelectedMode = args.includes('send-selected');
 
-let allowedNames = [];
-if (isSendSelectedMode) {
-    try {
-        // The argument after 'send-selected' should be the JSON string of names
-        const idx = args.indexOf('send-selected');
-        if (idx !== -1 && args[idx + 1]) {
-            allowedNames = JSON.parse(args[idx + 1]);
-        }
-    } catch (e) {
-        console.error("Error parsing allowed names list:", e.message);
+// Default threshold
+let daysThreshold = 30;
+
+// Parse threshold based on mode and argument position
+if (isViewMode) {
+    // "node main.js view 30" -> 30 is at index 1
+    if (args[1] && !isNaN(args[1])) {
+        daysThreshold = parseInt(args[1]);
+    }
+} else if (isSendSelectedMode) {
+    // "node main.js send-selected [json] 30" -> 30 is at index 2
+    if (args[2] && !isNaN(args[2])) {
+        daysThreshold = parseInt(args[2]);
     }
 }
+
+console.log(`> Configuration: Expiry Threshold set to ${daysThreshold} days.`);
 
 if (isTestMode) {
     console.log('*** RUNNING IN TEST MODE - NO EMAILS WILL BE SENT ***');
@@ -181,17 +186,17 @@ async function sendMessage(member) {
     }
 }
 async function checkExpiringSkills(member) {
-    // In view mode we suppress the per-member check logs to keep the "Loading" phase clean
-    // or keep them if you want verbose logs even during "View". 
-    // Given the prompt, we'll keep detailed logs for the "Send" process primarily.
+    // ...
     
     member.expiringSkills = member.skills.filter((skill) => {
         const skillExpiryDate = new Date(skill.dueDate);
         const currentDate = new Date();
-        const oneMonthLater = new Date();
-        oneMonthLater.setMonth(currentDate.getMonth() + 1);
+        
+        // NEW DYNAMIC LOGIC
+        const thresholdDate = new Date();
+        thresholdDate.setDate(currentDate.getDate() + daysThreshold);
 
-        if (skillExpiryDate <= oneMonthLater) {
+        if (skillExpiryDate <= thresholdDate) {
              const retVal = skillUrls.find(skillUrl => skillUrl.name === skill.skill);
              if (retVal) skill.url = retVal.url;
              return true;

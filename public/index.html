@@ -123,7 +123,12 @@
 <body>
     <h1>FENZ OSM Automation</h1>
     
-    <div id="controls">
+    <div id="controls" style="display: flex; align-items: center; flex-wrap: wrap;">
+        <div style="margin-right: 15px; margin-bottom: 10px; background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
+            <label for="daysInput" style="font-weight: bold; color: #555; font-size: 14px;">Days to Expiry:</label>
+            <input type="number" id="daysInput" value="30" min="1" style="width: 50px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
+        </div>
+
         <button id="viewBtn">View Expiring Skills</button>
         <button id="sendEmailsBtn" disabled>Send Emails</button>
         <span id="status" style="margin-left: 15px; font-weight: bold; color: #555;">Idle</span>
@@ -166,7 +171,7 @@
         const tableContainer = document.getElementById('tableContainer');
         const skillsTableBody = document.querySelector('#skillsTable tbody');
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-
+        const daysInput = document.getElementById('daysInput'); // Get reference to input
         // --- Helper Functions ---
 
         function setRunningState() {
@@ -250,25 +255,30 @@
         sendEmailsBtn.addEventListener('click', () => {
             const checkedBoxes = document.querySelectorAll('.email-checkbox:checked');
             const selectedNames = Array.from(checkedBoxes).map(cb => cb.getAttribute('data-name'));
+            const days = parseInt(daysInput.value) || 30; // Get value or default to 30
             
             if (selectedNames.length === 0) {
                 alert("No members selected for email.");
                 return;
             }
 
-            if (confirm(`Are you sure you want to send emails to ${selectedNames.length} member(s)?`)) {
+            if (confirm(`Are you sure you want to send emails to ${selectedNames.length} member(s)?\n(Expiry threshold: ${days} days)`)) {
                 setRunningState();
-                socket.emit('run-send-selected', selectedNames);
+                // Pass 'days' as second argument
+                socket.emit('run-send-selected', selectedNames, days); 
             }
         });
 
         viewBtn.addEventListener('click', () => {
+            const days = parseInt(daysInput.value) || 30; // Get value or default to 30
+            
             viewBtn.disabled = true;
             viewBtn.textContent = "Loading Data...";
-            terminal.textContent = '> Fetching View Data... please wait.\n';
-            socket.emit('view-expiring-skills');
+            terminal.textContent = `> Fetching View Data (Threshold: ${days} days)... please wait.\n`;
+            
+            // Pass 'days' as argument
+            socket.emit('view-expiring-skills', days); 
         });
-
         socket.on('terminal-output', (data) => {
             terminal.textContent += data;
             terminal.scrollTop = terminal.scrollHeight;
