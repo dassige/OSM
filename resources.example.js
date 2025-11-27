@@ -51,7 +51,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail', // Use 'gmail' or provide host/port for other SMTP services
     auth: {
         user: 'sender@yourdomain.com', // Your email address
-        pass: 'your-password'      // Your email password or App Password
+        pass: ''      // Your email password or App Password
     }
 });
 const emailInfo = {
