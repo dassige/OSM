@@ -32,7 +32,7 @@
         #sendEmailsBtn:hover { background-color: #0056b3; }
         #sendEmailsBtn:disabled { background-color: #ccc; cursor: not-allowed; }
 
-        /* View Button - Green */
+        /* Reload Button - Green */
         #viewBtn { background-color: #28a745; }
         #viewBtn:hover { background-color: #218838; }
 
@@ -141,6 +141,7 @@
             width: 16px;
             height: 16px;
         }
+        
     </style>
 </head>
 <body>
@@ -154,7 +155,8 @@
 
         <button id="viewBtn">Reload Expiring Skills</button>
         <button id="sendEmailsBtn" disabled>Send Emails</button>
-        <span id="status" style="margin-left: 15px; font-weight: bold; color: #555;">Idle</span>
+        
+        <span id="status" style="margin-left: 15px; font-weight: bold; color: #555; margin-bottom: 10px;">Idle</span>
     </div>
 
     <div id="progressContainer">
@@ -162,9 +164,21 @@
     </div>
 
     <div id="tableContainer">
-        <h2 style="margin-top: 0;">Expiring Skills Report</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            <h2 style="margin: 0;">Expiring Skills Report</h2>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                <label style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
+                    <input type="checkbox" id="hideNoSkillsCheckbox" style="margin-right: 8px; width: 16px; height: 16px;"> 
+                    Hide members with 'NO expiring skills'
+                </label>
+                <label style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
+                    <input type="checkbox" id="hideNoUrlSkillsCheckbox" style="margin-right: 8px; width: 16px; height: 16px;"> 
+                    Hide Skills without Online form
+                </label>
+            </div>
+        </div>
         
-        <p style="margin-top: -10px; margin-bottom: 15px; color: #666; font-size: 14px;">
+        <p style="margin-top: -5px; margin-bottom: 15px; color: #666; font-size: 14px;">
             <em>Skills displayed in <b>bold</b> are configured as 'Critical'. 
             <span style="display: inline-flex; align-items: center; vertical-align: bottom;">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #007bff;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
@@ -203,9 +217,14 @@
         const skillsTableBody = document.querySelector('#skillsTable tbody');
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
         const daysInput = document.getElementById('daysInput');
+        const hideNoSkillsCheckbox = document.getElementById('hideNoSkillsCheckbox');
+        const hideNoUrlSkillsCheckbox = document.getElementById('hideNoUrlSkillsCheckbox'); // New Checkbox
         
         const progressContainer = document.getElementById('progressContainer');
         const progressBar = document.getElementById('progressBar');
+
+        // Store data globally for re-rendering
+        let currentOsmData = [];
 
         // --- Helper Functions ---
 
@@ -226,6 +245,7 @@
 
         function setIdleState(code) {
             const isTableVisible = tableContainer.style.display !== 'none';
+            // Logic for send button enabling (ignore hidden rows if needed, but usually we just care if checked)
             sendEmailsBtn.disabled = !isTableVisible || document.querySelectorAll('.email-checkbox:checked').length === 0;
             selectAllCheckbox.disabled = !isTableVisible;
             
@@ -300,12 +320,124 @@
             const days = parseInt(daysInput.value) || 30;
             viewBtn.disabled = true;
             viewBtn.textContent = "Loading Data...";
-            // Use += to prevent overwriting existing logs
             terminal.textContent += `> Fetching View Data (Threshold: ${days} days)... please wait.\n`;
             socket.emit('view-expiring-skills', days); 
         }
 
+        // --- Render Table Logic ---
+        function renderTable() {
+            skillsTableBody.innerHTML = '';
+            
+            const hideNoSkills = hideNoSkillsCheckbox.checked;
+            const hideNoUrl = hideNoUrlSkillsCheckbox.checked;
+
+            currentOsmData.forEach((member, index) => {
+                // 1. Filter skills based on No URL checkbox
+                let visibleSkills = member.skills;
+                if (hideNoUrl) {
+                    visibleSkills = visibleSkills.filter(s => s.hasUrl);
+                }
+
+                // 2. Determine if member should be shown based on "Hide No Skills" checkbox
+                const hasVisibleSkills = visibleSkills.length > 0;
+                
+                // If the checkbox is checked, and we have no skills to show for this member, skip.
+                if (hideNoSkills && !hasVisibleSkills) {
+                    return; 
+                }
+
+                const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
+                
+                // --- Row 1 (Main Row) ---
+                const tr = document.createElement('tr');
+                tr.className = rowClass;
+                
+                // Mark specifically for styling/logic if needed, though we filter proactively now
+                if (!hasVisibleSkills) {
+                    tr.classList.add('no-skills-row');
+                }
+                
+                const nameTd = document.createElement('td');
+                nameTd.textContent = member.name;
+                nameTd.className = 'member-cell';
+                tr.appendChild(nameTd);
+
+                const skillTd = document.createElement('td');
+                const dateTd = document.createElement('td');
+                
+                if (hasVisibleSkills) {
+                    skillTd.innerHTML = buildSkillHtml(visibleSkills[0]);
+                    skillTd.className = 'skill-cell';
+                    dateTd.textContent = visibleSkills[0].dueDate;
+                    dateTd.className = 'date-cell';
+                } else {
+                    skillTd.textContent = "NO expiring skills" + (hideNoUrl && member.skills.length > 0 ? " (Hidden by filter)" : "");
+                    skillTd.className = 'no-skill';
+                    dateTd.textContent = ""; 
+                }
+                tr.appendChild(skillTd);
+                tr.appendChild(dateTd);
+
+                const emailTd = document.createElement('td');
+                emailTd.className = 'member-cell';
+                // Only show checkbox if member is eligible AND has visible skills
+                // (Optional: You might want to allow emailing even if filtered, but usually not)
+                if (member.emailEligible && hasVisibleSkills) {
+                    const label = document.createElement('label');
+                    label.className = 'email-label';
+                    label.innerHTML = `<input type="checkbox" class="email-checkbox" data-name="${member.name}" checked> Send email`;
+                    emailTd.appendChild(label);
+                }
+                tr.appendChild(emailTd);
+
+                skillsTableBody.appendChild(tr);
+
+                // --- Subsequent Rows (Additional Skills) ---
+                for (let i = 1; i < visibleSkills.length; i++) {
+                    const subTr = document.createElement('tr');
+                    subTr.className = rowClass;
+                    
+                    const emptyNameTd = document.createElement('td');
+                    emptyNameTd.className = 'merged-cell';
+                    subTr.appendChild(emptyNameTd);
+
+                    const subSkillTd = document.createElement('td');
+                    subSkillTd.innerHTML = buildSkillHtml(visibleSkills[i]);
+                    subSkillTd.className = 'skill-cell';
+                    
+                    const subDateTd = document.createElement('td');
+                    subDateTd.textContent = visibleSkills[i].dueDate;
+                    subDateTd.className = 'date-cell';
+
+                    subTr.appendChild(subSkillTd);
+                    subTr.appendChild(subDateTd);
+
+                    const emptyEmailTd = document.createElement('td');
+                    emptyEmailTd.className = 'merged-cell';
+                    subTr.appendChild(emptyEmailTd);
+                    
+                    skillsTableBody.appendChild(subTr);
+                }
+            });
+
+            // Re-attach listeners to new checkboxes
+            const newCheckboxes = document.querySelectorAll('.email-checkbox');
+            newCheckboxes.forEach(cb => {
+                cb.addEventListener('change', updateUIState);
+            });
+            
+            updateUIState();
+        }
+
         // --- Event Listeners ---
+
+        hideNoSkillsCheckbox.addEventListener('change', () => {
+            renderTable();
+        });
+
+        hideNoUrlSkillsCheckbox.addEventListener('change', () => {
+            renderTable();
+        });
 
         selectAllCheckbox.addEventListener('change', (e) => {
             const isChecked = e.target.checked;
@@ -359,86 +491,14 @@
 
         socket.on('expiring-skills-data', (data) => {
             viewBtn.disabled = false;
-            viewBtn.textContent = "Reload Expiring Skills"; // Updated Label
+            viewBtn.textContent = "Reload Expiring Skills";
             terminal.textContent += '> Data fetched successfully.\n';
 
-            skillsTableBody.innerHTML = '';
+            // Store data and render
+            currentOsmData = data;
             
-            data.forEach((member, index) => {
-                const skills = member.skills;
-                const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
-                
-                const tr = document.createElement('tr');
-                tr.className = rowClass;
-                
-                const nameTd = document.createElement('td');
-                nameTd.textContent = member.name;
-                nameTd.className = 'member-cell';
-                tr.appendChild(nameTd);
-
-                const skillTd = document.createElement('td');
-                const dateTd = document.createElement('td');
-                
-                if (skills.length > 0) {
-                    skillTd.innerHTML = buildSkillHtml(skills[0]);
-                    skillTd.className = 'skill-cell';
-                    dateTd.textContent = skills[0].dueDate;
-                    dateTd.className = 'date-cell';
-                } else {
-                    skillTd.textContent = "NO expiring skills";
-                    skillTd.className = 'no-skill';
-                    dateTd.textContent = ""; 
-                }
-                tr.appendChild(skillTd);
-                tr.appendChild(dateTd);
-
-                const emailTd = document.createElement('td');
-                emailTd.className = 'member-cell';
-                if (member.emailEligible) {
-                    const label = document.createElement('label');
-                    label.className = 'email-label';
-                    label.innerHTML = `<input type="checkbox" class="email-checkbox" data-name="${member.name}" checked> Send email`;
-                    emailTd.appendChild(label);
-                }
-                tr.appendChild(emailTd);
-
-                skillsTableBody.appendChild(tr);
-
-                for (let i = 1; i < skills.length; i++) {
-                    const subTr = document.createElement('tr');
-                    subTr.className = rowClass;
-                    
-                    const emptyNameTd = document.createElement('td');
-                    emptyNameTd.className = 'merged-cell';
-                    subTr.appendChild(emptyNameTd);
-
-                    const subSkillTd = document.createElement('td');
-                    subSkillTd.innerHTML = buildSkillHtml(skills[i]);
-                    subSkillTd.className = 'skill-cell';
-                    
-                    const subDateTd = document.createElement('td');
-                    subDateTd.textContent = skills[i].dueDate;
-                    subDateTd.className = 'date-cell';
-
-                    subTr.appendChild(subSkillTd);
-                    subTr.appendChild(subDateTd);
-
-                    const emptyEmailTd = document.createElement('td');
-                    emptyEmailTd.className = 'merged-cell';
-                    subTr.appendChild(emptyEmailTd);
-                    
-                    skillsTableBody.appendChild(subTr);
-                }
-            });
-
-            const newCheckboxes = document.querySelectorAll('.email-checkbox');
-            newCheckboxes.forEach(cb => {
-                cb.addEventListener('change', updateUIState);
-            });
-
-            updateUIState();
-
             tableContainer.style.display = 'block';
+            renderTable();
             tableContainer.scrollIntoView({ behavior: 'smooth' });
         });
 
