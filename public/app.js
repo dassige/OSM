@@ -15,6 +15,13 @@ const progressBar = document.getElementById('progressBar');
 
 let currentOsmData = [];
 
+// [NEW] Handle Authentication Errors
+socket.on("connect_error", (err) => {
+    if (err.message === "unauthorized") {
+        window.location.href = "/login.html";
+    }
+});
+
 // --- Helper Functions ---
 
 function setRunningState() {
@@ -179,33 +186,30 @@ function renderTable() {
 
 // --- DB Persistence Listeners ---
 
-// 1. Listen for Preference Changes in UI and Save
 daysInput.addEventListener('change', (e) => {
     socket.emit('update-preference', { key: 'daysToExpiry', value: parseInt(e.target.value) });
 });
 
 hideNoSkillsCheckbox.addEventListener('change', (e) => {
     socket.emit('update-preference', { key: 'hideNoSkills', value: e.target.checked });
-    renderTable(); // Re-render immediately on visual toggle
+    renderTable(); 
 });
 
 hideNoUrlSkillsCheckbox.addEventListener('change', (e) => {
     socket.emit('update-preference', { key: 'hideNoUrl', value: e.target.checked });
-    renderTable(); // Re-render immediately on visual toggle
+    renderTable(); 
 });
 
-// 2. Load Preferences on Connect
+// Load Preferences on Connect
 socket.on('connect', () => {
     socket.emit('get-preferences');
 });
 
 socket.on('preferences-data', (prefs) => {
-    // Apply loaded preferences to UI
     if (prefs.daysToExpiry !== undefined) daysInput.value = prefs.daysToExpiry;
     if (prefs.hideNoSkills !== undefined) hideNoSkillsCheckbox.checked = prefs.hideNoSkills;
     if (prefs.hideNoUrl !== undefined) hideNoUrlSkillsCheckbox.checked = prefs.hideNoUrl;
 
-    // Trigger initial fetch AFTER prefs are loaded to ensure we use the correct day count
     fetchData();
 });
 

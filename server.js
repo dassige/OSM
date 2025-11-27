@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
+const session = require('express-session'); // [NEW]
 
 // Configuration
 const config = require('./config.js'); 
@@ -9,26 +10,85 @@ const config = require('./config.js');
 const { getOIData } = require('./services/scraper');
 const { processMemberSkills } = require('./services/member-manager');
 const { sendNotification } = require('./services/mailer');
-const db = require('./services/db'); // [NEW] Import DB Service
+const db = require('./services/db');
 
 const app = express();
 const server = http.createServer(app);
+
+// [NEW] Configure Session Middleware
+const sessionMiddleware = session({
+    secret: config.auth?.sessionSecret || 'fallback_secret_key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false } // Set to true if running behind https proxy
+});
+
+app.use(sessionMiddleware);
+app.use(express.json()); // For parsing JSON bodies (login)
+
+// [NEW] Initialize Socket.IO with Session awareness
 const io = new Server(server);
+const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
+io.use(wrap(sessionMiddleware));
 
-app.use(express.static('public'));
+// [NEW] Socket.IO Auth Middleware
+io.use((socket, next) => {
+    const session = socket.request.session;
+    if (session && session.loggedIn) {
+        next();
+    } else {
+        next(new Error("unauthorized"));
+    }
+});
 
-// [NEW] Initialize DB before starting
+// Initialize DB
 db.initDB().catch(err => console.error("DB Init Error:", err));
 
+// --- HTTP ROUTES ---
+
+// [NEW] Login Endpoint
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === config.auth.username && password === config.auth.password) {
+        req.session.loggedIn = true;
+        req.session.user = username;
+        return res.status(200).send({ success: true });
+    }
+    return res.status(401).send({ error: "Invalid credentials" });
+});
+
+// [NEW] Logout Endpoint
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/login.html');
+});
+
+// [NEW] Protect Dashboard Middleware
+// Intercepts access to the root path and index.html
+app.use((req, res, next) => {
+    const protectedPaths = ['/', '/index.html'];
+    if (protectedPaths.includes(req.path)) {
+        if (req.session && req.session.loggedIn) {
+            return next();
+        }
+        return res.redirect('/login.html');
+    }
+    next();
+});
+
+// Serve Static Files
+app.use(express.static('public'));
+
+// --- SOCKET.IO EVENTS ---
+
 io.on('connection', (socket) => {
-    console.log('Web client connected');
+    console.log(`Web client connected (User: ${socket.request.session.user})`);
 
     const logger = (msg) => {
         process.stdout.write(msg + '\n');
         socket.emit('terminal-output', msg + '\n');
     };
 
-    // [NEW] Handle Preferences
     socket.on('get-preferences', async () => {
         try {
             const prefs = await db.getPreferences();
@@ -41,13 +101,11 @@ io.on('connection', (socket) => {
     socket.on('update-preference', async ({ key, value }) => {
         try {
             await db.savePreference(key, value);
-            // logger(`Preference saved: ${key} = ${value}`); // Optional verbose logging
         } catch (e) {
             logger(`Error saving preference: ${e.message}`);
         }
     });
 
-    // --- VIEW EXPIRING SKILLS ---
     socket.on('view-expiring-skills', async (days) => {
         const daysThreshold = parseInt(days) || 30;
         logger(`> Fetching View Data (Threshold: ${daysThreshold} days)...`);
@@ -82,7 +140,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // --- SEND EMAILS (SELECTED) ---
     socket.on('run-send-selected', async (selectedNames, days) => {
         const daysThreshold = parseInt(days) || 30;
         logger(`> Starting Email Process (Threshold: ${daysThreshold} days)...`);
@@ -91,7 +148,6 @@ io.on('connection', (socket) => {
 
         try {
             const rawData = await getOIData(config.url, logger);
-            
             const processedMembers = processMemberSkills(
                 config.members, 
                 rawData, 
@@ -104,7 +160,6 @@ io.on('connection', (socket) => {
             let current = 0;
             for (const member of targets) {
                 logger(`> Processing ${member.name}...`);
-                
                 if (member.expiringSkills.length > 0) {
                     try {
                         await sendNotification(
@@ -114,7 +169,6 @@ io.on('connection', (socket) => {
                             false, 
                             logger
                         );
-                        // [NEW] Log to DB
                         await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills`);
                     } catch (err) {
                         await db.logEmailAction(member, 'FAILED', err.message);
@@ -123,7 +177,6 @@ io.on('connection', (socket) => {
                 } else {
                     logger(`  No expiring skills for ${member.name}. Skipping.`);
                 }
-
                 current++;
                 socket.emit('progress-update', { 
                     type: 'progress-tick', 
@@ -131,13 +184,10 @@ io.on('connection', (socket) => {
                     total: targets.length, 
                     member: member.name 
                 });
-
                 await new Promise(resolve => setTimeout(resolve, 2000));
             }
-
             logger(`> All operations completed.`);
             socket.emit('script-complete', 0);
-
         } catch (error) {
             logger(`FATAL ERROR: ${error.message}`);
             socket.emit('script-complete', 1);

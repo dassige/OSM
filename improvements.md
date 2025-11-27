@@ -7,7 +7,6 @@ Based on the current codebase, here is a suggested `improvement.md` file outlini
 ## 1. Security & Configuration
 - **Environment Variables**: Currently, configuration lies in `resources.js`. Moving sensitive data (SMTP credentials, User Codes) to a `.env` file using `dotenv` would improve security and make container configuration easier.
 - **TLS Verification**: The axios request in `main.js` currently uses `rejectUnauthorized: false`. This bypasses SSL security checks. Resolving the underlying certificate issue and enabling verification is recommended for production security.
-- **Web Interface Authentication**: The dashboard at `public/index.html` is open. Adding Basic Auth or a simple login mechanism (e.g., Passport.js) would prevent unauthorized users from triggering emails.
 
 ## 2. Architecture & Performance
 

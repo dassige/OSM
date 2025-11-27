@@ -1,5 +1,11 @@
 const nodemailer = require('nodemailer');
 
+// --- AUTHENTICATION ---
+const auth = {
+    username: "admin",
+    password: "password123", // Change this!
+    sessionSecret: "change_this_to_a_random_string" 
+};
 // members names as they appear EXACTLY in the dashboard system
 const members = [
   { "name": "Member 1 name ", "email": "member1@yourdomain.com", "mobile": "","messengerId" : "","skills": [] },
@@ -47,9 +53,9 @@ const emailInfo = {
     };
 
 module.exports = {
+    auth,
     members,
-    skillUrls,
-    enabledSkills,
+    skillsConfig,
     url,
     transporter,
     emailInfo
