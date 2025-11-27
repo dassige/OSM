@@ -7,10 +7,10 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Mount resources.js so you can edit email settings without rebuilding
-      - ./resources.js:/app/resources.js
-      # Mount main.js so you can tweak logic without rebuilding
-      - ./main.js:/app/main.js
-      - ./server.js:/app/server.js
-      - ./public/index.html:/app/public/index.html
+      # Mount the entire project directory so all source files (including 'services/') sync instantly
+      - .:/app
+      # Create an anonymous volume for node_modules to prevent host overwrites
+      - /app/node_modules
+    # Use nodemon (via npx) to automatically restart the node process when files change
+    command: npx nodemon server.js
     restart: unless-stopped
