@@ -131,6 +131,10 @@
 
     <div id="tableContainer">
         <h2 style="margin-top: 0;">Expiring Skills Report</h2>
+        
+        <p style="margin-top: -10px; margin-bottom: 15px; color: #666; font-size: 14px;">
+            <em>Skills displayed in <b>bold</b> have a direct form link available in the email.</em>
+        </p>
         <table id="skillsTable">
             <thead>
                 <tr>
@@ -145,7 +149,7 @@
                 </tr>
             </thead>
             <tbody>
-                </tbody>
+            </tbody>
         </table>
     </div>
 
@@ -300,12 +304,18 @@
                 const dateTd = document.createElement('td');
                 
                 if (skills.length > 0) {
-                    skillTd.textContent = skills[0].skill;
+                    // --- UPDATED LOGIC ---
+                    if (skills[0].hasUrl) {
+                        skillTd.innerHTML = `<b>${skills[0].skill}</b>`;
+                    } else {
+                        skillTd.textContent = skills[0].skill;
+                    }
+                    // ---------------------
+                    
                     skillTd.className = 'skill-cell';
                     dateTd.textContent = skills[0].dueDate;
                     dateTd.className = 'date-cell';
-                } else {
-                    skillTd.textContent = "NO expiring skills";
+                } else {                    skillTd.textContent = "NO expiring skills";
                     skillTd.className = 'no-skill';
                     dateTd.textContent = ""; 
                 }
@@ -336,7 +346,12 @@
                     subTr.appendChild(emptyNameTd);
 
                     const subSkillTd = document.createElement('td');
-                    subSkillTd.textContent = skills[i].skill;
+                    // --- UPDATED LOGIC ---
+                    if (skills[i].hasUrl) {
+                        subSkillTd.innerHTML = `<b>${skills[i].skill}</b>`;
+                    } else {
+                        subSkillTd.textContent = skills[i].skill;
+                    }
                     subSkillTd.className = 'skill-cell';
                     
                     const subDateTd = document.createElement('td');

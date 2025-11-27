@@ -208,7 +208,8 @@ async function checkExpiringSkills(member) {
                 name: member.name,
                 skills: member.expiringSkills.map(s => ({
                     skill: s.skill,
-                    dueDate: s.dueDate
+                    dueDate: s.dueDate,
+                    hasUrl: !!s.url // <--- ADD THIS LINE (checks if the URL was found in skillUrls)
                 })),
                 emailEligible: isEmailEligible
             });
