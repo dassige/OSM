@@ -14,8 +14,14 @@ const progressContainer = document.getElementById('progressContainer');
 const progressBar = document.getElementById('progressBar');
 
 let currentOsmData = [];
-
-// [NEW] Handle Authentication Errors
+//  Logout Logic
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        window.location.href = '/logout';
+    });
+}
+// Handle Authentication Errors
 socket.on("connect_error", (err) => {
     if (err.message === "unauthorized") {
         window.location.href = "/login.html";
