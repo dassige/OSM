@@ -53,7 +53,7 @@
             line-height: 1.4;
             white-space: pre-wrap;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-top: 30px; /* Added spacing since it's at the bottom now */
+            /* margin-top removed here, handled by the new Header margin */
         }
 
         /* Table Styling */
@@ -98,6 +98,7 @@
         .date-cell { color: #555; white-space: nowrap; }
         .no-skill { color: #28a745; font-style: italic; }
         
+        /* Checkbox Styling */
         .email-label {
             display: flex;
             align-items: center;
@@ -106,6 +107,18 @@
             font-size: 14px;
         }
         .email-label input {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+        }
+        /* Header Checkbox specific style */
+        .header-checkbox-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: white;
+        }
+        .header-checkbox-label input {
             margin-right: 8px;
             width: 16px;
             height: 16px;
@@ -130,7 +143,11 @@
                     <th style="width: 30%">Member Name</th>
                     <th style="width: 35%">Expiring Skill</th>
                     <th style="width: 15%">Expiring Date</th>
-                    <th style="width: 20%">Send Email</th>
+                    <th style="width: 20%">
+                        <label class="header-checkbox-label">
+                            <input type="checkbox" id="selectAllCheckbox"> Send Email
+                        </label>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -138,6 +155,7 @@
         </table>
     </div>
 
+    <h2 style="margin-top: 30px;">Console Log</h2>
     <div id="terminal"></div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -150,11 +168,16 @@
         const statusSpan = document.getElementById('status');
         const tableContainer = document.getElementById('tableContainer');
         const skillsTableBody = document.querySelector('#skillsTable tbody');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+
+        // --- Helper Functions ---
 
         function setRunningState() {
             sendEmailsBtn.disabled = true;
             stopBtn.disabled = false;
             viewBtn.disabled = true;
+            // Disable master checkbox during run
+            selectAllCheckbox.disabled = true;
             
             terminal.textContent = '> Starting Email Process...\n';
             statusSpan.innerText = 'Sending Emails...';
@@ -162,8 +185,11 @@
         }
 
         function setIdleState(code) {
-            // Only re-enable if table is visible, otherwise keep disabled
-            sendEmailsBtn.disabled = (tableContainer.style.display === 'none');
+            // Only re-enable controls if table is visible
+            const isTableVisible = tableContainer.style.display !== 'none';
+            sendEmailsBtn.disabled = !isTableVisible || document.querySelectorAll('.email-checkbox:checked').length === 0;
+            selectAllCheckbox.disabled = !isTableVisible;
+            
             stopBtn.disabled = true;
             viewBtn.disabled = false;
 
@@ -182,8 +208,51 @@
             }
         }
 
+        function updateUIState() {
+            const allCheckboxes = document.querySelectorAll('.email-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('.email-checkbox:checked');
+            
+            // 1. Update Send Button
+            if (checkedCheckboxes.length > 0) {
+                sendEmailsBtn.disabled = false;
+            } else {
+                sendEmailsBtn.disabled = true;
+            }
+
+            // 2. Update Master Checkbox State
+            if (allCheckboxes.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.disabled = true;
+            } else if (checkedCheckboxes.length === allCheckboxes.length) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.disabled = false;
+            } else if (checkedCheckboxes.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.disabled = false;
+            } else {
+                // Some checked, some not
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+                selectAllCheckbox.disabled = false;
+            }
+        }
+
+        // --- Event Listeners ---
+
+        // Master Checkbox Toggle
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            const checkboxes = document.querySelectorAll('.email-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = isChecked;
+            });
+            updateUIState();
+        });
+
         sendEmailsBtn.addEventListener('click', () => {
-            // Gather selected names
             const checkedBoxes = document.querySelectorAll('.email-checkbox:checked');
             const selectedNames = Array.from(checkedBoxes).map(cb => cb.getAttribute('data-name'));
             
@@ -226,8 +295,6 @@
 
             skillsTableBody.innerHTML = '';
             
-            let eligibleCount = 0;
-
             data.forEach((member, index) => {
                 const skills = member.skills;
                 const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
@@ -265,10 +332,9 @@
                 if (member.emailEligible) {
                     const label = document.createElement('label');
                     label.className = 'email-label';
-                    // Added class 'email-checkbox' and data-name for selection logic
+                    // We attach 'change' listener logic after the loop
                     label.innerHTML = `<input type="checkbox" class="email-checkbox" data-name="${member.name}" checked> Send email`;
                     emailTd.appendChild(label);
-                    eligibleCount++;
                 }
                 tr.appendChild(emailTd);
 
@@ -302,15 +368,17 @@
                 }
             });
 
+            // Attach listeners to newly created checkboxes
+            const newCheckboxes = document.querySelectorAll('.email-checkbox');
+            newCheckboxes.forEach(cb => {
+                cb.addEventListener('change', updateUIState);
+            });
+
+            // Initialize UI state (sets Select All to checked if everything generated checked)
+            updateUIState();
+
             tableContainer.style.display = 'block';
             tableContainer.scrollIntoView({ behavior: 'smooth' });
-
-            // Enable Send Button if there are eligible members
-            if (eligibleCount > 0) {
-                sendEmailsBtn.disabled = false;
-            } else {
-                sendEmailsBtn.disabled = true;
-            }
         });
     </script>
 </body>
