@@ -2,7 +2,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const https = require('https');
 
-// Import constants (updated to use skillsConfig instead of skillUrls/enabledSkills)
+// Import constants
 const {members, skillsConfig, url, transporter, emailInfo } = require('./resources.js');
 
 // --- 1. GLOBAL FLAG DEFINITIONS ---
@@ -14,24 +14,17 @@ const isSendSelectedMode = args.includes('send-selected');
 // Default threshold
 let daysThreshold = 30;
 
-// Parse threshold based on mode and argument position
+// Parse threshold
 if (isViewMode) {
-    // "node main.js view 30" -> 30 is at index 1
-    if (args[1] && !isNaN(args[1])) {
-        daysThreshold = parseInt(args[1]);
-    }
+    if (args[1] && !isNaN(args[1])) daysThreshold = parseInt(args[1]);
 } else if (isSendSelectedMode) {
-    // "node main.js send-selected [json] 30" -> 30 is at index 2
-    if (args[2] && !isNaN(args[2])) {
-        daysThreshold = parseInt(args[2]);
-    }
+    if (args[2] && !isNaN(args[2])) daysThreshold = parseInt(args[2]);
 }
 
 // Retrieve allowed names if in selective mode
 let allowedNames = [];
 if (isSendSelectedMode) {
     try {
-        // "node main.js send-selected [json] 30" -> JSON is at index 1
         allowedNames = JSON.parse(args[1]);
     } catch (e) {
         console.error("Error parsing allowed names JSON:", e.message);
@@ -49,9 +42,8 @@ if (isSendSelectedMode) {
 }
 
 let osmData = [];
-let allResults = []; // Store results for View Mode
+let allResults = []; 
 
-// Helper for formatted timestamps
 function getTime() {
     return new Date().toLocaleTimeString();
 }
@@ -96,8 +88,8 @@ async function sendEmail(to, text, html) {
             from: emailInfo.from,
             to: to,
             subject: emailInfo.subject,
-            text: text, // Plain text fallback
-            html: html, // HTML version
+            text: text, 
+            html: html,
         });
         console.log(`   [${getTime()}] SMTP: Payload accepted.`);
         console.log(`   [${getTime()}] SMTP: Message ID: ${info.messageId}`);
@@ -111,11 +103,8 @@ async function sendEmail(to, text, html) {
 
 async function sendMessage(member) {
     let enableSend = false;
-    
-    // Initialize Plain Text Message (fallback)
     let message = emailInfo.text;
 
-    // Initialize HTML Message
     let htmlMessage = `
         <div style="font-family: Arial, sans-serif; color: #333;">
             <h2 style="color: #d32f2f;">Expiring Skills Notification</h2>
@@ -137,10 +126,7 @@ async function sendMessage(member) {
     if (!isViewMode) console.log(`   [${getTime()}] Analysis: Found ${member.expiringSkills.length} expiring skill(s).`);
 
     member.expiringSkills.forEach((skill) => {
-        // Find the skill definition in our config
         const skillConfig = skillsConfig.find(config => config.name === skill.skill);
-        
-        // If the skill is in our config, it is considered "enabled" / actionable
         const isIncluded = !!skillConfig;
         
         if (!isViewMode) {
@@ -153,14 +139,10 @@ async function sendMessage(member) {
         }
 
         if (isIncluded) {
-            // NEW: Construct the full URL by appending the encoded member name
             const fullUrl = `${skill.url}${encodeURIComponent(member.name)}`;
-
-            // Build Plain Text
             message = message + `\r\nSkill: '${skill.skill}' expires on ${skill.dueDate}`;
             message = message + `\r\nTo complete the OI Click here : ${fullUrl}`;
 
-            // Build HTML
             htmlMessage += `
                 <li style="margin-bottom: 15px;">
                     <strong>${skill.skill}</strong> ${skillConfig.critical_skill ? '(CRITICAL)' : ''}<br>
@@ -168,12 +150,10 @@ async function sendMessage(member) {
                     <a href="${fullUrl}" style="color: #007bff; font-weight: bold; text-decoration: none;">Complete the form here</a>
                 </li>
             `;
-            
             enableSend = true;
         }
     });
     
-    // Close HTML tags
     htmlMessage += `
             </ul>
             <p style="font-size: 12px; color: #888;">This is an automated notification from FENZ OSM Manager.</p>
@@ -208,18 +188,15 @@ async function checkExpiringSkills(member) {
     member.expiringSkills = member.skills.filter((skill) => {
         const skillExpiryDate = new Date(skill.dueDate);
         const currentDate = new Date();
-        
         const thresholdDate = new Date();
         thresholdDate.setDate(currentDate.getDate() + daysThreshold);
 
         if (skillExpiryDate <= thresholdDate) {
-             // Find matching config in the new skillsConfig array
              const retVal = skillsConfig.find(config => config.name === skill.skill);
              if (retVal) {
                  skill.url = retVal.url;
-                 skill.isCritical = retVal.critical_skill; // Capture critical status
+                 skill.isCritical = retVal.critical_skill; 
              }
-             // We return true so the skill is added to expiringSkills.
              return true;
         }
         return false;
@@ -229,16 +206,14 @@ async function checkExpiringSkills(member) {
         if (!isViewMode) {
             await sendMessage(member); 
         } else {
-            // Check if ANY expiring skill is in our config (isEmailEligible)
             const isEmailEligible = member.expiringSkills.some(s => skillsConfig.some(conf => conf.name === s.skill));
-            
             allResults.push({
                 name: member.name,
                 skills: member.expiringSkills.map(s => ({
                     skill: s.skill,
                     dueDate: s.dueDate,
-                    hasUrl: !!s.url, // Checks if the URL was found in skillsConfig
-                    isCritical: !!s.isCritical // Pass critical status to frontend
+                    hasUrl: !!s.url, 
+                    isCritical: !!s.isCritical 
                 })),
                 emailEligible: isEmailEligible
             });
@@ -255,13 +230,34 @@ async function checkExpiringSkills(member) {
 }
 
 async function processOIData(rows) {
-    for (const member of members) {
-        if (isSendSelectedMode && !allowedNames.includes(member.name)) {
-            continue; 
-        }
+    // REFACTOR: Filter targets based on mode
+    const targets = isSendSelectedMode 
+        ? members.filter(m => allowedNames.includes(m.name))
+        : members;
 
+    // Report start of progress via IPC
+    if (process.send) {
+        process.send({ type: 'progress-start', total: targets.length });
+    }
+
+    let current = 0;
+
+    for (const member of targets) {
+        // 1. Send the email (waits here until done)
         await checkExpiringSkills(member);
         
+        // 2. Increment and Update UI *IMMEDIATELY* after send
+        current++;
+        if (process.send) {
+            process.send({ 
+                type: 'progress-tick', 
+                current: current, 
+                total: targets.length, 
+                member: member.name // Pass name for UI feedback
+            });
+        }
+        
+        // 3. Pause *AFTER* updating UI
         if (!isViewMode) {
              console.log(`   [${getTime()}] Pausing for rate limit safety (5s)...`);
              await new Promise(resolve => setTimeout(resolve, 5000));
