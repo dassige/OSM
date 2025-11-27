@@ -1,193 +1,172 @@
-Here is a comprehensive `README.md` generated based on the source code you provided.
+Here is the updated `README.md`. I have revised it to reflect the move to a `server.js` architecture, the introduction of SQLite (`fenz.db`) for persistence, the new Authentication/UI configuration in `config.js`, and the modularization of services.
 
------
-
+````markdown
 # FENZ OSM Automation Manager
 
- *[Add other badges here, e.g., build status, version]*
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![Node Version](https://img.shields.io/badge/node-v20-blue) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Description
 
-**FENZ OSM Automation Manager** is a Node.js-based tool designed to streamline the tracking and management of expiring Operational Skills Maintenance (OSM) competencies.
+**FENZ OSM Automation Manager** is a Node.js web application designed to streamline the tracking and management of expiring Operational Skills Maintenance (OSM) competencies.
 
-It automates the process of checking a dashboard for expiring skills for specific team members. The system scrapes competency data, identifies skills expiring within a user-defined threshold (default 30 days), and generates a report. Administrators can then use the web interface to send targeted email notifications to members, providing them with direct links (e.g., Google Forms) to complete their specific skill renewals.
+It automates the process of checking a dashboard for expiring skills, persists preferences and history via a local SQLite database, and provides a secure web interface for administrators to send targeted email reminders.
 
 **Key Features:**
 
-  * **Dashboard Scraping:** Fetches real-time skill data from an OSM dashboard URL.
-  * **Web Interface:** A user-friendly console to view expiring skills and control email operations.
-  * **Automated Emailing:** Sends reminders via SMTP (e.g., Gmail) containing deep links to specific renewal forms.
-  * **Configurable Thresholds:** Adjust the "days to expiry" setting directly from the UI.
-  * **Dockerized:** Ready for deployment using Docker and Docker Compose.
+* **Real-Time Web Dashboard:** A responsive UI using Socket.IO to view scraping progress and logs in real-time.
+* **Secure Authentication:** Session-based login system to protect member data.
+* **Persistent Storage:** Uses **SQLite** (`fenz.db`) to save user preferences (e.g., expiry thresholds, view filters) and log email history.
+* **Smart Filtering:** Filter results by "Actionable" (has a form link) or hide members with no expiring skills.
+* **Automated Emailing:** Sends HTML-formatted reminders via SMTP with deep links to specific Google Forms for skill renewal.
+* **Modular Architecture:** Logic separated into dedicated services (Scraper, Mailer, Database, Member Manager).
+* **Dockerized:** Ready for production deployment using Docker and Docker Compose.
 
 ## Table of Contents
 
-  * [Installation](https://www.google.com/search?q=%23installation)
-  * [Configuration](https://www.google.com/search?q=%23configuration)
-  * [Usage](https://www.google.com/search?q=%23usage)
-  * [Docker Deployment](https://www.google.com/search?q=%23docker-deployment)
-  * [Project Structure](https://www.google.com/search?q=%23project-structure)
-  * [Contributing](https://www.google.com/search?q=%23contributing)
-  * [Troubleshooting](https://www.google.com/search?q=%23troubleshooting)
-  * [License](https://www.google.com/search?q=%23license)
-  * [Authors and Acknowledgments](https://www.google.com/search?q=%23authors-and-acknowledgments)
+* [Prerequisites](#prerequisites)
+* [Installation](#installation)
+* [Configuration](#configuration)
+* [Usage](#usage)
+* [Docker Deployment](#docker-deployment)
+* [Project Structure](#project-structure)
+* [Troubleshooting](#troubleshooting)
+
+## Prerequisites
+
+* **Node.js**: v20 or higher (Recommended).
+* **npm**: Included with Node.js.
+* **Access**: Valid credentials for the OSM Dashboard you intend to scrape.
 
 ## Installation
 
-### Prerequisites
-
-  * Node.js (v20 or higher recommended)
-  * npm (Node Package Manager)
-
-### Steps
-
 1.  **Clone the repository:**
-
     ```bash
-    git clone https://github.com/your-username/fenz-osm-manager.git
+    git clone [https://github.com/your-username/fenz-osm-manager.git](https://github.com/your-username/fenz-osm-manager.git)
     cd fenz-osm-manager
     ```
 
 2.  **Install dependencies:**
-
     ```bash
     npm install
     ```
 
 3.  **Setup Configuration:**
-    The project relies on a `resources.js` file which is git-ignored for security. You must create this file from the example.
-
+    The project relies on a `config.js` file. Create this by copying the example template.
     ```bash
-    cp resources.example.js resources.js
+    cp config.example.js config.js
     ```
 
 ## Configuration
 
-Open `resources.js` and configure the following sections:
+Open `config.js` and configure the following sections:
 
-1.  **Members List:**
-    Define the team members you want to track.
+### 1. Authentication (`auth`)
+Set the login credentials for the web dashboard and the session secret.
+```javascript
+const auth = {
+    username: "admin",
+    password: "your_secure_password", 
+    sessionSecret: "complex_random_string_here" 
+};
+````
 
-    ```javascript
-    const members = [
-      { "name": "John Doe", "email": "john@example.com", "skills": [] },
-      // ...
-    ];
-    ```
+### 2\. UI Customization (`ui`)
 
-2.  **Skill URLs:**
-    Map skill names (as they appear in the dashboard) to their corresponding renewal form URLs.
+Customize the login screen branding.
 
-    ```javascript
-    const skillUrls = [
-        { "name": "OI (IS1) - Operational Safety", "url": "https://forms.google.com/..." },
-        // ...
-    ];
-    ```
+```javascript
+const ui = {
+    loginBackground: "/images/bg.jpg", // Optional
+    loginLogo: "/images/logo.png",     // Optional
+    loginTitle: "FENZ OSM Manager"
+};
+```
 
-3.  **Dashboard URL:**
-    The URL where the script scrapes data from.
+### 3\. Members & Skills
 
-    ```javascript
-    const url = 'https://www.dashboardlive.nz/index.php?user=YOUR_CODE';
-    ```
+  * **`members`**: Array of objects containing the exact names of team members to track and their email addresses.
+  * **`skillsConfig`**: Map skill names (as they appear in the dashboard) to their renewal Form URLs. Set `critical_skill: true` to highlight them in the UI.
 
-4.  **Email Settings (SMTP):**
-    Configure your email provider. If using Gmail, you may need an [App Password](https://support.google.com/accounts/answer/185833).
+### 4\. System URLs & Email
 
-    ```javascript
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: 'sender@yourdomain.com',
-            pass: 'your-app-password'
-        }
-    });
-    ```
+  * **`url`**: The specific OSM dashboard URL (including your user code).
+  * **`transporter`**: SMTP settings (NodeMailer) for sending emails.
 
 ## Usage
 
 ### Running Locally
 
-To start the application server:
+To start the web server:
 
 ```bash
-npm start
+node server.js
 ```
 
-Access the web interface at: `http://localhost:3000`
+*Note: The server listens on port **3000** by default.*
 
-### Web Interface Workflow
+1.  Open your browser to `http://localhost:3000`.
+2.  Login with the credentials defined in `config.js`.
+3.  **Dashboard Controls:**
+      * **Days to Expiry:** Set the threshold (e.g., 30 days). This preference is saved automatically to the database.
+      * **Reload Expiring Skills:** Scrapes the live dashboard.
+      * **Filters:** Use the checkboxes to hide members with no issues or skills without URL links.
+      * **Send Emails:** Select specific members and click "Send Emails".
 
-1.  **Set Threshold:** Enter the number of days (e.g., 30) in the "Days to Expiry" box.
-2.  **View Skills:** Click **"View Expiring Skills"**. The terminal will show the scraping progress, and a table will populate with members who have skills expiring soon.
-3.  **Select Members:** Use the checkboxes in the table to select who should receive an email.
-4.  **Send Emails:** Click **"Send Emails"** to dispatch notifications.
+### Database
 
-### CLI Usage (Advanced)
+The application automatically creates a `fenz.db` SQLite file in the root directory upon the first run. This file stores:
 
-While the Web UI is the primary method, `main.js` can be run directly:
-
-  * **Test Mode (No emails sent):** `node main.js test`
-  * **View Only:** `node main.js view 30` (where 30 is the day threshold)
+  * User Preferences (Last used threshold, active filters).
+  * Email History (Logs of sent notifications).
 
 ## Docker Deployment
 
-This project includes a `Dockerfile` and `docker-compose.yml` for easy deployment.
+The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment.
 
 1.  **Build and Run:**
+
     ```bash
     docker-compose up -d --build
     ```
-2.  **Access:**
-    Open `http://localhost:3000` in your browser.
 
-*Note: The `docker-compose.yml` mounts `resources.js` as a volume, so changes to your config file apply immediately upon restarting the container.*
+2.  **Access:**
+    Open `http://localhost:3000`.
+
+3.  **Persistence:**
+
+      * The `docker-compose.yml` mounts the current directory.
+      * `config.js` changes are reflected after a container restart.
+      * `fenz.db` persists data on the host machine.
 
 ## Project Structure
 
-  * **`server.js`**: The Express/Socket.io backend that handles UI requests and spawns the worker process.
-  * **`main.js`**: The worker script. Handles scraping (Axios/Cheerio), logic, and emailing (Nodemailer).
-  * **`public/index.html`**: The front-end dashboard.
-  * **`resources.js`**: (Ignored) Configuration for members, URLs, and secrets.
-  * **`resources.example.js`**: Template for configuration.
-
-## Contributing
-
-Contributions are welcome\! Please follow these steps:
-
-1.  Fork the repository.
-2.  Create a feature branch (`git checkout -b feature/AmazingFeature`).
-3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4.  Push to the branch (`git push origin feature/AmazingFeature`).
-5.  Open a Pull Request.
+```text
+├── config.js              # (Ignored) Main configuration and secrets
+├── config.example.js      # Template for configuration
+├── server.js              # Main Express/Socket.io Web Server
+├── main.js                # Legacy/CLI entry point
+├── fenz.db                # SQLite Database (Auto-generated)
+├── public/                # Frontend assets (HTML, CSS, Client JS)
+├── services/              # Backend Logic
+│   ├── db.js              # SQLite connection and query helpers
+│   ├── mailer.js          # Nodemailer logic
+│   ├── member-manager.js  # Business logic for mapping skills to members
+│   └── scraper.js         # Axios/Cheerio scraping logic
+└── Dockerfile             # Container definition
+```
 
 ## Troubleshooting
 
-  * **Login Error / Email Failures:**
-      * Ensure your SMTP credentials in `resources.js` are correct.
-      * If using Gmail, ensure 2FA is enabled and you are using an **App Password**, not your main password.
-  * **No Data Retrieved:**
-      * Check that the `url` in `resources.js` is accessible and active.
-      * Verify if the dashboard HTML structure has changed, as this may break the `cheerio` selectors in `main.js`.
-  * **Docker Changes Not Reflecting:**
-      * If you changed `package.json`, you need to rebuild: `docker-compose up -d --build`.
-
-## Changelog
-
-  * **v1.0.0**: Initial Release. Basic scraping, viewing, and emailing functionality.
+  * **"Unauthorized" Socket Error:**
+    If the terminal logs "connect\_error: unauthorized", ensure you have logged in via `http://localhost:3000/login.html`. The socket connection requires an active Express session.
+  * **Database Locked:**
+    If running multiple instances or accessing `fenz.db` manually while the server is running, you may encounter SQLite locking issues. Ensure only one process accesses the DB file at a time.
+  * **Email Failures:**
+    Check the terminal logs for SMTP errors. If using Gmail, ensure you are using an **App Password** and not your standard login password.
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License.
 
-## Authors and Acknowledgments
-
-  * **[Your Name/Handle]** - *Initial work*
-  * **[Contributor Name]** - *[Contribution]*
-
-*Acknowledgments:*
-
-  * Built with [Node.js](https://nodejs.org/)
-  * [Socket.io](https://socket.io/) for real-time communication
-  * [Cheerio](https://cheerio.js.org/) for HTML parsing
+```
+```
