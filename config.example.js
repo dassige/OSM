@@ -6,7 +6,7 @@ const auth = {
     password: "password123", // Change this!
     sessionSecret: "change_this_to_a_random_string" 
 };
-// --- UI CUSTOMIZATION [NEW] ---
+// --- UI CUSTOMIZATIONEW] --- 
 const ui = {
     // Path relative to 'public' folder (e.g., '/my-background.jpg') or a full URL
     loginBackground: "", 

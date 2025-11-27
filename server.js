@@ -1,7 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
-const session = require('express-session'); // [NEW]
+const session = require('express-session'); // 
 
 // Configuration
 const config = require('./config.js'); 
@@ -15,7 +15,7 @@ const db = require('./services/db');
 const app = express();
 const server = http.createServer(app);
 
-// [NEW] Configure Session Middleware
+// Configure Session Middleware
 const sessionMiddleware = session({
     secret: config.auth?.sessionSecret || 'fallback_secret_key',
     resave: false,
@@ -26,12 +26,12 @@ const sessionMiddleware = session({
 app.use(sessionMiddleware);
 app.use(express.json()); // For parsing JSON bodies (login)
 
-// [NEW] Initialize Socket.IO with Session awareness
+// Initialize Socket.IO with Session awareness
 const io = new Server(server);
 const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
 io.use(wrap(sessionMiddleware));
 
-// [NEW] Socket.IO Auth Middleware
+//  Socket.IO Auth Middleware
 io.use((socket, next) => {
     const session = socket.request.session;
     if (session && session.loggedIn) {
@@ -46,7 +46,7 @@ db.initDB().catch(err => console.error("DB Init Error:", err));
 
 // --- HTTP ROUTES ---
 
-// [NEW] Login Endpoint
+//  Login Endpoint
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     if (username === config.auth.username && password === config.auth.password) {
@@ -57,13 +57,13 @@ app.post('/login', (req, res) => {
     return res.status(401).send({ error: "Invalid credentials" });
 });
 
-// [NEW] Logout Endpoint
+// Logout Endpoint
 app.get('/logout', (req, res) => {
     req.session.destroy();
     res.redirect('/login.html');
 });
 
-// [NEW] Protect Dashboard Middleware
+// Protect Dashboard Middleware
 // Intercepts access to the root path and index.html
 app.use((req, res, next) => {
     const protectedPaths = ['/', '/index.html'];
@@ -76,7 +76,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// [NEW] Expose UI Config to Frontend
+// Expose UI Config to Frontend
 app.get('/ui-config', (req, res) => {
     res.json(config.ui || {});
 });
