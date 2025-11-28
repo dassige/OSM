@@ -1,7 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
-const session = require('express-session'); // 
+const session = require('express-session');
 
 // Configuration
 const config = require('./config.js'); 
@@ -20,18 +20,18 @@ const sessionMiddleware = session({
     secret: config.auth?.sessionSecret || 'fallback_secret_key',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // Set to true if running behind https proxy
+    cookie: { secure: false } 
 });
 
 app.use(sessionMiddleware);
-app.use(express.json()); // For parsing JSON bodies (login)
+app.use(express.json()); 
 
 // Initialize Socket.IO with Session awareness
 const io = new Server(server);
 const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
 io.use(wrap(sessionMiddleware));
 
-//  Socket.IO Auth Middleware
+// Socket.IO Auth Middleware
 io.use((socket, next) => {
     const session = socket.request.session;
     if (session && session.loggedIn) {
@@ -46,7 +46,7 @@ db.initDB().catch(err => console.error("DB Init Error:", err));
 
 // --- HTTP ROUTES ---
 
-//  Login Endpoint
+// Login Endpoint
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     if (username === config.auth.username && password === config.auth.password) {
@@ -63,25 +63,94 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
-// Protect Dashboard Middleware
-// Intercepts access to the root path and index.html
+// Protect Routes Middleware
 app.use((req, res, next) => {
-    const protectedPaths = ['/', '/index.html'];
-    if (protectedPaths.includes(req.path)) {
-        if (req.session && req.session.loggedIn) {
-            return next();
-        }
-        return res.redirect('/login.html');
+    const publicPaths = ['/login.html', '/login', '/styles.css', '/ui-config'];
+    // Allow static resources or public paths
+    if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/')) {
+        return next();
     }
-    next();
+
+    if (req.session && req.session.loggedIn) {
+        return next();
+    }
+    
+    // If it's an API call, return 401, else redirect to login
+    if (req.path.startsWith('/api/')) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+    return res.redirect('/login.html');
 });
 
-// Expose UI Config to Frontend
+// Expose UI Config
 app.get('/ui-config', (req, res) => {
     res.json(config.ui || {});
 });
 
-// Serve Static Files
+// --- MEMBER API ROUTES (NEW) ---
+
+app.get('/api/members', async (req, res) => {
+    try {
+        const members = await db.getMembers();
+        res.json(members);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/members', async (req, res) => {
+    try {
+        const id = await db.addMember(req.body);
+        res.json({ success: true, id });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+// Bulk Import Endpoint
+app.post('/api/members/import', async (req, res) => {
+    try {
+        const members = req.body; // Expecting JSON array
+        if (!Array.isArray(members)) {
+            return res.status(400).json({ error: "Expected an array of members" });
+        }
+        await db.bulkAddMembers(members);
+        res.json({ success: true, count: members.length });
+    } catch (e) {
+        console.error("Import error:", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+app.put('/api/members/:id', async (req, res) => {
+    try {
+        await db.updateMember(req.params.id, req.body);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.delete('/api/members/:id', async (req, res) => {
+    try {
+        await db.deleteMember(req.params.id);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+app.post('/api/members/bulk-delete', async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids)) {
+            return res.status(400).json({ error: "Invalid input" });
+        }
+        await db.bulkDeleteMembers(ids);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Serve Static Files (must be after auth middleware for protection)
 app.use(express.static('public'));
 
 // --- SOCKET.IO EVENTS ---
@@ -116,10 +185,16 @@ io.on('connection', (socket) => {
         logger(`> Fetching View Data (Threshold: ${daysThreshold} days)...`);
 
         try {
+            // [UPDATED] Fetch members from DB
+            const dbMembers = await db.getMembers();
+            if (dbMembers.length === 0) {
+                logger(`> Warning: No members found in database. Please add members via the 'Manage Members' page.`);
+            }
+
             const rawData = await getOIData(config.url, logger);
             
             const processedMembers = processMemberSkills(
-                config.members, 
+                dbMembers, // Use DB members
                 rawData, 
                 config.skillsConfig, 
                 daysThreshold
@@ -152,9 +227,12 @@ io.on('connection', (socket) => {
         socket.emit('progress-update', { type: 'progress-start', total: selectedNames.length });
 
         try {
+            // [UPDATED] Fetch members from DB
+            const dbMembers = await db.getMembers();
             const rawData = await getOIData(config.url, logger);
+            
             const processedMembers = processMemberSkills(
-                config.members, 
+                dbMembers, // Use DB members
                 rawData, 
                 config.skillsConfig, 
                 daysThreshold
