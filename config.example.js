@@ -45,6 +45,7 @@ module.exports = {
     auth,
     ui,
     url,
+    scrapingInterval,
     transporter,
     emailInfo
 };
