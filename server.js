@@ -73,9 +73,12 @@ app.get('/logout', (req, res) => {
 // Protect Routes Middleware
 app.use((req, res, next) => {
     const publicPaths = ['/login.html', '/login', '/styles.css', '/ui-config'];
-    if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/')) {
+    
+    // CHANGE HERE: Add || req.path.startsWith('/resources/')
+    if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/')) {
         return next();
     }
+
     if (req.session && req.session.loggedIn) {
         return next();
     }
