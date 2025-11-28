@@ -39,8 +39,8 @@ It automates the process of checking a dashboard for expiring skills, persists d
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-username/fenz-osm-manager.git](https://github.com/your-username/fenz-osm-manager.git)
-    cd fenz-osm-manager
+    git clone https://github.com/dassige/OSM.git
+    cd OSM
     ```
 
 2.  **Install dependencies:**
