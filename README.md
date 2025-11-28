@@ -48,38 +48,53 @@ It automates the process of checking a dashboard for expiring skills, persists d
     npm install
     ```
 
-3.  **Setup Configuration:**
-    The project relies on a `config.js` file (powered by `.env`). Create your configuration file:
+3.  **Prepare Configuration Files:**
+    The application uses environment variables for sensitive data. Create your `.env` file from the example template:
     ```bash
     cp .example.env .env
-    cp config.js config.local.js # Optional if you want to override JS directly
     ```
 
 ## Configuration
 
-The application is configured primarily through environment variables or `config.js`.
+The application is configured in two places:
+1.  **`.env`**: For sensitive secrets (passwords, API keys) and backend settings.
+2.  **`config.js`**: For UI branding and non-sensitive defaults.
 
-### 1. Authentication & Secrets
-Configure these in your `.env` file or `config.js`:
-* **`APP_USERNAME` / `APP_PASSWORD`**: Credentials for logging into this OSM Manager web interface.
-* **`SESSION_SECRET`**: A random string used to sign session cookies.
+### 1. Environment Variables (`.env`)
 
-### 2. OSM Dashboard Source
-* **`DASHBOARD_URL`**: The full URL of the dashboard to scrape (including your specific user code).
-* **`SCRAPING_INTERVAL`**: Time in minutes to cache scraped data (default: 60).
+Open the `.env` file you just created and configure the following parameters:
 
-### 3. Email Settings (SMTP)
-Configure your SMTP provider (eja. Gmail, Outlook, AWS SES) to enable email notifications:
-* **`SMTP_SERVICE`**: (e.g., 'gmail').
-* **`SMTP_USER`** & **`SMTP_PASS`**: Your email account credentials.
-* **`EMAIL_FROM`**: The "From" address displayed in sent emails.
+#### **Application Security**
+These credentials are for logging into *this* OSM Manager application, not the external dashboard.
+* `APP_USERNAME`: The username you want to use for the admin panel (e.g., `admin`).
+* `APP_PASSWORD`: A strong password for the admin panel.
+* `SESSION_SECRET`: A long, random string used to encrypt session cookies (e.g., `my_super_secret_session_key_123`).
 
-### 4. UI Customization
-You can customize the login screen branding in `config.js`:
+#### **OSM Dashboard Connection**
+* `DASHBOARD_URL`: **Crucial.** This is the full URL of the live dashboard you want to scrape.
+    * *Format:* `https://www.dashboardlive.nz/index.php?user=YOUR_UNIQUE_CODE`
+    * *Note:* Ensure you include the `?user=...` query parameter provided by FENZ.
+* `SCRAPING_INTERVAL`: The number of minutes to cache data before scraping the live site again (Default: `60`).
+
+#### **Email Configuration (SMTP)**
+This application uses **Nodemailer** to send alerts. The example below assumes Gmail, but any SMTP service (Outlook, AWS SES, SendGrid) will work.
+
+* `SMTP_SERVICE`: The service provider (e.g., `gmail` or `hotmail`).
+* `SMTP_USER`: Your full email address (e.g., `sender@yourdomain.com`).
+* `SMTP_PASS`: Your email password.
+    * **Gmail Users:** Do **not** use your login password. You must generate an [App Password](https://myaccount.google.com/apppasswords) if you have 2FA enabled.
+* `EMAIL_FROM`: The string that appears in the "From" field (e.g., `"Station Officer" <sender@yourdomain.com>`).
+
+### 2. UI Customization (`config.js`)
+
+You can customize the look and feel of the login screen by editing `config.js` directly:
+
 ```javascript
+// config.js
 const ui = {
-    loginTitle: "Station OSM Manager",
-    loginLogo: "[https://your-logo-url.com/logo.png](https://your-logo-url.com/logo.png)"
+    loginBackground: "", // URL to a background image (optional)
+    loginLogo: "[https://your-fire-station-logo.com/logo.png](https://your-fire-station-logo.com/logo.png)", // URL to your logo
+    loginTitle: "Station 12 OSM Manager" // Custom title for the login page
 };
 ````
 
@@ -103,9 +118,9 @@ node server.js
       * **Reload Expiring Skills**: Triggers the scraper. If data was fetched recently (within `SCRAPING_INTERVAL`), cached data is shown instantly.
       * **Send Emails**: Select specific members and click "Send Emails" to dispatch notifications.
 
-### Data Management (New)
+### Data Management
 
-Unlike previous versions, **Members** and **Skills** are no longer hardcoded in `config.js`. You must add them via the UI or the system will not know who to track.
+**Members** and **Skills** are managed dynamically via the web interface.
 
 #### Managing Members
 
@@ -117,10 +132,10 @@ Unlike previous versions, **Members** and **Skills** are no longer hardcoded in 
 #### Managing Skills
 
   * Navigate to the **Menu** \> **Manage Skills**.
-  * **Add Skill**: define the Skill Name and the renewal URL.
+  * **Add Skill**: Define the Skill Name and the renewal URL.
       * *Important:* The **Skill Name** must match the text on the OSM Dashboard *exactly*.
   * **Critical Skills**: Check the "Critical" box to highlight these skills in bold on the dashboard.
-  * **Import CSV**: Upload a CSV file with headers: `name`, `url`, `critical_skill`.
+  * **Import CSV**: Upload a CSV file with headers: `name`, `url`, `critical_skill` (1 for true, 0 for false).
 
 ## Docker Deployment
 
@@ -141,7 +156,8 @@ The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment
 ## Project Structure
 
 ```text
-├── config.js              # Main configuration file
+├── config.js              # Main configuration file (UI defaults)
+├── .env                   # Environment variables (Secrets)
 ├── server.js              # Main Express Web Server & Socket.IO
 ├── fenz.db                # SQLite Database (Stores Members, Skills, History)
 ├── public/                # Frontend Assets
