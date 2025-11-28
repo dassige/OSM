@@ -1,5 +1,4 @@
 
-````markdown
 # FENZ OSM Automation Manager
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![Node Version](https://img.shields.io/badge/node-v20-blue) ![License](https://img.shields.io/badge/license-MIT-green)
@@ -190,5 +189,3 @@ The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment
 
 Distributed under the MIT License.
 
-```
-```
