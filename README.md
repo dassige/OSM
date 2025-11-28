@@ -87,14 +87,16 @@ This application uses **Nodemailer** to send alerts. The example below assumes G
 
 ### 2. UI Customization (`config.js`)
 
-You can customize the look and feel of the login screen by editing `config.js` directly:
+You can customize the look and feel of the login screen by adding images to the `public/resources` folder and updating `config.js`:
 
 ```javascript
 // config.js
 const ui = {
-    loginBackground: "", // URL to a background image (optional)
-    loginLogo: "[https://your-fire-station-logo.com/logo.png](https://your-fire-station-logo.com/logo.png)", // URL to your logo
-    loginTitle: "Station 12 OSM Manager" // Custom title for the login page
+    // Looks for file in public/resources/background_logo.png
+    loginBackground: "resources/background_logo.png", 
+    // Looks for file in public/resources/logo.png
+    loginLogo: "resources/logo.png",       
+    loginTitle: "Station 12 OSM Manager" 
 };
 ````
 
@@ -164,6 +166,9 @@ The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment
 │   ├── index.html         # Main Dashboard
 │   ├── members.html       # Member Management UI
 │   ├── skills.html        # Skill Management UI
+│   ├── resources/         # Folder for Images
+│   │   ├── logo.png
+│   │   └── background_logo.png
 │   └── app.js             # Client-side logic
 ├── services/              # Backend Services
 │   ├── db.js              # Database Access Layer (SQLite)

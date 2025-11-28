@@ -11,10 +11,13 @@ const auth = {
 
 // --- UI CUSTOMIZATION --- 
 const ui = {
-    loginBackground: "", 
-    loginLogo: "https://lh3.googleusercontent.com/sitesv/AAzXCkeKaUnyvXFGV95AG-3YMqRTQmovqwkJukjC79i4EHRCIOF3SWlkyKFIENJ2mWAWpNhCIHbDMGKpGvhAQs3GtIFbg1Mt-X-4IbEQIj00ykoV5WrRbqQa9ai5gDeBXDkyEUTdQgy3SH6JMkPJYimEXuZNcayvKoLHwWKjKDeO6apybOMQ8zTvgPJdZBOIk-piSc4OxXCChr2iVnoCZ9AFNCSXBOqtdsyH172W6z4=w1280",       
-    loginTitle: "DVFB OSM Automation Manager" 
+    // Points to public/resources/background_logo.png
+    loginBackground: "resources/background_logo.png", 
+    // Points to public/resources/logo.png
+    loginLogo: "resources/logo.png",       
+    loginTitle: "FENZ OSM Automation Manager" 
 };
+
 
 // --- SCRAPER CONFIGURATION ---
 const url = process.env.DASHBOARD_URL || 'https://www.dashboardlive.nz/index.php';
