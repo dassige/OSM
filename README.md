@@ -92,8 +92,8 @@ You can customize the look and feel of the login screen by adding images to the 
 ```javascript
 // config.js
 const ui = {
-    // Looks for file in public/resources/background_logo.png
-    loginBackground: "resources/background_logo.png", 
+    // Looks for file in public/resources/background.png (Applied to all pages)
+    appBackground: "resources/background.png", 
     // Looks for file in public/resources/logo.png
     loginLogo: "resources/logo.png",       
     loginTitle: "Station 12 OSM Manager" 
@@ -168,7 +168,7 @@ The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment
 │   ├── skills.html        # Skill Management UI
 │   ├── resources/         # Folder for Images
 │   │   ├── logo.png
-│   │   └── background_logo.png
+│   │   └── background.png
 │   └── app.js             # Client-side logic
 ├── services/              # Backend Services
 │   ├── db.js              # Database Access Layer (SQLite)
