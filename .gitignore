@@ -7,3 +7,5 @@ import-skills.csv
 import-members.csv
 .env
 public/resources/logo_dvfb.png
+# Database
+fenz.db
