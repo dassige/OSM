@@ -15,6 +15,7 @@ Based on the current codebase, here is a suggested `improvement.md` file outlini
 ## 3. Frontend Enhancements
 
 - **Modern Framework**: If complexity grows, migrating the vanilla HTML/JS to a lightweight framework like Vue.js or React would make state management (handling the `skillsTable` and socket events) cleaner.
+- **Readme**: complete with cretits, blah, blah
 
 
 ## 4. Reliability & Testing
