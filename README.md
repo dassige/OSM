@@ -144,7 +144,7 @@ The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment
 1.  **Build and Run:**
 
     ```bash
-    docker-compose up -d --build
+    docker compose up -d --build
     ```
 
 2.  **Access:**
