@@ -269,7 +269,7 @@ socket.on('preferences-data', (prefs) => {
     if (prefs.hideNoSkills !== undefined) hideNoSkillsCheckbox.checked = prefs.hideNoSkills;
     if (prefs.hideNoUrl !== undefined) hideNoUrlSkillsCheckbox.checked = prefs.hideNoUrl;
 
-    // [NEW] Restore Sort Preference
+    //  Restore Sort Preference
     if (prefs.sortSkills) {
         currentSort = prefs.sortSkills;
     }
@@ -340,3 +340,12 @@ socket.on('expiring-skills-data', (data) => {
     
     tableContainer.scrollIntoView({ behavior: 'smooth' });
 });
+// --- UI Configuration ---
+fetch('/ui-config')
+    .then(response => response.json())
+    .then(config => {
+        if (config.appBackground) {
+            document.body.style.backgroundImage = `url('${config.appBackground}')`;
+        }
+    })
+    .catch(err => console.error("Failed to load UI config:", err));

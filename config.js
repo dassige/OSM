@@ -12,7 +12,7 @@ const auth = {
 // --- UI CUSTOMIZATION --- 
 const ui = {
     // Points to public/resources/background_logo.png
-    loginBackground: "resources/background_logo.png", 
+    appBackground: "resources/background.png", 
     // Points to public/resources/logo.png
     loginLogo: "resources/logo.png",       
     loginTitle: "FENZ OSM Automation Manager" 

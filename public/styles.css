@@ -4,6 +4,11 @@ body {
     max-width: 900px; 
     margin: 0 auto; 
     background-color: #f0f2f5;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    background-attachment: fixed;
+    min-height: 100vh;
 }
 h1 { color: #333; }
 #controls { margin-bottom: 20px; }

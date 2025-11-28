@@ -6,3 +6,4 @@ npm-debug.log
 import-skills.csv
 import-members.csv
 .env
+public/skills.html

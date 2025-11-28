@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,11 +8,20 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         /* Page Layout */
-        body { position: relative; } 
-        
-        .container { max-width: 1000px; margin: 0 auto; padding-top: 40px;}
-        
-        h1 { text-align: center; margin-bottom: 30px; }
+        body {
+            position: relative;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding-top: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
 
         /* Back Button Style */
         .back-btn {
@@ -27,7 +37,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
             transition: all 0.2s ease;
             z-index: 10;
         }
@@ -35,14 +45,14 @@
         .back-btn:hover {
             background-color: #23272b;
             transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
         }
 
         /* Toolbar Action Buttons */
         .table-toolbar {
             display: flex;
-            justify-content: flex-end; 
-            align-items: center; 
+            justify-content: flex-end;
+            align-items: center;
             gap: 10px;
             margin-bottom: 5px;
         }
@@ -64,10 +74,11 @@
             position: relative;
             padding-right: 20px;
         }
+
         th.sortable:hover {
             background-color: #23272b;
         }
-        
+
         .th-content {
             display: flex;
             align-items: center;
@@ -79,16 +90,50 @@
             margin-left: 8px;
             opacity: 0.5;
         }
+
         .sort-icon.active {
             opacity: 1;
             color: #4db8ff;
         }
 
         /* Existing Button Styles */
-        .btn-primary { background-color: #007bff; color: white; text-decoration: none; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; }
-        .btn-success { background-color: #28a745; color: white; text-decoration: none; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; }
-        .btn-secondary { background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-        .btn-danger { background-color: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
 
         /* Icon Button Styles */
         .btn-icon {
@@ -103,35 +148,132 @@
             align-items: center;
             justify-content: center;
         }
-        .btn-icon:hover { background-color: rgba(0,0,0,0.08); }
-        .btn-icon.edit { color: #007bff; }
-        .btn-icon.edit:hover { color: #0056b3; }
-        .btn-icon.delete { color: #dc3545; }
-        .btn-icon.delete:hover { color: #bd2130; }
-        .btn-icon.info { color: #17a2b8; padding: 4px; margin-right: 4px; }
-        .btn-icon.info:hover { color: #117a8b; transform: scale(1.1); }
-        
-        .help-label { font-size: 13px; color: #666; cursor: pointer; }
-        .help-container { display: flex; align-items: center; cursor: pointer; }
-        .help-container:hover .help-label { text-decoration: underline; color: #17a2b8; }
+
+        .btn-icon:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-icon.edit {
+            color: #007bff;
+        }
+
+        .btn-icon.edit:hover {
+            color: #0056b3;
+        }
+
+        .btn-icon.delete {
+            color: #dc3545;
+        }
+
+        .btn-icon.delete:hover {
+            color: #bd2130;
+        }
+
+        .btn-icon.info {
+            color: #17a2b8;
+            padding: 4px;
+            margin-right: 4px;
+        }
+
+        .btn-icon.info:hover {
+            color: #117a8b;
+            transform: scale(1.1);
+        }
+
+        .help-label {
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .help-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .help-container:hover .help-label {
+            text-decoration: underline;
+            color: #17a2b8;
+        }
 
         /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
-        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 500px; border-radius: 8px; position: relative; }
-        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; color: #aaa; }
-        .close-btn:hover { color: black; }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
 
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
-        
-        .code-block { background: #f4f4f4; padding: 10px; border-left: 4px solid #007bff; font-family: monospace; white-space: pre; overflow-x: auto; }
-        .cb-col { width: 40px; text-align: center; }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 500px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close-btn:hover {
+            color: black;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .code-block {
+            background: #f4f4f4;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .cb-col {
+            width: 40px;
+            text-align: center;
+        }
     </style>
 </head>
+
 <body>
     <a href="/" class="back-btn" title="Back to Dashboard">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
     </a>
 
     <div class="container">
@@ -139,9 +281,10 @@
         <input type="file" id="csvInput" accept=".csv" style="display: none;" onchange="handleFileUpload(this)">
 
         <div id="tableContainer" style="display: block;">
-            
+
             <div class="table-toolbar">
-                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger" style="display: none; margin-right: auto;">Delete Selected</button>
+                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger"
+                    style="display: none; margin-right: auto;">Delete Selected</button>
                 <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
                 <button onclick="openModal()" class="btn-primary">Add Member</button>
             </div>
@@ -149,7 +292,12 @@
             <div class="help-bar">
                 <div class="help-container" onclick="openHelpModal()" title="Click for CSV format details">
                     <button class="btn-icon info">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
                     </button>
                     <span class="help-label">CSV Format Help</span>
                 </div>
@@ -158,8 +306,9 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
-                        
+                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                        </th>
+
                         <th class="sortable" onclick="handleSort('name')">
                             <div class="th-content">Name (OSM) <span id="icon-name" class="sort-icon"></span></div>
                         </th>
@@ -169,7 +318,7 @@
                         <th class="sortable" onclick="handleSort('mobile')">
                             <div class="th-content">Mobile <span id="icon-mobile" class="sort-icon"></span></div>
                         </th>
-                        
+
                         <th style="width: 100px; text-align: center;">Actions</th>
                     </tr>
                 </thead>
@@ -179,7 +328,11 @@
     </div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
     </button>
 
     <div id="memberModal" class="modal">
@@ -216,8 +369,8 @@
             <p><strong>Required:</strong> <code>name</code>, <code>email</code></p>
             <p><strong>Handling Commas:</strong> If a name contains a comma, wrap it in quotes.</p>
             <div class="code-block">name,email,mobile
-"Doe, John",john@example.com,021123
-Jane Smith,jane@test.com,</div>
+                "Doe, John",john@example.com,021123
+                Jane Smith,jane@test.com,</div>
             <br>
             <button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
         </div>
@@ -233,7 +386,14 @@ Jane Smith,jane@test.com,</div>
 
         async function initPage() {
             try {
-                const prefRes = await fetch('/api/preferences');
+                // Fetch UI Config for background
+                const uiRes = await fetch('/ui-config');
+                if (uiRes.ok) {
+                    const uiConfig = await uiRes.json();
+                    if (uiConfig.appBackground) {
+                        document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
+                    }
+                } const prefRes = await fetch('/api/preferences');
                 if (prefRes.ok) {
                     const prefs = await prefRes.json();
                     if (prefs.sortMembers) currentSort = prefs.sortMembers;
@@ -248,7 +408,7 @@ Jane Smith,jane@test.com,</div>
                 if (!res.ok) throw new Error(res.status);
                 currentMembers = await res.json();
                 applySort();
-            } catch (err) { 
+            } catch (err) {
                 document.getElementById('membersTableBody').innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Error: ${err.message}</td></tr>`;
             }
         }
@@ -288,10 +448,10 @@ Jane Smith,jane@test.com,</div>
         function updateHeaderIcons() {
             ['name', 'email', 'mobile'].forEach(col => {
                 const icon = document.getElementById(`icon-${col}`);
-                if(icon) { icon.innerHTML = ICON_NONE; icon.classList.remove('active'); }
+                if (icon) { icon.innerHTML = ICON_NONE; icon.classList.remove('active'); }
             });
             const active = document.getElementById(`icon-${currentSort.column}`);
-            if(active) {
+            if (active) {
                 active.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC;
                 active.classList.add('active');
             }
@@ -345,7 +505,7 @@ Jane Smith,jane@test.com,</div>
             const ids = Array.from(document.querySelectorAll('.member-checkbox:checked')).map(cb => cb.value);
             if (!ids.length) return;
             if (confirm(`Delete ${ids.length} members?`)) {
-                await fetch('/api/members/bulk-delete', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ids}) });
+                await fetch('/api/members/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
                 reloadMembers();
             }
         }
@@ -353,18 +513,18 @@ Jane Smith,jane@test.com,</div>
         const memberModal = document.getElementById('memberModal');
         const form = document.getElementById('memberForm');
 
-        function openModal() { document.getElementById('modalTitle').textContent="Add Member"; document.getElementById('memberId').value=""; form.reset(); memberModal.style.display='block'; }
+        function openModal() { document.getElementById('modalTitle').textContent = "Add Member"; document.getElementById('memberId').value = ""; form.reset(); memberModal.style.display = 'block'; }
         function editMemberByIndex(index) {
             const m = currentMembers[index];
-            document.getElementById('modalTitle').textContent="Edit Member";
-            document.getElementById('memberId').value=m.id;
-            document.getElementById('name').value=m.name;
-            document.getElementById('email').value=m.email;
-            document.getElementById('mobile').value=m.mobile;
-            memberModal.style.display='block';
+            document.getElementById('modalTitle').textContent = "Edit Member";
+            document.getElementById('memberId').value = m.id;
+            document.getElementById('name').value = m.name;
+            document.getElementById('email').value = m.email;
+            document.getElementById('mobile').value = m.mobile;
+            memberModal.style.display = 'block';
         }
-        function closeModal(id) { document.getElementById(id).style.display='none'; }
-        function openHelpModal() { document.getElementById('helpModal').style.display='block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openHelpModal() { document.getElementById('helpModal').style.display = 'block'; }
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -372,18 +532,18 @@ Jane Smith,jane@test.com,</div>
             const data = { name: document.getElementById('name').value, email: document.getElementById('email').value, mobile: document.getElementById('mobile').value };
             const method = id ? 'PUT' : 'POST';
             const url = id ? `/api/members/${id}` : '/api/members';
-            await fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             closeModal('memberModal');
             reloadMembers();
         });
 
         async function deleteMember(id) {
-            if(confirm('Delete member?')) { await fetch(`/api/members/${id}`, {method:'DELETE'}); reloadMembers(); }
+            if (confirm('Delete member?')) { await fetch(`/api/members/${id}`, { method: 'DELETE' }); reloadMembers(); }
         }
 
         function handleFileUpload(input) {
             const file = input.files[0];
-            if(!file) return;
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => processCSV(e.target.result);
             reader.readAsText(file);
@@ -395,29 +555,29 @@ Jane Smith,jane@test.com,</div>
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
             if (!headers.includes('name') || !headers.includes('email')) { alert('Invalid CSV'); return; }
             const members = [];
-            for (let i=1; i<lines.length; i++) {
+            for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
-                if(!line) continue;
+                if (!line) continue;
                 const vals = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
                 const obj = {};
                 headers.forEach((h, idx) => obj[h] = vals[idx]);
-                if(obj.name && obj.email) members.push(obj);
+                if (obj.name && obj.email) members.push(obj);
             }
             if (members.length > 0 && confirm(`Import ${members.length} members?`)) {
-                await fetch('/api/members/import', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(members) });
+                await fetch('/api/members/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(members) });
                 reloadMembers();
             }
         }
 
         initPage();
         window.onclick = (e) => {
-            if(e.target == memberModal) closeModal('memberModal');
-            if(e.target == document.getElementById('helpModal')) closeModal('helpModal');
+            if (e.target == memberModal) closeModal('memberModal');
+            if (e.target == document.getElementById('helpModal')) closeModal('helpModal');
         }
 
         // --- Scroll to Top Logic ---
         const scrollTopBtn = document.getElementById("scrollTopBtn");
-        window.onscroll = function() {
+        window.onscroll = function () {
             if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
                 scrollTopBtn.style.display = "flex";
             } else {
@@ -425,8 +585,9 @@ Jane Smith,jane@test.com,</div>
             }
         };
         function scrollToTop() {
-            window.scrollTo({top: 0, behavior: 'smooth'});
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
 </body>
+
 </html>

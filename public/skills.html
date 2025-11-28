@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,59 +8,265 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         /* Shared Styles */
-        body { position: relative; } 
-        .container { max-width: 1000px; margin: 0 auto; padding-top: 40px;}
-        h1 { text-align: center; margin-bottom: 30px; }
+        body {
+            position: relative;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding-top: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
 
         .back-btn {
-            position: absolute; top: 20px; left: 20px; text-decoration: none;
-            color: #fff; background-color: #343a40; width: 45px; height: 45px;
-            border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.15); transition: all 0.2s ease; z-index: 10;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-decoration: none;
+            color: #fff;
+            background-color: #343a40;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+            z-index: 10;
         }
-        .back-btn:hover { background-color: #23272b; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0,0,0,0.2); }
 
-        .table-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 5px; }
-        .help-bar { display: flex; justify-content: flex-end; align-items: center; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #eee; }
+        .back-btn:hover {
+            background-color: #23272b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+        }
 
-        .btn-primary { background-color: #007bff; color: white; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; }
-        .btn-success { background-color: #28a745; color: white; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; }
-        .btn-secondary { background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; border: none;}
-        .btn-danger { background-color: #dc3545; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; border: none;}
+        .table-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
 
-        .btn-icon { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 4px; transition: background-color 0.2s, color 0.2s; vertical-align: middle; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-icon:hover { background-color: rgba(0,0,0,0.08); }
-        .btn-icon.edit { color: #007bff; } .btn-icon.edit:hover { color: #0056b3; }
-        .btn-icon.delete { color: #dc3545; } .btn-icon.delete:hover { color: #bd2130; }
-        .btn-icon.info { color: #17a2b8; padding: 4px; margin-right: 4px; } .btn-icon.info:hover { color: #117a8b; transform: scale(1.1); }
-        
-        .help-label { font-size: 13px; color: #666; cursor: pointer; }
-        .help-container { display: flex; align-items: center; cursor: pointer; }
-        .help-container:hover .help-label { text-decoration: underline; color: #17a2b8; }
+        .help-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
 
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
-        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 500px; border-radius: 8px; position: relative; }
-        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; color: #aaa; }
-        .close-btn:hover { color: black; }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
 
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input[type="text"], .form-group input[type="url"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
-        
-        .code-block { background: #f4f4f4; padding: 10px; border-left: 4px solid #007bff; font-family: monospace; white-space: pre; overflow-x: auto; }
-        .cb-col { width: 40px; text-align: center; }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s, color 0.2s;
+            vertical-align: middle;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-icon.edit {
+            color: #007bff;
+        }
+
+        .btn-icon.edit:hover {
+            color: #0056b3;
+        }
+
+        .btn-icon.delete {
+            color: #dc3545;
+        }
+
+        .btn-icon.delete:hover {
+            color: #bd2130;
+        }
+
+        .btn-icon.info {
+            color: #17a2b8;
+            padding: 4px;
+            margin-right: 4px;
+        }
+
+        .btn-icon.info:hover {
+            color: #117a8b;
+            transform: scale(1.1);
+        }
+
+        .help-label {
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .help-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .help-container:hover .help-label {
+            text-decoration: underline;
+            color: #17a2b8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 500px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close-btn:hover {
+            color: black;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="url"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .code-block {
+            background: #f4f4f4;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .cb-col {
+            width: 40px;
+            text-align: center;
+        }
 
         /* Sortable Headers */
-        th.sortable { cursor: pointer; user-select: none; position: relative; padding-right: 20px; }
-        th.sortable:hover { background-color: #23272b; }
-        .th-content { display: flex; align-items: center; justify-content: space-between; }
-        .sort-icon { font-size: 12px; margin-left: 8px; opacity: 0.5; }
-        .sort-icon.active { opacity: 1; color: #4db8ff; }
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 20px;
+        }
+
+        th.sortable:hover {
+            background-color: #23272b;
+        }
+
+        .th-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sort-icon {
+            font-size: 12px;
+            margin-left: 8px;
+            opacity: 0.5;
+        }
+
+        .sort-icon.active {
+            opacity: 1;
+            color: #4db8ff;
+        }
     </style>
 </head>
+
 <body>
     <a href="/" class="back-btn" title="Back to Dashboard">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
     </a>
 
     <div class="container">
@@ -67,9 +274,10 @@
         <input type="file" id="csvInput" accept=".csv" style="display: none;" onchange="handleFileUpload(this)">
 
         <div id="tableContainer" style="display: block;">
-            
+
             <div class="table-toolbar">
-                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger" style="display: none; margin-right: auto;">Delete Selected</button>
+                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger"
+                    style="display: none; margin-right: auto;">Delete Selected</button>
                 <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
                 <button onclick="openModal()" class="btn-primary">Add Skill</button>
             </div>
@@ -77,7 +285,12 @@
             <div class="help-bar">
                 <div class="help-container" onclick="openHelpModal()" title="Click for CSV format details">
                     <button class="btn-icon info">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
                     </button>
                     <span class="help-label">CSV Format Help</span>
                 </div>
@@ -86,18 +299,20 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
-                        
+                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                        </th>
+
                         <th class="sortable" onclick="handleSort('name')">
                             <div class="th-content">Skill Name <span id="icon-name" class="sort-icon"></span></div>
                         </th>
-                        
+
                         <th class="sortable" onclick="handleSort('critical_skill')">
-                            <div class="th-content">Critical <span id="icon-critical_skill" class="sort-icon"></span></div>
+                            <div class="th-content">Critical <span id="icon-critical_skill" class="sort-icon"></span>
+                            </div>
                         </th>
-                        
+
                         <th>Form URL</th>
-                        
+
                         <th style="width: 100px; text-align: center;">Actions</th>
                     </tr>
                 </thead>
@@ -107,7 +322,11 @@
     </div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
     </button>
 
     <div id="skillModal" class="modal">
@@ -145,8 +364,8 @@
             <p><strong>Required:</strong> <code>name</code></p>
             <p><strong>Optional:</strong> <code>url</code>, <code>critical_skill</code> (true/false or 1/0)</p>
             <div class="code-block">name,url,critical_skill
-"OI (IS1)",https://forms...,true
-"OI (G9)",,0</div>
+                "OI (IS1)",https://forms...,true
+                "OI (G9)",,0</div>
             <br>
             <button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
         </div>
@@ -162,6 +381,14 @@
 
         async function initPage() {
             try {
+                // [Add] Fetch UI Config for background
+                const uiRes = await fetch('/ui-config');
+                if (uiRes.ok) {
+                    const uiConfig = await uiRes.json();
+                    if (uiConfig.appBackground) {
+                        document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
+                    }
+                }
                 const prefRes = await fetch('/api/preferences');
                 if (prefRes.ok) {
                     const prefs = await prefRes.json();
@@ -215,10 +442,10 @@
         function updateHeaderIcons() {
             ['name', 'critical_skill'].forEach(col => {
                 const icon = document.getElementById(`icon-${col}`);
-                if(icon) { icon.innerHTML = ICON_NONE; icon.classList.remove('active'); }
+                if (icon) { icon.innerHTML = ICON_NONE; icon.classList.remove('active'); }
             });
             const active = document.getElementById(`icon-${currentSort.column}`);
-            if(active) {
+            if (active) {
                 active.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC;
                 active.classList.add('active');
             }
@@ -236,8 +463,8 @@
             }
 
             currentSkills.forEach((s, index) => {
-                const urlDisplay = s.url 
-                    ? `<a href="${s.url}" target="_blank" style="color:#007bff;text-decoration:none;">Link</a>` 
+                const urlDisplay = s.url
+                    ? `<a href="${s.url}" target="_blank" style="color:#007bff;text-decoration:none;">Link</a>`
                     : `<span style="color:#999; font-style:italic;">No Link</span>`;
 
                 const tr = document.createElement('tr');
@@ -335,7 +562,7 @@
 
         function handleFileUpload(input) {
             const file = input.files[0];
-            if(!file) return;
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => processCSV(e.target.result);
             reader.readAsText(file);
@@ -349,13 +576,13 @@
                 alert('Invalid CSV. Missing name header.'); return;
             }
             const skills = [];
-            for (let i=1; i<lines.length; i++) {
+            for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
-                if(!line) continue;
+                if (!line) continue;
                 const vals = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
                 const obj = {};
                 headers.forEach((h, idx) => obj[h] = vals[idx]);
-                if(obj.name) {
+                if (obj.name) {
                     obj.critical_skill = (obj.critical_skill === 'true' || obj.critical_skill === '1');
                     skills.push(obj);
                 }
@@ -371,13 +598,13 @@
 
         initPage();
         window.onclick = (e) => {
-            if(e.target == skillModal) closeModal('skillModal');
-            if(e.target == document.getElementById('helpModal')) closeModal('helpModal');
+            if (e.target == skillModal) closeModal('skillModal');
+            if (e.target == document.getElementById('helpModal')) closeModal('helpModal');
         }
 
         // --- Scroll to Top Logic ---
         const scrollTopBtn = document.getElementById("scrollTopBtn");
-        window.onscroll = function() {
+        window.onscroll = function () {
             if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
                 scrollTopBtn.style.display = "flex";
             } else {
@@ -385,8 +612,9 @@
             }
         };
         function scrollToTop() {
-            window.scrollTo({top: 0, behavior: 'smooth'});
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
 </body>
+
 </html>

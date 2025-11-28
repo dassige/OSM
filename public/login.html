@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,30 +14,35 @@
             height: 100vh;
             margin: 0;
             /* Default background if none provided */
-            background-color: #f0f2f5; 
+            background-color: #f0f2f5;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
         }
+
         .login-container {
-            background: rgba(255, 255, 255, 0.95); /* Slight transparency */
+            background: rgba(255, 255, 255, 0.95);
+            /* Slight transparency */
             padding: 40px;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             width: 100%;
             max-width: 400px;
             text-align: center;
             backdrop-filter: blur(5px);
         }
+
         /* Logo Styling */
         #loginLogo {
             max-width: 150px;
             max-height: 100px;
             margin-bottom: 20px;
-            display: none; /* Hidden by default until loaded */
+            display: none;
+            /* Hidden by default until loaded */
             margin-left: auto;
             margin-right: auto;
         }
+
         input {
             width: 100%;
             padding: 12px;
@@ -45,6 +51,7 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
+
         button {
             width: 100%;
             margin-top: 15px;
@@ -56,9 +63,11 @@
             font-size: 16px;
             cursor: pointer;
         }
+
         button:hover {
             background-color: #0056b3;
         }
+
         .error {
             color: #dc3545;
             margin-top: 15px;
@@ -67,12 +76,13 @@
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
         <img id="loginLogo" alt="Logo">
-        
+
         <h1 id="loginTitle">Login</h1>
-        
+
         <form id="loginForm">
             <input type="text" id="username" placeholder="Username" required>
             <input type="password" id="password" placeholder="Password" required>
@@ -91,7 +101,7 @@
                     document.getElementById('loginTitle').textContent = config.loginTitle;
                     document.title = config.loginTitle + " - Login";
                 }
-                
+
                 // 2. Set Logo
                 if (config.loginLogo) {
                     const logoImg = document.getElementById('loginLogo');
@@ -100,8 +110,8 @@
                 }
 
                 // 3. Set Background
-                if (config.loginBackground) {
-                    document.body.style.backgroundImage = `url('${config.loginBackground}')`;
+                if (config.appBackground) {
+                    document.body.style.backgroundImage = `url('${config.appBackground}')`;
                 }
             })
             .catch(err => console.error("Failed to load UI config:", err));
@@ -133,4 +143,5 @@
         });
     </script>
 </body>
+
 </html>
