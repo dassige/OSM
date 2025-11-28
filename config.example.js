@@ -20,6 +20,10 @@ const ui = {
 // Dashboard URL with user code
 const url = 'https://www.dashboardlive.nz/index.php?user=your-user-code';
 
+// --- SCRAPER CONFIGURATION ---
+// Cache validity in minutes. 0 = always scrape (no cache).
+const scrapingInterval = 60;
+
 // --- EMAIL CONFIGURATION ---
 // Replace these details with your specific email provider's settings.
 // For Gmail, you often need to use an "App Password" instead of your login password.

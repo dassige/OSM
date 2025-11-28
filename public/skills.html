@@ -6,7 +6,7 @@
     <title>Skills Management - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Shared Styles (Identical to members.html) */
+        /* Shared Styles */
         body { position: relative; } 
         .container { max-width: 1000px; margin: 0 auto; padding-top: 40px;}
         h1 { text-align: center; margin-bottom: 30px; }
@@ -106,6 +106,10 @@
         </div>
     </div>
 
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+    </button>
+
     <div id="skillModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('skillModal')">&times;</span>
@@ -117,8 +121,8 @@
                     <input type="text" id="name" required placeholder="e.g. OI (IS1) - Operational Safety">
                 </div>
                 <div class="form-group">
-                    <label>Google Form URL</label>
-                    <input type="url" id="url" required placeholder="https://docs.google.com/forms/...">
+                    <label>Google Form URL (Optional)</label>
+                    <input type="url" id="url" placeholder="https://docs.google.com/forms/...">
                 </div>
                 <div class="form-group">
                     <label style="display:flex; align-items:center; cursor:pointer;">
@@ -138,11 +142,11 @@
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('helpModal')">&times;</span>
             <h2>CSV File Format</h2>
-            <p><strong>Required:</strong> <code>name</code>, <code>url</code></p>
-            <p><strong>Optional:</strong> <code>critical_skill</code> (true/false or 1/0)</p>
+            <p><strong>Required:</strong> <code>name</code></p>
+            <p><strong>Optional:</strong> <code>url</code>, <code>critical_skill</code> (true/false or 1/0)</p>
             <div class="code-block">name,url,critical_skill
 "OI (IS1)",https://forms...,true
-"OI (G9)",https://forms...,0</div>
+"OI (G9)",,0</div>
             <br>
             <button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
         </div>
@@ -232,12 +236,16 @@
             }
 
             currentSkills.forEach((s, index) => {
+                const urlDisplay = s.url 
+                    ? `<a href="${s.url}" target="_blank" style="color:#007bff;text-decoration:none;">Link</a>` 
+                    : `<span style="color:#999; font-style:italic;">No Link</span>`;
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="cb-col"><input type="checkbox" class="skill-checkbox" value="${s.id}" onchange="updateBulkDeleteButton()"></td>
                     <td>${s.name}</td>
                     <td style="text-align:center;">${s.critical_skill ? '<b style="color:red;">Yes</b>' : 'No'}</td>
-                    <td><a href="${s.url}" target="_blank" style="color:#007bff;text-decoration:none;">Link</a></td>
+                    <td>${urlDisplay}</td>
                     <td style="text-align: center;">
                         <button class="btn-icon edit" onclick="editSkillByIndex(${index})" title="Edit">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
@@ -337,8 +345,8 @@
         async function processCSV(csv) {
             const lines = csv.split(/\r\n|\n/);
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-            if (!headers.includes('name') || !headers.includes('url')) {
-                alert('Invalid CSV. Missing name or url.'); return;
+            if (!headers.includes('name')) {
+                alert('Invalid CSV. Missing name header.'); return;
             }
             const skills = [];
             for (let i=1; i<lines.length; i++) {
@@ -347,7 +355,7 @@
                 const vals = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
                 const obj = {};
                 headers.forEach((h, idx) => obj[h] = vals[idx]);
-                if(obj.name && obj.url) {
+                if(obj.name) {
                     obj.critical_skill = (obj.critical_skill === 'true' || obj.critical_skill === '1');
                     skills.push(obj);
                 }
@@ -365,6 +373,19 @@
         window.onclick = (e) => {
             if(e.target == skillModal) closeModal('skillModal');
             if(e.target == document.getElementById('helpModal')) closeModal('helpModal');
+        }
+
+        // --- Scroll to Top Logic ---
+        const scrollTopBtn = document.getElementById("scrollTopBtn");
+        window.onscroll = function() {
+            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+                scrollTopBtn.style.display = "flex";
+            } else {
+                scrollTopBtn.style.display = "none";
+            }
+        };
+        function scrollToTop() {
+            window.scrollTo({top: 0, behavior: 'smooth'});
         }
     </script>
 </body>

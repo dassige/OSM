@@ -146,7 +146,7 @@ app.delete('/api/members/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- API: SKILLS (NEW) ---
+// --- API: SKILLS ---
 app.get('/api/skills', async (req, res) => {
     try {
         const skills = await db.getSkills();
@@ -221,16 +221,15 @@ io.on('connection', (socket) => {
         logger(`> Fetching View Data (Threshold: ${daysThreshold} days)...`);
 
         try {
-            // [UPDATED] Fetch from DB
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
 
             if (dbMembers.length === 0) logger(`> Warning: No members in database.`);
             if (dbSkills.length === 0) logger(`> Warning: No skills configured in database.`);
 
-            const rawData = await getOIData(config.url, logger);
+            // [UPDATED] Pass the scraping interval config
+            const rawData = await getOIData(config.url, config.scrapingInterval || 0, logger);
             
-            // Pass dbSkills instead of config.skillsConfig
             const processedMembers = processMemberSkills(
                 dbMembers, 
                 rawData, 
@@ -265,10 +264,11 @@ io.on('connection', (socket) => {
         socket.emit('progress-update', { type: 'progress-start', total: selectedNames.length });
 
         try {
-            // [UPDATED] Fetch from DB
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
-            const rawData = await getOIData(config.url, logger);
+            
+            // [UPDATED] Pass the scraping interval config
+            const rawData = await getOIData(config.url, config.scrapingInterval || 0, logger);
             
             const processedMembers = processMemberSkills(
                 dbMembers, 

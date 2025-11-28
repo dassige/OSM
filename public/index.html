@@ -98,7 +98,6 @@
             color: #bd2130;
         }
 
-        /* Show class for JS toggle */
         .show { display: block; }
     </style>
 </head>
@@ -173,10 +172,8 @@
                             Member Name <span id="icon-name" class="sort-icon"></span>
                         </div>
                     </th>
-                    
                     <th style="width: 35%">Expiring Skill</th>
                     <th style="width: 15%">Expiring Date</th>
-
                     <th style="width: 20%">
                         <label class="header-checkbox-label">
                             <input type="checkbox" id="selectAllCheckbox"> Send Email
@@ -192,6 +189,10 @@
     <h2 style="margin-top: 30px;">Console Log</h2>
     <div id="terminal"></div>
 
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+    </button>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="app.js"></script>
     
@@ -200,7 +201,6 @@
             document.getElementById("myDropdown").classList.toggle("show");
         }
 
-        // Close the dropdown if the user clicks outside of it
         window.onclick = function(event) {
             if (!event.target.matches('.menu-btn') && !event.target.matches('.menu-btn *')) {
                 var dropdowns = document.getElementsByClassName("dropdown-content");
@@ -213,11 +213,23 @@
             }
         }
 
-        // Logout Link Action
         document.getElementById('logoutLink').addEventListener('click', (e) => {
             e.preventDefault();
             window.location.href = '/logout';
         });
+
+        // --- Scroll to Top Logic ---
+        const scrollTopBtn = document.getElementById("scrollTopBtn");
+        window.onscroll = function() {
+            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+                scrollTopBtn.style.display = "flex";
+            } else {
+                scrollTopBtn.style.display = "none";
+            }
+        };
+        function scrollToTop() {
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
     </script>
 </body>
 </html>
