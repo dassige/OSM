@@ -5,9 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FENZ OSM Console</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Table Sorting Styles */
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        th.sortable:hover {
+            background-color: #454d55;
+        }
+        
+        .th-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sort-icon {
+            font-size: 12px;
+            margin-left: 8px;
+            opacity: 0.5;
+        }
+        .sort-icon.active {
+            opacity: 1;
+            color: #4db8ff;
+        }
+    </style>
 </head>
 <body>
-    
     <div style="position: absolute; top: 20px; right: 20px;">
         <a href="members.html" style="background-color: #6c757d; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold; margin-right: 10px;">Manage Members</a>
         <button id="logoutBtn" style="position: static;">Logout</button>
@@ -56,9 +82,15 @@
         <table id="skillsTable">
             <thead>
                 <tr>
-                    <th style="width: 30%">Member Name</th>
+                    <th style="width: 30%" class="sortable" onclick="handleSort('name')">
+                        <div class="th-content">
+                            Member Name <span id="icon-name" class="sort-icon"></span>
+                        </div>
+                    </th>
+                    
                     <th style="width: 35%">Expiring Skill</th>
                     <th style="width: 15%">Expiring Date</th>
+
                     <th style="width: 20%">
                         <label class="header-checkbox-label">
                             <input type="checkbox" id="selectAllCheckbox"> Send Email
