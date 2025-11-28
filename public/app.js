@@ -338,7 +338,9 @@ socket.on('expiring-skills-data', (data) => {
     // Apply sort immediately (which calls renderTable)
     applySort();
     
-    tableContainer.scrollIntoView({ behavior: 'smooth' });
+    // alternative behavior
+    //tableContainer.scrollIntoView({ behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 // --- UI Configuration ---
 fetch('/ui-config')
