@@ -7,10 +7,9 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Mount the entire project directory so all source files (including 'services/') sync instantly
       - .:/app
-      # Create an anonymous volume for node_modules to prevent host overwrites
       - /app/node_modules
-    # Use nodemon (via npx) to automatically restart the node process when files change
+    env_file:         
+      - .env         
     command: npx nodemon server.js
     restart: unless-stopped

@@ -3,7 +3,6 @@ npm-debug.log
 .git
 .gitignore
 .wwebjs*
-config.js
-import.csv
 import-skills.csv
 import-members.csv
+.env

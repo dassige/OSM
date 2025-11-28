@@ -5,7 +5,7 @@ Based on the current codebase, here is a suggested `improvement.md` file outlini
 # Future Improvements
 
 ## 1. Security & Configuration
-- **Environment Variables**: Currently, configuration lies in `resources.js`. Moving sensitive data (SMTP credentials, User Codes) to a `.env` file using `dotenv` would improve security and make container configuration easier.
+
 - **TLS Verification**: The axios request in `main.js` currently uses `rejectUnauthorized: false`. This bypasses SSL security checks. Resolving the underlying certificate issue and enabling verification is recommended for production security.
 
 ## 2. Architecture & Performance
