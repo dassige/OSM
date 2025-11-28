@@ -5,3 +5,5 @@ npm-debug.log
 .wwebjs*
 config.js
 import.csv
+import-skills.csv
+import-members.csv

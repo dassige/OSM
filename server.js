@@ -66,36 +66,28 @@ app.get('/logout', (req, res) => {
 // Protect Routes Middleware
 app.use((req, res, next) => {
     const publicPaths = ['/login.html', '/login', '/styles.css', '/ui-config'];
-    // Allow static resources or public paths
     if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/')) {
         return next();
     }
-
     if (req.session && req.session.loggedIn) {
         return next();
     }
-    
-    // If it's an API call, return 401, else redirect to login
     if (req.path.startsWith('/api/')) {
         return res.status(401).json({ error: "Unauthorized" });
     }
     return res.redirect('/login.html');
 });
 
-// Expose UI Config
 app.get('/ui-config', (req, res) => {
     res.json(config.ui || {});
 });
 
-// --- PREFERENCES API ROUTES (NEW) ---
-
+// --- API: PREFERENCES ---
 app.get('/api/preferences', async (req, res) => {
     try {
         const prefs = await db.getPreferences();
         res.json(prefs);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/preferences', async (req, res) => {
@@ -104,77 +96,103 @@ app.post('/api/preferences', async (req, res) => {
         if (!key) return res.status(400).json({ error: "Key is required" });
         await db.savePreference(key, value);
         res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- MEMBER API ROUTES ---
-
+// --- API: MEMBERS ---
 app.get('/api/members', async (req, res) => {
     try {
         const members = await db.getMembers();
         res.json(members);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/members', async (req, res) => {
     try {
         const id = await db.addMember(req.body);
         res.json({ success: true, id });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/members/import', async (req, res) => {
     try {
         const members = req.body; 
-        if (!Array.isArray(members)) {
-            return res.status(400).json({ error: "Expected an array of members" });
-        }
+        if (!Array.isArray(members)) return res.status(400).json({ error: "Expected array" });
         await db.bulkAddMembers(members);
         res.json({ success: true, count: members.length });
-    } catch (e) {
-        console.error("Import error:", e);
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/members/bulk-delete', async (req, res) => {
     try {
         const { ids } = req.body;
-        if (!Array.isArray(ids)) {
-            return res.status(400).json({ error: "Invalid input" });
-        }
+        if (!Array.isArray(ids)) return res.status(400).json({ error: "Invalid input" });
         await db.bulkDeleteMembers(ids);
         res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/members/:id', async (req, res) => {
     try {
         await db.updateMember(req.params.id, req.body);
         res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/members/:id', async (req, res) => {
     try {
         await db.deleteMember(req.params.id);
         res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Serve Static Files
+// --- API: SKILLS (NEW) ---
+app.get('/api/skills', async (req, res) => {
+    try {
+        const skills = await db.getSkills();
+        res.json(skills);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/skills', async (req, res) => {
+    try {
+        const id = await db.addSkill(req.body);
+        res.json({ success: true, id });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/skills/import', async (req, res) => {
+    try {
+        const skills = req.body;
+        if (!Array.isArray(skills)) return res.status(400).json({ error: "Expected array" });
+        await db.bulkAddSkills(skills);
+        res.json({ success: true, count: skills.length });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/skills/bulk-delete', async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids)) return res.status(400).json({ error: "Invalid input" });
+        await db.bulkDeleteSkills(ids);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/skills/:id', async (req, res) => {
+    try {
+        await db.updateSkill(req.params.id, req.body);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/skills/:id', async (req, res) => {
+    try {
+        await db.deleteSkill(req.params.id);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.use(express.static('public'));
 
 // --- SOCKET.IO EVENTS ---
@@ -191,17 +209,11 @@ io.on('connection', (socket) => {
         try {
             const prefs = await db.getPreferences();
             socket.emit('preferences-data', prefs);
-        } catch (e) {
-            logger(`Error fetching preferences: ${e.message}`);
-        }
+        } catch (e) { logger(`Error fetching preferences: ${e.message}`); }
     });
 
     socket.on('update-preference', async ({ key, value }) => {
-        try {
-            await db.savePreference(key, value);
-        } catch (e) {
-            logger(`Error saving preference: ${e.message}`);
-        }
+        try { await db.savePreference(key, value); } catch (e) { logger(`Error saving preference: ${e.message}`); }
     });
 
     socket.on('view-expiring-skills', async (days) => {
@@ -209,17 +221,20 @@ io.on('connection', (socket) => {
         logger(`> Fetching View Data (Threshold: ${daysThreshold} days)...`);
 
         try {
+            // [UPDATED] Fetch from DB
             const dbMembers = await db.getMembers();
-            if (dbMembers.length === 0) {
-                logger(`> Warning: No members found in database. Please add members via the 'Manage Members' page.`);
-            }
+            const dbSkills = await db.getSkills();
+
+            if (dbMembers.length === 0) logger(`> Warning: No members in database.`);
+            if (dbSkills.length === 0) logger(`> Warning: No skills configured in database.`);
 
             const rawData = await getOIData(config.url, logger);
             
+            // Pass dbSkills instead of config.skillsConfig
             const processedMembers = processMemberSkills(
                 dbMembers, 
                 rawData, 
-                config.skillsConfig, 
+                dbSkills, 
                 daysThreshold
             );
 
@@ -250,13 +265,15 @@ io.on('connection', (socket) => {
         socket.emit('progress-update', { type: 'progress-start', total: selectedNames.length });
 
         try {
+            // [UPDATED] Fetch from DB
             const dbMembers = await db.getMembers();
+            const dbSkills = await db.getSkills();
             const rawData = await getOIData(config.url, logger);
             
             const processedMembers = processMemberSkills(
                 dbMembers, 
                 rawData, 
-                config.skillsConfig, 
+                dbSkills, 
                 daysThreshold
             );
 

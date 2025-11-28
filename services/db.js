@@ -1,3 +1,11 @@
+/******************************************
+ * ATTENTION!
+ * REMEMBER:
+ * MEMBERS NAMES AND SKILLS NAMES MUST BE EXACTLY AS THEY APPEAR IN THE OFFICIAL OSM SYSTEM
+ * 
+ ********************************/
+
+
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const path = require('path');
@@ -14,10 +22,7 @@ async function initDB() {
             driver: sqlite3.Database
         });
 
-        // Enable foreign keys
         await db.exec('PRAGMA foreign_keys = ON;');
-        
-        // --- Schema Definition ---
         
         // 1. Preferences Table
         await db.exec(`
@@ -39,7 +44,7 @@ async function initDB() {
             );
         `);
 
-        // 3. Members Table (NEW)
+        // 3. Members Table
         await db.exec(`
             CREATE TABLE IF NOT EXISTS members (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,6 +52,16 @@ async function initDB() {
                 email TEXT,
                 mobile TEXT,
                 messengerId TEXT
+            );
+        `);
+
+        // 4. Skills Table (NEW)
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS skills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                url TEXT,
+                critical_skill INTEGER DEFAULT 0
             );
         `);
 
@@ -94,7 +109,7 @@ async function logEmailAction(member, status, details = '') {
     );
 }
 
-// --- Member Management Methods (NEW) ---
+// --- Member Management Methods ---
 
 async function getMembers() {
     if (!db) await initDB();
@@ -110,23 +125,8 @@ async function addMember(member) {
     return result.lastID;
 }
 
-async function updateMember(id, member) {
-    if (!db) await initDB();
-    await db.run(
-        `UPDATE members SET name = ?, email = ?, mobile = ?, messengerId = ? WHERE id = ?`,
-        member.name, member.email, member.mobile, member.messengerId, id
-    );
-}
-
-async function deleteMember(id) {
-    if (!db) await initDB();
-    await db.run('DELETE FROM members WHERE id = ?', id);
-}
-//  Bulk Import Function
 async function bulkAddMembers(members) {
     if (!db) await initDB();
-    
-    // Use a transaction for speed and safety
     await db.exec('BEGIN TRANSACTION');
     try {
         const stmt = await db.prepare('INSERT INTO members (name, email, mobile, messengerId) VALUES (?, ?, ?, ?)');
@@ -140,14 +140,91 @@ async function bulkAddMembers(members) {
         throw error;
     }
 }
-// Bulk Delete Function
+
+async function updateMember(id, member) {
+    if (!db) await initDB();
+    await db.run(
+        `UPDATE members SET name = ?, email = ?, mobile = ?, messengerId = ? WHERE id = ?`,
+        member.name, member.email, member.mobile, member.messengerId, id
+    );
+}
+
+async function deleteMember(id) {
+    if (!db) await initDB();
+    await db.run('DELETE FROM members WHERE id = ?', id);
+}
+
 async function bulkDeleteMembers(ids) {
     if (!db) await initDB();
     if (!ids || ids.length === 0) return;
-
     await db.exec('BEGIN TRANSACTION');
     try {
         const stmt = await db.prepare('DELETE FROM members WHERE id = ?');
+        for (const id of ids) {
+            await stmt.run(id);
+        }
+        await stmt.finalize();
+        await db.exec('COMMIT');
+    } catch (error) {
+        await db.exec('ROLLBACK');
+        throw error;
+    }
+}
+
+// --- Skill Management Methods (NEW) ---
+
+async function getSkills() {
+    if (!db) await initDB();
+    // Return skills. Map SQLite integer (0/1) back to boolean if needed by frontend logic,
+    // though JS handles 0/1 as falsy/truthy well.
+    const skills = await db.all('SELECT * FROM skills ORDER BY name ASC');
+    return skills.map(s => ({...s, critical_skill: !!s.critical_skill}));
+}
+
+async function addSkill(skill) {
+    if (!db) await initDB();
+    const result = await db.run(
+        `INSERT INTO skills (name, url, critical_skill) VALUES (?, ?, ?)`,
+        skill.name, skill.url, skill.critical_skill ? 1 : 0
+    );
+    return result.lastID;
+}
+
+async function bulkAddSkills(skills) {
+    if (!db) await initDB();
+    await db.exec('BEGIN TRANSACTION');
+    try {
+        const stmt = await db.prepare('INSERT INTO skills (name, url, critical_skill) VALUES (?, ?, ?)');
+        for (const skill of skills) {
+            await stmt.run(skill.name, skill.url, skill.critical_skill ? 1 : 0);
+        }
+        await stmt.finalize();
+        await db.exec('COMMIT');
+    } catch (error) {
+        await db.exec('ROLLBACK');
+        throw error;
+    }
+}
+
+async function updateSkill(id, skill) {
+    if (!db) await initDB();
+    await db.run(
+        `UPDATE skills SET name = ?, url = ?, critical_skill = ? WHERE id = ?`,
+        skill.name, skill.url, skill.critical_skill ? 1 : 0, id
+    );
+}
+
+async function deleteSkill(id) {
+    if (!db) await initDB();
+    await db.run('DELETE FROM skills WHERE id = ?', id);
+}
+
+async function bulkDeleteSkills(ids) {
+    if (!db) await initDB();
+    if (!ids || ids.length === 0) return;
+    await db.exec('BEGIN TRANSACTION');
+    try {
+        const stmt = await db.prepare('DELETE FROM skills WHERE id = ?');
         for (const id of ids) {
             await stmt.run(id);
         }
@@ -164,10 +241,8 @@ module.exports = {
     getPreferences, 
     savePreference, 
     logEmailAction,
-    getMembers,
-    addMember,
-    bulkAddMembers, 
-    bulkDeleteMembers,
-    updateMember,
-    deleteMember
+    // Members
+    getMembers, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers,
+    // Skills
+    getSkills, addSkill, bulkAddSkills, updateSkill, deleteSkill, bulkDeleteSkills
 };
