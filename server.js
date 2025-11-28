@@ -87,7 +87,29 @@ app.get('/ui-config', (req, res) => {
     res.json(config.ui || {});
 });
 
-// --- MEMBER API ROUTES (NEW) ---
+// --- PREFERENCES API ROUTES (NEW) ---
+
+app.get('/api/preferences', async (req, res) => {
+    try {
+        const prefs = await db.getPreferences();
+        res.json(prefs);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/preferences', async (req, res) => {
+    try {
+        const { key, value } = req.body;
+        if (!key) return res.status(400).json({ error: "Key is required" });
+        await db.savePreference(key, value);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// --- MEMBER API ROUTES ---
 
 app.get('/api/members', async (req, res) => {
     try {
@@ -106,10 +128,10 @@ app.post('/api/members', async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
-// Bulk Import Endpoint
+
 app.post('/api/members/import', async (req, res) => {
     try {
-        const members = req.body; // Expecting JSON array
+        const members = req.body; 
         if (!Array.isArray(members)) {
             return res.status(400).json({ error: "Expected an array of members" });
         }
@@ -120,6 +142,20 @@ app.post('/api/members/import', async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
+
+app.post('/api/members/bulk-delete', async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids)) {
+            return res.status(400).json({ error: "Invalid input" });
+        }
+        await db.bulkDeleteMembers(ids);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.put('/api/members/:id', async (req, res) => {
     try {
         await db.updateMember(req.params.id, req.body);
@@ -137,20 +173,8 @@ app.delete('/api/members/:id', async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
-app.post('/api/members/bulk-delete', async (req, res) => {
-    try {
-        const { ids } = req.body;
-        if (!Array.isArray(ids)) {
-            return res.status(400).json({ error: "Invalid input" });
-        }
-        await db.bulkDeleteMembers(ids);
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
 
-// Serve Static Files (must be after auth middleware for protection)
+// Serve Static Files
 app.use(express.static('public'));
 
 // --- SOCKET.IO EVENTS ---
@@ -185,7 +209,6 @@ io.on('connection', (socket) => {
         logger(`> Fetching View Data (Threshold: ${daysThreshold} days)...`);
 
         try {
-            // [UPDATED] Fetch members from DB
             const dbMembers = await db.getMembers();
             if (dbMembers.length === 0) {
                 logger(`> Warning: No members found in database. Please add members via the 'Manage Members' page.`);
@@ -194,7 +217,7 @@ io.on('connection', (socket) => {
             const rawData = await getOIData(config.url, logger);
             
             const processedMembers = processMemberSkills(
-                dbMembers, // Use DB members
+                dbMembers, 
                 rawData, 
                 config.skillsConfig, 
                 daysThreshold
@@ -227,12 +250,11 @@ io.on('connection', (socket) => {
         socket.emit('progress-update', { type: 'progress-start', total: selectedNames.length });
 
         try {
-            // [UPDATED] Fetch members from DB
             const dbMembers = await db.getMembers();
             const rawData = await getOIData(config.url, logger);
             
             const processedMembers = processMemberSkills(
-                dbMembers, // Use DB members
+                dbMembers, 
                 rawData, 
                 config.skillsConfig, 
                 daysThreshold

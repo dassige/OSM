@@ -15,12 +15,7 @@ const ui = {
     // Title text displayed on the login form
     loginTitle: "FENZ OSM Manager" 
 };
-// members names as they appear EXACTLY in the dashboard system
-const members = [
-  { "name": "Member 1 name ", "email": "member1@yourdomain.com", "mobile": "","messengerId" : "","skills": [] },
-  { "name": "Member 2 name", "email": "member2@yourdomain.com", "mobile": "","messengerId" : "", "skills": [] },
-  { "name": "Member 3 name", "email": "member3@yourdomain.com", "mobile": "","messengerId" : "", "skills": [] }
-];
+
 // skills as they appear EXACTLY in the dashboard system
 const skillsConfig = [
     { "name": "OI (IS1) - Operational Safety (C)", "critical_skill": true ,"url": "https://docs.google.com/forms/d/e/1FAIpQLSfIPFllTJsWKaHUUFV5SbvckgmhRpQtKTlT7FVG87pi79pxoA/viewform?usp=pp_url&entry.892262364=" },
@@ -64,7 +59,6 @@ const emailInfo = {
 module.exports = {
     auth,
     ui,
-    members,
     skillsConfig,
     url,
     transporter,

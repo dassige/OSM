@@ -23,7 +23,7 @@ let currentSort = {
 
 const ICON_ASC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
 const ICON_DESC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
-const ICON_NONE = ''; // Empty for non-sortable columns
+const ICON_NONE = ''; 
 
 //  Logout Logic
 const logoutBtn = document.getElementById('logoutBtn');
@@ -127,6 +127,10 @@ function handleSort(column) {
         currentSort.column = column;
         currentSort.order = 'asc';
     }
+    
+    // [NEW] Persist the preference
+    socket.emit('update-preference', { key: 'sortSkills', value: currentSort });
+
     applySort();
 }
 
@@ -264,6 +268,11 @@ socket.on('preferences-data', (prefs) => {
     if (prefs.daysToExpiry !== undefined) daysInput.value = prefs.daysToExpiry;
     if (prefs.hideNoSkills !== undefined) hideNoSkillsCheckbox.checked = prefs.hideNoSkills;
     if (prefs.hideNoUrl !== undefined) hideNoUrlSkillsCheckbox.checked = prefs.hideNoUrl;
+
+    // [NEW] Restore Sort Preference
+    if (prefs.sortSkills) {
+        currentSort = prefs.sortSkills;
+    }
 
     fetchData();
 });
