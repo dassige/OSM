@@ -26,8 +26,15 @@ const sessionMiddleware = session({
 app.use(sessionMiddleware);
 app.use(express.json()); 
 
-// Initialize Socket.IO with Session awareness
-const io = new Server(server);
+// Initialize Socket.IO with Session awareness and CORS enabled
+
+const io = new Server(server, {
+    cors: {
+        origin: "*", // Allow all origins (or specify your domain: "https://your-server.com")
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
 const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
 io.use(wrap(sessionMiddleware));
 
