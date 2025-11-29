@@ -14,7 +14,8 @@ const ui = {
     // Default to the local file, but allow override via ENV
     appBackground: process.env.UI_BACKGROUND_URL || "resources/background.png", 
     loginLogo: process.env.UI_LOGO_URL || "resources/logo.png",       
-    loginTitle: process.env.UI_LOGIN_TITLE || "FENZ OSM Automation Manager" 
+    loginTitle: process.env.UI_LOGIN_TITLE || "FENZ OSM Automation Manager" ,
+    version: packageJson.version
 };
 
 // --- SCRAPER CONFIGURATION ---

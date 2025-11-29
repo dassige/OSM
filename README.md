@@ -1,9 +1,4 @@
 
-### 1\. README.md
-
-I updated the **Environment Variables** section to include the new UI options and completely rewrote the **UI Customization** section to describe the Volume (Docker) and URL (Cloud Run) methods.
-
-````markdown
 # FENZ OSM Automation Manager
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![Node Version](https://img.shields.io/badge/node-v20-blue) ![License](https://img.shields.io/badge/license-MIT-green)
@@ -105,7 +100,6 @@ If running locally or via Docker Compose, you can mount a local folder containin
    ```yaml
    volumes:
      - ./custom-resources:/app/public/resources
-````
 
 4.  Restart the container.
 
