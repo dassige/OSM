@@ -15,7 +15,10 @@ let db;
 // Initialize the Database
 async function initDB() {
     if (db) return db;
-
+    //Allow overriding the path via environment variable
+    const dbPath = process.env.DB_PATH || path.join(__dirname, '../fenz.db');
+    console.log(`[DB] Opening database at: ${dbPath}`);
+    
     try {
         db = await open({
             filename: path.join(__dirname, '../fenz.db'),
@@ -23,7 +26,7 @@ async function initDB() {
         });
 
         await db.exec('PRAGMA foreign_keys = ON;');
-        
+
         // 1. Preferences Table
         await db.exec(`
             CREATE TABLE IF NOT EXISTS preferences (
@@ -178,7 +181,7 @@ async function getSkills() {
     // Return skills. Map SQLite integer (0/1) back to boolean if needed by frontend logic,
     // though JS handles 0/1 as falsy/truthy well.
     const skills = await db.all('SELECT * FROM skills ORDER BY name ASC');
-    return skills.map(s => ({...s, critical_skill: !!s.critical_skill}));
+    return skills.map(s => ({ ...s, critical_skill: !!s.critical_skill }));
 }
 
 async function addSkill(skill) {
@@ -236,10 +239,10 @@ async function bulkDeleteSkills(ids) {
     }
 }
 
-module.exports = { 
-    initDB, 
-    getPreferences, 
-    savePreference, 
+module.exports = {
+    initDB,
+    getPreferences,
+    savePreference,
     logEmailAction,
     // Members
     getMembers, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers,

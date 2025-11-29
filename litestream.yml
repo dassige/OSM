@@ -1,0 +1,5 @@
+dbs:
+  - path: /app/fenz.db
+    replicas:
+      # Litestream will replace ${GCS_BUCKET_NAME} with the actual env var value at runtime
+      - url: gcs://${GCS_BUCKET_NAME}/fenz.db
