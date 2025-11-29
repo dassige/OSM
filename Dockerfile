@@ -22,6 +22,10 @@ RUN npm install
 # Copy application code
 COPY . .
 
+# Copy the startup script and make it executable
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Copy Litestream configuration file (We will create this next)
 COPY litestream.yml /etc/litestream.yml
 

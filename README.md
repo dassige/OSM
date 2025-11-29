@@ -1,4 +1,9 @@
 
+### 1\. README.md
+
+I updated the **Environment Variables** section to include the new UI options and completely rewrote the **UI Customization** section to describe the Volume (Docker) and URL (Cloud Run) methods.
+
+````markdown
 # FENZ OSM Automation Manager
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![Node Version](https://img.shields.io/badge/node-v20-blue) ![License](https://img.shields.io/badge/license-MIT-green)
@@ -24,6 +29,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
 * [Prerequisites](#prerequisites)
 * [Installation](#installation)
 * [Configuration](#configuration)
+* [UI Customization](#ui-customization)
 * [Usage](#usage)
 * [Docker Deployment](#docker-deployment)
 * [Google Cloud Run Deployment](#google-cloud-run-deployment)
@@ -40,7 +46,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/dassige/OSM.git
+    git clone [https://github.com/dassige/OSM.git](https://github.com/dassige/OSM.git)
     cd OSM
     ```
 
@@ -57,49 +63,55 @@ It automates the process of checking a dashboard for expiring skills, persists d
 
 ## Configuration
 
-The application is configured in two places:
-1.  **`.env`**: For sensitive secrets (passwords, API keys) and backend settings.
-2.  **`config.js`**: For UI branding and non-sensitive defaults.
+The application is configured primarily via the **`.env`** file.
 
-### 1. Environment Variables (`.env`)
+### Environment Variables (`.env`)
 
 Open the `.env` file you just created and configure the following parameters:
 
 #### **Application Security**
-These credentials are for logging into *this* OSM Manager application, not the external dashboard.
-* `APP_USERNAME`: The username you want to use for the admin panel (e.g., `admin`).
+* `APP_USERNAME`: The username for the admin panel (e.g., `admin`).
 * `APP_PASSWORD`: A strong password for the admin panel.
-* `SESSION_SECRET`: A long, random string used to encrypt session cookies (e.g., `my_super_secret_session_key_123`).
+* `SESSION_SECRET`: A long, random string used to encrypt session cookies.
 
 #### **OSM Dashboard Connection**
-* `DASHBOARD_URL`: **Crucial.** This is the full URL of the live dashboard you want to scrape.
-    * *Format:* `https://www.dashboardlive.nz/index.php?user=YOUR_UNIQUE_CODE`
-    * *Note:* Ensure you include the `?user=...` query parameter provided by FENZ.
-* `SCRAPING_INTERVAL`: The number of minutes to cache data before scraping the live site again (Default: `60`).
+* `DASHBOARD_URL`: **Crucial.** The full URL of the live dashboard including your unique user code.
+* `SCRAPING_INTERVAL`: Minutes to cache data before scraping the live site again (Default: `60`).
 
 #### **Email Configuration (SMTP)**
-This application uses **Nodemailer** to send alerts. The example below assumes Gmail, but any SMTP service (Outlook, AWS SES, SendGrid) will work.
+* `SMTP_SERVICE`: The service provider (e.g., `gmail`).
+* `SMTP_USER`: Your full email address.
+* `SMTP_PASS`: Your email password (or App Password).
+* `EMAIL_FROM`: The "From" address (e.g., `"Station Officer" <sender@yourdomain.com>`).
 
-* `SMTP_SERVICE`: The service provider (e.g., `gmail` or `hotmail`).
-* `SMTP_USER`: Your full email address (e.g., `sender@yourdomain.com`).
-* `SMTP_PASS`: Your email password.
-    * **Gmail Users:** Do **not** use your login password. You must generate an [App Password](https://myaccount.google.com/apppasswords) if you have 2FA enabled.
-* `EMAIL_FROM`: The string that appears in the "From" field (e.g., `"Station Officer" <sender@yourdomain.com>`).
+#### **UI Branding (Optional)**
+* `UI_LOGIN_TITLE`: Custom text for the login screen (e.g., "Station 44 OSM Manager").
+* `UI_LOGO_URL`: (Cloud Run Only) A public URL to download a custom logo from on boot.
+* `UI_BACKGROUND_URL`: (Cloud Run Only) A public URL to download a custom background from on boot.
 
-### 2. UI Customization (`config.js`)
+## UI Customization
 
-You can customize the look and feel of the login screen by adding images to the `public/resources` folder and updating `config.js`:
+You can customize the branding (Logo, Background, and Title) without modifying the source code.
 
-```javascript
-// config.js
-const ui = {
-    // Looks for file in public/resources/background.png (Applied to all pages)
-    appBackground: "resources/background.png", 
-    // Looks for file in public/resources/logo.png
-    loginLogo: "resources/logo.png",       
-    loginTitle: "Station 12 OSM Manager" 
-};
+### 1. Changing the Title
+Set the `UI_LOGIN_TITLE` variable in your `.env` file.
+
+### 2. Changing Images (Docker / Local)
+If running locally or via Docker Compose, you can mount a local folder containing your specific images.
+
+1. Create a folder named `custom-resources` in the project root.
+2. Add your files: `logo.png` and `background.png`.
+3. Uncomment the volume mapping in `docker-compose.yml`:
+   ```yaml
+   volumes:
+     - ./custom-resources:/app/public/resources
 ````
+
+4.  Restart the container.
+
+### 3\. Changing Images (Cloud Run)
+
+Since Cloud Run is stateless, you cannot mount a local folder. Instead, host your images publicly (e.g., in a Google Storage Bucket) and provide the URLs via `UI_LOGO_URL` and `UI_BACKGROUND_URL`. The container will download them on startup.
 
 ## Usage
 
@@ -117,28 +129,9 @@ node server.js
 
 1.  **Login**: Access `http://localhost:3000` and log in with your configured credentials.
 2.  **Dashboard Controls**:
-      * **Days to Expiry**: Set your threshold (e.g., 30 days). This is saved to the database automatically.
-      * **Reload Expiring Skills**: Triggers the scraper. If data was fetched recently (within `SCRAPING_INTERVAL`), cached data is shown instantly.
-      * **Send Emails**: Select specific members and click "Send Emails" to dispatch notifications.
-
-### Data Management
-
-**Members** and **Skills** are managed dynamically via the web interface.
-
-#### Managing Members
-
-  * Navigate to the **Menu** (top right) \> **Manage Members**.
-  * **Add Member**: Manually enter Name, Email, and Mobile.
-      * *Important:* The **Name** must match the name displayed on the OSM Dashboard *exactly*.
-  * **Import CSV**: Upload a CSV file with headers: `name`, `email`, `mobile`.
-
-#### Managing Skills
-
-  * Navigate to the **Menu** \> **Manage Skills**.
-  * **Add Skill**: Define the Skill Name and the renewal URL.
-      * *Important:* The **Skill Name** must match the text on the OSM Dashboard *exactly*.
-  * **Critical Skills**: Check the "Critical" box to highlight these skills in bold on the dashboard.
-  * **Import CSV**: Upload a CSV file with headers: `name`, `url`, `critical_skill` (1 for true, 0 for false).
+      * **Days to Expiry**: Set your threshold (e.g., 30 days).
+      * **Reload Expiring Skills**: Triggers the scraper.
+      * **Send Emails**: Select specific members and click "Send Emails".
 
 ## Docker Deployment
 
@@ -154,46 +147,35 @@ The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment
     Open `http://localhost:3000`.
 
 3.  **Data Persistence:**
-    The `docker-compose.yml` mounts the current directory. The `fenz.db` SQLite database is stored on the host machine, ensuring your member and skill data is preserved across container restarts.
+    The `fenz.db` SQLite database is stored on the host machine via a volume, ensuring data preservation.
 
 ## Google Cloud Run Deployment
 
-This application supports stateless deployment on Google Cloud Run by using Litestream for database persistence.
+This application supports stateless deployment on Google Cloud Run by using Litestream for database persistence and a startup script for asset customization.
 
-For a detailed step-by-step guide on configuring buckets, service accounts, and deployment commands, please refer to [Installation_google_run.md](Installation_google_run.md).
+See [Installation\_google\_run.md](https://www.google.com/search?q=Installation_google_run.md) for details.
 
 ## Project Structure
 
 ```text
-├── config.js              # Main configuration file (UI defaults)
-├── .env                   # Environment variables (Secrets)
-├── server.js              # Main Express Web Server & Socket.IO
-├── fenz.db                # SQLite Database (Stores Members, Skills, History)
+├── .env                   # Environment variables (Secrets & Config)
+├── server.js              # Main Express Web Server
+├── fenz.db                # SQLite Database
+├── start.sh               # Cloud Run Startup Script (Asset Downloader)
 ├── public/                # Frontend Assets
-│   ├── index.html         # Main Dashboard
-│   ├── members.html       # Member Management UI
-│   ├── skills.html        # Skill Management UI
-│   ├── resources/         # Folder for Images
-│   │   ├── logo.png
-│   │   └── background.png
-│   └── app.js             # Client-side logic
+│   └── resources/         # Default Images (can be overridden)
 ├── services/              # Backend Services
-│   ├── db.js              # Database Access Layer (SQLite)
-│   ├── mailer.js          # Email transport logic
-│   ├── member-manager.js  # Logic to map scraped data to members
-│   └── scraper.js         # Scraping & Caching logic
 └── Dockerfile             # Container definition
 ```
 
 ## Troubleshooting
 
-  * **"Unauthorized" Socket Error:**
-    If you see "connect\_error: unauthorized" in the logs, ensure you have logged in via `http://localhost:3000/login.html` first. The socket connection requires an active session.
-  * **Database Locked:**
-    This uses SQLite. Ensure only one process is writing to `fenz.db` at a time. If running in Docker, ensure file permissions allow the container to write to the mounted volume.
-  * **Email Failures:**
-    Check your `SMTP` credentials in `.env`. If using Gmail, you likely need an **App Password** rather than your login password.
-  * **Empty Dashboard:**
-    If the "Reload" button returns 0 results, ensure your `DASHBOARD_URL` is correct and that the **Member Names** in the "Manage Members" section exactly match those on the target website.
+  * **"Unauthorized" Socket Error:** Ensure you have logged in via `/login.html`.
+  * **Database Locked:** Ensure only one process is writing to `fenz.db`.
+  * **Custom Images not loading:**
+      * **Docker:** Ensure your local folder is named correctly and contains `logo.png`.
+      * **Cloud Run:** Check the Cloud Run logs to see if `wget` failed to download the image from the URL provided (e.g., 403 Forbidden).
 
 <!-- end list -->
+
+

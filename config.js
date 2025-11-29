@@ -11,13 +11,11 @@ const auth = {
 
 // --- UI CUSTOMIZATION --- 
 const ui = {
-    // Points to public/resources/background_logo.png
-    appBackground: "resources/background.png", 
-    // Points to public/resources/logo.png
-    loginLogo: "resources/logo.png",       
-    loginTitle: "FENZ OSM Automation Manager" 
+    // Default to the local file, but allow override via ENV
+    appBackground: process.env.UI_BACKGROUND_URL || "resources/background.png", 
+    loginLogo: process.env.UI_LOGO_URL || "resources/logo.png",       
+    loginTitle: process.env.UI_LOGIN_TITLE || "FENZ OSM Automation Manager" 
 };
-
 
 // --- SCRAPER CONFIGURATION ---
 const url = process.env.DASHBOARD_URL || 'https://www.dashboardlive.nz/index.php';
