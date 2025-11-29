@@ -22,16 +22,13 @@ RUN npm install
 # Copy application code
 COPY . .
 
-# Copy the startup script and make it executable
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-# Copy Litestream configuration file (We will create this next)
+# Copy Litestream configuration
 COPY litestream.yml /etc/litestream.yml
 
-# Expose the port
 EXPOSE 3000
 
-# Run Litestream, which wraps your Node command
-# This tells Litestream to: restore DB -> run app -> replicate changes back to bucket
-CMD ["litestream", "replicate", "-exec", "node server.js"]
+# CHANGED: Point to the smart script
+CMD ["/app/start.sh"]

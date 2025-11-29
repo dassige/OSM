@@ -1,6 +1,13 @@
 {
   "name": "fenz-osm",
   "version": "1.0.0",
+  "description": "FENZ OSM Automation Manager",
+  "versionDate": "2023-11-30",
+  "author": "Gerardo Dassi",
+  "repository": "https://github.com/dassige/OSM",
+  "bugs": "https://github.com/dassige/OSM/issues",
+  "homepage": "https://github.com/dassige/OSM", 
+  "license": "MIT",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

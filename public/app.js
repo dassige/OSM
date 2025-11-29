@@ -342,12 +342,22 @@ socket.on('expiring-skills-data', (data) => {
     //tableContainer.scrollIntoView({ behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
 });
+
 // --- UI Configuration ---
 fetch('/ui-config')
     .then(response => response.json())
     .then(config => {
         if (config.appBackground) {
             document.body.style.backgroundImage = `url('${config.appBackground}')`;
+        }
+        // Add these lines:
+        if (config.version) {
+            const el = document.getElementById('disp-version');
+            if (el) el.textContent = config.version;
+        }
+        if (config.deployDate) {
+            const el = document.getElementById('disp-date');
+            if (el) el.textContent = config.deployDate;
         }
     })
     .catch(err => console.error("Failed to load UI config:", err));

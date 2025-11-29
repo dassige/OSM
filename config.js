@@ -1,4 +1,5 @@
 require('dotenv').config(); // Load environment variables
+const packageJson = require('./package.json');
 
 const nodemailer = require('nodemailer');
 
@@ -15,7 +16,8 @@ const ui = {
     appBackground: process.env.UI_BACKGROUND_URL || "resources/background.png", 
     loginLogo: process.env.UI_LOGO_URL || "resources/logo.png",       
     loginTitle: process.env.UI_LOGIN_TITLE || "FENZ OSM Automation Manager" ,
-    version: packageJson.version
+    version: packageJson.version,
+    deployDate: process.env.DEPLOY_DATE
 };
 
 // --- SCRAPER CONFIGURATION ---

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,10 +13,11 @@
             user-select: none;
             position: relative;
         }
+
         th.sortable:hover {
             background-color: #454d55;
         }
-        
+
         .th-content {
             display: flex;
             align-items: center;
@@ -27,6 +29,7 @@
             margin-left: 8px;
             opacity: 0.5;
         }
+
         .sort-icon.active {
             opacity: 1;
             color: #4db8ff;
@@ -52,7 +55,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             transition: background-color 0.2s;
         }
 
@@ -66,7 +69,7 @@
             right: 0;
             background-color: #f9f9f9;
             min-width: 180px;
-            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
             border-radius: 4px;
             z-index: 1;
             overflow: hidden;
@@ -92,49 +95,86 @@
             border-top: 1px solid #eee;
             color: #dc3545;
         }
-        
+
         .dropdown-content a.logout:hover {
             background-color: #ffe6e6;
             color: #bd2130;
         }
 
-        .show { display: block; }
+        .show {
+            display: block;
+        }
     </style>
 </head>
+
 <body>
-    
+
     <div class="header-menu">
         <button onclick="toggleMenu()" class="menu-btn">
-            Menu 
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            Menu
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
         </button>
         <div id="myDropdown" class="dropdown-content">
             <a href="members.html">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin-right:8px;">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
                 Manage Members
             </a>
             <a href="skills.html">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin-right:8px;">
+                    <path
+                        d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+                    </path>
+                </svg>
                 Manage Skills
             </a>
             <a href="#" id="logoutLink" class="logout">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin-right:8px;">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
                 Logout
+            </a>
+            <a href="#" onclick="openModal('aboutModal')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin-right:8px;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                About
             </a>
         </div>
     </div>
 
     <h1>FENZ OSM Automation</h1>
-    
+
     <div id="controls" style="display: flex; align-items: center; flex-wrap: wrap;">
-        <div style="margin-right: 15px; margin-bottom: 10px; background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
+        <div
+            style="margin-right: 15px; margin-bottom: 10px; background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
             <label for="daysInput" style="font-weight: bold; color: #555; font-size: 14px;">Days to Expiry:</label>
-            <input type="number" id="daysInput" value="30" min="1" style="width: 50px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
+            <input type="number" id="daysInput" value="30" min="1"
+                style="width: 50px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
         </div>
 
         <button id="viewBtn">Reload Expiring Skills</button>
         <button id="sendEmailsBtn" disabled>Send Emails</button>
-        
+
         <span id="status" style="margin-left: 15px; font-weight: bold; color: #555; margin-bottom: 10px;">Idle</span>
     </div>
 
@@ -143,26 +183,38 @@
     </div>
 
     <div id="tableContainer">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
             <h2 style="margin: 0;">Expiring Skills Report</h2>
             <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
-                <label style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
-                    <input type="checkbox" id="hideNoSkillsCheckbox" style="margin-right: 8px; width: 16px; height: 16px;"> 
+                <label
+                    style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
+                    <input type="checkbox" id="hideNoSkillsCheckbox"
+                        style="margin-right: 8px; width: 16px; height: 16px;">
                     Hide members with 'NO expiring skills'
                 </label>
-                <label style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
-                    <input type="checkbox" id="hideNoUrlSkillsCheckbox" style="margin-right: 8px; width: 16px; height: 16px;"> 
+                <label
+                    style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
+                    <input type="checkbox" id="hideNoUrlSkillsCheckbox"
+                        style="margin-right: 8px; width: 16px; height: 16px;">
                     Hide Skills without Online form
                 </label>
             </div>
         </div>
-        
+
         <p style="margin-top: -5px; margin-bottom: 15px; color: #666; font-size: 14px;">
-            <em>Skills displayed in <b>bold</b> are configured as 'Critical'. 
-            <span style="display: inline-flex; align-items: center; vertical-align: bottom;">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #007bff;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            </span> 
-            indicates a direct form link is available.</em>
+            <em>Skills displayed in <b>bold</b> are configured as 'Critical'.
+                <span style="display: inline-flex; align-items: center; vertical-align: bottom;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round" style="color: #007bff;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </span>
+                indicates a direct form link is available.</em>
         </p>
         <table id="skillsTable">
             <thead>
@@ -190,18 +242,32 @@
     <div id="terminal"></div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
     </button>
-
+    <div id="aboutModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <span class="close-btn" onclick="closeModal('aboutModal')">&times;</span>
+            <h2 style="margin-top: 0;">About</h2>
+            <div style="margin: 20px 0; font-size: 1.1em;">
+                <p style="margin: 10px 0;"><strong>Version:</strong> <span id="disp-version">...</span></p>
+                <p style="margin: 10px 0;"><strong>Deployed:</strong> <span id="disp-date">...</span></p>
+            </div>
+            <p style="font-size: 0.9em; color: #666;">FENZ OSM Automation Manager</p>
+        </div>
+    </div>
     <script src="/socket.io/socket.io.js"></script>
     <script src="app.js"></script>
-    
+
     <script>
         function toggleMenu() {
             document.getElementById("myDropdown").classList.toggle("show");
         }
 
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (!event.target.matches('.menu-btn') && !event.target.matches('.menu-btn *')) {
                 var dropdowns = document.getElementsByClassName("dropdown-content");
                 for (var i = 0; i < dropdowns.length; i++) {
@@ -220,7 +286,7 @@
 
         // --- Scroll to Top Logic ---
         const scrollTopBtn = document.getElementById("scrollTopBtn");
-        window.onscroll = function() {
+        window.onscroll = function () {
             if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
                 scrollTopBtn.style.display = "flex";
             } else {
@@ -228,8 +294,31 @@
             }
         };
         function scrollToTop() {
-            window.scrollTo({top: 0, behavior: 'smooth'});
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        // --- Modal Logic ---
+        function openModal(id) {
+            document.getElementById(id).style.display = 'block';
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // Close modal if clicking outside of it
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = "none";
+            }
+            // ... existing menu close logic ...
+            if (!event.target.matches('.menu-btn') && !event.target.matches('.menu-btn *')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    if (dropdowns[i].classList.contains('show')) dropdowns[i].classList.remove('show');
+                }
+            }
         }
     </script>
+
 </body>
+
 </html>

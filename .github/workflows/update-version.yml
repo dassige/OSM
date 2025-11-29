@@ -1,0 +1,53 @@
+name: Update Version Date
+
+# Trigger this action on every push to the main branch
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write  # Required to push changes back to the repo
+
+jobs:
+  update-date:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')" # Prevent infinite loops
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update versionDate in package.json
+        run: |
+          # 1. Get today's date
+          NEW_DATE=$(date +'%Y-%m-%d')
+          
+          # 2. Use 'npm pkg set' to securely update the field
+          npm pkg set versionDate="$NEW_DATE"
+          
+          # Optional: Bump the patch version (e.g., 1.0.0 -> 1.0.1)
+          # Remove the '#' below if you want auto-version bumping
+          npm version patch --no-git-tag-version
+
+      - name: Commit and Push changes
+        run: |
+          # Configure git to look like a bot
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if anything actually changed to avoid empty commit errors
+          if [[ -n $(git status --porcelain) ]]; then
+            git add package.json
+            git commit -m "chore: update versionDate to $(date +'%Y-%m-%d') [skip ci]"
+            git push
+          else
+            echo "No changes to commit"
+          fi
