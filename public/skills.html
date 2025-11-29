@@ -278,10 +278,12 @@
             <div class="table-toolbar">
                 <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger"
                     style="display: none; margin-right: auto;">Delete Selected</button>
+
+                <button onclick="exportToCSV()" class="btn-secondary">Export CSV</button>
+
                 <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
                 <button onclick="openModal()" class="btn-primary">Add Skill</button>
             </div>
-
             <div class="help-bar">
                 <div class="help-container" onclick="openHelpModal()" title="Click for CSV format details">
                     <button class="btn-icon info">
@@ -613,6 +615,50 @@
         };
         function scrollToTop() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function exportToCSV() {
+            if (!currentSkills || currentSkills.length === 0) {
+                alert("No skills to export.");
+                return;
+            }
+
+            // 1. Define Headers
+            const headers = ['name', 'url', 'critical_skill'];
+
+            // 2. Map data to CSV rows
+            const rows = currentSkills.map(skill => {
+                // Handle boolean conversion for CSV (1 for true, 0 for false is standard for this app's import logic)
+                const rowData = {
+                    name: skill.name,
+                    url: skill.url,
+                    critical_skill: skill.critical_skill ? '1' : '0'
+                };
+
+                return headers.map(header => {
+                    let val = rowData[header] || '';
+
+                    // CSV Escaping
+                    const stringVal = String(val);
+                    if (stringVal.search(/("|,|\n)/g) >= 0) {
+                        val = `"${stringVal.replace(/"/g, '""')}"`;
+                    }
+                    return val;
+                }).join(',');
+            });
+
+            // 3. Combine headers and rows
+            const csvContent = [headers.join(',')].concat(rows).join('\n');
+
+            // 4. Trigger Download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "skills_export.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
