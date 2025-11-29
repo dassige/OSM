@@ -26,6 +26,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
 * [Configuration](#configuration)
 * [Usage](#usage)
 * [Docker Deployment](#docker-deployment)
+* [Google Cloud Run Deployment](#google-cloud-run-deployment)
 * [Project Structure](#project-structure)
 * [Troubleshooting](#troubleshooting)
 
@@ -154,6 +155,12 @@ The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment
 
 3.  **Data Persistence:**
     The `docker-compose.yml` mounts the current directory. The `fenz.db` SQLite database is stored on the host machine, ensuring your member and skill data is preserved across container restarts.
+
+## Google Cloud Run Deployment
+
+This application supports stateless deployment on Google Cloud Run by using Litestream for database persistence.
+
+For a detailed step-by-step guide on configuring buckets, service accounts, and deployment commands, please refer to [Installation_google_run.md](Installation_google_run.md).
 
 ## Project Structure
 
