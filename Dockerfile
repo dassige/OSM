@@ -5,7 +5,9 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install build dependencies AND wget/unzip for Litestream
-RUN apk add --no-cache python3 make g++ wget unzip
+# We also run 'upgrade' to patch known Alpine vulnerabilities
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache python3 make g++ wget unzip
 
 # --- LITESTREAM SETUP ---
 # Download Litestream

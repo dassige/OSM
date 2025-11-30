@@ -3,3 +3,7 @@ npm-debug.log
 .git
 .gitignore
 .wwebjs*
+# Add these lines:
+fenz.db
+fenz.db-wal
+fenz.db-shm
