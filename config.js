@@ -41,20 +41,12 @@ const dynamicProxySource = process.env.DYNAMIC_PROXY_SOURCE || null; // Optional
 
 
 
-
-const emailInfo = {
-      from: '"FENZ OSM Manager" <sender@yourdomain.com>',
-      subject: "FENZ OSM: Expiring Skills Notification",
-      text: "Hello, you have expiring Skills due in OSM. Please complete these ASAP.\r\n" 
-    };
-
 module.exports = {
     auth,
     ui,
     url,
     scrapingInterval,
-     transporter,
-    emailInfo,
+    transporter,
     proxyMode,
     fixedProxyUrl,
     dynamicProxySource

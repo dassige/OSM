@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Templates - FENZ OSM</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="no-referrer"></script>
+    <style>
+        .container { max-width: 900px; margin: 0 auto; padding-top: 40px; padding-bottom: 60px; }
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        
+        .help-text { font-size: 0.85em; color: #666; margin-top: 5px; background: #f9f9f9; padding: 10px; border-radius: 4px; border: 1px solid #eee; }
+        
+        /* Save Button */
+        .btn-save { background-color: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; transition: background 0.2s; }
+        .btn-save:hover { background-color: #218838; }
+        
+        /* Back Button */
+        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.15); transition: all 0.2s ease; }
+        .back-btn:hover { background-color: #23272b; transform: translateY(-2px); }
+
+        /* --- Drag & Drop Palette Styles --- */
+        .palette-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .draggable-item {
+            background-color: #e2e6ea;
+            border: 1px solid #ccc;
+            border-radius: 15px;
+            padding: 5px 12px;
+            font-family: monospace;
+            font-weight: bold;
+            color: #333;
+            cursor: grab;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+        }
+        .draggable-item:hover {
+            background-color: #dbe2ef;
+            border-color: #bbb;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+        .draggable-item::before {
+            content: '⋮⋮';
+            margin-right: 6px;
+            color: #999;
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-btn" title="Back to Dashboard">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </a>
+
+    <div class="container">
+        <h1>Email Templates</h1>
+        <p>Customize the automated emails sent to members.</p>
+
+        <form id="templateForm">
+            <div class="form-group">
+                <label>From Address</label>
+                <input type="text" id="emailFrom" placeholder='"Station Officer" <sender@example.com>'>
+            </div>
+
+            <div class="form-group">
+                <label>Subject Line</label>
+                <input type="text" id="emailSubject" placeholder="Expiring Skills Notification">
+            </div>
+
+            <div class="form-group">
+                <label>Introductory Text</label>
+                <textarea id="emailIntro"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Skill Row Template</label>
+                
+                <div class="palette-container" id="palette">
+                    <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                    <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                    <div class="draggable-item" draggable="true" data-val="critical">Critical Label</div>
+                    <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
+                </div>
+
+                <textarea id="emailRow"></textarea>
+                
+                <div class="help-text">
+                    <strong>Instructions:</strong> Drag and drop the chips above into the editor to place them.<br>
+                    Note: To use the <strong>Form URL</strong> inside a link, copy <code>{{url}}</code> and paste it into the URL field of the "Insert Link" dialog.
+                </div>
+            </div>
+
+            <div style="text-align: right; margin-top: 20px;">
+                <button type="submit" class="btn-save">Save Configuration</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const defaults = {
+            emailFrom: '"FENZ OSM Manager" <sender@yourdomain.com>',
+            emailSubject: 'FENZ OSM: Expiring Skills Notification',
+            emailIntro: '<p>Hello,</p><p>You have expiring Skills due in OSM. Please complete these ASAP:</p>',
+            emailRow: `<p><strong>{{skill}}</strong> <span style="color: red;">{{critical}}</span></p>
+                       <p>Expires on: <span style="color: #666;">{{date}}</span></p>
+                       <p><a href="{{url}}" target="_blank">Complete the form here</a></p>
+                       <hr />`
+        };
+
+        // --- 1. Helper Functions for Chips Conversion ---
+
+        function textToChips(htmlContent) {
+            if (!htmlContent) return '';
+            
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = htmlContent;
+
+            const walker = document.createTreeWalker(wrapper, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            let node;
+            while(node = walker.nextNode()) {
+                if (node.nodeValue.match(/\{\{(skill|date|critical|url)\}\}/)) {
+                    nodesToReplace.push(node);
+                }
+            }
+
+            nodesToReplace.forEach(node => {
+                const fragment = document.createDocumentFragment();
+                const parts = node.nodeValue.split(/(\{\{(?:skill|date|critical|url)\}\})/g);
+                
+                parts.forEach(part => {
+                    if (part.match(/^\{\{.*\}\}$/)) {
+                        const span = document.createElement('span');
+                        span.className = 'mceNonEditable placeholder-chip';
+                        span.setAttribute('data-mce-content', part);
+                        span.setAttribute('contenteditable', 'false');
+                        span.innerText = part;
+                        fragment.appendChild(span);
+                    } else if (part) {
+                        fragment.appendChild(document.createTextNode(part));
+                    }
+                });
+                node.parentNode.replaceChild(fragment, node);
+            });
+
+            return wrapper.innerHTML;
+        }
+
+        function chipsToText(htmlContent) {
+            if (!htmlContent) return '';
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = htmlContent;
+
+            const chips = wrapper.querySelectorAll('span.placeholder-chip');
+            chips.forEach(chip => {
+                const text = chip.innerText;
+                const textNode = document.createTextNode(text);
+                chip.parentNode.replaceChild(textNode, chip);
+            });
+
+            return wrapper.innerHTML;
+        }
+
+        // --- 2. Initialization ---
+
+        async function init() {
+            try {
+                // UI Config
+                const uiRes = await fetch('/ui-config');
+                if (uiRes.ok) {
+                    const uiConfig = await uiRes.json();
+                    if (uiConfig.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
+                }
+
+                // Load Data
+                const res = await fetch('/api/preferences');
+                const prefs = await res.json();
+
+                document.getElementById('emailFrom').value = prefs.emailFrom || defaults.emailFrom;
+                document.getElementById('emailSubject').value = prefs.emailSubject || defaults.emailSubject;
+                
+                const rawIntro = prefs.emailIntro || defaults.emailIntro;
+                const rawRow = prefs.emailRow || defaults.emailRow;
+
+                document.getElementById('emailIntro').value = textToChips(rawIntro);
+                document.getElementById('emailRow').value = textToChips(rawRow);
+
+                // --- 3. TinyMCE Configuration (Expanded + Clean) ---
+                tinymce.init({
+                    selector: '#emailRow, #emailIntro',
+                    height: 350,
+                    menubar: false, // CHANGED: Disable Menu Bar
+                    // Expanded Plugin List
+                    plugins: 'preview importcss searchreplace autolink autosave save directionality visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
+                    // Expanded Toolbar (Grouped)
+                    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | ' +
+                        'alignleft aligncenter alignright alignjustify | ' +
+                        'outdent indent |  numlist bullist | ' +
+                        'forecolor backcolor removeformat | pagebreak | charmap emoticons | ' +
+                        'fullscreen  preview print | insertfile image media template link anchor codesample | ' +
+                        'ltr rtl',
+                    
+                    noneditable_noneditable_class: 'mceNonEditable',
+                    content_style: `
+                        body { font-family:Helvetica,Arial,sans-serif; font-size:14px }
+                        .placeholder-chip {
+                            background-color: #e2e6ea;
+                            border: 1px solid #ccc;
+                            border-radius: 10px;
+                            padding: 2px 6px;
+                            margin: 0 2px;
+                            font-family: monospace;
+                            color: #333;
+                            cursor: default;
+                            user-select: all;
+                        }
+                    `,
+                    setup: function(editor) {
+                        editor.on('drop', function(e) {
+                            const content = e.dataTransfer.getData('text/html');
+                            if (content && content.includes('placeholder-chip')) {
+                                e.preventDefault();
+                                editor.insertContent(content);
+                            }
+                        });
+                    }
+                });
+
+                setupDragAndDrop();
+
+            } catch (e) { console.error("Init failed", e); }
+        }
+
+        // --- 4. External Drag & Drop Logic ---
+        function setupDragAndDrop() {
+            const items = document.querySelectorAll('.draggable-item');
+            
+            items.forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    const key = item.getAttribute('data-val');
+                    const text = `{{${key}}}`;
+                    const html = `<span class="mceNonEditable placeholder-chip" data-mce-content="${text}" contenteditable="false">${text}</span>`;
+                    
+                    e.dataTransfer.setData('text/html', html);
+                    e.dataTransfer.effectAllowed = 'copy';
+                });
+            });
+        }
+
+        // --- 5. Save Handler ---
+        document.getElementById('templateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const introRaw = tinymce.get('emailIntro').getContent();
+            const rowRaw = tinymce.get('emailRow').getContent();
+
+            const data = {
+                emailFrom: document.getElementById('emailFrom').value,
+                emailSubject: document.getElementById('emailSubject').value,
+                emailIntro: chipsToText(introRaw),
+                emailRow: chipsToText(rowRaw)
+            };
+
+            try {
+                for (const [key, value] of Object.entries(data)) {
+                    await fetch('/api/preferences', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key, value })
+                    });
+                }
+                alert('Templates saved successfully!');
+            } catch(err) {
+                alert('Error saving templates: ' + err.message);
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

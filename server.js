@@ -320,6 +320,15 @@ io.on('connection', (socket) => {
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
 
+            //Fetch Email Templates from DB ---
+            const prefs = await db.getPreferences();
+            const templateConfig = {
+                from: prefs.emailFrom,
+                subject: prefs.emailSubject,
+                intro: prefs.emailIntro,
+                rowHtml: prefs.emailRow
+            };
+
             // Pass 'currentProxy' to the scraper
             const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
             const processedMembers = processMemberSkills(

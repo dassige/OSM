@@ -1,61 +1,72 @@
 const getTime = () => new Date().toLocaleTimeString();
 
-async function sendNotification(member, emailInfo, transporter, isTestMode, logger = console.log) {
+// Helper to strip HTML tags for the plain text version
+function stripHtml(html) {
+    if (!html) return "";
+    return html.replace(/<[^>]*>?/gm, '');
+}
+
+async function sendNotification(member, templateConfig, transporter, isTestMode, logger = console.log) {
     if (!member.expiringSkills || member.expiringSkills.length === 0) {
         return;
     }
 
-    // --- Construct Email Content ---
-    let messageText = emailInfo.text;
-    let messageHtml = `
-        <div style="font-family: Arial, sans-serif; color: #333;">
-            <h2 style="color: #d32f2f;">Expiring Skills Notification</h2>
-            <p>Hello, you have expiring Skills due in OSM. Please complete these ASAP:</p>
-            <ul>
-    `;
+    const from = templateConfig.from || '"FENZ OSM Manager" <noreply@fenz.osm>';
+    const subject = templateConfig.subject || 'FENZ OSM: Expiring Skills Notification';
+    const intro = templateConfig.intro || '<p>Hello, you have expiring Skills due in OSM.</p>';
+    const rowTemplate = templateConfig.rowHtml || '<li><strong>{{skill}}</strong> expires on {{date}}</li>';
+
+    // 1. Build List Items
+    let rowsHtml = '';
+    let plainTextList = '';
 
     member.expiringSkills.forEach(skill => {
         const fullUrl = `${skill.url}${encodeURIComponent(member.name)}`;
+        const criticalLabel = skill.isCritical ? '(CRITICAL)' : '';
         
-        // Plain text
-        messageText += `\r\nSkill: '${skill.skill}' expires on ${skill.dueDate}`;
-        messageText += `\r\nTo complete the OI Click here : ${fullUrl}`;
+        let row = rowTemplate
+            .replace(/{{skill}}/g, skill.skill)
+            .replace(/{{date}}/g, skill.dueDate)
+            .replace(/{{critical}}/g, criticalLabel)
+            .replace(/{{url}}/g, fullUrl);
         
-        // HTML
-        messageHtml += `
-            <li style="margin-bottom: 15px;">
-                <strong>${skill.skill}</strong> ${skill.isCritical ? '(CRITICAL)' : ''}<br>
-                <span style="color: #666;">Expires on: ${skill.dueDate}</span><br>
-                <a href="${fullUrl}" style="color: #007bff; font-weight: bold; text-decoration: none;">Complete the form here</a>
-            </li>
-        `;
+        rowsHtml += row;
+        plainTextList += `- ${skill.skill} (${skill.dueDate})\n`;
     });
 
-    messageHtml += `
+    // 2. Build Final Body
+    // CHANGE: Removed <p> wrappers around ${intro} because intro now contains its own block tags
+    const messageHtml = `
+        <div style="font-family: Arial, sans-serif; color: #333;">
+            <h2 style="color: #d32f2f;">${subject}</h2>
+            ${intro}
+            <ul>
+                ${rowsHtml}
             </ul>
             <p style="font-size: 12px; color: #888;">This is an automated notification from FENZ OSM Manager.</p>
         </div>
     `;
 
-    // --- Send Logic ---
+    // CHANGE: Strip HTML from intro for the plain text version
+    const messageText = `${stripHtml(intro)}\n\n${plainTextList}\n\nLog in to dashboard to complete these.`;
+
     if (isTestMode) {
         logger(`[${getTime()}] [TEST MODE] Simulating email to: ${member.email}`);
-        logger(`[${getTime()}] [TEST MODE] Content would contain ${member.expiringSkills.length} skills.`);
         return;
     }
 
     try {
         const info = await transporter.sendMail({
-            from: emailInfo.from,
+            from: from,
             to: member.email,
-            subject: emailInfo.subject,
+            subject: subject,
             text: messageText,
             html: messageHtml,
         });
         logger(`[${getTime()}] [SMTP] Email sent to ${member.name} (ID: ${info.messageId})`);
     } catch (error) {
         logger(`[${getTime()}] [SMTP ERROR] Failed to send to ${member.name}: ${error.message}`);
-        throw error; // Re-throw to let the caller know it failed
+        throw error;
     }
 }
 
