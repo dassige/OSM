@@ -17,7 +17,7 @@ const ui = {
     loginLogo: process.env.UI_LOGO_URL || "resources/logo.png",       
     loginTitle: process.env.UI_LOGIN_TITLE || "FENZ OSM Automation Manager" ,
     version: packageJson.version,
-    deployDate: process.env.DEPLOY_DATE
+    deployDate: packageJson.versionDate
 };
 
 // --- SCRAPER CONFIGURATION ---
@@ -34,7 +34,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const emailInfo = {
-      from: process.env.EMAIL_FROM || '"FENZ OSM Manager" <sender@yourdomain.com>',
+      from: '"FENZ OSM Manager" <sender@yourdomain.com>',
       subject: "FENZ OSM: Expiring Skills Notification",
       text: "Hello, you have expiring Skills due in OSM. Please complete these ASAP.\r\n" 
     };
