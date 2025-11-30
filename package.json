@@ -1,6 +1,6 @@
 {
   "name": "fenz-osm",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "FENZ OSM Automation Manager",
   "versionDate": "2025-11-30",
   "author": "Gerardo Dassi",
@@ -21,12 +21,12 @@
     "fs": "^0.0.1-security",
     "http": "^0.0.1-security",
     "https": "^1.0.0",
+    "https-proxy-agent": "^5.0.1",
     "nodemailer": "^6.9.4",
     "path": "^0.12.7",
     "socket.io": "^4.7.2",
     "socket.io-client": "^4.7.2",
     "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7",
-    "https-proxy-agent": "^5.0.1"
+    "sqlite3": "^5.1.7"
   }
 }
