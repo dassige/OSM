@@ -11,13 +11,22 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            /* Ensure full viewport height, using dvh for better mobile support */
             height: 100vh;
+            height: 100dvh;
+            width: 100vw;
+            
+            /* Reset layout properties that might leak from styles.css */
             margin: 0;
+            padding: 0;
+            max-width: none;
+            
             /* Default background if none provided */
             background-color: #f0f2f5;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            overflow: hidden; /* Prevent scrollbars from minor sizing discrepancies */
         }
 
         .login-container {
@@ -26,10 +35,13 @@
             padding: 40px;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            width: 100%;
+            width: 90%; /* Changed from 100% to 90% for mobile margins */
             max-width: 400px;
             text-align: center;
             backdrop-filter: blur(5px);
+            /* Ensure container doesn't overflow vertically on very small screens */
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         /* Logo Styling */

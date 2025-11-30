@@ -238,8 +238,16 @@
         </table>
     </div>
 
-    <h2 style="margin-top: 30px;">Console Log</h2>
-    <div id="terminal"></div>
+    <div
+        style="margin-top: 20px; margin-bottom: 60px; text-align: right; border-top: 1px solid #eee; padding-top: 20px;">
+        <label style="cursor: pointer; color: #555; font-weight: bold; font-size: 14px;">
+            <input type="checkbox" id="showConsoleCheckbox" style="vertical-align: middle; margin-right: 8px;">
+            Show Console Log
+        </label>
+    </div>
+   <h2 id="consoleHeader" style="margin-top: 30px; display: none;">Console Log</h2>
+     <div id="terminal" style="display: none;"></div>
+
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"

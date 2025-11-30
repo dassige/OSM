@@ -8,10 +8,13 @@ const skillsTableBody = document.querySelector('#skillsTable tbody');
 const selectAllCheckbox = document.getElementById('selectAllCheckbox');
 const daysInput = document.getElementById('daysInput');
 const hideNoSkillsCheckbox = document.getElementById('hideNoSkillsCheckbox');
-const hideNoUrlSkillsCheckbox = document.getElementById('hideNoUrlSkillsCheckbox'); 
+const hideNoUrlSkillsCheckbox = document.getElementById('hideNoUrlSkillsCheckbox');
 
 const progressContainer = document.getElementById('progressContainer');
 const progressBar = document.getElementById('progressBar');
+const showConsoleCheckbox = document.getElementById('showConsoleCheckbox');
+const consoleHeader = document.getElementById('consoleHeader');
+
 
 let currentOsmData = [];
 
@@ -23,7 +26,7 @@ let currentSort = {
 
 const ICON_ASC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
 const ICON_DESC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
-const ICON_NONE = ''; 
+const ICON_NONE = '';
 
 //  Logout Logic
 const logoutBtn = document.getElementById('logoutBtn');
@@ -47,7 +50,7 @@ function setRunningState() {
     selectAllCheckbox.disabled = true;
     terminal.textContent = '> Starting Email Process...\n';
     statusSpan.innerText = 'Sending Emails...';
-    statusSpan.style.color = '#e67e22'; 
+    statusSpan.style.color = '#e67e22';
     progressContainer.style.display = 'block';
     progressBar.style.width = '0%';
     progressBar.textContent = 'Starting...';
@@ -82,7 +85,7 @@ function setIdleState(code) {
 function updateUIState() {
     const allCheckboxes = document.querySelectorAll('.email-checkbox');
     const checkedCheckboxes = document.querySelectorAll('.email-checkbox:checked');
-    
+
     if (checkedCheckboxes.length > 0) {
         sendEmailsBtn.disabled = false;
     } else {
@@ -127,7 +130,7 @@ function handleSort(column) {
         currentSort.column = column;
         currentSort.order = 'asc';
     }
-    
+
     // [NEW] Persist the preference
     socket.emit('update-preference', { key: 'sortSkills', value: currentSort });
 
@@ -156,14 +159,18 @@ function updateHeaderIcons() {
         iconSpan.classList.add('active');
     }
 }
-
+function toggleConsole(isVisible) {
+    const style = isVisible ? 'block' : 'none';
+    if (terminal) terminal.style.display = style;
+    if (consoleHeader) consoleHeader.style.display = style;
+}
 // --- Data Fetching Logic ---
 function fetchData() {
     const days = parseInt(daysInput.value) || 30;
     viewBtn.disabled = true;
     viewBtn.textContent = "Loading Data...";
     terminal.textContent += `> Fetching View Data (Threshold: ${days} days)... please wait.\n`;
-    socket.emit('view-expiring-skills', days); 
+    socket.emit('view-expiring-skills', days);
 }
 
 // --- Render Table Logic ---
@@ -176,14 +183,14 @@ function renderTable() {
         let visibleSkills = member.skills;
         if (hideNoUrl) visibleSkills = visibleSkills.filter(s => s.hasUrl);
         const hasVisibleSkills = visibleSkills.length > 0;
-        
-        if (hideNoSkills && !hasVisibleSkills) return; 
+
+        if (hideNoSkills && !hasVisibleSkills) return;
 
         const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
         const tr = document.createElement('tr');
         tr.className = rowClass;
         if (!hasVisibleSkills) tr.classList.add('no-skills-row');
-        
+
         const nameTd = document.createElement('td');
         nameTd.textContent = member.name;
         nameTd.className = 'member-cell';
@@ -191,7 +198,7 @@ function renderTable() {
 
         const skillTd = document.createElement('td');
         const dateTd = document.createElement('td');
-        
+
         if (hasVisibleSkills) {
             skillTd.innerHTML = buildSkillHtml(visibleSkills[0]);
             skillTd.className = 'skill-cell';
@@ -200,7 +207,7 @@ function renderTable() {
         } else {
             skillTd.textContent = "NO expiring skills" + (hideNoUrl && member.skills.length > 0 ? " (Hidden by filter)" : "");
             skillTd.className = 'no-skill';
-            dateTd.textContent = ""; 
+            dateTd.textContent = "";
         }
         tr.appendChild(skillTd);
         tr.appendChild(dateTd);
@@ -251,12 +258,12 @@ daysInput.addEventListener('change', (e) => {
 
 hideNoSkillsCheckbox.addEventListener('change', (e) => {
     socket.emit('update-preference', { key: 'hideNoSkills', value: e.target.checked });
-    renderTable(); 
+    renderTable();
 });
 
 hideNoUrlSkillsCheckbox.addEventListener('change', (e) => {
     socket.emit('update-preference', { key: 'hideNoUrl', value: e.target.checked });
-    renderTable(); 
+    renderTable();
 });
 
 // Load Preferences on Connect
@@ -265,11 +272,21 @@ socket.on('connect', () => {
 });
 
 socket.on('preferences-data', (prefs) => {
+    // ... existing preferences ...
     if (prefs.daysToExpiry !== undefined) daysInput.value = prefs.daysToExpiry;
     if (prefs.hideNoSkills !== undefined) hideNoSkillsCheckbox.checked = prefs.hideNoSkills;
     if (prefs.hideNoUrl !== undefined) hideNoUrlSkillsCheckbox.checked = prefs.hideNoUrl;
 
-    //  Restore Sort Preference
+    // --- NEW: Restore Console Visibility ---
+    if (prefs.showConsole !== undefined) {
+        showConsoleCheckbox.checked = prefs.showConsole;
+        toggleConsole(prefs.showConsole);
+    } else {
+        // Default is hidden (false)
+        showConsoleCheckbox.checked = false;
+        toggleConsole(false);
+    }
+
     if (prefs.sortSkills) {
         currentSort = prefs.sortSkills;
     }
@@ -290,7 +307,7 @@ sendEmailsBtn.addEventListener('click', () => {
     const checkedBoxes = document.querySelectorAll('.email-checkbox:checked');
     const selectedNames = Array.from(checkedBoxes).map(cb => cb.getAttribute('data-name'));
     const days = parseInt(daysInput.value) || 30;
-    
+
     if (selectedNames.length === 0) {
         alert("No members selected for email.");
         return;
@@ -298,10 +315,14 @@ sendEmailsBtn.addEventListener('click', () => {
 
     if (confirm(`Are you sure you want to send emails to ${selectedNames.length} member(s)?\n(Expiry threshold: ${days} days)`)) {
         setRunningState();
-        socket.emit('run-send-selected', selectedNames, days); 
+        socket.emit('run-send-selected', selectedNames, days);
     }
 });
-
+showConsoleCheckbox.addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    toggleConsole(isChecked);
+    socket.emit('update-preference', { key: 'showConsole', value: isChecked });
+});
 viewBtn.addEventListener('click', () => {
     fetchData();
 });
@@ -332,12 +353,12 @@ socket.on('expiring-skills-data', (data) => {
     terminal.textContent += '> Data fetched successfully.\n';
 
     currentOsmData = data;
-    
+
     tableContainer.style.display = 'block';
-    
+
     // Apply sort immediately (which calls renderTable)
     applySort();
-    
+
     // alternative behavior
     //tableContainer.scrollIntoView({ behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
