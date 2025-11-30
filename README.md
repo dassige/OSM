@@ -147,7 +147,7 @@ The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment
 
 This application supports stateless deployment on Google Cloud Run by using Litestream for database persistence and a startup script for asset customization.
 
-See [Installation\_google\_run.md](https://www.google.com/search?q=Installation_google_run.md) for details.
+See [Installation on Google Run](Installation\_google\_run.md) for details.
 
 ## Project Structure
 
