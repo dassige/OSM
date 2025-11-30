@@ -1,14 +1,12 @@
 // services/proxy-manager.js
 const axios = require('axios');
-const https = require('https');
+// const https = require('https'); // Not needed if we remove the agent
 
-// Default source if not provided in .env
 const DEFAULT_SOURCE = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=NZ&ssl=all&anonymity=all";
 
 async function findWorkingNZProxy(logger = console.log, customSource = null) {
     const sourceUrl = customSource || DEFAULT_SOURCE;
     logger(`[ProxyManager] 📡 Fetching NZ proxy list from source...`);
-    logger(`[ProxyManager] 🔗 Source URL: ${sourceUrl}`);
 
     try {
         const response = await axios.get(sourceUrl);
@@ -36,9 +34,6 @@ async function findWorkingNZProxy(logger = console.log, customSource = null) {
             if (isAlive) {
                 logger(`[ProxyManager] ✅ SUCCESS! Candidate passed verification.`);
                 return proxyUrl;
-            } else {
-                // Optional: log failure if you want very verbose logs
-                // logger(`[ProxyManager] ❌ Failed.`); 
             }
         }
         
@@ -55,23 +50,22 @@ async function verifyProxy(proxyUrl) {
     try {
         const { URL } = require('url');
         const pUrl = new URL(proxyUrl);
-        const agent = new https.Agent({ rejectUnauthorized: false });
+        
+        // --- CHANGED: Removed manual httpsAgent ---
+        // The previous agent was preventing the proxy from tunneling correctly.
         
         const start = Date.now();
         await axios.get("https://www.dashboardlive.nz/index.php", {
             timeout: 5000,
-            httpsAgent: agent,
             proxy: {
                 protocol: 'http',
                 host: pUrl.hostname,
-                port: pUrl.port
+                port: parseInt(pUrl.port) // Ensure port is a number
             }
         });
         const duration = Date.now() - start;
-        // console.log(`   -> Latency: ${duration}ms`); // Uncomment for latency stats
         return true;
     } catch (e) {
-        // console.log(`   -> Error: ${e.message}`); // Uncomment for verbose error reasons
         return false;
     }
 }
