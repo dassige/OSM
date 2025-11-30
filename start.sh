@@ -15,7 +15,12 @@ fi
 # 2. Decision: Run Litestream (Prod) or Standard (Local)
 if [ ! -z "$GCS_BUCKET_NAME" ]; then
     echo "GCS_BUCKET_NAME found. Starting in PRODUCTION mode (Litestream enabled)..."
-    # Execute Litestream, which wraps the node process
+    
+    # 1. Restore the database from the bucket (if it exists)
+    # The -if-replica-exists flag prevents errors on the very first deployment
+    litestream restore -if-replica-exists /app/fenz.db
+
+    # 2. Execute Litestream, which wraps the node process
     exec litestream replicate -exec "node server.js"
 else
     echo "No GCS_BUCKET_NAME found. Starting in LOCAL mode..."
