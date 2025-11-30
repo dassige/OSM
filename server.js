@@ -4,8 +4,8 @@ const { Server } = require("socket.io");
 const session = require('express-session');
 
 // Configuration
-const config = require('./config.js'); 
-
+const config = require('./config.js');
+const { findWorkingNZProxy } = require('./services/proxy-manager'); // Ensure you created this file from the previous ste
 // Services
 const { getOIData } = require('./services/scraper');
 const { processMemberSkills } = require('./services/member-manager');
@@ -20,11 +20,11 @@ const sessionMiddleware = session({
     secret: config.auth?.sessionSecret || 'fallback_secret_key',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } 
+    cookie: { secure: false }
 });
 
 app.use(sessionMiddleware);
-app.use(express.json()); 
+app.use(express.json());
 
 // Initialize Socket.IO with Session awareness and CORS enabled
 
@@ -37,6 +37,8 @@ const io = new Server(server, {
 });
 const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
 io.use(wrap(sessionMiddleware));
+
+
 
 // Socket.IO Auth Middleware
 io.use((socket, next) => {
@@ -73,7 +75,7 @@ app.get('/logout', (req, res) => {
 // Protect Routes Middleware
 app.use((req, res, next) => {
     const publicPaths = ['/login.html', '/login', '/styles.css', '/ui-config'];
-    
+
     // CHANGE HERE: Add || req.path.startsWith('/resources/')
     if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/')) {
         return next();
@@ -126,7 +128,7 @@ app.post('/api/members', async (req, res) => {
 
 app.post('/api/members/import', async (req, res) => {
     try {
-        const members = req.body; 
+        const members = req.body;
         if (!Array.isArray(members)) return res.status(400).json({ error: "Expected array" });
         await db.bulkAddMembers(members);
         res.json({ success: true, count: members.length });
@@ -205,6 +207,48 @@ app.delete('/api/skills/:id', async (req, res) => {
 
 app.use(express.static('public'));
 
+// --- PROXY STATE MANAGEMENT ---
+let currentProxy = null;
+
+async function initializeProxy() {
+    console.log('---------------------------------------------------------');
+    console.log('[ProxySystem] 🚀 Starting Proxy Initialization...');
+    console.log(`[ProxySystem] ⚙️  Configuration loaded. Mode: "${config.proxyMode.toUpperCase()}"`);
+
+    if (config.proxyMode === 'fixed') {
+        console.log('[ProxySystem] ℹ️  Mode selected: FIXED. Validating configuration...');
+        if (!config.fixedProxyUrl) {
+            console.error('[ProxySystem] ❌ ERROR: Mode is "fixed" but PROXY_URL is missing in .env');
+        } else {
+            currentProxy = config.fixedProxyUrl;
+            console.log(`[ProxySystem] ✅ Using Fixed Proxy: ${currentProxy}`);
+        }
+    }
+    else if (config.proxyMode === 'dynamic') {
+        console.log('[ProxySystem] ℹ️  Mode selected: DYNAMIC. Starting discovery service...');
+        console.time('[ProxySystem] Discovery Duration'); // Start timer
+
+        const proxy = await findWorkingNZProxy(console.log);
+
+        console.timeEnd('[ProxySystem] Discovery Duration'); // End timer
+
+        if (proxy) {
+            currentProxy = proxy;
+            console.log(`[ProxySystem] ✅ Acquired Dynamic Proxy: ${currentProxy}`);
+        } else {
+            console.error('[ProxySystem] ❌ FAILED to find a working dynamic proxy. Scraper will likely fail.');
+        }
+    }
+    else {
+        console.log('[ProxySystem] ℹ️  Mode selected: NONE. No proxy will be used.');
+        currentProxy = null;
+    }
+    console.log('---------------------------------------------------------');
+}
+
+// Call this immediately when server starts
+initializeProxy();
+
 // --- SOCKET.IO EVENTS ---
 
 io.on('connection', (socket) => {
@@ -237,13 +281,12 @@ io.on('connection', (socket) => {
             if (dbMembers.length === 0) logger(`> Warning: No members in database.`);
             if (dbSkills.length === 0) logger(`> Warning: No skills configured in database.`);
 
-            // [UPDATED] Pass the scraping interval config
-            const rawData = await getOIData(config.url, config.scrapingInterval || 0, logger);
-            
+            // Pass 'currentProxy' to the scraper
+            const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
             const processedMembers = processMemberSkills(
-                dbMembers, 
-                rawData, 
-                dbSkills, 
+                dbMembers,
+                rawData,
+                dbSkills,
                 daysThreshold
             );
 
@@ -270,51 +313,50 @@ io.on('connection', (socket) => {
     socket.on('run-send-selected', async (selectedNames, days) => {
         const daysThreshold = parseInt(days) || 30;
         logger(`> Starting Email Process (Threshold: ${daysThreshold} days)...`);
-        
+
         socket.emit('progress-update', { type: 'progress-start', total: selectedNames.length });
 
         try {
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
-            
-            // [UPDATED] Pass the scraping interval config
-            const rawData = await getOIData(config.url, config.scrapingInterval || 0, logger);
-            
+
+            // Pass 'currentProxy' to the scraper
+            const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
             const processedMembers = processMemberSkills(
-                dbMembers, 
-                rawData, 
-                dbSkills, 
+                dbMembers,
+                rawData,
+                dbSkills,
                 daysThreshold
             );
 
             const targets = processedMembers.filter(m => selectedNames.includes(m.name));
-            
+
             let current = 0;
             for (const member of targets) {
                 logger(`> Processing ${member.name}...`);
                 if (member.expiringSkills.length > 0) {
                     try {
                         await sendNotification(
-                            member, 
-                            config.emailInfo, 
-                            config.transporter, 
-                            false, 
+                            member,
+                            config.emailInfo,
+                            config.transporter,
+                            false,
                             logger
                         );
                         await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills`);
                     } catch (err) {
                         await db.logEmailAction(member, 'FAILED', err.message);
-                        throw err; 
+                        throw err;
                     }
                 } else {
                     logger(`  No expiring skills for ${member.name}. Skipping.`);
                 }
                 current++;
-                socket.emit('progress-update', { 
-                    type: 'progress-tick', 
-                    current: current, 
-                    total: targets.length, 
-                    member: member.name 
+                socket.emit('progress-update', {
+                    type: 'progress-tick',
+                    current: current,
+                    total: targets.length,
+                    member: member.name
                 });
                 await new Promise(resolve => setTimeout(resolve, 2000));
             }

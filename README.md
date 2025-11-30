@@ -8,15 +8,16 @@
 
 It automates the process of checking a dashboard for expiring skills, persists data via a local SQLite database, and provides a secure web interface for administrators to send targeted email reminders.
 
+
 **Key Features:**
 
-* **Real-Time Web Dashboard:** A responsive UI using Socket.IO to view scraping progress and logs in real-time.
+* **Real-Time Web Dashboard:** A responsive UI using Socket.IO to view scraping progress, logs, and sending status in real-time.
+* **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies, allowing you to scrape New Zealand-restricted dashboards from any region.
+* **Cloud-Native Persistence:** Uses **SQLite + Litestream** to replicate your database to Google Cloud Storage, ensuring data safety even on stateless platforms like Google Cloud Run.
 * **Web-Based Data Management:** Manage Members and Skills directly via the browser (CRUD operations & CSV Import).
-* **Persistent Storage:** Uses **SQLite** (`fenz.db`) to store members, skills, user preferences, and email history.
-* **Smart Caching:** Reduces load on the target dashboard by caching scraped results.
-* **Secure Authentication:** Session-based login system.
+* **Smart Caching:** Reduces load on the target dashboard by caching scraped results locally.
 * **Automated Emailing:** Sends HTML-formatted reminders via SMTP with deep links to specific Google Forms.
-* **Dockerized:** Ready for production deployment using Docker and Docker Compose.
+* **Dockerized:** Ready for production deployment with a flexible configuration system.
 
 ## Table of Contents
 
@@ -71,7 +72,7 @@ Open the `.env` file you just created and configure the following parameters:
 #### **OSM Dashboard Connection**
 * `DASHBOARD_URL`: **Crucial.** The full URL of the live dashboard including your unique user code.
 * `SCRAPING_INTERVAL`: Minutes to cache data before scraping the live site again (Default: `60`).
-* `PROXY_URL`: (Optional) A residential proxy URL (`http://user:pass@host:port`) to avoid blocking by the target firewall.
+
 
 #### **Email Configuration (SMTP)**
 * `SMTP_SERVICE`: The service provider (e.g., `gmail`).
@@ -84,6 +85,40 @@ Open the `.env` file you just created and configure the following parameters:
 * `UI_RESOURCES_PATH`: (Docker Only) Local path to a folder containing custom images (`logo.png` and `background.png`).
 * `UI_LOGO_URL`: (Cloud Run Only) A public URL to download a custom logo from on boot.
 * `UI_BACKGROUND_URL`: (Cloud Run Only) A public URL to download a custom background from on boot.
+
+### Proxy Configuration (Geoblocking Bypass)
+
+Because the target OSM Dashboard is geoblocked to New Zealand IP addresses, this application includes a built-in proxy system. If you are hosting this application outside of New Zealand (e.g., Google Cloud Run US region), you must configure this.
+
+Control the behavior using the `PROXY_MODE` environment variable:
+
+#### 1. None (`none`)
+* **Description:** Traffic flows directly from the container.
+* **Use Case:** You are hosting the app inside New Zealand or using a system-level VPN.
+* **Config:**
+    ```bash
+    PROXY_MODE=none
+    ```
+
+#### 2. Fixed Proxy (`fixed`)
+* **Description:** Routes traffic through a specific, static proxy server.
+* **Use Case:** **Recommended for production.** Use this with a paid residential proxy service for stability and speed.
+* **Config:**
+    ```bash
+    PROXY_MODE=fixed
+    PROXY_URL=[http://username:password@nz-proxy-provider.com](http://username:password@nz-proxy-provider.com):port
+    ```
+
+#### 3. Dynamic Proxy (`dynamic`)
+* **Description:** Automatically fetches a list of free public proxies, filters for New Zealand, and tests them one-by-one until a working one is found.
+* **Use Case:** Testing or zero-cost deployments.
+* **Warning:** Startup is slower (due to testing) and free proxies are often unstable.
+* **Config:**
+    ```bash
+    PROXY_MODE=dynamic
+    # (Optional) Override the default proxy list source API
+    # DYNAMIC_PROXY_SOURCE=[https://api.proxyscrape.com/](https://api.proxyscrape.com/)...
+    ```
 
 ## UI Customization
 
@@ -144,8 +179,21 @@ The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment
 2.  **Access:**
     Open `http://localhost:3000`.
 
-3.  **Data Persistence:**
-    The `fenz.db` SQLite database is stored on the host machine via a volume, ensuring data preservation.
+## Data Persistence
+
+The application stores all data (members, skills, history) in a local SQLite database file named `fenz.db`. Because Docker containers are ephemeral, we use two different strategies to ensure this data is not lost when the application restarts.
+
+### 1. Local / Docker Compose
+When running locally, persistence is handled via a **Volume Bind-Mount**.
+* The `docker-compose.yml` mounts your current project folder to `/app` inside the container.
+* The `fenz.db` file is written directly to your host machine's hard drive.
+* **Result:** Data survives container restarts and rebuilds.
+
+### 2. Google Cloud Run (Stateless)
+Cloud Run containers have no permanent disk. If a container stops, the local files are lost. To solve this, we use **Litestream**.
+* **Replication (Backup):** As the app writes to `fenz.db`, Litestream runs in the background and continuously streams the changes to your Google Cloud Storage (GCS) bucket.
+* **Restore (Recovery):** When a new container starts, the `start.sh` script automatically downloads the latest database from GCS before the application boots.
+* **Result:** You get the simplicity of SQLite with the durability of a cloud database.
 
 ## Google Cloud Run Deployment
 
@@ -156,14 +204,24 @@ See [Installation on Google Run](Installation\_google\_run.md) for details.
 ## Project Structure
 
 ```text
-├── .env                   # Environment variables (Secrets & Config)
-├── server.js              # Main Express Web Server
-├── fenz.db                # SQLite Database
-├── start.sh               # Cloud Run Startup Script (Asset Downloader)
-├── public/                # Frontend Assets
-│   └── resources/         # Default Images (can be overridden)
-├── services/              # Backend Services
-└── Dockerfile             # Container definition
+├── .env                    # Environment variables (Secrets & Config)
+├── config.js               # Central configuration loader
+├── server.js               # Main Express Web Server & API
+├── fenz.db                 # SQLite Database (generated at runtime)
+├── start.sh                # Startup Script (Litestream Restore & Init)
+├── litestream.yml          # Database replication configuration (GCS)
+├── docker-compose.yml      # Local development container orchestration
+├── public/                 # Frontend Assets (Single Page App)
+│   ├── resources/          # Static Images (Logo, Background)
+│   ├── *.html              # UI Pages (Login, Dashboard, Management)
+│   └── app.js              # Frontend Logic (Socket.IO client)
+├── services/               # Backend Business Logic
+│   ├── db.js               # Database interaction layer (SQLite)
+│   ├── mailer.js           # SMTP Email notification service
+│   ├── member-manager.js   # Data processing & expiry logic
+│   ├── proxy-manager.js    # Proxy discovery & verification service
+│   └── scraper.js          # Dashboard scraping logic (Cheerio/Axios)
+└── Dockerfile              # Container definition
 ```
 
 ## Troubleshooting

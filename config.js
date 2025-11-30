@@ -24,6 +24,7 @@ const ui = {
 const url = process.env.DASHBOARD_URL || 'https://www.dashboardlive.nz/index.php';
 const scrapingInterval = parseInt(process.env.SCRAPING_INTERVAL) || 60;
 
+
 // --- EMAIL CONFIGURATION ---
 const transporter = nodemailer.createTransport({
     service: process.env.SMTP_SERVICE || 'gmail',
@@ -32,6 +33,14 @@ const transporter = nodemailer.createTransport({
         pass: process.env.SMTP_PASS
     }
 });
+
+// --- PROXY CONFIGURATION ---
+const proxyMode = process.env.PROXY_MODE || 'none'; // Default to 'none'
+const fixedProxyUrl = process.env.PROXY_URL || null;
+const dynamicProxySource = process.env.DYNAMIC_PROXY_SOURCE || null; // Optional override
+
+
+
 
 const emailInfo = {
       from: '"FENZ OSM Manager" <sender@yourdomain.com>',
@@ -44,6 +53,9 @@ module.exports = {
     ui,
     url,
     scrapingInterval,
-    transporter,
-    emailInfo
+     transporter,
+    emailInfo,
+    proxyMode,
+    fixedProxyUrl,
+    dynamicProxySource
 };
