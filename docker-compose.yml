@@ -9,6 +9,8 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+      # CHANGED: Allow overriding resources via .env, default to standard folder
+      - ${UI_RESOURCES_PATH:-./public/resources}:/app/public/resources
     env_file:         
       - .env         
     command: npx nodemon server.js

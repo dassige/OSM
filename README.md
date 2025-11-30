@@ -1,4 +1,3 @@
-
 # FENZ OSM Automation Manager
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![Node Version](https://img.shields.io/badge/node-v20-blue) ![License](https://img.shields.io/badge/license-MIT-green)
@@ -72,6 +71,7 @@ Open the `.env` file you just created and configure the following parameters:
 #### **OSM Dashboard Connection**
 * `DASHBOARD_URL`: **Crucial.** The full URL of the live dashboard including your unique user code.
 * `SCRAPING_INTERVAL`: Minutes to cache data before scraping the live site again (Default: `60`).
+* `PROXY_URL`: (Optional) A residential proxy URL (`http://user:pass@host:port`) to avoid blocking by the target firewall.
 
 #### **Email Configuration (SMTP)**
 * `SMTP_SERVICE`: The service provider (e.g., `gmail`).
@@ -81,6 +81,7 @@ Open the `.env` file you just created and configure the following parameters:
 
 #### **UI Branding (Optional)**
 * `UI_LOGIN_TITLE`: Custom text for the login screen (e.g., "Station 44 OSM Manager").
+* `UI_RESOURCES_PATH`: (Docker Only) Local path to a folder containing custom images (`logo.png` and `background.png`).
 * `UI_LOGO_URL`: (Cloud Run Only) A public URL to download a custom logo from on boot.
 * `UI_BACKGROUND_URL`: (Cloud Run Only) A public URL to download a custom background from on boot.
 
@@ -92,20 +93,23 @@ You can customize the branding (Logo, Background, and Title) without modifying t
 Set the `UI_LOGIN_TITLE` variable in your `.env` file.
 
 ### 2. Changing Images (Docker / Local)
-If running locally or via Docker Compose, you can mount a local folder containing your specific images.
+To use custom images without modifying `docker-compose.yml`, use the `UI_RESOURCES_PATH` environment variable.
 
-1. Create a folder named `custom-resources` in the project root.
-2. Add your files: `logo.png` and `background.png`.
-3. Uncomment the volume mapping in `docker-compose.yml`:
-   ```yaml
-   volumes:
-     - ./custom-resources:/app/public/resources
+1.  Create a folder (e.g., `my-branding`) anywhere on your machine.
+2.  Add your custom files: `logo.png` and `background.png` into that folder.
+3.  In your `.env` file, add the path to that folder:
+    ```bash
+    UI_RESOURCES_PATH=./my-branding
+    ```
+4.  Restart the container:
+    ```bash
+    docker compose up -d
+    ```
 
-4.  Restart the container.
-
-### 3\. Changing Images (Cloud Run)
+### 3. Changing Images (Cloud Run)
 
 Since Cloud Run is stateless, you cannot mount a local folder. Instead, host your images publicly (e.g., in a Google Storage Bucket) and provide the URLs via `UI_LOGO_URL` and `UI_BACKGROUND_URL`. The container will download them on startup.
+
 
 ## Usage
 
