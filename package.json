@@ -26,6 +26,7 @@
     "socket.io": "^4.7.2",
     "socket.io-client": "^4.7.2",
     "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "https-proxy-agent": "^5.0.1"
   }
 }

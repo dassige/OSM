@@ -1,10 +1,11 @@
-// services/proxy-manager.js
 const axios = require('axios');
-// const https = require('https'); // Not needed if we remove the agent
+//
+const { HttpsProxyAgent } = require('https-proxy-agent');
 
 const DEFAULT_SOURCE = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=NZ&ssl=all&anonymity=all";
 
 async function findWorkingNZProxy(logger = console.log, customSource = null) {
+    // ... (This function remains mostly the same, ensuring it passes the URL to verifyProxy)
     const sourceUrl = customSource || DEFAULT_SOURCE;
     logger(`[ProxyManager] 📡 Fetching NZ proxy list from source...`);
 
@@ -48,22 +49,14 @@ async function findWorkingNZProxy(logger = console.log, customSource = null) {
 
 async function verifyProxy(proxyUrl) {
     try {
-        const { URL } = require('url');
-        const pUrl = new URL(proxyUrl);
-        
-        // --- CHANGED: Removed manual httpsAgent ---
-        // The previous agent was preventing the proxy from tunneling correctly.
+        const agent = new HttpsProxyAgent(proxyUrl);
         
         const start = Date.now();
         await axios.get("https://www.dashboardlive.nz/index.php", {
             timeout: 5000,
-            proxy: {
-                protocol: 'http',
-                host: pUrl.hostname,
-                port: parseInt(pUrl.port) // Ensure port is a number
-            }
+            httpsAgent: agent, // Use the agent
+            proxy: false       // Disable native proxy
         });
-        const duration = Date.now() - start;
         return true;
     } catch (e) {
         return false;
