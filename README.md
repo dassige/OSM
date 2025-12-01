@@ -1,57 +1,64 @@
+
 # FENZ OSM Automation Manager
 
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![Node Version](https://img.shields.io/badge/node-v20-blue) ![License](https://img.shields.io/badge/license-MIT-green)
+  
 
 ## Description
 
 **FENZ OSM Automation Manager** is a Node.js web application designed to streamline the tracking and management of expiring Operational Skills Maintenance (OSM) competencies.
 
-It automates the process of checking a dashboard for expiring skills, persists data via a local SQLite database, and provides a secure web interface for administrators to send targeted email reminders.
-
+It automates the process of checking a dashboard for expiring skills, persists data via a local SQLite database, and provides a secure web interface for administrators to send targeted email reminders. Unlike previous versions, this application manages all members, skills, and configurations dynamically via the web interface—no code editing required.
 
 **Key Features:**
 
-* **Real-Time Web Dashboard:** A responsive UI using Socket.IO to view scraping progress, logs, and sending status in real-time.
-* **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies, allowing you to scrape New Zealand-restricted dashboards from any region.
-* **Cloud-Native Persistence:** Uses **SQLite + Litestream** to replicate your database to Google Cloud Storage, ensuring data safety even on stateless platforms like Google Cloud Run.
-* **Web-Based Data Management:** Manage Members and Skills directly via the browser (CRUD operations & CSV Import).
-* **Smart Caching:** Reduces load on the target dashboard by caching scraped results locally.
-* **Automated Emailing:** Sends HTML-formatted reminders via SMTP with deep links to specific Google Forms.
-* **Dockerized:** Ready for production deployment with a flexible configuration system.
+  * **Real-Time Web Dashboard:** A responsive UI using Socket.IO to view scraping progress, logs, and sending status in real-time.
+  * **Database Driven:** All members and skills are stored in a local SQLite database (`fenz.db`).
+  * **Web-Based Management:**
+      * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
+      * **Skills:** Configure which skills to track, mark them as Critical, and assign Google Form URLs.
+      * **Email Templates:** A rich-text editor to customize email subjects and body content with drag-and-drop variables.
+  * **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies to scrape New Zealand-restricted dashboards from abroad.
+  * **Cloud-Native Persistence:** Uses **Litestream** to replicate the SQLite database to Google Cloud Storage, ensuring data safety even on stateless platforms like Google Cloud Run.
+  * **Dockerized:** Ready for production deployment with a flexible configuration system.
 
 ## Table of Contents
 
-* [Prerequisites](#prerequisites)
-* [Installation](#installation)
-* [Configuration](#configuration)
-* [UI Customization](#ui-customization)
-* [Usage](#usage)
-* [Docker Deployment](#docker-deployment)
-* [Google Cloud Run Deployment](#google-cloud-run-deployment)
-* [Project Structure](#project-structure)
-* [Troubleshooting](#troubleshooting)
+  * [Prerequisites](https://www.google.com/search?q=%23prerequisites)
+  * [Installation](https://www.google.com/search?q=%23installation)
+  * [Configuration](https://www.google.com/search?q=%23configuration)
+  * [UI Customization](https://www.google.com/search?q=%23ui-customization)
+  * [Usage](https://www.google.com/search?q=%23usage)
+  * [Docker Deployment](https://www.google.com/search?q=%23docker-deployment)
+  * [Google Cloud Run Deployment](https://www.google.com/search?q=%23google-cloud-run-deployment)
+  * [Project Structure](https://www.google.com/search?q=%23project-structure)
+  * [Troubleshooting](https://www.google.com/search?q=%23troubleshooting)
+  * [Credits](https://www.google.com/search?q=%23credits)
+  * [License](https://www.google.com/search?q=%23license)
 
 ## Prerequisites
 
-* **Node.js**: v20 or higher.
-* **npm**: Included with Node.js.
-* **Access**: Valid credentials for the OSM Dashboard you intend to scrape.
+  * **Node.js**: v20 or higher.
+  * **npm**: Included with Node.js.
+  * **Access**: Valid credentials for the OSM Dashboard you intend to scrape.
 
 ## Installation
 
 1.  **Clone the repository:**
+
     ```bash
-    git clone [https://github.com/dassige/OSM.git](https://github.com/dassige/OSM.git)
+    git clone https://github.com/dassige/OSM.git
     cd OSM
     ```
 
 2.  **Install dependencies:**
+
     ```bash
     npm install
     ```
 
 3.  **Prepare Configuration Files:**
     The application uses environment variables for sensitive data. Create your `.env` file from the example template:
+
     ```bash
     cp .example.env .env
     ```
@@ -65,92 +72,40 @@ The application is configured primarily via the **`.env`** file.
 Open the `.env` file you just created and configure the following parameters:
 
 #### **Application Security**
-* `APP_USERNAME`: The username for the admin panel (e.g., `admin`).
-* `APP_PASSWORD`: A strong password for the admin panel.
-* `SESSION_SECRET`: A long, random string used to encrypt session cookies.
+
+  * `APP_USERNAME`: The username for the web login (e.g., `admin`).
+  * `APP_PASSWORD`: A strong password for the web login.
+  * `SESSION_SECRET`: A long, random string used to encrypt session cookies.
 
 #### **OSM Dashboard Connection**
-* `DASHBOARD_URL`: **Crucial.** The full URL of the live dashboard including your unique user code.
-* `SCRAPING_INTERVAL`: Minutes to cache data before scraping the live site again (Default: `60`).
 
+  * `DASHBOARD_URL`: **Crucial.** The full URL of the live dashboard including your unique user code.
+  * `SCRAPING_INTERVAL`: Minutes to cache data before scraping the live site again (Default: `60`).
 
 #### **Email Configuration (SMTP)**
-* `SMTP_SERVICE`: The service provider (e.g., `gmail`).
-* `SMTP_USER`: Your full email address.
-* `SMTP_PASS`: Your email password (or App Password).
-* `EMAIL_FROM`: The "From" address (e.g., `"Station Officer" <sender@yourdomain.com>`).
 
-#### **UI Branding (Optional)**
-* `UI_LOGIN_TITLE`: Custom text for the login screen (e.g., "Station 44 OSM Manager").
-* `UI_RESOURCES_PATH`: (Docker Only) Local path to a folder containing custom images (`logo.png` and `background.png`).
-* `UI_LOGO_URL`: (Cloud Run Only) A public URL to download a custom logo from on boot.
-* `UI_BACKGROUND_URL`: (Cloud Run Only) A public URL to download a custom background from on boot.
+  * `SMTP_SERVICE`: The service provider (e.g., `gmail`).
+  * `SMTP_USER`: Your full email address.
+  * `SMTP_PASS`: Your email password (or App Password).
 
-### Proxy Configuration (Geoblocking Bypass)
+#### **Proxy Configuration (Geoblocking Bypass)**
 
-Because the target OSM Dashboard is geoblocked to New Zealand IP addresses, this application includes a built-in proxy system. If you are hosting this application outside of New Zealand (e.g., Google Cloud Run US region), you must configure this.
-
-Control the behavior using the `PROXY_MODE` environment variable:
-
-#### 1. None (`none`)
-* **Description:** Traffic flows directly from the container.
-* **Use Case:** You are hosting the app inside New Zealand or using a system-level VPN.
-* **Config:**
-    ```bash
-    PROXY_MODE=none
-    ```
-
-#### 2. Fixed Proxy (`fixed`)
-* **Description:** Routes traffic through a specific, static proxy server.
-* **Use Case:** **Recommended for production.** Use this with a paid residential proxy service for stability and speed.
-* **Config:**
-    ```bash
-    PROXY_MODE=fixed
-    PROXY_URL=[http://username:password@nz-proxy-provider.com](http://username:password@nz-proxy-provider.com):port
-    ```
-
-#### 3. Dynamic Proxy (`dynamic`)
-* **Description:** Automatically fetches a list of free public proxies, filters for New Zealand, and tests them one-by-one until a working one is found.
-* **Use Case:** Testing or zero-cost deployments.
-* **Warning:** Startup is slower (due to testing) and free proxies are often unstable.
-* **Config:**
-    ```bash
-    PROXY_MODE=dynamic
-    # (Optional) Override the default proxy list source API
-    # DYNAMIC_PROXY_SOURCE=[https://api.proxyscrape.com/](https://api.proxyscrape.com/)...
-    ```
+  * `PROXY_MODE`: Set to `none` (local NZ), `fixed` (paid proxy), or `dynamic` (free scraper).
+  * `PROXY_URL`: Required if mode is `fixed`.
 
 ## UI Customization
 
-You can customize the branding (Logo, Background, and Title) without modifying the source code.
+You can customize the branding (Logo, Background, and Title) via environment variables.
 
-### 1. Changing the Title
-Set the `UI_LOGIN_TITLE` variable in your `.env` file.
-
-### 2. Changing Images (Docker / Local)
-To use custom images without modifying `docker-compose.yml`, use the `UI_RESOURCES_PATH` environment variable.
-
-1.  Create a folder (e.g., `my-branding`) anywhere on your machine.
-2.  Add your custom files: `logo.png` and `background.png` into that folder.
-3.  In your `.env` file, add the path to that folder:
-    ```bash
-    UI_RESOURCES_PATH=./my-branding
-    ```
-4.  Restart the container:
-    ```bash
-    docker compose up -d
-    ```
-
-### 3. Changing Images (Cloud Run)
-
-Since Cloud Run is stateless, you cannot mount a local folder. Instead, host your images publicly (e.g., in a Google Storage Bucket) and provide the URLs via `UI_LOGO_URL` and `UI_BACKGROUND_URL`. The container will download them on startup.
-
+  * `UI_LOGIN_TITLE`: Custom text for the login screen (e.g., "Station 44 OSM Manager").
+  * `UI_RESOURCES_PATH`: (Docker/Local) Path to a folder containing `logo.png` and `background.png`.
+  * `UI_LOGO_URL` / `UI_BACKGROUND_URL`: (Cloud Run) Public URLs to download images on boot.
 
 ## Usage
 
-### Running Locally
+### 1\. Starting the Server
 
-To start the web server:
+Locally, start the web server using:
 
 ```bash
 node server.js
@@ -158,80 +113,114 @@ node server.js
 
 *The server listens on port **3000** by default.*
 
-### Dashboard Workflow
+### 2\. Dashboard Workflow
 
-1.  **Login**: Access `http://localhost:3000` and log in with your configured credentials.
-2.  **Dashboard Controls**:
-      * **Days to Expiry**: Set your threshold (e.g., 30 days).
-      * **Reload Expiring Skills**: Triggers the scraper.
-      * **Send Emails**: Select specific members and click "Send Emails".
+1.  **Login**: Access `http://localhost:3000` and log in.
+
+    ![A screenshot of the login page showing the custom title and background image.](assets/login.jpg)
+
+2.  **Manage Data**: Before using the dashboard, use the **Menu** (top right) to populate your database.
+
+      * **Manage Members**: Import a CSV of your team or add them manually.
+      * **Manage Skills**: Add the specific skill names (must match OSM exactly) you want to track. You can add Google Form URLs here.
+
+    > **[Image Placeholder]:** *A screenshot of the "Manage Skills" page showing the table with Skill Name, Critical status, and Form URL columns.*
+
+3.  **Configure Emails**: Go to **Email Templates** to customize the message your members receive.
+
+    > **[Image Placeholder]:** *A screenshot of the Email Templates editor showing the drag-and-drop chips for {{skill}} and {{date}}.*
+
+4.  **Run Dashboard**:
+
+      * Return to the **Home** screen.
+      * Click **Reload Expiring Skills** to scrape the live dashboard.
+      * Select members from the list and click **Send Emails**.
+
+    > **[Image Placeholder]:** *A screenshot of the main Dashboard with the "Expiring Skills Report" table populated and the console log visible at the bottom.*
 
 ## Docker Deployment
 
 The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment.
 
 1.  **Build and Run:**
-
     ```bash
     docker compose up -d --build
     ```
-
-2.  **Access:**
-    Open `http://localhost:3000`.
-
-## Data Persistence
-
-The application stores all data (members, skills, history) in a local SQLite database file named `fenz.db`. Because Docker containers are ephemeral, we use two different strategies to ensure this data is not lost when the application restarts.
-
-### 1. Local / Docker Compose
-When running locally, persistence is handled via a **Volume Bind-Mount**.
-* The `docker-compose.yml` mounts your current project folder to `/app` inside the container.
-* The `fenz.db` file is written directly to your host machine's hard drive.
-* **Result:** Data survives container restarts and rebuilds.
-
-### 2. Google Cloud Run (Stateless)
-Cloud Run containers have no permanent disk. If a container stops, the local files are lost. To solve this, we use **Litestream**.
-* **Replication (Backup):** As the app writes to `fenz.db`, Litestream runs in the background and continuously streams the changes to your Google Cloud Storage (GCS) bucket.
-* **Restore (Recovery):** When a new container starts, the `start.sh` script automatically downloads the latest database from GCS before the application boots.
-* **Result:** You get the simplicity of SQLite with the durability of a cloud database.
+2.  **Persistence:**
+    The `docker-compose.yml` mounts the local directory to `/app`, ensuring your `fenz.db` (database) is preserved on your host machine even if the container restarts.
 
 ## Google Cloud Run Deployment
 
-This application supports stateless deployment on Google Cloud Run by using Litestream for database persistence and a startup script for asset customization.
+This application supports stateless deployment on Google Cloud Run by using Litestream for database persistence.
 
-See [Installation on Google Run](Installation\_google\_run.md) for details.
+**How it works:**
+
+1.  **Litestream** runs alongside the app.
+2.  It continuously backs up `fenz.db` to a Google Cloud Storage Bucket.
+3.  On startup, it restores the latest database from the bucket.
+
+See [Installation on Google Run](Installation_google_run.md) for detailed deployment commands.
 
 ## Project Structure
 
 ```text
 ├── .env                    # Environment variables (Secrets & Config)
-├── config.js               # Central configuration loader
-├── server.js               # Main Express Web Server & API
-├── fenz.db                 # SQLite Database (generated at runtime)
+├── server.js               # Main Express Web Server & API entry point
+├── fenz.db                 # SQLite Database (Stores members, skills, history)
+├── config.js               # Configuration loader
 ├── start.sh                # Startup Script (Litestream Restore & Init)
-├── litestream.yml          # Database replication configuration (GCS)
-├── docker-compose.yml      # Local development container orchestration
-├── public/                 # Frontend Assets (Single Page App)
-│   ├── resources/          # Static Images (Logo, Background)
-│   ├── *.html              # UI Pages (Login, Dashboard, Management)
+├── public/                 # Frontend Assets
+│   ├── index.html          # Main Dashboard
+│   ├── members.html        # Member Management UI
+│   ├── skills.html         # Skill Management UI
+│   ├── email-templates.html # Email Editor UI
 │   └── app.js              # Frontend Logic (Socket.IO client)
-├── services/               # Backend Business Logic
-│   ├── db.js               # Database interaction layer (SQLite)
-│   ├── mailer.js           # SMTP Email notification service
-│   ├── member-manager.js   # Data processing & expiry logic
-│   ├── proxy-manager.js    # Proxy discovery & verification service
-│   └── scraper.js          # Dashboard scraping logic (Cheerio/Axios)
+├── services/               # Backend Logic
+│   ├── db.js               # SQLite Database Adapter
+│   ├── mailer.js           # SMTP Service
+│   ├── scraper.js          # OSM Dashboard Scraper
+│   └── proxy-manager.js    # Proxy Logic
 └── Dockerfile              # Container definition
 ```
 
 ## Troubleshooting
 
-  * **"Unauthorized" Socket Error:** Ensure you have logged in via `/login.html`.
-  * **Database Locked:** Ensure only one process is writing to `fenz.db`.
-  * **Custom Images not loading:**
-      * **Docker:** Ensure your local folder is named correctly and contains `logo.png`.
-      * **Cloud Run:** Check the Cloud Run logs to see if `wget` failed to download the image from the URL provided (e.g., 403 Forbidden).
+  * **"Unauthorized" Socket Error:** Ensure you have logged in via the login page; direct API access is blocked.
+  * **Scraper returns 0 results:**
+      * Check your `DASHBOARD_URL`.
+      * If outside NZ, ensure `PROXY_MODE` is set correctly. Check the web console for "Proxy verification" logs.
+  * **Database Locked:** SQLite allows only one writer at a time. Ensure you don't have the `fenz.db` file open in a viewer while the app is writing.
 
-<!-- end list -->
+## Credits
 
+  * **Project Lead & Developer:** Gerardo Dassi
+  * **Litestream:** Used for SQLite replication in serverless environments.
+  * **Icons:** Provided by [Feather Icons](https://feathericons.com/).
 
+## License
+
+This project is licensed under the **MIT License**.
+
+```text
+MIT License
+
+Copyright (c) 2025 Gerardo Dassi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
