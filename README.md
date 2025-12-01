@@ -1,11 +1,12 @@
 
+
 # FENZ OSM Manager
 
   
 
 ## Description
 
-**FENZ OSM Automation Manager** is a Node.js web application designed to streamline the tracking and management of expiring Operational Skills Maintenance (OSM) competencies.
+**FENZ OSM Manager** is a Node.js web application designed to streamline the tracking and management of expiring Operational Skills Maintenance (OSM) competencies.
 
 It automates the process of checking a dashboard for expiring skills, persists data via a local SQLite database, and provides a secure web interface for administrators to send targeted email reminders. Unlike previous versions, this application manages all members, skills, and configurations dynamically via the web interface—no code editing required.
 
@@ -23,17 +24,17 @@ It automates the process of checking a dashboard for expiring skills, persists d
 
 ## Table of Contents
 
-  * [Prerequisites](https://www.google.com/search?q=%23prerequisites)
-  * [Installation](https://www.google.com/search?q=%23installation)
-  * [Configuration](https://www.google.com/search?q=%23configuration)
-  * [UI Customization](https://www.google.com/search?q=%23ui-customization)
-  * [Usage](https://www.google.com/search?q=%23usage)
-  * [Docker Deployment](https://www.google.com/search?q=%23docker-deployment)
-  * [Google Cloud Run Deployment](https://www.google.com/search?q=%23google-cloud-run-deployment)
-  * [Project Structure](https://www.google.com/search?q=%23project-structure)
-  * [Troubleshooting](https://www.google.com/search?q=%23troubleshooting)
-  * [Credits](https://www.google.com/search?q=%23credits)
-  * [License](https://www.google.com/search?q=%23license)
+  * [Prerequisites](%23prerequisites)
+  * [Installation](%23installation)
+  * [Configuration](%23configuration)
+  * [UI Customization](%23ui-customization)
+  * [Usage](%23usage)
+  * [Docker Deployment](%23docker-deployment)
+  * [Google Cloud Run Deployment](%23google-cloud-run-deployment)
+  * [Project Structure](%23project-structure)
+  * [Troubleshooting](%23troubleshooting)
+  * [Credits](%23credits)
+  * [License](%23license)
 
 ## Prerequisites
 
@@ -95,11 +96,58 @@ Open the `.env` file you just created and configure the following parameters:
 
 ## UI Customization
 
-You can customize the branding (Logo, Background, and Title) via environment variables.
+You can fully customize the look and feel of the application (Logo, Background, and Login Title) to match your station's branding. This is handled differently depending on your deployment method.
 
-  * `UI_LOGIN_TITLE`: Custom text for the login screen (e.g., "Station 44 OSM Manager").
-  * `UI_RESOURCES_PATH`: (Docker/Local) Path to a folder containing `logo.png` and `background.png`.
-  * `UI_LOGO_URL` / `UI_BACKGROUND_URL`: (Cloud Run) Public URLs to download images on boot.
+### 1\. Customizing the Title
+
+For all deployments, simply change the `UI_LOGIN_TITLE` variable in your `.env` file:
+
+```bash
+UI_LOGIN_TITLE="Station 44 OSM Manager"
+```
+
+### 2\. Customizing Images (Local / Docker)
+
+When running locally or via Docker Compose, you can replace the default images by "mounting" a local folder containing your custom assets.
+
+**Step 1: Create a branding folder**
+Create a new folder anywhere on your computer (e.g., inside the project root). Let's call it `my-branding`.
+
+```bash
+mkdir my-branding
+```
+
+**Step 2: Add your images**
+Place your custom images inside this folder. They **must** be named exactly as follows:
+
+  * `logo.png` (The logo shown on the login screen)
+  * `background.png` (The full-screen background image)
+
+> **[Image Placeholder]:** *A screenshot of the file explorer showing the `my-branding` folder containing `logo.png` and `background.png`.*
+
+**Step 3: Update configuration**
+Open your `.env` file and set the `UI_RESOURCES_PATH` variable to point to your new folder.
+
+  * **Relative Path:** `UI_RESOURCES_PATH=./my-branding` (Recommended if folder is in project root)
+  * **Absolute Path:** `UI_RESOURCES_PATH=/Users/username/documents/osm-branding`
+
+**Step 4: Restart**
+Restart your Docker container or Node process. The application will now serve files from your custom folder instead of the default `public/resources` directory.
+
+```bash
+docker compose up -d
+```
+
+### 3\. Customizing Images (Cloud Run)
+
+Since Cloud Run is stateless, you cannot mount a local folder. Instead, you must host your images publicly (e.g., on Google Cloud Storage, Imgur, or your station's website) and provide the URLs.
+
+Add these variables to your Cloud Run deployment environment:
+
+  * `UI_LOGO_URL`: `https://example.com/images/station-logo.png`
+  * `UI_BACKGROUND_URL`: `https://example.com/images/station-bg.jpg`
+
+The application will automatically download these images every time a new container starts.
 
 ## Usage
 
@@ -117,18 +165,21 @@ node server.js
 
 1.  **Login**: Access `http://localhost:3000` and log in.
 
-    ![A screenshot of the login page showing the custom title and background image.](assets/login.jpg)
+     ![The login page showing the custom title and background image.](assets/login.jpg)
 
 2.  **Manage Data**: Before using the dashboard, use the **Menu** (top right) to populate your database.
 
       * **Manage Members**: Import a CSV of your team or add them manually.
+     ![The "Manage Members" page showing the table with member Name, Email, Mobile.](assets/members.jpg) 
+
+
       * **Manage Skills**: Add the specific skill names (must match OSM exactly) you want to track. You can add Google Form URLs here.
 
-    > **[Image Placeholder]:** *A screenshot of the "Manage Skills" page showing the table with Skill Name, Critical status, and Form URL columns.*
+     ![The "Manage Skills" page showing the table with Skill Name, Critical status, and Form URL columns.](assets/skills.jpg) 
 
 3.  **Configure Emails**: Go to **Email Templates** to customize the message your members receive.
 
-    > **[Image Placeholder]:** *A screenshot of the Email Templates editor showing the drag-and-drop chips for {{skill}} and {{date}}.*
+     ![The Email Templates editor showing the drag-and-drop chips for {{skill}} and {{date}}.](assets/email-template.jpg)  
 
 4.  **Run Dashboard**:
 
@@ -136,7 +187,7 @@ node server.js
       * Click **Reload Expiring Skills** to scrape the live dashboard.
       * Select members from the list and click **Send Emails**.
 
-    > **[Image Placeholder]:** *A screenshot of the main Dashboard with the "Expiring Skills Report" table populated and the console log visible at the bottom.*
+    ![The main Dashboard with the "Expiring Skills Report" table populated and the console log visible at the bottom.](assets/main.jpg)
 
 ## Docker Deployment
 
@@ -168,7 +219,7 @@ See [Installation on Google Run](Installation_google_run.md) for detailed deploy
 ├── server.js               # Main Express Web Server & API entry point
 ├── fenz.db                 # SQLite Database (Stores members, skills, history)
 ├── config.js               # Configuration loader
-├── start.sh                # Startup Script (Litestream Restore & Init)
+├──VB start.sh              # Startup Script (Litestream Restore & Init)
 ├── public/                 # Frontend Assets
 │   ├── index.html          # Main Dashboard
 │   ├── members.html        # Member Management UI
