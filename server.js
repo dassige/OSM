@@ -347,7 +347,7 @@ io.on('connection', (socket) => {
                     try {
                         await sendNotification(
                             member,
-                            config.emailInfo,
+                            templateConfig,
                             config.transporter,
                             false,
                             logger

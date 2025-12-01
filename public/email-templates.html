@@ -14,9 +14,14 @@
         
         .help-text { font-size: 0.85em; color: #666; margin-top: 5px; background: #f9f9f9; padding: 10px; border-radius: 4px; border: 1px solid #eee; }
         
-        /* Save Button */
+        /* Buttons */
+        .btn-container { text-align: right; margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+        
         .btn-save { background-color: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; transition: background 0.2s; }
         .btn-save:hover { background-color: #218838; }
+
+        .btn-secondary { background-color: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; transition: background 0.2s; }
+        .btn-secondary:hover { background-color: #5a6268; }
         
         /* Back Button */
         .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.15); transition: all 0.2s ease; }
@@ -106,7 +111,10 @@
                 </div>
             </div>
 
-            <div style="text-align: right; margin-top: 20px;">
+            <div class="btn-container">
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+                <button type="button" class="btn-secondary" onclick="document.getElementById('importFile').click()">Import JSON</button>
+                <button type="button" class="btn-secondary" onclick="exportTemplate()">Export JSON</button>
                 <button type="submit" class="btn-save">Save Configuration</button>
             </div>
         </form>
@@ -178,7 +186,64 @@
             return wrapper.innerHTML;
         }
 
-        // --- 2. Initialization ---
+        // --- 2. Export / Import Functions ---
+
+        function exportTemplate() {
+            // 1. Get raw HTML (with chips) from editors
+            const introRaw = tinymce.get('emailIntro').getContent();
+            const rowRaw = tinymce.get('emailRow').getContent();
+
+            // 2. Convert chips to storage text format ({{key}})
+            const exportData = {
+                emailFrom: document.getElementById('emailFrom').value,
+                emailSubject: document.getElementById('emailSubject').value,
+                emailIntro: chipsToText(introRaw),
+                emailRow: chipsToText(rowRaw),
+                exportedAt: new Date().toISOString()
+            };
+
+            // 3. Create blob and download
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "email_template.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        document.getElementById('importFile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Populate Fields
+                    if(data.emailFrom) document.getElementById('emailFrom').value = data.emailFrom;
+                    if(data.emailSubject) document.getElementById('emailSubject').value = data.emailSubject;
+                    
+                    // Populate Editors (Convert Text -> Chips)
+                    if(data.emailIntro && tinymce.get('emailIntro')) {
+                        tinymce.get('emailIntro').setContent(textToChips(data.emailIntro));
+                    }
+                    if(data.emailRow && tinymce.get('emailRow')) {
+                        tinymce.get('emailRow').setContent(textToChips(data.emailRow));
+                    }
+
+                    alert('Template imported successfully! Click "Save Configuration" to apply changes.');
+                } catch(err) {
+                    alert('Error parsing JSON file: ' + err.message);
+                }
+                // Reset input so same file can be selected again
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        // --- 3. Initialization ---
 
         async function init() {
             try {
@@ -202,14 +267,12 @@
                 document.getElementById('emailIntro').value = textToChips(rawIntro);
                 document.getElementById('emailRow').value = textToChips(rawRow);
 
-                // --- 3. TinyMCE Configuration (Expanded + Clean) ---
+                // --- 4. TinyMCE Configuration (Expanded + Clean) ---
                 tinymce.init({
                     selector: '#emailRow, #emailIntro',
                     height: 350,
-                    menubar: false, // CHANGED: Disable Menu Bar
-                    // Expanded Plugin List
+                    menubar: false,
                     plugins: 'preview importcss searchreplace autolink autosave save directionality visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
-                    // Expanded Toolbar (Grouped)
                     toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | ' +
                         'alignleft aligncenter alignright alignjustify | ' +
                         'outdent indent |  numlist bullist | ' +
@@ -248,7 +311,7 @@
             } catch (e) { console.error("Init failed", e); }
         }
 
-        // --- 4. External Drag & Drop Logic ---
+        // --- 5. External Drag & Drop Logic ---
         function setupDragAndDrop() {
             const items = document.querySelectorAll('.draggable-item');
             
@@ -264,7 +327,7 @@
             });
         }
 
-        // --- 5. Save Handler ---
+        // --- 6. Save Handler ---
         document.getElementById('templateForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
