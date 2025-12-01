@@ -28,8 +28,9 @@ jobs:
 
       - name: Update versionDate in package.json
         run: |
-          # 1. Get today's date
-          NEW_DATE=$(date +'%Y-%m-%d')
+          # 1. Get today's date in NZ Time
+          # We use TZ='Pacific/Auckland' to ensure it reflects the correct day in NZ
+          NEW_DATE=$(TZ='Pacific/Auckland' date +'%Y-%m-%d')
           
           # 2. Use 'npm pkg set' to securely update the field
           npm pkg set versionDate="$NEW_DATE"
@@ -47,7 +48,8 @@ jobs:
           # Check if anything actually changed to avoid empty commit errors
           if [[ -n $(git status --porcelain) ]]; then
             git add package.json
-            git commit -m "chore: update versionDate to $(date +'%Y-%m-%d') [skip ci]"
+            # Use the same timezone for the commit message
+            git commit -m "chore: update versionDate to $(TZ='Pacific/Auckland' date +'%Y-%m-%d') [skip ci]"
             git push
           else
             echo "No changes to commit"

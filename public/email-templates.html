@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Templates - FENZ OSM</title>
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <title id="pageTitle">Email Templates - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="no-referrer"></script>
     <style>
@@ -74,7 +75,7 @@
     </a>
 
     <div class="container">
-        <h1>Email Templates</h1>
+        <h1 id="pageHeader">Email Templates</h1>
         <p>Customize the automated emails sent to members.</p>
 
         <form id="templateForm">
@@ -251,6 +252,15 @@
                 const uiRes = await fetch('/ui-config');
                 if (uiRes.ok) {
                     const uiConfig = await uiRes.json();
+                    
+                    // --- UPDATE TITLE & HEADER ---
+                    if (uiConfig.loginTitle) {
+                        const titleEl = document.getElementById('pageTitle');
+                        const headerEl = document.getElementById('pageHeader');
+                        if (titleEl) titleEl.innerText = "Email Templates - " + uiConfig.loginTitle;
+                        if (headerEl) headerEl.innerText = "Email Templates - " + uiConfig.loginTitle;
+                    }
+
                     if (uiConfig.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
                 }
 

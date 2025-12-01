@@ -368,6 +368,17 @@ socket.on('expiring-skills-data', (data) => {
 fetch('/ui-config')
     .then(response => response.json())
     .then(config => {
+        //  Set Title and Header ---
+        if (config.loginTitle) {
+            // Update the Browser Tab Title
+            const pageTitle = document.getElementById('pageTitle');
+            if (pageTitle) pageTitle.innerText = config.loginTitle;
+
+            // Update the Page Header (H1)
+            const mainHeader = document.getElementById('mainHeader');
+            if (mainHeader) mainHeader.innerText = config.loginTitle;
+        }
+
         if (config.appBackground) {
             document.body.style.backgroundImage = `url('${config.appBackground}')`;
         }

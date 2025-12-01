@@ -15,7 +15,7 @@ Based on the current codebase, here is a suggested `improvement.md` file outlini
 ## 3. Frontend Enhancements
 
 - **Modern Framework**: If complexity grows, migrating the vanilla HTML/JS to a lightweight framework like Vue.js or React would make state management (handling the `skillsTable` and socket events) cleaner.
-- **Readme**: complete with cretits, blah, blah
+- **Readme**: complete with credits, blah, blah
 
 
 ## 4. Reliability & Testing
@@ -27,4 +27,3 @@ Based on the current codebase, here is a suggested `improvement.md` file outlini
 ## 5. New Features
 
 - **Scheduled Automation**: Instead of requiring a manual button press, integrate a scheduler (like `node-cron`) to automatically check and send emails on a weekly/monthly basis.
-- **Email Templating**: Move the hardcoded HTML strings in `sendMessage` to a template engine (EJS or Handlebars) to allow for easier design changes without touching code.
