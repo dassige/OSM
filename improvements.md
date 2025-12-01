@@ -1,6 +1,3 @@
-Based on the current codebase, here is a suggested `improvement.md` file outlining potential future enhancements for the FENZ OSM application.
-
-***
 
 # Future Improvements
 
@@ -15,7 +12,6 @@ Based on the current codebase, here is a suggested `improvement.md` file outlini
 ## 3. Frontend Enhancements
 
 - **Modern Framework**: If complexity grows, migrating the vanilla HTML/JS to a lightweight framework like Vue.js or React would make state management (handling the `skillsTable` and socket events) cleaner.
-- **Readme**: complete with credits, blah, blah
 
 
 ## 4. Reliability & Testing
@@ -23,7 +19,7 @@ Based on the current codebase, here is a suggested `improvement.md` file outlini
     - Test the `checkExpiringSkills` logic to ensure date math is always correct.
     - Mock the scraper to test parser logic without hitting the live dashboard.
 
-
 ## 5. New Features
 
 - **Scheduled Automation**: Instead of requiring a manual button press, integrate a scheduler (like `node-cron`) to automatically check and send emails on a weekly/monthly basis.
+- **Whatsapp and Messenger integration**: in addition to send emails, the user will be able to send whatsapp messages to mobiles or messages to Facebook Messenger

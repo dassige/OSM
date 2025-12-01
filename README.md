@@ -244,6 +244,10 @@ See [Installation on Google Cloud Run](Installation_google_run.md) for detailed 
       * If outside NZ, ensure `PROXY_MODE` is set correctly. Check the web console for "Proxy verification" logs.
   * **Database Locked:** SQLite allows only one writer at a time. Ensure you don't have the `fenz.db` file open in a viewer while the app is writing.
 
+## Future Improvements
+
+See [Future Improvements](improvements.md) for a list of desired features.
+
 ## Credits
 
   * **Project Lead & Developer:** Gerardo Dassi
