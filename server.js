@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
 const session = require('express-session');
+const multer = require('multer');
+const fs = require('fs');
 
 // Configuration
 const config = require('./config.js');
@@ -22,6 +24,9 @@ const sessionMiddleware = session({
     saveUninitialized: false,
     cookie: { secure: false }
 });
+
+// --- UPLOAD CONFIGURATION ---
+const upload = multer({ dest: 'uploads/' }); // Temp folder for uploads
 
 app.use(sessionMiddleware);
 app.use(express.json());
@@ -203,6 +208,52 @@ app.delete('/api/skills/:id', async (req, res) => {
         await db.deleteSkill(req.params.id);
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- API: SYSTEM TOOLS ---
+
+// 1. Backup Database
+app.get('/api/system/backup', (req, res) => {
+    if (!req.session || !req.session.loggedIn) return res.status(401).send("Unauthorized");
+
+    const dbPath = db.getDbPath();
+    const date = new Date().toISOString().split('T')[0];
+    const domain = req.get('host').replace(/[:\/]/g, '-');
+    
+    // We append the version to the filename for easier user identification
+    const packageJson = require('./package.json');
+    const version = packageJson.version;
+    const filename = `fenz-osm-backup-v${version}-${date}-${domain}.db`;
+
+    res.download(dbPath, filename, (err) => {
+        if (err) {
+            console.error("Backup download error:", err);
+            if (!res.headersSent) res.status(500).send("Could not download database.");
+        }
+    });
+});
+
+// 2. Restore Database
+app.post('/api/system/restore', upload.single('databaseFile'), async (req, res) => {
+    if (!req.session || !req.session.loggedIn) return res.status(401).json({ error: "Unauthorized" });
+
+    if (!req.file) return res.status(400).json({ error: "No file uploaded." });
+
+    const tempPath = req.file.path;
+
+    try {
+        await db.verifyAndReplaceDb(tempPath);
+        
+        // Cleanup temp file
+        if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+        
+        res.json({ success: true, message: "Database restored successfully. System reloaded." });
+    } catch (e) {
+        // Cleanup temp file even on error
+        if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+        
+        res.status(500).json({ error: e.message });
+    }
 });
 
 app.use(express.static('public'));

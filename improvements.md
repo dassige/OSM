@@ -11,6 +11,7 @@
 
 ## 3. Frontend Enhancements
 
+- **Online Help**:
 - **Modern Framework**: If complexity grows, migrating the vanilla HTML/JS to a lightweight framework like Vue.js or React would make state management (handling the `skillsTable` and socket events) cleaner.
 
 
@@ -22,4 +23,9 @@
 ## 5. New Features
 
 - **Scheduled Automation**: Instead of requiring a manual button press, integrate a scheduler (like `node-cron`) to automatically check and send emails on a weekly/monthly basis.
+
 - **Whatsapp and Messenger integration**: in addition to send emails, the user will be able to send whatsapp messages to mobiles or messages to Facebook Messenger
+
+- **Events logging**: the app should log all the relevant events:
+   - adding, deleting,editing members/skills
+   - sending emails and their data

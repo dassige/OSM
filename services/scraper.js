@@ -50,7 +50,7 @@ async function getOIData(url, intervalMinutes = 0, proxyUrl = null, logger = con
 
     // 2. Scrape Data
     try {
-        logger(`[${getTime()}] [Scraper] Starting Request to ${url}`);
+        logger(`[${getTime()}] [Scraper] Starting Request `);
         const response = await axios.get(url, axiosConfig);
         
         // ... (Rest of the parsing logic remains the same)

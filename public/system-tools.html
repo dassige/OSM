@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <title id="pageTitle">System Tools - FENZ OSM</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .container { max-width: 800px; margin: 0 auto; padding-top: 40px; }
+        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); transition: all 0.2s ease; }
+        .back-btn:hover { background-color: #23272b; transform: translateY(-2px); }
+        
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 30px; }
+        .card h2 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; color: #333; }
+        .card p { color: #666; line-height: 1.5; }
+        
+        .btn-action { padding: 12px 24px; font-size: 16px; border: none; border-radius: 4px; cursor: pointer; color: white; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+        .btn-download { background-color: #007bff; }
+        .btn-download:hover { background-color: #0056b3; }
+        .btn-upload { background-color: #dc3545; }
+        .btn-upload:hover { background-color: #c82333; }
+        
+        .file-input-wrapper { margin: 20px 0; border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 6px; transition: border-color 0.2s; }
+        .file-input-wrapper:hover { border-color: #999; }
+        
+        .status-msg { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; }
+        .status-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-btn" title="Back to Dashboard">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </a>
+
+    <div class="container">
+        <h1 id="pageHeader">System Tools</h1>
+
+        <div class="card">
+            <h2>Backup Database</h2>
+            <p>Download a snapshot of the current system database (<code>fenz.db</code>). This file contains all members, skills configuration, email history, and preferences.</p>
+            <div style="margin-top: 20px;">
+                <a href="/api/system/backup" class="btn-action btn-download" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download Backup
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Restore Database</h2>
+            <p style="color: #dc3545; font-weight: bold;">⚠️ Warning: This will overwrite the current database!</p>
+            <p>Upload a previously backed-up <code>.db</code> file. <br><strong>Note:</strong> The uploaded database MUST match the current application version.</p>
+            
+            <form id="restoreForm">
+                <div class="file-input-wrapper">
+                    <input type="file" id="dbFile" name="databaseFile" accept=".db, .sqlite" required>
+                </div>
+                
+                <button type="submit" class="btn-action btn-upload" id="restoreBtn">
+                    <span class="spinner" id="restoreSpinner"></span>
+                    <svg id="restoreIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    Restore Database
+                </button>
+            </form>
+
+            <div id="statusMsg" class="status-msg"></div>
+        </div>
+    </div>
+
+    <script>
+        // Init UI Config
+        fetch('/ui-config')
+            .then(r => r.json())
+            .then(c => {
+                if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+                if (c.loginTitle) {
+                    document.getElementById('pageTitle').innerText = "System Tools - " + c.loginTitle;
+                    document.getElementById('pageHeader').innerText = "System Tools";
+                }
+            });
+
+        // Restore Logic
+        document.getElementById('restoreForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if(!confirm("Are you sure you want to restore the database? Current data will be lost.")) return;
+
+            const btn = document.getElementById('restoreBtn');
+            const spinner = document.getElementById('restoreSpinner');
+            const icon = document.getElementById('restoreIcon');
+            const statusBox = document.getElementById('statusMsg');
+            const fileInput = document.getElementById('dbFile');
+
+            // UI Loading State
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            icon.style.display = 'none';
+            statusBox.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('databaseFile', fileInput.files[0]);
+
+            try {
+                const res = await fetch('/api/system/restore', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await res.json();
+                
+                statusBox.style.display = 'block';
+                if (res.ok) {
+                    statusBox.className = 'status-msg status-success';
+                    statusBox.textContent = result.message;
+                    // Reset form
+                    fileInput.value = '';
+                } else {
+                    throw new Error(result.error || 'Unknown error occurred');
+                }
+
+            } catch (err) {
+                statusBox.style.display = 'block';
+                statusBox.className = 'status-msg status-error';
+                statusBox.textContent = err.message;
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                icon.style.display = 'inline-block';
+            }
+        });
+    </script>
+</body>
+</html>

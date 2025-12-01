@@ -1,27 +1,24 @@
 /******************************************
  * ATTENTION!
- * REMEMBER:
  * MEMBERS NAMES AND SKILLS NAMES MUST BE EXACTLY AS THEY APPEAR IN THE OFFICIAL OSM SYSTEM
- * 
  ********************************/
-
 
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const path = require('path');
+const packageJson = require('../package.json'); // Import to access app version
 
 let db;
 
 // Initialize the Database
 async function initDB() {
     if (db) return db;
-    //Allow overriding the path via environment variable
     const dbPath = process.env.DB_PATH || path.join(__dirname, '../fenz.db');
     console.log(`[DB] Opening database at: ${dbPath}`);
     
     try {
         db = await open({
-            filename: path.join(__dirname, '../fenz.db'),
+            filename: dbPath,
             driver: sqlite3.Database
         });
 
@@ -34,6 +31,16 @@ async function initDB() {
                 value TEXT
             );
         `);
+
+        // --- VERSION STAMPING (NEW) ---
+        // Every time the app starts, we ensure the DB knows which app version is running it.
+        // This is crucial for the "Same Version" compatibility check during restore.
+        await db.run(
+            `INSERT INTO preferences (key, value) VALUES (?, ?) 
+             ON CONFLICT(key) DO UPDATE SET value=excluded.value`,
+            'app_version', packageJson.version
+        );
+        console.log(`[DB] Database version stamp updated to: ${packageJson.version}`);
 
         // 2. Email History Table
         await db.exec(`
@@ -58,7 +65,7 @@ async function initDB() {
             );
         `);
 
-        // 4. Skills Table (NEW)
+        // 4. Skills Table
         await db.exec(`
             CREATE TABLE IF NOT EXISTS skills (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -174,12 +181,10 @@ async function bulkDeleteMembers(ids) {
     }
 }
 
-// --- Skill Management Methods (NEW) ---
+// --- Skill Management Methods ---
 
 async function getSkills() {
     if (!db) await initDB();
-    // Return skills. Map SQLite integer (0/1) back to boolean if needed by frontend logic,
-    // though JS handles 0/1 as falsy/truthy well.
     const skills = await db.all('SELECT * FROM skills ORDER BY name ASC');
     return skills.map(s => ({ ...s, critical_skill: !!s.critical_skill }));
 }
@@ -239,13 +244,95 @@ async function bulkDeleteSkills(ids) {
     }
 }
 
+// --- System Tools Methods (NEW) ---
+
+async function closeDB() {
+    if (db) {
+        console.log('[DB] Closing database connection...');
+        await db.close();
+        db = null;
+    }
+}
+
+async function verifyAndReplaceDb(newDbPath) {
+    let tempDb;
+    try {
+        console.log(`[DB] Verifying integrity of uploaded file: ${newDbPath}`);
+        tempDb = await open({
+            filename: newDbPath,
+            driver: sqlite3.Database
+        });
+
+        // 1. Check for required tables
+        const tables = await tempDb.all("SELECT name FROM sqlite_master WHERE type='table'");
+        const tableNames = tables.map(t => t.name);
+        const requiredTables = ['members', 'skills', 'preferences'];
+        const missing = requiredTables.filter(t => !tableNames.includes(t));
+
+        if (missing.length > 0) {
+            throw new Error(`Incompatible Database. Missing tables: ${missing.join(', ')}`);
+        }
+
+        // 2. Strict Version Check
+        let dbVersion = '0.0.0'; // Default if missing (legacy db)
+        try {
+            const row = await tempDb.get("SELECT value FROM preferences WHERE key = 'app_version'");
+            if (row && row.value) {
+                // Determine if stored as JSON string (quoted) or plain text
+                /* If the DB was saved by this code, it's a string inside a column. 
+                   sqlite driver returns the text. e.g. "1.1.8" or 1.1.8 depending on storage.
+                   Since we store it as text, it should be fine. */
+                dbVersion = row.value;
+            }
+        } catch (e) {
+            console.warn('[DB] Could not read app_version from uploaded DB');
+        }
+
+        const currentVersion = packageJson.version;
+        
+        console.log(`[DB] Compatibility Check: Uploaded Version [${dbVersion}] vs Current App Version [${currentVersion}]`);
+
+        if (dbVersion !== currentVersion) {
+            throw new Error(`Version Mismatch! The uploaded database is version ${dbVersion}, but this app is version ${currentVersion}. They MUST be the same.`);
+        }
+
+        await tempDb.close();
+    } catch (e) {
+        if (tempDb) await tempDb.close(); 
+        throw e; // Propagate error to controller
+    }
+
+    // 3. Replace File
+    await closeDB();
+
+    const fs = require('fs');
+    const currentDbPath = process.env.DB_PATH || path.join(__dirname, '../fenz.db');
+    
+    try {
+        console.log(`[DB] Replacing ${currentDbPath} with verified data...`);
+        fs.copyFileSync(newDbPath, currentDbPath);
+        
+        // 4. Re-initialize
+        await initDB();
+        return true;
+    } catch (e) {
+        console.error('[DB] Restore failed during file copy:', e);
+        await initDB(); 
+        throw e;
+    }
+}
+
+function getDbPath() {
+    return process.env.DB_PATH || path.join(__dirname, '../fenz.db');
+}
+
 module.exports = {
     initDB,
     getPreferences,
     savePreference,
     logEmailAction,
-    // Members
     getMembers, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers,
-    // Skills
-    getSkills, addSkill, bulkAddSkills, updateSkill, deleteSkill, bulkDeleteSkills
+    getSkills, addSkill, bulkAddSkills, updateSkill, deleteSkill, bulkDeleteSkills,
+    // System
+    closeDB, verifyAndReplaceDb, getDbPath
 };
