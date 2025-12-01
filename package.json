@@ -1,8 +1,8 @@
 {
   "name": "fenz-osm",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "FENZ OSM Automation Manager",
-  "versionDate": "2025-12-01",
+  "versionDate": "2025-12-02",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -22,12 +22,12 @@
     "http": "^0.0.1-security",
     "https": "^1.0.0",
     "https-proxy-agent": "^5.0.1",
+    "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.4",
     "path": "^0.12.7",
     "socket.io": "^4.7.2",
     "socket.io-client": "^4.7.2",
     "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7",
-    "multer": "^1.4.5-lts.1"
+    "sqlite3": "^5.1.7"
   }
 }
