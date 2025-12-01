@@ -1,5 +1,5 @@
 
-# FENZ OSM Automation Manager
+# FENZ OSM Manager
 
   
 
