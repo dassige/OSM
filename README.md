@@ -24,17 +24,17 @@ It automates the process of checking a dashboard for expiring skills, persists d
 
 ## Table of Contents
 
-  * [Prerequisites](%23prerequisites)
-  * [Installation](%23installation)
-  * [Configuration](%23configuration)
-  * [UI Customization](%23ui-customization)
-  * [Usage](%23usage)
-  * [Docker Deployment](%23docker-deployment)
-  * [Google Cloud Run Deployment](%23google-cloud-run-deployment)
-  * [Project Structure](%23project-structure)
-  * [Troubleshooting](%23troubleshooting)
-  * [Credits](%23credits)
-  * [License](%23license)
+  * [Prerequisites](#prerequisites)
+  * [Installation](#installation)
+  * [Configuration](#configuration)
+  * [UI Customization](#ui-customization)
+  * [Usage](#usage)
+  * [Docker Deployment](#docker-deployment)
+  * [Google Cloud Run Deployment](#google-cloud-run-deployment)
+  * [Project Structure](#project-structure)
+  * [Troubleshooting](#troubleshooting)
+  * [Credits](#credits)
+  * [License](#license)
 
 ## Prerequisites
 
@@ -168,7 +168,9 @@ node server.js
      ![The login page showing the custom title and background image.](assets/login.jpg)
 
 2.  **Manage Data**: Before using the dashboard, use the **Menu** (top right) to populate your database.
-
+   
+     ![The menu on main Dashboard.](assets/menu.jpg)
+    
       * **Manage Members**: Import a CSV of your team or add them manually.
      ![The "Manage Members" page showing the table with member Name, Email, Mobile.](assets/members.jpg) 
 
@@ -177,11 +179,11 @@ node server.js
 
      ![The "Manage Skills" page showing the table with Skill Name, Critical status, and Form URL columns.](assets/skills.jpg) 
 
-3.  **Configure Emails**: Go to **Email Templates** to customize the message your members receive.
+4.  **Configure Emails**: Go to **Email Templates** to customize the message your members receive.
 
-     ![The Email Templates editor showing the drag-and-drop chips for {{skill}} and {{date}}.](assets/email-template.jpg)  
+     ![The Email Templates editor showing the drag-and-drop chips for {{skill}} and {{date}}.](assets/email-templates.jpg)  
 
-4.  **Run Dashboard**:
+5.  **Run Dashboard**:
 
       * Return to the **Home** screen.
       * Click **Reload Expiring Skills** to scrape the live dashboard.
@@ -210,7 +212,7 @@ This application supports stateless deployment on Google Cloud Run by using Lite
 2.  It continuously backs up `fenz.db` to a Google Cloud Storage Bucket.
 3.  On startup, it restores the latest database from the bucket.
 
-See [Installation on Google Run](Installation_google_run.md) for detailed deployment commands.
+See [Installation on Google Cloud Run](Installation_google_run.md) for detailed deployment commands.
 
 ## Project Structure
 
