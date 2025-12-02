@@ -26,6 +26,4 @@
 
 - **Whatsapp and Messenger integration**: in addition to send emails, the user will be able to send whatsapp messages to mobiles or messages to Facebook Messenger
 
-- **Events logging**: the app should log all the relevant events:
-   - adding, deleting,editing members/skills
-   - sending emails and their data
+

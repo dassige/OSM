@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +7,6 @@
     <title id="pageTitle">Member Management - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* ... (Keep existing styles) ... */
-        /* Page Layout */
         body { position: relative; }
         .container { max-width: 1000px; margin: 0 auto; padding-top: 40px; }
         h1 { text-align: center; margin-bottom: 30px; }
@@ -48,14 +45,9 @@
         .cb-col { width: 40px; text-align: center; }
     </style>
 </head>
-
 <body>
     <a href="/" class="back-btn" title="Back to Dashboard">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
     </a>
 
     <div class="container">
@@ -63,25 +55,16 @@
         <input type="file" id="csvInput" accept=".csv" style="display: none;" onchange="handleFileUpload(this)">
 
         <div id="tableContainer" style="display: block;">
-
             <div class="table-toolbar">
-                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger"
-                    style="display: none; margin-right: auto;">Delete Selected</button>
-
+                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger" style="display: none; margin-right: auto;">Delete Selected</button>
                 <button onclick="exportToCSV()" class="btn-secondary">Export CSV</button>
-
                 <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
                 <button onclick="openModal()" class="btn-primary">Add Member</button>
             </div>
             <div class="help-bar">
                 <div class="help-container" onclick="openHelpModal()" title="Click for CSV format details">
                     <button class="btn-icon info">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                     </button>
                     <span class="help-label">CSV Format Help</span>
                 </div>
@@ -90,19 +73,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
-                        </th>
-
-                        <th class="sortable" onclick="handleSort('name')">
-                            <div class="th-content">Name (OSM) <span id="icon-name" class="sort-icon"></span></div>
-                        </th>
-                        <th class="sortable" onclick="handleSort('email')">
-                            <div class="th-content">Email <span id="icon-email" class="sort-icon"></span></div>
-                        </th>
-                        <th class="sortable" onclick="handleSort('mobile')">
-                            <div class="th-content">Mobile <span id="icon-mobile" class="sort-icon"></span></div>
-                        </th>
-
+                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
+                        <th class="sortable" onclick="handleSort('name')"><div class="th-content">Name (OSM) <span id="icon-name" class="sort-icon"></span></div></th>
+                        <th class="sortable" onclick="handleSort('email')"><div class="th-content">Email <span id="icon-email" class="sort-icon"></span></div></th>
+                        <th class="sortable" onclick="handleSort('mobile')"><div class="th-content">Mobile <span id="icon-mobile" class="sort-icon"></span></div></th>
                         <th style="width: 100px; text-align: center;">Actions</th>
                     </tr>
                 </thead>
@@ -112,11 +86,7 @@
     </div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="19" x2="12" y2="5"></line>
-            <polyline points="5 12 12 5 19 12"></polyline>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
     </button>
 
     <div id="memberModal" class="modal">
@@ -125,18 +95,9 @@
             <h2 id="modalTitle">Add Member</h2>
             <form id="memberForm">
                 <input type="hidden" id="memberId">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="name" required placeholder="Exact name as seen in OSM Dashboard">
-                </div>
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <input type="email" id="email" required>
-                </div>
-                <div class="form-group">
-                    <label>Mobile (Optional)</label>
-                    <input type="text" id="mobile">
-                </div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="name" required placeholder="Exact name as seen in OSM"></div>
+                <div class="form-group"><label>Email Address</label><input type="email" id="email" required></div>
+                <div class="form-group"><label>Mobile (Optional)</label><input type="text" id="mobile"></div>
                 <div style="text-align: right; margin-top: 20px;">
                     <button type="button" onclick="closeModal('memberModal')" class="btn-secondary">Cancel</button>
                     <button type="submit" class="btn-primary">Save</button>
@@ -144,26 +105,20 @@
             </form>
         </div>
     </div>
-
     <div id="helpModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('helpModal')">&times;</span>
             <h2>CSV File Format</h2>
-            <p>Your CSV file must include headers on the first line. The columns can be in any order.</p>
             <p><strong>Required:</strong> <code>name</code>, <code>email</code></p>
-            <p><strong>Handling Commas:</strong> If a name contains a comma, wrap it in quotes.</p>
             <div class="code-block">name,email,mobile
-                "Doe, John",john@example.com,021123
-                Jane Smith,jane@test.com,</div>
-            <br>
-            <button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
+"Doe, John",john@example.com,021123</div>
+            <br><button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
         </div>
     </div>
 
     <script>
         let currentMembers = [];
         let currentSort = { column: 'name', order: 'asc' };
-
         const ICON_ASC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
         const ICON_DESC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
         const ICON_NONE = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5"/><path d="M7 9l5-5 5 5"/></svg>';
@@ -173,24 +128,18 @@
                 const uiRes = await fetch('/ui-config');
                 if (uiRes.ok) {
                     const uiConfig = await uiRes.json();
-                    
-                    // --- UPDATE TITLE & HEADER ---
                     if (uiConfig.loginTitle) {
-                        const titleEl = document.getElementById('pageTitle');
-                        const headerEl = document.getElementById('pageHeader');
-                        if (titleEl) titleEl.innerText = "Member Management - " + uiConfig.loginTitle;
-                        if (headerEl) headerEl.innerText = "Manage Members - " + uiConfig.loginTitle;
+                        document.getElementById('pageTitle').innerText = "Member Management - " + uiConfig.loginTitle;
+                        document.getElementById('pageHeader').innerText = "Manage Members - " + uiConfig.loginTitle;
                     }
-                    
-                    if (uiConfig.appBackground) {
-                        document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
-                    }
-                } const prefRes = await fetch('/api/preferences');
+                    if (uiConfig.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
+                }
+                const prefRes = await fetch('/api/preferences');
                 if (prefRes.ok) {
                     const prefs = await prefRes.json();
                     if (prefs.sortMembers) currentSort = prefs.sortMembers;
                 }
-            } catch (e) { console.warn("Could not load preferences", e); }
+            } catch (e) {}
             await reloadMembers();
         }
 
@@ -212,17 +161,8 @@
                 currentSort.column = column;
                 currentSort.order = 'asc';
             }
-            savePreference(currentSort);
+            fetch('/api/preferences', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ key: 'sortMembers', value: currentSort }) });
             applySort();
-        }
-
-        async function savePreference(value) {
-            try {
-                await fetch('/api/preferences', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ key: 'sortMembers', value: value })
-                });
-            } catch (e) { console.error(e); }
         }
 
         function applySort() {
@@ -233,20 +173,13 @@
                 if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
                 return 0;
             });
-            updateHeaderIcons();
-            renderTable();
-        }
-
-        function updateHeaderIcons() {
             ['name', 'email', 'mobile'].forEach(col => {
                 const icon = document.getElementById(`icon-${col}`);
                 if (icon) { icon.innerHTML = ICON_NONE; icon.classList.remove('active'); }
             });
             const active = document.getElementById(`icon-${currentSort.column}`);
-            if (active) {
-                active.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC;
-                active.classList.add('active');
-            }
+            if (active) { active.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC; active.classList.add('active'); }
+            renderTable();
         }
 
         function renderTable() {
@@ -254,28 +187,19 @@
             tbody.innerHTML = '';
             document.getElementById('selectAllCheckbox').checked = false;
             updateBulkDeleteButton();
-
             if (currentMembers.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#666;">No members found.</td></tr>`;
                 return;
             }
-
             currentMembers.forEach((m, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()"></td>
-                    <td>${m.name}</td>
-                    <td>${m.email}</td>
-                    <td>${m.mobile || ''}</td>
+                    <td>${m.name}</td><td>${m.email}</td><td>${m.mobile || ''}</td>
                     <td style="text-align: center;">
-                        <button class="btn-icon edit" onclick="editMemberByIndex(${index})" title="Edit">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                        </button>
-                        <button class="btn-icon delete" onclick="deleteMember(${m.id})" title="Delete">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                        </button>
-                    </td>
-                `;
+                        <button class="btn-icon edit" onclick="editMemberByIndex(${index})" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
+                        <button class="btn-icon delete" onclick="deleteMember(${m.id})" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                    </td>`;
                 tbody.appendChild(tr);
             });
         }
@@ -304,7 +228,6 @@
 
         const memberModal = document.getElementById('memberModal');
         const form = document.getElementById('memberForm');
-
         function openModal() { document.getElementById('modalTitle').textContent = "Add Member"; document.getElementById('memberId').value = ""; form.reset(); memberModal.style.display = 'block'; }
         function editMemberByIndex(index) {
             const m = currentMembers[index];
@@ -361,62 +284,43 @@
             }
         }
 
-        initPage();
-        window.onclick = (e) => {
-            if (e.target == memberModal) closeModal('memberModal');
-            if (e.target == document.getElementById('helpModal')) closeModal('helpModal');
-        }
-
-        // --- Scroll to Top Logic ---
-        const scrollTopBtn = document.getElementById("scrollTopBtn");
-        window.onscroll = function () {
-            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
-                scrollTopBtn.style.display = "flex";
-            } else {
-                scrollTopBtn.style.display = "none";
-            }
-        };
-        function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-        function exportToCSV() {
-            if (!currentMembers || currentMembers.length === 0) {
-                alert("No members to export.");
-                return;
-            }
-
-            // 1. Define Headers
+        // --- EXPORT LOGIC ---
+        async function exportToCSV() {
+            if (!currentMembers || currentMembers.length === 0) { alert("No members to export."); return; }
             const headers = ['name', 'email', 'mobile'];
-
-            // 2. Map data to CSV rows
-            const rows = currentMembers.map(member => {
-                return headers.map(header => {
-                    let val = member[header] || ''; // Handle null/undefined
-
-                    // Escape quotes by doubling them (" -> "") and wrap in quotes if it contains comma or newline
-                    const stringVal = String(val);
-                    if (stringVal.search(/("|,|\n)/g) >= 0) {
-                        val = `"${stringVal.replace(/"/g, '""')}"`;
-                    }
-                    return val;
-                }).join(',');
-            });
-
-            // 3. Combine headers and rows
+            const rows = currentMembers.map(member => headers.map(header => {
+                let val = String(member[header] || '');
+                if (val.search(/("|,|\n)/g) >= 0) val = `"${val.replace(/"/g, '""')}"`;
+                return val;
+            }).join(','));
             const csvContent = [headers.join(',')].concat(rows).join('\n');
-
-            // 4. Trigger Download
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", "members_export.csv");
-            link.style.visibility = 'hidden';
+            link.href = url;
+            link.download = "members_export.csv";
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+
+            // LOG EXPORT EVENT
+            try {
+                await fetch('/api/logs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'Members',
+                        title: 'Exported members list',
+                        payload: { count: currentMembers.length }
+                    })
+                });
+            } catch(e) { console.error("Logging failed", e); }
         }
+
+        initPage();
+        window.onclick = (e) => { if (e.target == memberModal) closeModal('memberModal'); if (e.target == document.getElementById('helpModal')) closeModal('helpModal'); }
+        window.onscroll = function () { document.getElementById("scrollTopBtn").style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none"; };
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
     </script>
 </body>
-
 </html>

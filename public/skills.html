@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +7,6 @@
     <title id="pageTitle">Skills Management - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* ... (Keep existing styles) ... */
         body { position: relative; }
         .container { max-width: 1000px; margin: 0 auto; padding-top: 40px; }
         h1 { text-align: center; margin-bottom: 30px; }
@@ -62,13 +60,9 @@
         <input type="file" id="csvInput" accept=".csv" style="display: none;" onchange="handleFileUpload(this)">
 
         <div id="tableContainer" style="display: block;">
-
             <div class="table-toolbar">
-                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger"
-                    style="display: none; margin-right: auto;">Delete Selected</button>
-
+                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger" style="display: none; margin-right: auto;">Delete Selected</button>
                 <button onclick="exportToCSV()" class="btn-secondary">Export CSV</button>
-
                 <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
                 <button onclick="openModal()" class="btn-primary">Add Skill</button>
             </div>
@@ -89,20 +83,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
-                        </th>
-
-                        <th class="sortable" onclick="handleSort('name')">
-                            <div class="th-content">Skill Name <span id="icon-name" class="sort-icon"></span></div>
-                        </th>
-
-                        <th class="sortable" onclick="handleSort('critical_skill')">
-                            <div class="th-content">Critical <span id="icon-critical_skill" class="sort-icon"></span>
-                            </div>
-                        </th>
-
+                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
+                        <th class="sortable" onclick="handleSort('name')"><div class="th-content">Skill Name <span id="icon-name" class="sort-icon"></span></div></th>
+                        <th class="sortable" onclick="handleSort('critical_skill')"><div class="th-content">Critical <span id="icon-critical_skill" class="sort-icon"></span></div></th>
                         <th>Form URL</th>
-
                         <th style="width: 100px; text-align: center;">Actions</th>
                     </tr>
                 </thead>
@@ -112,11 +96,7 @@
     </div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="19" x2="12" y2="5"></line>
-            <polyline points="5 12 12 5 19 12"></polyline>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
     </button>
 
     <div id="skillModal" class="modal">
@@ -125,18 +105,11 @@
             <h2 id="modalTitle">Add Skill</h2>
             <form id="skillForm">
                 <input type="hidden" id="skillId">
-                <div class="form-group">
-                    <label>Skill Name (Exact Match)</label>
-                    <input type="text" id="name" required placeholder="e.g. OI (IS1) - Operational Safety">
-                </div>
-                <div class="form-group">
-                    <label>Google Form URL (Optional)</label>
-                    <input type="url" id="url" placeholder="https://docs.google.com/forms/...">
-                </div>
+                <div class="form-group"><label>Skill Name (Exact Match)</label><input type="text" id="name" required placeholder="e.g. OI (IS1) - Operational Safety"></div>
+                <div class="form-group"><label>Google Form URL (Optional)</label><input type="url" id="url" placeholder="https://docs.google.com/forms/..."></div>
                 <div class="form-group">
                     <label style="display:flex; align-items:center; cursor:pointer;">
-                        <input type="checkbox" id="critical_skill" style="width:auto; margin-right:10px;">
-                        Critical Skill (Bold in reports)
+                        <input type="checkbox" id="critical_skill" style="width:auto; margin-right:10px;"> Critical Skill
                     </label>
                 </div>
                 <div style="text-align: right; margin-top: 20px;">
@@ -152,19 +125,16 @@
             <span class="close-btn" onclick="closeModal('helpModal')">&times;</span>
             <h2>CSV File Format</h2>
             <p><strong>Required:</strong> <code>name</code></p>
-            <p><strong>Optional:</strong> <code>url</code>, <code>critical_skill</code> (true/false or 1/0)</p>
             <div class="code-block">name,url,critical_skill
-                "OI (IS1)",https://forms...,true
-                "OI (G9)",,0</div>
-            <br>
-            <button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
+"OI (IS1)",https://forms...,true
+"OI (G9)",,0</div>
+            <br><button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
         </div>
     </div>
 
     <script>
         let currentSkills = [];
         let currentSort = { column: 'name', order: 'asc' };
-
         const ICON_ASC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
         const ICON_DESC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
         const ICON_NONE = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5"/><path d="M7 9l5-5 5 5"/></svg>';
@@ -174,25 +144,18 @@
                 const uiRes = await fetch('/ui-config');
                 if (uiRes.ok) {
                     const uiConfig = await uiRes.json();
-                    
-                    // --- UPDATE TITLE & HEADER ---
                     if (uiConfig.loginTitle) {
-                        const titleEl = document.getElementById('pageTitle');
-                        const headerEl = document.getElementById('pageHeader');
-                        if (titleEl) titleEl.innerText = "Skills Management - " + uiConfig.loginTitle;
-                        if (headerEl) headerEl.innerText = "Manage Skills - " + uiConfig.loginTitle;
+                        document.getElementById('pageTitle').innerText = "Skills Management - " + uiConfig.loginTitle;
+                        document.getElementById('pageHeader').innerText = "Manage Skills - " + uiConfig.loginTitle;
                     }
-
-                    if (uiConfig.appBackground) {
-                        document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
-                    }
+                    if (uiConfig.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
                 }
                 const prefRes = await fetch('/api/preferences');
                 if (prefRes.ok) {
                     const prefs = await prefRes.json();
                     if (prefs.sortSkillsPage) currentSort = prefs.sortSkillsPage;
                 }
-            } catch (e) { console.warn("Pref load failed", e); }
+            } catch (e) { }
             await reloadSkills();
         }
 
@@ -214,15 +177,8 @@
                 currentSort.column = column;
                 currentSort.order = 'asc';
             }
-            savePreference(currentSort);
+            fetch('/api/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'sortSkillsPage', value: currentSort }) });
             applySort();
-        }
-
-        async function savePreference(value) {
-            fetch('/api/preferences', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: 'sortSkillsPage', value: value })
-            }).catch(console.error);
         }
 
         function applySort() {
@@ -243,10 +199,7 @@
                 if (icon) { icon.innerHTML = ICON_NONE; icon.classList.remove('active'); }
             });
             const active = document.getElementById(`icon-${currentSort.column}`);
-            if (active) {
-                active.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC;
-                active.classList.add('active');
-            }
+            if (active) { active.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC; active.classList.add('active'); }
         }
 
         function renderTable() {
@@ -254,17 +207,12 @@
             tbody.innerHTML = '';
             document.getElementById('selectAllCheckbox').checked = false;
             updateBulkDeleteButton();
-
             if (currentSkills.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#666;">No skills found.</td></tr>`;
                 return;
             }
-
             currentSkills.forEach((s, index) => {
-                const urlDisplay = s.url
-                    ? `<a href="${s.url}" target="_blank" style="color:#007bff;text-decoration:none;">Link</a>`
-                    : `<span style="color:#999; font-style:italic;">No Link</span>`;
-
+                const urlDisplay = s.url ? `<a href="${s.url}" target="_blank" style="color:#007bff;text-decoration:none;">Link</a>` : `<span style="color:#999; font-style:italic;">No Link</span>`;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="cb-col"><input type="checkbox" class="skill-checkbox" value="${s.id}" onchange="updateBulkDeleteButton()"></td>
@@ -272,19 +220,13 @@
                     <td style="text-align:center;">${s.critical_skill ? '<b style="color:red;">Yes</b>' : 'No'}</td>
                     <td>${urlDisplay}</td>
                     <td style="text-align: center;">
-                        <button class="btn-icon edit" onclick="editSkillByIndex(${index})" title="Edit">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                        </button>
-                        <button class="btn-icon delete" onclick="deleteSkill(${s.id})" title="Delete">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                        </button>
-                    </td>
-                `;
+                        <button class="btn-icon edit" onclick="editSkillByIndex(${index})" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
+                        <button class="btn-icon delete" onclick="deleteSkill(${s.id})" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                    </td>`;
                 tbody.appendChild(tr);
             });
         }
 
-        // --- Bulk & CRUD ---
         function toggleSelectAll() {
             const checked = document.getElementById('selectAllCheckbox').checked;
             document.querySelectorAll('.skill-checkbox').forEach(cb => cb.checked = checked);
@@ -302,24 +244,14 @@
             const ids = Array.from(document.querySelectorAll('.skill-checkbox:checked')).map(cb => cb.value);
             if (!ids.length) return;
             if (confirm(`Delete ${ids.length} skills?`)) {
-                await fetch('/api/skills/bulk-delete', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ids })
-                });
+                await fetch('/api/skills/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
                 reloadSkills();
             }
         }
 
         const skillModal = document.getElementById('skillModal');
         const form = document.getElementById('skillForm');
-
-        function openModal() {
-            document.getElementById('modalTitle').textContent = "Add Skill";
-            document.getElementById('skillId').value = "";
-            form.reset();
-            skillModal.style.display = 'block';
-        }
-
+        function openModal() { document.getElementById('modalTitle').textContent = "Add Skill"; document.getElementById('skillId').value = ""; form.reset(); skillModal.style.display = 'block'; }
         function editSkillByIndex(index) {
             const s = currentSkills[index];
             document.getElementById('modalTitle').textContent = "Edit Skill";
@@ -329,33 +261,22 @@
             document.getElementById('critical_skill').checked = s.critical_skill;
             skillModal.style.display = 'block';
         }
-
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function openHelpModal() { document.getElementById('helpModal').style.display = 'block'; }
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('skillId').value;
-            const data = {
-                name: document.getElementById('name').value,
-                url: document.getElementById('url').value,
-                critical_skill: document.getElementById('critical_skill').checked
-            };
+            const data = { name: document.getElementById('name').value, url: document.getElementById('url').value, critical_skill: document.getElementById('critical_skill').checked };
             const method = id ? 'PUT' : 'POST';
             const url = id ? `/api/skills/${id}` : '/api/skills';
-            await fetch(url, {
-                method: method, headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             closeModal('skillModal');
             reloadSkills();
         });
 
         async function deleteSkill(id) {
-            if (confirm('Delete this skill?')) {
-                await fetch(`/api/skills/${id}`, { method: 'DELETE' });
-                reloadSkills();
-            }
+            if (confirm('Delete this skill?')) { await fetch(`/api/skills/${id}`, { method: 'DELETE' }); reloadSkills(); }
         }
 
         function handleFileUpload(input) {
@@ -370,9 +291,7 @@
         async function processCSV(csv) {
             const lines = csv.split(/\r\n|\n/);
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-            if (!headers.includes('name')) {
-                alert('Invalid CSV. Missing name header.'); return;
-            }
+            if (!headers.includes('name')) { alert('Invalid CSV'); return; }
             const skills = [];
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
@@ -386,77 +305,51 @@
                 }
             }
             if (skills.length > 0 && confirm(`Import ${skills.length} skills?`)) {
-                await fetch('/api/skills/import', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(skills)
-                });
+                await fetch('/api/skills/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(skills) });
                 reloadSkills();
             }
         }
 
-        initPage();
-        window.onclick = (e) => {
-            if (e.target == skillModal) closeModal('skillModal');
-            if (e.target == document.getElementById('helpModal')) closeModal('helpModal');
-        }
-
-        // --- Scroll to Top Logic ---
-        const scrollTopBtn = document.getElementById("scrollTopBtn");
-        window.onscroll = function () {
-            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
-                scrollTopBtn.style.display = "flex";
-            } else {
-                scrollTopBtn.style.display = "none";
-            }
-        };
-        function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-        function exportToCSV() {
-            if (!currentSkills || currentSkills.length === 0) {
-                alert("No skills to export.");
-                return;
-            }
-
-            // 1. Define Headers
+        // --- EXPORT LOGIC ---
+        async function exportToCSV() {
+            if (!currentSkills || currentSkills.length === 0) { alert("No skills to export."); return; }
             const headers = ['name', 'url', 'critical_skill'];
-
-            // 2. Map data to CSV rows
             const rows = currentSkills.map(skill => {
-                // Handle boolean conversion for CSV (1 for true, 0 for false is standard for this app's import logic)
-                const rowData = {
-                    name: skill.name,
-                    url: skill.url,
-                    critical_skill: skill.critical_skill ? '1' : '0'
-                };
-
+                const rowData = { name: skill.name, url: skill.url, critical_skill: skill.critical_skill ? '1' : '0' };
                 return headers.map(header => {
-                    let val = rowData[header] || '';
-
-                    // CSV Escaping
-                    const stringVal = String(val);
-                    if (stringVal.search(/("|,|\n)/g) >= 0) {
-                        val = `"${stringVal.replace(/"/g, '""')}"`;
-                    }
+                    let val = String(rowData[header] || '');
+                    if (val.search(/("|,|\n)/g) >= 0) val = `"${val.replace(/"/g, '""')}"`;
                     return val;
                 }).join(',');
             });
-
-            // 3. Combine headers and rows
             const csvContent = [headers.join(',')].concat(rows).join('\n');
-
-            // 4. Trigger Download
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", "skills_export.csv");
-            link.style.visibility = 'hidden';
+            link.href = url;
+            link.download = "skills_export.csv";
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+
+            // LOG EXPORT EVENT
+            try {
+                await fetch('/api/logs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'Skills',
+                        title: 'Exported skills list',
+                        payload: { count: currentSkills.length }
+                    })
+                });
+            } catch(e) { console.error("Logging failed", e); }
         }
+
+        initPage();
+        window.onclick = (e) => { if (e.target == skillModal) closeModal('skillModal'); if (e.target == document.getElementById('helpModal')) closeModal('helpModal'); }
+        window.onscroll = function () { document.getElementById("scrollTopBtn").style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none"; };
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
     </script>
 </body>
-
 </html>

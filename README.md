@@ -1,8 +1,5 @@
 
-
 # FENZ OSM Manager
-
-  
 
 ## Description
 
@@ -18,6 +15,9 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
       * **Skills:** Configure which skills to track, mark them as Critical, and assign Google Form URLs.
       * **Email Templates:** A rich-text editor to customize email subjects and body content with drag-and-drop variables.
+  * **System Maintenance & Auditing:**
+      * **Database Backup & Restore:** Download full database snapshots and restore them with strict version compatibility checks.
+      * **Event Log:** A comprehensive audit trail recording all major actions (Member/Skill changes, Emails sent, Template edits, etc.) with timestamps and user details.
   * **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies to scrape New Zealand-restricted dashboards from abroad.
   * **Cloud-Native Persistence:** Uses **Litestream** to replicate the SQLite database to Google Cloud Storage, ensuring data safety even on stateless platforms like Google Cloud Run.
   * **Dockerized:** Ready for production deployment with a flexible configuration system.
@@ -47,7 +47,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/dassige/OSM.git
+    git clone [https://github.com/dassige/OSM.git](https://github.com/dassige/OSM.git)
     cd OSM
     ```
 
@@ -123,8 +123,6 @@ Place your custom images inside this folder. They **must** be named exactly as f
   * `logo.png` (The logo shown on the login screen)
   * `background.png` (The full-screen background image)
 
-> **[Image Placeholder]:** *A screenshot of the file explorer showing the `my-branding` folder containing `logo.png` and `background.png`.*
-
 **Step 3: Update configuration**
 Open your `.env` file and set the `UI_RESOURCES_PATH` variable to point to your new folder.
 
@@ -165,31 +163,24 @@ node server.js
 
 1.  **Login**: Access `http://localhost:3000` and log in.
 
-     ![The login page showing the custom title and background image.](assets/login.jpg)
-
 2.  **Manage Data**: Before using the dashboard, use the **Menu** (top right) to populate your database.
-   
-     ![The menu on main Dashboard.](assets/menu.jpg)
-    
-      * **Manage Members**: Import a CSV of your team or add them manually.
-     ![The "Manage Members" page showing the table with member Name, Email, Mobile.](assets/members.jpg) 
 
+      * **Manage Members**: Import a CSV of your team or add them manually.
 
       * **Manage Skills**: Add the specific skill names (must match OSM exactly) you want to track. You can add Google Form URLs here.
 
-     ![The "Manage Skills" page showing the table with Skill Name, Critical status, and Form URL columns.](assets/skills.jpg) 
+3.  **Configure Emails**: Go to **Email Templates** to customize the message your members receive.
 
-4.  **Configure Emails**: Go to **Email Templates** to customize the message your members receive.
+4.  **Admin Tools**:
 
-     ![The Email Templates editor showing the drag-and-drop chips for {{skill}} and {{date}}.](assets/email-templates.jpg)  
+      * **System Tools**: Access this page to **Backup** your database (downloads a `.db` file) or **Restore** from a previous backup.
+      * **Event Log**: View a history of all system activities, including who modified members, who sent emails, and when backups were performed.
 
 5.  **Run Dashboard**:
 
       * Return to the **Home** screen.
       * Click **Reload Expiring Skills** to scrape the live dashboard.
       * Select members from the list and click **Send Emails**.
-
-    ![The main Dashboard with the "Expiring Skills Report" table populated and the console log visible at the bottom.](assets/main.jpg)
 
 ## Docker Deployment
 
@@ -212,7 +203,7 @@ This application supports stateless deployment on Google Cloud Run by using Lite
 2.  It continuously backs up `fenz.db` to a Google Cloud Storage Bucket.
 3.  On startup, it restores the latest database from the bucket.
 
-See [Installation on Google Cloud Run](Installation_google_run.md) for detailed deployment commands.
+See [Installation on Google Cloud Run](https://www.google.com/search?q=Installation_google_run.md) for detailed deployment commands.
 
 ## Project Structure
 
@@ -221,17 +212,20 @@ See [Installation on Google Cloud Run](Installation_google_run.md) for detailed 
 ├── server.js               # Main Express Web Server & API entry point
 ├── fenz.db                 # SQLite Database (Stores members, skills, history)
 ├── config.js               # Configuration loader
-├──VB start.sh              # Startup Script (Litestream Restore & Init)
+├── start.sh                # Startup Script (Litestream Restore & Init)
 ├── public/                 # Frontend Assets
 │   ├── index.html          # Main Dashboard
 │   ├── members.html        # Member Management UI
 │   ├── skills.html         # Skill Management UI
 │   ├── email-templates.html # Email Editor UI
+│   ├── system-tools.html   # Backup/Restore UI
+│   ├── event-log.html      # Event Audit UI
 │   └── app.js              # Frontend Logic (Socket.IO client)
 ├── services/               # Backend Logic
 │   ├── db.js               # SQLite Database Adapter
 │   ├── mailer.js           # SMTP Service
 │   ├── scraper.js          # OSM Dashboard Scraper
+│   ├── member-manager.js   # Logic to map skills to members
 │   └── proxy-manager.js    # Proxy Logic
 └── Dockerfile              # Container definition
 ```
@@ -243,10 +237,11 @@ See [Installation on Google Cloud Run](Installation_google_run.md) for detailed 
       * Check your `DASHBOARD_URL`.
       * If outside NZ, ensure `PROXY_MODE` is set correctly. Check the web console for "Proxy verification" logs.
   * **Database Locked:** SQLite allows only one writer at a time. Ensure you don't have the `fenz.db` file open in a viewer while the app is writing.
+  * **Restore Failed (Version Mismatch):** You can only restore a database backup that was created by the exact same version of the application you are currently running. This prevents data corruption from schema changes.
 
 ## Future Improvements
 
-See [Future Improvements](improvements.md) for a list of desired features.
+See [Future Improvements](https://www.google.com/search?q=improvements.md) for a list of desired features.
 
 ## Credits
 
@@ -280,4 +275,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+```
 ```

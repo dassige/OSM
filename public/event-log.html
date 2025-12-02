@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <title id="pageTitle">Event Log - FENZ OSM</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .container { max-width: 1100px; margin: 0 auto; padding-top: 40px; }
+        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); transition: all 0.2s ease; }
+        .back-btn:hover { background-color: #23272b; transform: translateY(-2px); }
+        
+        #eventTable { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #eventTable th, #eventTable td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        #eventTable th { background-color: #343a40; color: white; font-weight: 600; }
+        #eventTable tbody tr:hover { background-color: #f8f9fa; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
+        .badge-system { background-color: #17a2b8; color: white; }
+        .badge-members { background-color: #28a745; color: white; }
+        .badge-skills { background-color: #ffc107; color: #333; }
+        .badge-email { background-color: #007bff; color: white; }
+        .badge-default { background-color: #6c757d; color: white; }
+
+        .btn-info { background: none; border: none; cursor: pointer; color: #007bff; }
+        .btn-info:hover { color: #0056b3; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border-radius: 8px; width: 70%; max-width: 700px; position: relative; max-height: 80vh; overflow-y: auto; }
+        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; color: #aaa; }
+        .close-btn:hover { color: black; }
+        pre { background: #f4f4f4; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-btn" title="Back to Dashboard">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </a>
+
+    <div class="container">
+        <h1 id="pageHeader">System Event Log</h1>
+        
+        <table id="eventTable">
+            <thead>
+                <tr>
+                    <th style="width: 180px;">Datetime</th>
+                    <th style="width: 120px;">User</th>
+                    <th style="width: 120px;">Event Type</th>
+                    <th>Title</th>
+                    <th style="width: 60px;">Info</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="5" style="text-align:center; padding: 20px;">Loading events...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="payloadModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="document.getElementById('payloadModal').style.display='none'">&times;</span>
+            <h2>Event Details</h2>
+            <p><strong>Timestamp:</strong> <span id="modalTime"></span></p>
+            <p><strong>User:</strong> <span id="modalUser"></span></p>
+            <p><strong>Type:</strong> <span id="modalType"></span></p>
+            <p><strong>Title:</strong> <span id="modalTitle"></span></p>
+            <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+            <h3>Payload Data</h3>
+            <pre id="modalPayload"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Init UI
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.loginTitle) document.getElementById('pageTitle').innerText = "Event Log - " + c.loginTitle;
+        });
+
+        // Utils
+        function formatDate(isoStr) {
+            return new Date(isoStr).toLocaleString();
+        }
+
+        function getBadgeClass(type) {
+            const t = (type || '').toLowerCase();
+            if (t.includes('system')) return 'badge-system';
+            if (t.includes('member')) return 'badge-members';
+            if (t.includes('skill')) return 'badge-skills';
+            if (t.includes('email')) return 'badge-email';
+            return 'badge-default';
+        }
+
+        function showModal(evt) {
+            document.getElementById('modalTime').textContent = formatDate(evt.timestamp);
+            document.getElementById('modalUser').textContent = evt.user;
+            document.getElementById('modalType').textContent = evt.event_type;
+            document.getElementById('modalTitle').textContent = evt.title;
+            document.getElementById('modalPayload').textContent = JSON.stringify(evt.payload, null, 2);
+            document.getElementById('payloadModal').style.display = 'block';
+        }
+
+        // Fetch Data
+        async function loadEvents() {
+            try {
+                const res = await fetch('/api/events');
+                const events = await res.json();
+                const tbody = document.getElementById('tableBody');
+                tbody.innerHTML = '';
+
+                if (events.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">No events recorded.</td></tr>';
+                    return;
+                }
+
+                events.forEach(evt => {
+                    const tr = document.createElement('tr');
+                    
+                    // Button logic
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-icon btn-info';
+                    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+                    btn.onclick = () => showModal(evt);
+
+                    tr.innerHTML = `
+                        <td>${formatDate(evt.timestamp)}</td>
+                        <td><strong>${evt.user}</strong></td>
+                        <td><span class="badge ${getBadgeClass(evt.event_type)}">${evt.event_type}</span></td>
+                        <td>${evt.title}</td>
+                        <td style="text-align:center;"></td>
+                    `;
+                    tr.querySelector('td:last-child').appendChild(btn);
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error loading events: ${err.message}</td></tr>`;
+            }
+        }
+
+        loadEvents();
+        
+        // Close modal on outside click
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('payloadModal')) {
+                document.getElementById('payloadModal').style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
