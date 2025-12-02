@@ -7,7 +7,7 @@
     <title id="pageTitle">Event Log - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        .container { max-width: 1100px; margin: 0 auto; padding-top: 40px; }
+        .container { max-width: 1100px; margin: 0 auto; padding-top: 40px; padding-bottom: 40px; }
         .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); transition: all 0.2s ease; }
         .back-btn:hover { background-color: #23272b; transform: translateY(-2px); }
         
@@ -21,6 +21,8 @@
         .badge-members { background-color: #28a745; color: white; }
         .badge-skills { background-color: #ffc107; color: #333; }
         .badge-email { background-color: #007bff; color: white; }
+        .badge-user { background-color: #6f42c1; color: white; } 
+        .badge-template { background-color: #e83e8c; color: white; } 
         .badge-default { background-color: #6c757d; color: white; }
 
         .btn-info { background: none; border: none; cursor: pointer; color: #007bff; }
@@ -42,11 +44,50 @@
     <div class="container">
         <h1 id="pageHeader">System Event Log</h1>
         
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label>Event Types:</label>
+                <div class="type-toggles" id="typeToggles"></div>
+            </div>
+
+            <div class="filter-group">
+                <label>User:</label>
+                <select id="userFilter" class="filter-select">
+                    <option value="">All Users</option>
+                    <option value="System">System</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Date Range:</label>
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <input type="date" id="startDate" class="filter-date">
+                    <span style="color:#aaa;">to</span>
+                    <input type="date" id="endDate" class="filter-date">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Rows:</label>
+                <select id="rowsPerPage" class="filter-select" style="min-width: 80px;" onchange="changeLimit(this.value)">
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                </select>
+            </div>
+
+            <div class="filter-group" style="margin-left: auto; flex-direction: row; gap: 10px;">
+                <button onclick="applyFilters(1)" class="btn-filter">Apply Filters</button>
+                <button onclick="resetFilters()" class="btn-reset-filter">Reset</button>
+            </div>
+        </div>
+
         <table id="eventTable">
             <thead>
                 <tr>
                     <th style="width: 180px;">Datetime</th>
-                    <th style="width: 120px;">User</th>
+                    <th style="width: 150px;">User</th>
                     <th style="width: 120px;">Event Type</th>
                     <th>Title</th>
                     <th style="width: 60px;">Info</th>
@@ -56,6 +97,14 @@
                 <tr><td colspan="5" style="text-align:center; padding: 20px;">Loading events...</td></tr>
             </tbody>
         </table>
+
+        <div class="pagination-container" id="paginationControls" style="display:none;">
+            <span class="pagination-info" id="pageInfo">Showing 0-0 of 0</span>
+            <div class="pagination-buttons">
+                <button class="btn-page" id="btnPrev" onclick="changePage(-1)">Previous</button>
+                <button class="btn-page" id="btnNext" onclick="changePage(1)">Next</button>
+            </div>
+        </div>
     </div>
 
     <div id="payloadModal" class="modal">
@@ -72,6 +121,7 @@
         </div>
     </div>
 
+    <script src="help.js"></script>
     <script>
         // Init UI
         fetch('/ui-config').then(r => r.json()).then(c => {
@@ -79,17 +129,177 @@
             if (c.loginTitle) document.getElementById('pageTitle').innerText = "Event Log - " + c.loginTitle;
         });
 
-        // Utils
-        function formatDate(isoStr) {
-            return new Date(isoStr).toLocaleString();
+        // Global State
+        let currentPage = 1;
+        let currentLimit = 50;
+        let totalCount = 0;
+
+        async function init() {
+            await loadMetadata();
+            await loadUserPrefs();
+            await applyFilters(1);
         }
 
+        async function loadUserPrefs() {
+            try {
+                const res = await fetch('/api/user-preferences/eventLogLimit');
+                const data = await res.json();
+                if (data.value) {
+                    currentLimit = parseInt(data.value);
+                    document.getElementById('rowsPerPage').value = currentLimit;
+                }
+            } catch (e) { console.error("Pref error", e); }
+        }
+
+        async function changeLimit(newLimit) {
+            currentLimit = parseInt(newLimit);
+            fetch('/api/user-preferences', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ key: 'eventLogLimit', value: currentLimit })
+            });
+            applyFilters(1);
+        }
+
+        // UPDATED: Dynamically load both Users and Event Types
+        async function loadMetadata() {
+            try {
+                const res = await fetch('/api/events/meta');
+                if(res.ok) {
+                    const data = await res.json();
+                    
+                    // 1. Populate Users
+                    const select = document.getElementById('userFilter');
+                    data.users.forEach(u => {
+                        if (u !== 'System') {
+                            const opt = document.createElement('option');
+                            opt.value = u; opt.textContent = u;
+                            select.appendChild(opt);
+                        }
+                    });
+
+                    // 2. Populate Event Types (Dynamic Badges)
+                    const typeContainer = document.getElementById('typeToggles');
+                    typeContainer.innerHTML = ''; // Clear previous content
+
+                    if (data.types && data.types.length > 0) {
+                        data.types.forEach(type => {
+                            const badge = document.createElement('div');
+                            badge.className = 'type-badge';
+                            badge.setAttribute('data-type', type);
+                            badge.textContent = type;
+                            
+                            // Add click handler
+                            badge.addEventListener('click', () => {
+                                badge.classList.toggle('active');
+                            });
+                            
+                            typeContainer.appendChild(badge);
+                        });
+                    } else {
+                        typeContainer.innerHTML = '<span style="font-size:13px; color:#888;">No events recorded yet.</span>';
+                    }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function resetFilters() {
+            document.querySelectorAll('.type-badge').forEach(b => b.classList.remove('active'));
+            document.getElementById('userFilter').value = "";
+            document.getElementById('startDate').value = "";
+            document.getElementById('endDate').value = "";
+            applyFilters(1);
+        }
+
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            if (newPage > 0 && newPage <= Math.ceil(totalCount / currentLimit)) {
+                applyFilters(newPage);
+            }
+        }
+
+        async function applyFilters(page = 1) {
+            currentPage = page;
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Loading...</td></tr>';
+
+            const activeTypes = Array.from(document.querySelectorAll('.type-badge.active')).map(b => b.getAttribute('data-type'));
+            const user = document.getElementById('userFilter').value;
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+
+            const params = new URLSearchParams();
+            params.append('page', currentPage);
+            params.append('limit', currentLimit);
+            if (activeTypes.length > 0) params.append('types', activeTypes.join(','));
+            if (user) params.append('user', user);
+            if (start) params.append('startDate', start);
+            if (end) params.append('endDate', end);
+
+            try {
+                const res = await fetch(`/api/events?${params.toString()}`);
+                const data = await res.json();
+                renderTable(data.logs);
+                updatePagination(data.total, data.page, data.limit);
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error loading events: ${err.message}</td></tr>`;
+            }
+        }
+
+        function updatePagination(total, page, limit) {
+            totalCount = total;
+            const totalPages = Math.ceil(total / limit);
+            const start = (page - 1) * limit + 1;
+            const end = Math.min(page * limit, total);
+
+            document.getElementById('paginationControls').style.display = total > 0 ? 'flex' : 'none';
+            document.getElementById('pageInfo').textContent = total > 0 
+                ? `Showing ${start}-${end} of ${total} events` 
+                : 'No events found';
+
+            document.getElementById('btnPrev').disabled = page <= 1;
+            document.getElementById('btnNext').disabled = page >= totalPages;
+        }
+
+        function renderTable(events) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (!events || events.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #666;">No events matching criteria.</td></tr>';
+                return;
+            }
+
+            events.forEach(evt => {
+                const tr = document.createElement('tr');
+                const btn = document.createElement('button');
+                btn.className = 'btn-icon btn-info';
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+                btn.onclick = () => showModal(evt);
+
+                tr.innerHTML = `
+                    <td>${formatDate(evt.timestamp)}</td>
+                    <td><strong>${evt.user}</strong></td>
+                    <td><span class="badge ${getBadgeClass(evt.event_type)}">${evt.event_type}</span></td>
+                    <td>${evt.title}</td>
+                    <td style="text-align:center;"></td>
+                `;
+                tr.querySelector('td:last-child').appendChild(btn);
+                tbody.appendChild(tr);
+            });
+        }
+
+        function formatDate(isoStr) { return new Date(isoStr).toLocaleString(); }
+        
         function getBadgeClass(type) {
             const t = (type || '').toLowerCase();
             if (t.includes('system')) return 'badge-system';
             if (t.includes('member')) return 'badge-members';
             if (t.includes('skill')) return 'badge-skills';
-            if (t.includes('email')) return 'badge-email';
+            if (t.includes('email') && !t.includes('template')) return 'badge-email';
+            if (t.includes('user')) return 'badge-user';
+            if (t.includes('template')) return 'badge-template';
+            if (t.includes('profile')) return 'badge-system';
             return 'badge-default';
         }
 
@@ -102,46 +312,9 @@
             document.getElementById('payloadModal').style.display = 'block';
         }
 
-        // Fetch Data
-        async function loadEvents() {
-            try {
-                const res = await fetch('/api/events');
-                const events = await res.json();
-                const tbody = document.getElementById('tableBody');
-                tbody.innerHTML = '';
-
-                if (events.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">No events recorded.</td></tr>';
-                    return;
-                }
-
-                events.forEach(evt => {
-                    const tr = document.createElement('tr');
-                    
-                    // Button logic
-                    const btn = document.createElement('button');
-                    btn.className = 'btn-icon btn-info';
-                    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
-                    btn.onclick = () => showModal(evt);
-
-                    tr.innerHTML = `
-                        <td>${formatDate(evt.timestamp)}</td>
-                        <td><strong>${evt.user}</strong></td>
-                        <td><span class="badge ${getBadgeClass(evt.event_type)}">${evt.event_type}</span></td>
-                        <td>${evt.title}</td>
-                        <td style="text-align:center;"></td>
-                    `;
-                    tr.querySelector('td:last-child').appendChild(btn);
-                    tbody.appendChild(tr);
-                });
-            } catch (err) {
-                document.getElementById('tableBody').innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error loading events: ${err.message}</td></tr>`;
-            }
-        }
-
-        loadEvents();
+        // Run Init
+        init();
         
-        // Close modal on outside click
         window.onclick = function(event) {
             if (event.target == document.getElementById('payloadModal')) {
                 document.getElementById('payloadModal').style.display = "none";

@@ -10,7 +10,7 @@ function stripHtml(html) {
 // 1. Existing Notification Sender
 async function sendNotification(member, templateConfig, transporter, isTestMode, logger = console.log) {
     if (!member.expiringSkills || member.expiringSkills.length === 0) {
-        return;
+        return null;
     }
 
     const from = templateConfig.from || '"FENZ OSM Manager" <noreply@fenz.osm>';
@@ -50,7 +50,8 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
 
     if (isTestMode) {
         logger(`[${getTime()}] [TEST MODE] Simulating email to: ${member.email}`);
-        return;
+        // Return content even in test mode
+        return { html: messageHtml, text: messageText }; 
     }
 
     try {
@@ -62,13 +63,17 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
             html: messageHtml,
         });
         logger(`[${getTime()}] [SMTP] Email sent to ${member.name} (ID: ${info.messageId})`);
+        
+        // UPDATED: Return the content used
+        return { info, html: messageHtml, text: messageText };
+
     } catch (error) {
         logger(`[${getTime()}] [SMTP ERROR] Failed to send to ${member.name}: ${error.message}`);
         throw error;
     }
 }
 
-// 2. NEW: Password Reset Sender
+// 2. Password Reset Sender
 async function sendPasswordReset(email, newPassword, transporter) {
     const from = '"FENZ OSM Manager" <noreply@fenz.osm>';
     const subject = 'Security: Password Reset';

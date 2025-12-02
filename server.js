@@ -1,11 +1,10 @@
-// server.js
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
 const session = require('express-session');
 const multer = require('multer');
 const fs = require('fs');
-const crypto = require('crypto'); // Ensure crypto is imported
+const crypto = require('crypto');
 
 // Configuration
 const config = require('./config.js');
@@ -14,7 +13,6 @@ const { findWorkingNZProxy } = require('./services/proxy-manager');
 // Services
 const { getOIData } = require('./services/scraper');
 const { processMemberSkills } = require('./services/member-manager');
-// UPDATED: Import both mailer functions
 const { sendNotification, sendPasswordReset } = require('./services/mailer');
 const db = require('./services/db');
 
@@ -27,7 +25,7 @@ const sessionMiddleware = session({
     secret: config.auth?.sessionSecret || 'fallback_secret_key',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: { secure: false } // Set to true if running behind HTTPS proxy
 });
 
 app.use(sessionMiddleware);
@@ -53,9 +51,8 @@ io.use((socket, next) => {
 // Initialize DB
 db.initDB().catch(err => console.error("DB Init Error:", err));
 
-// --- HTTP ROUTES ---
+// --- AUTHENTICATION ROUTES ---
 
-// Login Route
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
@@ -91,41 +88,30 @@ app.post('/login', async (req, res) => {
     return res.status(401).send({ error: "Invalid credentials" });
 });
 
-// NEW: Forgot Password Route
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     
-    // 1. Block Super Admin reset (as it is env based)
+    // Block Super Admin reset (env based)
     if (email === config.auth.username) {
-        return res.status(400).json({ error: "Cannot reset Super Admin password via email. Check server configuration." });
+        return res.status(400).json({ error: "Cannot reset Super Admin password via email." });
     }
 
     try {
-        // 2. Check if user exists
         const user = await db.getUserByEmail(email);
         if (!user) {
-            // Security: Don't reveal if user exists or not, just fake success or give vague error. 
-            // For internal app ease-of-use, explicit error is often preferred:
             return res.status(404).json({ error: "User not found." });
         }
 
-        // 3. Generate Temp Password (8 chars)
         const tempPassword = crypto.randomBytes(4).toString('hex');
-
-        // 4. Update DB
         await db.adminResetPassword(user.id, tempPassword);
-
-        // 5. Send Email
         await sendPasswordReset(email, tempPassword, config.transporter);
-
-        // 6. Log
+        
         await db.logEvent('System', 'Security', `Password reset requested for ${email}`, {});
-
         res.json({ success: true });
 
     } catch (e) {
         console.error("Forgot PW Error:", e);
-        res.status(500).json({ error: "Failed to reset password. Check server logs." });
+        res.status(500).json({ error: "Failed to reset password." });
     }
 });
 
@@ -134,6 +120,7 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
+// Helper for Frontend Session Info
 app.get('/api/user-session', (req, res) => {
     if (req.session && req.session.user) {
         res.json(req.session.user);
@@ -142,6 +129,7 @@ app.get('/api/user-session', (req, res) => {
     }
 });
 
+// Middleware: Require Super Admin
 const requireAdmin = (req, res, next) => {
     if (req.session?.user?.isAdmin) {
         next();
@@ -150,6 +138,7 @@ const requireAdmin = (req, res, next) => {
     }
 };
 
+// Protect Routes Middleware
 app.use((req, res, next) => {
     const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config'];
     if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/')) {
@@ -169,6 +158,7 @@ app.get('/ui-config', (req, res) => {
 });
 
 // --- API: USER MANAGEMENT (Admin Only) ---
+
 app.get('/api/users', requireAdmin, async (req, res) => {
     try {
         const users = await db.getUsers();
@@ -180,6 +170,7 @@ app.post('/api/users', requireAdmin, async (req, res) => {
     try {
         const { email, name, password } = req.body;
         if (!email || !name || !password) return res.status(400).json({ error: "Missing fields" });
+        
         await db.addUser(email, name, password);
         await db.logEvent(req.session.user.name, 'User Mgmt', `Created user ${email}`, {});
         res.json({ success: true });
@@ -205,19 +196,26 @@ app.post('/api/users/:id/reset', requireAdmin, async (req, res) => {
 });
 
 // --- API: PROFILE (Self Service) ---
+
 app.put('/api/profile', async (req, res) => {
     try {
         const { name, password } = req.body;
         const currentUser = req.session.user;
-        if (currentUser.isEnvUser) return res.status(403).json({ error: "Super Admin from .env cannot change profile via web." });
+
+        if (currentUser.isEnvUser) {
+            return res.status(403).json({ error: "Super Admin from .env cannot change profile via web." });
+        }
+
         await db.updateUserProfile(currentUser.id, name, password || null);
-        req.session.user.name = name;
+        req.session.user.name = name; // Update session
+        
         await db.logEvent(currentUser.name, 'Profile', `Updated own profile`, {});
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- API: LOGGING ---
+// --- API: LOGGING (Filtered) ---
+
 app.post('/api/logs', async (req, res) => {
     try {
         const { type, title, payload } = req.body;
@@ -229,12 +227,48 @@ app.post('/api/logs', async (req, res) => {
 
 app.get('/api/events', async (req, res) => {
     try {
-        const logs = await db.getEventLogs(100); 
-        res.json(logs);
+        const filters = {
+            user: req.query.user || null,
+            types: req.query.types ? req.query.types.split(',') : [],
+            startDate: req.query.startDate || null,
+            endDate: req.query.endDate || null,
+            page: req.query.page || 1,
+            limit: req.query.limit || 50
+        };
+
+        const result = await db.getEventLogs(filters); 
+        res.json(result);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- API: PREFERENCES ---
+app.get('/api/events/meta', async (req, res) => {
+    try {
+        const meta = await db.getEventLogMetadata();
+        res.json(meta);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- API: USER PREFERENCES ---
+
+app.get('/api/user-preferences/:key', async (req, res) => {
+    try {
+        // Use id 0 for Super Admin, otherwise user.id
+        const userId = req.session.user.id || 0; 
+        const value = await db.getUserPreference(userId, req.params.key);
+        res.json({ value });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/user-preferences', async (req, res) => {
+    try {
+        const { key, value } = req.body;
+        const userId = req.session.user.id || 0;
+        await db.saveUserPreference(userId, key, value);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- API: GLOBAL PREFERENCES ---
 app.get('/api/preferences', async (req, res) => {
     try {
         const prefs = await db.getPreferences();
@@ -368,13 +402,16 @@ app.delete('/api/skills/:id', async (req, res) => {
 // --- API: SYSTEM TOOLS ---
 app.get('/api/system/backup', async (req, res) => {
     if (!req.session || !req.session.loggedIn) return res.status(401).send("Unauthorized");
+
     const dbPath = db.getDbPath();
     const date = new Date().toISOString().split('T')[0];
     const domain = req.get('host').replace(/[:\/]/g, '-');
     const packageJson = require('./package.json');
     const filename = `fenz-osm-backup-v${packageJson.version}-${date}-${domain}.db`;
+
     const username = req.session.user.name || req.session.user;
     await db.logEvent(username, 'System', 'Database Backup Downloaded', { filename });
+
     res.download(dbPath, filename, (err) => {
         if (err) {
             console.error("Backup download error:", err);
@@ -386,12 +423,15 @@ app.get('/api/system/backup', async (req, res) => {
 app.post('/api/system/restore', upload.single('databaseFile'), async (req, res) => {
     if (!req.session || !req.session.loggedIn) return res.status(401).json({ error: "Unauthorized" });
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
+
     const tempPath = req.file.path;
     try {
         await db.verifyAndReplaceDb(tempPath);
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+        
         const username = req.session.user.name || req.session.user;
         await db.logEvent(username, 'System', 'Database Restored', { originalname: req.file.originalname });
+        
         res.json({ success: true, message: "Database restored successfully. System reloaded." });
     } catch (e) {
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
@@ -419,20 +459,24 @@ async function initializeProxy() {
 initializeProxy();
 
 // --- SOCKET.IO ---
+
 io.on('connection', (socket) => {
     const logger = (msg) => {
         process.stdout.write(msg + '\n');
         socket.emit('terminal-output', msg + '\n');
     };
+
     socket.on('get-preferences', async () => {
         try {
             const prefs = await db.getPreferences();
             socket.emit('preferences-data', prefs);
         } catch (e) { logger(e.message); }
     });
+
     socket.on('update-preference', async ({ key, value }) => {
         try { await db.savePreference(key, value); } catch (e) { logger(e.message); }
     });
+
     socket.on('view-expiring-skills', async (days) => {
         const daysThreshold = parseInt(days) || 30;
         logger(`> Fetching View Data (Threshold: ${daysThreshold} days)...`);
@@ -441,6 +485,7 @@ io.on('connection', (socket) => {
             const dbSkills = await db.getSkills();
             const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
             const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
+
             const results = processedMembers.map(m => ({
                 name: m.name,
                 skills: m.expiringSkills.map(s => ({
@@ -458,26 +503,46 @@ io.on('connection', (socket) => {
             socket.emit('script-complete', 1);
         }
     });
+
     socket.on('run-send-selected', async (selectedNames, days) => {
         const daysThreshold = parseInt(days) || 30;
         const currentUser = socket.request.session.user.name || socket.request.session.user;
+        
         logger(`> Starting Email Process (User: ${currentUser})...`);
         socket.emit('progress-update', { type: 'progress-start', total: selectedNames.length });
+
         try {
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
             const prefs = await db.getPreferences();
-            const templateConfig = { from: prefs.emailFrom, subject: prefs.emailSubject, intro: prefs.emailIntro, rowHtml: prefs.emailRow };
+            
+            const templateConfig = {
+                from: prefs.emailFrom,
+                subject: prefs.emailSubject,
+                intro: prefs.emailIntro,
+                rowHtml: prefs.emailRow
+            };
+
             const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
             const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
             const targets = processedMembers.filter(m => selectedNames.includes(m.name));
+
             let current = 0;
             for (const member of targets) {
                 if (member.expiringSkills.length > 0) {
                     try {
-                        await sendNotification(member, templateConfig, config.transporter, false, logger);
+                        const result = await sendNotification(member, templateConfig, config.transporter, false, logger);
+                        
                         await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills`);
-                        await db.logEvent(currentUser, 'Email', `Sent to ${member.name} at ${member.email}`, { recipient: member.name, email: member.email, skillsCount: member.expiringSkills.length });
+                        
+                        // UPDATED: Include body in log
+                        await db.logEvent(currentUser, 'Email', `Sent to ${member.name} at ${member.email}`, { 
+                            recipient: member.name, 
+                            email: member.email,
+                            skillsCount: member.expiringSkills.length,
+                            emailBody: result ? result.html : 'No content'
+                        });
+                        
                     } catch (err) {
                         await db.logEmailAction(member, 'FAILED', err.message);
                         throw err;

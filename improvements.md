@@ -12,6 +12,7 @@
 ## 3. Frontend Enhancements
 
 - **Online Help**:
+
 - **Modern Framework**: If complexity grows, migrating the vanilla HTML/JS to a lightweight framework like Vue.js or React would make state management (handling the `skillsTable` and socket events) cleaner.
 
 

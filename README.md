@@ -232,7 +232,7 @@ This application supports stateless deployment on Google Cloud Run by using Lite
 2.  It continuously backs up `fenz.db` to a Google Cloud Storage Bucket.
 3.  On startup, it restores the latest database from the bucket.
 
-See [Installation on Google Cloud Run](https://www.google.com/search?q=Installation_google_run.md) for detailed deployment commands.
+See [Installation on Google Cloud Run](Installation_google_run.md) for detailed deployment commands.
 
 ## Project Structure
 
@@ -273,7 +273,7 @@ See [Installation on Google Cloud Run](https://www.google.com/search?q=Installat
 
 ## Future Improvements
 
-See [Future Improvements](https://www.google.com/search?q=improvements.md) for a list of desired features.
+See [Future Improvements](improvements.md) for a list of desired features.
 
 ## Credits
 
