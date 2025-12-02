@@ -1,9 +1,11 @@
+// server.js
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
 const session = require('express-session');
 const multer = require('multer');
 const fs = require('fs');
+const crypto = require('crypto'); // Ensure crypto is imported
 
 // Configuration
 const config = require('./config.js');
@@ -12,7 +14,8 @@ const { findWorkingNZProxy } = require('./services/proxy-manager');
 // Services
 const { getOIData } = require('./services/scraper');
 const { processMemberSkills } = require('./services/member-manager');
-const { sendNotification } = require('./services/mailer');
+// UPDATED: Import both mailer functions
+const { sendNotification, sendPasswordReset } = require('./services/mailer');
 const db = require('./services/db');
 
 const app = express();
@@ -52,14 +55,78 @@ db.initDB().catch(err => console.error("DB Init Error:", err));
 
 // --- HTTP ROUTES ---
 
-app.post('/login', (req, res) => {
+// Login Route
+app.post('/login', async (req, res) => {
     const { username, password } = req.body;
+
+    // 1. Check Superadmin (from .env)
     if (username === config.auth.username && password === config.auth.password) {
         req.session.loggedIn = true;
-        req.session.user = username;
+        req.session.user = { 
+            name: 'Super Admin', 
+            email: username, 
+            isAdmin: true,
+            isEnvUser: true
+        };
         return res.status(200).send({ success: true });
     }
+
+    // 2. Check Database Users
+    try {
+        const user = await db.authenticateUser(username, password);
+        if (user) {
+            req.session.loggedIn = true;
+            req.session.user = { 
+                id: user.id,
+                name: user.name, 
+                email: user.email, 
+                isAdmin: false 
+            };
+            return res.status(200).send({ success: true });
+        }
+    } catch (e) {
+        console.error("Login DB error:", e);
+    }
+
     return res.status(401).send({ error: "Invalid credentials" });
+});
+
+// NEW: Forgot Password Route
+app.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    
+    // 1. Block Super Admin reset (as it is env based)
+    if (email === config.auth.username) {
+        return res.status(400).json({ error: "Cannot reset Super Admin password via email. Check server configuration." });
+    }
+
+    try {
+        // 2. Check if user exists
+        const user = await db.getUserByEmail(email);
+        if (!user) {
+            // Security: Don't reveal if user exists or not, just fake success or give vague error. 
+            // For internal app ease-of-use, explicit error is often preferred:
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        // 3. Generate Temp Password (8 chars)
+        const tempPassword = crypto.randomBytes(4).toString('hex');
+
+        // 4. Update DB
+        await db.adminResetPassword(user.id, tempPassword);
+
+        // 5. Send Email
+        await sendPasswordReset(email, tempPassword, config.transporter);
+
+        // 6. Log
+        await db.logEvent('System', 'Security', `Password reset requested for ${email}`, {});
+
+        res.json({ success: true });
+
+    } catch (e) {
+        console.error("Forgot PW Error:", e);
+        res.status(500).json({ error: "Failed to reset password. Check server logs." });
+    }
 });
 
 app.get('/logout', (req, res) => {
@@ -67,9 +134,24 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
-// Protect Routes Middleware
+app.get('/api/user-session', (req, res) => {
+    if (req.session && req.session.user) {
+        res.json(req.session.user);
+    } else {
+        res.status(401).json({ error: "Not logged in" });
+    }
+});
+
+const requireAdmin = (req, res, next) => {
+    if (req.session?.user?.isAdmin) {
+        next();
+    } else {
+        res.status(403).json({ error: "Forbidden: Super Admin access required" });
+    }
+};
+
 app.use((req, res, next) => {
-    const publicPaths = ['/login.html', '/login', '/styles.css', '/ui-config'];
+    const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config'];
     if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/')) {
         return next();
     }
@@ -86,18 +168,65 @@ app.get('/ui-config', (req, res) => {
     res.json(config.ui || {});
 });
 
-// --- API: LOGGING ---
-
-// Client-side event reporter
-app.post('/api/logs', async (req, res) => {
+// --- API: USER MANAGEMENT (Admin Only) ---
+app.get('/api/users', requireAdmin, async (req, res) => {
     try {
-        const { type, title, payload } = req.body;
-        await db.logEvent(req.session.user, type, title, payload);
+        const users = await db.getUsers();
+        res.json(users);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/users', requireAdmin, async (req, res) => {
+    try {
+        const { email, name, password } = req.body;
+        if (!email || !name || !password) return res.status(400).json({ error: "Missing fields" });
+        await db.addUser(email, name, password);
+        await db.logEvent(req.session.user.name, 'User Mgmt', `Created user ${email}`, {});
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Fetch logs
+app.delete('/api/users/:id', requireAdmin, async (req, res) => {
+    try {
+        await db.deleteUser(req.params.id);
+        await db.logEvent(req.session.user.name, 'User Mgmt', `Deleted user ID ${req.params.id}`, {});
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/users/:id/reset', requireAdmin, async (req, res) => {
+    try {
+        const { password } = req.body;
+        if (!password) return res.status(400).json({ error: "Password required" });
+        await db.adminResetPassword(req.params.id, password);
+        await db.logEvent(req.session.user.name, 'User Mgmt', `Reset password for user ID ${req.params.id}`, {});
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- API: PROFILE (Self Service) ---
+app.put('/api/profile', async (req, res) => {
+    try {
+        const { name, password } = req.body;
+        const currentUser = req.session.user;
+        if (currentUser.isEnvUser) return res.status(403).json({ error: "Super Admin from .env cannot change profile via web." });
+        await db.updateUserProfile(currentUser.id, name, password || null);
+        req.session.user.name = name;
+        await db.logEvent(currentUser.name, 'Profile', `Updated own profile`, {});
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- API: LOGGING ---
+app.post('/api/logs', async (req, res) => {
+    try {
+        const { type, title, payload } = req.body;
+        const username = req.session.user.name || req.session.user;
+        await db.logEvent(username, type, title, payload);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/events', async (req, res) => {
     try {
         const logs = await db.getEventLogs(100); 
@@ -118,7 +247,6 @@ app.post('/api/preferences', async (req, res) => {
         const { key, value } = req.body;
         if (!key) return res.status(400).json({ error: "Key is required" });
         await db.savePreference(key, value);
-        // Note: Email template editing events are logged via client-side fetch to /api/logs
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -133,44 +261,49 @@ app.get('/api/members', async (req, res) => {
 
 app.post('/api/members', async (req, res) => {
     try {
+        const username = req.session.user.name || req.session.user;
         const id = await db.addMember(req.body);
-        await db.logEvent(req.session.user, 'Members', `Added ${req.body.name}`, req.body);
+        await db.logEvent(username, 'Members', `Added ${req.body.name}`, req.body);
         res.json({ success: true, id });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/members/import', async (req, res) => {
     try {
+        const username = req.session.user.name || req.session.user;
         const members = req.body;
         if (!Array.isArray(members)) return res.status(400).json({ error: "Expected array" });
         await db.bulkAddMembers(members);
-        await db.logEvent(req.session.user, 'Members', `Imported ${members.length} members`, { count: members.length });
+        await db.logEvent(username, 'Members', `Imported ${members.length} members`, { count: members.length });
         res.json({ success: true, count: members.length });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/members/bulk-delete', async (req, res) => {
     try {
+        const username = req.session.user.name || req.session.user;
         const { ids } = req.body;
         if (!Array.isArray(ids)) return res.status(400).json({ error: "Invalid input" });
         await db.bulkDeleteMembers(ids);
-        await db.logEvent(req.session.user, 'Members', `Deleted ${ids.length} members`, { ids });
+        await db.logEvent(username, 'Members', `Deleted ${ids.length} members`, { ids });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/members/:id', async (req, res) => {
     try {
+        const username = req.session.user.name || req.session.user;
         await db.updateMember(req.params.id, req.body);
-        await db.logEvent(req.session.user, 'Members', `Edited ${req.body.name}`, req.body);
+        await db.logEvent(username, 'Members', `Edited ${req.body.name}`, req.body);
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/members/:id', async (req, res) => {
     try {
+        const username = req.session.user.name || req.session.user;
         await db.deleteMember(req.params.id);
-        await db.logEvent(req.session.user, 'Members', `Deleted member ID ${req.params.id}`, { id: req.params.id });
+        await db.logEvent(username, 'Members', `Deleted member ID ${req.params.id}`, { id: req.params.id });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -185,44 +318,49 @@ app.get('/api/skills', async (req, res) => {
 
 app.post('/api/skills', async (req, res) => {
     try {
+        const username = req.session.user.name || req.session.user;
         const id = await db.addSkill(req.body);
-        await db.logEvent(req.session.user, 'Skills', `Added ${req.body.name}`, req.body);
+        await db.logEvent(username, 'Skills', `Added ${req.body.name}`, req.body);
         res.json({ success: true, id });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/skills/import', async (req, res) => {
     try {
+        const username = req.session.user.name || req.session.user;
         const skills = req.body;
         if (!Array.isArray(skills)) return res.status(400).json({ error: "Expected array" });
         await db.bulkAddSkills(skills);
-        await db.logEvent(req.session.user, 'Skills', `Imported ${skills.length} skills`, { count: skills.length });
+        await db.logEvent(username, 'Skills', `Imported ${skills.length} skills`, { count: skills.length });
         res.json({ success: true, count: skills.length });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/skills/bulk-delete', async (req, res) => {
     try {
+        const username = req.session.user.name || req.session.user;
         const { ids } = req.body;
         if (!Array.isArray(ids)) return res.status(400).json({ error: "Invalid input" });
         await db.bulkDeleteSkills(ids);
-        await db.logEvent(req.session.user, 'Skills', `Deleted ${ids.length} skills`, { ids });
+        await db.logEvent(username, 'Skills', `Deleted ${ids.length} skills`, { ids });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/skills/:id', async (req, res) => {
     try {
+        const username = req.session.user.name || req.session.user;
         await db.updateSkill(req.params.id, req.body);
-        await db.logEvent(req.session.user, 'Skills', `Edited ${req.body.name}`, req.body);
+        await db.logEvent(username, 'Skills', `Edited ${req.body.name}`, req.body);
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/skills/:id', async (req, res) => {
     try {
+        const username = req.session.user.name || req.session.user;
         await db.deleteSkill(req.params.id);
-        await db.logEvent(req.session.user, 'Skills', `Deleted skill ID ${req.params.id}`, { id: req.params.id });
+        await db.logEvent(username, 'Skills', `Deleted skill ID ${req.params.id}`, { id: req.params.id });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -230,15 +368,13 @@ app.delete('/api/skills/:id', async (req, res) => {
 // --- API: SYSTEM TOOLS ---
 app.get('/api/system/backup', async (req, res) => {
     if (!req.session || !req.session.loggedIn) return res.status(401).send("Unauthorized");
-
     const dbPath = db.getDbPath();
     const date = new Date().toISOString().split('T')[0];
     const domain = req.get('host').replace(/[:\/]/g, '-');
     const packageJson = require('./package.json');
     const filename = `fenz-osm-backup-v${packageJson.version}-${date}-${domain}.db`;
-
-    await db.logEvent(req.session.user, 'System', 'Database Backup Downloaded', { filename });
-
+    const username = req.session.user.name || req.session.user;
+    await db.logEvent(username, 'System', 'Database Backup Downloaded', { filename });
     res.download(dbPath, filename, (err) => {
         if (err) {
             console.error("Backup download error:", err);
@@ -250,14 +386,12 @@ app.get('/api/system/backup', async (req, res) => {
 app.post('/api/system/restore', upload.single('databaseFile'), async (req, res) => {
     if (!req.session || !req.session.loggedIn) return res.status(401).json({ error: "Unauthorized" });
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
-
     const tempPath = req.file.path;
     try {
         await db.verifyAndReplaceDb(tempPath);
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-        
-        await db.logEvent(req.session.user, 'System', 'Database Restored', { originalname: req.file.originalname });
-        
+        const username = req.session.user.name || req.session.user;
+        await db.logEvent(username, 'System', 'Database Restored', { originalname: req.file.originalname });
         res.json({ success: true, message: "Database restored successfully. System reloaded." });
     } catch (e) {
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
@@ -285,24 +419,20 @@ async function initializeProxy() {
 initializeProxy();
 
 // --- SOCKET.IO ---
-
 io.on('connection', (socket) => {
     const logger = (msg) => {
         process.stdout.write(msg + '\n');
         socket.emit('terminal-output', msg + '\n');
     };
-
     socket.on('get-preferences', async () => {
         try {
             const prefs = await db.getPreferences();
             socket.emit('preferences-data', prefs);
         } catch (e) { logger(e.message); }
     });
-
     socket.on('update-preference', async ({ key, value }) => {
         try { await db.savePreference(key, value); } catch (e) { logger(e.message); }
     });
-
     socket.on('view-expiring-skills', async (days) => {
         const daysThreshold = parseInt(days) || 30;
         logger(`> Fetching View Data (Threshold: ${daysThreshold} days)...`);
@@ -311,7 +441,6 @@ io.on('connection', (socket) => {
             const dbSkills = await db.getSkills();
             const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
             const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
-
             const results = processedMembers.map(m => ({
                 name: m.name,
                 skills: m.expiringSkills.map(s => ({
@@ -329,45 +458,26 @@ io.on('connection', (socket) => {
             socket.emit('script-complete', 1);
         }
     });
-
     socket.on('run-send-selected', async (selectedNames, days) => {
         const daysThreshold = parseInt(days) || 30;
-        const currentUser = socket.request.session.user;
-        
+        const currentUser = socket.request.session.user.name || socket.request.session.user;
         logger(`> Starting Email Process (User: ${currentUser})...`);
         socket.emit('progress-update', { type: 'progress-start', total: selectedNames.length });
-
         try {
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
             const prefs = await db.getPreferences();
-            
-            const templateConfig = {
-                from: prefs.emailFrom,
-                subject: prefs.emailSubject,
-                intro: prefs.emailIntro,
-                rowHtml: prefs.emailRow
-            };
-
+            const templateConfig = { from: prefs.emailFrom, subject: prefs.emailSubject, intro: prefs.emailIntro, rowHtml: prefs.emailRow };
             const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
             const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
             const targets = processedMembers.filter(m => selectedNames.includes(m.name));
-
             let current = 0;
             for (const member of targets) {
                 if (member.expiringSkills.length > 0) {
                     try {
                         await sendNotification(member, templateConfig, config.transporter, false, logger);
-                        
                         await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills`);
-                        
-                        // UPDATED: Log formatted email event
-                        await db.logEvent(currentUser, 'Email', `Sent to ${member.name} at ${member.email}`, { 
-                            recipient: member.name, 
-                            email: member.email,
-                            skillsCount: member.expiringSkills.length
-                        });
-                        
+                        await db.logEvent(currentUser, 'Email', `Sent to ${member.name} at ${member.email}`, { recipient: member.name, email: member.email, skillsCount: member.expiringSkills.length });
                     } catch (err) {
                         await db.logEmailAction(member, 'FAILED', err.message);
                         throw err;

@@ -11,6 +11,10 @@ It automates the process of checking a dashboard for expiring skills, persists d
 
   * **Real-Time Web Dashboard:** A responsive UI using Socket.IO to view scraping progress, logs, and sending status in real-time.
   * **Database Driven:** All members and skills are stored in a local SQLite database (`fenz.db`).
+  * **Multi-User System:**
+      * **Super Admin:** A resilient system account defined via environment variables.
+      * **User Management:** Create multiple database-backed administrators with secure password hashing.
+      * **Self-Service:** Users can manage their profiles and recover lost passwords via email.
   * **Web-Based Management:**
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
       * **Skills:** Configure which skills to track, mark them as Critical, and assign Google Form URLs.
@@ -72,10 +76,10 @@ The application is configured primarily via the **`.env`** file.
 
 Open the `.env` file you just created and configure the following parameters:
 
-#### **Application Security**
+#### **Application Security (Super Admin)**
 
-  * `APP_USERNAME`: The username for the web login (e.g., `admin`).
-  * `APP_PASSWORD`: A strong password for the web login.
+  * `APP_USERNAME`: The username for the immutable Super Admin (e.g., `admin`).
+  * `APP_PASSWORD`: A strong password for the Super Admin.
   * `SESSION_SECRET`: A long, random string used to encrypt session cookies.
 
 #### **OSM Dashboard Connection**
@@ -159,7 +163,32 @@ node server.js
 
 *The server listens on port **3000** by default.*
 
-### 2\. Dashboard Workflow
+### 2\. User Management
+
+The application supports two types of users:
+
+1.  **Super Admin (Environment User):**
+
+      * Defined in `.env`.
+      * Has exclusive access to the **Manage Users** menu.
+      * Cannot change their own password via the web UI (must be changed in `.env`).
+      * Used for initial setup and system recovery.
+
+2.  **Standard Users (Database Users):**
+
+      * Created by the Super Admin.
+      * Can manage members, skills, and send emails.
+      * Can update their own Name and Password via the **User Settings** menu (top-left).
+      * Can recover lost passwords via the "Forgot Password" link on the login page.
+
+**Managing Users (Super Admin Only):**
+
+  * Log in as the Super Admin.
+  * Go to **Menu \> Manage Users**.
+  * **Add User**: Click "Add User", enter their Email, Name, and a strong Password.
+  * **Reset Password**: Admin can manually reset a user's password if needed.
+
+### 3\. Dashboard Workflow
 
 1.  **Login**: Access `http://localhost:3000` and log in.
 
@@ -210,13 +239,15 @@ See [Installation on Google Cloud Run](https://www.google.com/search?q=Installat
 ```text
 ├── .env                    # Environment variables (Secrets & Config)
 ├── server.js               # Main Express Web Server & API entry point
-├── fenz.db                 # SQLite Database (Stores members, skills, history)
+├── fenz.db                 # SQLite Database (Stores members, skills, history, users)
 ├── config.js               # Configuration loader
 ├── start.sh                # Startup Script (Litestream Restore & Init)
 ├── public/                 # Frontend Assets
 │   ├── index.html          # Main Dashboard
 │   ├── members.html        # Member Management UI
 │   ├── skills.html         # Skill Management UI
+│   ├── users.html          # User Management UI (Admin Only)
+│   ├── profile.html        # User Profile UI
 │   ├── email-templates.html # Email Editor UI
 │   ├── system-tools.html   # Backup/Restore UI
 │   ├── event-log.html      # Event Audit UI
@@ -238,6 +269,7 @@ See [Installation on Google Cloud Run](https://www.google.com/search?q=Installat
       * If outside NZ, ensure `PROXY_MODE` is set correctly. Check the web console for "Proxy verification" logs.
   * **Database Locked:** SQLite allows only one writer at a time. Ensure you don't have the `fenz.db` file open in a viewer while the app is writing.
   * **Restore Failed (Version Mismatch):** You can only restore a database backup that was created by the exact same version of the application you are currently running. This prevents data corruption from schema changes.
+  * **Login Issues:** If you cannot login as a created user, ensure the email address is correct. As a fallback, you can always log in using the `APP_USERNAME` and `APP_PASSWORD` defined in your `.env` file to reset other accounts.
 
 ## Future Improvements
 
@@ -277,5 +309,3 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-```
-```

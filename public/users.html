@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Users - FENZ OSM</title>
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .container { max-width: 900px; margin: 40px auto; }
+        .back-btn { position: absolute; top: 20px; left: 20px; color: #fff; background: #343a40; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f8f9fa; font-weight: bold; }
+        .btn-add { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; float: right; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 3px; cursor: pointer; border: none; color: white; margin-left: 5px; }
+        .btn-del { background: #dc3545; }
+        .btn-reset { background: #ffc107; color: #333; }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); }
+        .modal-content { background: #fff; margin: 10% auto; padding: 20px; width: 400px; border-radius: 8px; position: relative; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+        .close-btn { position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 20px; }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></a>
+    
+    <div class="container">
+        <button class="btn-add" onclick="openAddModal()">Add User</button>
+        <h1 id="pageHeader">System Users</h1>
+        <p>Manage additional administrators for the web application.</p>
+        
+        <table id="userTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email (Username)</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody><tr><td colspan="3">Loading...</td></tr></tbody>
+        </table>
+    </div>
+
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('userModal')">&times;</span>
+            <h2>Add New User</h2>
+            <form id="addUserForm" autocomplete="off">
+                <input type="text" style="display:none">
+                <input type="password" style="display:none">
+
+                <div class="form-group"><label>Name</label><input type="text" id="newName" required autocomplete="off"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="newEmail" required autocomplete="off"></div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="newPassword" required autocomplete="new-password">
+                        <button type="button" class="btn-toggle-pw" onclick="togglePw('newPassword', this)">
+                            <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Repeat Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="newPasswordConfirm" required autocomplete="new-password">
+                        <button type="button" class="btn-toggle-pw" onclick="togglePw('newPasswordConfirm', this)">
+                            <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-add" style="width:100%">Create User</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('resetModal')">&times;</span>
+            <h2>Reset Password</h2>
+            <p>Set a new password for <b id="resetUserName"></b></p>
+            <form id="resetForm" autocomplete="off">
+                <input type="hidden" id="resetUserId">
+                <div class="form-group">
+                    <div class="password-wrapper">
+                        <input type="password" id="resetPassword" placeholder="New Password" required autocomplete="new-password">
+                        <button type="button" class="btn-toggle-pw" onclick="togglePw('resetPassword', this)">
+                            <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-reset" style="width:100%; border:none; padding:10px;">Update Password</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        fetch('/ui-config').then(r=>r.json()).then(c=>{ if(c.loginTitle) document.getElementById('pageHeader').innerText="System Users - "+c.loginTitle; if(c.appBackground) document.body.style.backgroundImage=`url('${c.appBackground}')`; });
+
+        function togglePw(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            
+            if(isPassword) {
+                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+            } else {
+                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/users');
+                if(res.status === 403) { alert('Access Denied'); window.location.href='/'; return; }
+                const users = await res.json();
+                const tbody = document.querySelector('#userTable tbody');
+                tbody.innerHTML = '';
+                if(users.length === 0) tbody.innerHTML = '<tr><td colspan="3">No database users found.</td></tr>';
+                users.forEach(u => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${u.name}</td>
+                        <td>${u.email}</td>
+                        <td style="text-align: right;">
+                            <button class="btn-sm btn-reset" onclick="openReset('${u.id}', '${u.name}')">Reset Pwd</button>
+                            <button class="btn-sm btn-del" onclick="deleteUser('${u.id}')">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pw = document.getElementById('newPassword').value;
+            const pwConf = document.getElementById('newPasswordConfirm').value;
+
+            if(pw !== pwConf) { alert("Passwords do not match!"); return; }
+
+            const data = { name: document.getElementById('newName').value, email: document.getElementById('newEmail').value, password: pw };
+            const res = await fetch('/api/users', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)});
+            if(res.ok) { closeModal('userModal'); loadUsers(); document.getElementById('addUserForm').reset(); } else { alert('Error adding user'); }
+        });
+
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('resetUserId').value;
+            const password = document.getElementById('resetPassword').value;
+            const res = await fetch(`/api/users/${id}/reset`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password})});
+            if(res.ok) { closeModal('resetModal'); alert('Password updated'); document.getElementById('resetForm').reset(); }
+        });
+
+        async function deleteUser(id) {
+            if(confirm('Delete this user?')) { await fetch(`/api/users/${id}`, { method: 'DELETE' }); loadUsers(); }
+        }
+
+        function openAddModal() { document.getElementById('userModal').style.display = 'block'; }
+        function openReset(id, name) { document.getElementById('resetUserId').value = id; document.getElementById('resetUserName').innerText = name; document.getElementById('resetModal').style.display = 'block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        loadUsers();
+    </script>
+</body>
+</html>

@@ -236,3 +236,53 @@ th {
     from {top: -300px; opacity: 0}
     to {top: 0; opacity: 1}
 }
+/* --- TOP LEFT PROFILE MENU --- */
+.profile-menu {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+}
+.profile-btn {
+    background-color: white;
+    color: #333;
+    padding: 10px 16px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+}
+.profile-btn:hover { background-color: #f8f9fa; transform: translateY(-1px); }
+.profile-dropdown {
+    left: 0; right: auto; /* Align left */
+    min-width: 160px;
+}
+/* --- PASSWORD INPUT GROUP --- */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.password-wrapper input {
+    padding-right: 40px; /* Make room for the button */
+}
+.btn-toggle-pw {
+    position: absolute;
+    right: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-toggle-pw:hover {
+    color: #333;
+}

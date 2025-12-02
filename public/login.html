@@ -12,48 +12,42 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Ensure full viewport height, using dvh for better mobile support */
+            /* Ensure full viewport height */
             height: 100vh;
             height: 100dvh;
             width: 100vw;
 
-            /* Reset layout properties that might leak from styles.css */
+            /* Reset layout properties to override styles.css */
             margin: 0;
             padding: 0;
-            max-width: none;
+            max-width: none; /* CRITICAL: Allows body to fill screen for centering */
 
-            /* Default background if none provided */
             background-color: #f0f2f5;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             overflow: hidden;
-            /* Prevent scrollbars from minor sizing discrepancies */
         }
 
         .login-container {
             background: rgba(255, 255, 255, 0.95);
-            /* Slight transparency */
             padding: 40px;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             width: 90%;
-            /* Changed from 100% to 90% for mobile margins */
             max-width: 400px;
             text-align: center;
             backdrop-filter: blur(5px);
-            /* Ensure container doesn't overflow vertically on very small screens */
+            /* Ensure it fits on small vertical screens */
             max-height: 90vh;
             overflow-y: auto;
         }
 
-        /* Logo Styling */
         #loginLogo {
             max-width: 150px;
             max-height: 100px;
             margin-bottom: 20px;
             display: none;
-            /* Hidden by default until loaded */
             margin-left: auto;
             margin-right: auto;
         }
@@ -89,6 +83,21 @@
             font-size: 14px;
             display: none;
         }
+
+        .forgot-link {
+            display: block;
+            margin-top: 10px;
+            color: #007bff;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .forgot-link:hover { text-decoration: underline; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); }
+        .modal-content { background: #fff; margin: 15% auto; padding: 25px; width: 80%; max-width: 400px; border-radius: 8px; position: relative; text-align: left; }
+        .close-btn { position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 24px; font-weight: bold; color: #aaa; }
     </style>
 </head>
 
@@ -99,32 +108,42 @@
         <h1 id="loginTitle">Login</h1>
 
         <form id="loginForm">
-            <input type="text" id="username" placeholder="Username" required>
+            <input type="text" id="username" placeholder="Username / Email" required>
             <input type="password" id="password" placeholder="Password" required>
-            <button type="submit">Sign In</button>
+            <button type="submit" id="loginBtn">Sign In</button>
             <div id="errorMsg" class="error">Invalid credentials</div>
         </form>
+        
+        <a class="forgot-link" onclick="openForgotModal()">Forgot Password?</a>
+    </div>
+
+    <div id="forgotModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('forgotModal')">&times;</span>
+            <h2 style="margin-top: 0;">Reset Password</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter your email address. We will generate a new password and send it to you.</p>
+            <form id="forgotForm">
+                <input type="email" id="forgotEmail" placeholder="Enter your email" required style="margin-top: 0;">
+                <div id="forgotMsg" class="error" style="margin-top: 5px; margin-bottom: 5px;"></div>
+                <button type="submit">Reset Password</button>
+            </form>
+        </div>
     </div>
 
     <script>
-        // Fetch and Apply UI Configuration
+        // Fetch UI Config
         fetch('/ui-config')
             .then(response => response.json())
             .then(config => {
-                // 1. Set Title
                 if (config.loginTitle) {
                     document.getElementById('loginTitle').textContent = config.loginTitle;
                     document.title = config.loginTitle + " - Login";
                 }
-
-                // 2. Set Logo
                 if (config.loginLogo) {
                     const logoImg = document.getElementById('loginLogo');
                     logoImg.src = config.loginLogo;
                     logoImg.style.display = 'block';
                 }
-
-                // 3. Set Background
                 if (config.appBackground) {
                     document.body.style.backgroundImage = `url('${config.appBackground}')`;
                 }
@@ -134,9 +153,14 @@
         // Login Logic
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const btn = document.getElementById('loginBtn');
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
+
+            btn.disabled = true;
+            btn.textContent = "Signing In...";
+            errorMsg.style.display = 'none';
 
             try {
                 const response = await fetch('/login', {
@@ -148,14 +172,68 @@
                 if (response.ok) {
                     window.location.href = '/';
                 } else {
+                    errorMsg.textContent = "Invalid credentials";
                     errorMsg.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = "Sign In";
                 }
             } catch (err) {
                 console.error(err);
                 errorMsg.textContent = "Connection error";
                 errorMsg.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = "Sign In";
             }
         });
+
+        // Forgot Password Logic
+        function openForgotModal() { document.getElementById('forgotModal').style.display = 'block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmail').value;
+            const msg = document.getElementById('forgotMsg');
+            const btn = e.target.querySelector('button');
+
+            if(!confirm(`Are you sure you want to reset the password for ${email}?`)) return;
+
+            btn.disabled = true;
+            btn.textContent = "Sending...";
+            msg.style.display = 'none';
+
+            try {
+                const res = await fetch('/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await res.json();
+
+                if(res.ok) {
+                    alert('Success! Please check your email for the new password.');
+                    closeModal('forgotModal');
+                    document.getElementById('forgotForm').reset();
+                } else {
+                    msg.textContent = data.error || "Failed to reset password.";
+                    msg.style.display = 'block';
+                }
+            } catch(err) {
+                msg.textContent = "Server connection error.";
+                msg.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Reset Password";
+            }
+        });
+
+        // Close modal on outside click
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('forgotModal')) {
+                closeModal('forgotModal');
+            }
+        }
     </script>
 </body>
 
