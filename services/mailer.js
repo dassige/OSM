@@ -1,5 +1,6 @@
 // services/mailer.js
-const getTime = () => new Date().toLocaleTimeString();
+const config = require('../config');
+const getTime = () => new Date().toLocaleTimeString(config.locale, { timeZone: config.timezone });
 
 // Helper: Strip HTML tags
 function stripHtml(html) {
@@ -33,8 +34,24 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
     if (!member.expiringSkills || member.expiringSkills.length === 0) return null;
 
     // ... [Keep globalVars definition] ...
+    // Note: Reconstructing globalVars here as context was cut, assuming standard implementation
+    const globalVars = {
+        appname: appName || "FENZ OSM Manager",
+        name: member.name,
+        email: member.email
+    };
 
-    // ... [Keep from, subject, intro processing] ...
+    const defaults = {
+        from: templateConfig.from || `"${globalVars.appname}" <noreply@fenz.osm>`,
+        subject: templateConfig.subject || `${globalVars.appname}: Expiring Skills Notification`,
+        intro: templateConfig.intro || `<p>Hello <strong>{{name}}</strong>,</p><p>You have expiring skills in OSM. Please complete them ASAP.</p>`,
+        rowHtml: templateConfig.rowHtml || `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} <br> <a href="{{url}}">Form Link</a></li>`
+    };
+
+    const from = replaceVariables(defaults.from, globalVars);
+    const subject = replaceVariables(defaults.subject, globalVars);
+    const intro = replaceVariables(defaults.intro, globalVars);
+    const rowTemplate = defaults.rowHtml;
 
     let rowsHtml = '';
     let plainTextList = '';

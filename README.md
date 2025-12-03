@@ -88,7 +88,8 @@ Open the `.env` file and configure the following parameters:
 #### **Application Settings**
 
   * `APP_TIMEZONE`: The timezone used for date calculations (e.g., `Pacific/Auckland`). Defaults to NZ time.
-  
+  * `APP_LOCALE`: The locale used for date/time formatting strings (e.g., `en-NZ`, `en-US`). Defaults to `en-NZ`.
+    
 #### **OSM Dashboard Connection**
 
   * `OSM_BU_ID`: **Crucial.** Your unique Business Unit ID (GUID) for the dashboard (e.g., `87FF646A-FCBC-49A1-9BAC-76F1C368EEFA`). The system will automatically construct the correct URL.

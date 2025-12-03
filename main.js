@@ -4,6 +4,7 @@ const config = require('./config');
 
 // Import resources (Legacy support for CLI)
 const { members, skillsConfig, transporter, emailInfo } = require('./resources.js');
+const { processMemberSkills, isExpired } = require('./services/member-manager');
 
 // --- 1. GLOBAL FLAG DEFINITIONS ---
 const args = process.argv.slice(2);
@@ -41,7 +42,7 @@ if (isSendSelectedMode) {
 let allResults = []; 
 
 function getTime() {
-    return new Date().toLocaleTimeString();
+    return new Date().toLocaleTimeString(config.locale, { timeZone: config.timezone });
 }
 
 async function sendEmail(to, text, html) { 

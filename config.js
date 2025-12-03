@@ -22,6 +22,7 @@ const ui = {
 // --- APP SETTINGS ---
 // [NEW] Timezone Support
 const timezone = process.env.APP_TIMEZONE || 'Pacific/Auckland';
+const locale = process.env.APP_LOCALE || 'en-NZ';
 
 // --- DASHBOARD CONFIGURATION ---
 const defaultBuId = '87FF646A-FCBC-49A1-9BAC-XXXXXXXXX';
@@ -47,7 +48,8 @@ const dynamicProxySource = process.env.DYNAMIC_PROXY_SOURCE || null;
 module.exports = {
     auth,
     ui,
-    timezone, // <--- Exported here
+    timezone,
+    locale,
     url,
     scrapingInterval,
     transporter,

@@ -3,8 +3,9 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const https = require('https');
 const { HttpsProxyAgent } = require('https-proxy-agent');
+const config = require('../config');
 
-const getTime = () => new Date().toLocaleTimeString();
+const getTime = () => new Date().toLocaleTimeString(config.locale, { timeZone: config.timezone });
 
 let cachedData = null;
 let lastScrapeTime = 0;
