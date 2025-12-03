@@ -3,7 +3,7 @@ const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const path = require('path');
 const crypto = require('crypto');
-const packageJson = require('../package.json'); 
+const packageJson = require('../package.json');
 
 let db;
 
@@ -24,7 +24,7 @@ async function initDB() {
     if (db) return db;
     const dbPath = process.env.DB_PATH || path.join(__dirname, '../fenz.db');
     console.log(`[DB] Opening database at: ${dbPath}`);
-    
+
     try {
         db = await open({
             filename: dbPath,
@@ -41,7 +41,7 @@ async function initDB() {
         await db.exec(`CREATE TABLE IF NOT EXISTS members (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, mobile TEXT, messengerId TEXT);`);
         await db.exec(`CREATE TABLE IF NOT EXISTS skills (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, url TEXT, critical_skill INTEGER DEFAULT 0);`);
         await db.exec(`CREATE TABLE IF NOT EXISTS event_log (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT DEFAULT CURRENT_TIMESTAMP, user TEXT, event_type TEXT, title TEXT, payload TEXT);`);
-        
+
         await db.exec(`
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -129,7 +129,7 @@ async function getEventLogs(filters = {}) {
 
     // 2. Get Data with Pagination
     let dataQuery = `SELECT * ${baseQuery} ORDER BY id DESC`;
-    
+
     // Pagination
     const page = filters.page && filters.page > 0 ? parseInt(filters.page) : 1;
     const limit = filters.limit && filters.limit > 0 ? parseInt(filters.limit) : 50;
@@ -139,7 +139,7 @@ async function getEventLogs(filters = {}) {
     params.push(limit, offset);
 
     const rows = await db.all(dataQuery, params);
-    
+
     const logs = rows.map(r => {
         try {
             return { ...r, payload: JSON.parse(r.payload) };
@@ -187,12 +187,24 @@ async function updateUserProfile(id, name, newPassword = null) { if (!db) await 
 async function adminResetPassword(id, newPassword) { if (!db) await initDB(); const { salt, hash } = hashPassword(newPassword); await db.run(`UPDATE users SET hash = ?, salt = ? WHERE id = ?`, hash, salt, id); }
 async function deleteUser(id) { if (!db) await initDB(); await db.run(`DELETE FROM users WHERE id = ?`, id); }
 async function closeDB() { if (db) { console.log('[DB] Closing database connection...'); await db.close(); db = null; } }
-async function verifyAndReplaceDb(newDbPath) { let tempDb; try { console.log(`[DB] Verifying integrity of uploaded file: ${newDbPath}`); tempDb = await open({ filename: newDbPath, driver: sqlite3.Database }); const tables = await tempDb.all("SELECT name FROM sqlite_master WHERE type='table'"); const tableNames = tables.map(t => t.name); const requiredTables = ['members', 'skills', 'preferences']; const missing = requiredTables.filter(t => !tableNames.includes(t)); if (missing.length > 0) throw new Error(`Incompatible Database. Missing tables: ${missing.join(', ')}`); let dbVersion = '0.0.0'; try { const row = await tempDb.get("SELECT value FROM preferences WHERE key = 'app_version'"); if (row && row.value) dbVersion = row.value; } catch (e) {} const currentVersion = packageJson.version; if (dbVersion !== currentVersion) throw new Error(`Version Mismatch! Uploaded DB is ${dbVersion}, App is ${currentVersion}.`); await tempDb.close(); } catch (e) { if (tempDb) await tempDb.close(); throw e; } await closeDB(); const fs = require('fs'); const currentDbPath = process.env.DB_PATH || path.join(__dirname, '../fenz.db'); try { console.log(`[DB] Replacing ${currentDbPath}...`); fs.copyFileSync(newDbPath, currentDbPath); await initDB(); return true; } catch (e) { console.error('[DB] Restore failed:', e); await initDB(); throw e; } }
+async function verifyAndReplaceDb(newDbPath) { let tempDb; try { console.log(`[DB] Verifying integrity of uploaded file: ${newDbPath}`); tempDb = await open({ filename: newDbPath, driver: sqlite3.Database }); const tables = await tempDb.all("SELECT name FROM sqlite_master WHERE type='table'"); const tableNames = tables.map(t => t.name); const requiredTables = ['members', 'skills', 'preferences']; const missing = requiredTables.filter(t => !tableNames.includes(t)); if (missing.length > 0) throw new Error(`Incompatible Database. Missing tables: ${missing.join(', ')}`); let dbVersion = '0.0.0'; try { const row = await tempDb.get("SELECT value FROM preferences WHERE key = 'app_version'"); if (row && row.value) dbVersion = row.value; } catch (e) { } const currentVersion = packageJson.version; if (dbVersion !== currentVersion) throw new Error(`Version Mismatch! Uploaded DB is ${dbVersion}, App is ${currentVersion}.`); await tempDb.close(); } catch (e) { if (tempDb) await tempDb.close(); throw e; } await closeDB(); const fs = require('fs'); const currentDbPath = process.env.DB_PATH || path.join(__dirname, '../fenz.db'); try { console.log(`[DB] Replacing ${currentDbPath}...`); fs.copyFileSync(newDbPath, currentDbPath); await initDB(); return true; } catch (e) { console.error('[DB] Restore failed:', e); await initDB(); throw e; } }
 function getDbPath() { return process.env.DB_PATH || path.join(__dirname, '../fenz.db'); }
-
+async function getAllUserPreferences(userId) {
+    if (!db) await initDB();
+    const rows = await db.all('SELECT key, value FROM user_preferences WHERE user_id = ?', userId);
+    const prefs = {};
+    rows.forEach(row => {
+        try {
+            prefs[row.key] = JSON.parse(row.value);
+        } catch (e) {
+            prefs[row.key] = row.value;
+        }
+    });
+    return prefs;
+}
 module.exports = {
     initDB,
-    getPreferences, savePreference, getUserPreference, saveUserPreference,
+    getPreferences, savePreference, getUserPreference, saveUserPreference, getAllUserPreferences,
     logEmailAction,
     getMembers, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers,
     getSkills, addSkill, bulkAddSkills, updateSkill, deleteSkill, bulkDeleteSkills,

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,47 +8,265 @@
     <title id="pageTitle">Member Management - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        body { position: relative; }
-        .container { max-width: 1000px; margin: 0 auto; padding-top: 40px; }
-        h1 { text-align: center; margin-bottom: 30px; }
-        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); transition: all 0.2s ease; z-index: 10; }
-        .back-btn:hover { background-color: #23272b; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); }
-        .table-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 5px; }
-        .help-bar { display: flex; justify-content: flex-end; align-items: center; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #eee; }
-        th.sortable { cursor: pointer; user-select: none; position: relative; padding-right: 20px; }
-        th.sortable:hover { background-color: #23272b; }
-        .th-content { display: flex; align-items: center; justify-content: space-between; }
-        .sort-icon { font-size: 12px; margin-left: 8px; opacity: 0.5; }
-        .sort-icon.active { opacity: 1; color: #4db8ff; }
-        .btn-primary { background-color: #007bff; color: white; text-decoration: none; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; }
-        .btn-success { background-color: #28a745; color: white; text-decoration: none; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; }
-        .btn-secondary { background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-        .btn-danger { background-color: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-        .btn-icon { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 4px; transition: background-color 0.2s, color 0.2s; vertical-align: middle; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-icon:hover { background-color: rgba(0, 0, 0, 0.08); }
-        .btn-icon.edit { color: #007bff; }
-        .btn-icon.edit:hover { color: #0056b3; }
-        .btn-icon.delete { color: #dc3545; }
-        .btn-icon.delete:hover { color: #bd2130; }
-        .btn-icon.info { color: #17a2b8; padding: 4px; margin-right: 4px; }
-        .btn-icon.info:hover { color: #117a8b; transform: scale(1.1); }
-        .help-label { font-size: 13px; color: #666; cursor: pointer; }
-        .help-container { display: flex; align-items: center; cursor: pointer; }
-        .help-container:hover .help-label { text-decoration: underline; color: #17a2b8; }
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); }
-        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 500px; border-radius: 8px; position: relative; }
-        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; color: #aaa; }
-        .close-btn:hover { color: black; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
-        .code-block { background: #f4f4f4; padding: 10px; border-left: 4px solid #007bff; font-family: monospace; white-space: pre; overflow-x: auto; }
-        .cb-col { width: 40px; text-align: center; }
+        body {
+            position: relative;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding-top: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-decoration: none;
+            color: #fff;
+            background-color: #343a40;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .back-btn:hover {
+            background-color: #23272b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .table-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .help-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 20px;
+        }
+
+        th.sortable:hover {
+            background-color: #23272b;
+        }
+
+        .th-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sort-icon {
+            font-size: 12px;
+            margin-left: 8px;
+            opacity: 0.5;
+        }
+
+        .sort-icon.active {
+            opacity: 1;
+            color: #4db8ff;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s, color 0.2s;
+            vertical-align: middle;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-icon.edit {
+            color: #007bff;
+        }
+
+        .btn-icon.edit:hover {
+            color: #0056b3;
+        }
+
+        .btn-icon.delete {
+            color: #dc3545;
+        }
+
+        .btn-icon.delete:hover {
+            color: #bd2130;
+        }
+
+        .btn-icon.info {
+            color: #17a2b8;
+            padding: 4px;
+            margin-right: 4px;
+        }
+
+        .btn-icon.info:hover {
+            color: #117a8b;
+            transform: scale(1.1);
+        }
+
+        .help-label {
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .help-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .help-container:hover .help-label {
+            text-decoration: underline;
+            color: #17a2b8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 500px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close-btn:hover {
+            color: black;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .code-block {
+            background: #f4f4f4;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .cb-col {
+            width: 40px;
+            text-align: center;
+        }
     </style>
 </head>
+
 <body>
     <a href="/" class="back-btn" title="Back to Dashboard">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
     </a>
 
     <div class="container">
@@ -56,7 +275,8 @@
 
         <div id="tableContainer" style="display: block;">
             <div class="table-toolbar">
-                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger" style="display: none; margin-right: auto;">Delete Selected</button>
+                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger"
+                    style="display: none; margin-right: auto;">Delete Selected</button>
                 <button onclick="exportToCSV()" class="btn-secondary">Export CSV</button>
                 <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
                 <button onclick="openModal()" class="btn-primary">Add Member</button>
@@ -64,7 +284,12 @@
             <div class="help-bar">
                 <div class="help-container" onclick="openHelpModal()" title="Click for CSV format details">
                     <button class="btn-icon info">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
                     </button>
                     <span class="help-label">CSV Format Help</span>
                 </div>
@@ -73,10 +298,17 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
-                        <th class="sortable" onclick="handleSort('name')"><div class="th-content">Name (OSM) <span id="icon-name" class="sort-icon"></span></div></th>
-                        <th class="sortable" onclick="handleSort('email')"><div class="th-content">Email <span id="icon-email" class="sort-icon"></span></div></th>
-                        <th class="sortable" onclick="handleSort('mobile')"><div class="th-content">Mobile <span id="icon-mobile" class="sort-icon"></span></div></th>
+                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                        </th>
+                        <th class="sortable" onclick="handleSort('name')">
+                            <div class="th-content">Name (OSM) <span id="icon-name" class="sort-icon"></span></div>
+                        </th>
+                        <th class="sortable" onclick="handleSort('email')">
+                            <div class="th-content">Email <span id="icon-email" class="sort-icon"></span></div>
+                        </th>
+                        <th class="sortable" onclick="handleSort('mobile')">
+                            <div class="th-content">Mobile <span id="icon-mobile" class="sort-icon"></span></div>
+                        </th>
                         <th style="width: 100px; text-align: center;">Actions</th>
                     </tr>
                 </thead>
@@ -86,7 +318,11 @@
     </div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
     </button>
 
     <div id="memberModal" class="modal">
@@ -95,7 +331,8 @@
             <h2 id="modalTitle">Add Member</h2>
             <form id="memberForm">
                 <input type="hidden" id="memberId">
-                <div class="form-group"><label>Full Name</label><input type="text" id="name" required placeholder="Exact name as seen in OSM"></div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="name" required
+                        placeholder="Exact name as seen in OSM"></div>
                 <div class="form-group"><label>Email Address</label><input type="email" id="email" required></div>
                 <div class="form-group"><label>Mobile (Optional)</label><input type="text" id="mobile"></div>
                 <div style="text-align: right; margin-top: 20px;">
@@ -111,7 +348,7 @@
             <h2>CSV File Format</h2>
             <p><strong>Required:</strong> <code>name</code>, <code>email</code></p>
             <div class="code-block">name,email,mobile
-"Doe, John",john@example.com,021123</div>
+                "Doe, John",john@example.com,021123</div>
             <br><button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
         </div>
     </div>
@@ -134,12 +371,12 @@
                     }
                     if (uiConfig.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
                 }
-                const prefRes = await fetch('/api/preferences');
+                const prefRes = await fetch('/api/user-preferences');
                 if (prefRes.ok) {
                     const prefs = await prefRes.json();
                     if (prefs.sortMembers) currentSort = prefs.sortMembers;
                 }
-            } catch (e) {}
+            } catch (e) { }
             await reloadMembers();
         }
 
@@ -161,11 +398,10 @@
                 currentSort.column = column;
                 currentSort.order = 'asc';
             }
-            fetch('/api/preferences', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ key: 'sortMembers', value: currentSort }) });
+            // CHANGED: Post to /api/user-preferences
+            fetch('/api/user-preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'sortMembers', value: currentSort }) });
             applySort();
-        }
-
-        function applySort() {
+        } function applySort() {
             currentMembers.sort((a, b) => {
                 const valA = (a[currentSort.column] || '').toString().toLowerCase();
                 const valB = (b[currentSort.column] || '').toString().toLowerCase();
@@ -314,7 +550,7 @@
                         payload: { count: currentMembers.length }
                     })
                 });
-            } catch(e) { console.error("Logging failed", e); }
+            } catch (e) { console.error("Logging failed", e); }
         }
 
         initPage();
@@ -324,4 +560,5 @@
     </script>
     <script src="help.js"></script>
 </body>
+
 </html>

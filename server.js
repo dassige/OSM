@@ -59,9 +59,9 @@ app.post('/login', async (req, res) => {
     // 1. Check Superadmin (from .env)
     if (username === config.auth.username && password === config.auth.password) {
         req.session.loggedIn = true;
-        req.session.user = { 
-            name: 'Super Admin', 
-            email: username, 
+        req.session.user = {
+            name: 'Super Admin',
+            email: username,
             isAdmin: true,
             isEnvUser: true
         };
@@ -73,11 +73,11 @@ app.post('/login', async (req, res) => {
         const user = await db.authenticateUser(username, password);
         if (user) {
             req.session.loggedIn = true;
-            req.session.user = { 
+            req.session.user = {
                 id: user.id,
-                name: user.name, 
-                email: user.email, 
-                isAdmin: false 
+                name: user.name,
+                email: user.email,
+                isAdmin: false
             };
             return res.status(200).send({ success: true });
         }
@@ -90,7 +90,7 @@ app.post('/login', async (req, res) => {
 
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
-    
+
     // Block Super Admin reset (env based)
     if (email === config.auth.username) {
         return res.status(400).json({ error: "Cannot reset Super Admin password via email." });
@@ -105,7 +105,7 @@ app.post('/forgot-password', async (req, res) => {
         const tempPassword = crypto.randomBytes(4).toString('hex');
         await db.adminResetPassword(user.id, tempPassword);
         await sendPasswordReset(email, tempPassword, config.transporter);
-        
+
         await db.logEvent('System', 'Security', `Password reset requested for ${email}`, {});
         res.json({ success: true });
 
@@ -170,7 +170,7 @@ app.post('/api/users', requireAdmin, async (req, res) => {
     try {
         const { email, name, password } = req.body;
         if (!email || !name || !password) return res.status(400).json({ error: "Missing fields" });
-        
+
         await db.addUser(email, name, password);
         await db.logEvent(req.session.user.name, 'User Mgmt', `Created user ${email}`, {});
         res.json({ success: true });
@@ -208,7 +208,7 @@ app.put('/api/profile', async (req, res) => {
 
         await db.updateUserProfile(currentUser.id, name, password || null);
         req.session.user.name = name; // Update session
-        
+
         await db.logEvent(currentUser.name, 'Profile', `Updated own profile`, {});
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -236,7 +236,7 @@ app.get('/api/events', async (req, res) => {
             limit: req.query.limit || 50
         };
 
-        const result = await db.getEventLogs(filters); 
+        const result = await db.getEventLogs(filters);
         res.json(result);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -249,11 +249,17 @@ app.get('/api/events/meta', async (req, res) => {
 });
 
 // --- API: USER PREFERENCES ---
-
+app.get('/api/user-preferences', async (req, res) => {
+    try {
+        const userId = req.session.user.id || 0;
+        const prefs = await db.getAllUserPreferences(userId);
+        res.json(prefs);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
 app.get('/api/user-preferences/:key', async (req, res) => {
     try {
         // Use id 0 for Super Admin, otherwise user.id
-        const userId = req.session.user.id || 0; 
+        const userId = req.session.user.id || 0;
         const value = await db.getUserPreference(userId, req.params.key);
         res.json({ value });
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -428,10 +434,10 @@ app.post('/api/system/restore', upload.single('databaseFile'), async (req, res) 
     try {
         await db.verifyAndReplaceDb(tempPath);
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-        
+
         const username = req.session.user.name || req.session.user;
         await db.logEvent(username, 'System', 'Database Restored', { originalname: req.file.originalname });
-        
+
         res.json({ success: true, message: "Database restored successfully. System reloaded." });
     } catch (e) {
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
@@ -468,15 +474,19 @@ io.on('connection', (socket) => {
 
     socket.on('get-preferences', async () => {
         try {
-            const prefs = await db.getPreferences();
+            // Fetch User Preferences instead of Global
+            const userId = socket.request.session.user.id || 0;
+            const prefs = await db.getAllUserPreferences(userId);
             socket.emit('preferences-data', prefs);
         } catch (e) { logger(e.message); }
     });
-
     socket.on('update-preference', async ({ key, value }) => {
-        try { await db.savePreference(key, value); } catch (e) { logger(e.message); }
+        try {
+            // Save to User Preferences
+            const userId = socket.request.session.user.id || 0;
+            await db.saveUserPreference(userId, key, value);
+        } catch (e) { logger(e.message); }
     });
-
     socket.on('view-expiring-skills', async (days) => {
         const daysThreshold = parseInt(days) || 30;
         logger(`> Fetching View Data (Threshold: ${daysThreshold} days)...`);
@@ -507,7 +517,7 @@ io.on('connection', (socket) => {
     socket.on('run-send-selected', async (selectedNames, days) => {
         const daysThreshold = parseInt(days) || 30;
         const currentUser = socket.request.session.user.name || socket.request.session.user;
-        
+
         logger(`> Starting Email Process (User: ${currentUser})...`);
         socket.emit('progress-update', { type: 'progress-start', total: selectedNames.length });
 
@@ -515,7 +525,7 @@ io.on('connection', (socket) => {
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
             const prefs = await db.getPreferences();
-            
+
             const templateConfig = {
                 from: prefs.emailFrom,
                 subject: prefs.emailSubject,
@@ -532,17 +542,17 @@ io.on('connection', (socket) => {
                 if (member.expiringSkills.length > 0) {
                     try {
                         const result = await sendNotification(member, templateConfig, config.transporter, false, logger);
-                        
+
                         await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills`);
-                        
+
                         // UPDATED: Include body in log
-                        await db.logEvent(currentUser, 'Email', `Sent to ${member.name} at ${member.email}`, { 
-                            recipient: member.name, 
+                        await db.logEvent(currentUser, 'Email', `Sent to ${member.name} at ${member.email}`, {
+                            recipient: member.name,
                             email: member.email,
                             skillsCount: member.expiringSkills.length,
                             emailBody: result ? result.html : 'No content'
                         });
-                        
+
                     } catch (err) {
                         await db.logEmailAction(member, 'FAILED', err.message);
                         throw err;
