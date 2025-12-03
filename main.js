@@ -3,7 +3,7 @@ const cheerio = require('cheerio');
 const https = require('https');
 
 // Import constants
-const {members, skillsConfig, url, transporter, emailInfo } = require('./resources.js');
+const { members, skillsConfig, url, transporter, emailInfo } = require('./resources.js');
 
 // --- 1. GLOBAL FLAG DEFINITIONS ---
 const args = process.argv.slice(2);
@@ -42,7 +42,7 @@ if (isSendSelectedMode) {
 }
 
 let osmData = [];
-let allResults = []; 
+let allResults = [];
 
 function getTime() {
     return new Date().toLocaleTimeString();
@@ -51,7 +51,7 @@ function getTime() {
 async function getOIData() {
     if (!isViewMode) console.log(`[${getTime()}] Retreiving OI Data from dashboard...`);
     try {
-        const response = await axios.get(url, { httpsAgent: new https.Agent({rejectUnauthorized: false }) });
+        const response = await axios.get(url, { httpsAgent: new https.Agent({ rejectUnauthorized: false }) });
         const $ = cheerio.load(response.data);
         const osmStatusTable = $('tbody');
 
@@ -81,14 +81,14 @@ async function getOIData() {
     }
 }
 
-async function sendEmail(to, text, html) { 
+async function sendEmail(to, text, html) {
     console.log(`   [${getTime()}] SMTP: Initializing transport...`);
     try {
         const info = await transporter.sendMail({
             from: emailInfo.from,
             to: to,
             subject: emailInfo.subject,
-            text: text, 
+            text: text,
             html: html,
         });
         console.log(`   [${getTime()}] SMTP: Payload accepted.`);
@@ -111,7 +111,7 @@ async function sendMessage(member) {
             <p>Hello, you have expiring Skills due in OSM. Please complete these ASAP:</p>
             <ul>
     `;
-    
+
     if (!isViewMode) {
         console.log(`\n=============================================================`);
         console.log(`PROCESSING MEMBER: ${member.name}`);
@@ -128,7 +128,7 @@ async function sendMessage(member) {
     member.expiringSkills.forEach((skill) => {
         const skillConfig = skillsConfig.find(config => config.name === skill.skill);
         const isIncluded = !!skillConfig;
-        
+
         if (!isViewMode) {
             console.log(`      - Skill: "${skill.skill}"`);
             console.log(`        Due Date: ${skill.dueDate}`);
@@ -139,7 +139,14 @@ async function sendMessage(member) {
         }
 
         if (isIncluded) {
-            const fullUrl = `${skill.url}${encodeURIComponent(member.name)}`;
+            // [UPDATED] Use templating instead of appending
+            let fullUrl = skill.url || '';
+            if (fullUrl) {
+                fullUrl = fullUrl
+                    .replace(/{{member-name}}/g, encodeURIComponent(member.name))
+                    .replace(/{{member-email}}/g, encodeURIComponent(member.email));
+            }
+
             message = message + `\r\nSkill: '${skill.skill}' expires on ${skill.dueDate}`;
             message = message + `\r\nTo complete the OI Click here : ${fullUrl}`;
 
@@ -153,7 +160,7 @@ async function sendMessage(member) {
             enableSend = true;
         }
     });
-    
+
     htmlMessage += `
             </ul>
             <p style="font-size: 12px; color: #888;">This is an automated notification from FENZ OSM Manager.</p>
@@ -192,19 +199,19 @@ async function checkExpiringSkills(member) {
         thresholdDate.setDate(currentDate.getDate() + daysThreshold);
 
         if (skillExpiryDate <= thresholdDate) {
-             const retVal = skillsConfig.find(config => config.name === skill.skill);
-             if (retVal) {
-                 skill.url = retVal.url;
-                 skill.isCritical = retVal.critical_skill; 
-             }
-             return true;
+            const retVal = skillsConfig.find(config => config.name === skill.skill);
+            if (retVal) {
+                skill.url = retVal.url;
+                skill.isCritical = retVal.critical_skill;
+            }
+            return true;
         }
         return false;
     });
 
     if (member.expiringSkills && member.expiringSkills.length > 0) {
         if (!isViewMode) {
-            await sendMessage(member); 
+            await sendMessage(member);
         } else {
             const isEmailEligible = member.expiringSkills.some(s => skillsConfig.some(conf => conf.name === s.skill));
             allResults.push({
@@ -212,15 +219,15 @@ async function checkExpiringSkills(member) {
                 skills: member.expiringSkills.map(s => ({
                     skill: s.skill,
                     dueDate: s.dueDate,
-                    hasUrl: !!s.url, 
-                    isCritical: !!s.isCritical 
+                    hasUrl: !!s.url,
+                    isCritical: !!s.isCritical
                 })),
                 emailEligible: isEmailEligible
             });
         }
     } else {
         if (isViewMode) {
-             allResults.push({
+            allResults.push({
                 name: member.name,
                 skills: [],
                 emailEligible: false
@@ -231,7 +238,7 @@ async function checkExpiringSkills(member) {
 
 async function processOIData(rows) {
     // REFACTOR: Filter targets based on mode
-    const targets = isSendSelectedMode 
+    const targets = isSendSelectedMode
         ? members.filter(m => allowedNames.includes(m.name))
         : members;
 
@@ -245,22 +252,22 @@ async function processOIData(rows) {
     for (const member of targets) {
         // 1. Send the email (waits here until done)
         await checkExpiringSkills(member);
-        
+
         // 2. Increment and Update UI *IMMEDIATELY* after send
         current++;
         if (process.send) {
-            process.send({ 
-                type: 'progress-tick', 
-                current: current, 
-                total: targets.length, 
+            process.send({
+                type: 'progress-tick',
+                current: current,
+                total: targets.length,
                 member: member.name // Pass name for UI feedback
             });
         }
-        
+
         // 3. Pause *AFTER* updating UI
         if (!isViewMode) {
-             console.log(`   [${getTime()}] Pausing for rate limit safety (5s)...`);
-             await new Promise(resolve => setTimeout(resolve, 5000));
+            console.log(`   [${getTime()}] Pausing for rate limit safety (5s)...`);
+            await new Promise(resolve => setTimeout(resolve, 5000));
         }
     }
 }
@@ -270,7 +277,7 @@ const main = async () => {
         const rows = await getOIData();
         if (rows) {
             await processOIData(rows);
-            
+
             if (isViewMode) {
                 console.log('___JSON_START___');
                 console.log(JSON.stringify(allResults));

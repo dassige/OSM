@@ -17,14 +17,19 @@
         .tab { padding: 12px 24px; cursor: pointer; font-weight: bold; color: #666; border-top-left-radius: 6px; border-top-right-radius: 6px; transition: all 0.2s; background: #f8f9fa; margin-right: 2px; border: 1px solid #ddd; border-bottom: none; }
         .tab:hover { background-color: #e9ecef; }
         .tab.active { background-color: #fff; color: #007bff; border-bottom: 2px solid #fff; margin-bottom: -2px; }
-        .tab-content { display: none; background: #fff; padding: 25px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 6px 6px; }
+        .tab-content { display: none; background: #fff; padding: 25px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 6px 6px; position: relative; }
         .tab-content.active { display: block; }
+
+        /* ACTIONS BAR inside Tab */
+        .template-actions { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 4px; border: none; cursor: pointer; color: white; background-color: #6c757d; transition: background 0.2s; }
+        .btn-sm:hover { background-color: #5a6268; }
 
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.95em; color: #333; }
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
         
-        .palette-container { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; padding: 10px; background: #eef2f5; border: 1px solid #dee2e6; border-radius: 4px; align-items: center; }
+        .palette-container { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; padding: 10px; background: #eef2f5; border: 1px solid #dee2e6; border-radius: 4px; align-items: center; max-width: 70%; /* Leave room for buttons */ }
         .palette-label { font-size: 12px; font-weight: bold; color: #666; margin-right: 5px; text-transform: uppercase; }
         .draggable-item { background-color: #fff; border: 1px solid #adb5bd; border-radius: 12px; padding: 4px 12px; font-family: monospace; font-weight: 600; color: #495057; cursor: grab; user-select: none; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .draggable-item:hover { background-color: #007bff; color: white; border-color: #007bff; }
@@ -41,6 +46,8 @@
     <div class="container">
         <h1 id="pageHeader">Email Templates</h1>
         
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+
         <div class="tab-container">
             <div class="tab active" onclick="switchTab('skills')">Expiring Skills</div>
             <div class="tab" onclick="switchTab('newuser')">New User</div>
@@ -51,6 +58,10 @@
         <form id="templateForm">
             
             <div id="tab-skills" class="tab-content active">
+                <div class="template-actions">
+                    <button type="button" class="btn-sm" onclick="triggerImport('skills')">Import</button>
+                    <button type="button" class="btn-sm" onclick="exportTemplate('skills')">Export</button>
+                </div>
                 <div class="palette-container">
                     <span class="palette-label">Drag variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
@@ -74,6 +85,10 @@
             </div>
 
             <div id="tab-newuser" class="tab-content">
+                <div class="template-actions">
+                    <button type="button" class="btn-sm" onclick="triggerImport('newuser')">Import</button>
+                    <button type="button" class="btn-sm" onclick="exportTemplate('newuser')">Export</button>
+                </div>
                 <div class="palette-container">
                     <span class="palette-label">Variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
@@ -87,6 +102,10 @@
             </div>
 
             <div id="tab-reset" class="tab-content">
+                <div class="template-actions">
+                    <button type="button" class="btn-sm" onclick="triggerImport('reset')">Import</button>
+                    <button type="button" class="btn-sm" onclick="exportTemplate('reset')">Export</button>
+                </div>
                 <div class="palette-container">
                     <span class="palette-label">Variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
@@ -99,6 +118,10 @@
             </div>
 
             <div id="tab-delete" class="tab-content">
+                <div class="template-actions">
+                    <button type="button" class="btn-sm" onclick="triggerImport('delete')">Import</button>
+                    <button type="button" class="btn-sm" onclick="exportTemplate('delete')">Export</button>
+                </div>
                 <div class="palette-container">
                     <span class="palette-label">Variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
@@ -117,6 +140,8 @@
     </div>
 
     <script>
+        let currentImportType = null;
+
         // Init UI Config
         fetch('/ui-config').then(r=>r.json()).then(c=>{ 
             if(c.loginTitle) document.getElementById('pageTitle').innerText = "Templates - "+c.loginTitle; 
@@ -177,17 +202,12 @@
             item.addEventListener('dragstart', (e) => {
                 const val = item.getAttribute('data-val');
                 const text = `{{${val}}}`;
-                
-                // For Inputs (Plain Text)
-                e.dataTransfer.setData('text/plain', text);
-                
-                // For TinyMCE (HTML Chip)
+                e.dataTransfer.setData('text/plain', text); // For Inputs
                 const html = `<span class="mceNonEditable chip" data-val="${val}">${text}</span>`;
-                e.dataTransfer.setData('text/html', html);
+                e.dataTransfer.setData('text/html', html); // For TinyMCE
             });
         });
 
-        // Allow dropping into standard inputs
         document.querySelectorAll('.droppable-input').forEach(input => {
             input.addEventListener('dragover', e => e.preventDefault());
             input.addEventListener('drop', e => {
@@ -202,12 +222,78 @@
             });
         });
 
+        // --- Import / Export Logic ---
+
+        function exportTemplate(type) {
+            let data = {};
+            
+            if (type === 'skills') {
+                data = {
+                    from: document.getElementById('skillsFrom').value,
+                    subject: document.getElementById('skillsSubject').value,
+                    intro: chipsToText(tinymce.get('skillsIntro').getContent()),
+                    row: chipsToText(tinymce.get('skillsRow').getContent())
+                };
+            } else {
+                // Generic logic for newuser, reset, delete
+                const prefix = (type === 'newuser') ? 'newUser' : type; // Handle camelCase map if needed
+                data = {
+                    from: document.getElementById(prefix + 'From').value,
+                    subject: document.getElementById(prefix + 'Subject').value,
+                    body: chipsToText(tinymce.get(prefix + 'Body').getContent())
+                };
+            }
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template_${type}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function triggerImport(type) {
+            currentImportType = type;
+            document.getElementById('importFile').value = '';
+            document.getElementById('importFile').click();
+        }
+
+        document.getElementById('importFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file || !currentImportType) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = JSON.parse(evt.target.result);
+                    
+                    if (currentImportType === 'skills') {
+                        if(data.from) document.getElementById('skillsFrom').value = data.from;
+                        if(data.subject) document.getElementById('skillsSubject').value = data.subject;
+                        if(data.intro) tinymce.get('skillsIntro').setContent(textToChips(data.intro));
+                        if(data.row) tinymce.get('skillsRow').setContent(textToChips(data.row));
+                    } else {
+                        const prefix = (currentImportType === 'newuser') ? 'newUser' : currentImportType;
+                        if(data.from) document.getElementById(prefix + 'From').value = data.from;
+                        if(data.subject) document.getElementById(prefix + 'Subject').value = data.subject;
+                        if(data.body) tinymce.get(prefix + 'Body').setContent(textToChips(data.body));
+                    }
+                    alert(`Template for '${currentImportType}' imported successfully!`);
+                } catch (err) {
+                    alert('Error parsing JSON: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        });
+
         // --- Load & Save ---
         async function loadData() {
             const res = await fetch('/api/preferences');
             const prefs = await res.json();
 
-            // 1. Skills (Legacy mapping)
+            // 1. Skills
             document.getElementById('skillsFrom').value = prefs.emailFrom || '';
             document.getElementById('skillsSubject').value = prefs.emailSubject || '';
             if(prefs.emailIntro) tinymce.get('skillsIntro').setContent(textToChips(prefs.emailIntro));
@@ -261,6 +347,17 @@
                     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(u) 
                 });
             }
+
+            // Logging event
+            await fetch('/api/logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'Email Templates',
+                    title: 'Updated Email Templates',
+                    payload: { fields: ['skills', 'new_user', 'reset', 'delete'] }
+                })
+            });
 
             alert("All templates saved successfully.");
         });

@@ -28,38 +28,37 @@ function getTemplate(prefs, type, defaults) {
     return defaults;
 }
 
-// 1. Expiring Skills Notification
+//  Expiring Skills Notification
 async function sendNotification(member, templateConfig, transporter, isTestMode, logger = console.log, appName) {
     if (!member.expiringSkills || member.expiringSkills.length === 0) return null;
 
-    // Common Variables
-    const globalVars = {
-        appname: appName || "FENZ OSM Manager",
-        name: member.name,
-        email: member.email
-    };
+    // ... [Keep globalVars definition] ...
 
-    // 1. Process From/Subject/Intro with Global Vars
-    const from = replaceVariables(templateConfig.from || '"{{appname}}" <noreply@fenz.osm>', globalVars);
-    const subject = replaceVariables(templateConfig.subject || '{{appname}}: Expiring Skills Notification', globalVars);
-    const intro = replaceVariables(templateConfig.intro || '<p>Hello {{name}},</p><p>You have expiring Skills due.</p>', globalVars);
-    const rowTemplate = templateConfig.rowHtml || '<li><strong>{{skill}}</strong> expires on {{date}}</li>';
+    // ... [Keep from, subject, intro processing] ...
 
-    // 2. Build the rows
     let rowsHtml = '';
     let plainTextList = '';
 
     member.expiringSkills.forEach(skill => {
-        const fullUrl = `${skill.url}${encodeURIComponent(member.name)}`;
+        // [UPDATED] URL Construction Logic
+        let fullUrl = skill.url || '';
+        if (fullUrl) {
+            // Replace variables if they exist, otherwise keep original string (backward compat)
+            // If the user hasn't updated the URL to use tags yet, this simply returns the base URL.
+            // NOTE: The previous hardcoded appending of 'member.name' is REMOVED as requested.
+            fullUrl = fullUrl
+                .replace(/{{member-name}}/g, encodeURIComponent(member.name))
+                .replace(/{{member-email}}/g, encodeURIComponent(member.email));
+        }
+
         const criticalLabel = skill.isCritical ? '(CRITICAL)' : '';
-        
-        // Row specific replacement
+
         let row = rowTemplate
             .replace(/{{skill}}/g, skill.skill)
             .replace(/{{date}}/g, skill.dueDate)
             .replace(/{{critical}}/g, criticalLabel)
             .replace(/{{url}}/g, fullUrl);
-        
+
         rowsHtml += row;
         plainTextList += `- ${skill.skill} (${skill.dueDate})\n`;
     });
@@ -76,7 +75,7 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
 
     if (isTestMode) {
         logger(`[${getTime()}] [TEST MODE] Simulating email to: ${member.email}`);
-        return { html: messageHtml, text: messageText }; 
+        return { html: messageHtml, text: messageText };
     }
 
     try {
@@ -159,9 +158,9 @@ async function sendAccountDeletionNotification(email, name, transporter, appName
     console.log(`[SMTP] Deletion notification sent to ${email}`);
 }
 
-module.exports = { 
-    sendNotification, 
-    sendPasswordReset, 
-    sendNewAccountNotification, 
-    sendAccountDeletionNotification 
+module.exports = {
+    sendNotification,
+    sendPasswordReset,
+    sendNewAccountNotification,
+    sendAccountDeletionNotification
 };

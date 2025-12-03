@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,254 +7,61 @@
     <title id="pageTitle">Skills Management - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        body {
-            position: relative;
+        body { position: relative; }
+        .container { max-width: 1000px; margin: 0 auto; padding-top: 40px; }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); transition: all 0.2s ease; z-index: 10; }
+        .back-btn:hover { background-color: #23272b; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); }
+        .table-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .help-bar { display: flex; justify-content: flex-end; align-items: center; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #eee; }
+        .btn-primary { background-color: #007bff; color: white; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; }
+        .btn-success { background-color: #28a745; color: white; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; }
+        .btn-secondary { background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; border: none; }
+        .btn-danger { background-color: #dc3545; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; border: none; }
+        .btn-icon { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 4px; transition: background-color 0.2s, color 0.2s; vertical-align: middle; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-icon:hover { background-color: rgba(0, 0, 0, 0.08); }
+        .btn-icon.edit { color: #007bff; }
+        .btn-icon.edit:hover { color: #0056b3; }
+        .btn-icon.delete { color: #dc3545; }
+        .btn-icon.delete:hover { color: #bd2130; }
+        .btn-icon.info { color: #17a2b8; padding: 4px; margin-right: 4px; }
+        .btn-icon.info:hover { color: #117a8b; transform: scale(1.1); }
+        .help-label { font-size: 13px; color: #666; cursor: pointer; }
+        .help-container { display: flex; align-items: center; cursor: pointer; }
+        .help-container:hover .help-label { text-decoration: underline; color: #17a2b8; }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 500px; border-radius: 8px; position: relative; }
+        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; color: #aaa; }
+        .close-btn:hover { color: black; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        
+        /* UPDATED: Include textarea in basic form styling */
+        .form-group input[type="text"], 
+        .form-group input[type="url"],
+        .form-group textarea { 
+            width: 100%; 
+            padding: 8px; 
+            box-sizing: border-box; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            font-family: inherit; /* Ensure textarea matches font */
         }
 
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding-top: 40px;
-        }
+        .code-block { background: #f4f4f4; padding: 10px; border-left: 4px solid #007bff; font-family: monospace; white-space: pre; overflow-x: auto; }
+        .cb-col { width: 40px; text-align: center; }
+        th.sortable { cursor: pointer; user-select: none; position: relative; padding-right: 20px; }
+        th.sortable:hover { background-color: #23272b; }
+        .th-content { display: flex; align-items: center; justify-content: space-between; }
+        .sort-icon { font-size: 12px; margin-left: 8px; opacity: 0.5; }
+        .sort-icon.active { opacity: 1; color: #4db8ff; }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .back-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            text-decoration: none;
-            color: #fff;
-            background-color: #343a40;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-            transition: all 0.2s ease;
-            z-index: 10;
-        }
-
-        .back-btn:hover {
-            background-color: #23272b;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .table-toolbar {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 5px;
-        }
-
-        .help-bar {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-success {
-            background-color: #28a745;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-danger {
-            background-color: #dc3545;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-icon {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 4px;
-            transition: background-color 0.2s, color 0.2s;
-            vertical-align: middle;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-icon:hover {
-            background-color: rgba(0, 0, 0, 0.08);
-        }
-
-        .btn-icon.edit {
-            color: #007bff;
-        }
-
-        .btn-icon.edit:hover {
-            color: #0056b3;
-        }
-
-        .btn-icon.delete {
-            color: #dc3545;
-        }
-
-        .btn-icon.delete:hover {
-            color: #bd2130;
-        }
-
-        .btn-icon.info {
-            color: #17a2b8;
-            padding: 4px;
-            margin-right: 4px;
-        }
-
-        .btn-icon.info:hover {
-            color: #117a8b;
-            transform: scale(1.1);
-        }
-
-        .help-label {
-            font-size: 13px;
-            color: #666;
-            cursor: pointer;
-        }
-
-        .help-container {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .help-container:hover .help-label {
-            text-decoration: underline;
-            color: #17a2b8;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 100;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-
-        .modal-content {
-            background-color: #fefefe;
-            margin: 10% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 500px;
-            border-radius: 8px;
-            position: relative;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            color: #aaa;
-        }
-
-        .close-btn:hover {
-            color: black;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .form-group input[type="text"],
-        .form-group input[type="url"] {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .code-block {
-            background: #f4f4f4;
-            padding: 10px;
-            border-left: 4px solid #007bff;
-            font-family: monospace;
-            white-space: pre;
-            overflow-x: auto;
-        }
-
-        .cb-col {
-            width: 40px;
-            text-align: center;
-        }
-
-        th.sortable {
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-            padding-right: 20px;
-        }
-
-        th.sortable:hover {
-            background-color: #23272b;
-        }
-
-        .th-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .sort-icon {
-            font-size: 12px;
-            margin-left: 8px;
-            opacity: 0.5;
-        }
-
-        .sort-icon.active {
-            opacity: 1;
-            color: #4db8ff;
-        }
+        /* CHIPS STYLING */
+        .palette-container { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; padding: 8px; background: #eef2f5; border: 1px solid #dee2e6; border-radius: 4px; align-items: center; }
+        .palette-label { font-size: 11px; font-weight: bold; color: #666; margin-right: 4px; text-transform: uppercase; }
+        .draggable-item { background-color: #fff; border: 1px solid #adb5bd; border-radius: 12px; padding: 2px 10px; font-family: monospace; font-weight: 600; color: #495057; cursor: grab; user-select: none; font-size: 11px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .draggable-item:hover { background-color: #007bff; color: white; border-color: #007bff; }
+        .draggable-item:active { cursor: grabbing; }
     </style>
 </head>
 
@@ -274,8 +80,7 @@
 
         <div id="tableContainer" style="display: block;">
             <div class="table-toolbar">
-                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger"
-                    style="display: none; margin-right: auto;">Delete Selected</button>
+                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger" style="display: none; margin-right: auto;">Delete Selected</button>
                 <button onclick="exportToCSV()" class="btn-secondary">Export CSV</button>
                 <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
                 <button onclick="openModal()" class="btn-primary">Add Skill</button>
@@ -297,15 +102,9 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
-                        </th>
-                        <th class="sortable" onclick="handleSort('name')">
-                            <div class="th-content">Skill Name <span id="icon-name" class="sort-icon"></span></div>
-                        </th>
-                        <th class="sortable" onclick="handleSort('critical_skill')">
-                            <div class="th-content">Critical <span id="icon-critical_skill" class="sort-icon"></span>
-                            </div>
-                        </th>
+                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
+                        <th class="sortable" onclick="handleSort('name')"><div class="th-content">Skill Name <span id="icon-name" class="sort-icon"></span></div></th>
+                        <th class="sortable" onclick="handleSort('critical_skill')"><div class="th-content">Critical <span id="icon-critical_skill" class="sort-icon"></span></div></th>
                         <th>Form URL</th>
                         <th style="width: 100px; text-align: center;">Actions</th>
                     </tr>
@@ -316,11 +115,7 @@
     </div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="19" x2="12" y2="5"></line>
-            <polyline points="5 12 12 5 19 12"></polyline>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
     </button>
 
     <div id="skillModal" class="modal">
@@ -329,14 +124,26 @@
             <h2 id="modalTitle">Add Skill</h2>
             <form id="skillForm">
                 <input type="hidden" id="skillId">
-                <div class="form-group"><label>Skill Name (Exact Match)</label><input type="text" id="name" required
-                        placeholder="e.g. OI (IS1) - Operational Safety"></div>
-                <div class="form-group"><label>Google Form URL (Optional)</label><input type="url" id="url"
-                        placeholder="https://docs.google.com/forms/..."></div>
+                <div class="form-group">
+                    <label>Skill Name (Exact Match)</label>
+                    <input type="text" id="name" required placeholder="e.g. OI (IS1) - Operational Safety">
+                </div>
+                
+                <div class="form-group">
+                    <label>Google Form URL (Optional)</label>
+                    <div class="palette-container">
+                        <span class="palette-label">Drag to Insert:</span>
+                        <div class="draggable-item" draggable="true" data-val="member-name">Member Name</div>
+                        <div class="draggable-item" draggable="true" data-val="member-email">Member Email</div>
+                    </div>
+                    <textarea id="url" rows="4" placeholder="https://docs.google.com/forms/...?entry.123={{member-name}}" style="resize:vertical;"></textarea>
+                    
+                    <small style="display:block; color:#888; font-size:0.8em; margin-top:4px;">Drag chips above into the box to pre-fill form fields.</small>
+                </div>
+
                 <div class="form-group">
                     <label style="display:flex; align-items:center; cursor:pointer;">
-                        <input type="checkbox" id="critical_skill" style="width:auto; margin-right:10px;"> Critical
-                        Skill
+                        <input type="checkbox" id="critical_skill" style="width:auto; margin-right:10px;"> Critical Skill
                     </label>
                 </div>
                 <div style="text-align: right; margin-top: 20px;">
@@ -353,8 +160,8 @@
             <h2>CSV File Format</h2>
             <p><strong>Required:</strong> <code>name</code></p>
             <div class="code-block">name,url,critical_skill
-                "OI (IS1)",https://forms...,true
-                "OI (G9)",,0</div>
+"OI (IS1)",https://forms...{{member-name}},true
+"OI (G9)",,0</div>
             <br><button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
         </div>
     </div>
@@ -384,6 +191,35 @@
                 }
             } catch (e) { }
             await reloadSkills();
+            setupDragAndDrop();
+        }
+
+        // --- DRAG & DROP LOGIC ---
+        function setupDragAndDrop() {
+            document.querySelectorAll('.draggable-item').forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    const val = item.getAttribute('data-val');
+                    const text = `{{${val}}}`;
+                    e.dataTransfer.setData('text/plain', text);
+                });
+            });
+
+            const urlInput = document.getElementById('url');
+            urlInput.addEventListener('dragover', e => e.preventDefault());
+            urlInput.addEventListener('drop', e => {
+                e.preventDefault();
+                const text = e.dataTransfer.getData('text/plain');
+                if(text) {
+                    const start = urlInput.selectionStart;
+                    const end = urlInput.selectionEnd;
+                    const val = urlInput.value;
+                    urlInput.value = val.substring(0, start) + text + val.substring(end);
+                    urlInput.focus();
+                    // Move cursor to end of inserted text
+                    const newPos = start + text.length;
+                    urlInput.setSelectionRange(newPos, newPos);
+                }
+            });
         }
 
         async function reloadSkills() {
@@ -404,7 +240,6 @@
                 currentSort.column = column;
                 currentSort.order = 'asc';
             }
-            // CHANGED: Post to /api/user-preferences
             fetch('/api/user-preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'sortSkillsPage', value: currentSort }) });
             applySort();
         }
@@ -570,7 +405,7 @@
                         payload: { count: currentSkills.length }
                     })
                 });
-            } catch (e) { console.error("Logging failed", e); }
+            } catch(e) { console.error("Logging failed", e); }
         }
 
         initPage();
@@ -580,5 +415,4 @@
     </script>
     <script src="help.js"></script>
 </body>
-
 </html>

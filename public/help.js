@@ -27,27 +27,37 @@ const helpContent = {
         `
     },
     // --- Skill Management ---
-    "skills": {
+"skills": {
         title: "Manage Skills Help",
         body: `
             <p><strong>Add Skill:</strong> Define a new skill to track. The name must match the OSM Dashboard exactly.</p>
             <p><strong>Critical Skill:</strong> Mark high-priority skills (e.g., BA). These appear bold on the dashboard.</p>
-            <p><strong>Form URL:</strong> Paste the Google Form link here. It will be included in the email so members can renew immediately.</p>
+            <p><strong>Form URL:</strong> Paste the Google Form link here.</p>
+            <p><strong>URL Templating:</strong> You can pre-fill form fields using variables:</p>
+            <ul>
+                <li><code>{{member-name}}</code> - Inserts the member's name.</li>
+                <li><code>{{member-email}}</code> - Inserts the member's email.</li>
+            </ul>
+            <p><em>Example:</em> <code>https://docs.google.com/forms/d/e/...?entry.123={{member-name}}</code></p>
         `
     },
     // --- Email Templates ---
     "email-templates": {
         title: "Email Templates Help",
         body: `
-            <p><strong>Editor:</strong> Customize the email sent to members.</p>
-            <p><strong>Drag & Drop:</strong> Drag the gray chips (e.g., <code>{{skill}}</code>) into the editor to place dynamic placeholders.</p>
-            <p><strong>Form URL:</strong> To link the "Form URL" correctly:
-            <ol>
-                <li>Type text like "Click here".</li>
-                <li>Highlight it and click the Link icon.</li>
-                <li>Paste <code>{{url}}</code> into the URL field.</li>
-            </ol>
-            </p>
+            <p><strong>Overview:</strong> Customize the automated emails sent by the system.</p>
+            <p><strong>Tabs:</strong> Use the tabs at the top to switch between different email types (Expiring Skills, New User, Password Reset, Account Deletion).</p>
+            <p><strong>Drag & Drop Variables:</strong> Drag the gray chips (e.g., <code>{{name}}</code>) into the Subject or Body editor to insert dynamic placeholders.</p>
+            <ul>
+                <li><strong>Import/Export:</strong> Use the buttons in the top-right of each tab to backup or restore specific templates.</li>
+                <li><strong>Form URL (Skills):</strong> To link the "Form URL" correctly in the Skills template:
+                    <ol>
+                        <li>Type text like "Click here".</li>
+                        <li>Highlight it and click the Link icon in the editor toolbar.</li>
+                        <li>Paste <code>{{url}}</code> into the URL field.</li>
+                    </ol>
+                </li>
+            </ul>
         `
     },
     // --- System Tools ---
