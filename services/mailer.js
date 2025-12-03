@@ -1,23 +1,51 @@
 // services/mailer.js
 const getTime = () => new Date().toLocaleTimeString();
 
-// Helper to strip HTML tags
+// Helper: Strip HTML tags
 function stripHtml(html) {
     if (!html) return "";
     return html.replace(/<[^>]*>?/gm, '');
 }
 
-// 1. Existing Notification Sender
-async function sendNotification(member, templateConfig, transporter, isTestMode, logger = console.log) {
-    if (!member.expiringSkills || member.expiringSkills.length === 0) {
-        return null;
+// Helper: Generic Variable Replacement
+function replaceVariables(text, variables) {
+    if (!text) return "";
+    let result = text;
+    for (const [key, value] of Object.entries(variables)) {
+        // Replace {{key}} globally
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        result = result.replace(regex, value);
     }
+    return result;
+}
 
-    const from = templateConfig.from || '"FENZ OSM Manager" <noreply@fenz.osm>';
-    const subject = templateConfig.subject || 'FENZ OSM: Expiring Skills Notification';
-    const intro = templateConfig.intro || '<p>Hello, you have expiring Skills due in OSM.</p>';
+// Helper: Get Default Template if DB is empty
+function getTemplate(prefs, type, defaults) {
+    const json = prefs[type];
+    if (json) {
+        try { return JSON.parse(json); } catch (e) { return defaults; }
+    }
+    return defaults;
+}
+
+// 1. Expiring Skills Notification
+async function sendNotification(member, templateConfig, transporter, isTestMode, logger = console.log, appName) {
+    if (!member.expiringSkills || member.expiringSkills.length === 0) return null;
+
+    // Common Variables
+    const globalVars = {
+        appname: appName || "FENZ OSM Manager",
+        name: member.name,
+        email: member.email
+    };
+
+    // 1. Process From/Subject/Intro with Global Vars
+    const from = replaceVariables(templateConfig.from || '"{{appname}}" <noreply@fenz.osm>', globalVars);
+    const subject = replaceVariables(templateConfig.subject || '{{appname}}: Expiring Skills Notification', globalVars);
+    const intro = replaceVariables(templateConfig.intro || '<p>Hello {{name}},</p><p>You have expiring Skills due.</p>', globalVars);
     const rowTemplate = templateConfig.rowHtml || '<li><strong>{{skill}}</strong> expires on {{date}}</li>';
 
+    // 2. Build the rows
     let rowsHtml = '';
     let plainTextList = '';
 
@@ -25,6 +53,7 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
         const fullUrl = `${skill.url}${encodeURIComponent(member.name)}`;
         const criticalLabel = skill.isCritical ? '(CRITICAL)' : '';
         
+        // Row specific replacement
         let row = rowTemplate
             .replace(/{{skill}}/g, skill.skill)
             .replace(/{{date}}/g, skill.dueDate)
@@ -37,124 +66,102 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
 
     const messageHtml = `
         <div style="font-family: Arial, sans-serif; color: #333;">
-            <h2 style="color: #d32f2f;">${subject}</h2>
             ${intro}
-            <ul>
-                ${rowsHtml}
-            </ul>
-            <p style="font-size: 12px; color: #888;">This is an automated notification from FENZ OSM Manager.</p>
+            <ul>${rowsHtml}</ul>
+            <p style="font-size: 12px; color: #888; margin-top:20px;">Notification from ${globalVars.appname}.</p>
         </div>
     `;
 
-    const messageText = `${stripHtml(intro)}\n\n${plainTextList}\n\nLog in to dashboard to complete these.`;
+    const messageText = `${stripHtml(intro)}\n\n${plainTextList}`;
 
     if (isTestMode) {
         logger(`[${getTime()}] [TEST MODE] Simulating email to: ${member.email}`);
-        // Return content even in test mode
         return { html: messageHtml, text: messageText }; 
     }
 
     try {
-        const info = await transporter.sendMail({
-            from: from,
-            to: member.email,
-            subject: subject,
-            text: messageText,
-            html: messageHtml,
-        });
+        const info = await transporter.sendMail({ from, to: member.email, subject, text: messageText, html: messageHtml });
         logger(`[${getTime()}] [SMTP] Email sent to ${member.name} (ID: ${info.messageId})`);
-        
-        // UPDATED: Return the content used
         return { info, html: messageHtml, text: messageText };
-
     } catch (error) {
         logger(`[${getTime()}] [SMTP ERROR] Failed to send to ${member.name}: ${error.message}`);
         throw error;
     }
 }
 
-// 2. Password Reset Sender
-async function sendPasswordReset(email, newPassword, transporter, appName) {
-    const applicationName = appName || "FENZ OSM Manager";
-    const from = `"${applicationName}" <noreply@fenz.osm>`;
-    const subject = `${applicationName}: Password Reset`;
-    
-    const messageHtml = `
-        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
-            <h2 style="color: #007bff;">Password Reset</h2>
-            <p>A password reset was requested for your account on <strong>${applicationName}</strong>.</p>
-            <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p style="margin: 0; font-size: 14px; color: #666;">Your new temporary password is:</p>
-                <p style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold; color: #333; letter-spacing: 1px;">${newPassword}</p>
-            </div>
-            <p><strong>Important:</strong> Please log in and change your password immediately.</p>
-        </div>
-    `;
+// 2. Password Reset
+async function sendPasswordReset(email, newPassword, transporter, appName, templatePref) {
+    const variables = {
+        appname: appName || "FENZ OSM Manager",
+        email: email,
+        password: newPassword
+    };
 
-    const messageText = `Password Reset\n\nA password reset was requested for ${applicationName}.\nYour new temporary password is: ${newPassword}\n\nPlease log in and change it immediately.`;
+    const defaults = {
+        from: `"${variables.appname}" <noreply@fenz.osm>`,
+        subject: `${variables.appname}: Password Reset`,
+        body: `<p>A password reset was requested.</p><p>New Password: <strong>{{password}}</strong></p>`
+    };
 
-    await transporter.sendMail({
-        from: from,
-        to: email,
-        subject: subject,
-        text: messageText,
-        html: messageHtml
-    });
+    const config = templatePref || defaults;
+    const from = replaceVariables(config.from || defaults.from, variables);
+    const subject = replaceVariables(config.subject || defaults.subject, variables);
+    const body = replaceVariables(config.body || defaults.body, variables);
+
+    await transporter.sendMail({ from, to: email, subject, html: body, text: stripHtml(body) });
     console.log(`[SMTP] Password reset email sent to ${email}`);
 }
-async function sendNewAccountNotification(email, name, password, transporter, appName) {
-    const applicationName = appName || "FENZ OSM Manager"; // Fallback if undefined
-    const from = `"${applicationName}" <noreply@fenz.osm>`;
-    const subject = `Welcome to ${applicationName}`;
-    
-    const messageHtml = `
-        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
-            <h2 style="color: #007bff;">Welcome, ${name}</h2>
-            <p>An account has been created for you on <strong>${applicationName}</strong>.</p>
-            <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p style="margin: 0; font-size: 14px; color: #666;">Your temporary password is:</p>
-                <p style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold; color: #333; letter-spacing: 1px;">${password}</p>
-            </div>
-            <p><strong>Important:</strong> Please log in and change your password immediately.</p>
-        </div>
-    `;
 
-    const messageText = `Welcome ${name},\n\nAn account has been created for you on ${applicationName}.\nYour temporary password is: ${password}\n\nPlease log in and change it immediately.`;
+// 3. New Account
+async function sendNewAccountNotification(email, name, password, transporter, appName, templatePref) {
+    const variables = {
+        appname: appName || "FENZ OSM Manager",
+        name: name,
+        email: email,
+        password: password
+    };
 
-    await transporter.sendMail({
-        from: from,
-        to: email,
-        subject: subject,
-        text: messageText,
-        html: messageHtml
-    });
+    const defaults = {
+        from: `"${variables.appname}" <noreply@fenz.osm>`,
+        subject: `Welcome to ${variables.appname}`,
+        body: `<p>Welcome <strong>{{name}}</strong>,</p><p>Your account has been created.</p><p>Password: <strong>{{password}}</strong></p>`
+    };
+
+    const config = templatePref || defaults;
+    const from = replaceVariables(config.from || defaults.from, variables);
+    const subject = replaceVariables(config.subject || defaults.subject, variables);
+    const body = replaceVariables(config.body || defaults.body, variables);
+
+    await transporter.sendMail({ from, to: email, subject, html: body, text: stripHtml(body) });
     console.log(`[SMTP] New account email sent to ${email}`);
 }
-async function sendAccountDeletionNotification(email, name, transporter, appName) {
-    const applicationName = appName || "FENZ OSM Manager";
-    const from = `"${applicationName}" <noreply@fenz.osm>`;
-    const subject = `${applicationName}: Account Deleted`;
-    
-    const messageHtml = `
-        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
-            <h2 style="color: #d32f2f;">Account Deleted</h2>
-            <p>Hello ${name},</p>
-            <p>Your account on <strong>${applicationName}</strong> has been deleted by an administrator.</p>
-            <p>You can no longer access the system.</p>
-            <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
-            <p style="font-size: 12px; color: #888;">If you believe this is an error, please contact your Station Administrator.</p>
-        </div>
-    `;
 
-    const messageText = `Hello ${name},\n\nYour account on ${applicationName} has been deleted by an administrator.\n\nYou can no longer access the system.`;
+// 4. Account Deletion
+async function sendAccountDeletionNotification(email, name, transporter, appName, templatePref) {
+    const variables = {
+        appname: appName || "FENZ OSM Manager",
+        name: name,
+        email: email
+    };
 
-    await transporter.sendMail({
-        from: from,
-        to: email,
-        subject: subject,
-        text: messageText,
-        html: messageHtml
-    });
+    const defaults = {
+        from: `"${variables.appname}" <noreply@fenz.osm>`,
+        subject: `${variables.appname}: Account Deleted`,
+        body: `<p>Hello {{name}},</p><p>Your account on {{appname}} has been deleted.</p>`
+    };
+
+    const config = templatePref || defaults;
+    const from = replaceVariables(config.from || defaults.from, variables);
+    const subject = replaceVariables(config.subject || defaults.subject, variables);
+    const body = replaceVariables(config.body || defaults.body, variables);
+
+    await transporter.sendMail({ from, to: email, subject, html: body, text: stripHtml(body) });
     console.log(`[SMTP] Deletion notification sent to ${email}`);
 }
-module.exports = { sendNotification, sendPasswordReset, sendNewAccountNotification , sendAccountDeletionNotification };
+
+module.exports = { 
+    sendNotification, 
+    sendPasswordReset, 
+    sendNewAccountNotification, 
+    sendAccountDeletionNotification 
+};

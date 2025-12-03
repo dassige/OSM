@@ -6,6 +6,10 @@ const multer = require('multer');
 const fs = require('fs');
 const crypto = require('crypto');
 
+// Helper to safely parse JSON prefs
+function safeParse(jsonString) {
+    try { return JSON.parse(jsonString); } catch (e) { return null; }
+}
 // Configuration
 const config = require('./config.js');
 const { findWorkingNZProxy } = require('./services/proxy-manager');
@@ -13,12 +17,12 @@ const { findWorkingNZProxy } = require('./services/proxy-manager');
 // Services
 const { getOIData } = require('./services/scraper');
 const { processMemberSkills } = require('./services/member-manager');
-const { 
-    sendNotification, 
-    sendPasswordReset, 
-    sendNewAccountNotification, 
+const {
+    sendNotification,
+    sendPasswordReset,
+    sendNewAccountNotification,
     sendAccountDeletionNotification // <--- Added import
-} = require('./services/mailer');const db = require('./services/db');
+} = require('./services/mailer'); const db = require('./services/db');
 
 const app = express();
 const server = http.createServer(app);
@@ -175,21 +179,21 @@ app.post('/api/users', requireAdmin, async (req, res) => {
         const { email, name } = req.body;
         if (!email || !name) return res.status(400).json({ error: "Missing fields" });
 
-        // Generate Secure Random Password (12 characters hex)
         const generatedPassword = crypto.randomBytes(6).toString('hex');
-
-        // Create User in DB (hashes the password)
         await db.addUser(email, name, generatedPassword);
 
-        // Send Email with Plaintext Password & App Title
-        try {
-            // Pass config.ui.loginTitle as the appName argument
-            await sendNewAccountNotification(email, name, generatedPassword, config.transporter, config.ui.loginTitle);
-        } catch (mailError) {
-            console.error("Failed to send welcome email:", mailError);
-        }
+        // Fetch Prefs
+        const prefs = await db.getPreferences();
+        const template = safeParse(prefs.tpl_new_user);
 
-        await db.logEvent(req.session.user.name, 'User Mgmt', `Created user ${email} (Password emailed)`, {});
+        try {
+            await sendNewAccountNotification(
+                email, name, generatedPassword,
+                config.transporter, config.ui.loginTitle, template
+            );
+        } catch (mailError) { console.error("Mail Error:", mailError); }
+
+        await db.logEvent(req.session.user.name, 'User Mgmt', `Created user ${email}`, {});
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -197,39 +201,24 @@ app.post('/api/users', requireAdmin, async (req, res) => {
 app.delete('/api/users/:id', requireAdmin, async (req, res) => {
     try {
         const id = req.params.id;
-        
-        // 1. Fetch user details BEFORE deletion
         const userToDelete = await db.getUserById(id);
-        
-        if (!userToDelete) {
-            return res.status(404).json({ error: "User not found" });
-        }
+        if (!userToDelete) return res.status(404).json({ error: "User not found" });
 
-        // 2. Delete the user
         await db.deleteUser(id);
-        
-        // 3. Send Deletion Email
+
+        // Fetch Prefs
+        const prefs = await db.getPreferences();
+        const template = safeParse(prefs.tpl_delete_user);
+
         try {
             await sendAccountDeletionNotification(
-                userToDelete.email, 
-                userToDelete.name, 
-                config.transporter, 
-                config.ui.loginTitle
+                userToDelete.email, userToDelete.name,
+                config.transporter, config.ui.loginTitle, template
             );
-        } catch (mailError) {
-            console.error("Failed to send deletion email:", mailError);
-            // We don't fail the request, just log it
-        }
+        } catch (mailError) { console.error("Mail Error:", mailError); }
 
-        // 4. Log Event
         const userEmail = userToDelete.email;
-        await db.logEvent(
-            req.session.user.name, 
-            'User Mgmt', 
-            `Deleted user ${userEmail} (Notification sent)`, 
-            { email: userEmail, id: id }
-        );
-        
+        await db.logEvent(req.session.user.name, 'User Mgmt', `Deleted user ${userEmail}`, { email: userEmail, id: id });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -237,28 +226,24 @@ app.delete('/api/users/:id', requireAdmin, async (req, res) => {
 app.post('/api/users/:id/reset', requireAdmin, async (req, res) => {
     try {
         const id = req.params.id;
-
-        // 1. Fetch user to get email
         const user = await db.getUserById(id);
         if (!user) return res.status(404).json({ error: "User not found" });
 
-        // 2. Generate Random Password
         const tempPassword = crypto.randomBytes(6).toString('hex');
-
-        // 3. Reset in DB
         await db.adminResetPassword(id, tempPassword);
 
-        // 4. Email the user
-        try {
-            await sendPasswordReset(user.email, tempPassword, config.transporter, config.ui.loginTitle);
-        } catch (mailError) {
-            console.error("Failed to send reset email:", mailError);
-            return res.status(500).json({ error: "Password reset, but failed to send email. Check logs." });
-        }
+        // Fetch Prefs
+        const prefs = await db.getPreferences();
+        const template = safeParse(prefs.tpl_reset_password);
 
-        // 5. Log Event
-        await db.logEvent(req.session.user.name, 'User Mgmt', `Reset password for ${user.email} (Password emailed)`, { email: user.email, id: id });
-        
+        try {
+            await sendPasswordReset(
+                user.email, tempPassword,
+                config.transporter, config.ui.loginTitle, template
+            );
+        } catch (mailError) { console.error("Mail Error:", mailError); }
+
+        await db.logEvent(req.session.user.name, 'User Mgmt', `Reset password for ${user.email}`, { email: user.email });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -503,10 +488,10 @@ app.post('/api/system/restore', requireAdmin, upload.single('databaseFile'), asy
     try {
         await db.verifyAndReplaceDb(tempPath);
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-        
+
         const username = req.session.user.name || req.session.user;
         await db.logEvent(username, 'System', 'Database Restored', { originalname: req.file.originalname });
-        
+
         res.json({ success: true, message: "Database restored successfully. System reloaded." });
     } catch (e) {
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
@@ -602,6 +587,7 @@ io.on('connection', (socket) => {
             const dbSkills = await db.getSkills();
             const prefs = await db.getPreferences();
 
+            // Re-map legacy prefs to new structure if needed, or just pass directly
             const templateConfig = {
                 from: prefs.emailFrom,
                 subject: prefs.emailSubject,
@@ -617,8 +603,7 @@ io.on('connection', (socket) => {
             for (const member of targets) {
                 if (member.expiringSkills.length > 0) {
                     try {
-                        const result = await sendNotification(member, templateConfig, config.transporter, false, logger);
-
+                        const result = await sendNotification(member, templateConfig, config.transporter, false, logger, config.ui.loginTitle);
                         await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills`);
 
                         // UPDATED: Include body in log

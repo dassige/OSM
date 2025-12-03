@@ -8,246 +8,266 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="no-referrer"></script>
     <style>
-        .container { max-width: 900px; margin: 0 auto; padding-top: 40px; padding-bottom: 60px; }
-        .form-group { margin-bottom: 25px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; }
-        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        
-        .help-text { font-size: 0.85em; color: #666; margin-top: 5px; background: #f9f9f9; padding: 10px; border-radius: 4px; border: 1px solid #eee; }
-        
-        .btn-container { text-align: right; margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
-        .btn-save { background-color: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; transition: background 0.2s; }
-        .btn-save:hover { background-color: #218838; }
-        .btn-secondary { background-color: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; transition: background 0.2s; }
-        .btn-secondary:hover { background-color: #5a6268; }
-        
+        .container { max-width: 950px; margin: 0 auto; padding-top: 40px; padding-bottom: 60px; }
         .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.15); transition: all 0.2s ease; }
         .back-btn:hover { background-color: #23272b; transform: translateY(-2px); }
 
-        .palette-container { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; padding: 10px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; }
-        .draggable-item { background-color: #e2e6ea; border: 1px solid #ccc; border-radius: 15px; padding: 5px 12px; font-family: monospace; font-weight: bold; color: #333; cursor: grab; user-select: none; display: flex; align-items: center; font-size: 13px; }
-        .draggable-item:hover { background-color: #dbe2ef; border-color: #bbb; }
+        /* TABS */
+        .tab-container { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab { padding: 12px 24px; cursor: pointer; font-weight: bold; color: #666; border-top-left-radius: 6px; border-top-right-radius: 6px; transition: all 0.2s; background: #f8f9fa; margin-right: 2px; border: 1px solid #ddd; border-bottom: none; }
+        .tab:hover { background-color: #e9ecef; }
+        .tab.active { background-color: #fff; color: #007bff; border-bottom: 2px solid #fff; margin-bottom: -2px; }
+        .tab-content { display: none; background: #fff; padding: 25px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 6px 6px; }
+        .tab-content.active { display: block; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.95em; color: #333; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        
+        .palette-container { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; padding: 10px; background: #eef2f5; border: 1px solid #dee2e6; border-radius: 4px; align-items: center; }
+        .palette-label { font-size: 12px; font-weight: bold; color: #666; margin-right: 5px; text-transform: uppercase; }
+        .draggable-item { background-color: #fff; border: 1px solid #adb5bd; border-radius: 12px; padding: 4px 12px; font-family: monospace; font-weight: 600; color: #495057; cursor: grab; user-select: none; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .draggable-item:hover { background-color: #007bff; color: white; border-color: #007bff; }
         .draggable-item:active { cursor: grabbing; }
-        .draggable-item::before { content: '⋮⋮'; margin-right: 6px; color: #999; font-size: 10px; letter-spacing: 1px; }
+
+        .btn-container { text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; }
+        .btn-save { background-color: #28a745; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn-save:hover { background-color: #218838; }
     </style>
 </head>
 <body>
-    <a href="/" class="back-btn" title="Back to Dashboard">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-    </a>
+    <a href="/" class="back-btn" title="Back to Dashboard"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></a>
 
     <div class="container">
         <h1 id="pageHeader">Email Templates</h1>
-        <p>Customize the automated emails sent to members.</p>
+        
+        <div class="tab-container">
+            <div class="tab active" onclick="switchTab('skills')">Expiring Skills</div>
+            <div class="tab" onclick="switchTab('newuser')">New User</div>
+            <div class="tab" onclick="switchTab('reset')">Password Reset</div>
+            <div class="tab" onclick="switchTab('delete')">Delete Account</div>
+        </div>
 
         <form id="templateForm">
-            <div class="form-group"><label>From Address</label><input type="text" id="emailFrom" placeholder='"Station Officer" <sender@example.com>'></div>
-            <div class="form-group"><label>Subject Line</label><input type="text" id="emailSubject" placeholder="Expiring Skills Notification"></div>
-            <div class="form-group"><label>Introductory Text</label><textarea id="emailIntro"></textarea></div>
-            <div class="form-group">
-                <label>Skill Row Template</label>
-                <div class="palette-container" id="palette">
+            
+            <div id="tab-skills" class="tab-content active">
+                <div class="palette-container">
+                    <span class="palette-label">Drag variables:</span>
+                    <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                    <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                    <div class="draggable-item" draggable="true" data-val="email">Member Email</div>
+                </div>
+                <div class="form-group"><label>Sender (From)</label><input type="text" id="skillsFrom" class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
+                <div class="form-group"><label>Subject</label><input type="text" id="skillsSubject" class="droppable-input" placeholder="{{appname}}: Expiring Skills"></div>
+                <div class="form-group"><label>Intro Body</label><textarea id="skillsIntro" class="rich-editor"></textarea></div>
+                
+                <hr style="margin: 20px 0; border:0; border-top:1px dashed #ccc;">
+                <label style="font-weight:bold;">Repeated Skill Row (HTML)</label>
+                <div class="palette-container">
+                    <span class="palette-label">Row Variables:</span>
                     <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
                     <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
                     <div class="draggable-item" draggable="true" data-val="critical">Critical Label</div>
                     <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
                 </div>
-                <textarea id="emailRow"></textarea>
-                <div class="help-text"><strong>Instructions:</strong> Drag and drop the chips above into the editor to place them.<br>Note: To use the <strong>Form URL</strong> inside a link, copy <code>{{url}}</code> and paste it into the URL field of the "Insert Link" dialog.</div>
+                <textarea id="skillsRow" class="rich-editor"></textarea>
             </div>
+
+            <div id="tab-newuser" class="tab-content">
+                <div class="palette-container">
+                    <span class="palette-label">Variables:</span>
+                    <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                    <div class="draggable-item" draggable="true" data-val="name">User Name</div>
+                    <div class="draggable-item" draggable="true" data-val="email">Email</div>
+                    <div class="draggable-item" draggable="true" data-val="password" style="border-color:#28a745; color:#28a745;">Password</div>
+                </div>
+                <div class="form-group"><label>Sender (From)</label><input type="text" id="newUserFrom" class="droppable-input"></div>
+                <div class="form-group"><label>Subject</label><input type="text" id="newUserSubject" class="droppable-input"></div>
+                <div class="form-group"><label>Email Body</label><textarea id="newUserBody" class="rich-editor"></textarea></div>
+            </div>
+
+            <div id="tab-reset" class="tab-content">
+                <div class="palette-container">
+                    <span class="palette-label">Variables:</span>
+                    <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                    <div class="draggable-item" draggable="true" data-val="email">Email</div>
+                    <div class="draggable-item" draggable="true" data-val="password" style="border-color:#28a745; color:#28a745;">New Password</div>
+                </div>
+                <div class="form-group"><label>Sender (From)</label><input type="text" id="resetFrom" class="droppable-input"></div>
+                <div class="form-group"><label>Subject</label><input type="text" id="resetSubject" class="droppable-input"></div>
+                <div class="form-group"><label>Email Body</label><textarea id="resetBody" class="rich-editor"></textarea></div>
+            </div>
+
+            <div id="tab-delete" class="tab-content">
+                <div class="palette-container">
+                    <span class="palette-label">Variables:</span>
+                    <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                    <div class="draggable-item" draggable="true" data-val="name">User Name</div>
+                    <div class="draggable-item" draggable="true" data-val="email">Email</div>
+                </div>
+                <div class="form-group"><label>Sender (From)</label><input type="text" id="deleteFrom" class="droppable-input"></div>
+                <div class="form-group"><label>Subject</label><input type="text" id="deleteSubject" class="droppable-input"></div>
+                <div class="form-group"><label>Email Body</label><textarea id="deleteBody" class="rich-editor"></textarea></div>
+            </div>
+
             <div class="btn-container">
-                <input type="file" id="importFile" accept=".json" style="display: none;">
-                <button type="button" class="btn-secondary" onclick="document.getElementById('importFile').click()">Import JSON</button>
-                <button type="button" class="btn-secondary" onclick="exportTemplate()">Export JSON</button>
-                <button type="submit" class="btn-save">Save Configuration</button>
+                <button type="submit" class="btn-save">Save All Templates</button>
             </div>
         </form>
     </div>
 
     <script>
-        const defaults = {
-            emailFrom: '"FENZ OSM Manager" <sender@yourdomain.com>',
-            emailSubject: 'FENZ OSM: Expiring Skills Notification',
-            emailIntro: '<p>Hello,</p><p>You have expiring Skills due in OSM. Please complete these ASAP:</p>',
-            emailRow: `<p><strong>{{skill}}</strong> <span style="color: red;">{{critical}}</span></p><p>Expires on: <span style="color: #666;">{{date}}</span></p><p><a href="{{url}}" target="_blank">Complete the form here</a></p><hr />`
-        };
-
-        function textToChips(htmlContent) {
-            if (!htmlContent) return '';
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = htmlContent;
-            const walker = document.createTreeWalker(wrapper, NodeFilter.SHOW_TEXT, null, false);
-            const nodesToReplace = [];
-            let node;
-            while(node = walker.nextNode()) {
-                if (node.nodeValue.match(/\{\{(skill|date|critical|url)\}\}/)) {
-                    nodesToReplace.push(node);
-                }
-            }
-            nodesToReplace.forEach(node => {
-                const fragment = document.createDocumentFragment();
-                const parts = node.nodeValue.split(/(\{\{(?:skill|date|critical|url)\}\})/g);
-                parts.forEach(part => {
-                    if (part.match(/^\{\{.*\}\}$/)) {
-                        const span = document.createElement('span');
-                        span.className = 'mceNonEditable placeholder-chip';
-                        span.setAttribute('data-mce-content', part);
-                        span.setAttribute('contenteditable', 'false');
-                        span.innerText = part;
-                        fragment.appendChild(span);
-                    } else if (part) {
-                        fragment.appendChild(document.createTextNode(part));
-                    }
-                });
-                node.parentNode.replaceChild(fragment, node);
-            });
-            return wrapper.innerHTML;
-        }
-
-        function chipsToText(htmlContent) {
-            if (!htmlContent) return '';
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = htmlContent;
-            const chips = wrapper.querySelectorAll('span.placeholder-chip');
-            chips.forEach(chip => {
-                const text = chip.innerText;
-                const textNode = document.createTextNode(text);
-                chip.parentNode.replaceChild(textNode, chip);
-            });
-            return wrapper.innerHTML;
-        }
-
-        function exportTemplate() {
-            const introRaw = tinymce.get('emailIntro').getContent();
-            const rowRaw = tinymce.get('emailRow').getContent();
-            const exportData = {
-                emailFrom: document.getElementById('emailFrom').value,
-                emailSubject: document.getElementById('emailSubject').value,
-                emailIntro: chipsToText(introRaw),
-                emailRow: chipsToText(rowRaw),
-                exportedAt: new Date().toISOString()
-            };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "email_template.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        }
-
-        document.getElementById('importFile').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if(data.emailFrom) document.getElementById('emailFrom').value = data.emailFrom;
-                    if(data.emailSubject) document.getElementById('emailSubject').value = data.emailSubject;
-                    if(data.emailIntro && tinymce.get('emailIntro')) tinymce.get('emailIntro').setContent(textToChips(data.emailIntro));
-                    if(data.emailRow && tinymce.get('emailRow')) tinymce.get('emailRow').setContent(textToChips(data.emailRow));
-                    alert('Template imported successfully! Click "Save Configuration" to apply changes.');
-                } catch(err) { alert('Error parsing JSON file: ' + err.message); }
-                event.target.value = '';
-            };
-            reader.readAsText(file);
+        // Init UI Config
+        fetch('/ui-config').then(r=>r.json()).then(c=>{ 
+            if(c.loginTitle) document.getElementById('pageTitle').innerText = "Templates - "+c.loginTitle; 
+            if(c.appBackground) document.body.style.backgroundImage=`url('${c.appBackground}')`; 
         });
 
-        async function init() {
-            try {
-                const uiRes = await fetch('/ui-config');
-                if (uiRes.ok) {
-                    const uiConfig = await uiRes.json();
-                    if (uiConfig.loginTitle) {
-                        document.getElementById('pageTitle').innerText = "Email Templates - " + uiConfig.loginTitle;
-                        document.getElementById('pageHeader').innerText = "Email Templates - " + uiConfig.loginTitle;
-                    }
-                    if (uiConfig.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
-                }
-                const res = await fetch('/api/preferences');
-                const prefs = await res.json();
-                document.getElementById('emailFrom').value = prefs.emailFrom || defaults.emailFrom;
-                document.getElementById('emailSubject').value = prefs.emailSubject || defaults.emailSubject;
-                const rawIntro = prefs.emailIntro || defaults.emailIntro;
-                const rawRow = prefs.emailRow || defaults.emailRow;
-                document.getElementById('emailIntro').value = textToChips(rawIntro);
-                document.getElementById('emailRow').value = textToChips(rawRow);
-
-                tinymce.init({
-                    selector: '#emailRow, #emailIntro',
-                    height: 350,
-                    menubar: false,
-                    plugins: 'preview importcss searchreplace autolink autosave save directionality visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
-                    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview print | insertfile image media template link anchor codesample | ltr rtl',
-                    noneditable_noneditable_class: 'mceNonEditable',
-                    content_style: `body { font-family:Helvetica,Arial,sans-serif; font-size:14px } .placeholder-chip { background-color: #e2e6ea; border: 1px solid #ccc; border-radius: 10px; padding: 2px 6px; margin: 0 2px; font-family: monospace; color: #333; cursor: default; user-select: all; }`,
-                    setup: function(editor) {
-                        editor.on('drop', function(e) {
-                            const content = e.dataTransfer.getData('text/html');
-                            if (content && content.includes('placeholder-chip')) {
-                                e.preventDefault();
-                                editor.insertContent(content);
-                            }
-                        });
-                    }
-                });
-                setupDragAndDrop();
-            } catch (e) { console.error("Init failed", e); }
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Find index to set active tab
+            const tabs = ['skills', 'newuser', 'reset', 'delete'];
+            document.querySelectorAll('.tab')[tabs.indexOf(tabId)].classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
         }
 
-        function setupDragAndDrop() {
-            const items = document.querySelectorAll('.draggable-item');
-            items.forEach(item => {
-                item.addEventListener('dragstart', (e) => {
-                    const key = item.getAttribute('data-val');
-                    const text = `{{${key}}}`;
-                    const html = `<span class="mceNonEditable placeholder-chip" data-mce-content="${text}" contenteditable="false">${text}</span>`;
-                    e.dataTransfer.setData('text/html', html);
-                    e.dataTransfer.effectAllowed = 'copy';
-                });
+        // --- TinyMCE Setup with Chip Support ---
+        function textToChips(html) {
+            if (!html) return '';
+            // Logic to convert {{var}} text to non-editable spans for visualization in editor
+            return html.replace(/{{([a-zA-Z0-9_]+)}}/g, '<span class="mceNonEditable chip" data-val="$1">{{$1}}</span>');
+        }
+
+        function chipsToText(html) {
+            if (!html) return '';
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            // Convert spans back to text
+            temp.querySelectorAll('.chip').forEach(span => {
+                span.replaceWith(`{{${span.getAttribute('data-val')}}}`);
             });
+            return temp.innerHTML;
+        }
+
+        tinymce.init({
+            selector: '.rich-editor',
+            height: 300,
+            menubar: false,
+            plugins: 'link code lists',
+            toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | bullist numlist | code',
+            content_style: `
+                body { font-family:Helvetica,Arial,sans-serif; font-size:14px }
+                .chip { background-color: #e2e6ea; border: 1px solid #ccc; border-radius: 12px; padding: 2px 8px; margin: 0 2px; font-family: monospace; color: #333; cursor: default; }
+            `,
+            setup: function(editor) {
+                editor.on('drop', function(e) {
+                    const content = e.dataTransfer.getData('text/html');
+                    if (content && content.includes('data-val')) {
+                        e.preventDefault();
+                        editor.insertContent(content);
+                    }
+                });
+            }
+        });
+
+        // --- Drag & Drop Logic ---
+        document.querySelectorAll('.draggable-item').forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                const val = item.getAttribute('data-val');
+                const text = `{{${val}}}`;
+                
+                // For Inputs (Plain Text)
+                e.dataTransfer.setData('text/plain', text);
+                
+                // For TinyMCE (HTML Chip)
+                const html = `<span class="mceNonEditable chip" data-val="${val}">${text}</span>`;
+                e.dataTransfer.setData('text/html', html);
+            });
+        });
+
+        // Allow dropping into standard inputs
+        document.querySelectorAll('.droppable-input').forEach(input => {
+            input.addEventListener('dragover', e => e.preventDefault());
+            input.addEventListener('drop', e => {
+                e.preventDefault();
+                const text = e.dataTransfer.getData('text/plain');
+                if(text) {
+                    const start = input.selectionStart;
+                    const end = input.selectionEnd;
+                    const val = input.value;
+                    input.value = val.substring(0, start) + text + val.substring(end);
+                }
+            });
+        });
+
+        // --- Load & Save ---
+        async function loadData() {
+            const res = await fetch('/api/preferences');
+            const prefs = await res.json();
+
+            // 1. Skills (Legacy mapping)
+            document.getElementById('skillsFrom').value = prefs.emailFrom || '';
+            document.getElementById('skillsSubject').value = prefs.emailSubject || '';
+            if(prefs.emailIntro) tinymce.get('skillsIntro').setContent(textToChips(prefs.emailIntro));
+            if(prefs.emailRow) tinymce.get('skillsRow').setContent(textToChips(prefs.emailRow));
+
+            // 2. Helper to load JSON configs
+            const loadTab = (key, prefix) => {
+                if(prefs[key]) {
+                    try {
+                        const data = JSON.parse(prefs[key]);
+                        document.getElementById(prefix + 'From').value = data.from || '';
+                        document.getElementById(prefix + 'Subject').value = data.subject || '';
+                        if(data.body) tinymce.get(prefix + 'Body').setContent(textToChips(data.body));
+                    } catch(e) {}
+                }
+            };
+
+            loadTab('tpl_new_user', 'newUser');
+            loadTab('tpl_reset_password', 'reset');
+            loadTab('tpl_delete_user', 'delete');
         }
 
         document.getElementById('templateForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const introRaw = tinymce.get('emailIntro').getContent();
-            const rowRaw = tinymce.get('emailRow').getContent();
-            const data = {
-                emailFrom: document.getElementById('emailFrom').value,
-                emailSubject: document.getElementById('emailSubject').value,
-                emailIntro: chipsToText(introRaw),
-                emailRow: chipsToText(rowRaw)
-            };
+            
+            // Helper to get data
+            const getTab = (prefix) => ({
+                from: document.getElementById(prefix + 'From').value,
+                subject: document.getElementById(prefix + 'Subject').value,
+                body: chipsToText(tinymce.get(prefix + 'Body').getContent())
+            });
 
-            try {
-                // Save Preferences
-                for (const [key, value] of Object.entries(data)) {
-                    await fetch('/api/preferences', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ key, value })
-                    });
-                }
+            // 1. Skills (Save as legacy keys for backward compat)
+            const skillsIntro = chipsToText(tinymce.get('skillsIntro').getContent());
+            const skillsRow = chipsToText(tinymce.get('skillsRow').getContent());
+            
+            // Batch updates
+            const updates = [
+                { key: 'emailFrom', value: document.getElementById('skillsFrom').value },
+                { key: 'emailSubject', value: document.getElementById('skillsSubject').value },
+                { key: 'emailIntro', value: skillsIntro },
+                { key: 'emailRow', value: skillsRow },
+                
+                { key: 'tpl_new_user', value: JSON.stringify(getTab('newUser')) },
+                { key: 'tpl_reset_password', value: JSON.stringify(getTab('reset')) },
+                { key: 'tpl_delete_user', value: JSON.stringify(getTab('delete')) }
+            ];
 
-                // >> LOGGING EVENT HERE (Single entry for the whole save operation) <<
-                await fetch('/api/logs', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        type: 'Email Templates',
-                        title: 'Updated Email Templates',
-                        payload: { fields: Object.keys(data) }
-                    })
+            for(const u of updates) {
+                await fetch('/api/preferences', { 
+                    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(u) 
                 });
-
-                alert('Templates saved successfully!');
-            } catch(err) {
-                alert('Error saving templates: ' + err.message);
             }
+
+            alert("All templates saved successfully.");
         });
 
-        init();
+        // Delay init to allow TinyMCE to load
+        setTimeout(loadData, 1000);
+
     </script>
     <script src="help.js"></script>
 </body>
