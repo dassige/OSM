@@ -474,10 +474,10 @@ app.delete('/api/skills/:id', async (req, res) => {
 });
 
 // --- API: SYSTEM TOOLS ---
-app.get('/api/system/backup', async (req, res) => {
-    if (!req.session || !req.session.loggedIn) return res.status(401).send("Unauthorized");
-
+app.get('/api/system/backup', requireAdmin, async (req, res) => {
+    // Removed the manual session check since requireAdmin handles it
     const dbPath = db.getDbPath();
+    // ... [Rest of the function remains the same] ...
     const date = new Date().toISOString().split('T')[0];
     const domain = req.get('host').replace(/[:\/]/g, '-');
     const packageJson = require('./package.json');
@@ -494,25 +494,33 @@ app.get('/api/system/backup', async (req, res) => {
     });
 });
 
-app.post('/api/system/restore', upload.single('databaseFile'), async (req, res) => {
-    if (!req.session || !req.session.loggedIn) return res.status(401).json({ error: "Unauthorized" });
+app.post('/api/system/restore', requireAdmin, upload.single('databaseFile'), async (req, res) => {
+    // Removed the manual session check since requireAdmin handles it
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
 
     const tempPath = req.file.path;
+    // ... [Rest of the function remains the same] ...
     try {
         await db.verifyAndReplaceDb(tempPath);
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-
+        
         const username = req.session.user.name || req.session.user;
         await db.logEvent(username, 'System', 'Database Restored', { originalname: req.file.originalname });
-
+        
         res.json({ success: true, message: "Database restored successfully. System reloaded." });
     } catch (e) {
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
         res.status(500).json({ error: e.message });
     }
 });
-
+//  Page Restriction Middleware
+app.get('/system-tools.html', (req, res, next) => {
+    if (req.session && req.session.user && req.session.user.isAdmin) {
+        next(); // Allow access, pass to static handler
+    } else {
+        res.redirect('/'); // Redirect unauthorized users to dashboard
+    }
+});
 app.use(express.static('public'));
 
 // --- PROXY ---

@@ -198,7 +198,7 @@
                 </svg>
                 Email Templates
             </a>
-            <a href="system-tools.html">
+            <a href="system-tools.html" id="navSystemTools" style="display:none;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     style="margin-right:8px;">
@@ -414,6 +414,24 @@
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        fetch('/api/user-session')
+            .then(r => r.json())
+            .then(user => {
+                document.getElementById('userNameDisplay').textContent = user.name || 'User';
+                
+                if(user.isEnvUser) {
+                    // SUPER ADMIN:
+                    document.getElementById('navUserSettings').style.display = 'none';
+                    
+                    // Show restricted menus
+                    document.getElementById('navManageUsers').style.display = 'block';
+                    document.getElementById('navSystemTools').style.display = 'block'; // <--- Added
+                } else {
+                    // REGULAR DB USER:
+                    // (Menus remain hidden by default)
+                }
+            })
+            .catch(() => window.location.href='/login.html');
     </script>
     <script src="help.js"></script>
 </body>
