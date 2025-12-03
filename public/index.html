@@ -9,29 +9,136 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         /* ... (Keep existing styles) ... */
-        th.sortable { cursor: pointer; user-select: none; position: relative; }
-        th.sortable:hover { background-color: #454d55; }
-        .th-content { display: flex; align-items: center; justify-content: space-between; }
-        .sort-icon { font-size: 12px; margin-left: 8px; opacity: 0.5; }
-        .sort-icon.active { opacity: 1; color: #4db8ff; }
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        th.sortable:hover {
+            background-color: #454d55;
+        }
+
+        .th-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sort-icon {
+            font-size: 12px;
+            margin-left: 8px;
+            opacity: 0.5;
+        }
+
+        .sort-icon.active {
+            opacity: 1;
+            color: #4db8ff;
+        }
 
         /* HEADER MENUS */
-        .header-menu { position: absolute; top: 20px; right: 20px; display: inline-block; z-index: 100; }
-        .menu-btn { background-color: #343a40; color: white; padding: 10px 16px; font-size: 16px; border: none; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); transition: background-color 0.2s; }
-        .menu-btn:hover { background-color: #23272b; }
-        
-        .dropdown-content { display: none; position: absolute; right: 0; background-color: #f9f9f9; min-width: 180px; box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2); border-radius: 4px; z-index: 1; overflow: hidden; margin-top: 5px; border: 1px solid #ddd; }
-        .dropdown-content a { color: #333; padding: 12px 16px; text-decoration: none; display: block; text-align: left; transition: background-color 0.2s; }
-        .dropdown-content a:hover { background-color: #f1f1f1; color: #007bff; }
-        .show { display: block; }
+        .header-menu {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: inline-block;
+            z-index: 100;
+        }
+
+        .menu-btn {
+            background-color: #343a40;
+            color: white;
+            padding: 10px 16px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.2s;
+        }
+
+        .menu-btn:hover {
+            background-color: #23272b;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #f9f9f9;
+            min-width: 180px;
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            z-index: 1;
+            overflow: hidden;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+            color: #007bff;
+        }
+
+        .show {
+            display: block;
+        }
 
         /* PROFILE MENU (Top Left) */
-        .profile-menu { position: absolute; top: 20px; left: 20px; z-index: 100; }
-        .profile-btn { background-color: white; color: #333; padding: 10px 16px; font-size: 16px; border: 1px solid #ddd; cursor: pointer; border-radius: 20px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s; }
-        .profile-btn:hover { background-color: #f8f9fa; transform: translateY(-1px); }
-        .profile-dropdown { left: 0; right: auto; min-width: 160px; }
-        .logout { color: #dc3545 !important; border-top: 1px solid #eee; }
-        .logout:hover { background-color: #ffe6e6 !important; color: #bd2130 !important; }
+        .profile-menu {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+
+        .profile-btn {
+            background-color: white;
+            color: #333;
+            padding: 10px 16px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+
+        .profile-btn:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
+        }
+
+        .profile-dropdown {
+            left: 0;
+            right: auto;
+            min-width: 160px;
+        }
+
+        .logout {
+            color: #dc3545 !important;
+            border-top: 1px solid #eee;
+        }
+
+        .logout:hover {
+            background-color: #ffe6e6 !important;
+            color: #bd2130 !important;
+        }
     </style>
 </head>
 
@@ -39,7 +146,11 @@
 
     <div class="profile-menu">
         <button onclick="toggleProfileMenu()" class="profile-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
             <span id="userNameDisplay">User</span>
         </button>
         <div id="profileDropdown" class="dropdown-content profile-dropdown">
@@ -51,37 +162,86 @@
     <div class="header-menu">
         <button onclick="toggleMenu()" class="menu-btn">
             Menu
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
         </button>
         <div id="myDropdown" class="dropdown-content">
             <a href="members.html">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin-right:8px;">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
                 Manage Members
             </a>
             <a href="skills.html">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin-right:8px;">
+                    <path
+                        d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+                    </path>
+                </svg>
                 Manage Skills
             </a>
             <a href="email-templates.html">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin-right:8px;">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
                 Email Templates
             </a>
             <a href="system-tools.html">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin-right:8px;">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
                 System Tools
             </a>
             <a href="event-log.html">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin-right:8px;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
                 Event Log
             </a>
-            
+
             <a href="users.html" id="navManageUsers" style="display:none; border-top:1px solid #eee;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin-right:8px;">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
                 Manage Users
             </a>
 
             <a href="#" onclick="openModal('aboutModal')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="margin-right:8px;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
                 About
             </a>
         </div>
@@ -90,9 +250,11 @@
     <h1 id="mainHeader">FENZ OSM Automation</h1>
 
     <div id="controls" style="display: flex; align-items: center; flex-wrap: wrap;">
-        <div style="margin-right: 15px; margin-bottom: 10px; background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
+        <div
+            style="margin-right: 15px; margin-bottom: 10px; background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
             <label for="daysInput" style="font-weight: bold; color: #555; font-size: 14px;">Days to Expiry:</label>
-            <input type="number" id="daysInput" value="30" min="1" style="width: 50px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
+            <input type="number" id="daysInput" value="30" min="1"
+                style="width: 50px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
         </div>
         <button id="viewBtn">Reload Expiring Skills</button>
         <button id="sendEmailsBtn" disabled>Send Emails</button>
@@ -104,15 +266,20 @@
     </div>
 
     <div id="tableContainer">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
             <h2 style="margin: 0;">Expiring Skills Report</h2>
             <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
-                <label style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
-                    <input type="checkbox" id="hideNoSkillsCheckbox" style="margin-right: 8px; width: 16px; height: 16px;">
+                <label
+                    style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
+                    <input type="checkbox" id="hideNoSkillsCheckbox"
+                        style="margin-right: 8px; width: 16px; height: 16px;">
                     Hide members with 'NO expiring skills'
                 </label>
-                <label style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
-                    <input type="checkbox" id="hideNoUrlSkillsCheckbox" style="margin-right: 8px; width: 16px; height: 16px;">
+                <label
+                    style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
+                    <input type="checkbox" id="hideNoUrlSkillsCheckbox"
+                        style="margin-right: 8px; width: 16px; height: 16px;">
                     Hide Skills without Online form
                 </label>
             </div>
@@ -121,24 +288,35 @@
         <p style="margin-top: -5px; margin-bottom: 15px; color: #666; font-size: 14px;">
             <em>Skills displayed in <b>bold</b> are configured as 'Critical'.
                 <span style="display: inline-flex; align-items: center; vertical-align: bottom;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #007bff;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round" style="color: #007bff;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
                 </span>
                 indicates a direct form link is available.</em>
         </p>
         <table id="skillsTable">
             <thead>
                 <tr>
-                    <th style="width: 30%" class="sortable" onclick="handleSort('name')"><div class="th-content">Member Name <span id="icon-name" class="sort-icon"></span></div></th>
+                    <th style="width: 30%" class="sortable" onclick="handleSort('name')">
+                        <div class="th-content">Member Name <span id="icon-name" class="sort-icon"></span></div>
+                    </th>
                     <th style="width: 35%">Expiring Skill</th>
                     <th style="width: 15%">Expiring Date</th>
-                    <th style="width: 20%"><label class="header-checkbox-label"><input type="checkbox" id="selectAllCheckbox"> Send Email</label></th>
+                    <th style="width: 20%"><label class="header-checkbox-label"><input type="checkbox"
+                                id="selectAllCheckbox"> Send Email</label></th>
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
     </div>
 
-    <div style="margin-top: 20px; margin-bottom: 60px; text-align: right; border-top: 1px solid #eee; padding-top: 20px;">
+    <div
+        style="margin-top: 20px; margin-bottom: 60px; text-align: right; border-top: 1px solid #eee; padding-top: 20px;">
         <label style="cursor: pointer; color: #555; font-weight: bold; font-size: 14px;">
             <input type="checkbox" id="showConsoleCheckbox" style="vertical-align: middle; margin-right: 8px;">
             Show Console Log
@@ -148,7 +326,11 @@
     <div id="terminal" style="display: none;"></div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
     </button>
 
     <div id="aboutModal" class="modal">
@@ -160,6 +342,17 @@
                 <p style="margin: 10px 0;"><strong>Version:</strong> <span id="disp-version">...</span></p>
                 <p style="margin: 10px 0;"><strong>Date:</strong> <span id="disp-date">...</span></p>
             </div>
+
+            <div
+                style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; font-size: 0.85em; text-align: left; color: #555;">
+                <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">Credits</p>
+                <ul style="padding-left: 20px; margin: 0; line-height: 1.6;">
+                    <li><strong>Developer:</strong> Gerardo Dassi</li>
+                    <li><strong>Persistence:</strong> Litestream</li>
+                    <li><strong>Icons:</strong> Feather Icons</li>
+                </ul>
+            </div>
+
         </div>
     </div>
 
@@ -182,8 +375,8 @@
             .then(r => r.json())
             .then(user => {
                 document.getElementById('userNameDisplay').textContent = user.name || 'User';
-                
-                if(user.isEnvUser) {
+
+                if (user.isEnvUser) {
                     // SUPER ADMIN:
                     // 1. Hide User Settings
                     document.getElementById('navUserSettings').style.display = 'none';
@@ -195,9 +388,9 @@
                     // 2. Hide Manage Users (Default is hidden)
                 }
             })
-            .catch(() => window.location.href='/login.html');
+            .catch(() => window.location.href = '/login.html');
 
-        document.getElementById('logoutLinkLeft').addEventListener('click', () => window.location.href='/logout');
+        document.getElementById('logoutLinkLeft').addEventListener('click', () => window.location.href = '/logout');
 
         // Close dropdowns on click outside
         window.onclick = function (event) {
@@ -224,4 +417,5 @@
     </script>
     <script src="help.js"></script>
 </body>
+
 </html>

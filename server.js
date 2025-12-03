@@ -13,8 +13,12 @@ const { findWorkingNZProxy } = require('./services/proxy-manager');
 // Services
 const { getOIData } = require('./services/scraper');
 const { processMemberSkills } = require('./services/member-manager');
-const { sendNotification, sendPasswordReset } = require('./services/mailer');
-const db = require('./services/db');
+const { 
+    sendNotification, 
+    sendPasswordReset, 
+    sendNewAccountNotification, 
+    sendAccountDeletionNotification // <--- Added import
+} = require('./services/mailer');const db = require('./services/db');
 
 const app = express();
 const server = http.createServer(app);
@@ -168,29 +172,93 @@ app.get('/api/users', requireAdmin, async (req, res) => {
 
 app.post('/api/users', requireAdmin, async (req, res) => {
     try {
-        const { email, name, password } = req.body;
-        if (!email || !name || !password) return res.status(400).json({ error: "Missing fields" });
+        const { email, name } = req.body;
+        if (!email || !name) return res.status(400).json({ error: "Missing fields" });
 
-        await db.addUser(email, name, password);
-        await db.logEvent(req.session.user.name, 'User Mgmt', `Created user ${email}`, {});
+        // Generate Secure Random Password (12 characters hex)
+        const generatedPassword = crypto.randomBytes(6).toString('hex');
+
+        // Create User in DB (hashes the password)
+        await db.addUser(email, name, generatedPassword);
+
+        // Send Email with Plaintext Password & App Title
+        try {
+            // Pass config.ui.loginTitle as the appName argument
+            await sendNewAccountNotification(email, name, generatedPassword, config.transporter, config.ui.loginTitle);
+        } catch (mailError) {
+            console.error("Failed to send welcome email:", mailError);
+        }
+
+        await db.logEvent(req.session.user.name, 'User Mgmt', `Created user ${email} (Password emailed)`, {});
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/users/:id', requireAdmin, async (req, res) => {
     try {
-        await db.deleteUser(req.params.id);
-        await db.logEvent(req.session.user.name, 'User Mgmt', `Deleted user ID ${req.params.id}`, {});
+        const id = req.params.id;
+        
+        // 1. Fetch user details BEFORE deletion
+        const userToDelete = await db.getUserById(id);
+        
+        if (!userToDelete) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // 2. Delete the user
+        await db.deleteUser(id);
+        
+        // 3. Send Deletion Email
+        try {
+            await sendAccountDeletionNotification(
+                userToDelete.email, 
+                userToDelete.name, 
+                config.transporter, 
+                config.ui.loginTitle
+            );
+        } catch (mailError) {
+            console.error("Failed to send deletion email:", mailError);
+            // We don't fail the request, just log it
+        }
+
+        // 4. Log Event
+        const userEmail = userToDelete.email;
+        await db.logEvent(
+            req.session.user.name, 
+            'User Mgmt', 
+            `Deleted user ${userEmail} (Notification sent)`, 
+            { email: userEmail, id: id }
+        );
+        
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/users/:id/reset', requireAdmin, async (req, res) => {
     try {
-        const { password } = req.body;
-        if (!password) return res.status(400).json({ error: "Password required" });
-        await db.adminResetPassword(req.params.id, password);
-        await db.logEvent(req.session.user.name, 'User Mgmt', `Reset password for user ID ${req.params.id}`, {});
+        const id = req.params.id;
+
+        // 1. Fetch user to get email
+        const user = await db.getUserById(id);
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        // 2. Generate Random Password
+        const tempPassword = crypto.randomBytes(6).toString('hex');
+
+        // 3. Reset in DB
+        await db.adminResetPassword(id, tempPassword);
+
+        // 4. Email the user
+        try {
+            await sendPasswordReset(user.email, tempPassword, config.transporter, config.ui.loginTitle);
+        } catch (mailError) {
+            console.error("Failed to send reset email:", mailError);
+            return res.status(500).json({ error: "Password reset, but failed to send email. Check logs." });
+        }
+
+        // 5. Log Event
+        await db.logEvent(req.session.user.name, 'User Mgmt', `Reset password for ${user.email} (Password emailed)`, { email: user.email, id: id });
+        
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });

@@ -74,23 +74,24 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
 }
 
 // 2. Password Reset Sender
-async function sendPasswordReset(email, newPassword, transporter) {
-    const from = '"FENZ OSM Manager" <noreply@fenz.osm>';
-    const subject = 'Security: Password Reset';
+async function sendPasswordReset(email, newPassword, transporter, appName) {
+    const applicationName = appName || "FENZ OSM Manager";
+    const from = `"${applicationName}" <noreply@fenz.osm>`;
+    const subject = `${applicationName}: Password Reset`;
     
     const messageHtml = `
         <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
             <h2 style="color: #007bff;">Password Reset</h2>
-            <p>A password reset was requested for your account.</p>
+            <p>A password reset was requested for your account on <strong>${applicationName}</strong>.</p>
             <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <p style="margin: 0; font-size: 14px; color: #666;">Your new temporary password is:</p>
                 <p style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold; color: #333; letter-spacing: 1px;">${newPassword}</p>
             </div>
-            <p>Please log in and change your password immediately.</p>
+            <p><strong>Important:</strong> Please log in and change your password immediately.</p>
         </div>
     `;
 
-    const messageText = `Password Reset\n\nA password reset was requested. Your new temporary password is: ${newPassword}\n\nPlease log in and change it immediately.`;
+    const messageText = `Password Reset\n\nA password reset was requested for ${applicationName}.\nYour new temporary password is: ${newPassword}\n\nPlease log in and change it immediately.`;
 
     await transporter.sendMail({
         from: from,
@@ -101,5 +102,59 @@ async function sendPasswordReset(email, newPassword, transporter) {
     });
     console.log(`[SMTP] Password reset email sent to ${email}`);
 }
+async function sendNewAccountNotification(email, name, password, transporter, appName) {
+    const applicationName = appName || "FENZ OSM Manager"; // Fallback if undefined
+    const from = `"${applicationName}" <noreply@fenz.osm>`;
+    const subject = `Welcome to ${applicationName}`;
+    
+    const messageHtml = `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
+            <h2 style="color: #007bff;">Welcome, ${name}</h2>
+            <p>An account has been created for you on <strong>${applicationName}</strong>.</p>
+            <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p style="margin: 0; font-size: 14px; color: #666;">Your temporary password is:</p>
+                <p style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold; color: #333; letter-spacing: 1px;">${password}</p>
+            </div>
+            <p><strong>Important:</strong> Please log in and change your password immediately.</p>
+        </div>
+    `;
 
-module.exports = { sendNotification, sendPasswordReset };
+    const messageText = `Welcome ${name},\n\nAn account has been created for you on ${applicationName}.\nYour temporary password is: ${password}\n\nPlease log in and change it immediately.`;
+
+    await transporter.sendMail({
+        from: from,
+        to: email,
+        subject: subject,
+        text: messageText,
+        html: messageHtml
+    });
+    console.log(`[SMTP] New account email sent to ${email}`);
+}
+async function sendAccountDeletionNotification(email, name, transporter, appName) {
+    const applicationName = appName || "FENZ OSM Manager";
+    const from = `"${applicationName}" <noreply@fenz.osm>`;
+    const subject = `${applicationName}: Account Deleted`;
+    
+    const messageHtml = `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
+            <h2 style="color: #d32f2f;">Account Deleted</h2>
+            <p>Hello ${name},</p>
+            <p>Your account on <strong>${applicationName}</strong> has been deleted by an administrator.</p>
+            <p>You can no longer access the system.</p>
+            <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
+            <p style="font-size: 12px; color: #888;">If you believe this is an error, please contact your Station Administrator.</p>
+        </div>
+    `;
+
+    const messageText = `Hello ${name},\n\nYour account on ${applicationName} has been deleted by an administrator.\n\nYou can no longer access the system.`;
+
+    await transporter.sendMail({
+        from: from,
+        to: email,
+        subject: subject,
+        text: messageText,
+        html: messageHtml
+    });
+    console.log(`[SMTP] Deletion notification sent to ${email}`);
+}
+module.exports = { sendNotification, sendPasswordReset, sendNewAccountNotification , sendAccountDeletionNotification };
