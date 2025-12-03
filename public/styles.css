@@ -202,7 +202,7 @@ th {
 
 .modal-content {
     background-color: #fefefe;
-    margin: 15% auto; /* 15% from the top and centered */
+    margin: 10% auto; /* Reduced top margin to allow more space */
     padding: 20px;
     border: 1px solid #888;
     width: 80%; 
@@ -211,6 +211,9 @@ th {
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     position: relative;
     animation: animatetop 0.4s;
+    /* Added scrollbar support */
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .close-btn {
@@ -356,6 +359,9 @@ th {
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     position: relative;
     animation: slideDown 0.3s ease-out;
+    /* Added scrollbar support */
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 @keyframes slideDown {

@@ -21,7 +21,7 @@
         .tab-content.active { display: block; }
 
         /* ACTIONS BAR inside Tab */
-        .template-actions { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
+        .template-actions { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; z-index: 10; }
         .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 4px; border: none; cursor: pointer; color: white; background-color: #6c757d; transition: background 0.2s; }
         .btn-sm:hover { background-color: #5a6268; }
 
@@ -29,7 +29,7 @@
         .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.95em; color: #333; }
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
         
-        .palette-container { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; padding: 10px; background: #eef2f5; border: 1px solid #dee2e6; border-radius: 4px; align-items: center; max-width: 70%; /* Leave room for buttons */ }
+        .palette-container { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; padding: 10px; background: #eef2f5; border: 1px solid #dee2e6; border-radius: 4px; align-items: center; max-width: 100%; }
         .palette-label { font-size: 12px; font-weight: bold; color: #666; margin-right: 5px; text-transform: uppercase; }
         .draggable-item { background-color: #fff; border: 1px solid #adb5bd; border-radius: 12px; padding: 4px 12px; font-family: monospace; font-weight: 600; color: #495057; cursor: grab; user-select: none; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .draggable-item:hover { background-color: #007bff; color: white; border-color: #007bff; }
@@ -38,6 +38,10 @@
         .btn-container { text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; }
         .btn-save { background-color: #28a745; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
         .btn-save:hover { background-color: #218838; }
+        
+        /* Checkbox Group */
+        .checkbox-group { display: flex; align-items: center; background: #e8f0fe; padding: 10px; border-radius: 4px; border: 1px solid #b8d4fe; color: #1a73e8; font-weight: bold; margin-bottom: 20px; margin-top: 40px; }
+        .checkbox-group input { width: auto; margin-right: 10px; }
     </style>
 </head>
 <body>
@@ -62,6 +66,12 @@
                     <button type="button" class="btn-sm" onclick="triggerImport('skills')">Import</button>
                     <button type="button" class="btn-sm" onclick="exportTemplate('skills')">Export</button>
                 </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="skillsFilterNoUrl">
+                    <label for="skillsFilterNoUrl" style="margin:0; display:inline;">Include only skills with Form URL?</label>
+                </div>
+
                 <div class="palette-container">
                     <span class="palette-label">Drag variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
@@ -73,15 +83,39 @@
                 <div class="form-group"><label>Intro Body</label><textarea id="skillsIntro" class="rich-editor"></textarea></div>
                 
                 <hr style="margin: 20px 0; border:0; border-top:1px dashed #ccc;">
-                <label style="font-weight:bold;">Repeated Skill Row (HTML)</label>
-                <div class="palette-container">
-                    <span class="palette-label">Row Variables:</span>
-                    <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
-                    <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
-                    <div class="draggable-item" draggable="true" data-val="critical">Critical Label</div>
-                    <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
+                
+                <div style="display: flex; flex-direction: column; gap: 30px;">
+                    
+                    <div style="flex: 1; width: 100%;">
+                        <label style="font-weight:bold; color: #007bff;">Repeated Skill Row (With URL)</label>
+                        <p style="font-size: 12px; color: #666; margin-top: -5px; margin-bottom: 8px;">Used when the skill has a Form URL configured.</p>
+                        
+                        <div class="palette-container">
+                            <span class="palette-label">Row Variables:</span>
+                            <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                            <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                            <div class="draggable-item" draggable="true" data-val="critical">Critical Label</div>
+                            <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
+                        </div>
+
+                        <textarea id="skillsRow" class="rich-editor"></textarea>
+                    </div>
+
+                    <div style="flex: 1; width: 100%;">
+                        <label style="font-weight:bold; color: #6c757d;">Repeated Skill Row (No URL)</label>
+                        <p style="font-size: 12px; color: #666; margin-top: -5px; margin-bottom: 8px;">Used when no Form URL is available (unless filtered out).</p>
+                        
+                        <div class="palette-container">
+                            <span class="palette-label">Row Variables:</span>
+                            <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                            <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                            <div class="draggable-item" draggable="true" data-val="critical">Critical Label</div>
+                            <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
+                        </div>
+
+                        <textarea id="skillsRowNoUrl" class="rich-editor"></textarea>
+                    </div>
                 </div>
-                <textarea id="skillsRow" class="rich-editor"></textarea>
             </div>
 
             <div id="tab-newuser" class="tab-content">
@@ -179,9 +213,10 @@
         tinymce.init({
             selector: '.rich-editor',
             height: 300,
-            menubar: false,
-            plugins: 'link code lists',
-            toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | bullist numlist | code',
+            menubar: true,
+            promotion: false,
+            plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
+            toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | ltr rtl',
             content_style: `
                 body { font-family:Helvetica,Arial,sans-serif; font-size:14px }
                 .chip { background-color: #e2e6ea; border: 1px solid #ccc; border-radius: 12px; padding: 2px 8px; margin: 0 2px; font-family: monospace; color: #333; cursor: default; }
@@ -232,7 +267,10 @@
                     from: document.getElementById('skillsFrom').value,
                     subject: document.getElementById('skillsSubject').value,
                     intro: chipsToText(tinymce.get('skillsIntro').getContent()),
-                    row: chipsToText(tinymce.get('skillsRow').getContent())
+                    row: chipsToText(tinymce.get('skillsRow').getContent()),
+                    // New Fields
+                    rowNoUrl: chipsToText(tinymce.get('skillsRowNoUrl').getContent()),
+                    filterOnlyWithUrl: document.getElementById('skillsFilterNoUrl').checked
                 };
             } else {
                 // Generic logic for newuser, reset, delete
@@ -274,6 +312,9 @@
                         if(data.subject) document.getElementById('skillsSubject').value = data.subject;
                         if(data.intro) tinymce.get('skillsIntro').setContent(textToChips(data.intro));
                         if(data.row) tinymce.get('skillsRow').setContent(textToChips(data.row));
+                        // New Fields
+                        if(data.rowNoUrl) tinymce.get('skillsRowNoUrl').setContent(textToChips(data.rowNoUrl));
+                        if(data.filterOnlyWithUrl !== undefined) document.getElementById('skillsFilterNoUrl').checked = data.filterOnlyWithUrl;
                     } else {
                         const prefix = (currentImportType === 'newuser') ? 'newUser' : currentImportType;
                         if(data.from) document.getElementById(prefix + 'From').value = data.from;
@@ -298,6 +339,10 @@
             document.getElementById('skillsSubject').value = prefs.emailSubject || '';
             if(prefs.emailIntro) tinymce.get('skillsIntro').setContent(textToChips(prefs.emailIntro));
             if(prefs.emailRow) tinymce.get('skillsRow').setContent(textToChips(prefs.emailRow));
+            
+            // New Skills Fields
+            if(prefs.emailRowNoUrl) tinymce.get('skillsRowNoUrl').setContent(textToChips(prefs.emailRowNoUrl));
+            document.getElementById('skillsFilterNoUrl').checked = prefs.emailOnlyWithUrl || false;
 
             // 2. Helper to load JSON configs
             const loadTab = (key, prefix) => {
@@ -329,6 +374,7 @@
             // 1. Skills (Save as legacy keys for backward compat)
             const skillsIntro = chipsToText(tinymce.get('skillsIntro').getContent());
             const skillsRow = chipsToText(tinymce.get('skillsRow').getContent());
+            const skillsRowNoUrl = chipsToText(tinymce.get('skillsRowNoUrl').getContent());
             
             // Batch updates
             const updates = [
@@ -336,6 +382,10 @@
                 { key: 'emailSubject', value: document.getElementById('skillsSubject').value },
                 { key: 'emailIntro', value: skillsIntro },
                 { key: 'emailRow', value: skillsRow },
+                
+                // New Fields
+                { key: 'emailRowNoUrl', value: skillsRowNoUrl },
+                { key: 'emailOnlyWithUrl', value: document.getElementById('skillsFilterNoUrl').checked },
                 
                 { key: 'tpl_new_user', value: JSON.stringify(getTab('newUser')) },
                 { key: 'tpl_reset_password', value: JSON.stringify(getTab('reset')) },
@@ -355,7 +405,7 @@
                 body: JSON.stringify({
                     type: 'Email Templates',
                     title: 'Updated Email Templates',
-                    payload: { fields: ['skills', 'new_user', 'reset', 'delete'] }
+                    payload: { fields: ['skills', 'new_user', 'reset', 'delete', 'filter_settings'] }
                 })
             });
 

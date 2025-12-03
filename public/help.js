@@ -11,9 +11,15 @@ const helpContent = {
                 <li><strong>Days to Expiry:</strong> Change this number and click 'Reload' to see skills expiring further in the future.</li>
                 <li><strong>Reload Expiring Skills:</strong> Fetches the latest data from the OSM Dashboard.</li>
                 <li><strong>Send Emails:</strong> Sends reminders to selected members. Only available if checkboxes are selected.</li>
-                <li><strong>Filters:</strong> Use the checkboxes on the right to hide members with no issues or skills without online forms.</li>
+                <li><strong>Filters:</strong> Use the toggle buttons at the top right of the table:
+                    <ul>
+                        <li><strong>Hide Empty:</strong> Hides members who have no expiring skills listed.</li>
+                        <li><strong>Has Form Only:</strong> Hides skills that do not have a configured Google Form URL.</li>
+                        <li><strong>Expired Only:</strong> Shows only skills that have already passed their due date.</li>
+                    </ul>
+                </li>
             </ul>
-            <p><em>Note:</em> Skills in <strong>bold</strong> are Critical. The <span style="color:#007bff">📄</span> icon indicates a direct link to the Google Form is available.</p>
+            <p><em>Note:</em> Skills in <strong>bold</strong> are Critical. Dates highlighted in <span style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red</span> are overdue.</p>
         `
     },
     // --- Member Management ---
@@ -46,11 +52,24 @@ const helpContent = {
         title: "Email Templates Help",
         body: `
             <p><strong>Overview:</strong> Customize the automated emails sent by the system.</p>
-            <p><strong>Tabs:</strong> Use the tabs at the top to switch between different email types (Expiring Skills, New User, Password Reset, Account Deletion).</p>
+            <p><strong>Tabs:</strong> Use the tabs at the top to switch between different email types.</p>
+            
+            <h3>Expiring Skills Template</h3>
+            <ul>
+                <li><strong>Filter:</strong> Check <em>"Include only skills with Form URL"</em> to completely exclude any skill that doesn't have a link configured.</li>
+                <li><strong>Dual Row Templates:</strong>
+                    <ul>
+                        <li><strong>Row (With URL):</strong> Used for skills that have a valid Form URL.</li>
+                        <li><strong>Row (No URL):</strong> Used for skills without a link (unless filtered out).</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3>General Editing</h3>
             <p><strong>Drag & Drop Variables:</strong> Drag the gray chips (e.g., <code>{{name}}</code>) into the Subject or Body editor to insert dynamic placeholders.</p>
             <ul>
                 <li><strong>Import/Export:</strong> Use the buttons in the top-right of each tab to backup or restore specific templates.</li>
-                <li><strong>Form URL (Skills):</strong> To link the "Form URL" correctly in the Skills template:
+                <li><strong>Form URL (Skills):</strong> To link the "Form URL" correctly:
                     <ol>
                         <li>Type text like "Click here".</li>
                         <li>Highlight it and click the Link icon in the editor toolbar.</li>

@@ -33,8 +33,18 @@ function getTemplate(prefs, type, defaults) {
 async function sendNotification(member, templateConfig, transporter, isTestMode, logger = console.log, appName) {
     if (!member.expiringSkills || member.expiringSkills.length === 0) return null;
 
-    // ... [Keep globalVars definition] ...
-    // Note: Reconstructing globalVars here as context was cut, assuming standard implementation
+    // --- FILTER LOGIC ---
+    let skillsToProcess = member.expiringSkills;
+    
+    // Check if filtering is enabled (handle string/boolean)
+    const isFilterEnabled = templateConfig.filterOnlyWithUrl === true || templateConfig.filterOnlyWithUrl === 'true';
+    
+    if (isFilterEnabled) {
+        skillsToProcess = skillsToProcess.filter(s => !!s.url);
+    }
+
+    if (skillsToProcess.length === 0) return null; // Abort if nothing to send
+
     const globalVars = {
         appname: appName || "FENZ OSM Manager",
         name: member.name,
@@ -45,24 +55,27 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
         from: templateConfig.from || `"${globalVars.appname}" <noreply@fenz.osm>`,
         subject: templateConfig.subject || `${globalVars.appname}: Expiring Skills Notification`,
         intro: templateConfig.intro || `<p>Hello <strong>{{name}}</strong>,</p><p>You have expiring skills in OSM. Please complete them ASAP.</p>`,
-        rowHtml: templateConfig.rowHtml || `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} <br> <a href="{{url}}">Form Link</a></li>`
+        // Default templates
+        rowHtml: templateConfig.rowHtml || `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} <br> <a href="{{url}}">Form Link</a></li>`,
+        rowHtmlNoUrl: templateConfig.rowHtmlNoUrl || `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} (No online form available)</li>`
     };
 
     const from = replaceVariables(defaults.from, globalVars);
     const subject = replaceVariables(defaults.subject, globalVars);
     const intro = replaceVariables(defaults.intro, globalVars);
-    const rowTemplate = defaults.rowHtml;
 
     let rowsHtml = '';
     let plainTextList = '';
 
-    member.expiringSkills.forEach(skill => {
-        // [UPDATED] URL Construction Logic
+    skillsToProcess.forEach(skill => {
         let fullUrl = skill.url || '';
+        
+        // --- TEMPLATE SELECTION ---
+        // Choose the template based on whether a URL exists
+        const templateToUse = fullUrl ? defaults.rowHtml : defaults.rowHtmlNoUrl;
+
         if (fullUrl) {
             // Replace variables if they exist, otherwise keep original string (backward compat)
-            // If the user hasn't updated the URL to use tags yet, this simply returns the base URL.
-            // NOTE: The previous hardcoded appending of 'member.name' is REMOVED as requested.
             fullUrl = fullUrl
                 .replace(/{{member-name}}/g, encodeURIComponent(member.name))
                 .replace(/{{member-email}}/g, encodeURIComponent(member.email));
@@ -70,7 +83,7 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
 
         const criticalLabel = skill.isCritical ? '(CRITICAL)' : '';
 
-        let row = rowTemplate
+        let row = templateToUse
             .replace(/{{skill}}/g, skill.skill)
             .replace(/{{date}}/g, skill.dueDate)
             .replace(/{{critical}}/g, criticalLabel)

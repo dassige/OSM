@@ -629,12 +629,14 @@ io.on('connection', (socket) => {
             const dbSkills = await db.getSkills();
             const prefs = await db.getPreferences();
 
-            // Re-map legacy prefs to new structure if needed, or just pass directly
+            // Updated to include new properties
             const templateConfig = {
                 from: prefs.emailFrom,
                 subject: prefs.emailSubject,
                 intro: prefs.emailIntro,
-                rowHtml: prefs.emailRow
+                rowHtml: prefs.emailRow,
+                rowHtmlNoUrl: prefs.emailRowNoUrl,
+                filterOnlyWithUrl: prefs.emailOnlyWithUrl
             };
 
             const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
@@ -646,15 +648,21 @@ io.on('connection', (socket) => {
                 if (member.expiringSkills.length > 0) {
                     try {
                         const result = await sendNotification(member, templateConfig, config.transporter, false, logger, config.ui.loginTitle);
-                        await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills`);
+                        
+                        // If result is null, it means no email was sent (e.g. skills filtered out)
+                        if (result) {
+                            await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills`);
 
-                        // UPDATED: Include body in log
-                        await db.logEvent(currentUser, 'Email', `Sent to ${member.name} at ${member.email}`, {
-                            recipient: member.name,
-                            email: member.email,
-                            skillsCount: member.expiringSkills.length,
-                            emailBody: result ? result.html : 'No content'
-                        });
+                            // UPDATED: Include body in log
+                            await db.logEvent(currentUser, 'Email', `Sent to ${member.name} at ${member.email}`, {
+                                recipient: member.name,
+                                email: member.email,
+                                skillsCount: member.expiringSkills.length,
+                                emailBody: result ? result.html : 'No content'
+                            });
+                        } else {
+                            logger(`   [Skipped] ${member.name} - No skills remaining after filters.`);
+                        }
 
                     } catch (err) {
                         await db.logEmailAction(member, 'FAILED', err.message);
@@ -667,6 +675,66 @@ io.on('connection', (socket) => {
             }
             logger(`> All operations completed.`);
             socket.emit('script-complete', 0);
+        } catch (error) {
+            logger(`FATAL ERROR: ${error.message}`);
+            socket.emit('script-complete', 1);
+        }
+    });
+
+    // --- NEW: Single Member Send Event ---
+    socket.on('run-send-single', async (memberName, days) => {
+        const daysThreshold = parseInt(days) || 30;
+        const currentUser = socket.request.session.user.name || socket.request.session.user;
+
+        logger(`> Sending Single Email to ${memberName}...`);
+        socket.emit('progress-update', { type: 'progress-start', total: 1 });
+
+        try {
+            const dbMembers = await db.getMembers();
+            const dbSkills = await db.getSkills();
+            const prefs = await db.getPreferences();
+
+            const templateConfig = {
+                from: prefs.emailFrom,
+                subject: prefs.emailSubject,
+                intro: prefs.emailIntro,
+                rowHtml: prefs.emailRow,
+                rowHtmlNoUrl: prefs.emailRowNoUrl,
+                filterOnlyWithUrl: prefs.emailOnlyWithUrl
+            };
+
+            const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
+            const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
+            
+            const member = processedMembers.find(m => m.name === memberName);
+
+            if (member && member.expiringSkills.length > 0) {
+                try {
+                    const result = await sendNotification(member, templateConfig, config.transporter, false, logger, config.ui.loginTitle);
+                    
+                    if (result) {
+                        await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills (Manual Single)`);
+                        await db.logEvent(currentUser, 'Email', `Sent SINGLE email to ${member.name}`, {
+                            recipient: member.name,
+                            skillsCount: member.expiringSkills.length,
+                            mode: 'Single'
+                        });
+                        logger(`> Email sent successfully to ${member.name}.`);
+                    } else {
+                        logger(`> Skipped: No actionable skills found for ${member.name} after filtering.`);
+                    }
+                } catch (err) {
+                    await db.logEmailAction(member, 'FAILED', err.message);
+                    logger(`> Failed to send email: ${err.message}`);
+                }
+            } else {
+                logger(`> Error: Member not found or no expiring skills.`);
+            }
+
+            // Immediately set progress to 100% and finish
+            socket.emit('progress-update', { type: 'progress-tick', current: 1, total: 1, member: memberName });
+            socket.emit('script-complete', 0); // 0 = Success code
+
         } catch (error) {
             logger(`FATAL ERROR: ${error.message}`);
             socket.emit('script-complete', 1);

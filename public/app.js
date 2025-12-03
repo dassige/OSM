@@ -211,6 +211,18 @@ function fetchData() {
     socket.emit('view-expiring-skills', days);
 }
 
+// --- New: Send Single Email Logic ---
+function sendSingleEmail(memberName) {
+    const days = parseInt(daysInput.value) || 30;
+    if(confirm(`Send immediate email reminder to ${memberName}?`)) {
+        // [UPDATED] Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        setRunningState();
+        socket.emit('run-send-single', memberName, days);
+    }
+}
+
 // --- Render Table Logic ---
 function renderTable() {
     skillsTableBody.innerHTML = '';
@@ -276,10 +288,63 @@ function renderTable() {
         const emailTd = document.createElement('td');
         emailTd.className = 'member-cell';
         if (member.emailEligible && hasVisibleSkills) {
+            
+            // Container for checkbox and button
+            const controlsDiv = document.createElement('div');
+            controlsDiv.style.display = 'flex';
+            controlsDiv.style.alignItems = 'center';
+            controlsDiv.style.justifyContent = 'space-between'; // Distribute space
+
+            // 1. The Checkbox Label
             const label = document.createElement('label');
             label.className = 'email-label';
-            label.innerHTML = `<input type="checkbox" class="email-checkbox" data-name="${member.name}" checked> Send email`;
-            emailTd.appendChild(label);
+            label.style.marginRight = '8px'; // Spacing
+            label.innerHTML = `<input type="checkbox" class="email-checkbox" data-name="${member.name}" checked> Select`;
+            
+            // 2. The Single Send Button (Rounded Mail Icon)
+            const singleBtn = document.createElement('button');
+            singleBtn.className = 'btn-icon send-single'; 
+            
+            // Custom styling for round, nicer look
+            singleBtn.style.color = '#007bff';
+            singleBtn.style.borderRadius = '50%';
+            singleBtn.style.width = '32px';
+            singleBtn.style.height = '32px';
+            singleBtn.style.padding = '0';
+            singleBtn.style.display = 'flex';
+            singleBtn.style.alignItems = 'center';
+            singleBtn.style.justifyContent = 'center';
+            singleBtn.style.border = '1px solid #cce5ff';
+            singleBtn.style.backgroundColor = '#e6f2ff';
+            singleBtn.style.cursor = 'pointer';
+            singleBtn.style.transition = 'all 0.2s';
+
+            // Tooltip
+            singleBtn.title = `Send email to ${member.name} only`;
+            
+            // Mail Icon SVG
+            singleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
+            
+            // Hover Effects
+            singleBtn.onmouseenter = () => { 
+                singleBtn.style.backgroundColor = '#007bff'; 
+                singleBtn.style.color = 'white'; 
+                singleBtn.style.borderColor = '#007bff';
+            };
+            singleBtn.onmouseleave = () => { 
+                singleBtn.style.backgroundColor = '#e6f2ff'; 
+                singleBtn.style.color = '#007bff'; 
+                singleBtn.style.borderColor = '#cce5ff';
+            };
+
+            singleBtn.onclick = (e) => {
+                e.stopPropagation(); // Prevent row clicks if any
+                sendSingleEmail(member.name);
+            };
+
+            controlsDiv.appendChild(label);
+            controlsDiv.appendChild(singleBtn);
+            emailTd.appendChild(controlsDiv);
         }
         tr.appendChild(emailTd);
 
