@@ -27,7 +27,7 @@ const helpContent = {
         `
     },
     // --- Skill Management ---
-"skills": {
+    "skills": {
         title: "Manage Skills Help",
         body: `
             <p><strong>Add Skill:</strong> Define a new skill to track. The name must match the OSM Dashboard exactly.</p>
@@ -74,9 +74,14 @@ const helpContent = {
         body: `
             <p><strong>Audit Trail:</strong> View a history of system actions (emails sent, members added, backups created, etc.).</p>
             <ul>
-                <li><strong>Filtering:</strong> Use the controls at the top to filter by <strong>Event Type</strong> (e.g., Emails, System), specific <strong>Users</strong>, or a <strong>Date Range</strong>.</li>
-                <li><strong>Pagination:</strong> Use the dropdown to change the number of rows per page (default is 50). This setting is saved to your profile.</li>
-                <li><strong>Details:</strong> Click the <span style="color:#007bff">ℹ️</span> icon on any row to view the full raw data (JSON) associated with that event.</li>
+                <li><strong>Filtering:</strong> Use the controls at the top to filter by <strong>Event Type</strong>, <strong>User</strong>, or <strong>Date</strong>.</li>
+                <li><strong>Pagination:</strong> Change the number of rows per page via the dropdown.</li>
+            </ul>
+            <p><strong>Super Admin Tools (Yellow Bar):</strong></p>
+            <ul>
+                <li><strong>Prune Old:</strong> Delete events older than the specified number of days to save space.</li>
+                <li><strong>Purge All:</strong> Completely wipe the event log database. <em>Use with caution.</em></li>
+                <li><strong>Export JSON:</strong> Download a full copy of the logs matching your current filters.</li>
             </ul>
         `
     },
@@ -114,11 +119,11 @@ const helpContent = {
 
 // --- LOGIC: Inject Button and Modal ---
 
-(function() {
+(function () {
     // 1. Determine Current Page Key
     const path = window.location.pathname;
     let key = "default";
-    
+
     if (path === "/" || path.endsWith("index.html")) key = "index";
     else if (path.includes("members")) key = "members";
     else if (path.includes("skills")) key = "skills";
@@ -162,7 +167,7 @@ const helpContent = {
 
     // Adjust position if on Dashboard to avoid Menu overlap
     if (key === "index") {
-        btn.style.top = "80px"; 
+        btn.style.top = "80px";
         btn.style.right = "20px";
     } else {
         btn.style.top = "20px";

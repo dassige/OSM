@@ -267,7 +267,7 @@ app.put('/api/profile', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- API: LOGGING (Filtered) ---
+// --- API: LOGGING  ---
 
 app.post('/api/logs', async (req, res) => {
     try {
@@ -298,6 +298,48 @@ app.get('/api/events/meta', async (req, res) => {
     try {
         const meta = await db.getEventLogMetadata();
         res.json(meta);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// (Super Admin Only)
+app.get('/api/events/export', requireAdmin, async (req, res) => {
+    try {
+        const filters = {
+            user: req.query.user || null,
+            types: req.query.types ? req.query.types.split(',') : [],
+            startDate: req.query.startDate || null,
+            endDate: req.query.endDate || null
+        };
+        
+        const logs = await db.getEventLogsExport(filters);
+        
+        // Return file download
+        const filename = `event_log_export_${new Date().toISOString().split('T')[0]}.json`;
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify(logs, null, 2));
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+//  Purge All (Super Admin Only)
+app.delete('/api/events/all', requireAdmin, async (req, res) => {
+    try {
+        await db.purgeEventLog();
+        // Log this action (it will be the first new entry!)
+        await db.logEvent(req.session.user.name, 'System', 'Event Log Purged', {});
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Prune Old (Super Admin Only)
+app.post('/api/events/prune', requireAdmin, async (req, res) => {
+    try {
+        const days = parseInt(req.body.days);
+        if (isNaN(days) || days < 0) return res.status(400).json({ error: "Invalid days value" });
+        
+        await db.pruneEventLog(days);
+        await db.logEvent(req.session.user.name, 'System', `Pruned events older than ${days} days`, { days });
+        res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

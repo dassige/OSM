@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,43 +8,203 @@
     <title id="pageTitle">Event Log - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        .container { max-width: 1100px; margin: 0 auto; padding-top: 40px; padding-bottom: 40px; }
-        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); transition: all 0.2s ease; }
-        .back-btn:hover { background-color: #23272b; transform: translateY(-2px); }
-        
-        #eventTable { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        #eventTable th, #eventTable td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
-        #eventTable th { background-color: #343a40; color: white; font-weight: 600; }
-        #eventTable tbody tr:hover { background-color: #f8f9fa; }
-        
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
-        .badge-system { background-color: #17a2b8; color: white; }
-        .badge-members { background-color: #28a745; color: white; }
-        .badge-skills { background-color: #ffc107; color: #333; }
-        .badge-email { background-color: #007bff; color: white; }
-        .badge-user { background-color: #6f42c1; color: white; } 
-        .badge-template { background-color: #e83e8c; color: white; } 
-        .badge-default { background-color: #6c757d; color: white; }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding-top: 40px;
+            padding-bottom: 40px;
+        }
 
-        .btn-info { background: none; border: none; cursor: pointer; color: #007bff; }
-        .btn-info:hover { color: #0056b3; }
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-decoration: none;
+            color: #fff;
+            background-color: #343a40;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background-color: #23272b;
+            transform: translateY(-2px);
+        }
+
+        #eventTable {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #eventTable th,
+        #eventTable td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        #eventTable th {
+            background-color: #343a40;
+            color: white;
+            font-weight: 600;
+        }
+
+        #eventTable tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .badge-system {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .badge-members {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .badge-skills {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        .badge-email {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .badge-user {
+            background-color: #6f42c1;
+            color: white;
+        }
+
+        .badge-template {
+            background-color: #e83e8c;
+            color: white;
+        }
+
+        .badge-default {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-info {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #007bff;
+        }
+
+        .btn-info:hover {
+            color: #0056b3;
+        }
 
         /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
-        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border-radius: 8px; width: 70%; max-width: 700px; position: relative; max-height: 80vh; overflow-y: auto; }
-        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; color: #aaa; }
-        .close-btn:hover { color: black; }
-        pre { background: #f4f4f4; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 0.9em; }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 70%;
+            max-width: 700px;
+            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close-btn:hover {
+            color: black;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
     </style>
 </head>
+
 <body>
     <a href="/" class="back-btn" title="Back to Dashboard">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
     </a>
+    <div id="maintenanceToolbar" class="filter-bar"
+        style="display:none; background-color: #fff3cd; border: 1px solid #ffeeba;">
+        <div style="display:flex; align-items:center; width:100%; justify-content: space-between;">
 
+            <div style="display:flex; gap:15px; align-items:center;">
+                <strong style="color:#856404;">Maintenance:</strong>
+
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <input type="number" id="pruneDays" class="filter-select" style="width:70px" value="90" min="1">
+                    <span style="font-size:13px;">days</span>
+                    <button onclick="pruneEvents()" class="btn-filter"
+                        style="background-color: #ffc107; color: #333;">Prune Old</button>
+                </div>
+
+                <button onclick="purgeLog()" class="btn-filter"
+                    style="background-color: #dc3545; margin-left:10px;">Purge All</button>
+            </div>
+
+            <button onclick="exportLog()" class="btn-filter" style="background-color: #28a745;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="vertical-align:text-bottom; margin-right:5px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export JSON
+            </button>
+        </div>
+    </div>
     <div class="container">
         <h1 id="pageHeader">System Event Log</h1>
-        
+
         <div class="filter-bar">
             <div class="filter-group">
                 <label>Event Types:</label>
@@ -69,7 +230,8 @@
 
             <div class="filter-group">
                 <label>Rows:</label>
-                <select id="rowsPerPage" class="filter-select" style="min-width: 80px;" onchange="changeLimit(this.value)">
+                <select id="rowsPerPage" class="filter-select" style="min-width: 80px;"
+                    onchange="changeLimit(this.value)">
                     <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
@@ -94,7 +256,9 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <tr><td colspan="5" style="text-align:center; padding: 20px;">Loading events...</td></tr>
+                <tr>
+                    <td colspan="5" style="text-align:center; padding: 20px;">Loading events...</td>
+                </tr>
             </tbody>
         </table>
 
@@ -109,7 +273,8 @@
 
     <div id="payloadModal" class="modal">
         <div class="modal-content">
-            <span class="close-btn" onclick="document.getElementById('payloadModal').style.display='none'">&times;</span>
+            <span class="close-btn"
+                onclick="document.getElementById('payloadModal').style.display='none'">&times;</span>
             <h2>Event Details</h2>
             <p><strong>Timestamp:</strong> <span id="modalTime"></span></p>
             <p><strong>User:</strong> <span id="modalUser"></span></p>
@@ -135,11 +300,62 @@
         let totalCount = 0;
 
         async function init() {
+            await checkAdmin(); // <--- Check privileges first
             await loadMetadata();
             await loadUserPrefs();
             await applyFilters(1);
         }
+        async function checkAdmin() {
+            try {
+                const res = await fetch('/api/user-session');
+                const user = await res.json();
+                // Show maintenance bar ONLY if EnvUser (Super Admin) or specifically isAdmin
+                if (user.isEnvUser === true || user.isAdmin === true) {
+                    document.getElementById('maintenanceToolbar').style.display = 'block';
+                }
+            } catch (e) { console.error("Auth check failed", e); }
+        }
 
+        //  Maintenance Actions
+        async function purgeLog() {
+            if (!confirm("DANGER: This will permanently delete ALL events from the log.\n\nAre you sure?")) return;
+            try {
+                const res = await fetch('/api/events/all', { method: 'DELETE' });
+                if (res.ok) { alert("Log purged."); applyFilters(1); }
+                else { throw new Error((await res.json()).error); }
+            } catch (e) { alert("Error: " + e.message); }
+        }
+
+        async function pruneEvents() {
+            const days = document.getElementById('pruneDays').value;
+            if (!confirm(`Delete events older than ${days} days?`)) return;
+            try {
+                const res = await fetch('/api/events/prune', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ days })
+                });
+                if (res.ok) { alert("Events pruned."); applyFilters(1); }
+                else { throw new Error((await res.json()).error); }
+            } catch (e) { alert("Error: " + e.message); }
+        }
+
+        function exportLog() {
+            // Build query string from current filters to export what is seen (or all if filters empty)
+            const activeTypes = Array.from(document.querySelectorAll('.type-badge.active')).map(b => b.getAttribute('data-type'));
+            const user = document.getElementById('userFilter').value;
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+
+            const params = new URLSearchParams();
+            if (activeTypes.length > 0) params.append('types', activeTypes.join(','));
+            if (user) params.append('user', user);
+            if (start) params.append('startDate', start);
+            if (end) params.append('endDate', end);
+
+            // Trigger download
+            window.location.href = `/api/events/export?${params.toString()}`;
+        }
         async function loadUserPrefs() {
             try {
                 const res = await fetch('/api/user-preferences/eventLogLimit');
@@ -155,7 +371,7 @@
             currentLimit = parseInt(newLimit);
             fetch('/api/user-preferences', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key: 'eventLogLimit', value: currentLimit })
             });
             applyFilters(1);
@@ -165,9 +381,9 @@
         async function loadMetadata() {
             try {
                 const res = await fetch('/api/events/meta');
-                if(res.ok) {
+                if (res.ok) {
                     const data = await res.json();
-                    
+
                     // 1. Populate Users
                     const select = document.getElementById('userFilter');
                     data.users.forEach(u => {
@@ -188,19 +404,19 @@
                             badge.className = 'type-badge';
                             badge.setAttribute('data-type', type);
                             badge.textContent = type;
-                            
+
                             // Add click handler
                             badge.addEventListener('click', () => {
                                 badge.classList.toggle('active');
                             });
-                            
+
                             typeContainer.appendChild(badge);
                         });
                     } else {
                         typeContainer.innerHTML = '<span style="font-size:13px; color:#888;">No events recorded yet.</span>';
                     }
                 }
-            } catch(e) { console.error(e); }
+            } catch (e) { console.error(e); }
         }
 
         function resetFilters() {
@@ -253,8 +469,8 @@
             const end = Math.min(page * limit, total);
 
             document.getElementById('paginationControls').style.display = total > 0 ? 'flex' : 'none';
-            document.getElementById('pageInfo').textContent = total > 0 
-                ? `Showing ${start}-${end} of ${total} events` 
+            document.getElementById('pageInfo').textContent = total > 0
+                ? `Showing ${start}-${end} of ${total} events`
                 : 'No events found';
 
             document.getElementById('btnPrev').disabled = page <= 1;
@@ -290,7 +506,7 @@
         }
 
         function formatDate(isoStr) { return new Date(isoStr).toLocaleString(); }
-        
+
         function getBadgeClass(type) {
             const t = (type || '').toLowerCase();
             if (t.includes('system')) return 'badge-system';
@@ -314,12 +530,13 @@
 
         // Run Init
         init();
-        
-        window.onclick = function(event) {
+
+        window.onclick = function (event) {
             if (event.target == document.getElementById('payloadModal')) {
                 document.getElementById('payloadModal').style.display = "none";
             }
         }
     </script>
 </body>
+
 </html>
