@@ -1,13 +1,13 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
-const https = require('https');
+// main.js
+const { getOIData } = require('./services/scraper'); 
+const config = require('./config'); 
 
-// Import constants
-const { members, skillsConfig, url, transporter, emailInfo } = require('./resources.js');
+// Import resources (Legacy support for CLI)
+const { members, skillsConfig, transporter, emailInfo } = require('./resources.js');
 
 // --- 1. GLOBAL FLAG DEFINITIONS ---
 const args = process.argv.slice(2);
-const isTestMode = args.includes('test');
+// [REMOVED] Test mode flag
 const isViewMode = args.includes('view');
 const isSendSelectedMode = args.includes('send-selected');
 
@@ -34,66 +34,28 @@ if (isSendSelectedMode) {
 
 console.log(`> Configuration: Expiry Threshold set to ${daysThreshold} days.`);
 
-if (isTestMode) {
-    console.log('*** RUNNING IN TEST MODE - NO EMAILS WILL BE SENT ***');
-}
 if (isSendSelectedMode) {
     console.log(`*** RUNNING IN SELECTIVE MODE - Sending to ${allowedNames.length} selected member(s) ***`);
 }
 
-let osmData = [];
-let allResults = [];
+let allResults = []; 
 
 function getTime() {
     return new Date().toLocaleTimeString();
 }
 
-async function getOIData() {
-    if (!isViewMode) console.log(`[${getTime()}] Retreiving OI Data from dashboard...`);
-    try {
-        const response = await axios.get(url, { httpsAgent: new https.Agent({ rejectUnauthorized: false }) });
-        const $ = cheerio.load(response.data);
-        const osmStatusTable = $('tbody');
-
-        let rows = [];
-        osmStatusTable.find('tr').each((i, row) => {
-            const cols = [];
-            $(row).find('td').each((j, col) => {
-                cols.push($(col).text().trim());
-            });
-            if (cols.length > 0) {
-                osmData.push({ name: cols[0], skill: cols[1], dueDate: cols[2] })
-                rows.push(cols);
-            }
-        });
-
-        members.forEach((member) => {
-            let filteredSkills = osmData.filter((item) => {
-                return item.name === member.name;
-            })
-            member.skills = filteredSkills;
-        });
-        if (!isViewMode) console.log(`[${getTime()}] OI Data successfully retrieved (${rows.length} records).`);
-        return rows;
-    } catch (error) {
-        console.error(`[${getTime()}] Error fetching OI Data:`, error);
-        return null;
-    }
-}
-
-async function sendEmail(to, text, html) {
+async function sendEmail(to, text, html) { 
     console.log(`   [${getTime()}] SMTP: Initializing transport...`);
     try {
         const info = await transporter.sendMail({
             from: emailInfo.from,
             to: to,
             subject: emailInfo.subject,
-            text: text,
+            text: text, 
             html: html,
         });
         console.log(`   [${getTime()}] SMTP: Payload accepted.`);
         console.log(`   [${getTime()}] SMTP: Message ID: ${info.messageId}`);
-        console.log(`   [${getTime()}] SMTP: Server Response: ${info.response}`);
     } catch (error) {
         console.error(`   [${getTime()}] SMTP ERROR: Failed to send to ${to}`);
         console.error(`   [${getTime()}] Error Details:`, error.message);
@@ -111,7 +73,7 @@ async function sendMessage(member) {
             <p>Hello, you have expiring Skills due in OSM. Please complete these ASAP:</p>
             <ul>
     `;
-
+    
     if (!isViewMode) {
         console.log(`\n=============================================================`);
         console.log(`PROCESSING MEMBER: ${member.name}`);
@@ -128,18 +90,16 @@ async function sendMessage(member) {
     member.expiringSkills.forEach((skill) => {
         const skillConfig = skillsConfig.find(config => config.name === skill.skill);
         const isIncluded = !!skillConfig;
-
+        
         if (!isViewMode) {
             console.log(`      - Skill: "${skill.skill}"`);
             console.log(`        Due Date: ${skill.dueDate}`);
-            console.log(`        Actionable: ${isIncluded ? 'YES' : 'NO'}`);
             if (skillConfig && skillConfig.critical_skill) {
                 console.log(`        CRITICAL: YES`);
             }
         }
 
         if (isIncluded) {
-            // [UPDATED] Use templating instead of appending
             let fullUrl = skill.url || '';
             if (fullUrl) {
                 fullUrl = fullUrl
@@ -160,7 +120,7 @@ async function sendMessage(member) {
             enableSend = true;
         }
     });
-
+    
     htmlMessage += `
             </ul>
             <p style="font-size: 12px; color: #888;">This is an automated notification from FENZ OSM Manager.</p>
@@ -172,18 +132,14 @@ async function sendMessage(member) {
             // View mode: do nothing
         } else if (isSendSelectedMode && !allowedNames.includes(member.name)) {
             console.log(`   [${getTime()}] Decision: BLOCKED. Member not in user-selected list.`);
-        } else if (isTestMode) {
-            console.log(`   [${getTime()}] Mode: TEST. Simulating email send.`);
-            console.log(`   [${getTime()}] Target: ${member.email}`);
-            console.log(`   [${getTime()}] Content Preview (Plain Text):\n   --------------------\n${message.replace(/\r\n/g, '\n   ')}\n   --------------------`);
         } else {
             console.log(`   [${getTime()}] Decision: SENDING. Member is eligible and selected.`);
             console.log(`   [${getTime()}] Target: ${member.email}`);
             try {
                 await sendEmail(member.email, message, htmlMessage);
-                console.log(`   [${getTime()}] SUCCESS: Notification cycle complete for ${member.name}.`);
+                console.log(`   [${getTime()}] SUCCESS: Notification cycle complete.`);
             } catch (error) {
-                console.error(`   [${getTime()}] FAILURE: Could not complete notification for ${member.name}.`);
+                console.error(`   [${getTime()}] FAILURE: Could not complete notification.`);
             }
         }
     } else {
@@ -191,27 +147,46 @@ async function sendMessage(member) {
     }
 }
 
+// Helper: Robust Date Parser (Matches Service Logic)
+function parseDate(dateStr) {
+    if (!dateStr) return null;
+    const cleanStr = dateStr.trim();
+    if (cleanStr.toLowerCase().includes('expired')) return new Date('1970-01-01');
+
+    const dmy = cleanStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (dmy) {
+        const day = parseInt(dmy[1], 10);
+        const month = parseInt(dmy[2], 10) - 1;
+        let year = parseInt(dmy[3], 10);
+        if (year < 100) year += 2000;
+        return new Date(year, month, day);
+    }
+    const fallback = new Date(cleanStr);
+    return isNaN(fallback.getTime()) ? null : fallback;
+}
+
 async function checkExpiringSkills(member) {
     member.expiringSkills = member.skills.filter((skill) => {
-        const skillExpiryDate = new Date(skill.dueDate);
-        const currentDate = new Date();
+        const skillExpiryDate = parseDate(skill.dueDate);
+        if (!skillExpiryDate) return false;
+
         const thresholdDate = new Date();
-        thresholdDate.setDate(currentDate.getDate() + daysThreshold);
+        thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
 
         if (skillExpiryDate <= thresholdDate) {
-            const retVal = skillsConfig.find(config => config.name === skill.skill);
-            if (retVal) {
-                skill.url = retVal.url;
-                skill.isCritical = retVal.critical_skill;
-            }
-            return true;
+             const retVal = skillsConfig.find(config => config.name === skill.skill);
+             if (retVal) {
+                 skill.url = retVal.url;
+                 skill.isCritical = retVal.critical_skill; 
+             }
+             return true;
         }
         return false;
     });
 
     if (member.expiringSkills && member.expiringSkills.length > 0) {
         if (!isViewMode) {
-            await sendMessage(member);
+            await sendMessage(member); 
         } else {
             const isEmailEligible = member.expiringSkills.some(s => skillsConfig.some(conf => conf.name === s.skill));
             allResults.push({
@@ -219,15 +194,15 @@ async function checkExpiringSkills(member) {
                 skills: member.expiringSkills.map(s => ({
                     skill: s.skill,
                     dueDate: s.dueDate,
-                    hasUrl: !!s.url,
-                    isCritical: !!s.isCritical
+                    hasUrl: !!s.url, 
+                    isCritical: !!s.isCritical 
                 })),
                 emailEligible: isEmailEligible
             });
         }
     } else {
         if (isViewMode) {
-            allResults.push({
+             allResults.push({
                 name: member.name,
                 skills: [],
                 emailEligible: false
@@ -236,48 +211,53 @@ async function checkExpiringSkills(member) {
     }
 }
 
-async function processOIData(rows) {
-    // REFACTOR: Filter targets based on mode
-    const targets = isSendSelectedMode
+async function processOIData() {
+    const targets = isSendSelectedMode 
         ? members.filter(m => allowedNames.includes(m.name))
         : members;
 
-    // Report start of progress via IPC
-    if (process.send) {
-        process.send({ type: 'progress-start', total: targets.length });
-    }
+    if (process.send) process.send({ type: 'progress-start', total: targets.length });
 
     let current = 0;
 
     for (const member of targets) {
-        // 1. Send the email (waits here until done)
         await checkExpiringSkills(member);
-
-        // 2. Increment and Update UI *IMMEDIATELY* after send
+        
         current++;
         if (process.send) {
-            process.send({
-                type: 'progress-tick',
-                current: current,
-                total: targets.length,
-                member: member.name // Pass name for UI feedback
+            process.send({ 
+                type: 'progress-tick', 
+                current: current, 
+                total: targets.length, 
+                member: member.name 
             });
         }
-
-        // 3. Pause *AFTER* updating UI
+        
         if (!isViewMode) {
-            console.log(`   [${getTime()}] Pausing for rate limit safety (5s)...`);
-            await new Promise(resolve => setTimeout(resolve, 5000));
+             console.log(`   [${getTime()}] Pausing for rate limit safety (2s)...`);
+             await new Promise(resolve => setTimeout(resolve, 2000));
         }
     }
 }
 
 const main = async () => {
     try {
-        const rows = await getOIData();
-        if (rows) {
-            await processOIData(rows);
+        if (!isViewMode) console.log(`[${getTime()}] Initializing Scraper (Target: ${config.url})`);
+        
+        const scrapedData = await getOIData(config.url, 0, config.fixedProxyUrl);
+        
+        if (scrapedData && scrapedData.length > 0) {
+            members.forEach((member) => {
+                const filteredSkills = scrapedData.filter((item) => {
+                    return item.name === member.name;
+                });
+                member.skills = filteredSkills;
+            });
 
+            if (!isViewMode) console.log(`[${getTime()}] Data mapped to ${members.length} members.`);
+
+            await processOIData();
+            
             if (isViewMode) {
                 console.log('___JSON_START___');
                 console.log(JSON.stringify(allResults));
@@ -286,7 +266,7 @@ const main = async () => {
                 console.log(`\n[${getTime()}] *** ALL PROCESSES COMPLETED ***`);
             }
         } else {
-            console.log('No OI Data retrieved.');
+            console.log('No OI Data retrieved or empty response.');
         }
     } catch (error) {
         console.error('Error in main process:', error.message);

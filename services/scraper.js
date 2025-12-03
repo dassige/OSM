@@ -1,8 +1,8 @@
+// services/scraper.js
 const axios = require('axios');
 const cheerio = require('cheerio');
 const https = require('https');
-//
-const { HttpsProxyAgent } = require('https-proxy-agent'); // Import the new library
+const { HttpsProxyAgent } = require('https-proxy-agent');
 
 const getTime = () => new Date().toLocaleTimeString();
 
@@ -12,7 +12,6 @@ let lastScrapeTime = 0;
 async function getOIData(url, intervalMinutes = 0, proxyUrl = null, logger = console.log) {
     // 1. Check Cache
     if (cachedData && lastScrapeTime > 0 && intervalMinutes > 0) {
-        // ... (Cache logic remains the same)
         const now = Date.now();
         const cacheAgeMs = now - lastScrapeTime;
         const maxAgeMs = intervalMinutes * 60 * 1000;
@@ -22,51 +21,64 @@ async function getOIData(url, intervalMinutes = 0, proxyUrl = null, logger = con
     const axiosConfig = {
         timeout: 30000,
         headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9'
         }
     };
 
-    // ---  PROXY LOGIC ---
+    // --- PROXY LOGIC ---
     if (proxyUrl) {
         try {
-            // Create a dedicated proxy agent
-            // This handles auth parsing and the CONNECT tunnel automatically
             const agent = new HttpsProxyAgent(proxyUrl);
-            
-            // Assign the agent to axios
             axiosConfig.httpsAgent = agent;
-            
-            // CRITICAL: Disable axios's native proxy handling so it doesn't conflict with the agent
             axiosConfig.proxy = false; 
-            
-            logger(`[Scraper] Using Proxy Agent: ${proxyUrl.replace(/:[^:]*@/, ':***@')}`); // Log masked URL
+            logger(`[Scraper] Using Proxy Agent: ${proxyUrl.replace(/:[^:]*@/, ':***@')}`);
         } catch (e) {
             logger(`[Scraper] Failed to configure Proxy Agent: ${e.message}`);
         }
     } else {
-        // Only use the insecure agent if NO proxy is used (optional, for local dev)
         axiosConfig.httpsAgent = new https.Agent({ rejectUnauthorized: false });
     }
 
     // 2. Scrape Data
     try {
-        logger(`[${getTime()}] [Scraper] Starting Request `);
+        logger(`[${getTime()}] [Scraper] scraping url`);
         const response = await axios.get(url, axiosConfig);
         
-        // ... (Rest of the parsing logic remains the same)
-        if (!response.data) return [];
+        if (!response.data) {
+            logger(`[Scraper] Warning: Empty response from server.`);
+            return [];
+        }
+
         const $ = cheerio.load(response.data);
         const osmStatusTable = $('tbody');
-        if (osmStatusTable.length === 0) return [];
+        
+        if (osmStatusTable.length === 0) {
+            logger(`[Scraper] Warning: No <tbody> found in page. Check URL or page structure.`);
+            return [];
+        }
 
         let scrapedData = [];
         osmStatusTable.find('tr').each((i, row) => {
             const cols = [];
             $(row).find('td').each((j, col) => cols.push($(col).text().trim()));
+            
             if (cols.length >= 3) {
                 scrapedData.push({ name: cols[0], skill: cols[1], dueDate: cols[2] });
             }
         });
+
+        logger(`[Scraper] Successfully parsed ${scrapedData.length} records.`);
+
+        // [NEW] Log all records to console
+        if (scrapedData.length > 0) {
+            logger('[Scraper] --- Extracted Data Start ---');
+            scrapedData.forEach((record, index) => {
+        //        logger(`   ${index + 1}. ${JSON.stringify(record)}`);
+            });
+            logger('[Scraper] --- Extracted Data End ---');
+        }
 
         if (scrapedData.length > 0) {
             cachedData = scrapedData;

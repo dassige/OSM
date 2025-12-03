@@ -14,16 +14,19 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **Multi-User System:**
       * **Super Admin:** A resilient system account defined via environment variables.
       * **User Management:** Create multiple database-backed administrators with secure password hashing.
+      * **Automatic Notifications:** New users receive a welcome email with a randomly generated temporary password.
       * **Self-Service:** Users can manage their profiles and recover lost passwords via email.
   * **Web-Based Management:**
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
-      * **Skills:** Configure which skills to track, mark them as Critical, and assign Google Form URLs.
-      * **Email Templates:** A rich-text editor to customize email subjects and body content with drag-and-drop variables.
+      * **Skills:** Configure which skills to track and mark them as Critical.
+      * **Smart Form Links:** Define Google Form URLs with dynamic placeholders (e.g., `{{member-name}}`) to pre-fill member details automatically.
+      * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, New Users, Password Resets, and Account Deletions.
   * **System Maintenance & Auditing:**
       * **Database Backup & Restore:** Download full database snapshots and restore them with strict version compatibility checks.
-      * **Event Log:** A comprehensive audit trail recording all major actions (Member/Skill changes, Emails sent, Template edits, etc.) with timestamps and user details.
-  * **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies to scrape New Zealand-restricted dashboards from abroad.
-  * **Cloud-Native Persistence:** Uses **Litestream** to replicate the SQLite database to Google Cloud Storage, ensuring data safety even on stateless platforms like Google Cloud Run.
+      * **Event Log:** A comprehensive audit trail recording all major actions.
+      * **Log Maintenance:** Super Admins can prune old events, purge the entire log, or export it to JSON.
+  * **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies.
+  * **Cloud-Native Persistence:** Uses **Litestream** to replicate the SQLite database to Google Cloud Storage (GCS) for stateless deployments (e.g., Google Cloud Run).
   * **Dockerized:** Ready for production deployment with a flexible configuration system.
 
 ## Table of Contents
@@ -74,7 +77,7 @@ The application is configured primarily via the **`.env`** file.
 
 ### Environment Variables (`.env`)
 
-Open the `.env` file you just created and configure the following parameters:
+Open the `.env` file and configure the following parameters:
 
 #### **Application Security (Super Admin)**
 
@@ -82,9 +85,14 @@ Open the `.env` file you just created and configure the following parameters:
   * `APP_PASSWORD`: A strong password for the Super Admin.
   * `SESSION_SECRET`: A long, random string used to encrypt session cookies.
 
+#### **Application Settings**
+
+  * `APP_TIMEZONE`: The timezone used for date calculations (e.g., `Pacific/Auckland`). Defaults to NZ time.
+  
 #### **OSM Dashboard Connection**
 
-  * `DASHBOARD_URL`: **Crucial.** The full URL of the live dashboard including your unique user code.
+  * `OSM_BU_ID`: **Crucial.** Your unique Business Unit ID (GUID) for the dashboard (e.g., `87FF646A-FCBC-49A1-9BAC-76F1C368EEFA`). The system will automatically construct the correct URL.
+  * `DASHBOARD_URL`: (Optional) Override the automatic URL construction if you have a custom link.
   * `SCRAPING_INTERVAL`: Minutes to cache data before scraping the live site again (Default: `60`).
 
 #### **Email Configuration (SMTP)**
@@ -100,11 +108,11 @@ Open the `.env` file you just created and configure the following parameters:
 
 ## UI Customization
 
-You can fully customize the look and feel of the application (Logo, Background, and Login Title) to match your station's branding. This is handled differently depending on your deployment method.
+You can fully customize the look and feel (Logo, Background, Title).
 
 ### 1\. Customizing the Title
 
-For all deployments, simply change the `UI_LOGIN_TITLE` variable in your `.env` file:
+Change the `UI_LOGIN_TITLE` variable in your `.env` file:
 
 ```bash
 UI_LOGIN_TITLE="Station 44 OSM Manager"
@@ -112,200 +120,89 @@ UI_LOGIN_TITLE="Station 44 OSM Manager"
 
 ### 2\. Customizing Images (Local / Docker)
 
-When running locally or via Docker Compose, you can replace the default images by "mounting" a local folder containing your custom assets.
-
-**Step 1: Create a branding folder**
-Create a new folder anywhere on your computer (e.g., inside the project root). Let's call it `my-branding`.
-
-```bash
-mkdir my-branding
-```
-
-**Step 2: Add your images**
-Place your custom images inside this folder. They **must** be named exactly as follows:
-
-  * `logo.png` (The logo shown on the login screen)
-  * `background.png` (The full-screen background image)
-
-**Step 3: Update configuration**
-Open your `.env` file and set the `UI_RESOURCES_PATH` variable to point to your new folder.
-
-  * **Relative Path:** `UI_RESOURCES_PATH=./my-branding` (Recommended if folder is in project root)
-  * **Absolute Path:** `UI_RESOURCES_PATH=/Users/username/documents/osm-branding`
-
-**Step 4: Restart**
-Restart your Docker container or Node process. The application will now serve files from your custom folder instead of the default `public/resources` directory.
-
-```bash
-docker compose up -d
-```
+1.  Create a folder (e.g., `my-branding`) containing `logo.png` and `background.png`.
+2.  Set `UI_RESOURCES_PATH=./my-branding` in your `.env`.
+3.  Restart the application.
 
 ### 3\. Customizing Images (Cloud Run)
 
-Since Cloud Run is stateless, you cannot mount a local folder. Instead, you must host your images publicly (e.g., on Google Cloud Storage, Imgur, or your station's website) and provide the URLs.
+For stateless deployments, host your images publicly and provide the URLs via environment variables:
 
-Add these variables to your Cloud Run deployment environment:
-
-  * `UI_LOGO_URL`: `https://example.com/images/station-logo.png`
-  * `UI_BACKGROUND_URL`: `https://example.com/images/station-bg.jpg`
-
-The application will automatically download these images every time a new container starts.
+  * `UI_LOGO_URL`
+  * `UI_BACKGROUND_URL`
 
 ## Usage
 
 ### 1\. Starting the Server
 
-Locally, start the web server using:
-
 ```bash
 node server.js
 ```
 
-*The server listens on port **3000** by default.*
+*Listens on port **3000** by default.*
 
 ### 2\. User Management
 
-The application supports two types of users:
-
-1.  **Super Admin (Environment User):**
-
-      * Defined in `.env`.
-      * Has exclusive access to the **Manage Users** menu.
-      * Cannot change their own password via the web UI (must be changed in `.env`).
-      * Used for initial setup and system recovery.
-
-2.  **Standard Users (Database Users):**
-
-      * Created by the Super Admin.
-      * Can manage members, skills, and send emails.
-      * Can update their own Name and Password via the **User Settings** menu (top-left).
-      * Can recover lost passwords via the "Forgot Password" link on the login page.
-
-**Managing Users (Super Admin Only):**
-
-  * Log in as the Super Admin.
-  * Go to **Menu \> Manage Users**.
-  * **Add User**: Click "Add User", enter their Email, Name, and a strong Password.
-  * **Reset Password**: Admin can manually reset a user's password if needed.
+  * **Super Admin:** Log in with the credentials defined in `.env`. Access **Manage Users** to create other admins.
+  * **Creating Users:** When you add a user, the system generates a secure random password and emails it to them automatically.
+  * **Deleting Users:** Deleting a user will also send them a notification email.
 
 ### 3\. Dashboard Workflow
 
-1.  **Login**: Access `http://localhost:3000` and log in.
-
-2.  **Manage Data**: Before using the dashboard, use the **Menu** (top right) to populate your database.
-
-      * **Manage Members**: Import a CSV of your team or add them manually.
-
-      * **Manage Skills**: Add the specific skill names (must match OSM exactly) you want to track. You can add Google Form URLs here.
-
-3.  **Configure Emails**: Go to **Email Templates** to customize the message your members receive.
-
-4.  **Admin Tools**:
-
-      * **System Tools**: Access this page to **Backup** your database (downloads a `.db` file) or **Restore** from a previous backup.
-      * **Event Log**: View a history of all system activities, including who modified members, who sent emails, and when backups were performed.
-
-5.  **Run Dashboard**:
-
-      * Return to the **Home** screen.
-      * Click **Reload Expiring Skills** to scrape the live dashboard.
-      * Select members from the list and click **Send Emails**.
+1.  **Manage Members**: Import your team via CSV.
+2.  **Manage Skills**:
+      * Add skill names exactly as they appear on the OSM Dashboard.
+      * **Templated URLs:** You can use variables in the "Form URL" field.
+          * Example: `https://docs.google.com/forms/...?entry.123={{member-name}}`
+          * The system will auto-fill the member's name and email when generating the link.
+3.  **Email Templates**: Use the tabbed editor to customize the `Expiring Skills`, `New User`, `Password Reset`, and `Account Deleted` emails. Drag and drop variables directly into the text.
+4.  **Event Log**: Use the yellow maintenance bar (Super Admin only) to prune old logs or purge the history.
+5.  **Run Dashboard**: Click **Reload Expiring Skills** to fetch live data, then select members to send reminders.
 
 ## Docker Deployment
-
-The project includes a `Dockerfile` and `docker-compose.yml` for easy deployment.
 
 1.  **Build and Run:**
     ```bash
     docker compose up -d --build
     ```
-2.  **Persistence:**
-    The `docker-compose.yml` mounts the local directory to `/app`, ensuring your `fenz.db` (database) is preserved on your host machine even if the container restarts.
+2.  **Persistence:** The `docker-compose.yml` mounts the local directory to `/app`, ensuring your `fenz.db` persists restarts.
 
 ## Google Cloud Run Deployment
 
-This application supports stateless deployment on Google Cloud Run by using Litestream for database persistence.
+Supports stateless deployment using **Litestream** to replicate the database to Google Cloud Storage.
 
-**How it works:**
-
-1.  **Litestream** runs alongside the app.
-2.  It continuously backs up `fenz.db` to a Google Cloud Storage Bucket.
-3.  On startup, it restores the latest database from the bucket.
-
-See [Installation on Google Cloud Run](Installation_google_run.md) for detailed deployment commands.
+See [Installation on Google Cloud Run](Installation_google_run.md) for details.
 
 ## Project Structure
 
 ```text
-├── .env                    # Environment variables (Secrets & Config)
-├── server.js               # Main Express Web Server & API entry point
-├── fenz.db                 # SQLite Database (Stores members, skills, history, users)
+├── .env                    # Secrets & Config
+├── server.js               # Express Web Server
+├── fenz.db                 # SQLite Database
 ├── config.js               # Configuration loader
-├── start.sh                # Startup Script (Litestream Restore & Init)
+├── start.sh                # Startup Script (Litestream)
 ├── public/                 # Frontend Assets
-│   ├── index.html          # Main Dashboard
-│   ├── members.html        # Member Management UI
-│   ├── skills.html         # Skill Management UI
-│   ├── users.html          # User Management UI (Admin Only)
-│   ├── profile.html        # User Profile UI
-│   ├── email-templates.html # Email Editor UI
-│   ├── system-tools.html   # Backup/Restore UI
-│   ├── event-log.html      # Event Audit UI
-│   └── app.js              # Frontend Logic (Socket.IO client)
+│   ├── email-templates.html # Template Editor
+│   ├── system-tools.html   # Backup/Restore
+│   ├── event-log.html      # Audit Log
+│   └── ...
 ├── services/               # Backend Logic
-│   ├── db.js               # SQLite Database Adapter
+│   ├── db.js               # Database Adapter
 │   ├── mailer.js           # SMTP Service
-│   ├── scraper.js          # OSM Dashboard Scraper
-│   ├── member-manager.js   # Logic to map skills to members
-│   └── proxy-manager.js    # Proxy Logic
+│   ├── scraper.js          # Dashboard Scraper
+│   └── ...
 └── Dockerfile              # Container definition
 ```
-
-## Troubleshooting
-
-  * **"Unauthorized" Socket Error:** Ensure you have logged in via the login page; direct API access is blocked.
-  * **Scraper returns 0 results:**
-      * Check your `DASHBOARD_URL`.
-      * If outside NZ, ensure `PROXY_MODE` is set correctly. Check the web console for "Proxy verification" logs.
-  * **Database Locked:** SQLite allows only one writer at a time. Ensure you don't have the `fenz.db` file open in a viewer while the app is writing.
-  * **Restore Failed (Version Mismatch):** You can only restore a database backup that was created by the exact same version of the application you are currently running. This prevents data corruption from schema changes.
-  * **Login Issues:** If you cannot login as a created user, ensure the email address is correct. As a fallback, you can always log in using the `APP_USERNAME` and `APP_PASSWORD` defined in your `.env` file to reset other accounts.
-
-## Future Improvements
-
-See [Future Improvements](improvements.md) for a list of desired features.
 
 ## Credits
 
   * **Project Lead & Developer:** Gerardo Dassi
-  * **Litestream:** Used for SQLite replication in serverless environments.
-  * **Icons:** Provided by [Feather Icons](https://feathericons.com/).
+  * **Persistence:** Litestream
+  * **Icons:** Feather Icons
 
 ## License
 
-This project is licensed under the **MIT License**.
+MIT License. See source code for full text.
 
-```text
-MIT License
-
-Copyright (c) 2025 Gerardo Dassi
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 ```
-
+```
