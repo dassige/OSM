@@ -7,8 +7,11 @@ const tableContainer = document.getElementById('tableContainer');
 const skillsTableBody = document.querySelector('#skillsTable tbody');
 const selectAllCheckbox = document.getElementById('selectAllCheckbox');
 const daysInput = document.getElementById('daysInput');
-const hideNoSkillsCheckbox = document.getElementById('hideNoSkillsCheckbox');
-const hideNoUrlSkillsCheckbox = document.getElementById('hideNoUrlSkillsCheckbox');
+
+// Filter Buttons (Chips)
+const btnHideNoSkills = document.getElementById('btnHideNoSkills');
+const btnHideNoUrl = document.getElementById('btnHideNoUrl');
+const btnExpiredOnly = document.getElementById('btnExpiredOnly');
 
 const progressContainer = document.getElementById('progressContainer');
 const progressBar = document.getElementById('progressBar');
@@ -118,6 +121,41 @@ function buildSkillHtml(skillObj) {
     return html;
 }
 
+// [UPDATED] Robust Date Checker
+function isDateInPast(dateStr) {
+    if (!dateStr) return false;
+    const cleanStr = dateStr.toString().trim();
+    
+    // 1. Check for explicit "Expired" text
+    if (cleanStr.toLowerCase().includes('expired')) return true;
+
+    // Get Start of Today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 2. Try NZ/UK format (DD/MM/YYYY)
+    const dmy = cleanStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (dmy) {
+        const day = parseInt(dmy[1], 10);
+        const month = parseInt(dmy[2], 10) - 1; // Months are 0-indexed
+        let year = parseInt(dmy[3], 10);
+        if (year < 100) year += 2000;
+
+        const date = new Date(year, month, day);
+        if (!isNaN(date.getTime())) {
+            return date < today;
+        }
+    }
+
+    // 3. Fallback to standard JS parsing (ISO, etc.)
+    const fallbackDate = new Date(cleanStr);
+    if (!isNaN(fallbackDate.getTime())) {
+        return fallbackDate < today;
+    }
+
+    return false;
+}
+
 // --- Sorting Logic ---
 
 function handleSort(column) {
@@ -131,7 +169,7 @@ function handleSort(column) {
         currentSort.order = 'asc';
     }
 
-    // [NEW] Persist the preference
+    // Persist the preference
     socket.emit('update-preference', { key: 'sortSkills', value: currentSort });
 
     applySort();
@@ -176,14 +214,24 @@ function fetchData() {
 // --- Render Table Logic ---
 function renderTable() {
     skillsTableBody.innerHTML = '';
-    const hideNoSkills = hideNoSkillsCheckbox.checked;
-    const hideNoUrl = hideNoUrlSkillsCheckbox.checked;
+    
+    // Check state of chips
+    const hideNoSkills = btnHideNoSkills.classList.contains('active');
+    const hideNoUrl = btnHideNoUrl.classList.contains('active');
+    const expiredOnly = btnExpiredOnly.classList.contains('active');
 
     currentOsmData.forEach((member, index) => {
         let visibleSkills = member.skills;
+        
+        // Filter: Hide No URL
         if (hideNoUrl) visibleSkills = visibleSkills.filter(s => s.hasUrl);
+        
+        // Filter: Expired Only
+        if (expiredOnly) visibleSkills = visibleSkills.filter(s => isDateInPast(s.dueDate));
+
         const hasVisibleSkills = visibleSkills.length > 0;
 
+        // Filter: Hide No Skills (if user has 0 visible skills based on other filters)
         if (hideNoSkills && !hasVisibleSkills) return;
 
         const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
@@ -204,8 +252,21 @@ function renderTable() {
             skillTd.className = 'skill-cell';
             dateTd.textContent = visibleSkills[0].dueDate;
             dateTd.className = 'date-cell';
+
+            // Check if expired (First Skill)
+            if (isDateInPast(visibleSkills[0].dueDate)) {
+                dateTd.style.backgroundColor = '#dc3545';
+                dateTd.style.color = 'white';
+                dateTd.style.fontWeight = 'bold'; 
+            }
+
         } else {
-            skillTd.textContent = "NO expiring skills" + (hideNoUrl && member.skills.length > 0 ? " (Hidden by filter)" : "");
+            // Updated text to reflect which filter might be hiding skills
+            let msg = "NO expiring skills";
+            if (hideNoUrl && member.skills.length > 0) msg = " (Hidden by 'Has Form' filter)";
+            else if (expiredOnly && member.skills.length > 0) msg = " (Hidden by 'Expired Only' filter)";
+            
+            skillTd.textContent = msg;
             skillTd.className = 'no-skill';
             dateTd.textContent = "";
         }
@@ -236,6 +297,14 @@ function renderTable() {
             const subDateTd = document.createElement('td');
             subDateTd.textContent = visibleSkills[i].dueDate;
             subDateTd.className = 'date-cell';
+
+            // Check if expired (Subsequent Skills)
+            if (isDateInPast(visibleSkills[i].dueDate)) {
+                subDateTd.style.backgroundColor = '#dc3545';
+                subDateTd.style.color = 'white';
+                subDateTd.style.fontWeight = 'bold';
+            }
+
             subTr.appendChild(subSkillTd);
             subTr.appendChild(subDateTd);
             const emptyEmailTd = document.createElement('td');
@@ -256,15 +325,21 @@ daysInput.addEventListener('change', (e) => {
     socket.emit('update-preference', { key: 'daysToExpiry', value: parseInt(e.target.value) });
 });
 
-hideNoSkillsCheckbox.addEventListener('change', (e) => {
-    socket.emit('update-preference', { key: 'hideNoSkills', value: e.target.checked });
-    renderTable();
-});
+// Helper for Chip Toggles
+function setupChipToggle(btnId, prefKey) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        btn.classList.toggle('active');
+        const isActive = btn.classList.contains('active');
+        socket.emit('update-preference', { key: prefKey, value: isActive });
+        renderTable();
+    });
+}
 
-hideNoUrlSkillsCheckbox.addEventListener('change', (e) => {
-    socket.emit('update-preference', { key: 'hideNoUrl', value: e.target.checked });
-    renderTable();
-});
+setupChipToggle('btnHideNoSkills', 'hideNoSkills');
+setupChipToggle('btnHideNoUrl', 'hideNoUrl');
+setupChipToggle('btnExpiredOnly', 'expiredOnly');
 
 // Load Preferences on Connect
 socket.on('connect', () => {
@@ -272,17 +347,22 @@ socket.on('connect', () => {
 });
 
 socket.on('preferences-data', (prefs) => {
-    // ... existing preferences ...
     if (prefs.daysToExpiry !== undefined) daysInput.value = prefs.daysToExpiry;
-    if (prefs.hideNoSkills !== undefined) hideNoSkillsCheckbox.checked = prefs.hideNoSkills;
-    if (prefs.hideNoUrl !== undefined) hideNoUrlSkillsCheckbox.checked = prefs.hideNoUrl;
+    
+    // Set Chip Active States based on Prefs
+    if (prefs.hideNoSkills === true) btnHideNoSkills.classList.add('active');
+    else btnHideNoSkills.classList.remove('active');
 
-    // --- NEW: Restore Console Visibility ---
+    if (prefs.hideNoUrl === true) btnHideNoUrl.classList.add('active');
+    else btnHideNoUrl.classList.remove('active');
+
+    if (prefs.expiredOnly === true) btnExpiredOnly.classList.add('active');
+    else btnExpiredOnly.classList.remove('active');
+
     if (prefs.showConsole !== undefined) {
         showConsoleCheckbox.checked = prefs.showConsole;
         toggleConsole(prefs.showConsole);
     } else {
-        // Default is hidden (false)
         showConsoleCheckbox.checked = false;
         toggleConsole(false);
     }
@@ -359,8 +439,6 @@ socket.on('expiring-skills-data', (data) => {
     // Apply sort immediately (which calls renderTable)
     applySort();
 
-    // alternative behavior
-    //tableContainer.scrollIntoView({ behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
@@ -368,13 +446,10 @@ socket.on('expiring-skills-data', (data) => {
 fetch('/ui-config')
     .then(response => response.json())
     .then(config => {
-        //  Set Title and Header ---
         if (config.loginTitle) {
-            // Update the Browser Tab Title
             const pageTitle = document.getElementById('pageTitle');
             if (pageTitle) pageTitle.innerText = config.loginTitle;
 
-            // Update the Page Header (H1)
             const mainHeader = document.getElementById('mainHeader');
             if (mainHeader) mainHeader.innerText = config.loginTitle;
         }
@@ -382,7 +457,6 @@ fetch('/ui-config')
         if (config.appBackground) {
             document.body.style.backgroundImage = `url('${config.appBackground}')`;
         }
-        // Add these lines:
         if (config.version) {
             const el = document.getElementById('disp-version');
             if (el) el.textContent = config.version;

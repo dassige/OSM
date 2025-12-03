@@ -139,6 +139,13 @@
             background-color: #ffe6e6 !important;
             color: #bd2130 !important;
         }
+        
+        /* Custom style for the Expired filter when active */
+        .type-badge.expired-filter.active {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
     </style>
 </head>
 
@@ -269,19 +276,11 @@
         <div
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
             <h2 style="margin: 0;">Expiring Skills Report</h2>
-            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
-                <label
-                    style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
-                    <input type="checkbox" id="hideNoSkillsCheckbox"
-                        style="margin-right: 8px; width: 16px; height: 16px;">
-                    Hide members with 'NO expiring skills'
-                </label>
-                <label
-                    style="display: flex; align-items: center; cursor: pointer; font-weight: bold; color: #555; font-size: 14px;">
-                    <input type="checkbox" id="hideNoUrlSkillsCheckbox"
-                        style="margin-right: 8px; width: 16px; height: 16px;">
-                    Hide Skills without Online form
-                </label>
+            <div class="type-toggles" style="display: flex; gap: 8px; align-items: center;">
+                <span style="font-size:13px; font-weight:bold; color:#666;">Filters:</span>
+                <div id="btnHideNoSkills" class="type-badge" title="Hide members with 'NO expiring skills'">Hide Empty</div>
+                <div id="btnHideNoUrl" class="type-badge" title="Hide Skills without Online form">Has Form Only</div>
+                <div id="btnExpiredOnly" class="type-badge expired-filter" title="Display only expired skills">Expired Only</div>
             </div>
         </div>
 
