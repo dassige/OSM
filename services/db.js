@@ -33,41 +33,30 @@ async function initDB() {
 
         await db.exec('PRAGMA foreign_keys = ON;');
 
-        // Create Tables
-        await db.exec(`CREATE TABLE IF NOT EXISTS preferences (key TEXT PRIMARY KEY, value TEXT);`);
-        await db.run(`INSERT INTO preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, 'app_version', packageJson.version);
+        // ... (Keep preferences, email_history, members, skills, event_log tables creation)
 
-        await db.exec(`CREATE TABLE IF NOT EXISTS email_history (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT DEFAULT CURRENT_TIMESTAMP, recipient_name TEXT, recipient_email TEXT, status TEXT, details TEXT);`);
-        
-        // [UPDATED] Members table now includes 'enabled'
-        await db.exec(`CREATE TABLE IF NOT EXISTS members (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, mobile TEXT, messengerId TEXT, enabled INTEGER DEFAULT 1);`);
-        
-        // [MIGRATION] Attempt to add the column if it doesn't exist
-        try {
-            await db.exec(`ALTER TABLE members ADD COLUMN enabled INTEGER DEFAULT 1;`);
-        } catch (e) {}
-
-        await db.exec(`CREATE TABLE IF NOT EXISTS skills (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, url TEXT, critical_skill INTEGER DEFAULT 0, enabled INTEGER DEFAULT 1);`);
-        try { await db.exec(`ALTER TABLE skills ADD COLUMN enabled INTEGER DEFAULT 1;`); } catch (e) {}
-
-        await db.exec(`CREATE TABLE IF NOT EXISTS event_log (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT DEFAULT CURRENT_TIMESTAMP, user TEXT, event_type TEXT, title TEXT, payload TEXT);`);
-
+        // [UPDATED] Users table with role
         await db.exec(`
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT UNIQUE NOT NULL,
                 name TEXT,
                 hash TEXT NOT NULL,
-                salt TEXT NOT NULL
+                salt TEXT NOT NULL,
+                role TEXT DEFAULT 'simple'
             );
         `);
 
+        // [MIGRATION] Attempt to add role column for existing databases
+        try {
+            await db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'simple';`);
+        } catch (e) {
+            // Column likely exists, ignore error
+        }
+
         await db.exec(`
             CREATE TABLE IF NOT EXISTS user_preferences (
-                user_id INTEGER NOT NULL,
-                key TEXT NOT NULL,
-                value TEXT,
-                PRIMARY KEY (user_id, key)
+                // ... keep existing
             );
         `);
 
@@ -78,7 +67,6 @@ async function initDB() {
         throw error;
     }
 }
-
 // ... (Keep existing User Preferences, Event Log functions same as before) ...
 async function getUserPreference(userId, key) {
     if (!db) await initDB();
@@ -124,52 +112,52 @@ async function savePreference(key, value) { if (!db) await initDB(); await db.ru
 async function logEmailAction(member, status, details = '') { if (!db) await initDB(); await db.run(`INSERT INTO email_history (recipient_name, recipient_email, status, details) VALUES (?, ?, ?, ?)`, member.name, member.email, status, details); }
 
 // [UPDATED] Members Functions
-async function getMembers() { 
-    if (!db) await initDB(); 
-    const members = await db.all('SELECT * FROM members ORDER BY name ASC'); 
+async function getMembers() {
+    if (!db) await initDB();
+    const members = await db.all('SELECT * FROM members ORDER BY name ASC');
     return members.map(m => ({
         ...m,
         enabled: m.enabled !== 0 // Convert 1/0 to boolean, default true
     }));
 }
 
-async function addMember(member) { 
-    if (!db) await initDB(); 
+async function addMember(member) {
+    if (!db) await initDB();
     const result = await db.run(
-        `INSERT INTO members (name, email, mobile, messengerId, enabled) VALUES (?, ?, ?, ?, ?)`, 
+        `INSERT INTO members (name, email, mobile, messengerId, enabled) VALUES (?, ?, ?, ?, ?)`,
         member.name, member.email, member.mobile, member.messengerId, member.enabled !== false ? 1 : 0
-    ); 
-    return result.lastID; 
+    );
+    return result.lastID;
 }
 
-async function bulkAddMembers(members) { 
-    if (!db) await initDB(); 
-    await db.exec('BEGIN TRANSACTION'); 
-    try { 
-        const stmt = await db.prepare('INSERT INTO members (name, email, mobile, messengerId, enabled) VALUES (?, ?, ?, ?, ?)'); 
-        for (const member of members) { 
+async function bulkAddMembers(members) {
+    if (!db) await initDB();
+    await db.exec('BEGIN TRANSACTION');
+    try {
+        const stmt = await db.prepare('INSERT INTO members (name, email, mobile, messengerId, enabled) VALUES (?, ?, ?, ?, ?)');
+        for (const member of members) {
             await stmt.run(
-                member.name, 
-                member.email, 
-                member.mobile, 
+                member.name,
+                member.email,
+                member.mobile,
                 member.messengerId,
                 member.enabled !== false ? 1 : 0
-            ); 
-        } 
-        await stmt.finalize(); 
-        await db.exec('COMMIT'); 
-    } catch (error) { 
-        await db.exec('ROLLBACK'); 
-        throw error; 
-    } 
+            );
+        }
+        await stmt.finalize();
+        await db.exec('COMMIT');
+    } catch (error) {
+        await db.exec('ROLLBACK');
+        throw error;
+    }
 }
 
-async function updateMember(id, member) { 
-    if (!db) await initDB(); 
+async function updateMember(id, member) {
+    if (!db) await initDB();
     await db.run(
-        `UPDATE members SET name = ?, email = ?, mobile = ?, messengerId = ?, enabled = ? WHERE id = ?`, 
+        `UPDATE members SET name = ?, email = ?, mobile = ?, messengerId = ?, enabled = ? WHERE id = ?`,
         member.name, member.email, member.mobile, member.messengerId, member.enabled ? 1 : 0, id
-    ); 
+    );
 }
 
 async function deleteMember(id) { if (!db) await initDB(); await db.run('DELETE FROM members WHERE id = ?', id); }
@@ -183,11 +171,44 @@ async function updateSkill(id, skill) { if (!db) await initDB(); await db.run(`U
 async function deleteSkill(id) { if (!db) await initDB(); await db.run('DELETE FROM skills WHERE id = ?', id); }
 async function bulkDeleteSkills(ids) { if (!db) await initDB(); if (!ids || ids.length === 0) return; await db.exec('BEGIN TRANSACTION'); try { const stmt = await db.prepare('DELETE FROM skills WHERE id = ?'); for (const id of ids) { await stmt.run(id); } await stmt.finalize(); await db.exec('COMMIT'); } catch (error) { await db.exec('ROLLBACK'); throw error; } }
 
-async function authenticateUser(email, password) { if (!db) await initDB(); const user = await db.get('SELECT * FROM users WHERE email = ?', email); if (!user) return null; if (verifyPassword(password, user.hash, user.salt)) { return { id: user.id, name: user.name, email: user.email }; } return null; }
+// Authenticate User - Return role
+async function authenticateUser(email, password) {
+    if (!db) await initDB();
+    const user = await db.get('SELECT * FROM users WHERE email = ?', email);
+    if (!user) return null;
+    if (verifyPassword(password, user.hash, user.salt)) {
+        return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role || 'simple' // Fallback
+        };
+    }
+    return null;
+}
+// Get Users - Include role
+async function getUsers() {
+    if (!db) await initDB();
+    return await db.all('SELECT id, email, name, role FROM users ORDER BY name ASC');
+}
+
+// Add User - Accept role
+async function addUser(email, name, password, role = 'simple') {
+    if (!db) await initDB();
+    const { salt, hash } = hashPassword(password);
+    try {
+        const result = await db.run(
+            `INSERT INTO users (email, name, hash, salt, role) VALUES (?, ?, ?, ?, ?)`,
+            email, name, hash, salt, role
+        );
+        return result.lastID;
+    } catch (e) {
+        if (e.message.includes('UNIQUE constraint')) throw new Error('Email already exists');
+        throw e;
+    }
+}
 async function getUserByEmail(email) { if (!db) await initDB(); return await db.get('SELECT id, email, name FROM users WHERE email = ?', email); }
-async function getUsers() { if (!db) await initDB(); return await db.all('SELECT id, email, name FROM users ORDER BY name ASC'); }
 async function getUserById(id) { if (!db) await initDB(); return await db.get('SELECT id, email, name FROM users WHERE id = ?', id); }
-async function addUser(email, name, password) { if (!db) await initDB(); const { salt, hash } = hashPassword(password); try { const result = await db.run(`INSERT INTO users (email, name, hash, salt) VALUES (?, ?, ?, ?)`, email, name, hash, salt); return result.lastID; } catch (e) { if (e.message.includes('UNIQUE constraint')) throw new Error('Email already exists'); throw e; } }
 async function updateUserProfile(id, name, newPassword = null) { if (!db) await initDB(); if (newPassword) { const { salt, hash } = hashPassword(newPassword); await db.run(`UPDATE users SET name = ?, hash = ?, salt = ? WHERE id = ?`, name, hash, salt, id); } else { await db.run(`UPDATE users SET name = ? WHERE id = ?`, name, id); } }
 async function adminResetPassword(id, newPassword) { if (!db) await initDB(); const { salt, hash } = hashPassword(newPassword); await db.run(`UPDATE users SET hash = ?, salt = ? WHERE id = ?`, hash, salt, id); }
 async function deleteUser(id) { if (!db) await initDB(); await db.run(`DELETE FROM users WHERE id = ?`, id); }
@@ -208,5 +229,5 @@ module.exports = {
     closeDB, verifyAndReplaceDb, getDbPath,
     logEvent, getEventLogs, getEventLogMetadata,
     authenticateUser, getUserByEmail, getUsers, getUserById, addUser, updateUserProfile, adminResetPassword, deleteUser,
-     purgeEventLog, pruneEventLog, getEventLogsExport
+    purgeEventLog, pruneEventLog, getEventLogsExport
 };

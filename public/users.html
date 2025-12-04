@@ -146,6 +146,39 @@
             align-items: center;
             justify-content: center;
         }
+
+        /* Add basic badge styles for roles in users.html style block */
+        .badge-admin {
+            background: #6f42c1;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .badge-simple {
+            background: #17a2b8;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .badge-guest {
+            background: #6c757d;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .badge-superadmin {
+            background: #d63384;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
     </style>
 </head>
 
@@ -166,9 +199,19 @@
                 <tr>
                     <th>Name</th>
                     <th>Email (Username)</th>
+                    <th>Role</th>
                     <th style="text-align: right;">Actions</th>
                 </tr>
             </thead>
+
+            <div class="form-group">
+                <label>Role</label>
+                <select id="newRole" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    <option value="simple" selected>Simple (Can send emails)</option>
+                    <option value="guest">Guest (Read only)</option>
+                    <option value="admin">Admin (Full Access)</option>
+                </select>
+            </div>
             <tbody>
                 <tr>
                     <td colspan="3">Loading...</td>
@@ -235,6 +278,20 @@
     </div>
 
     <script>
+        users.forEach(u => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+            <td>${u.name}</td>
+            <td>${u.email}</td>
+            <td><span class="badge badge-${u.role}">${u.role}</span></td>
+            <td style="text-align: right;">
+                </td>
+        `;
+            tbody.appendChild(tr);
+        });
+
+
+
         fetch('/ui-config').then(r => r.json()).then(c => { if (c.loginTitle) document.getElementById('pageHeader').innerText = "System Users - " + c.loginTitle; if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`; });
 
         function togglePw(inputId, btn) {
@@ -277,6 +334,7 @@
 
             const name = document.getElementById('newName').value;
             const email = document.getElementById('newEmail').value;
+            const role = document.getElementById('newRole').value;
 
             // UI Elements
             const btn = document.getElementById('createBtn');
@@ -293,7 +351,7 @@
             btnText.innerText = 'Creating & Sending...';
 
             try {
-                const data = { name, email };
+                const data = { name, email, role };
                 const res = await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
 
                 if (res.ok) {

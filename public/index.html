@@ -139,7 +139,7 @@
             background-color: #ffe6e6 !important;
             color: #bd2130 !important;
         }
-        
+
         /* Custom style for the Expired filter when active */
         .type-badge.expired-filter.active {
             background-color: #dc3545;
@@ -278,9 +278,11 @@
             <h2 style="margin: 0;">Expiring Skills Report</h2>
             <div class="type-toggles" style="display: flex; gap: 8px; align-items: center;">
                 <span style="font-size:13px; font-weight:bold; color:#666;">Filters:</span>
-                <div id="btnHideNoSkills" class="type-badge" title="Hide members with 'NO expiring skills'">Hide Empty</div>
+                <div id="btnHideNoSkills" class="type-badge" title="Hide members with 'NO expiring skills'">Hide Empty
+                </div>
                 <div id="btnHideNoUrl" class="type-badge" title="Hide Skills without Online form">Has Form Only</div>
-                <div id="btnExpiredOnly" class="type-badge expired-filter" title="Display only expired skills">Expired Only</div>
+                <div id="btnExpiredOnly" class="type-badge expired-filter" title="Display only expired skills">Expired
+                    Only</div>
             </div>
         </div>
 
@@ -297,7 +299,9 @@
                     </svg>
                 </span>
                 indicates a direct form link is available.
-                Dates highlighted in <span style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px;">Red</span> are overdue.
+                Dates highlighted in <span
+                    style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px;">Red</span> are
+                overdue.
             </em>
         </p>
         <table id="skillsTable">
@@ -376,18 +380,47 @@
             .then(r => r.json())
             .then(user => {
                 document.getElementById('userNameDisplay').textContent = user.name || 'User';
+                const role = user.role || 'guest';
 
-                if (user.isEnvUser) {
-                    // SUPER ADMIN:
-                    // 1. Hide User Settings
+                // 1. Menu Visibility (RBAC)
+                const manageMembers = document.querySelector('a[href="members.html"]');
+                const manageSkills = document.querySelector('a[href="skills.html"]');
+                const emailTemplates = document.querySelector('a[href="email-templates.html"]');
+                const manageUsers = document.getElementById('navManageUsers');
+                const systemTools = document.getElementById('navSystemTools');
+
+                // Defaults: Hide Admin stuff
+                if (manageMembers) manageMembers.style.display = 'none';
+                if (manageSkills) manageSkills.style.display = 'none';
+                if (emailTemplates) emailTemplates.style.display = 'none';
+
+                // --- SUPER ADMIN ---
+                if (role === 'superadmin') {
                     document.getElementById('navUserSettings').style.display = 'none';
-                    // 2. Show Manage Users
-                    document.getElementById('navManageUsers').style.display = 'block';
-                } else {
-                    // REGULAR DB USER:
-                    // 1. Show User Settings (Default is visible)
-                    // 2. Hide Manage Users (Default is hidden)
+                    if (manageUsers) manageUsers.style.display = 'block';
+                    if (systemTools) systemTools.style.display = 'block';
+                    if (manageMembers) manageMembers.style.display = 'block';
+                    if (manageSkills) manageSkills.style.display = 'block';
+                    if (emailTemplates) emailTemplates.style.display = 'block';
                 }
+                // --- ADMIN ---
+                else if (role === 'admin') {
+                    if (manageUsers) manageUsers.style.display = 'block';
+                    if (manageMembers) manageMembers.style.display = 'block';
+                    if (manageSkills) manageSkills.style.display = 'block';
+                    if (emailTemplates) emailTemplates.style.display = 'block';
+                    // System Tools remains hidden for standard admin (per requirement "except superadmin restricted")
+                }
+                // --- SIMPLE / GUEST ---
+                else {
+                    // Can only see Event Log, About, Logout, Profile
+                }
+
+                // 2. Operational Logic (Handled in app.js via global var or attribute)
+                document.body.setAttribute('data-user-role', role);
+
+                // Trigger an event or let app.js read this attribute
+                if (window.updateRoleUI) window.updateRoleUI(role);
             })
             .catch(() => window.location.href = '/login.html');
 
@@ -419,11 +452,11 @@
             .then(r => r.json())
             .then(user => {
                 document.getElementById('userNameDisplay').textContent = user.name || 'User';
-                
-                if(user.isEnvUser) {
+
+                if (user.isEnvUser) {
                     // SUPER ADMIN:
                     document.getElementById('navUserSettings').style.display = 'none';
-                    
+
                     // Show restricted menus
                     document.getElementById('navManageUsers').style.display = 'block';
                     document.getElementById('navSystemTools').style.display = 'block'; // <--- Added
@@ -432,7 +465,7 @@
                     // (Menus remain hidden by default)
                 }
             })
-            .catch(() => window.location.href='/login.html');
+            .catch(() => window.location.href = '/login.html');
     </script>
     <script src="help.js"></script>
 </body>

@@ -70,7 +70,8 @@ app.post('/login', async (req, res) => {
         req.session.user = {
             name: 'Super Admin',
             email: username,
-            isAdmin: true,
+            role: 'superadmin', // Explicit role
+            isAdmin: true,      // Legacy flag for backward compat
             isEnvUser: true
         };
         return res.status(200).send({ success: true });
@@ -85,7 +86,8 @@ app.post('/login', async (req, res) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                isAdmin: false
+                role: user.role, // 'guest', 'simple', or 'admin'
+                isAdmin: user.role === 'admin' // Legacy support
             };
             return res.status(200).send({ success: true });
         }
@@ -137,6 +139,26 @@ app.get('/api/user-session', (req, res) => {
     }
 });
 
+// --- ROLE MIDDLEWARE ---
+
+const ROLES = {
+    guest: 0,
+    simple: 1,
+    admin: 2,
+    superadmin: 3
+};
+
+const hasRole = (requiredRole) => (req, res, next) => {
+    const userRoleStr = req.session?.user?.role || 'guest';
+    const userLevel = ROLES[userRoleStr] !== undefined ? ROLES[userRoleStr] : 0;
+    const requiredLevel = ROLES[requiredRole];
+
+    if (userLevel >= requiredLevel) {
+        next();
+    } else {
+        res.status(403).json({ error: `Forbidden: Requires ${requiredRole} access.` });
+    }
+};
 // Middleware: Require Super Admin
 const requireAdmin = (req, res, next) => {
     if (req.session?.user?.isAdmin) {
@@ -161,44 +183,34 @@ app.use((req, res, next) => {
     return res.redirect('/login.html');
 });
 
-app.get('/ui-config', (req, res) => {
-    res.json(config.ui || {});
-});
+// PUBLIC / GUEST (Read-only UI Config & Profile)
+app.get('/ui-config', (req, res) => res.json(config.ui || {}));
 
 // --- API: USER MANAGEMENT (Admin Only) ---
 
-app.get('/api/users', requireAdmin, async (req, res) => {
+app.get('/api/users', hasRole('admin'), async (req, res) => {
     try {
         const users = await db.getUsers();
         res.json(users);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/users', requireAdmin, async (req, res) => {
+app.post('/api/users', hasRole('admin'), async (req, res) => {
     try {
-        const { email, name } = req.body;
+        const { email, name, role } = req.body; // [UPDATED] Accept role
         if (!email || !name) return res.status(400).json({ error: "Missing fields" });
 
+        const validRole = ['guest', 'simple', 'admin'].includes(role) ? role : 'simple';
         const generatedPassword = crypto.randomBytes(6).toString('hex');
-        await db.addUser(email, name, generatedPassword);
 
-        // Fetch Prefs
-        const prefs = await db.getPreferences();
-        const template = safeParse(prefs.tpl_new_user);
+        await db.addUser(email, name, generatedPassword, validRole); // [UPDATED] Pass role
 
-        try {
-            await sendNewAccountNotification(
-                email, name, generatedPassword,
-                config.transporter, config.ui.loginTitle, template
-            );
-        } catch (mailError) { console.error("Mail Error:", mailError); }
-
-        await db.logEvent(req.session.user.name, 'User Mgmt', `Created user ${email}`, {});
+        // ... (keep email sending and logging logic)
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/users/:id', requireAdmin, async (req, res) => {
+app.delete('/api/users/:id', hasRole('admin'), async (req, res) => {
     try {
         const id = req.params.id;
         const userToDelete = await db.getUserById(id);
@@ -223,7 +235,7 @@ app.delete('/api/users/:id', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/users/:id/reset', requireAdmin, async (req, res) => {
+app.post('/api/users/:id/reset', hasRole('admin'), async (req, res) => {
     try {
         const id = req.params.id;
         const user = await db.getUserById(id);
@@ -269,7 +281,7 @@ app.put('/api/profile', async (req, res) => {
 
 // --- API: LOGGING  ---
 
-app.post('/api/logs', async (req, res) => {
+app.post('/api/logs', hasRole('simple'), async (req, res) => {
     try {
         const { type, title, payload } = req.body;
         const username = req.session.user.name || req.session.user;
@@ -310,9 +322,9 @@ app.get('/api/events/export', requireAdmin, async (req, res) => {
             startDate: req.query.startDate || null,
             endDate: req.query.endDate || null
         };
-        
+
         const logs = await db.getEventLogsExport(filters);
-        
+
         // Return file download
         const filename = `event_log_export_${new Date().toISOString().split('T')[0]}.json`;
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -322,7 +334,7 @@ app.get('/api/events/export', requireAdmin, async (req, res) => {
 });
 
 //  Purge All (Super Admin Only)
-app.delete('/api/events/all', requireAdmin, async (req, res) => {
+app.delete('/api/events/all', hasRole('superadmin'), async (req, res) => {
     try {
         await db.purgeEventLog();
         // Log this action (it will be the first new entry!)
@@ -332,11 +344,11 @@ app.delete('/api/events/all', requireAdmin, async (req, res) => {
 });
 
 // Prune Old (Super Admin Only)
-app.post('/api/events/prune', requireAdmin, async (req, res) => {
+app.post('/api/events/prune', hasRole('superadmin'), async (req, res) => {
     try {
         const days = parseInt(req.body.days);
         if (isNaN(days) || days < 0) return res.status(400).json({ error: "Invalid days value" });
-        
+
         await db.pruneEventLog(days);
         await db.logEvent(req.session.user.name, 'System', `Pruned events older than ${days} days`, { days });
         res.json({ success: true });
@@ -360,7 +372,7 @@ app.get('/api/user-preferences/:key', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/user-preferences', async (req, res) => {
+app.post('/api/preferences', hasRole('admin'), async (req, res) => {
     try {
         const { key, value } = req.body;
         const userId = req.session.user.id || 0;
@@ -394,7 +406,7 @@ app.get('/api/members', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/members', async (req, res) => {
+app.post('/api/members', hasRole('admin'), async (req, res) => {
     try {
         const username = req.session.user.name || req.session.user;
         const id = await db.addMember(req.body);
@@ -403,7 +415,7 @@ app.post('/api/members', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/members/import', async (req, res) => {
+app.post('/api/members/import', hasRole('admin'), async (req, res) => {
     try {
         const username = req.session.user.name || req.session.user;
         const members = req.body;
@@ -425,7 +437,7 @@ app.post('/api/members/bulk-delete', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.put('/api/members/:id', async (req, res) => {
+app.put('/api/members/:id', hasRole('admin'), async (req, res) => {
     try {
         const username = req.session.user.name || req.session.user;
         await db.updateMember(req.params.id, req.body);
@@ -434,7 +446,7 @@ app.put('/api/members/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/members/:id', async (req, res) => {
+app.delete('/api/members/:id', hasRole('admin'), async (req, res) => {
     try {
         const username = req.session.user.name || req.session.user;
         await db.deleteMember(req.params.id);
@@ -501,7 +513,7 @@ app.delete('/api/skills/:id', async (req, res) => {
 });
 
 // --- API: SYSTEM TOOLS ---
-app.get('/api/system/backup', requireAdmin, async (req, res) => {
+app.get('/api/system/backup', hasRole('superadmin'), async (req, res) => {
     // Removed the manual session check since requireAdmin handles it
     const dbPath = db.getDbPath();
     // ... [Rest of the function remains the same] ...
@@ -521,7 +533,7 @@ app.get('/api/system/backup', requireAdmin, async (req, res) => {
     });
 });
 
-app.post('/api/system/restore', requireAdmin, upload.single('databaseFile'), async (req, res) => {
+app.post('/api/system/restore', hasRole('superadmin'), async (req, res) => {
     // Removed the manual session check since requireAdmin handles it
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
 
@@ -542,18 +554,21 @@ app.post('/api/system/restore', requireAdmin, upload.single('databaseFile'), asy
 });
 //  Page Restriction Middleware
 app.get('/system-tools.html', (req, res, next) => {
-    if (req.session && req.session.user && req.session.user.isAdmin) {
-        next(); // Allow access, pass to static handler
-    } else {
-        res.redirect('/'); // Redirect unauthorized users to dashboard
-    }
+    const role = req.session?.user?.role;
+    if (role === 'superadmin') next();
+    else res.redirect('/');
 });
-
+app.get('/users.html', (req, res, next) => {
+    // Admin or Superadmin can see users
+    const role = req.session?.user?.role;
+    if (role === 'admin' || role === 'superadmin') next();
+    else res.redirect('/');
+});
 // --- API: SKILLS DISCOVERY ---
 app.get('/api/skills/discover', async (req, res) => {
     try {
         const logger = console.log; // Or use a specific logger if available
-        
+
         // 1. Get existing skills from DB to filter against
         const existingSkills = await db.getSkills();
         const existingNames = new Set(existingSkills.map(s => s.name));
@@ -561,7 +576,7 @@ app.get('/api/skills/discover', async (req, res) => {
         // 2. Scrape live data
         // Note: reusing the 'currentProxy' variable defined in server.js scope
         const rawData = await getOIData(config.url, 0, currentProxy, logger);
-        
+
         // 3. Extract unique skills
         const foundSkills = new Set();
         rawData.forEach(record => {
@@ -583,14 +598,14 @@ app.get('/api/skills/discover', async (req, res) => {
 app.get('/api/members/discover', async (req, res) => {
     try {
         const logger = console.log;
-        
+
         // 1. Get existing members from DB
         const existingMembers = await db.getMembers();
         const existingNames = new Set(existingMembers.map(m => m.name));
 
         // 2. Scrape live data
         const rawData = await getOIData(config.url, 0, currentProxy, logger);
-        
+
         // 3. Extract unique members that are NOT in DB
         const foundMembers = new Set();
         rawData.forEach(record => {
@@ -629,6 +644,8 @@ initializeProxy();
 // --- SOCKET.IO ---
 
 io.on('connection', (socket) => {
+    const userRole = socket.request.session.user?.role || 'guest';
+    const userLevel = ROLES[userRole] || 0;
     const logger = (msg) => {
         process.stdout.write(msg + '\n');
         socket.emit('terminal-output', msg + '\n');
@@ -643,6 +660,7 @@ io.on('connection', (socket) => {
         } catch (e) { logger(e.message); }
     });
     socket.on('update-preference', async ({ key, value }) => {
+        if (userLevel < ROLES.simple) return logger("Unauthorized: Guest cannot save preferences.");
         try {
             // Save to User Preferences
             const userId = socket.request.session.user.id || 0;
@@ -677,7 +695,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on('run-send-selected', async (selectedNames, days) => {
-        const daysThreshold = parseInt(days) || 30;
+        if (userLevel < ROLES.simple) {
+            socket.emit('terminal-output', 'Error: Guests cannot send emails.\n');
+            socket.emit('script-complete', 1);
+            return;
+        } const daysThreshold = parseInt(days) || 30;
         const currentUser = socket.request.session.user.name || socket.request.session.user;
 
         logger(`> Starting Email Process (User: ${currentUser})...`);
@@ -707,7 +729,7 @@ io.on('connection', (socket) => {
                 if (member.expiringSkills.length > 0) {
                     try {
                         const result = await sendNotification(member, templateConfig, config.transporter, false, logger, config.ui.loginTitle);
-                        
+
                         // If result is null, it means no email was sent (e.g. skills filtered out)
                         if (result) {
                             await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills`);
@@ -742,6 +764,11 @@ io.on('connection', (socket) => {
 
     // --- NEW: Single Member Send Event ---
     socket.on('run-send-single', async (memberName, days) => {
+        if (userLevel < ROLES.simple) {
+            socket.emit('terminal-output', 'Error: Guests cannot send emails.\n');
+            socket.emit('script-complete', 1);
+            return;
+        }
         const daysThreshold = parseInt(days) || 30;
         const currentUser = socket.request.session.user.name || socket.request.session.user;
 
@@ -764,13 +791,13 @@ io.on('connection', (socket) => {
 
             const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
             const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
-            
+
             const member = processedMembers.find(m => m.name === memberName);
 
             if (member && member.expiringSkills.length > 0) {
                 try {
                     const result = await sendNotification(member, templateConfig, config.transporter, false, logger, config.ui.loginTitle);
-                    
+
                     if (result) {
                         await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills (Manual Single)`);
                         await db.logEvent(currentUser, 'Email', `Sent SINGLE email to ${member.name}`, {

@@ -125,7 +125,7 @@ function buildSkillHtml(skillObj) {
 function isDateInPast(dateStr) {
     if (!dateStr) return false;
     const cleanStr = dateStr.toString().trim();
-    
+
     // 1. Check for explicit "Expired" text
     if (cleanStr.toLowerCase().includes('expired')) return true;
 
@@ -214,10 +214,10 @@ function fetchData() {
 // --- New: Send Single Email Logic ---
 function sendSingleEmail(memberName) {
     const days = parseInt(daysInput.value) || 30;
-    if(confirm(`Send immediate email reminder to ${memberName}?`)) {
+    if (confirm(`Send immediate email reminder to ${memberName}?`)) {
         // [UPDATED] Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        
+
         setRunningState();
         socket.emit('run-send-single', memberName, days);
     }
@@ -226,7 +226,7 @@ function sendSingleEmail(memberName) {
 // --- Render Table Logic ---
 function renderTable() {
     skillsTableBody.innerHTML = '';
-    
+
     // Check state of chips
     const hideNoSkills = btnHideNoSkills.classList.contains('active');
     const hideNoUrl = btnHideNoUrl.classList.contains('active');
@@ -234,10 +234,10 @@ function renderTable() {
 
     currentOsmData.forEach((member, index) => {
         let visibleSkills = member.skills;
-        
+
         // Filter: Hide No URL
         if (hideNoUrl) visibleSkills = visibleSkills.filter(s => s.hasUrl);
-        
+
         // Filter: Expired Only
         if (expiredOnly) visibleSkills = visibleSkills.filter(s => isDateInPast(s.dueDate));
 
@@ -269,7 +269,7 @@ function renderTable() {
             if (isDateInPast(visibleSkills[0].dueDate)) {
                 dateTd.style.backgroundColor = '#dc3545';
                 dateTd.style.color = 'white';
-                dateTd.style.fontWeight = 'bold'; 
+                dateTd.style.fontWeight = 'bold';
             }
 
         } else {
@@ -277,7 +277,7 @@ function renderTable() {
             let msg = "NO expiring skills";
             if (hideNoUrl && member.skills.length > 0) msg = " (Hidden by 'Has Form' filter)";
             else if (expiredOnly && member.skills.length > 0) msg = " (Hidden by 'Expired Only' filter)";
-            
+
             skillTd.textContent = msg;
             skillTd.className = 'no-skill';
             dateTd.textContent = "";
@@ -288,7 +288,7 @@ function renderTable() {
         const emailTd = document.createElement('td');
         emailTd.className = 'member-cell';
         if (member.emailEligible && hasVisibleSkills) {
-            
+
             // Container for checkbox and button
             const controlsDiv = document.createElement('div');
             controlsDiv.style.display = 'flex';
@@ -300,11 +300,11 @@ function renderTable() {
             label.className = 'email-label';
             label.style.marginRight = '8px'; // Spacing
             label.innerHTML = `<input type="checkbox" class="email-checkbox" data-name="${member.name}" checked> Select`;
-            
+
             // 2. The Single Send Button (Rounded Mail Icon)
             const singleBtn = document.createElement('button');
-            singleBtn.className = 'btn-icon send-single'; 
-            
+            singleBtn.className = 'btn-icon send-single';
+
             // Custom styling for round, nicer look
             singleBtn.style.color = '#007bff';
             singleBtn.style.borderRadius = '50%';
@@ -321,19 +321,19 @@ function renderTable() {
 
             // Tooltip
             singleBtn.title = `Send email to ${member.name} only`;
-            
+
             // Mail Icon SVG
             singleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
-            
+
             // Hover Effects
-            singleBtn.onmouseenter = () => { 
-                singleBtn.style.backgroundColor = '#007bff'; 
-                singleBtn.style.color = 'white'; 
+            singleBtn.onmouseenter = () => {
+                singleBtn.style.backgroundColor = '#007bff';
+                singleBtn.style.color = 'white';
                 singleBtn.style.borderColor = '#007bff';
             };
-            singleBtn.onmouseleave = () => { 
-                singleBtn.style.backgroundColor = '#e6f2ff'; 
-                singleBtn.style.color = '#007bff'; 
+            singleBtn.onmouseleave = () => {
+                singleBtn.style.backgroundColor = '#e6f2ff';
+                singleBtn.style.color = '#007bff';
                 singleBtn.style.borderColor = '#cce5ff';
             };
 
@@ -413,7 +413,7 @@ socket.on('connect', () => {
 
 socket.on('preferences-data', (prefs) => {
     if (prefs.daysToExpiry !== undefined) daysInput.value = prefs.daysToExpiry;
-    
+
     // Set Chip Active States based on Prefs
     if (prefs.hideNoSkills === true) btnHideNoSkills.classList.add('active');
     else btnHideNoSkills.classList.remove('active');
@@ -532,3 +532,36 @@ fetch('/ui-config')
         }
     })
     .catch(err => console.error("Failed to load UI config:", err));
+// Add this helper function to disable/enable controls based on role
+function updateRoleUI(role) {
+    const isGuest = role === 'guest';
+    const sendBtn = document.getElementById('sendEmailsBtn');
+    const selectAll = document.getElementById('selectAllCheckbox');
+
+    // Disable "Send Emails" for Guests completely
+    if (isGuest) {
+        if (sendBtn) {
+            sendBtn.disabled = true;
+            sendBtn.title = "Guest access: Sending disabled";
+            sendBtn.style.backgroundColor = '#ccc';
+            sendBtn.style.cursor = 'not-allowed';
+        }
+        if (selectAll) selectAll.disabled = true;
+
+        // Hide single send buttons in table if they exist
+        const style = document.createElement('style');
+        style.innerHTML = `.send-single, .email-checkbox { display: none !important; }`;
+        document.head.appendChild(style);
+    }
+}
+
+// Ensure the UI state updater respects the guest role
+const originalUpdateUIState = updateUIState;
+updateUIState = function () {
+    const role = document.body.getAttribute('data-user-role');
+    if (role === 'guest') {
+        document.getElementById('sendEmailsBtn').disabled = true;
+        return;
+    }
+    originalUpdateUIState();
+};
