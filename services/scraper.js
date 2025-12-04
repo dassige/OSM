@@ -16,9 +16,11 @@ async function getOIData(url, intervalMinutes = 0, proxyUrl = null, logger = con
         const now = Date.now();
         const cacheAgeMs = now - lastScrapeTime;
         const maxAgeMs = intervalMinutes * 60 * 1000;
-        if (cacheAgeMs < maxAgeMs) return cachedData;
+        if (cacheAgeMs < maxAgeMs) {
+            logger(`[Scraper] 🟢 Using cached data (Age: ${Math.round(cacheAgeMs / 1000)}s / Limit: ${intervalMinutes * 60}s)`);
+            return cachedData;
+        }
     }
-
     const axiosConfig = {
         timeout: 30000,
         headers: {
@@ -33,7 +35,7 @@ async function getOIData(url, intervalMinutes = 0, proxyUrl = null, logger = con
         try {
             const agent = new HttpsProxyAgent(proxyUrl);
             axiosConfig.httpsAgent = agent;
-            axiosConfig.proxy = false; 
+            axiosConfig.proxy = false;
             logger(`[Scraper] Using Proxy Agent: ${proxyUrl.replace(/:[^:]*@/, ':***@')}`);
         } catch (e) {
             logger(`[Scraper] Failed to configure Proxy Agent: ${e.message}`);
@@ -44,9 +46,9 @@ async function getOIData(url, intervalMinutes = 0, proxyUrl = null, logger = con
 
     // 2. Scrape Data
     try {
-        logger(`[${getTime()}] [Scraper] scraping url`);
+        logger(`[${getTime()}] [Scraper] 🟠 Cache invalid or disabled. Scraping live data from URL...`);
         const response = await axios.get(url, axiosConfig);
-        
+
         if (!response.data) {
             logger(`[Scraper] Warning: Empty response from server.`);
             return [];
@@ -54,7 +56,7 @@ async function getOIData(url, intervalMinutes = 0, proxyUrl = null, logger = con
 
         const $ = cheerio.load(response.data);
         const osmStatusTable = $('tbody');
-        
+
         if (osmStatusTable.length === 0) {
             logger(`[Scraper] Warning: No <tbody> found in page. Check URL or page structure.`);
             return [];
@@ -64,7 +66,7 @@ async function getOIData(url, intervalMinutes = 0, proxyUrl = null, logger = con
         osmStatusTable.find('tr').each((i, row) => {
             const cols = [];
             $(row).find('td').each((j, col) => cols.push($(col).text().trim()));
-            
+
             if (cols.length >= 3) {
                 scrapedData.push({ name: cols[0], skill: cols[1], dueDate: cols[2] });
             }
@@ -76,7 +78,7 @@ async function getOIData(url, intervalMinutes = 0, proxyUrl = null, logger = con
         if (scrapedData.length > 0) {
             logger('[Scraper] --- Extracted Data Start ---');
             scrapedData.forEach((record, index) => {
-        //        logger(`   ${index + 1}. ${JSON.stringify(record)}`);
+                //        logger(`   ${index + 1}. ${JSON.stringify(record)}`);
             });
             logger('[Scraper] --- Extracted Data End ---');
         }

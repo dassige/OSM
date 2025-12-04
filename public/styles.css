@@ -529,6 +529,38 @@ th {
     color: white;
     border-color: #007bff;
 }
+/* [NEW] Round Icon Button */
+.btn-round {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    transition: all 0.2s ease;
+    margin: 0;
+}
+
+.btn-round:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-round svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2px;
+    /* Optional: slightly offset the plane icon to look optically centered */
+    margin-right: 2px; 
+    margin-top: 2px;
+}
 .spinner {
     width: 20px;
     height: 20px;

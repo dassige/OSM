@@ -122,15 +122,9 @@ function updateUIState() {
         selectAllCheckbox.checked = false; selectAllCheckbox.indeterminate = true; selectAllCheckbox.disabled = false;
     }
 }
-
 function updateRoleUI(role) {
-    if (role === 'guest') {
-        // 1. Hide Send Email Button
-        if (sendEmailsBtn) {
-            sendEmailsBtn.style.display = 'none';
-        }
-
-        // 2. Hide Console & Remove Toggle Option
+    // 1. Console Log Restrictions (Guest OR Simple)
+    if (role === 'guest' || role === 'simple') {
         if (showConsoleCheckbox) {
             // Hide the container div surrounding the checkbox label
             const container = showConsoleCheckbox.closest('div');
@@ -139,14 +133,22 @@ function updateRoleUI(role) {
         // Force hide the terminal area regardless of preference
         if (terminal) terminal.style.display = 'none';
         if (consoleHeader) consoleHeader.style.display = 'none';
+    }
 
-        // 3. Hide Select All Checkbox in Header
+    // 2. Guest-Specific Restrictions
+    if (role === 'guest') {
+        // Hide Send Email Button
+        if (sendEmailsBtn) {
+            sendEmailsBtn.style.display = 'none';
+        }
+
+        // Hide Select All Checkbox in Header
         if (selectAllCheckbox) {
             const label = selectAllCheckbox.closest('label');
             if (label) label.style.display = 'none';
         }
 
-        // 4. Hide row actions via CSS
+        // Hide row actions via CSS
         const style = document.createElement('style');
         style.innerHTML = `
             .send-single, 
@@ -154,7 +156,7 @@ function updateRoleUI(role) {
         `;
         document.head.appendChild(style);
 
-        // 5. Ensure Reload button is enabled
+        // Ensure Reload button is enabled
         if (viewBtn) {
             viewBtn.disabled = false;
             viewBtn.style.display = 'inline-block';
@@ -164,23 +166,26 @@ function updateRoleUI(role) {
 
 function toggleConsole(isVisible) {
     const role = document.body.getAttribute('data-user-role');
-    if (role === 'guest') return; // Guests never see console
+    if (role === 'guest' || role === 'simple') return; // Guests and Simple users never see console
 
     const style = isVisible ? 'block' : 'none';
     if (terminal) terminal.style.display = style;
     if (consoleHeader) consoleHeader.style.display = style;
 }
-
 // =============================================================================
 // 4. DATA & SORTING
 // =============================================================================
 
-function fetchData() {
+function fetchData(forceRefresh = false) {
     const days = parseInt(daysInput.value) || 30;
     viewBtn.disabled = true;
     viewBtn.textContent = "Loading Data...";
-    terminal.textContent += `> Fetching View Data (Threshold: ${days} days)... please wait.\n`;
-    socket.emit('view-expiring-skills', days);
+
+    const modeText = forceRefresh ? " (Force Refresh)" : "";
+    terminal.textContent += `> Fetching View Data (Threshold: ${days} days)${modeText}... please wait.\n`;
+
+    // Emit with flag
+    socket.emit('view-expiring-skills', days, forceRefresh);
 }
 
 function handleSort(column) {
@@ -257,10 +262,9 @@ function renderTable() {
             label.className = 'email-label'; label.style.marginRight = '8px';
             label.innerHTML = `<input type="checkbox" class="email-checkbox" data-name="${member.name}" checked> Select`;
             const singleBtn = document.createElement('button');
-            singleBtn.className = 'btn-icon send-single';
+            singleBtn.className = 'btn-round send-single';
             singleBtn.title = `Send email to ${member.name} only`;
-            singleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
-            singleBtn.onclick = (e) => { e.stopPropagation(); sendSingleEmail(member.name); };
+            singleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
             controlsDiv.appendChild(label); controlsDiv.appendChild(singleBtn); emailTd.appendChild(controlsDiv);
         }
         tr.appendChild(emailTd);
@@ -291,6 +295,8 @@ selectAllCheckbox.addEventListener('change', (e) => {
     updateUIState();
 });
 
+viewBtn.addEventListener('click', () => fetchData(true));
+
 sendEmailsBtn.addEventListener('click', () => {
     const checkedBoxes = document.querySelectorAll('.email-checkbox:checked');
     const selectedNames = Array.from(checkedBoxes).map(cb => cb.getAttribute('data-name'));
@@ -316,7 +322,7 @@ daysInput.addEventListener('change', (e) => socket.emit('update-preference', { k
 showConsoleCheckbox.addEventListener('change', (e) => { toggleConsole(e.target.checked); socket.emit('update-preference', { key: 'showConsole', value: e.target.checked }); });
 
 function setupChipToggle(btnId, prefKey) {
-    document.getElementById(btnId).addEventListener('click', function() {
+    document.getElementById(btnId).addEventListener('click', function () {
         this.classList.toggle('active');
         socket.emit('update-preference', { key: prefKey, value: this.classList.contains('active') });
         renderTable();
@@ -332,11 +338,11 @@ socket.on('preferences-data', (prefs) => {
     if (prefs.hideNoSkills) btnHideNoSkills.classList.add('active');
     if (prefs.hideNoUrl) btnHideNoUrl.classList.add('active');
     if (prefs.expiredOnly) btnExpiredOnly.classList.add('active');
-    
-    // Only show console if user is NOT a guest
+
+    // Only show console if user is NOT a guest or simple
     const role = document.body.getAttribute('data-user-role');
-    if (role !== 'guest' && prefs.showConsole !== undefined) {
-        showConsoleCheckbox.checked = prefs.showConsole; 
+    if (role !== 'guest' && role !== 'simple' && prefs.showConsole !== undefined) {
+        showConsoleCheckbox.checked = prefs.showConsole;
         toggleConsole(prefs.showConsole);
     } else {
         showConsoleCheckbox.checked = false;
@@ -344,7 +350,7 @@ socket.on('preferences-data', (prefs) => {
     }
 
     if (prefs.sortSkills) currentSort = prefs.sortSkills;
-    fetchData();
+    fetchData(false);
 });
 
 socket.on('terminal-output', (data) => { terminal.textContent += data; terminal.scrollTop = terminal.scrollHeight; });

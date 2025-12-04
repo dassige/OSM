@@ -108,7 +108,7 @@ app.post('/login', async (req, res) => {
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     if (email === config.auth.username) return res.status(400).json({ error: "Cannot reset Super Admin password via email." });
-    
+
     try {
         const user = await db.getUserByEmail(email);
         if (!user) return res.status(404).json({ error: "User not found." });
@@ -188,7 +188,7 @@ app.put('/api/users/:id', hasRole('admin'), async (req, res) => {
         const { name, email, role } = req.body;
         if (!name || !email || !role) return res.status(400).json({ error: "Missing fields" });
         const validRole = ['guest', 'simple', 'admin'].includes(role) ? role : 'simple';
-        
+
         await db.updateUser(req.params.id, name, email, validRole);
         await db.logEvent(req.session.user.name, 'User Mgmt', `Updated user ${email}`, { id: req.params.id, name, email, role: validRole });
         res.json({ success: true });
@@ -205,7 +205,7 @@ app.delete('/api/users/:id', hasRole('admin'), async (req, res) => {
         const template = safeParse(prefs.tpl_delete_user);
         try {
             await sendAccountDeletionNotification(userToDelete.email, userToDelete.name, config.transporter, config.ui.loginTitle, template);
-        } catch (e) {}
+        } catch (e) { }
 
         await db.logEvent(req.session.user.name, 'User Mgmt', `Deleted user ${userToDelete.email}`, { email: userToDelete.email });
         res.json({ success: true });
@@ -219,12 +219,12 @@ app.post('/api/users/:id/reset', hasRole('admin'), async (req, res) => {
 
         const tempPassword = crypto.randomBytes(6).toString('hex');
         await db.adminResetPassword(req.params.id, tempPassword);
-        
+
         const prefs = await db.getPreferences();
         const template = safeParse(prefs.tpl_reset_password);
         try {
             await sendPasswordReset(user.email, tempPassword, config.transporter, config.ui.loginTitle, template);
-        } catch (e) {}
+        } catch (e) { }
 
         await db.logEvent(req.session.user.name, 'User Mgmt', `Reset password for ${user.email}`, { email: user.email });
         res.json({ success: true });
@@ -364,10 +364,10 @@ app.delete('/api/events/all', hasRole('superadmin'), async (req, res) => {
     try { await db.purgeEventLog(); await db.logEvent(req.session.user.name, 'System', 'Event Log Purged', {}); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.post('/api/events/prune', hasRole('superadmin'), async (req, res) => {
-    try { 
-        await db.pruneEventLog(parseInt(req.body.days)); 
-        await db.logEvent(req.session.user.name, 'System', `Pruned events > ${req.body.days} days`, {}); 
-        res.json({ success: true }); 
+    try {
+        await db.pruneEventLog(parseInt(req.body.days));
+        await db.logEvent(req.session.user.name, 'System', `Pruned events > ${req.body.days} days`, {});
+        res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -396,21 +396,28 @@ io.on('connection', (socket) => {
     const userLevel = ROLES[userRole] || 0;
 
     socket.on('get-preferences', async () => {
-        try { socket.emit('preferences-data', await db.getAllUserPreferences(socket.request.session.user.id || 0)); } catch (e) {}
+        try { socket.emit('preferences-data', await db.getAllUserPreferences(socket.request.session.user.id || 0)); } catch (e) { }
     });
 
     socket.on('update-preference', async ({ key, value }) => {
         if (userLevel < ROLES.simple) return logger("Unauthorized: Guest cannot save preferences.");
-        try { await db.saveUserPreference(socket.request.session.user.id || 0, key, value); } catch (e) {}
+        try { await db.saveUserPreference(socket.request.session.user.id || 0, key, value); } catch (e) { }
     });
 
-    socket.on('view-expiring-skills', async (days) => {
+socket.on('view-expiring-skills', async (days, forceRefresh = false) => {
         const daysThreshold = parseInt(days) || 30;
-        logger(`> Fetching View Data (Threshold: ${daysThreshold} days)...`);
+        
+        // Logic: If forced, interval is 0. Otherwise use config default (usually 60 mins).
+        const interval = forceRefresh ? 0 : (config.scrapingInterval || 60);
+
+        logger(`> Fetching View Data (Threshold: ${daysThreshold} days${forceRefresh ? ', Force Refresh' : ', Cached OK'})...`);
         try {
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
-            const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
+            
+            // Pass the calculated interval
+            const rawData = await getOIData(config.url, interval, currentProxy, logger);
+            
             const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
             
             const results = processedMembers.map(m => ({
