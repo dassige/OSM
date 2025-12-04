@@ -30,6 +30,13 @@
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
         
         .palette-container { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; padding: 10px; background: #eef2f5; border: 1px solid #dee2e6; border-radius: 4px; align-items: center; max-width: 100%; }
+        /* Fix for overlap in specific tabs where palette is the first element */
+        #tab-newuser .palette-container,
+        #tab-reset .palette-container,
+        #tab-delete .palette-container {
+            margin-top: 40px;
+        }
+
         .palette-label { font-size: 12px; font-weight: bold; color: #666; margin-right: 5px; text-transform: uppercase; }
         .draggable-item { background-color: #fff; border: 1px solid #adb5bd; border-radius: 12px; padding: 4px 12px; font-family: monospace; font-weight: 600; color: #495057; cursor: grab; user-select: none; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .draggable-item:hover { background-color: #007bff; color: white; border-color: #007bff; }
