@@ -124,9 +124,17 @@ const helpContent = {
     "users": {
         title: "User Management Help",
         body: `
-            <p><strong>Super Admin:</strong> The default system admin (defined in .env) cannot be deleted.</p>
-            <p><strong>Add User:</strong> Create new administrators who can access this console.</p>
-            <p><strong>Reset Password:</strong> You can forcefully reset any user's password here.</p>
+            <p><strong>User Roles:</strong></p>
+            <ul>
+                <li><strong>Guest:</strong> Read-only access. Can view the Dashboard and reload skill data, but cannot send emails or view the console.</li>
+                <li><strong>Simple:</strong> Operational access. Can send emails on the Dashboard but cannot access management pages.</li>
+                <li><strong>Admin:</strong> Management access. Can manage Members, Skills, Templates, and Users. Cannot access System Tools.</li>
+                <li><strong>Super Admin:</strong> Full system access (including Backups/Restore). Defined in environment variables.</li>
+            </ul>
+            <hr>
+            <p><strong>Add User:</strong> Create new users. A random password will be generated and emailed to them.</p>
+            <p><strong>Edit User:</strong> Change a user's name, email, or role.</p>
+            <p><strong>Reset Password:</strong> Generate a new random password and email it to the user.</p>
         `
     },
     // --- User Profile ---

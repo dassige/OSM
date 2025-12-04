@@ -1,0 +1,8 @@
+{
+  "ignore": [
+    "fenz.db",
+    "fenz.db-journal",
+    "fenz.db-wal",
+    "fenz.db-shm"
+  ]
+}
