@@ -19,15 +19,28 @@ const helpContent = {
                     </ul>
                 </li>
             </ul>
-            <p><em>Note:</em> Skills in <strong>bold</strong> are Critical. Dates highlighted in <span style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red</span> are overdue.</p>
+            <p><em>Note:</em> Skills in <strong>bold</strong> are Critical. 
+            <span style="display: inline-flex; align-items: center; vertical-align: bottom;">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #007bff;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </span> indicates a direct form link is available.
+            Dates highlighted in <span style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red</span> are overdue.</p>
         `
     },
     // --- Member Management ---
     "members": {
         title: "Manage Members Help",
         body: `
+            <p><strong>Import from OSM:</strong> Scans the live dashboard for any members not yet in your list and allows you to import them.</p>
+            <p><strong>Enabled Toggle:</strong> Use the switch to enable/disable a member. Disabled members are ignored during checks.</p>
+            <hr>
             <p><strong>Add Member:</strong> Manually add a single member. Name must match OSM exactly.</p>
-            <p><strong>Import CSV:</strong> Bulk upload members. <br>Format: <code>name, email, mobile</code>.</p>
+            <p><strong>Import CSV:</strong> Bulk upload members. <br>Format: <code>name, email, mobile, enabled</code>.</p>
             <p><strong>Edit/Delete:</strong> Use the pencil or trash icons to modify specific members.</p>
             <p><strong>Export CSV:</strong> Download the current list of members for backup or editing.</p>
         `
@@ -36,8 +49,11 @@ const helpContent = {
     "skills": {
         title: "Manage Skills Help",
         body: `
+            <p><strong>Import from OSM:</strong> Scans the live dashboard for new skills not in your table. Auto-detects 'Critical' skills ending in <code>(C)</code>.</p>
+            <p><strong>Enabled Toggle:</strong> Use the switch to enable/disable tracking for a skill without deleting it.</p>
+            <hr>
             <p><strong>Add Skill:</strong> Define a new skill to track. The name must match the OSM Dashboard exactly.</p>
-            <p><strong>Critical Skill:</strong> Mark high-priority skills (e.g., BA). These appear bold on the dashboard.</p>
+            <p><strong>Import CSV:</strong> Bulk upload skills. <br>Format: <code>name, url, critical_skill, enabled</code>.</p>
             <p><strong>Form URL:</strong> Paste the Google Form link here.</p>
             <p><strong>URL Templating:</strong> You can pre-fill form fields using variables:</p>
             <ul>

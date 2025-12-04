@@ -548,6 +548,65 @@ app.get('/system-tools.html', (req, res, next) => {
         res.redirect('/'); // Redirect unauthorized users to dashboard
     }
 });
+
+// --- API: SKILLS DISCOVERY ---
+app.get('/api/skills/discover', async (req, res) => {
+    try {
+        const logger = console.log; // Or use a specific logger if available
+        
+        // 1. Get existing skills from DB to filter against
+        const existingSkills = await db.getSkills();
+        const existingNames = new Set(existingSkills.map(s => s.name));
+
+        // 2. Scrape live data
+        // Note: reusing the 'currentProxy' variable defined in server.js scope
+        const rawData = await getOIData(config.url, 0, currentProxy, logger);
+        
+        // 3. Extract unique skills
+        const foundSkills = new Set();
+        rawData.forEach(record => {
+            if (record.skill && !existingNames.has(record.skill)) {
+                foundSkills.add(record.skill);
+            }
+        });
+
+        // 4. Return sorted list
+        const newSkills = Array.from(foundSkills).sort();
+        res.json(newSkills);
+
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// --- API: MEMBERS DISCOVERY ---
+app.get('/api/members/discover', async (req, res) => {
+    try {
+        const logger = console.log;
+        
+        // 1. Get existing members from DB
+        const existingMembers = await db.getMembers();
+        const existingNames = new Set(existingMembers.map(m => m.name));
+
+        // 2. Scrape live data
+        const rawData = await getOIData(config.url, 0, currentProxy, logger);
+        
+        // 3. Extract unique members that are NOT in DB
+        const foundMembers = new Set();
+        rawData.forEach(record => {
+            if (record.name && !existingNames.has(record.name)) {
+                foundMembers.add(record.name);
+            }
+        });
+
+        // 4. Return sorted list
+        const newMembers = Array.from(foundMembers).sort();
+        res.json(newMembers);
+
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 app.use(express.static('public'));
 
 // --- PROXY ---

@@ -36,7 +36,6 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         
-        /* UPDATED: Include textarea in basic form styling */
         .form-group input[type="text"], 
         .form-group input[type="url"],
         .form-group textarea { 
@@ -45,7 +44,7 @@
             box-sizing: border-box; 
             border: 1px solid #ddd; 
             border-radius: 4px; 
-            font-family: inherit; /* Ensure textarea matches font */
+            font-family: inherit;
         }
 
         .code-block { background: #f4f4f4; padding: 10px; border-left: 4px solid #007bff; font-family: monospace; white-space: pre; overflow-x: auto; }
@@ -62,6 +61,18 @@
         .draggable-item { background-color: #fff; border: 1px solid #adb5bd; border-radius: 12px; padding: 2px 10px; font-family: monospace; font-weight: 600; color: #495057; cursor: grab; user-select: none; font-size: 11px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .draggable-item:hover { background-color: #007bff; color: white; border-color: #007bff; }
         .draggable-item:active { cursor: grabbing; }
+
+        /* [NEW] TOGGLE SWITCH CSS */
+        .switch { position: relative; display: inline-block; width: 34px; height: 20px; vertical-align: middle; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: #28a745; }
+        input:focus + .slider { box-shadow: 0 0 1px #28a745; }
+        input:checked + .slider:before { transform: translateX(14px); }
+        
+        .spinner { width: 20px; height: 20px; border: 3px solid rgba(0, 0, 0, 0.1); border-radius: 50%; border-top-color: #007bff; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 
@@ -82,6 +93,7 @@
             <div class="table-toolbar">
                 <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger" style="display: none; margin-right: auto;">Delete Selected</button>
                 <button onclick="exportToCSV()" class="btn-secondary">Export CSV</button>
+                <button onclick="openOsmImportModal()" class="btn-secondary" style="background-color: #17a2b8; color: white;">Import from OSM</button>
                 <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
                 <button onclick="openModal()" class="btn-primary">Add Skill</button>
             </div>
@@ -103,6 +115,9 @@
                 <thead>
                     <tr>
                         <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
+                        
+                        <th style="width: 70px; text-align: center;">Enabled</th>
+                        
                         <th class="sortable" onclick="handleSort('name')"><div class="th-content">Skill Name <span id="icon-name" class="sort-icon"></span></div></th>
                         <th class="sortable" onclick="handleSort('critical_skill')"><div class="th-content">Critical <span id="icon-critical_skill" class="sort-icon"></span></div></th>
                         <th>Form URL</th>
@@ -141,11 +156,19 @@
                     <small style="display:block; color:#888; font-size:0.8em; margin-top:4px;">Drag chips above into the box to pre-fill form fields.</small>
                 </div>
 
-                <div class="form-group">
-                    <label style="display:flex; align-items:center; cursor:pointer;">
-                        <input type="checkbox" id="critical_skill" style="width:auto; margin-right:10px;"> Critical Skill
-                    </label>
+                <div style="display:flex; gap:20px;">
+                    <div class="form-group">
+                        <label style="display:flex; align-items:center; cursor:pointer;">
+                            <input type="checkbox" id="enabled" checked style="width:auto; margin-right:10px;"> Enabled
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label style="display:flex; align-items:center; cursor:pointer;">
+                            <input type="checkbox" id="critical_skill" style="width:auto; margin-right:10px;"> Critical Skill
+                        </label>
+                    </div>
                 </div>
+
                 <div style="text-align: right; margin-top: 20px;">
                     <button type="button" onclick="closeModal('skillModal')" class="btn-secondary">Cancel</button>
                     <button type="submit" class="btn-primary">Save</button>
@@ -163,6 +186,31 @@
 "OI (IS1)",https://forms...{{member-name}},true
 "OI (G9)",,0</div>
             <br><button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
+        </div>
+    </div>
+
+    <div id="osmImportModal" class="modal">
+        <div class="modal-content" style="width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
+            <span class="close-btn" onclick="closeModal('osmImportModal')">&times;</span>
+            <h2 id="osmModalTitle">Import Skills from OSM</h2>
+            
+            <div style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9em; color: #555;">
+                <strong>Note:</strong> This operation scans the OSM Dashboard and will import only the skills that are <u>not yet in your table</u>.
+            </div>
+
+            <div id="osmLoading" style="text-align: center; padding: 20px; display: none;">
+                <div class="spinner" style="display:inline-block; border-top-color:#333; margin-bottom: 10px;"></div>
+                <div>Scanning Dashboard...</div>
+            </div>
+
+            <div id="osmListContainer" style="flex: 1; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 20px; min-height: 100px; display: none;">
+                <ul id="osmSkillList" style="list-style: none; padding: 0; margin: 0;"></ul>
+            </div>
+            
+            <div id="osmActions" style="text-align: right; display: none;">
+                <button type="button" onclick="closeModal('osmImportModal')" class="btn-secondary">Cancel</button>
+                <button type="button" onclick="confirmOsmImport()" class="btn-success">Confirm Import</button>
+            </div>
         </div>
     </div>
 
@@ -215,7 +263,6 @@
                     const val = urlInput.value;
                     urlInput.value = val.substring(0, start) + text + val.substring(end);
                     urlInput.focus();
-                    // Move cursor to end of inserted text
                     const newPos = start + text.length;
                     urlInput.setSelectionRange(newPos, newPos);
                 }
@@ -229,7 +276,7 @@
                 currentSkills = await res.json();
                 applySort();
             } catch (err) {
-                document.getElementById('skillsTableBody').innerHTML = `<tr><td colspan="5" style="text-align:center;color:red;">Error: ${err.message}</td></tr>`;
+                document.getElementById('skillsTableBody').innerHTML = `<tr><td colspan="6" style="text-align:center;color:red;">Error: ${err.message}</td></tr>`;
             }
         }
 
@@ -270,14 +317,27 @@
             document.getElementById('selectAllCheckbox').checked = false;
             updateBulkDeleteButton();
             if (currentSkills.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#666;">No skills found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#666;">No skills found.</td></tr>`;
                 return;
             }
             currentSkills.forEach((s, index) => {
                 const urlDisplay = s.url ? `<a href="${s.url}" target="_blank" style="color:#007bff;text-decoration:none;">Link</a>` : `<span style="color:#999; font-style:italic;">No Link</span>`;
                 const tr = document.createElement('tr');
+                
+                // Opacity style for disabled row
+                const rowStyle = s.enabled ? '' : 'opacity: 0.6; background-color: #f9f9f9;';
+                tr.style = rowStyle;
+
                 tr.innerHTML = `
                     <td class="cb-col"><input type="checkbox" class="skill-checkbox" value="${s.id}" onchange="updateBulkDeleteButton()"></td>
+                    
+                    <td style="text-align: center;">
+                        <label class="switch">
+                            <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSkillEnabled(${s.id}, this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+
                     <td>${s.name}</td>
                     <td style="text-align:center;">${s.critical_skill ? '<b style="color:red;">Yes</b>' : 'No'}</td>
                     <td>${urlDisplay}</td>
@@ -287,6 +347,24 @@
                     </td>`;
                 tbody.appendChild(tr);
             });
+        }
+
+        async function toggleSkillEnabled(id, newState) {
+            const skill = currentSkills.find(s => s.id == id);
+            if (!skill) return;
+            skill.enabled = newState;
+            try {
+                await fetch(`/api/skills/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(skill)
+                });
+                renderTable(); // Update styles/opacity
+            } catch (e) {
+                alert('Failed to update status');
+                skill.enabled = !newState; // Revert
+                renderTable();
+            }
         }
 
         function toggleSelectAll() {
@@ -313,7 +391,14 @@
 
         const skillModal = document.getElementById('skillModal');
         const form = document.getElementById('skillForm');
-        function openModal() { document.getElementById('modalTitle').textContent = "Add Skill"; document.getElementById('skillId').value = ""; form.reset(); skillModal.style.display = 'block'; }
+        function openModal() { 
+            document.getElementById('modalTitle').textContent = "Add Skill"; 
+            document.getElementById('skillId').value = ""; 
+            form.reset(); 
+            // Default to Enabled = True
+            document.getElementById('enabled').checked = true;
+            skillModal.style.display = 'block'; 
+        }
         function editSkillByIndex(index) {
             const s = currentSkills[index];
             document.getElementById('modalTitle').textContent = "Edit Skill";
@@ -321,6 +406,7 @@
             document.getElementById('name').value = s.name;
             document.getElementById('url').value = s.url;
             document.getElementById('critical_skill').checked = s.critical_skill;
+            document.getElementById('enabled').checked = s.enabled;
             skillModal.style.display = 'block';
         }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -329,7 +415,12 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('skillId').value;
-            const data = { name: document.getElementById('name').value, url: document.getElementById('url').value, critical_skill: document.getElementById('critical_skill').checked };
+            const data = { 
+                name: document.getElementById('name').value, 
+                url: document.getElementById('url').value, 
+                critical_skill: document.getElementById('critical_skill').checked,
+                enabled: document.getElementById('enabled').checked 
+            };
             const method = id ? 'PUT' : 'POST';
             const url = id ? `/api/skills/${id}` : '/api/skills';
             await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -363,6 +454,12 @@
                 headers.forEach((h, idx) => obj[h] = vals[idx]);
                 if (obj.name) {
                     obj.critical_skill = (obj.critical_skill === 'true' || obj.critical_skill === '1');
+                    // Handle import enable logic if column exists, else default true
+                    if(obj.enabled !== undefined) {
+                        obj.enabled = (obj.enabled === 'true' || obj.enabled === '1');
+                    } else {
+                        obj.enabled = true;
+                    }
                     skills.push(obj);
                 }
             }
@@ -372,12 +469,16 @@
             }
         }
 
-        // --- EXPORT LOGIC ---
         async function exportToCSV() {
             if (!currentSkills || currentSkills.length === 0) { alert("No skills to export."); return; }
-            const headers = ['name', 'url', 'critical_skill'];
+            const headers = ['name', 'url', 'critical_skill', 'enabled'];
             const rows = currentSkills.map(skill => {
-                const rowData = { name: skill.name, url: skill.url, critical_skill: skill.critical_skill ? '1' : '0' };
+                const rowData = { 
+                    name: skill.name, 
+                    url: skill.url, 
+                    critical_skill: skill.critical_skill ? '1' : '0',
+                    enabled: skill.enabled ? '1' : '0'
+                };
                 return headers.map(header => {
                     let val = String(rowData[header] || '');
                     if (val.search(/("|,|\n)/g) >= 0) val = `"${val.replace(/"/g, '""')}"`;
@@ -394,7 +495,6 @@
             link.click();
             document.body.removeChild(link);
 
-            // LOG EXPORT EVENT
             try {
                 await fetch('/api/logs', {
                     method: 'POST',
@@ -408,8 +508,92 @@
             } catch(e) { console.error("Logging failed", e); }
         }
 
+        /* [OSM Import Logic] */
+        let discoveredSkills = [];
+
+        async function openOsmImportModal() {
+            const modal = document.getElementById('osmImportModal');
+            const loading = document.getElementById('osmLoading');
+            const listContainer = document.getElementById('osmListContainer');
+            const actions = document.getElementById('osmActions');
+            const list = document.getElementById('osmSkillList');
+
+            list.innerHTML = '';
+            listContainer.style.display = 'none';
+            actions.style.display = 'none';
+            loading.style.display = 'block';
+            modal.style.display = 'block';
+
+            try {
+                const res = await fetch('/api/skills/discover');
+                if (!res.ok) throw new Error((await res.json()).error || "Failed to scan");
+                
+                discoveredSkills = await res.json();
+                loading.style.display = 'none';
+
+                if (discoveredSkills.length === 0) {
+                    listContainer.style.display = 'block';
+                    listContainer.innerHTML = '<p style="text-align:center; color:#666; padding-top:20px;">No new unique skills found.</p>';
+                    actions.style.display = 'block';
+                    actions.querySelector('.btn-success').disabled = true;
+                } else {
+                    listContainer.style.display = 'block';
+                    actions.style.display = 'block';
+                    actions.querySelector('.btn-success').disabled = false;
+
+                    discoveredSkills.forEach(skillName => {
+                        const li = document.createElement('li');
+                        li.style.padding = "5px 0";
+                        li.style.borderBottom = "1px solid #eee";
+                        const isCritical = skillName.trim().endsWith('(C)');
+                        const criticalBadge = isCritical ? '<span style="background:#dc3545; color:white; font-size:10px; padding:2px 4px; border-radius:3px; margin-left:5px;">Critical</span>' : '';
+                        li.innerHTML = `<span style="color:#333;">${skillName}</span> ${criticalBadge}`;
+                        list.appendChild(li);
+                    });
+                }
+            } catch (e) {
+                loading.style.display = 'none';
+                alert("Error scanning OSM: " + e.message);
+                closeModal('osmImportModal');
+            }
+        }
+
+        async function confirmOsmImport() {
+            if (!discoveredSkills || discoveredSkills.length === 0) return;
+            if (!confirm(`Import ${discoveredSkills.length} new skills?`)) return;
+
+            const importPayload = discoveredSkills.map(name => ({
+                name: name,
+                url: "",
+                critical_skill: name.trim().endsWith('(C)'),
+                enabled: true // Default enabled on import
+            }));
+
+            try {
+                const res = await fetch('/api/skills/import', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(importPayload) 
+                });
+
+                if (res.ok) {
+                    closeModal('osmImportModal');
+                    await reloadSkills();
+                    alert(`Successfully imported ${importPayload.length} skills.`);
+                } else {
+                    throw new Error("Server rejected import.");
+                }
+            } catch (e) {
+                alert("Import failed: " + e.message);
+            }
+        }
+
         initPage();
-        window.onclick = (e) => { if (e.target == skillModal) closeModal('skillModal'); if (e.target == document.getElementById('helpModal')) closeModal('helpModal'); }
+        window.onclick = (e) => { 
+            if (e.target == skillModal) closeModal('skillModal'); 
+            if (e.target == document.getElementById('helpModal')) closeModal('helpModal'); 
+            if (e.target == document.getElementById('osmImportModal')) closeModal('osmImportModal'); 
+        }
         window.onscroll = function () { document.getElementById("scrollTopBtn").style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
     </script>
