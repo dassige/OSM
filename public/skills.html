@@ -182,9 +182,10 @@
             <span class="close-btn" onclick="closeModal('helpModal')">&times;</span>
             <h2>CSV File Format</h2>
             <p><strong>Required:</strong> <code>name</code></p>
-            <div class="code-block">name,url,critical_skill
-"OI (IS1)",https://forms...{{member-name}},true
-"OI (G9)",,0</div>
+            <p><strong>Optional:</strong> <code>url</code>, <code>critical_skill</code>, <code>enabled</code></p>
+            <div class="code-block">name,url,critical_skill,enabled
+"OI (IS1)",https://forms...{{member-name}},true,true
+"OI (G9)",,0,false</div>
             <br><button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
         </div>
     </div>

@@ -200,10 +200,48 @@
         }
 
         // --- TinyMCE Setup with Chip Support ---
+        
+        // [UPDATED] Robust DOM-based replacement to avoid breaking attributes
         function textToChips(html) {
             if (!html) return '';
-            // Logic to convert {{var}} text to non-editable spans for visualization in editor
-            return html.replace(/{{([a-zA-Z0-9_]+)}}/g, '<span class="mceNonEditable chip" data-val="$1">{{$1}}</span>');
+            // Use DOM parsing to avoid touching attributes (like href)
+            const div = document.createElement('div');
+            div.innerHTML = html;
+
+            const walker = document.createTreeWalker(div, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            while (walker.nextNode()) {
+                const node = walker.currentNode;
+                // Only target text nodes containing variables
+                if (node.nodeValue && node.nodeValue.match(/{{[a-zA-Z0-9_]+}}/)) {
+                    nodesToReplace.push(node);
+                }
+            }
+
+            nodesToReplace.forEach(node => {
+                const fragment = document.createDocumentFragment();
+                // Split by {{var}} but keep the delimiter for reconstruction
+                const parts = node.nodeValue.split(/({{[a-zA-Z0-9_]+}})/g);
+                
+                parts.forEach(part => {
+                    // Check if this part is strictly a variable
+                    if (part.match(/^{{[a-zA-Z0-9_]+}}$/)) {
+                        const varName = part.replace(/[{}]/g, '');
+                        const span = document.createElement('span');
+                        span.className = 'mceNonEditable chip';
+                        span.setAttribute('data-val', varName);
+                        span.textContent = part;
+                        fragment.appendChild(span);
+                    } else if (part !== '') {
+                        fragment.appendChild(document.createTextNode(part));
+                    }
+                });
+                
+                node.parentNode.replaceChild(fragment, node);
+            });
+
+            return div.innerHTML;
         }
 
         function chipsToText(html) {
