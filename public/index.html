@@ -9,143 +9,26 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         /* ... (Keep existing styles) ... */
-        th.sortable {
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-        }
-
-        th.sortable:hover {
-            background-color: #454d55;
-        }
-
-        .th-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .sort-icon {
-            font-size: 12px;
-            margin-left: 8px;
-            opacity: 0.5;
-        }
-
-        .sort-icon.active {
-            opacity: 1;
-            color: #4db8ff;
-        }
-
-        /* HEADER MENUS */
-        .header-menu {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: inline-block;
-            z-index: 100;
-        }
-
-        .menu-btn {
-            background-color: #343a40;
-            color: white;
-            padding: 10px 16px;
-            font-size: 16px;
-            border: none;
-            cursor: pointer;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            transition: background-color 0.2s;
-        }
-
-        .menu-btn:hover {
-            background-color: #23272b;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            right: 0;
-            background-color: #f9f9f9;
-            min-width: 180px;
-            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
-            border-radius: 4px;
-            z-index: 1;
-            overflow: hidden;
-            margin-top: 5px;
-            border: 1px solid #ddd;
-        }
-
-        .dropdown-content a {
-            color: #333;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            text-align: left;
-            transition: background-color 0.2s;
-        }
-
-        .dropdown-content a:hover {
-            background-color: #f1f1f1;
-            color: #007bff;
-        }
-
-        .show {
-            display: block;
-        }
-
-        /* PROFILE MENU (Top Left) */
-        .profile-menu {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-        }
-
-        .profile-btn {
-            background-color: white;
-            color: #333;
-            padding: 10px 16px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            cursor: pointer;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s;
-        }
-
-        .profile-btn:hover {
-            background-color: #f8f9fa;
-            transform: translateY(-1px);
-        }
-
-        .profile-dropdown {
-            left: 0;
-            right: auto;
-            min-width: 160px;
-        }
-
-        .logout {
-            color: #dc3545 !important;
-            border-top: 1px solid #eee;
-        }
-
-        .logout:hover {
-            background-color: #ffe6e6 !important;
-            color: #bd2130 !important;
-        }
-
-        /* Custom style for the Expired filter when active */
-        .type-badge.expired-filter.active {
-            background-color: #dc3545;
-            border-color: #dc3545;
-            color: white;
-        }
+        /* ... (No changes to styles needed for this specific task) ... */
+        th.sortable { cursor: pointer; user-select: none; position: relative; }
+        th.sortable:hover { background-color: #454d55; }
+        .th-content { display: flex; align-items: center; justify-content: space-between; }
+        .sort-icon { font-size: 12px; margin-left: 8px; opacity: 0.5; }
+        .sort-icon.active { opacity: 1; color: #4db8ff; }
+        .header-menu { position: absolute; top: 20px; right: 20px; display: inline-block; z-index: 100; }
+        .menu-btn { background-color: #343a40; color: white; padding: 10px 16px; font-size: 16px; border: none; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); transition: background-color 0.2s; }
+        .menu-btn:hover { background-color: #23272b; }
+        .dropdown-content { display: none; position: absolute; right: 0; background-color: #f9f9f9; min-width: 180px; box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2); border-radius: 4px; z-index: 1; overflow: hidden; margin-top: 5px; border: 1px solid #ddd; }
+        .dropdown-content a { color: #333; padding: 12px 16px; text-decoration: none; display: block; text-align: left; transition: background-color 0.2s; }
+        .dropdown-content a:hover { background-color: #f1f1f1; color: #007bff; }
+        .show { display: block; }
+        .profile-menu { position: absolute; top: 20px; left: 20px; z-index: 100; }
+        .profile-btn { background-color: white; color: #333; padding: 10px 16px; font-size: 16px; border: 1px solid #ddd; cursor: pointer; border-radius: 20px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); transition: all 0.2s; }
+        .profile-btn:hover { background-color: #f8f9fa; transform: translateY(-1px); }
+        .profile-dropdown { left: 0; right: auto; min-width: 160px; }
+        .logout { color: #dc3545 !important; border-top: 1px solid #eee; }
+        .logout:hover { background-color: #ffe6e6 !important; color: #bd2130 !important; }
+        .type-badge.expired-filter.active { background-color: #dc3545; border-color: #dc3545; color: white; }
     </style>
 </head>
 
@@ -216,7 +99,7 @@
                 </svg>
                 System Tools
             </a>
-            <a href="event-log.html">
+            <a href="event-log.html" id="navEventLog" style="display:none;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     style="margin-right:8px;">
@@ -388,11 +271,13 @@
                 const emailTemplates = document.querySelector('a[href="email-templates.html"]');
                 const manageUsers = document.getElementById('navManageUsers');
                 const systemTools = document.getElementById('navSystemTools');
+                const eventLog = document.getElementById('navEventLog');
 
                 // Defaults: Hide Admin stuff
                 if (manageMembers) manageMembers.style.display = 'none';
                 if (manageSkills) manageSkills.style.display = 'none';
                 if (emailTemplates) emailTemplates.style.display = 'none';
+                // Event Log is hidden by default in HTML
 
                 // --- SUPER ADMIN ---
                 if (role === 'superadmin') {
@@ -402,6 +287,7 @@
                     if (manageMembers) manageMembers.style.display = 'block';
                     if (manageSkills) manageSkills.style.display = 'block';
                     if (emailTemplates) emailTemplates.style.display = 'block';
+                    if (eventLog) eventLog.style.display = 'block';
                 }
                 // --- ADMIN ---
                 else if (role === 'admin') {
@@ -409,11 +295,13 @@
                     if (manageMembers) manageMembers.style.display = 'block';
                     if (manageSkills) manageSkills.style.display = 'block';
                     if (emailTemplates) emailTemplates.style.display = 'block';
+                    if (eventLog) eventLog.style.display = 'block';
                     // System Tools remains hidden for standard admin (per requirement "except superadmin restricted")
                 }
                 // --- SIMPLE / GUEST ---
                 else {
-                    // Can only see Event Log, About, Logout, Profile
+                    // Can only see About, Logout, Profile
+                    // Event Log stays hidden
                 }
 
                 // 2. Operational Logic (Handled in app.js via global var or attribute)
@@ -448,24 +336,6 @@
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        fetch('/api/user-session')
-            .then(r => r.json())
-            .then(user => {
-                document.getElementById('userNameDisplay').textContent = user.name || 'User';
-
-                if (user.isEnvUser) {
-                    // SUPER ADMIN:
-                    document.getElementById('navUserSettings').style.display = 'none';
-
-                    // Show restricted menus
-                    document.getElementById('navManageUsers').style.display = 'block';
-                    document.getElementById('navSystemTools').style.display = 'block'; // <--- Added
-                } else {
-                    // REGULAR DB USER:
-                    // (Menus remain hidden by default)
-                }
-            })
-            .catch(() => window.location.href = '/login.html');
     </script>
     <script src="help.js"></script>
 </body>

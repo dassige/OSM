@@ -33,6 +33,7 @@
             background: white;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
+            color: #333;
         }
 
         th,
@@ -45,6 +46,7 @@
         th {
             background: #f8f9fa;
             font-weight: bold;
+            color: black; /* Table heading text color set to black */
         }
 
         .btn-add {
@@ -57,15 +59,32 @@
             float: right;
         }
 
-        .btn-sm {
-            padding: 5px 10px;
-            font-size: 12px;
-            border-radius: 3px;
-            cursor: pointer;
+        /* Icon Button Styles */
+        .btn-icon {
+            background: none;
             border: none;
-            color: white;
-            margin-left: 5px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s, color 0.2s;
+            vertical-align: middle;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
+
+        .btn-icon:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-icon.edit { color: #007bff; }
+        .btn-icon.edit:hover { color: #0056b3; }
+
+        .btn-icon.reset { color: #ffc107; }
+        .btn-icon.reset:hover { color: #d39e00; }
+
+        .btn-icon.delete { color: #dc3545; }
+        .btn-icon.delete:hover { color: #bd2130; }
 
         .btn-del {
             background: #dc3545;
@@ -74,6 +93,10 @@
         .btn-reset {
             background: #ffc107;
             color: #333;
+        }
+        
+        .btn-edit {
+            background: #007bff;
         }
 
         .modal {
@@ -106,7 +129,7 @@
             font-weight: bold;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 8px;
             box-sizing: border-box;
@@ -140,59 +163,27 @@
             }
         }
 
-        /* Utility to align spinner and text */
         .btn-content {
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* Add basic badge styles for roles in users.html style block */
-        .badge-admin {
-            background: #6f42c1;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        .badge-simple {
-            background: #17a2b8;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        .badge-guest {
-            background: #6c757d;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        .badge-superadmin {
-            background: #d63384;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 12px; color: white; }
+        .badge-admin { background: #6f42c1; }
+        .badge-simple { background: #17a2b8; }
+        .badge-guest { background: #6c757d; }
+        .badge-superadmin { background: #d63384; }
     </style>
 </head>
 
 <body>
-    <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-        </svg></a>
+    <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></a>
 
     <div class="container">
         <button class="btn-add" onclick="openAddModal()">Add User</button>
         <h1 id="pageHeader">System Users</h1>
-        <p>Manage additional administrators for the web application.</p>
+        <p>Manage additional users for the web application.</p>
 
         <table id="userTable">
             <thead>
@@ -203,18 +194,9 @@
                     <th style="text-align: right;">Actions</th>
                 </tr>
             </thead>
-
-            <div class="form-group">
-                <label>Role</label>
-                <select id="newRole" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                    <option value="simple" selected>Simple (Can send emails)</option>
-                    <option value="guest">Guest (Read only)</option>
-                    <option value="admin">Admin (Full Access)</option>
-                </select>
-            </div>
             <tbody>
                 <tr>
-                    <td colspan="3">Loading...</td>
+                    <td colspan="4">Loading...</td>
                 </tr>
             </tbody>
         </table>
@@ -238,8 +220,16 @@
                     <input type="email" id="newEmail" required autocomplete="off">
                 </div>
 
-                <div
-                    style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: #555;">
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="newRole">
+                        <option value="simple" selected>Simple (Can send emails)</option>
+                        <option value="guest">Guest (Read only)</option>
+                        <option value="admin">Admin (Full Access)</option>
+                    </select>
+                </div>
+
+                <div style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: #555;">
                     <p style="margin: 0;">A random password will be generated automatically and emailed to the user.</p>
                 </div>
 
@@ -252,6 +242,34 @@
             </form>
         </div>
     </div>
+
+    <div id="editUserModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('editUserModal')">&times;</span>
+            <h2>Edit User</h2>
+            <form id="editUserForm" autocomplete="off">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="editName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="editEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="editRole">
+                        <option value="simple">Simple</option>
+                        <option value="guest">Guest</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-add" style="background-color:#007bff; width:100%">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
     <div id="resetModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('resetModal')">&times;</span>
@@ -261,10 +279,8 @@
             <form id="resetForm" autocomplete="off">
                 <input type="hidden" id="resetUserId">
                 <input type="hidden" id="resetUserEmail">
-                <div
-                    style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: #555;">
-                    <p style="margin: 0;">A new random password will be generated and sent to the user's email address.
-                    </p>
+                <div style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: #555;">
+                    <p style="margin: 0;">A new random password will be generated and sent to the user's email address.</p>
                 </div>
 
                 <button type="submit" class="btn-reset" id="resetBtn" style="width:100%; border:none; padding:10px;">
@@ -278,163 +294,185 @@
     </div>
 
     <script>
-        users.forEach(u => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-            <td>${u.name}</td>
-            <td>${u.email}</td>
-            <td><span class="badge badge-${u.role}">${u.role}</span></td>
-            <td style="text-align: right;">
-                </td>
-        `;
-            tbody.appendChild(tr);
+        // Init UI
+        fetch('/ui-config').then(r => r.json()).then(c => { 
+            if (c.loginTitle) document.getElementById('pageHeader').innerText = "System Users - " + c.loginTitle; 
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`; 
         });
-
-
-
-        fetch('/ui-config').then(r => r.json()).then(c => { if (c.loginTitle) document.getElementById('pageHeader').innerText = "System Users - " + c.loginTitle; if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`; });
-
-        function togglePw(inputId, btn) {
-            const input = document.getElementById(inputId);
-            const isPassword = input.type === 'password';
-            input.type = isPassword ? 'text' : 'password';
-
-            if (isPassword) {
-                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
-            } else {
-                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
-            }
-        }
 
         async function loadUsers() {
             try {
                 const res = await fetch('/api/users');
                 if (res.status === 403) { alert('Access Denied'); window.location.href = '/'; return; }
+                
                 const users = await res.json();
                 const tbody = document.querySelector('#userTable tbody');
                 tbody.innerHTML = '';
-                if (users.length === 0) tbody.innerHTML = '<tr><td colspan="3">No database users found.</td></tr>';
+                
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4">No database users found.</td></tr>';
+                    return;
+                }
+
                 users.forEach(u => {
                     const tr = document.createElement('tr');
+                    const userObj = JSON.stringify(u).replace(/"/g, '&quot;');
+
                     tr.innerHTML = `
-                    <td>${u.name}</td>
-                    <td>${u.email}</td>
-                    <td style="text-align: right;">
-                        <button class="btn-sm btn-reset" onclick="openReset('${u.id}', '${u.name}', '${u.email}')">Reset Pwd</button>
-                        <button class="btn-sm btn-del" onclick="deleteUser('${u.id}')">Delete</button>
-                    </td>
-                `;
+                        <td>${u.name}</td>
+                        <td>${u.email}</td>
+                        <td><span class="badge badge-${u.role || 'simple'}">${u.role || 'simple'}</span></td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button class="btn-icon edit" onclick="openEditModal(${userObj})" title="Edit User">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            </button>
+                            <button class="btn-icon reset" onclick="openReset('${u.id}', '${u.name}', '${u.email}')" title="Reset Password">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                            </button>
+                            <button class="btn-icon delete" onclick="deleteUser('${u.id}')" title="Delete User">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            </button>
+                        </td>
+                    `;
                     tbody.appendChild(tr);
                 });
             } catch (e) { console.error(e); }
         }
 
+        // --- ADD USER ---
         document.getElementById('addUserForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const name = document.getElementById('newName').value;
             const email = document.getElementById('newEmail').value;
             const role = document.getElementById('newRole').value;
 
-            // UI Elements
             const btn = document.getElementById('createBtn');
             const spinner = document.getElementById('createSpinner');
             const btnText = document.getElementById('btnText');
 
-            if (!confirm(`Are you sure you want to create a new user for:\n\n${name} (${email})?\n\nA random password will be generated and sent to this email address immediately.`)) {
-                return;
-            }
+            if (!confirm(`Create user ${name} (${role})?\nA password will be emailed.`)) return;
 
-            // [START Loading State]
             btn.disabled = true;
             spinner.style.display = 'inline-block';
-            btnText.innerText = 'Creating & Sending...';
+            btnText.innerText = 'Creating...';
 
             try {
                 const data = { name, email, role };
-                const res = await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const res = await fetch('/api/users', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(data) 
+                });
 
                 if (res.ok) {
                     closeModal('userModal');
                     loadUsers();
                     document.getElementById('addUserForm').reset();
-                    alert('User created successfully! The welcome email has been sent.');
+                    alert('User created successfully!');
                 } else {
                     const err = await res.json();
-                    alert('Error adding user: ' + (err.error || 'Unknown error'));
+                    alert('Error: ' + (err.error || 'Unknown error'));
                 }
-            } catch (error) {
-                alert('Network or Server Error');
-            } finally {
-                // [END Loading State]
+            } catch (error) { alert('Network Error'); } 
+            finally {
                 btn.disabled = false;
                 spinner.style.display = 'none';
                 btnText.innerText = 'Create User & Send Email';
             }
         });
 
+        // --- EDIT USER ---
+        function openEditModal(u) {
+            document.getElementById('editUserId').value = u.id;
+            document.getElementById('editName').value = u.name;
+            document.getElementById('editEmail').value = u.email;
+            document.getElementById('editRole').value = u.role || 'simple';
+            document.getElementById('editUserModal').style.display = 'block';
+        }
+
+        document.getElementById('editUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editUserId').value;
+            const data = {
+                name: document.getElementById('editName').value,
+                email: document.getElementById('editEmail').value,
+                role: document.getElementById('editRole').value
+            };
+
+            try {
+                const res = await fetch(`/api/users/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    closeModal('editUserModal');
+                    loadUsers();
+                } else {
+                    const err = await res.json();
+                    alert('Error: ' + err.error);
+                }
+            } catch (e) { alert('Network Error'); }
+        });
+
+        // --- RESET PASSWORD ---
+        function openReset(id, name, email) {
+            document.getElementById('resetUserId').value = id;
+            document.getElementById('resetUserName').innerText = name;
+            document.getElementById('resetUserEmail').value = email;
+            document.getElementById('resetModal').style.display = 'block';
+        }
 
         document.getElementById('resetForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('resetUserId').value;
-            const name = document.getElementById('resetUserName').innerText;
-            const email = document.getElementById('resetUserEmail').value;
-
-            if (!confirm(`Are you sure you want to reset the password for ${name} (${email})?\n\nA new password will be emailed to them immediately.`)) return;
-
-            // UI Loading
             const btn = document.getElementById('resetBtn');
             const spinner = document.getElementById('resetSpinner');
             const btnText = document.getElementById('resetBtnText');
+
+            if (!confirm(`Reset password? A new one will be emailed.`)) return;
 
             btn.disabled = true;
             spinner.style.display = 'inline-block';
             btnText.innerText = 'Resetting...';
 
             try {
-                const res = await fetch(`/api/users/${id}/reset`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({}) // No body needed
+                const res = await fetch(`/api/users/${id}/reset`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({}) 
                 });
 
                 if (res.ok) {
                     closeModal('resetModal');
-                    alert('Success! The new password has been emailed to the user.');
+                    alert('Success! Password emailed.');
                 } else {
                     const err = await res.json();
-                    alert('Error: ' + (err.error || 'Failed to reset'));
+                    alert('Error: ' + (err.error || 'Failed'));
                 }
-            } catch (err) {
-                alert('Network error occurred.');
-            } finally {
+            } catch (err) { alert('Network error'); } 
+            finally {
                 btn.disabled = false;
                 spinner.style.display = 'none';
                 btnText.innerText = 'Reset & Email Password';
             }
         });
+
+        // --- DELETE USER ---
         async function deleteUser(id) {
-            if (confirm('Delete this user?\n\nThey will be permanently removed and sent an email notification.')) {
+            if (confirm('Delete this user?\n\nThis cannot be undone.')) {
                 const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    loadUsers();
-                } else {
-                    alert("Failed to delete user.");
-                }
+                if (res.ok) loadUsers();
+                else alert("Failed to delete user.");
             }
         }
+
         function openAddModal() { document.getElementById('userModal').style.display = 'block'; }
-        function openReset(id, name, email) {
-            document.getElementById('resetUserId').value = id;
-            document.getElementById('resetUserName').innerText = name;
-            document.getElementById('resetUserEmail').value = email; // Store for alert
-            document.getElementById('resetModal').style.display = 'block';
-        }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+        // Start
         loadUsers();
     </script>
     <script src="help.js"></script>
 </body>
-
 </html>

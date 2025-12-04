@@ -219,7 +219,19 @@ async function getAllUserPreferences(userId) { if (!db) await initDB(); const ro
 async function purgeEventLog() { if (!db) await initDB(); await db.run('DELETE FROM event_log'); }
 async function pruneEventLog(days) { if (!db) await initDB(); const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days); const isoDate = cutoff.toISOString(); await db.run('DELETE FROM event_log WHERE timestamp < ?', isoDate); }
 async function getEventLogsExport(filters = {}) { if (!db) await initDB(); let baseQuery = `SELECT * FROM event_log WHERE 1=1`; const params = []; if (filters.user) { baseQuery += ` AND user = ?`; params.push(filters.user); } if (filters.types && filters.types.length > 0) { const placeholders = filters.types.map(() => '?').join(','); baseQuery += ` AND event_type IN (${placeholders})`; params.push(...filters.types); } if (filters.startDate) { baseQuery += ` AND timestamp >= ?`; params.push(filters.startDate); } if (filters.endDate) { baseQuery += ` AND timestamp <= ?`; params.push(filters.endDate + ' 23:59:59'); } baseQuery += ` ORDER BY id DESC`; const rows = await db.all(baseQuery, params); return rows.map(r => { try { return { ...r, payload: JSON.parse(r.payload) }; } catch (e) { return { ...r, payload: {} }; } }); }
-
+// Update User details
+async function updateUser(id, name, email, role) {
+    if (!db) await initDB();
+    try {
+        await db.run(
+            `UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?`,
+            name, email, role, id
+        );
+    } catch (e) {
+        if (e.message.includes('UNIQUE constraint')) throw new Error('Email already exists');
+        throw e;
+    }
+}
 module.exports = {
     initDB,
     getPreferences, savePreference, getUserPreference, saveUserPreference, getAllUserPreferences,
@@ -228,6 +240,6 @@ module.exports = {
     getSkills, addSkill, bulkAddSkills, updateSkill, deleteSkill, bulkDeleteSkills,
     closeDB, verifyAndReplaceDb, getDbPath,
     logEvent, getEventLogs, getEventLogMetadata,
-    authenticateUser, getUserByEmail, getUsers, getUserById, addUser, updateUserProfile, adminResetPassword, deleteUser,
+    authenticateUser, getUserByEmail, getUsers, getUserById, addUser, updateUserProfile, adminResetPassword, deleteUser, updateUser,
     purgeEventLog, pruneEventLog, getEventLogsExport
 };
