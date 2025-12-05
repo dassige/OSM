@@ -20,7 +20,13 @@ The integration relies on a library called **`whatsapp-web.js`**. Unlike the off
 Ensure the feature is enabled in your `.env` file:
 ```bash
 ENABLE_WHATSAPP=true
-````
+```
+### Deployment Requirements (Cloud Run / Docker)
+
+Since this feature runs a full browser instance in the background, your container requires more resources than a standard Node.js app.
+
+* **Google Cloud Run:** You must allocate at least **1GiB of RAM** (2GiB recommended) and **1 CPU**. The default 512MB will cause the service to crash with a `TimeoutError` or `ProtocolError` upon startup.
+* **Docker:** No specific limits are enforced by default, but ensure your host has available memory. The system automatically applies the necessary `--disable-dev-shm-usage` flags for Docker compatibility.
 
 ### Step 2: Access the Management Panel
 

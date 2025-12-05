@@ -67,3 +67,21 @@ gcloud run deploy fenz-osm-manager \
   --set-env-vars UI_LOGIN_TITLE="Station 44 OSM Manager" \
   --set-env-vars UI_LOGO_URL="[https://storage.googleapis.com/my-bucket/station44-logo.png](https://storage.googleapis.com/my-bucket/station44-logo.png)"
 ```
+#### 5. Critical Resource Configuration (WhatsApp Support)
+
+If you enable the WhatsApp integration (`ENABLE_WHATSAPP=true`), the application launches a headless Chrome instance. **The default Cloud Run settings (512MB RAM) are insufficient and will cause the application to crash immediately.**
+
+You **MUST** update your service with the following minimum resources:
+
+* **Memory:** At least **1GiB** (2GiB is highly recommended for stability).
+* **CPU:** At least **1 CPU**.
+* **Execution Environment:** Use **Second Generation** (gen2) for better file system compatibility.
+
+**Update Command:**
+
+```bash
+gcloud run services update fenz-osm-manager \
+  --memory 2Gi \
+  --cpu 1 \
+  --execution-environment gen2 \
+  --region australia-southeast1
