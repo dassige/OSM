@@ -4,19 +4,18 @@ const qrcode = require('qrcode');
 
 let client;
 let io;
-let logEvent = null; // [NEW] Reference to DB Logger
+let logEvent = null; 
 let qrCodeUrl = null;
 let status = 'DISCONNECTED'; 
 let isClientReady = false;
 let clientInfo = null;
 
-// [UPDATED] Init now accepts a logger callback
 function init(socketIo, logEventCallback) {
     io = socketIo;
     logEvent = logEventCallback;
 }
 
-// [NEW] Helper to log system events safely
+// Helper to log system events safely
 async function systemLog(title, payload = {}) {
     if (logEvent) {
         try {
@@ -31,25 +30,31 @@ function startClient() {
     if (status !== 'DISCONNECTED') return;
 
     console.log('[WhatsApp] Starting client...');
-    systemLog('Client Starting', {}); // [NEW]
+    systemLog('Client Starting', {});
     updateStatus('INITIALIZING');
 
     client = new Client({
         authStrategy: new LocalAuth({ clientId: "fenz-osm-client" }),
         puppeteer: {
             headless: true,
+            // [UPDATED] Critical flags for Cloud Run/Docker stability
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
+                '--disable-dev-shm-usage', // <--- PREVENTS CRASHES ON DOCKER/CLOUD RUN
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
                 '--disable-gpu'
-            ]
+            ],
+            // [UPDATED] Increase timeout to 60s for slow cold starts
+            timeout: 60000 
         }
     });
 
     client.on('qr', (qr) => {
         console.log('[WhatsApp] QR Code received');
-        systemLog('QR Code Generated', {}); // [NEW]
+        systemLog('QR Code Generated', {}); 
         
         qrcode.toDataURL(qr, (err, url) => {
             if (!err) {
@@ -72,7 +77,7 @@ function startClient() {
             };
         }
         
-        systemLog('Client Connected', clientInfo || {}); // [NEW]
+        systemLog('Client Connected', clientInfo || {}); 
         
         updateStatus('READY');
         if (io) io.emit('wa-status-data', getStatus());
@@ -80,13 +85,13 @@ function startClient() {
 
     client.on('auth_failure', msg => {
         console.error('[WhatsApp] Auth Failure', msg);
-        systemLog('Auth Failure', { error: msg }); // [NEW]
+        systemLog('Auth Failure', { error: msg });
         updateStatus('DISCONNECTED');
     });
 
     client.on('disconnected', (reason) => {
         console.log('[WhatsApp] Client was logged out', reason);
-        systemLog('Client Disconnected', { reason }); // [NEW]
+        systemLog('Client Disconnected', { reason }); 
         resetState();
     });
 
@@ -97,7 +102,7 @@ async function logout() {
     if (client) {
         try {
             await client.logout();
-            systemLog('Client Logged Out (Manual)', {}); // [NEW]
+            systemLog('Client Logged Out (Manual)', {});
         } catch (e) {
             console.log('[WhatsApp] Logout error:', e.message);
         }
