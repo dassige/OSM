@@ -139,6 +139,10 @@
 
     <h1 id="mainHeader">FENZ OSM Automation</h1>
 
+    <div id="demoBanner" class="demo-banner">
+        DEMO VERSION <span style="font-weight:normal;">(<a href="resources/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+    </div>
+
     <div id="controls" style="display: flex; align-items: center; flex-wrap: wrap;">
         <div
             style="margin-right: 15px; margin-bottom: 10px; background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
@@ -224,6 +228,10 @@
     <div id="aboutModal" class="modal">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <span class="close-btn" onclick="closeModal('aboutModal')">&times;</span>
+            <div id="aboutDemoBanner" class="demo-banner" style="display:none; margin: -20px -20px 20px -20px;">
+                DEMO VERSION <span style="font-weight:normal;">(<a href="resources/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+            </div>
+
             <h2 style="margin-top: 0;">About</h2>
             <p style="font-size: 1.1em; color: #666;">FENZ OSM Automation Manager</p>
             <div style="margin: 20px 0; font-size: 0.9em;">
@@ -336,6 +344,16 @@
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        // [NEW] Check for demo mode and show About modal banner
+        fetch('/ui-config')
+            .then(r => r.json())
+            .then(config => {
+                if (config.appMode === 'demo') {
+                    const banner = document.getElementById('aboutDemoBanner');
+                    if(banner) banner.style.display = 'block';
+                }
+            });
     </script>
     <script src="help.js"></script>
 </body>

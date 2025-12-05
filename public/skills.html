@@ -10,7 +10,8 @@
         body { position: relative; }
         .container { max-width: 1000px; margin: 0 auto; padding-top: 40px; }
         h1 { text-align: center; margin-bottom: 30px; }
-        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); transition: all 0.2s ease; z-index: 10; }
+        /* [UPDATED] Increased z-index to 100 */
+        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); transition: all 0.2s ease; z-index: 100; }
         .back-btn:hover { background-color: #23272b; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); }
         .table-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 5px; }
         .help-bar { display: flex; justify-content: flex-end; align-items: center; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #eee; }
@@ -77,6 +78,10 @@
 </head>
 
 <body>
+    <div id="demoBanner" class="demo-banner">
+        DEMO VERSION <span style="font-weight:normal;">(<a href="resources/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+    </div>
+
     <a href="/" class="back-btn" title="Back to Dashboard">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -232,6 +237,11 @@
                         document.getElementById('pageHeader').innerText = "Manage Skills - " + uiConfig.loginTitle;
                     }
                     if (uiConfig.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
+
+                    // [NEW] Demo Banner
+                    if (uiConfig.appMode === 'demo') {
+                        document.getElementById('demoBanner').style.display = 'block';
+                    }
                 }
                 const prefRes = await fetch('/api/user-preferences');
                 if (prefRes.ok) {

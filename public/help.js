@@ -30,6 +30,11 @@ const helpContent = {
                 </svg>
             </span> indicates a direct form link is available.
             Dates highlighted in <span style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red</span> are overdue.</p>
+            
+            <div style="background-color: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; border: 1px solid #ffeeba; color: #856404; font-size: 0.9em;">
+                <strong>Demo Mode Note:</strong><br>
+                If running in Demo Mode, the data shown is static (from a local file). However, the <strong>Due Dates</strong> are automatically adjusted to appear relative to today's date, allowing you to effectively test the expiry logic.
+            </div>
         `
     },
     // --- Member Management ---
@@ -99,8 +104,12 @@ const helpContent = {
     "system-tools": {
         title: "System Tools Help",
         body: `
-            <p><strong>Backup:</strong> Downloads the entire <code>fenz.db</code> database file. Keep this safe.</p>
+            <p><strong>Backup:</strong> Downloads the entire database file. Keep this safe.</p>
             <p><strong>Restore:</strong> Upload a <code>.db</code> file to overwrite the current system. <br><strong style="color:red">Warning:</strong> This cannot be undone.</p>
+            
+            <div style="background-color: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; border: 1px solid #ffeeba; color: #856404; font-size: 0.9em;">
+                <strong>Demo Mode:</strong> In Demo Mode, backups and restores apply to the sandboxed <code>demo.db</code>, not your production data.
+            </div>
         `
     },
     // --- Event Log ---
@@ -151,6 +160,11 @@ const helpContent = {
         body: `
             <p>Please sign in with your credentials.</p>
             <p><strong>Forgot Password?</strong> Click the link below the form to have a temporary password sent to your email.</p>
+            
+            <div style="background-color: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; border: 1px solid #ffeeba; color: #856404; font-size: 0.9em;">
+                <strong>Demo Mode:</strong><br>
+                If the application is running in Demo Mode, you can click the <strong>"Reveal Super-Admin demo credentials"</strong> link at the bottom of the page to view the login details.
+            </div>
         `
     },
     // --- Default ---

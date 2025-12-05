@@ -133,14 +133,19 @@ app.get('/api/user-session', (req, res) => {
 
 // --- GLOBAL ROUTE GUARD ---
 app.use((req, res, next) => {
-    const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config'];
+    // [FIX] Added '/api/demo-credentials' to publicPaths so it can be accessed without login
+    const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config', '/api/demo-credentials'];
     if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/')) return next();
     if (req.session && req.session.loggedIn) return next();
     if (req.path.startsWith('/api/')) return res.status(401).json({ error: "Unauthorized" });
     return res.redirect('/login.html');
 });
 
-app.get('/ui-config', (req, res) => res.json(config.ui || {}));
+// [UPDATED] Send appMode to UI
+app.get('/ui-config', (req, res) => res.json({ 
+    ...config.ui, 
+    appMode: config.appMode 
+}));
 
 // --- PAGE ACCESS CONTROL ---
 app.get('/system-tools.html', (req, res, next) => {
@@ -158,6 +163,18 @@ app.get('/event-log.html', (req, res, next) => {
 // =============================================================================
 // 4. API ROUTES - USER MANAGEMENT & PROFILE
 // =============================================================================
+
+// [NEW] Endpoint to reveal demo credentials (must be publicly accessible via middleware above)
+app.get('/api/demo-credentials', (req, res) => {
+    if (config.appMode !== 'demo') {
+        return res.status(403).json({ error: "Feature only available in DEMO mode." });
+    }
+    // Return env credentials
+    res.json({
+        username: config.auth.username,
+        password: config.auth.password
+    });
+});
 
 app.get('/api/users', hasRole('admin'), async (req, res) => {
     try { res.json(await db.getUsers()); } catch (e) { res.status(500).json({ error: e.message }); }
@@ -491,4 +508,7 @@ async function handleEmailSending(socket, targetNames, days, logger, isSingle) {
 }
 
 const PORT = 3000;
-server.listen(PORT, () => { console.log(`Server running at http://localhost:${PORT}`); });
+server.listen(PORT, () => { 
+    console.log(`Server running at http://localhost:${PORT}`); 
+    console.log(`> App Mode: ${(config.appMode || 'PRODUCTION').toUpperCase()}`);
+});

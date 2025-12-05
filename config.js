@@ -2,13 +2,25 @@
 require('dotenv').config();
 const packageJson = require('./package.json');
 const nodemailer = require('nodemailer');
+const path = require('path');
+
+// --- APP MODE ---
+const appMode = process.env.APP_MODE || 'production';
 
 // --- AUTHENTICATION ---
 const auth = {
-    username: process.env.APP_USERNAME,
-    password: process.env.APP_PASSWORD,
     sessionSecret: process.env.SESSION_SECRET 
 };
+
+if (appMode === 'demo') {
+    // Demo Mode: Use specific demo credentials (defaulting if not set)
+    auth.username = process.env.DEMO_SUPERADMIN_USERNAME || 'demo';
+    auth.password = process.env.DEMO_SUPERADMIN_PASSWORD || 'demo';
+} else {
+    // Production Mode: Use standard credentials
+    auth.username = process.env.APP_USERNAME;
+    auth.password = process.env.APP_PASSWORD;
+}
 
 // --- UI CUSTOMIZATION --- 
 const ui = {
@@ -20,14 +32,20 @@ const ui = {
 };
 
 // --- APP SETTINGS ---
-// [NEW] Timezone Support
 const timezone = process.env.APP_TIMEZONE || 'Pacific/Auckland';
 const locale = process.env.APP_LOCALE || 'en-NZ';
 
 // --- DASHBOARD CONFIGURATION ---
-const defaultBuId = '87FF646A-FCBC-49A1-9BAC-XXXXXXXXX';
-const buId = process.env.OSM_BU_ID || defaultBuId;
-const url = process.env.DASHBOARD_URL || `https://www.dashboardlive.nz/osm.php?bu={${buId.replace(/[{}]/g, '')}}`;
+let url;
+if (appMode === 'demo') {
+    // In Demo mode, point to the local static HTML file
+    url = path.join(__dirname, 'public/resources/demo_osm_dasboard.html');
+} else {
+    // In Production, build the live URL
+    const defaultBuId = '87FF646A-FCBC-49A1-9BAC-XXXXXXXXX';
+    const buId = process.env.OSM_BU_ID || defaultBuId;
+    url = process.env.DASHBOARD_URL || `https://www.dashboardlive.nz/osm.php?bu={${buId.replace(/[{}]/g, '')}}`;
+}
 
 const scrapingInterval = parseInt(process.env.SCRAPING_INTERVAL) || 60;
 
@@ -46,6 +64,7 @@ const fixedProxyUrl = process.env.PROXY_URL || null;
 const dynamicProxySource = process.env.DYNAMIC_PROXY_SOURCE || null;
 
 module.exports = {
+    appMode, // Exported for use in other modules
     auth,
     ui,
     timezone,

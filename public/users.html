@@ -11,7 +11,7 @@
             max-width: 900px;
             margin: 40px auto;
         }
-
+        /* [UPDATED] Increased z-index to 100 */
         .back-btn {
             position: absolute;
             top: 20px;
@@ -25,6 +25,7 @@
             align-items: center;
             justify-content: center;
             text-decoration: none;
+            z-index: 100;
         }
 
         table {
@@ -178,6 +179,10 @@
 </head>
 
 <body>
+    <div id="demoBanner" class="demo-banner">
+        DEMO VERSION <span style="font-weight:normal;">(<a href="resources/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+    </div>
+
     <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></a>
 
     <div class="container">
@@ -298,6 +303,11 @@
         fetch('/ui-config').then(r => r.json()).then(c => { 
             if (c.loginTitle) document.getElementById('pageHeader').innerText = "System Users - " + c.loginTitle; 
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`; 
+
+            // [NEW] Demo Banner
+            if (c.appMode === 'demo') {
+                document.getElementById('demoBanner').style.display = 'block';
+            }
         });
 
         async function loadUsers() {

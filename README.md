@@ -28,6 +28,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies.
   * **Cloud-Native Persistence:** Uses **Litestream** to replicate the SQLite database to Google Cloud Storage (GCS) for stateless deployments (e.g., Google Cloud Run).
   * **Dockerized:** Ready for production deployment with a flexible configuration system.
+  * **Demo Mode:** Run the application in a fully sandboxed environment using static local data and a separate database (`demo.db`). This allows for safe testing and demonstration without connecting to the live OSM Dashboard or risking production data.
 
 ## Table of Contents
 
@@ -36,6 +37,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * [Configuration](#configuration)
   * [UI Customization](#ui-customization)
   * [Usage](#usage)
+  * [Demo Mode](#demo-mode)
   * [Docker Deployment](#docker-deployment)
   * [Google Cloud Run Deployment](#google-cloud-run-deployment)
   * [Project Structure](#project-structure)
@@ -85,6 +87,15 @@ Open the `.env` file and configure the following parameters:
   * `APP_PASSWORD`: A strong password for the Super Admin.
   * `SESSION_SECRET`: A long, random string used to encrypt session cookies.
 
+#### **Operation Mode**
+
+  * `APP_MODE`: Set to `production` (default) for live scraping, or `demo` to enable the sandboxed demo mode.
+
+#### **Demo Secrets (Only used when APP_MODE=demo)**
+
+  * `DEMO_SUPERADMIN_USERNAME`: The username for the Super Admin in demo mode.
+  * `DEMO_SUPERADMIN_PASSWORD`: The password for the Super Admin in demo mode.
+
 #### **Application Settings**
 
   * `APP_TIMEZONE`: The timezone used for date calculations (e.g., `Pacific/Auckland`). Defaults to NZ time.
@@ -107,6 +118,20 @@ Open the `.env` file and configure the following parameters:
   * `PROXY_MODE`: Set to `none` (local NZ), `fixed` (paid proxy), or `dynamic` (free scraper).
   * `PROXY_URL`: Required if mode is `fixed`.
 
+## Demo Mode
+
+You can run the application in **Demo Mode** to test features or demonstrate the workflow without accessing live private data.
+
+**How to Enable:**
+1. Set `APP_MODE=demo` in your `.env` file.
+2. (Optional) Set `DEMO_SUPERADMIN_USERNAME` and `DEMO_SUPERADMIN_PASSWORD`.
+
+**Features in Demo Mode:**
+* **Sandboxed Database:** Uses `demo.db` instead of `fenz.db` to ensure your real data is never touched.
+* **Static Scraping:** Instead of connecting to the live OSM website, the app scrapes a local static HTML file located at `public/resources/demo_osm_dasboard.html`.
+* **Dynamic Dates:** The system automatically adjusts the dates in the static file to appear current (relative to "today"), allowing you to test expiry logic effectively.
+* **Visual Indicators:** A "DEMO VERSION" banner appears on all pages, providing a link to view the source HTML used for scraping.
+* **Credential Reveal:** The login page includes a tool to reveal the demo Super Admin credentials for easy access.
 ## UI Customization
 
 You can fully customize the look and feel (Logo, Background, Title).
@@ -131,6 +156,7 @@ For stateless deployments, host your images publicly and provide the URLs via en
 
   * `UI_LOGO_URL`
   * `UI_BACKGROUND_URL`
+
 
 ## Usage
 

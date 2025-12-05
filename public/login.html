@@ -12,16 +12,12 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Ensure full viewport height */
             height: 100vh;
             height: 100dvh;
             width: 100vw;
-
-            /* Reset layout properties to override styles.css */
             margin: 0;
             padding: 0;
-            max-width: none; /* CRITICAL: Allows body to fill screen for centering */
-
+            max-width: none;
             background-color: #f0f2f5;
             background-size: cover;
             background-position: center;
@@ -38,10 +34,36 @@
             max-width: 400px;
             text-align: center;
             backdrop-filter: blur(5px);
-            /* Ensure it fits on small vertical screens */
             max-height: 90vh;
             overflow-y: auto;
+            position: relative; /* For ribbon positioning */
+            overflow: hidden; /* Clip ribbon */
         }
+
+        /* [NEW] Demo Banner Style */
+        .demo-banner {
+            background-color: #ffc107;
+            color: #333;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            margin: -40px -40px 20px -40px; /* Stretch to edges */
+            border-bottom: 1px solid #e0a800;
+            display: none; /* Hidden by default */
+            font-size: 14px;
+        }
+
+        /* [NEW] Demo Link Style */
+        .demo-link {
+            display: block;
+            margin-top: 20px;
+            color: #666;
+            font-size: 12px;
+            text-decoration: underline;
+            cursor: pointer;
+            display: none; /* Hidden by default */
+        }
+        .demo-link:hover { color: #333; }
 
         #loginLogo {
             max-width: 150px;
@@ -98,11 +120,26 @@
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); }
         .modal-content { background: #fff; margin: 15% auto; padding: 25px; width: 80%; max-width: 400px; border-radius: 8px; position: relative; text-align: left; }
         .close-btn { position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 24px; font-weight: bold; color: #aaa; }
+        
+        .cred-box {
+            background: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
     </style>
 </head>
 
 <body>
     <div class="login-container">
+        
+        <div id="demoBanner" class="demo-banner">
+            DEMO VERSION <span style="font-weight:normal;">
+                <br>(<a href="resources/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Demo OSM data</a>)</span>
+        </div>
+
         <img id="loginLogo" alt="Logo">
 
         <h1 id="loginTitle">Login</h1>
@@ -115,6 +152,8 @@
         </form>
         
         <a class="forgot-link" onclick="openForgotModal()">Forgot Password?</a>
+
+        <a id="demoLink" class="demo-link" onclick="showDemoCreds()">Reveal Super-Admin demo credentials</a>
     </div>
 
     <div id="forgotModal" class="modal">
@@ -127,6 +166,21 @@
                 <div id="forgotMsg" class="error" style="margin-top: 5px; margin-bottom: 5px;"></div>
                 <button type="submit">Reset Password</button>
             </form>
+        </div>
+    </div>
+
+    <div id="demoCredsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('demoCredsModal')">&times;</span>
+            <h2 style="margin-top: 0; color: #ffc107;">Demo Credentials</h2>
+            <p>Use these credentials to log in as Super Admin:</p>
+            
+            <div class="cred-box">
+                <strong>Username:</strong> <span id="demoUser">Loading...</span><br>
+                <strong>Password:</strong> <span id="demoPass">Loading...</span>
+            </div>
+            
+            <button onclick="closeModal('demoCredsModal')" style="margin-top:0;">Close</button>
         </div>
     </div>
 
@@ -146,6 +200,11 @@
                 }
                 if (config.appBackground) {
                     document.body.style.backgroundImage = `url('${config.appBackground}')`;
+                }
+                // [NEW] Check for Demo Mode
+                if (config.appMode === 'demo') {
+                    document.getElementById('demoBanner').style.display = 'block';
+                    document.getElementById('demoLink').style.display = 'block';
                 }
             })
             .catch(err => console.error("Failed to load UI config:", err));
@@ -190,6 +249,23 @@
         function openForgotModal() { document.getElementById('forgotModal').style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+        // [NEW] Demo Credentials Logic
+        async function showDemoCreds() {
+            document.getElementById('demoCredsModal').style.display = 'block';
+            try {
+                const res = await fetch('/api/demo-credentials');
+                if (res.ok) {
+                    const creds = await res.json();
+                    document.getElementById('demoUser').textContent = creds.username;
+                    document.getElementById('demoPass').textContent = creds.password;
+                } else {
+                    document.getElementById('demoUser').textContent = "Error fetching credentials";
+                }
+            } catch (e) {
+                document.getElementById('demoUser').textContent = "Connection Error";
+            }
+        }
+
         document.getElementById('forgotForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('forgotEmail').value;
@@ -230,9 +306,8 @@
 
         // Close modal on outside click
         window.onclick = function(event) {
-            if (event.target == document.getElementById('forgotModal')) {
-                closeModal('forgotModal');
-            }
+            if (event.target == document.getElementById('forgotModal')) closeModal('forgotModal');
+            if (event.target == document.getElementById('demoCredsModal')) closeModal('demoCredsModal');
         }
     </script>
     <script src="help.js"></script>

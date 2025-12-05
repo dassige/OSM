@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
 const packageJson = require('../package.json');
+const config = require('../config');
 
 let db;
 
@@ -102,9 +103,12 @@ async function closeDB() {
 }
 
 function getDbPath() {
-    return process.env.DB_PATH || path.join(__dirname, '../fenz.db');
+    if (process.env.DB_PATH) return process.env.DB_PATH;
+    
+    // Switch database file if in Demo mode
+    const filename = (config.appMode === 'demo') ? 'demo.db' : 'fenz.db';
+    return path.join(__dirname, '../' + filename);
 }
-
 async function verifyAndReplaceDb(newDbPath) {
     let tempDb;
     try {

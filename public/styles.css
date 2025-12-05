@@ -570,3 +570,19 @@ th {
     animation: spin 1s ease-in-out infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/*  Demo Banner Global Style */
+.demo-banner {
+    background-color: #ffc107;
+    color: #333;
+    font-weight: bold;
+    text-align: center;
+    padding: 12px;
+    /* Negative margin to counteract body padding (20px) and stretch edge-to-edge */
+    margin: -20px -20px 20px -20px; 
+    border-bottom: 1px solid #e0a800;
+    display: none; /* Hidden by default */
+    font-size: 14px;
+    position: relative;
+    z-index: 50; /* Ensure it sits below absolute menus (z-index 100) */
+}

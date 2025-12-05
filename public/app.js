@@ -53,6 +53,13 @@ function init() {
             if (config.appBackground) document.body.style.backgroundImage = `url('${config.appBackground}')`;
             if (config.version) document.getElementById('disp-version').textContent = config.version;
             if (config.deployDate) document.getElementById('disp-date').textContent = config.deployDate;
+
+            // [NEW] Show Demo Banner
+            if (config.appMode === 'demo') {
+                document.getElementById('demoBanner').style.display = 'block';
+                // Adjust top buttons to not overlap content if needed, 
+                // though z-index in CSS handles the layering.
+            }
         })
         .catch(err => console.error("Failed to load UI config:", err));
 
