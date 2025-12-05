@@ -15,7 +15,6 @@ function init(socketIo, logEventCallback) {
     logEvent = logEventCallback;
 }
 
-// Helper to log system events safely
 async function systemLog(title, payload = {}) {
     if (logEvent) {
         try {
@@ -37,17 +36,17 @@ function startClient() {
         authStrategy: new LocalAuth({ clientId: "fenz-osm-client" }),
         puppeteer: {
             headless: true,
-            // [UPDATED] Critical flags for Cloud Run/Docker stability
+            // [FIX] Explicitly tell Puppeteer where Chrome is installed in Alpine Linux
+            executablePath: '/usr/bin/chromium-browser', 
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage', // <--- PREVENTS CRASHES ON DOCKER/CLOUD RUN
+                '--disable-dev-shm-usage',
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
                 '--disable-gpu'
             ],
-            // [UPDATED] Increase timeout to 60s for slow cold starts
             timeout: 60000 
         }
     });
