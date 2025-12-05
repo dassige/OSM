@@ -4,10 +4,26 @@ FROM node:20-alpine
 # Set the working directory inside the container
 WORKDIR /app
 
-# Install build dependencies AND wget/unzip for Litestream
-# We also run 'upgrade' to patch known Alpine vulnerabilities
+# 1. Install build dependencies, Litestream tools, AND Chromium
+# We add 'chromium' and its dependencies (nss, freetype, etc)
 RUN apk update && apk upgrade --no-cache && \
-    apk add --no-cache python3 make g++ wget unzip
+    apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    wget \
+    unzip \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# 2. Configure Puppeteer to use the installed Chromium
+# This prevents it from trying (and failing) to run the bundled version
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # --- LITESTREAM SETUP ---
 # Download Litestream

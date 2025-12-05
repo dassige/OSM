@@ -17,7 +17,6 @@ const terminal = document.getElementById('terminal');
 const statusSpan = document.getElementById('status');
 const tableContainer = document.getElementById('tableContainer');
 const skillsTableBody = document.querySelector('#skillsTable tbody');
-const selectAllCheckbox = document.getElementById('selectAllCheckbox');
 const daysInput = document.getElementById('daysInput');
 const btnHideNoSkills = document.getElementById('btnHideNoSkills');
 const btnHideNoUrl = document.getElementById('btnHideNoUrl');
@@ -32,17 +31,14 @@ const consoleHeader = document.getElementById('consoleHeader');
 // =============================================================================
 
 function init() {
-    // Auth Check
     socket.on("connect_error", (err) => {
         if (err.message === "unauthorized") window.location.href = "/login.html";
     });
 
-    // Load Prefs
     socket.on('connect', () => {
         socket.emit('get-preferences');
     });
 
-    // Load UI Config
     fetch('/ui-config')
         .then(response => response.json())
         .then(config => {
@@ -54,16 +50,13 @@ function init() {
             if (config.version) document.getElementById('disp-version').textContent = config.version;
             if (config.deployDate) document.getElementById('disp-date').textContent = config.deployDate;
 
-            // [NEW] Show Demo Banner
+            // Demo Banner
             if (config.appMode === 'demo') {
                 document.getElementById('demoBanner').style.display = 'block';
-                // Adjust top buttons to not overlap content if needed, 
-                // though z-index in CSS handles the layering.
             }
         })
         .catch(err => console.error("Failed to load UI config:", err));
 
-    // Handle Role UI
     fetch('/api/user-session').then(r => r.json()).then(user => {
         document.body.setAttribute('data-user-role', user.role || 'guest');
         updateRoleUI(user.role || 'guest');
@@ -77,9 +70,12 @@ function init() {
 function setRunningState() {
     sendEmailsBtn.disabled = true;
     viewBtn.disabled = true;
-    selectAllCheckbox.disabled = true;
-    terminal.textContent = '> Starting Email Process...\n';
-    statusSpan.innerText = 'Sending Emails...';
+    // Disable checkboxes and buttons
+    document.querySelectorAll('.header-checkbox-label input').forEach(cb => cb.disabled = true);
+    document.querySelectorAll('.btn-round').forEach(btn => btn.disabled = true);
+    
+    terminal.textContent = '> Starting Notification Process...\n';
+    statusSpan.innerText = 'Sending...';
     statusSpan.style.color = '#e67e22';
     progressContainer.style.display = 'block';
     progressBar.style.width = '0%';
@@ -88,9 +84,12 @@ function setRunningState() {
 
 function setIdleState(code) {
     const isTableVisible = tableContainer.style.display !== 'none';
-    sendEmailsBtn.disabled = !isTableVisible || document.querySelectorAll('.email-checkbox:checked').length === 0;
-    selectAllCheckbox.disabled = !isTableVisible;
+    
+    document.querySelectorAll('.header-checkbox-label input').forEach(cb => cb.disabled = !isTableVisible);
+    document.querySelectorAll('.btn-round').forEach(btn => btn.disabled = false); // Re-enable buttons
+    
     viewBtn.disabled = false;
+    updateSendButtonState();
 
     if (code === 0) {
         statusSpan.innerText = 'Completed Successfully';
@@ -106,79 +105,44 @@ function setIdleState(code) {
     setTimeout(() => { progressContainer.style.display = 'none'; }, 3000);
 }
 
-function updateUIState() {
+function updateSendButtonState() {
     const role = document.body.getAttribute('data-user-role');
     if (role === 'guest') {
-        // Ensure logic doesn't re-enable things for guests
         if (sendEmailsBtn) sendEmailsBtn.style.display = 'none';
         return;
     }
-
-    const allCheckboxes = document.querySelectorAll('.email-checkbox');
-    const checkedCheckboxes = document.querySelectorAll('.email-checkbox:checked');
-
-    sendEmailsBtn.disabled = checkedCheckboxes.length === 0;
-
-    if (allCheckboxes.length === 0) {
-        selectAllCheckbox.checked = false; selectAllCheckbox.disabled = true;
-    } else if (checkedCheckboxes.length === allCheckboxes.length) {
-        selectAllCheckbox.checked = true; selectAllCheckbox.indeterminate = false; selectAllCheckbox.disabled = false;
-    } else if (checkedCheckboxes.length === 0) {
-        selectAllCheckbox.checked = false; selectAllCheckbox.indeterminate = false; selectAllCheckbox.disabled = false;
-    } else {
-        selectAllCheckbox.checked = false; selectAllCheckbox.indeterminate = true; selectAllCheckbox.disabled = false;
-    }
+    const anyChecked = document.querySelectorAll('.send-email-cb:checked, .send-wa-cb:checked').length > 0;
+    sendEmailsBtn.disabled = !anyChecked;
 }
+
 function updateRoleUI(role) {
-    // 1. Console Log Restrictions (Guest OR Simple)
     if (role === 'guest' || role === 'simple') {
         if (showConsoleCheckbox) {
-            // Hide the container div surrounding the checkbox label
             const container = showConsoleCheckbox.closest('div');
             if (container) container.style.display = 'none';
         }
-        // Force hide the terminal area regardless of preference
         if (terminal) terminal.style.display = 'none';
         if (consoleHeader) consoleHeader.style.display = 'none';
     }
 
-    // 2. Guest-Specific Restrictions
     if (role === 'guest') {
-        // Hide Send Email Button
-        if (sendEmailsBtn) {
-            sendEmailsBtn.style.display = 'none';
-        }
-
-        // Hide Select All Checkbox in Header
-        if (selectAllCheckbox) {
-            const label = selectAllCheckbox.closest('label');
-            if (label) label.style.display = 'none';
-        }
-
-        // Hide row actions via CSS
-        const style = document.createElement('style');
-        style.innerHTML = `
-            .send-single, 
-            .email-checkbox { display: none !important; }
-        `;
-        document.head.appendChild(style);
-
-        // Ensure Reload button is enabled
+        if (sendEmailsBtn) sendEmailsBtn.style.display = 'none';
         if (viewBtn) {
             viewBtn.disabled = false;
             viewBtn.style.display = 'inline-block';
         }
+        // Hide action buttons via CSS or logic if needed
     }
 }
 
 function toggleConsole(isVisible) {
     const role = document.body.getAttribute('data-user-role');
-    if (role === 'guest' || role === 'simple') return; // Guests and Simple users never see console
-
+    if (role === 'guest' || role === 'simple') return; 
     const style = isVisible ? 'block' : 'none';
     if (terminal) terminal.style.display = style;
     if (consoleHeader) consoleHeader.style.display = style;
 }
+
 // =============================================================================
 // 4. DATA & SORTING
 // =============================================================================
@@ -187,11 +151,8 @@ function fetchData(forceRefresh = false) {
     const days = parseInt(daysInput.value) || 30;
     viewBtn.disabled = true;
     viewBtn.textContent = "Loading Data...";
-
     const modeText = forceRefresh ? " (Force Refresh)" : "";
     terminal.textContent += `> Fetching View Data (Threshold: ${days} days)${modeText}... please wait.\n`;
-
-    // Emit with flag
     socket.emit('view-expiring-skills', days, forceRefresh);
 }
 
@@ -260,56 +221,87 @@ function renderTable() {
         }
         tr.appendChild(skillTd); tr.appendChild(dateTd);
 
-        const emailTd = document.createElement('td');
-        emailTd.className = 'member-cell';
-        if (member.emailEligible && hasVisibleSkills) {
-            const controlsDiv = document.createElement('div');
-            controlsDiv.style.display = 'flex'; controlsDiv.style.alignItems = 'center'; controlsDiv.style.justifyContent = 'space-between';
-            const label = document.createElement('label');
-            label.className = 'email-label'; label.style.marginRight = '8px';
-            label.innerHTML = `<input type="checkbox" class="email-checkbox" data-name="${member.name}" checked> Select`;
-            const singleBtn = document.createElement('button');
-            singleBtn.className = 'btn-round send-single';
-            singleBtn.title = `Send email to ${member.name} only`;
-            singleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
-            controlsDiv.appendChild(label); controlsDiv.appendChild(singleBtn); emailTd.appendChild(controlsDiv);
-        }
-        tr.appendChild(emailTd);
-        skillsTableBody.appendChild(tr);
-
+        // [UPDATED] Action Column - Groups Controls with Buttons
         const actionTd = document.createElement('td');
         actionTd.className = 'member-cell';
 
         if (member.emailEligible && hasVisibleSkills) {
-            const controlsDiv = document.createElement('div');
-            controlsDiv.style.display = 'flex';
-            controlsDiv.style.flexDirection = 'column';
-            controlsDiv.style.gap = '5px';
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.flexDirection = 'column';
+            wrapper.style.gap = '8px'; // Gap between Email row and WhatsApp row
+
+            // --- ROW 1: EMAIL ---
+            const emailRow = document.createElement('div');
+            emailRow.style.display = 'flex';
+            emailRow.style.alignItems = 'center';
+            emailRow.style.justifyContent = 'space-between';
+            emailRow.style.gap = '10px';
 
             // Email Checkbox
             const emailLabel = document.createElement('label');
             emailLabel.className = 'email-label';
+            emailLabel.style.marginBottom = '0';
             emailLabel.innerHTML = `<input type="checkbox" class="send-email-cb" data-name="${member.name}" checked> Email`;
+            
+            // Email Round Button
+            const btnEmail = document.createElement('button');
+            btnEmail.className = 'btn-round';
+            btnEmail.style.backgroundColor = '#007bff';
+            btnEmail.style.flexShrink = '0';
+            btnEmail.title = "Send Email Immediately";
+            btnEmail.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
+            btnEmail.onclick = () => sendSingleAction(member.name, 'email');
+
+            emailRow.appendChild(emailLabel);
+            emailRow.appendChild(btnEmail);
+
+            // --- ROW 2: WHATSAPP ---
+            const waRow = document.createElement('div');
+            waRow.style.display = 'flex';
+            waRow.style.alignItems = 'center';
+            waRow.style.justifyContent = 'space-between';
+            waRow.style.gap = '10px';
 
             // WhatsApp Checkbox
             const waLabel = document.createElement('label');
             waLabel.className = 'email-label';
-
-            // Only enable if mobile number exists
-            const hasMobile = member.mobile && member.mobile.length > 5; // Basic length check
-            const mobileTitle = hasMobile ? `Send to ${member.mobile}` : "No mobile number configured";
-
+            waLabel.style.marginBottom = '0';
+            
+            const hasMobile = member.mobile && member.mobile.length > 5;
+            const mobileTitle = hasMobile ? `Mobile: ${member.mobile}` : "No mobile configured";
+            
             waLabel.innerHTML = `<input type="checkbox" class="send-wa-cb" data-name="${member.name}" ${hasMobile ? '' : 'disabled'}> WhatsApp`;
             waLabel.title = mobileTitle;
             if (!hasMobile) waLabel.style.opacity = "0.5";
 
-            controlsDiv.appendChild(emailLabel);
-            controlsDiv.appendChild(waLabel);
-            actionTd.appendChild(controlsDiv);
+            // WhatsApp Round Button
+            const btnWa = document.createElement('button');
+            btnWa.className = 'btn-round';
+            btnWa.style.backgroundColor = '#25D366'; // WhatsApp Green
+            btnWa.style.flexShrink = '0';
+            btnWa.title = hasMobile ? `Send WhatsApp to ${member.mobile}` : "No Mobile Number";
+            btnWa.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>`;
+            btnWa.onclick = () => sendSingleAction(member.name, 'whatsapp');
+
+            if (!hasMobile) {
+                btnWa.disabled = true;
+                btnWa.style.backgroundColor = '#ccc';
+                btnWa.style.opacity = '0.5';
+                btnWa.style.cursor = 'not-allowed';
+            }
+
+            waRow.appendChild(waLabel);
+            waRow.appendChild(btnWa);
+
+            wrapper.appendChild(emailRow);
+            wrapper.appendChild(waRow);
+            actionTd.appendChild(wrapper);
         }
         tr.appendChild(actionTd);
         skillsTableBody.appendChild(tr);
 
+        // Sub-rows
         for (let i = 1; i < visibleSkills.length; i++) {
             const subTr = document.createElement('tr'); subTr.className = rowClass;
             const emptyNameTd = document.createElement('td'); emptyNameTd.className = 'merged-cell'; subTr.appendChild(emptyNameTd);
@@ -322,58 +314,63 @@ function renderTable() {
         }
     });
 
-    // Update listeners for master checkboxes
+    // Listeners
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.addEventListener('change', updateSendButtonState));
     setupMasterCheckbox('selectAllEmail', '.send-email-cb');
     setupMasterCheckbox('selectAllWhatsapp', '.send-wa-cb');
-
-    // Update button state listener
-    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.addEventListener('change', updateSendButtonState));
     updateSendButtonState();
 }
+
 function setupMasterCheckbox(masterId, targetClass) {
     const master = document.getElementById(masterId);
-    if (!master) return;
-
-    // Remove old listeners to prevent dupes if re-rendering
+    if(!master) return;
+    
     const newMaster = master.cloneNode(true);
     master.parentNode.replaceChild(newMaster, master);
-
+    
     newMaster.addEventListener('change', (e) => {
         document.querySelectorAll(targetClass).forEach(cb => {
-            if (!cb.disabled) cb.checked = e.target.checked;
+            if(!cb.disabled) cb.checked = e.target.checked;
         });
         updateSendButtonState();
     });
 }
 
-function updateSendButtonState() {
-    const anyChecked = document.querySelectorAll('.send-email-cb:checked, .send-wa-cb:checked').length > 0;
-    sendEmailsBtn.disabled = !anyChecked;
+// Single Action Logic
+function sendSingleAction(name, type) {
+    const days = parseInt(daysInput.value) || 30;
+    const label = type === 'email' ? 'Email' : 'WhatsApp';
+    
+    if (confirm(`Send immediate ${label} reminder to ${name}?`)) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setRunningState();
+        
+        const target = { 
+            name: name, 
+            sendEmail: type === 'email', 
+            sendWa: type === 'whatsapp' 
+        };
+        
+        socket.emit('run-process-queue', [target], days);
+    }
 }
+
 // =============================================================================
 // 5. EVENT LISTENERS & ACTIONS
 // =============================================================================
 
-selectAllCheckbox.addEventListener('change', (e) => {
-    document.querySelectorAll('.email-checkbox').forEach(cb => cb.checked = e.target.checked);
-    updateUIState();
-});
-
 viewBtn.addEventListener('click', () => fetchData(true));
 
-sendEmailsBtn.replaceWith(sendEmailsBtn.cloneNode(true));
-document.getElementById('sendEmailsBtn').addEventListener('click', () => {
+sendEmailsBtn.addEventListener('click', () => {
     const targets = [];
     document.querySelectorAll('#skillsTable tbody tr').forEach(row => {
-        // Only look at parent rows (those with member-cell)
-        const nameCell = row.querySelector('.member-cell');
-        if (!nameCell) return;
+        const emailCb = row.querySelector('.send-email-cb');
+        if (!emailCb) return;
 
-        const name = row.querySelector('.send-email-cb')?.getAttribute('data-name');
-        if (!name) return;
-
-        const sendEmail = row.querySelector('.send-email-cb').checked;
-        const sendWa = row.querySelector('.send-wa-cb').checked;
+        const name = emailCb.getAttribute('data-name');
+        const sendEmail = emailCb.checked;
+        const waCb = row.querySelector('.send-wa-cb');
+        const sendWa = waCb ? waCb.checked : false;
 
         if (sendEmail || sendWa) {
             targets.push({ name, sendEmail, sendWa });
@@ -381,23 +378,14 @@ document.getElementById('sendEmailsBtn').addEventListener('click', () => {
     });
 
     if (targets.length === 0) return alert("No actions selected.");
-
+    
     if (confirm(`Process ${targets.length} members?`)) {
         setRunningState();
         const days = parseInt(daysInput.value) || 30;
         socket.emit('run-process-queue', targets, days);
     }
 });
-function sendSingleEmail(memberName) {
-    const days = parseInt(daysInput.value) || 30;
-    if (confirm(`Send immediate email reminder to ${memberName}?`)) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setRunningState();
-        socket.emit('run-send-single', memberName, days);
-    }
-}
 
-// Pref listeners
 daysInput.addEventListener('change', (e) => socket.emit('update-preference', { key: 'daysToExpiry', value: parseInt(e.target.value) }));
 showConsoleCheckbox.addEventListener('change', (e) => { toggleConsole(e.target.checked); socket.emit('update-preference', { key: 'showConsole', value: e.target.checked }); });
 
@@ -419,7 +407,6 @@ socket.on('preferences-data', (prefs) => {
     if (prefs.hideNoUrl) btnHideNoUrl.classList.add('active');
     if (prefs.expiredOnly) btnExpiredOnly.classList.add('active');
 
-    // Only show console if user is NOT a guest or simple
     const role = document.body.getAttribute('data-user-role');
     if (role !== 'guest' && role !== 'simple' && prefs.showConsole !== undefined) {
         showConsoleCheckbox.checked = prefs.showConsole;
@@ -439,7 +426,7 @@ socket.on('progress-update', (data) => {
     if (data.type === 'progress-start') { progressBar.style.width = '0%'; progressBar.textContent = '0%'; }
     else if (data.type === 'progress-tick') {
         const pct = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
-        progressBar.style.width = pct + '%'; progressBar.textContent = `${pct}% - Sent to ${data.member}`;
+        progressBar.style.width = pct + '%'; progressBar.textContent = `${pct}% - Processed ${data.member}`;
     }
 });
 socket.on('expiring-skills-data', (data) => {

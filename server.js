@@ -445,35 +445,46 @@ io.on('connection', (socket) => {
         if (action === 'start') whatsappService.startClient();
         if (action === 'stop') whatsappService.logout();
     });
-
+//  WhatsApp Test Event
+    socket.on('wa-send-test', async (data) => {
+        if (userLevel < ROLES.admin) return;
+        try {
+            logger(`[WhatsApp] Sending test message to ${data.mobile}...`);
+            await whatsappService.sendMessage(data.mobile, data.message);
+            socket.emit('wa-test-result', { success: true, message: 'Test message sent successfully.' });
+        } catch (err) {
+            logger(`[WhatsApp] Test failed: ${err.message}`);
+            socket.emit('wa-test-result', { success: false, error: err.message });
+        }
+    });
     socket.on('view-expiring-skills', async (days, forceRefresh = false) => {
         const daysThreshold = parseInt(days) || 30;
-
-        // Logic: If forced, interval is 0. Otherwise use config default (usually 60 mins).
         const interval = forceRefresh ? 0 : (config.scrapingInterval || 60);
 
         logger(`> Fetching View Data (Threshold: ${daysThreshold} days${forceRefresh ? ', Force Refresh' : ', Cached OK'})...`);
         try {
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
-
-            // Pass the calculated interval
             const rawData = await getOIData(config.url, interval, currentProxy, logger);
-
             const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
 
+            // [FIX] Added 'mobile: m.mobile' to the response object
             const results = processedMembers.map(m => ({
                 name: m.name,
+                mobile: m.mobile, // <--- THIS WAS MISSING
                 skills: m.expiringSkills.map(s => ({
                     skill: s.skill, dueDate: s.dueDate, hasUrl: !!s.url, isCritical: !!s.isCritical
                 })),
                 emailEligible: m.expiringSkills.length > 0
             }));
+
             socket.emit('expiring-skills-data', results);
             socket.emit('script-complete', 0);
-        } catch (error) { logger(`Error: ${error.message}`); socket.emit('script-complete', 1); }
+        } catch (error) {
+            logger(`Error: ${error.message}`);
+            socket.emit('script-complete', 1);
+        }
     });
-
     // Renamed/Modified 'run-send-selected' to 'run-process-queue'
     // to support the new multi-channel object structure
     socket.on('run-process-queue', async (targets, days) => {

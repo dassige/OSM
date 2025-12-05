@@ -24,9 +24,18 @@
         .btn-start:hover { background-color: #218838; }
         .btn-stop { background-color: #dc3545; }
         .btn-stop:hover { background-color: #c82333; }
+        .btn-test { background-color: #007bff; }
+        .btn-test:hover { background-color: #0056b3; }
         .btn-disabled { background-color: #ccc; cursor: not-allowed; }
 
-        .wa-logs { background: #1e1e1e; color: #ccc; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 13px; height: 150px; overflow-y: auto; margin-top: 20px; }
+        /* Modal specific styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 25px; border-radius: 8px; width: 400px; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; color: #aaa; }
+        .close-btn:hover { color: black; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
     </style>
 </head>
 <body>
@@ -65,10 +74,28 @@
                 </div>
             </div>
 
-            <div style="margin-top:20px; display:flex; gap:10px;">
+            <div style="margin-top:20px; display:flex; gap:10px; flex-wrap: wrap;">
                 <button id="btnStart" class="btn-wa btn-start" onclick="controlWa('start')">Start Service</button>
                 <button id="btnStop" class="btn-wa btn-stop" onclick="controlWa('stop')">Disconnect / Logout</button>
+                <button id="btnTest" class="btn-wa btn-test btn-disabled" disabled onclick="openModal('testModal')">Test Integration</button>
             </div>
+        </div>
+    </div>
+
+    <div id="testModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('testModal')">&times;</span>
+            <h2 style="margin-top:0;">Test WhatsApp Integration</h2>
+            <div class="form-group">
+                <label>Mobile Number</label>
+                <input type="text" id="testMobile" placeholder="e.g. 021 123 4567">
+                <small style="color:#666;">Accepted formats: 021..., 6421..., +6421...</small>
+            </div>
+            <div class="form-group">
+                <label>Message</label>
+                <textarea id="testMessage" rows="4">This is a test message from FENZ OSM Manager.</textarea>
+            </div>
+            <button id="btnSendTest" class="btn-wa btn-test" style="width:100%;" onclick="sendTestMessage()">Send Test Message</button>
         </div>
     </div>
 
@@ -83,6 +110,7 @@
         const qrImage = document.getElementById('qrImage');
         const btnStart = document.getElementById('btnStart');
         const btnStop = document.getElementById('btnStop');
+        const btnTest = document.getElementById('btnTest'); // [NEW]
 
         // Check config
         fetch('/ui-config').then(r=>r.json()).then(c=>{ 
@@ -91,20 +119,40 @@
             if(c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });
 
-        // Control
         function controlWa(action) {
             socket.emit('wa-control', action);
         }
 
-        // State Update
+        // [NEW] Send Test Logic
+        function sendTestMessage() {
+            const mobile = document.getElementById('testMobile').value;
+            const message = document.getElementById('testMessage').value;
+
+            if(!mobile || !message) {
+                alert("Please provide both a mobile number and a message.");
+                return;
+            }
+
+            const btn = document.getElementById('btnSendTest');
+            btn.disabled = true;
+            btn.innerText = "Sending...";
+
+            socket.emit('wa-send-test', { mobile, message });
+        }
+
+        // Update UI based on status
         function updateUi(status) {
-            // Reset
+            // Reset defaults
             statusBadge.className = 'status-badge';
             qrArea.style.display = 'none';
             readyArea.style.display = 'none';
+            
             btnStart.disabled = false;
             btnStart.classList.remove('btn-disabled');
             
+            btnTest.disabled = true; // Disable test by default
+            btnTest.classList.add('btn-disabled');
+
             if (status === 'DISCONNECTED') {
                 statusBadge.classList.add('status-disconnected');
                 statusBadge.innerText = 'Disconnected';
@@ -130,6 +178,10 @@
                 readyArea.style.display = 'flex';
                 btnStart.disabled = true;
                 btnStart.classList.add('btn-disabled');
+                
+                // Enable Test Button
+                btnTest.disabled = false;
+                btnTest.classList.remove('btn-disabled');
             }
         }
 
@@ -146,6 +198,29 @@
             qrImage.src = url;
             updateUi('QR_READY');
         });
+
+        // [NEW] Test Result Handler
+        socket.on('wa-test-result', (res) => {
+            const btn = document.getElementById('btnSendTest');
+            btn.disabled = false;
+            btn.innerText = "Send Test Message";
+
+            if (res.success) {
+                alert("Success: " + res.message);
+                closeModal('testModal');
+            } else {
+                alert("Error: " + res.error);
+            }
+        });
+
+        // Modal Utils
+        function openModal(id) { document.getElementById(id).style.display = 'block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = "none";
+            }
+        }
     </script>
     <script src="help.js"></script>
 </body>
