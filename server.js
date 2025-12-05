@@ -54,8 +54,9 @@ app.use(express.json());
 // Initialize DB & Proxy
 db.initDB().catch(err => console.error("DB Init Error:", err));
 
-// Initialize WhatsApp Service with IO
-whatsappService.init(io);
+// [UPDATED] Initialize WhatsApp Service with IO AND DB Logger
+whatsappService.init(io, db.logEvent);
+
 if (config.enableWhatsApp) {
     whatsappService.startClient();
 }
@@ -128,12 +129,11 @@ app.post('/forgot-password', async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Failed to reset password." }); }
 });
 
-// [UPDATED] Logout with Auto-Disconnect Check
+// Logout with Auto-Disconnect Check
 app.get('/logout', async (req, res) => {
     try {
         if (req.session && req.session.user && req.session.user.id) {
             const prefs = await db.getAllUserPreferences(req.session.user.id);
-            // Check for the auto-disconnect preference (stored as string 'true'/'false')
             if (prefs.wa_auto_disconnect === 'true') {
                 console.log(`[Logout] Auto-disconnecting WhatsApp for user ${req.session.user.name}`);
                 await whatsappService.logout();
@@ -154,7 +154,6 @@ app.get('/api/user-session', (req, res) => {
 
 // --- GLOBAL ROUTE GUARD ---
 app.use((req, res, next) => {
-    // Added '/api/demo-credentials' to publicPaths so it can be accessed without login
     const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config', '/api/demo-credentials'];
     if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/')) return next();
     if (req.session && req.session.loggedIn) return next();
@@ -162,7 +161,6 @@ app.use((req, res, next) => {
     return res.redirect('/login.html');
 });
 
-//  Send appMode to UI
 app.get('/ui-config', (req, res) => res.json({
     ...config.ui,
     appMode: config.appMode
@@ -180,7 +178,6 @@ app.get('/event-log.html', (req, res, next) => {
     const r = req.session?.user?.role;
     if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/');
 });
-// Page Access Control for Third Parties
 app.get('/third-parties.html', (req, res, next) => {
     const r = req.session?.user?.role;
     if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/');
@@ -190,12 +187,10 @@ app.get('/third-parties.html', (req, res, next) => {
 // 4. API ROUTES - USER MANAGEMENT & PROFILE
 // =============================================================================
 
-// Endpoint to reveal demo credentials (must be publicly accessible via middleware above)
 app.get('/api/demo-credentials', (req, res) => {
     if (config.appMode !== 'demo') {
         return res.status(403).json({ error: "Feature only available in DEMO mode." });
     }
-    // Return env credentials
     res.json({
         username: config.auth.username,
         password: config.auth.password
@@ -460,14 +455,24 @@ io.on('connection', (socket) => {
         if (action === 'stop') whatsappService.logout();
     });
 
+    // [UPDATED] WA Send Test Event now logs to DB
     socket.on('wa-send-test', async (data) => {
         if (userLevel < ROLES.admin) return;
+        const currentUser = socket.request.session.user.name || socket.request.session.user;
         try {
             logger(`[WhatsApp] Sending test message to ${data.mobile}...`);
             await whatsappService.sendMessage(data.mobile, data.message);
+            
+            // [NEW] Log to DB
+            await db.logEvent(currentUser, 'WhatsApp', 'Test Message Sent', { mobile: data.mobile, messageSnippet: data.message.substring(0, 20) });
+            
             socket.emit('wa-test-result', { success: true, message: 'Test message sent successfully.' });
         } catch (err) {
             logger(`[WhatsApp] Test failed: ${err.message}`);
+            
+            // [NEW] Log Failure
+            await db.logEvent(currentUser, 'WhatsApp', 'Test Message Failed', { mobile: data.mobile, error: err.message });
+            
             socket.emit('wa-test-result', { success: false, error: err.message });
         }
     });
@@ -602,6 +607,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         socket.emit('script-complete', 1);
     }
 }
+
 const PORT = 3000;
 server.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);

@@ -10,7 +10,8 @@ const helpContent = {
             <ul>
                 <li><strong>Days to Expiry:</strong> Change this number and click 'Reload' to see skills expiring further in the future.</li>
                 <li><strong>Reload Expiring Skills:</strong> Fetches the latest data from the OSM Dashboard.</li>
-                <li><strong>Send Emails:</strong> Sends reminders to selected members. Only available if checkboxes are selected.</li>
+                <li><strong>Send Notifications:</strong> Select the <strong>Email</strong> or <strong>WhatsApp</strong> checkboxes for members and click 'Send Notifications' to process them in bulk.</li>
+                <li><strong>Quick Actions:</strong> Use the round <span style="background:#007bff; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✉</span> or <span style="background:#25D366; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✆</span> buttons to send a single reminder immediately.</li>
                 <li><strong>Filters:</strong> Use the toggle buttons at the top right of the table:
                     <ul>
                         <li><strong>Hide Empty:</strong> Hides members who have no expiring skills listed.</li>
@@ -167,18 +168,28 @@ const helpContent = {
             </div>
         `
     },
+    // --- Third Parties ---
     "third-parties": {
         title: "Third Party Services Help",
         body: `
             <p><strong>WhatsApp Integration:</strong></p>
-            <p>This allows the system to send notifications directly to member's mobile phones.</p>
+            <p>This service enables the system to send automated expiring skill notifications directly to member's WhatsApp accounts.</p>
+            
+            <h3>Connection Steps</h3>
             <ol>
-                <li>Click <strong>Start Service</strong> to launch the client.</li>
-                <li>Wait for the <strong>QR Code</strong> to appear.</li>
-                <li>Open WhatsApp on your phone, go to <strong>Linked Devices</strong>, and scan the code.</li>
-                <li>Once connected, the status will turn Green.</li>
+                <li>Click <strong>Start Service</strong> to launch the secure WhatsApp client on the server.</li>
+                <li>Wait for the <strong>QR Code</strong> to appear on the screen.</li>
+                <li>Open WhatsApp on your phone, go to <strong>Linked Devices</strong> > <strong>Link a Device</strong>, and scan the code.</li>
+                <li>Once connected, the status will turn <span style="color:#28a745; font-weight:bold;">Green</span> and display the connected account name and number.</li>
             </ol>
-            <p><strong>Note:</strong> You must keep the phone connected to the internet. If the server restarts, the session is usually restored automatically, but you may need to verify connection here.</p>
+
+            <h3>Testing & Configuration</h3>
+            <ul>
+                <li><strong>Test Integration:</strong> Click this button to send a verification message to any mobile number you choose. This confirms the system can successfully send messages.</li>
+                <li><strong>Auto-Disconnect Preference:</strong> If enabled, the WhatsApp session will automatically log out when you sign out of the FENZ OSM Manager. This prevents your session from staying active on the server when you are not using it.</li>
+            </ul>
+
+            <p><strong>Note:</strong> The phone associated with the WhatsApp account must be on and connected to the internet for messages to send.</p>
         `
     },
     // --- Default ---
@@ -205,6 +216,7 @@ const helpContent = {
     else if (path.includes("profile")) key = "profile";
     else if (path.includes("login")) key = "login";
     else if (path.includes("third-parties")) key = "third-parties";
+
     const content = helpContent[key] || helpContent["default"];
 
     // 2. Inject HTML

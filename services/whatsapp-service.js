@@ -4,31 +4,53 @@ const qrcode = require('qrcode');
 
 let client;
 let io;
+let logEvent = null; // [NEW] Reference to DB Logger
 let qrCodeUrl = null;
-let status = 'DISCONNECTED'; // DISCONNECTED, INITIALIZING, QR_READY, READY
+let status = 'DISCONNECTED'; 
 let isClientReady = false;
-let clientInfo = null; // [NEW] Store connected account info
+let clientInfo = null;
 
-function init(socketIo) {
+// [UPDATED] Init now accepts a logger callback
+function init(socketIo, logEventCallback) {
     io = socketIo;
+    logEvent = logEventCallback;
+}
+
+// [NEW] Helper to log system events safely
+async function systemLog(title, payload = {}) {
+    if (logEvent) {
+        try {
+            await logEvent('System', 'WhatsApp', title, payload);
+        } catch (e) {
+            console.error("[WhatsApp] Logging failed:", e.message);
+        }
+    }
 }
 
 function startClient() {
     if (status !== 'DISCONNECTED') return;
 
     console.log('[WhatsApp] Starting client...');
+    systemLog('Client Starting', {}); // [NEW]
     updateStatus('INITIALIZING');
 
     client = new Client({
         authStrategy: new LocalAuth({ clientId: "fenz-osm-client" }),
         puppeteer: {
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu'
+            ]
         }
     });
 
     client.on('qr', (qr) => {
         console.log('[WhatsApp] QR Code received');
+        systemLog('QR Code Generated', {}); // [NEW]
+        
         qrcode.toDataURL(qr, (err, url) => {
             if (!err) {
                 qrCodeUrl = url;
@@ -43,26 +65,28 @@ function startClient() {
         isClientReady = true;
         qrCodeUrl = null;
         
-        // [NEW] Capture Account Info
-        if (client.info) {
+        if (client && client.info) {
             clientInfo = {
                 number: client.info.wid.user,
                 name: client.info.pushname
             };
         }
         
+        systemLog('Client Connected', clientInfo || {}); // [NEW]
+        
         updateStatus('READY');
-        // Force emit full status data including the new clientInfo
         if (io) io.emit('wa-status-data', getStatus());
     });
 
     client.on('auth_failure', msg => {
         console.error('[WhatsApp] Auth Failure', msg);
+        systemLog('Auth Failure', { error: msg }); // [NEW]
         updateStatus('DISCONNECTED');
     });
 
     client.on('disconnected', (reason) => {
         console.log('[WhatsApp] Client was logged out', reason);
+        systemLog('Client Disconnected', { reason }); // [NEW]
         resetState();
     });
 
@@ -71,8 +95,15 @@ function startClient() {
 
 async function logout() {
     if (client) {
-        try { await client.logout(); } catch (e) {}
-        try { await client.destroy(); } catch (e) {}
+        try {
+            await client.logout();
+            systemLog('Client Logged Out (Manual)', {}); // [NEW]
+        } catch (e) {
+            console.log('[WhatsApp] Logout error:', e.message);
+        }
+        try {
+            await client.destroy();
+        } catch (e) {}
     }
     resetState();
 }
@@ -81,7 +112,7 @@ function resetState() {
     client = null;
     isClientReady = false;
     qrCodeUrl = null;
-    clientInfo = null; // [NEW] Clear info
+    clientInfo = null;
     updateStatus('DISCONNECTED');
 }
 
@@ -94,15 +125,19 @@ function getStatus() {
     return { 
         status, 
         qr: qrCodeUrl,
-        info: clientInfo // [NEW] Send info to frontend
+        info: clientInfo
     };
 }
 
 function formatPhone(mobile) {
     if (!mobile) return null;
     let cleaned = mobile.replace(/\D/g, '');
-    if (cleaned.startsWith('0')) cleaned = '64' + cleaned.substring(1);
-    else if (!cleaned.startsWith('64')) cleaned = '64' + cleaned;
+    
+    if (cleaned.startsWith('0')) {
+        cleaned = '64' + cleaned.substring(1);
+    } else if (!cleaned.startsWith('64')) {
+        cleaned = '64' + cleaned;
+    }
     return `${cleaned}@c.us`;
 }
 

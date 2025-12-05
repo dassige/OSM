@@ -29,6 +29,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **Cloud-Native Persistence:** Uses **Litestream** to replicate the SQLite database to Google Cloud Storage (GCS) for stateless deployments (e.g., Google Cloud Run).
   * **Dockerized:** Ready for production deployment with a flexible configuration system.
   * **Demo Mode:** Run the application in a fully sandboxed environment using static local data and a separate database (`demo.db`). This allows for safe testing and demonstration without connecting to the live OSM Dashboard or risking production data.
+  * **WhatsApp Integration:** Send expiring skill notifications directly to members' WhatsApp accounts using a headless client. Includes support for bulk sending, test messages, and session management.
 
 ## Table of Contents
 
@@ -118,6 +119,9 @@ Open the `.env` file and configure the following parameters:
   * `PROXY_MODE`: Set to `none` (local NZ), `fixed` (paid proxy), or `dynamic` (free scraper).
   * `PROXY_URL`: Required if mode is `fixed`.
 
+#### **WhatsApp Integration**
+  * `ENABLE_WHATSAPP`: Set to `true` to enable the WhatsApp service and menu items.
+
 ## Demo Mode
 
 You can run the application in **Demo Mode** to test features or demonstrate the workflow without accessing live private data.
@@ -132,6 +136,7 @@ You can run the application in **Demo Mode** to test features or demonstrate the
 * **Dynamic Dates:** The system automatically adjusts the dates in the static file to appear current (relative to "today"), allowing you to test expiry logic effectively.
 * **Visual Indicators:** A "DEMO VERSION" banner appears on all pages, providing a link to view the source HTML used for scraping.
 * **Credential Reveal:** The login page includes a tool to reveal the demo Super Admin credentials for easy access.
+
 ## UI Customization
 
 You can fully customize the look and feel (Logo, Background, Title).
@@ -200,6 +205,10 @@ Supports stateless deployment using **Litestream** to replicate the database to 
 
 See [Installation on Google Cloud Run](Installation_google_run.md) for details.
 
+## Integrations
+
+* [**WhatsApp Feature Guide**](whatsapp-feature.md): Detailed instructions on connecting your WhatsApp account, managing sessions, and sending mobile notifications.
+
 ## Project Structure
 
 ```text
@@ -227,9 +236,27 @@ See [Installation on Google Cloud Run](Installation_google_run.md) for details.
   * **Persistence:** Litestream
   * **Icons:** Feather Icons
 
+
 ## License
 
-MIT License. See source code for full text.
+MIT License
 
-```
-```
+Copyright (c) 2025 Gerardo Dassi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
