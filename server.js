@@ -19,6 +19,8 @@ const {
     sendNewAccountNotification,
     sendAccountDeletionNotification
 } = require('./services/mailer');
+// Import WhatsApp Service
+const whatsappService = require('./services/whatsapp-service');
 
 // =============================================================================
 // 1. INITIALIZATION & MIDDLEWARE
@@ -52,6 +54,11 @@ app.use(express.json());
 // Initialize DB & Proxy
 db.initDB().catch(err => console.error("DB Init Error:", err));
 
+// Initialize WhatsApp Service with IO
+whatsappService.init(io);
+if (config.enableWhatsApp) {
+    whatsappService.startClient();
+}
 let currentProxy = null;
 async function initializeProxy() {
     if (config.proxyMode === 'fixed') currentProxy = config.fixedProxyUrl;
@@ -141,10 +148,10 @@ app.use((req, res, next) => {
     return res.redirect('/login.html');
 });
 
-// [UPDATED] Send appMode to UI
-app.get('/ui-config', (req, res) => res.json({ 
-    ...config.ui, 
-    appMode: config.appMode 
+//  Send appMode to UI
+app.get('/ui-config', (req, res) => res.json({
+    ...config.ui,
+    appMode: config.appMode
 }));
 
 // --- PAGE ACCESS CONTROL ---
@@ -156,6 +163,11 @@ app.get('/users.html', (req, res, next) => {
     if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/');
 });
 app.get('/event-log.html', (req, res, next) => {
+    const r = req.session?.user?.role;
+    if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/');
+});
+// [NEW] Page Access Control for Third Parties
+app.get('/third-parties.html', (req, res, next) => {
     const r = req.session?.user?.role;
     if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/');
 });
@@ -421,9 +433,22 @@ io.on('connection', (socket) => {
         try { await db.saveUserPreference(socket.request.session.user.id || 0, key, value); } catch (e) { }
     });
 
-socket.on('view-expiring-skills', async (days, forceRefresh = false) => {
+    //  WhatsApp Management Events
+    socket.on('wa-get-status', () => {
+        if (userLevel >= ROLES.admin) {
+            socket.emit('wa-status-data', whatsappService.getStatus());
+        }
+    });
+
+    socket.on('wa-control', (action) => {
+        if (userLevel < ROLES.admin) return;
+        if (action === 'start') whatsappService.startClient();
+        if (action === 'stop') whatsappService.logout();
+    });
+
+    socket.on('view-expiring-skills', async (days, forceRefresh = false) => {
         const daysThreshold = parseInt(days) || 30;
-        
+
         // Logic: If forced, interval is 0. Otherwise use config default (usually 60 mins).
         const interval = forceRefresh ? 0 : (config.scrapingInterval || 60);
 
@@ -431,12 +456,12 @@ socket.on('view-expiring-skills', async (days, forceRefresh = false) => {
         try {
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
-            
+
             // Pass the calculated interval
             const rawData = await getOIData(config.url, interval, currentProxy, logger);
-            
+
             const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
-            
+
             const results = processedMembers.map(m => ({
                 name: m.name,
                 skills: m.expiringSkills.map(s => ({
@@ -449,15 +474,16 @@ socket.on('view-expiring-skills', async (days, forceRefresh = false) => {
         } catch (error) { logger(`Error: ${error.message}`); socket.emit('script-complete', 1); }
     });
 
-    socket.on('run-send-selected', async (selectedNames, days) => {
+    // Renamed/Modified 'run-send-selected' to 'run-process-queue'
+    // to support the new multi-channel object structure
+    socket.on('run-process-queue', async (targets, days) => {
         if (userLevel < ROLES.simple) {
-            socket.emit('terminal-output', 'Error: Guests cannot send emails.\n');
+            socket.emit('terminal-output', 'Error: Guests cannot send notifications.\n');
             socket.emit('script-complete', 1);
             return;
         }
-        await handleEmailSending(socket, selectedNames, parseInt(days) || 30, logger, false);
+        await handleQueueProcessing(socket, targets, parseInt(days) || 30, logger);
     });
-
     socket.on('run-send-single', async (memberName, days) => {
         if (userLevel < ROLES.simple) {
             socket.emit('terminal-output', 'Error: Guests cannot send emails.\n');
@@ -468,12 +494,14 @@ socket.on('view-expiring-skills', async (days, forceRefresh = false) => {
     });
 });
 
-async function handleEmailSending(socket, targetNames, days, logger, isSingle) {
+// [UPDATED] Queue Processing Function
+async function handleQueueProcessing(socket, targets, days, logger) {
     const currentUser = socket.request.session.user.name || socket.request.session.user;
-    logger(`> Starting Email Process (${isSingle ? 'Single' : 'Batch'})...`);
-    socket.emit('progress-update', { type: 'progress-start', total: targetNames.length });
+    logger(`> Starting Notification Process for ${targets.length} members...`);
+    socket.emit('progress-update', { type: 'progress-start', total: targets.length });
 
     try {
+        // Load Data
         const dbMembers = await db.getMembers();
         const dbSkills = await db.getSkills();
         const prefs = await db.getPreferences();
@@ -481,34 +509,74 @@ async function handleEmailSending(socket, targetNames, days, logger, isSingle) {
             from: prefs.emailFrom, subject: prefs.emailSubject, intro: prefs.emailIntro,
             rowHtml: prefs.emailRow, rowHtmlNoUrl: prefs.emailRowNoUrl, filterOnlyWithUrl: prefs.emailOnlyWithUrl
         };
+
         const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
         const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, days);
-        const targets = processedMembers.filter(m => targetNames.includes(m.name));
 
         let current = 0;
-        for (const member of targets) {
-            if (member.expiringSkills.length > 0) {
-                try {
-                    const result = await sendNotification(member, templateConfig, config.transporter, false, logger, config.ui.loginTitle);
-                    if (result) {
-                        await db.logEmailAction(member, 'SENT', `${member.expiringSkills.length} skills`);
-                        await db.logEvent(currentUser, 'Email', `Sent to ${member.name}`, { recipient: member.name, email: member.email, skillsCount: member.expiringSkills.length, mode: isSingle ? 'Single' : 'Batch' });
-                    } else {
-                        logger(`   [Skipped] ${member.name} - No skills remaining after filters.`);
-                    }
-                } catch (err) { await db.logEmailAction(member, 'FAILED', err.message); throw err; }
+
+        for (const target of targets) {
+            const member = processedMembers.find(m => m.name === target.name);
+
+            if (!member) {
+                logger(`   [Skipped] ${target.name} - Data not found in scrape results.`);
+                continue;
             }
+
+            if (member.expiringSkills.length > 0) {
+                // 1. SEND EMAIL
+                if (target.sendEmail) {
+                    try {
+                        const result = await sendNotification(member, templateConfig, config.transporter, false, logger, config.ui.loginTitle);
+                        if (result) {
+                            await db.logEmailAction(member, 'EMAIL_SENT', `${member.expiringSkills.length} skills`);
+                            await db.logEvent(currentUser, 'Email', `Sent to ${member.name}`, { recipient: member.name, count: member.expiringSkills.length });
+                        }
+                    } catch (err) {
+                        await db.logEmailAction(member, 'EMAIL_FAILED', err.message);
+                    }
+                }
+
+                // 2. SEND WHATSAPP
+                if (target.sendWa && config.enableWhatsApp) {
+                    try {
+                        // Construct simple text message
+                        let waText = `*Expiring Skills Notification*\n\nHello ${member.name.split(',')[1] || member.name}, you have skills expiring in OSM:\n`;
+                        member.expiringSkills.forEach(s => {
+                            waText += `\n- *${s.skill}*\n  Expires: ${s.dueDate}`;
+                            if (s.url) waText += `\n  Link: ${s.url}`;
+                        });
+                        waText += `\n\nPlease complete these ASAP.`;
+
+                        await whatsappService.sendMessage(member.mobile, waText);
+                        logger(`   [WhatsApp] Message sent to ${member.name} (${member.mobile})`);
+                        await db.logEmailAction(member, 'WA_SENT', 'WhatsApp Sent'); // Reuse table for now
+                        await db.logEvent(currentUser, 'WhatsApp', `Sent to ${member.name}`, { mobile: member.mobile });
+                    } catch (err) {
+                        logger(`   [WhatsApp ERROR] ${member.name}: ${err.message}`);
+                        await db.logEmailAction(member, 'WA_FAILED', err.message);
+                    }
+                }
+            } else {
+                logger(`   [Skipped] ${member.name} - No relevant expiring skills found.`);
+            }
+
             current++;
             socket.emit('progress-update', { type: 'progress-tick', current: current, total: targets.length, member: member.name });
-            if (!isSingle) await new Promise(resolve => setTimeout(resolve, 2000));
+            // Pause between members to be polite
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
-        logger(`> All operations completed.`);
-        socket.emit('script-complete', 0);
-    } catch (error) { logger(`FATAL ERROR: ${error.message}`); socket.emit('script-complete', 1); }
-}
 
+        logger(`> Process completed.`);
+        socket.emit('script-complete', 0);
+
+    } catch (error) {
+        logger(`FATAL ERROR: ${error.message}`);
+        socket.emit('script-complete', 1);
+    }
+}
 const PORT = 3000;
-server.listen(PORT, () => { 
-    console.log(`Server running at http://localhost:${PORT}`); 
+server.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
     console.log(`> App Mode: ${(config.appMode || 'PRODUCTION').toUpperCase()}`);
 });

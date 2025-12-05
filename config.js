@@ -63,6 +63,9 @@ const proxyMode = process.env.PROXY_MODE || 'none';
 const fixedProxyUrl = process.env.PROXY_URL || null;
 const dynamicProxySource = process.env.DYNAMIC_PROXY_SOURCE || null;
 
+// --- WHATSAPP CONFIG ---
+const enableWhatsApp = process.env.ENABLE_WHATSAPP === 'true';
+
 module.exports = {
     appMode, // Exported for use in other modules
     auth,
@@ -74,5 +77,6 @@ module.exports = {
     transporter,
     proxyMode,
     fixedProxyUrl,
-    dynamicProxySource
+    dynamicProxySource,
+    enableWhatsApp
 };

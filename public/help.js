@@ -167,6 +167,20 @@ const helpContent = {
             </div>
         `
     },
+    "third-parties": {
+        title: "Third Party Services Help",
+        body: `
+            <p><strong>WhatsApp Integration:</strong></p>
+            <p>This allows the system to send notifications directly to member's mobile phones.</p>
+            <ol>
+                <li>Click <strong>Start Service</strong> to launch the client.</li>
+                <li>Wait for the <strong>QR Code</strong> to appear.</li>
+                <li>Open WhatsApp on your phone, go to <strong>Linked Devices</strong>, and scan the code.</li>
+                <li>Once connected, the status will turn Green.</li>
+            </ol>
+            <p><strong>Note:</strong> You must keep the phone connected to the internet. If the server restarts, the session is usually restored automatically, but you may need to verify connection here.</p>
+        `
+    },
     // --- Default ---
     "default": {
         title: "Help",
@@ -190,7 +204,7 @@ const helpContent = {
     else if (path.includes("users")) key = "users";
     else if (path.includes("profile")) key = "profile";
     else if (path.includes("login")) key = "login";
-
+    else if (path.includes("third-parties")) key = "third-parties";
     const content = helpContent[key] || helpContent["default"];
 
     // 2. Inject HTML
