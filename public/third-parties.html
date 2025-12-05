@@ -28,7 +28,6 @@
         .btn-test:hover { background-color: #0056b3; }
         .btn-disabled { background-color: #ccc; cursor: not-allowed; }
 
-        /* Modal specific styles */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); }
         .modal-content { background-color: #fefefe; margin: 10% auto; padding: 25px; border-radius: 8px; width: 400px; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; color: #aaa; }
@@ -36,6 +35,16 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+
+        .switch { position: relative; display: inline-block; width: 34px; height: 20px; vertical-align: middle; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: #28a745; }
+        input:focus + .slider { box-shadow: 0 0 1px #28a745; }
+        input:checked + .slider:before { transform: translateX(14px); }
+
+        .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background: #17a2b8; color: white; border-radius: 50%; font-size: 12px; font-weight: bold; margin-left: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -70,7 +79,8 @@
                 <div style="text-align:center; color:#155724;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                     <h3>WhatsApp Connected!</h3>
-                    <p>The system is ready to send messages.</p>
+                    <p id="waAccountInfo" style="margin-top:5px; font-weight:bold;"></p>
+                    <p style="margin-top:5px;">The system is ready to send messages.</p>
                 </div>
             </div>
 
@@ -78,6 +88,19 @@
                 <button id="btnStart" class="btn-wa btn-start" onclick="controlWa('start')">Start Service</button>
                 <button id="btnStop" class="btn-wa btn-stop" onclick="controlWa('stop')">Disconnect / Logout</button>
                 <button id="btnTest" class="btn-wa btn-test btn-disabled" disabled onclick="openModal('testModal')">Test Integration</button>
+            </div>
+
+            <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                <h3 style="margin-top: 0; color: #555; font-size: 16px;">Preferences</h3>
+                
+                <div style="display:flex; align-items:center; gap: 10px;">
+                    <label class="switch">
+                        <input type="checkbox" id="waAutoDisconnect" onchange="toggleAutoDisconnect(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                    <span style="font-weight: bold; color: #333;">Auto-disconnect on Logout</span>
+                    <span class="info-icon" onclick="openModal('prefHelpModal')">?</span>
+                </div>
             </div>
         </div>
     </div>
@@ -99,129 +122,57 @@
         </div>
     </div>
 
+    <div id="prefHelpModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('prefHelpModal')">&times;</span>
+            <h2 style="margin-top:0;">Preference Help</h2>
+            <p><strong>Auto-disconnect on Logout</strong></p>
+            <p>If this option is enabled, your WhatsApp session will be automatically terminated (logged out) whenever you sign out of the FENZ OSM Manager application.</p>
+            <p>This is a security feature to ensure that subsequent users (who might share this login or computer) cannot access or send messages using your personal WhatsApp account.</p>
+            <button class="btn-wa btn-test" style="width:100%; margin-top:20px;" onclick="closeModal('prefHelpModal')">Close</button>
+        </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         
-        // UI Elements
         const statusBadge = document.getElementById('waStatus');
         const qrArea = document.getElementById('qrArea');
         const readyArea = document.getElementById('readyArea');
+        const waAccountInfo = document.getElementById('waAccountInfo'); // [NEW]
         const qrImage = document.getElementById('qrImage');
         const btnStart = document.getElementById('btnStart');
         const btnStop = document.getElementById('btnStop');
-        const btnTest = document.getElementById('btnTest'); // [NEW]
+        const btnTest = document.getElementById('btnTest');
+        const waAutoDisconnect = document.getElementById('waAutoDisconnect'); 
 
-        // Check config
         fetch('/ui-config').then(r=>r.json()).then(c=>{ 
             if(c.loginTitle) document.getElementById('pageHeader').innerText = "Services - "+c.loginTitle;
             if(c.appBackground) document.body.style.backgroundImage=`url('${c.appBackground}')`;
             if(c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });
 
+        socket.on('connect', () => {
+            socket.emit('get-preferences');
+            socket.emit('wa-get-status');
+        });
+
+        socket.on('preferences-data', (prefs) => {
+            if (prefs.wa_auto_disconnect !== undefined) {
+                waAutoDisconnect.checked = (prefs.wa_auto_disconnect === 'true' || prefs.wa_auto_disconnect === true);
+            }
+        });
+
+        function toggleAutoDisconnect(isChecked) {
+            socket.emit('update-preference', { key: 'wa_auto_disconnect', value: isChecked });
+        }
+
         function controlWa(action) {
             socket.emit('wa-control', action);
         }
 
-        // [NEW] Send Test Logic
         function sendTestMessage() {
             const mobile = document.getElementById('testMobile').value;
             const message = document.getElementById('testMessage').value;
-
-            if(!mobile || !message) {
-                alert("Please provide both a mobile number and a message.");
-                return;
-            }
-
-            const btn = document.getElementById('btnSendTest');
-            btn.disabled = true;
-            btn.innerText = "Sending...";
-
-            socket.emit('wa-send-test', { mobile, message });
-        }
-
-        // Update UI based on status
-        function updateUi(status) {
-            // Reset defaults
-            statusBadge.className = 'status-badge';
-            qrArea.style.display = 'none';
-            readyArea.style.display = 'none';
-            
-            btnStart.disabled = false;
-            btnStart.classList.remove('btn-disabled');
-            
-            btnTest.disabled = true; // Disable test by default
-            btnTest.classList.add('btn-disabled');
-
-            if (status === 'DISCONNECTED') {
-                statusBadge.classList.add('status-disconnected');
-                statusBadge.innerText = 'Disconnected';
-                btnStop.disabled = true;
-                btnStop.classList.add('btn-disabled');
-            } 
-            else if (status === 'INITIALIZING') {
-                statusBadge.classList.add('status-initializing');
-                statusBadge.innerText = 'Initializing...';
-                btnStart.disabled = true;
-                btnStart.classList.add('btn-disabled');
-            } 
-            else if (status === 'QR_READY') {
-                statusBadge.classList.add('status-initializing');
-                statusBadge.innerText = 'Scan QR Code';
-                qrArea.style.display = 'flex';
-                btnStart.disabled = true;
-                btnStart.classList.add('btn-disabled');
-            } 
-            else if (status === 'READY') {
-                statusBadge.classList.add('status-ready');
-                statusBadge.innerText = 'Connected';
-                readyArea.style.display = 'flex';
-                btnStart.disabled = true;
-                btnStart.classList.add('btn-disabled');
-                
-                // Enable Test Button
-                btnTest.disabled = false;
-                btnTest.classList.remove('btn-disabled');
-            }
-        }
-
-        // Socket Listeners
-        socket.on('connect', () => socket.emit('wa-get-status'));
-        
-        socket.on('wa-status-data', (data) => {
-            updateUi(data.status);
-            if(data.qr) qrImage.src = data.qr;
-        });
-
-        socket.on('wa-status', (status) => updateUi(status));
-        socket.on('wa-qr', (url) => {
-            qrImage.src = url;
-            updateUi('QR_READY');
-        });
-
-        // [NEW] Test Result Handler
-        socket.on('wa-test-result', (res) => {
-            const btn = document.getElementById('btnSendTest');
-            btn.disabled = false;
-            btn.innerText = "Send Test Message";
-
-            if (res.success) {
-                alert("Success: " + res.message);
-                closeModal('testModal');
-            } else {
-                alert("Error: " + res.error);
-            }
-        });
-
-        // Modal Utils
-        function openModal(id) { document.getElementById(id).style.display = 'block'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = "none";
-            }
-        }
-    </script>
-    <script src="help.js"></script>
-</body>
-</html>
+            if(!mobile || !message)

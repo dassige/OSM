@@ -7,6 +7,7 @@ let io;
 let qrCodeUrl = null;
 let status = 'DISCONNECTED'; // DISCONNECTED, INITIALIZING, QR_READY, READY
 let isClientReady = false;
+let clientInfo = null; // [NEW] Store connected account info
 
 function init(socketIo) {
     io = socketIo;
@@ -22,14 +23,12 @@ function startClient() {
         authStrategy: new LocalAuth({ clientId: "fenz-osm-client" }),
         puppeteer: {
             headless: true,
-            // args are needed for running in Docker/Cloud environments
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         }
     });
 
     client.on('qr', (qr) => {
         console.log('[WhatsApp] QR Code received');
-        // Convert QR text to Data URI for frontend display
         qrcode.toDataURL(qr, (err, url) => {
             if (!err) {
                 qrCodeUrl = url;
@@ -43,7 +42,18 @@ function startClient() {
         console.log('[WhatsApp] Client is ready!');
         isClientReady = true;
         qrCodeUrl = null;
+        
+        // [NEW] Capture Account Info
+        if (client.info) {
+            clientInfo = {
+                number: client.info.wid.user,
+                name: client.info.pushname
+            };
+        }
+        
         updateStatus('READY');
+        // Force emit full status data including the new clientInfo
+        if (io) io.emit('wa-status-data', getStatus());
     });
 
     client.on('auth_failure', msg => {
@@ -53,10 +63,7 @@ function startClient() {
 
     client.on('disconnected', (reason) => {
         console.log('[WhatsApp] Client was logged out', reason);
-        isClientReady = false;
-        qrCodeUrl = null;
-        status = 'DISCONNECTED';
-        io.emit('wa-status', status);
+        resetState();
     });
 
     client.initialize();
@@ -64,18 +71,17 @@ function startClient() {
 
 async function logout() {
     if (client) {
-        try {
-            await client.logout();
-        } catch (e) {
-            console.log('[WhatsApp] Logout error (might already be closed):', e.message);
-        }
-        try {
-            await client.destroy();
-        } catch (e) {}
+        try { await client.logout(); } catch (e) {}
+        try { await client.destroy(); } catch (e) {}
     }
+    resetState();
+}
+
+function resetState() {
     client = null;
     isClientReady = false;
     qrCodeUrl = null;
+    clientInfo = null; // [NEW] Clear info
     updateStatus('DISCONNECTED');
 }
 
@@ -85,31 +91,24 @@ function updateStatus(newStatus) {
 }
 
 function getStatus() {
-    return { status, qr: qrCodeUrl };
+    return { 
+        status, 
+        qr: qrCodeUrl,
+        info: clientInfo // [NEW] Send info to frontend
+    };
 }
 
-// Formatting: NZ numbers (021...) to International (6421...)
 function formatPhone(mobile) {
     if (!mobile) return null;
     let cleaned = mobile.replace(/\D/g, '');
-    
-    if (cleaned.startsWith('0')) {
-        cleaned = '64' + cleaned.substring(1);
-    } else if (!cleaned.startsWith('64')) {
-        // Fallback: assume NZ if no country code
-        cleaned = '64' + cleaned;
-    }
+    if (cleaned.startsWith('0')) cleaned = '64' + cleaned.substring(1);
+    else if (!cleaned.startsWith('64')) cleaned = '64' + cleaned;
     return `${cleaned}@c.us`;
 }
 
 async function sendMessage(mobile, text) {
     if (!isClientReady) throw new Error("WhatsApp client not ready.");
     const chatId = formatPhone(mobile);
-    
-    // Optional: Check if number is registered
-    // const isRegistered = await client.isRegisteredUser(chatId);
-    // if (!isRegistered) throw new Error("Number not registered on WhatsApp");
-
     await client.sendMessage(chatId, text);
     return true;
 }

@@ -30,7 +30,7 @@ const app = express();
 const server = http.createServer(app);
 const upload = multer({ dest: 'uploads/' });
 
-// [FIX] Initialize Socket.IO instance here
+// Initialize Socket.IO instance here
 const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"], credentials: true }
 });
@@ -128,7 +128,21 @@ app.post('/forgot-password', async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Failed to reset password." }); }
 });
 
-app.get('/logout', (req, res) => {
+// [UPDATED] Logout with Auto-Disconnect Check
+app.get('/logout', async (req, res) => {
+    try {
+        if (req.session && req.session.user && req.session.user.id) {
+            const prefs = await db.getAllUserPreferences(req.session.user.id);
+            // Check for the auto-disconnect preference (stored as string 'true'/'false')
+            if (prefs.wa_auto_disconnect === 'true') {
+                console.log(`[Logout] Auto-disconnecting WhatsApp for user ${req.session.user.name}`);
+                await whatsappService.logout();
+            }
+        }
+    } catch (e) {
+        console.error("Logout cleanup error:", e);
+    }
+
     req.session.destroy();
     res.redirect('/login.html');
 });
@@ -140,7 +154,7 @@ app.get('/api/user-session', (req, res) => {
 
 // --- GLOBAL ROUTE GUARD ---
 app.use((req, res, next) => {
-    // [FIX] Added '/api/demo-credentials' to publicPaths so it can be accessed without login
+    // Added '/api/demo-credentials' to publicPaths so it can be accessed without login
     const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config', '/api/demo-credentials'];
     if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/')) return next();
     if (req.session && req.session.loggedIn) return next();
@@ -166,7 +180,7 @@ app.get('/event-log.html', (req, res, next) => {
     const r = req.session?.user?.role;
     if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/');
 });
-// [NEW] Page Access Control for Third Parties
+// Page Access Control for Third Parties
 app.get('/third-parties.html', (req, res, next) => {
     const r = req.session?.user?.role;
     if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/');
@@ -176,7 +190,7 @@ app.get('/third-parties.html', (req, res, next) => {
 // 4. API ROUTES - USER MANAGEMENT & PROFILE
 // =============================================================================
 
-// [NEW] Endpoint to reveal demo credentials (must be publicly accessible via middleware above)
+// Endpoint to reveal demo credentials (must be publicly accessible via middleware above)
 app.get('/api/demo-credentials', (req, res) => {
     if (config.appMode !== 'demo') {
         return res.status(403).json({ error: "Feature only available in DEMO mode." });
@@ -445,7 +459,7 @@ io.on('connection', (socket) => {
         if (action === 'start') whatsappService.startClient();
         if (action === 'stop') whatsappService.logout();
     });
-//  WhatsApp Test Event
+
     socket.on('wa-send-test', async (data) => {
         if (userLevel < ROLES.admin) return;
         try {
@@ -457,34 +471,36 @@ io.on('connection', (socket) => {
             socket.emit('wa-test-result', { success: false, error: err.message });
         }
     });
+
     socket.on('view-expiring-skills', async (days, forceRefresh = false) => {
         const daysThreshold = parseInt(days) || 30;
+
+        // Logic: If forced, interval is 0. Otherwise use config default (usually 60 mins).
         const interval = forceRefresh ? 0 : (config.scrapingInterval || 60);
 
         logger(`> Fetching View Data (Threshold: ${daysThreshold} days${forceRefresh ? ', Force Refresh' : ', Cached OK'})...`);
         try {
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
+
+            // Pass the calculated interval
             const rawData = await getOIData(config.url, interval, currentProxy, logger);
+
             const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
 
-            // [FIX] Added 'mobile: m.mobile' to the response object
             const results = processedMembers.map(m => ({
                 name: m.name,
-                mobile: m.mobile, // <--- THIS WAS MISSING
+                mobile: m.mobile,
                 skills: m.expiringSkills.map(s => ({
                     skill: s.skill, dueDate: s.dueDate, hasUrl: !!s.url, isCritical: !!s.isCritical
                 })),
                 emailEligible: m.expiringSkills.length > 0
             }));
-
             socket.emit('expiring-skills-data', results);
             socket.emit('script-complete', 0);
-        } catch (error) {
-            logger(`Error: ${error.message}`);
-            socket.emit('script-complete', 1);
-        }
+        } catch (error) { logger(`Error: ${error.message}`); socket.emit('script-complete', 1); }
     });
+
     // Renamed/Modified 'run-send-selected' to 'run-process-queue'
     // to support the new multi-channel object structure
     socket.on('run-process-queue', async (targets, days) => {
