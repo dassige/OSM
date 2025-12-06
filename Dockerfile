@@ -36,7 +36,9 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm install
-
+# If you prefer using npm ci for a clean install, uncomment the following line and comment out the npm install line above
+# it may fix any package-lock related issues.
+#RUN npm ci  
 # Copy application code
 COPY . .
 
