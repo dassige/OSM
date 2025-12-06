@@ -182,6 +182,10 @@ app.get('/third-parties.html', (req, res, next) => {
     const r = req.session?.user?.role;
     if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/');
 });
+app.get('/templates.html', (req, res, next) => {
+    const r = req.session?.user?.role;
+    if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/');
+});
 
 // =============================================================================
 // 4. API ROUTES - USER MANAGEMENT & PROFILE
@@ -444,7 +448,6 @@ io.on('connection', (socket) => {
 
     //  WhatsApp Management Events
     socket.on('wa-get-status', () => {
-        // [CHANGED] Allow ROLES.simple (Dashboard users) to check status
         if (userLevel >= ROLES.simple) {
             socket.emit('wa-status-data', whatsappService.getStatus());
         }
@@ -456,47 +459,37 @@ io.on('connection', (socket) => {
         if (action === 'stop') whatsappService.logout();
     });
 
-    // [UPDATED] WA Send Test Event now logs to DB
     socket.on('wa-send-test', async (data) => {
         if (userLevel < ROLES.admin) return;
         const currentUser = socket.request.session.user.name || socket.request.session.user;
         try {
             logger(`[WhatsApp] Sending test message to ${data.mobile}...`);
             await whatsappService.sendMessage(data.mobile, data.message);
-            
-            // [NEW] Log to DB
+
             await db.logEvent(currentUser, 'WhatsApp', 'Test Message Sent', { mobile: data.mobile, messageSnippet: data.message.substring(0, 20) });
-            
+
             socket.emit('wa-test-result', { success: true, message: 'Test message sent successfully.' });
         } catch (err) {
             logger(`[WhatsApp] Test failed: ${err.message}`);
-            
-            // [NEW] Log Failure
             await db.logEvent(currentUser, 'WhatsApp', 'Test Message Failed', { mobile: data.mobile, error: err.message });
-            
             socket.emit('wa-test-result', { success: false, error: err.message });
         }
     });
 
     socket.on('view-expiring-skills', async (days, forceRefresh = false) => {
         const daysThreshold = parseInt(days) || 30;
-
-        // Logic: If forced, interval is 0. Otherwise use config default (usually 60 mins).
         const interval = forceRefresh ? 0 : (config.scrapingInterval || 60);
 
         logger(`> Fetching View Data (Threshold: ${daysThreshold} days${forceRefresh ? ', Force Refresh' : ', Cached OK'})...`);
         try {
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
-
-            // Pass the calculated interval
             const rawData = await getOIData(config.url, interval, currentProxy, logger);
-
             const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
 
             const results = processedMembers.map(m => ({
                 name: m.name,
-                email: m.email, // [UPDATED] Added email field
+                email: m.email,
                 mobile: m.mobile,
                 skills: m.expiringSkills.map(s => ({
                     skill: s.skill, dueDate: s.dueDate, hasUrl: !!s.url, isCritical: !!s.isCritical
@@ -508,8 +501,6 @@ io.on('connection', (socket) => {
         } catch (error) { logger(`Error: ${error.message}`); socket.emit('script-complete', 1); }
     });
 
-    // Renamed/Modified 'run-send-selected' to 'run-process-queue'
-    // to support the new multi-channel object structure
     socket.on('run-process-queue', async (targets, days) => {
         if (userLevel < ROLES.simple) {
             socket.emit('terminal-output', 'Error: Guests cannot send notifications.\n');
@@ -528,6 +519,16 @@ io.on('connection', (socket) => {
     });
 });
 
+// Helper for variable replacement in strings
+function applyTemplate(template, vars) {
+    let text = template || "";
+    for (const [key, value] of Object.entries(vars)) {
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        text = text.replace(regex, value || '');
+    }
+    return text;
+}
+
 // [UPDATED] Queue Processing Function
 async function handleQueueProcessing(socket, targets, days, logger) {
     const currentUser = socket.request.session.user.name || socket.request.session.user;
@@ -539,10 +540,23 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         const dbMembers = await db.getMembers();
         const dbSkills = await db.getSkills();
         const prefs = await db.getPreferences();
+        
+        // Email Config
         const templateConfig = {
             from: prefs.emailFrom, subject: prefs.emailSubject, intro: prefs.emailIntro,
             rowHtml: prefs.emailRow, rowHtmlNoUrl: prefs.emailRowNoUrl, filterOnlyWithUrl: prefs.emailOnlyWithUrl
         };
+
+        // [NEW] WhatsApp Config Defaults
+        const waDefaults = {
+            intro: "*Expiring Skills Notification*\n\nHello {{name}}, you have skills expiring in OSM:\n",
+            row: "- *{{skill}}*\n  Expires: {{date}}\n  Link: {{url}}",
+            rowNoUrl: "- *{{skill}}*\n  Expires: {{date}}"
+        };
+        const waIntroTpl = prefs.waIntro || waDefaults.intro;
+        const waRowTpl = prefs.waRow || waDefaults.row;
+        const waRowNoUrlTpl = prefs.waRowNoUrl || waDefaults.rowNoUrl;
+        const waOnlyWithUrl = (prefs.waOnlyWithUrl === 'true' || prefs.waOnlyWithUrl === true);
 
         const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
         const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, days);
@@ -574,18 +588,42 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                 // 2. SEND WHATSAPP
                 if (target.sendWa && config.enableWhatsApp) {
                     try {
-                        // Construct simple text message
-                        let waText = `*Expiring Skills Notification*\n\nHello ${member.name.split(',')[1] || member.name}, you have skills expiring in OSM:\n`;
-                        member.expiringSkills.forEach(s => {
-                            waText += `\n- *${s.skill}*\n  Expires: ${s.dueDate}`;
-                            if (s.url) waText += `\n  Link: ${s.url}`;
-                        });
-                        waText += `\n\nPlease complete these ASAP.`;
+                        // Filter Logic
+                        let waSkills = member.expiringSkills;
+                        if (waOnlyWithUrl) {
+                            waSkills = waSkills.filter(s => !!s.url);
+                        }
 
-                        await whatsappService.sendMessage(member.mobile, waText);
-                        logger(`   [WhatsApp] Message sent to ${member.name} (${member.mobile})`);
-                        await db.logEmailAction(member, 'WA_SENT', 'WhatsApp Sent'); // Reuse table for now
-                        await db.logEvent(currentUser, 'WhatsApp', `Sent to ${member.name}`, { mobile: member.mobile });
+                        if (waSkills.length > 0) {
+                            // Construct message
+                            const memberVars = {
+                                name: member.name.split(',')[1] || member.name,
+                                appname: config.ui.loginTitle
+                            };
+                            
+                            let waText = applyTemplate(waIntroTpl, memberVars);
+
+                            waSkills.forEach(s => {
+                                const skillVars = {
+                                    skill: s.skill,
+                                    date: s.dueDate,
+                                    url: s.url || "N/A",
+                                    critical: s.isCritical ? "(CRITICAL)" : ""
+                                };
+                                // Select template based on URL existence
+                                const rowTpl = s.url ? waRowTpl : waRowNoUrlTpl;
+                                waText += "\n" + applyTemplate(rowTpl, skillVars);
+                            });
+                            
+                            waText += `\n\nPlease complete these ASAP.`;
+
+                            await whatsappService.sendMessage(member.mobile, waText);
+                            logger(`   [WhatsApp] Message sent to ${member.name} (${member.mobile})`);
+                            await db.logEmailAction(member, 'WA_SENT', 'WhatsApp Sent');
+                            await db.logEvent(currentUser, 'WhatsApp', `Sent to ${member.name}`, { mobile: member.mobile });
+                        } else {
+                            logger(`   [Skipped WA] ${member.name} - No skills matched filter (Has URL Only).`);
+                        }
                     } catch (err) {
                         logger(`   [WhatsApp ERROR] ${member.name}: ${err.message}`);
                         await db.logEmailAction(member, 'WA_FAILED', err.message);

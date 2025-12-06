@@ -69,36 +69,28 @@ const helpContent = {
             <p><em>Example:</em> <code>https://docs.google.com/forms/d/e/...?entry.123={{member-name}}</code></p>
         `
     },
-    // --- Email Templates ---
-    "email-templates": {
-        title: "Email Templates Help",
+    // --- Templates ---
+    "templates": {
+        title: "Templates Help",
         body: `
-            <p><strong>Overview:</strong> Customize the automated emails sent by the system.</p>
-            <p><strong>Tabs:</strong> Use the tabs at the top to switch between different email types.</p>
+            <p><strong>Overview:</strong> Customize the automated messages sent by the system for both Email and WhatsApp.</p>
+            <p><strong>Tabs:</strong> Use the tabs at the top to switch between different template types.</p>
             
-            <h3>Expiring Skills Template</h3>
+            <h3>Expiring Skills (Email)</h3>
             <ul>
                 <li><strong>Filter:</strong> Check <em>"Include only skills with Form URL"</em> to completely exclude any skill that doesn't have a link configured.</li>
-                <li><strong>Dual Row Templates:</strong>
-                    <ul>
-                        <li><strong>Row (With URL):</strong> Used for skills that have a valid Form URL.</li>
-                        <li><strong>Row (No URL):</strong> Used for skills without a link (unless filtered out).</li>
-                    </ul>
-                </li>
+                <li><strong>Dual Row Templates:</strong> Customize how each skill row appears based on whether it has a URL or not.</li>
+            </ul>
+
+            <h3>Expiring Skills (WhatsApp)</h3>
+            <p>Customize the text message sent to mobile phones.</p>
+            <ul>
+                <li><strong>Formatting:</strong> WhatsApp supports simple markdown: <code>*bold*</code>, <code>_italic_</code>, <code>~strike~</code>. HTML is not supported.</li>
+                <li><strong>Intro & Rows:</strong> Define the opening message and the format for each skill in the list.</li>
             </ul>
 
             <h3>General Editing</h3>
-            <p><strong>Drag & Drop Variables:</strong> Drag the gray chips (e.g., <code>{{name}}</code>) into the Subject or Body editor to insert dynamic placeholders.</p>
-            <ul>
-                <li><strong>Import/Export:</strong> Use the buttons in the top-right of each tab to backup or restore specific templates.</li>
-                <li><strong>Form URL (Skills):</strong> To link the "Form URL" correctly:
-                    <ol>
-                        <li>Type text like "Click here".</li>
-                        <li>Highlight it and click the Link icon in the editor toolbar.</li>
-                        <li>Paste <code>{{url}}</code> into the URL field.</li>
-                    </ol>
-                </li>
-            </ul>
+            <p><strong>Drag & Drop Variables:</strong> Drag the gray chips (e.g., <code>{{name}}</code>) into the editor to insert dynamic placeholders.</p>
         `
     },
     // --- System Tools ---
@@ -209,7 +201,7 @@ const helpContent = {
     if (path === "/" || path.endsWith("index.html")) key = "index";
     else if (path.includes("members")) key = "members";
     else if (path.includes("skills")) key = "skills";
-    else if (path.includes("email-templates")) key = "email-templates";
+    else if (path.includes("templates")) key = "templates"; // [UPDATED]
     else if (path.includes("system-tools")) key = "system-tools";
     else if (path.includes("event-log")) key = "event-log";
     else if (path.includes("users")) key = "users";

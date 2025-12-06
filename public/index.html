@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         /* ... (Keep existing styles) ... */
-        /* ... (No changes to styles needed for this specific task) ... */
         th.sortable { cursor: pointer; user-select: none; position: relative; }
         th.sortable:hover { background-color: #454d55; }
         .th-content { display: flex; align-items: center; justify-content: space-between; }
@@ -79,14 +78,14 @@
                 </svg>
                 Manage Skills
             </a>
-            <a href="email-templates.html">
+            <a href="templates.html">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     style="margin-right:8px;">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                     <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
-                Email Templates
+                Templates
             </a>
             <a href="system-tools.html" id="navSystemTools" style="display:none;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -291,7 +290,7 @@
                 // 1. Menu Visibility (RBAC)
                 const manageMembers = document.querySelector('a[href="members.html"]');
                 const manageSkills = document.querySelector('a[href="skills.html"]');
-                const emailTemplates = document.querySelector('a[href="email-templates.html"]');
+                const emailTemplates = document.querySelector('a[href="templates.html"]');
                 const manageUsers = document.getElementById('navManageUsers');
                 const systemTools = document.getElementById('navSystemTools');
                 const eventLog = document.getElementById('navEventLog');

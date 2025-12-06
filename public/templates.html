@@ -4,18 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
-    <title id="pageTitle">Email Templates - FENZ OSM</title>
+    <title id="pageTitle">Templates - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="no-referrer"></script>
     <style>
         .container { max-width: 950px; margin: 0 auto; padding-top: 40px; padding-bottom: 60px; }
-        /* [UPDATED] Increased z-index to 100 */
         .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.15); transition: all 0.2s ease; z-index: 100; }
         .back-btn:hover { background-color: #23272b; transform: translateY(-2px); }
 
         /* TABS */
-        .tab-container { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-        .tab { padding: 12px 24px; cursor: pointer; font-weight: bold; color: #666; border-top-left-radius: 6px; border-top-right-radius: 6px; transition: all 0.2s; background: #f8f9fa; margin-right: 2px; border: 1px solid #ddd; border-bottom: none; }
+        .tab-container { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab { padding: 12px 18px; cursor: pointer; font-weight: bold; color: #666; border-top-left-radius: 6px; border-top-right-radius: 6px; transition: all 0.2s; background: #f8f9fa; margin-right: 2px; border: 1px solid #ddd; border-bottom: none; display: flex; align-items: center; gap: 8px; }
         .tab:hover { background-color: #e9ecef; }
         .tab.active { background-color: #fff; color: #007bff; border-bottom: 2px solid #fff; margin-bottom: -2px; }
         .tab-content { display: none; background: #fff; padding: 25px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 6px 6px; position: relative; }
@@ -28,8 +27,9 @@
 
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.95em; color: #333; }
-        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
+        /* CHIPS & DRAGGABLE */
         .palette-container { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; padding: 10px; background: #eef2f5; border: 1px solid #dee2e6; border-radius: 4px; align-items: center; max-width: 100%; }
         /* Fix for overlap in specific tabs where palette is the first element */
         #tab-newuser .palette-container,
@@ -37,6 +37,7 @@
         #tab-delete .palette-container {
             margin-top: 40px;
         }
+        #tab-whatsapp .palette-container { margin-top: 10px; }
 
         .palette-label { font-size: 12px; font-weight: bold; color: #666; margin-right: 5px; text-transform: uppercase; }
         .draggable-item { background-color: #fff; border: 1px solid #adb5bd; border-radius: 12px; padding: 4px 12px; font-family: monospace; font-weight: 600; color: #495057; cursor: grab; user-select: none; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
@@ -50,6 +51,17 @@
         /* Checkbox Group */
         .checkbox-group { display: flex; align-items: center; background: #e8f0fe; padding: 10px; border-radius: 4px; border: 1px solid #b8d4fe; color: #1a73e8; font-weight: bold; margin-bottom: 20px; margin-top: 40px; }
         .checkbox-group input { width: auto; margin-right: 10px; }
+        
+        /* [UPDATED] Added margin-top to clear the absolute positioned Import/Export buttons */
+        .wa-note { font-size: 0.9em; color: #666; background: #f0f2f5; padding: 10px; border-left: 4px solid #25D366; margin-bottom: 15px; margin-top: 40px; }
+        
+        .tab-icon { margin-right: 6px; }
+
+        /* [UPDATED] WhatsApp Toolbar Styles: Added color: black */
+        .wa-toolbar { display: flex; gap: 5px; margin-bottom: 5px; background: #f1f1f1; padding: 5px; border-radius: 4px 4px 0 0; border: 1px solid #ccc; border-bottom: none; }
+        .wa-btn { background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; padding: 4px 8px; font-weight: bold; font-family: monospace; min-width: 30px; display: flex; align-items: center; justify-content: center; color: black; }
+        .wa-btn:hover { background: #e9ecef; border-color: #999; }
+        .wa-input-wrapper textarea { border-top-left-radius: 0; border-top-right-radius: 0; font-family: monospace !important; }
     </style>
 </head>
 <body>
@@ -60,15 +72,31 @@
     <a href="/" class="back-btn" title="Back to Dashboard"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></a>
 
     <div class="container">
-        <h1 id="pageHeader">Email Templates</h1>
+        <h1 id="pageHeader">Templates</h1>
         
         <input type="file" id="importFile" accept=".json" style="display: none;">
 
         <div class="tab-container">
-            <div class="tab active" onclick="switchTab('skills')">Expiring Skills</div>
-            <div class="tab" onclick="switchTab('newuser')">New User</div>
-            <div class="tab" onclick="switchTab('reset')">Password Reset</div>
-            <div class="tab" onclick="switchTab('delete')">Delete Account</div>
+            <div class="tab active" onclick="switchTab('skills')">
+                <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                Expiring Skills (Email)
+            </div>
+            <div class="tab" onclick="switchTab('whatsapp')">
+                <svg class="tab-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="color:#25D366;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                Expiring Skills (WhatsApp)
+            </div>
+            <div class="tab" onclick="switchTab('newuser')">
+                <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                New User
+            </div>
+            <div class="tab" onclick="switchTab('reset')">
+                <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                Password Reset
+            </div>
+            <div class="tab" onclick="switchTab('delete')">
+                <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                Delete Account
+            </div>
         </div>
 
         <form id="templateForm">
@@ -126,6 +154,83 @@
                         </div>
 
                         <textarea id="skillsRowNoUrl" class="rich-editor"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-whatsapp" class="tab-content">
+                <div class="template-actions">
+                    <button type="button" class="btn-sm" onclick="triggerImport('whatsapp')">Import</button>
+                    <button type="button" class="btn-sm" onclick="exportTemplate('whatsapp')">Export</button>
+                </div>
+
+                <div class="wa-note">
+                    <strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>, <code>_italic_</code>, <code>~strikethrough~</code>, or <code>```monospace```</code>. HTML is not supported.
+                </div>
+
+                <div class="checkbox-group" style="margin-top:20px;">
+                    <input type="checkbox" id="waFilterNoUrl">
+                    <label for="waFilterNoUrl" style="margin:0; display:inline;">Include only skills with Form URL?</label>
+                </div>
+
+                <div class="palette-container">
+                    <span class="palette-label">Intro Variables:</span>
+                    <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                    <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                </div>
+
+                <div class="form-group wa-input-wrapper">
+                    <label>Intro Message</label>
+                    <div class="wa-toolbar">
+                        <button type="button" class="wa-btn" onclick="formatText('waIntro', '*')">B</button>
+                        <button type="button" class="wa-btn" onclick="formatText('waIntro', '_')" style="font-style:italic;">I</button>
+                        <button type="button" class="wa-btn" onclick="formatText('waIntro', '~')" style="text-decoration:line-through;">S</button>
+                        <button type="button" class="wa-btn" onclick="formatText('waIntro', '```')">&lt;/&gt;</button>
+                    </div>
+                    <textarea id="waIntro" class="droppable-input" rows="4" placeholder="*Expiring Skills Notification*\n\nHello {{name}},..."></textarea>
+                </div>
+
+                <hr style="margin: 20px 0; border:0; border-top:1px dashed #ccc;">
+
+                <div style="display: flex; flex-direction: column; gap: 30px;">
+                    <div style="flex: 1; width: 100%;">
+                        <label style="font-weight:bold; color: #007bff;">Repeated Skill Row (With URL)</label>
+                        <div class="palette-container">
+                            <span class="palette-label">Row Variables:</span>
+                            <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                            <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                            <div class="draggable-item" draggable="true" data-val="critical">Critical Label</div>
+                            <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
+                        </div>
+                        <div class="form-group wa-input-wrapper">
+                            <div class="wa-toolbar">
+                                <button type="button" class="wa-btn" onclick="formatText('waRow', '*')">B</button>
+                                <button type="button" class="wa-btn" onclick="formatText('waRow', '_')" style="font-style:italic;">I</button>
+                                <button type="button" class="wa-btn" onclick="formatText('waRow', '~')" style="text-decoration:line-through;">S</button>
+                                <button type="button" class="wa-btn" onclick="formatText('waRow', '```')">&lt;/&gt;</button>
+                            </div>
+                            <textarea id="waRow" class="droppable-input" rows="3" placeholder="- *{{skill}}*\n  Expires: {{date}}\n  Link: {{url}}"></textarea>
+                        </div>
+                    </div>
+
+                    <div style="flex: 1; width: 100%;">
+                        <label style="font-weight:bold; color: #6c757d;">Repeated Skill Row (No URL)</label>
+                        <div class="palette-container">
+                            <span class="palette-label">Row Variables:</span>
+                            <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                            <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                            <div class="draggable-item" draggable="true" data-val="critical">Critical Label</div>
+                            <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
+                        </div>
+                        <div class="form-group wa-input-wrapper">
+                            <div class="wa-toolbar">
+                                <button type="button" class="wa-btn" onclick="formatText('waRowNoUrl', '*')">B</button>
+                                <button type="button" class="wa-btn" onclick="formatText('waRowNoUrl', '_')" style="font-style:italic;">I</button>
+                                <button type="button" class="wa-btn" onclick="formatText('waRowNoUrl', '~')" style="text-decoration:line-through;">S</button>
+                                <button type="button" class="wa-btn" onclick="formatText('waRowNoUrl', '```')">&lt;/&gt;</button>
+                            </div>
+                            <textarea id="waRowNoUrl" class="droppable-input" rows="3" placeholder="- *{{skill}}*\n  Expires: {{date}}"></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -204,17 +309,32 @@
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             
             // Find index to set active tab
-            const tabs = ['skills', 'newuser', 'reset', 'delete'];
+            const tabs = ['skills', 'whatsapp', 'newuser', 'reset', 'delete'];
             document.querySelectorAll('.tab')[tabs.indexOf(tabId)].classList.add('active');
             document.getElementById('tab-' + tabId).classList.add('active');
         }
 
+        // --- Custom Text Formatting for WhatsApp ---
+        function formatText(elemId, marker) {
+            const el = document.getElementById(elemId);
+            const start = el.selectionStart;
+            const end = el.selectionEnd;
+            const text = el.value;
+            const selected = text.substring(start, end);
+            
+            // Simple wrap
+            const replacement = marker + selected + marker;
+            
+            el.value = text.substring(0, start) + replacement + text.substring(end);
+            el.focus();
+            // Restore selection including markers
+            el.setSelectionRange(start + marker.length, end + marker.length);
+        }
+
         // --- TinyMCE Setup with Chip Support ---
         
-        // [UPDATED] Robust DOM-based replacement to avoid breaking attributes
         function textToChips(html) {
             if (!html) return '';
-            // Use DOM parsing to avoid touching attributes (like href)
             const div = document.createElement('div');
             div.innerHTML = html;
 
@@ -223,7 +343,6 @@
 
             while (walker.nextNode()) {
                 const node = walker.currentNode;
-                // Only target text nodes containing variables
                 if (node.nodeValue && node.nodeValue.match(/{{[a-zA-Z0-9_]+}}/)) {
                     nodesToReplace.push(node);
                 }
@@ -231,11 +350,8 @@
 
             nodesToReplace.forEach(node => {
                 const fragment = document.createDocumentFragment();
-                // Split by {{var}} but keep the delimiter for reconstruction
                 const parts = node.nodeValue.split(/({{[a-zA-Z0-9_]+}})/g);
-                
                 parts.forEach(part => {
-                    // Check if this part is strictly a variable
                     if (part.match(/^{{[a-zA-Z0-9_]+}}$/)) {
                         const varName = part.replace(/[{}]/g, '');
                         const span = document.createElement('span');
@@ -247,7 +363,6 @@
                         fragment.appendChild(document.createTextNode(part));
                     }
                 });
-                
                 node.parentNode.replaceChild(fragment, node);
             });
 
@@ -258,7 +373,6 @@
             if (!html) return '';
             const temp = document.createElement('div');
             temp.innerHTML = html;
-            // Convert spans back to text
             temp.querySelectorAll('.chip').forEach(span => {
                 span.replaceWith(`{{${span.getAttribute('data-val')}}}`);
             });
@@ -323,13 +437,18 @@
                     subject: document.getElementById('skillsSubject').value,
                     intro: chipsToText(tinymce.get('skillsIntro').getContent()),
                     row: chipsToText(tinymce.get('skillsRow').getContent()),
-                    // New Fields
                     rowNoUrl: chipsToText(tinymce.get('skillsRowNoUrl').getContent()),
                     filterOnlyWithUrl: document.getElementById('skillsFilterNoUrl').checked
                 };
+            } else if (type === 'whatsapp') {
+                data = {
+                    waIntro: document.getElementById('waIntro').value,
+                    waRow: document.getElementById('waRow').value,
+                    waRowNoUrl: document.getElementById('waRowNoUrl').value,
+                    waFilterOnlyWithUrl: document.getElementById('waFilterNoUrl').checked
+                }
             } else {
-                // Generic logic for newuser, reset, delete
-                const prefix = (type === 'newuser') ? 'newUser' : type; // Handle camelCase map if needed
+                const prefix = (type === 'newuser') ? 'newUser' : type; 
                 data = {
                     from: document.getElementById(prefix + 'From').value,
                     subject: document.getElementById(prefix + 'Subject').value,
@@ -367,9 +486,13 @@
                         if(data.subject) document.getElementById('skillsSubject').value = data.subject;
                         if(data.intro) tinymce.get('skillsIntro').setContent(textToChips(data.intro));
                         if(data.row) tinymce.get('skillsRow').setContent(textToChips(data.row));
-                        // New Fields
                         if(data.rowNoUrl) tinymce.get('skillsRowNoUrl').setContent(textToChips(data.rowNoUrl));
                         if(data.filterOnlyWithUrl !== undefined) document.getElementById('skillsFilterNoUrl').checked = data.filterOnlyWithUrl;
+                    } else if (currentImportType === 'whatsapp') {
+                        if(data.waIntro) document.getElementById('waIntro').value = data.waIntro;
+                        if(data.waRow) document.getElementById('waRow').value = data.waRow;
+                        if(data.waRowNoUrl) document.getElementById('waRowNoUrl').value = data.waRowNoUrl;
+                        if(data.waFilterOnlyWithUrl !== undefined) document.getElementById('waFilterNoUrl').checked = data.waFilterOnlyWithUrl;
                     } else {
                         const prefix = (currentImportType === 'newuser') ? 'newUser' : currentImportType;
                         if(data.from) document.getElementById(prefix + 'From').value = data.from;
@@ -394,12 +517,16 @@
             document.getElementById('skillsSubject').value = prefs.emailSubject || '';
             if(prefs.emailIntro) tinymce.get('skillsIntro').setContent(textToChips(prefs.emailIntro));
             if(prefs.emailRow) tinymce.get('skillsRow').setContent(textToChips(prefs.emailRow));
-            
-            // New Skills Fields
             if(prefs.emailRowNoUrl) tinymce.get('skillsRowNoUrl').setContent(textToChips(prefs.emailRowNoUrl));
             document.getElementById('skillsFilterNoUrl').checked = prefs.emailOnlyWithUrl || false;
 
-            // 2. Helper to load JSON configs
+            // 2. WhatsApp
+            if(prefs.waIntro) document.getElementById('waIntro').value = prefs.waIntro;
+            if(prefs.waRow) document.getElementById('waRow').value = prefs.waRow;
+            if(prefs.waRowNoUrl) document.getElementById('waRowNoUrl').value = prefs.waRowNoUrl;
+            document.getElementById('waFilterNoUrl').checked = prefs.waOnlyWithUrl || false;
+
+            // 3. Helper to load JSON configs
             const loadTab = (key, prefix) => {
                 if(prefs[key]) {
                     try {
@@ -419,14 +546,13 @@
         document.getElementById('templateForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Helper to get data
             const getTab = (prefix) => ({
                 from: document.getElementById(prefix + 'From').value,
                 subject: document.getElementById(prefix + 'Subject').value,
                 body: chipsToText(tinymce.get(prefix + 'Body').getContent())
             });
 
-            // 1. Skills (Save as legacy keys for backward compat)
+            // Skills Email
             const skillsIntro = chipsToText(tinymce.get('skillsIntro').getContent());
             const skillsRow = chipsToText(tinymce.get('skillsRow').getContent());
             const skillsRowNoUrl = chipsToText(tinymce.get('skillsRowNoUrl').getContent());
@@ -437,11 +563,15 @@
                 { key: 'emailSubject', value: document.getElementById('skillsSubject').value },
                 { key: 'emailIntro', value: skillsIntro },
                 { key: 'emailRow', value: skillsRow },
-                
-                // New Fields
                 { key: 'emailRowNoUrl', value: skillsRowNoUrl },
                 { key: 'emailOnlyWithUrl', value: document.getElementById('skillsFilterNoUrl').checked },
                 
+                // WA Templates
+                { key: 'waIntro', value: document.getElementById('waIntro').value },
+                { key: 'waRow', value: document.getElementById('waRow').value },
+                { key: 'waRowNoUrl', value: document.getElementById('waRowNoUrl').value },
+                { key: 'waOnlyWithUrl', value: document.getElementById('waFilterNoUrl').checked },
+
                 { key: 'tpl_new_user', value: JSON.stringify(getTab('newUser')) },
                 { key: 'tpl_reset_password', value: JSON.stringify(getTab('reset')) },
                 { key: 'tpl_delete_user', value: JSON.stringify(getTab('delete')) }
@@ -453,21 +583,19 @@
                 });
             }
 
-            // Logging event
             await fetch('/api/logs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    type: 'Email Templates',
-                    title: 'Updated Email Templates',
-                    payload: { fields: ['skills', 'new_user', 'reset', 'delete', 'filter_settings'] }
+                    type: 'Templates',
+                    title: 'Updated Templates',
+                    payload: { fields: ['email_skills', 'wa_skills', 'new_user', 'reset', 'delete'] }
                 })
             });
 
             alert("All templates saved successfully.");
         });
 
-        // Delay init to allow TinyMCE to load
         setTimeout(loadData, 1000);
 
     </script>
