@@ -444,7 +444,8 @@ io.on('connection', (socket) => {
 
     //  WhatsApp Management Events
     socket.on('wa-get-status', () => {
-        if (userLevel >= ROLES.admin) {
+        // [CHANGED] Allow ROLES.simple (Dashboard users) to check status
+        if (userLevel >= ROLES.simple) {
             socket.emit('wa-status-data', whatsappService.getStatus());
         }
     });

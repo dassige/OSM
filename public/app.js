@@ -5,6 +5,8 @@ const socket = io();
 // =============================================================================
 let currentOsmData = [];
 let currentSort = { column: 'name', order: 'asc' };
+// [NEW] Global State for WA Status
+let isWaReady = false;
 
 // Icons
 const ICON_ASC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
@@ -37,6 +39,8 @@ function init() {
 
     socket.on('connect', () => {
         socket.emit('get-preferences');
+        // [NEW] Check WA status on connect
+        socket.emit('wa-get-status');
     });
 
     fetch('/ui-config')
@@ -276,32 +280,49 @@ function renderTable() {
             waRow.style.justifyContent = 'space-between';
             waRow.style.gap = '10px';
 
+            // Check Mobile and WA Status
+            const hasMobile = member.mobile && member.mobile.length > 5;
+            const isWaDisabled = !hasMobile || !isWaReady;
+
+            // Checkbox Title Logic
+            let waTitle = `Mobile: ${member.mobile}`;
+            if (!hasMobile) waTitle = "No mobile configured";
+            else if (!isWaReady) waTitle = "WhatsApp service not started";
+
             // WhatsApp Checkbox
             const waLabel = document.createElement('label');
             waLabel.className = 'email-label';
             waLabel.style.marginBottom = '0';
-            
-            const hasMobile = member.mobile && member.mobile.length > 5;
-            const mobileTitle = hasMobile ? `Mobile: ${member.mobile}` : "No mobile configured";
-            
-            waLabel.innerHTML = `<input type="checkbox" class="send-wa-cb" data-name="${member.name}" ${hasMobile ? '' : 'disabled'}> WhatsApp`;
-            waLabel.title = mobileTitle;
-            if (!hasMobile) waLabel.style.opacity = "0.5";
+            waLabel.innerHTML = `<input type="checkbox" class="send-wa-cb" data-name="${member.name}" ${isWaDisabled ? 'disabled' : ''}> WhatsApp`;
+            waLabel.title = waTitle;
+            if (isWaDisabled) waLabel.style.opacity = "0.5";
 
             // WhatsApp Round Button
             const btnWa = document.createElement('button');
             btnWa.className = 'btn-round';
-            btnWa.style.backgroundColor = '#25D366'; // WhatsApp Green
             btnWa.style.flexShrink = '0';
-            btnWa.title = hasMobile ? `Send WhatsApp to ${member.mobile}` : "No Mobile Number";
             btnWa.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>`;
             btnWa.onclick = () => sendSingleAction(member.name, 'whatsapp');
 
+            // Button Logic
             if (!hasMobile) {
                 btnWa.disabled = true;
                 btnWa.style.backgroundColor = '#ccc';
                 btnWa.style.opacity = '0.5';
                 btnWa.style.cursor = 'not-allowed';
+                btnWa.title = "No Mobile Number";
+            } else if (!isWaReady) {
+                // [NEW] Orange disabled state if service is down
+                btnWa.disabled = true;
+                btnWa.style.backgroundColor = '#fd7e14'; // Orange
+                btnWa.style.opacity = '0.8';
+                btnWa.style.cursor = 'not-allowed';
+                btnWa.title = "Whatsapp service not started";
+            } else {
+                // Ready state
+                btnWa.style.backgroundColor = '#25D366';
+                btnWa.title = `Send WhatsApp to ${member.mobile}`;
+                btnWa.disabled = false;
             }
 
             waRow.appendChild(waLabel);
@@ -431,6 +452,18 @@ socket.on('preferences-data', (prefs) => {
 
     if (prefs.sortSkills) currentSort = prefs.sortSkills;
     fetchData(false);
+});
+
+// [NEW] Listeners for WA Status Updates
+socket.on('wa-status-data', (data) => {
+    isWaReady = (data.status === 'READY');
+    // Re-render table to update button states if data is already loaded
+    if (currentOsmData.length > 0) renderTable();
+});
+
+socket.on('wa-status', (status) => {
+    isWaReady = (status === 'READY');
+    if (currentOsmData.length > 0) renderTable();
 });
 
 socket.on('terminal-output', (data) => { terminal.textContent += data; terminal.scrollTop = terminal.scrollHeight; });
