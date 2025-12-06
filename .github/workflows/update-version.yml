@@ -38,17 +38,16 @@ jobs:
           # Optional: Bump the patch version (e.g., 1.0.0 -> 1.0.1)
           # Remove the '#' below if you want auto-version bumping
           npm version patch --no-git-tag-version
-
       - name: Commit and Push changes
         run: |
-          # Configure git to look like a bot
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Check if anything actually changed to avoid empty commit errors
           if [[ -n $(git status --porcelain) ]]; then
-            git add package.json
-            # Use the same timezone for the commit message
+            # OLD LINE: git add package.json
+            # NEW LINE below adds both files:
+            git add package.json package-lock.json
+            
             git commit -m "chore: update versionDate to $(TZ='Pacific/Auckland' date +'%Y-%m-%d') [skip ci]"
             git push
           else
