@@ -462,17 +462,17 @@ io.on('connection', (socket) => {
         try {
             logger(`[WhatsApp] Sending test message to ${data.mobile}...`);
             await whatsappService.sendMessage(data.mobile, data.message);
-
+            
             // [NEW] Log to DB
             await db.logEvent(currentUser, 'WhatsApp', 'Test Message Sent', { mobile: data.mobile, messageSnippet: data.message.substring(0, 20) });
-
+            
             socket.emit('wa-test-result', { success: true, message: 'Test message sent successfully.' });
         } catch (err) {
             logger(`[WhatsApp] Test failed: ${err.message}`);
-
+            
             // [NEW] Log Failure
             await db.logEvent(currentUser, 'WhatsApp', 'Test Message Failed', { mobile: data.mobile, error: err.message });
-
+            
             socket.emit('wa-test-result', { success: false, error: err.message });
         }
     });
@@ -495,6 +495,7 @@ io.on('connection', (socket) => {
 
             const results = processedMembers.map(m => ({
                 name: m.name,
+                email: m.email, // [UPDATED] Added email field
                 mobile: m.mobile,
                 skills: m.expiringSkills.map(s => ({
                     skill: s.skill, dueDate: s.dueDate, hasUrl: !!s.url, isCritical: !!s.isCritical

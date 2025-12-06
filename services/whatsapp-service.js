@@ -53,7 +53,8 @@ function startClient() {
 
     client.on('qr', (qr) => {
         console.log('[WhatsApp] QR Code received');
-        systemLog('QR Code Generated', {}); 
+        // [CHANGED] Disabled logging for QR Code generation to reduce noise
+        // systemLog('QR Code Generated', {}); 
         
         qrcode.toDataURL(qr, (err, url) => {
             if (!err) {
