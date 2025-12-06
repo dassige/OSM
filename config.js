@@ -39,7 +39,7 @@ const locale = process.env.APP_LOCALE || 'en-NZ';
 let url;
 if (appMode === 'demo') {
     // In Demo mode, point to the local static HTML file
-    url = path.join(__dirname, 'public/resources/demo_osm_dasboard.html');
+    url = path.join(__dirname, 'public/demo/demo_osm_dasboard.html');
 } else {
     // In Production, build the live URL
     const defaultBuId = '87FF646A-FCBC-49A1-9BAC-XXXXXXXXX';
