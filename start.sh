@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
+# --- NEW: Auto-fix Chrome Lock Files ---
+# Removes the "SingletonLock" files that prevent Chrome from starting after a crash
+echo "Cleaning up Chrome session locks..."
+rm -f /app/.wwebjs_auth/session-fenz-osm-client/Singleton*
+
 # 1. Customization: Download assets if URLs are provided
 if [ ! -z "$UI_LOGO_URL" ]; then
     echo "Found custom logo URL. Downloading..."
@@ -17,7 +22,6 @@ if [ ! -z "$GCS_BUCKET_NAME" ]; then
     echo "GCS_BUCKET_NAME found. Starting in PRODUCTION mode (Litestream enabled)..."
     
     # 1. Restore the database from the bucket (if it exists)
-    # The -if-replica-exists flag prevents errors on the very first deployment
     litestream restore -if-replica-exists /app/fenz.db
 
     # 2. Execute Litestream, which wraps the node process

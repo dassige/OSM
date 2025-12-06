@@ -155,7 +155,7 @@ app.get('/api/user-session', (req, res) => {
 // --- GLOBAL ROUTE GUARD ---
 app.use((req, res, next) => {
     const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config', '/api/demo-credentials'];
-    if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/')) return next();
+    if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/') || req.path.startsWith('/demo/')) return next();
     if (req.session && req.session.loggedIn) return next();
     if (req.path.startsWith('/api/')) return res.status(401).json({ error: "Unauthorized" });
     return res.redirect('/login.html');
@@ -462,17 +462,17 @@ io.on('connection', (socket) => {
         try {
             logger(`[WhatsApp] Sending test message to ${data.mobile}...`);
             await whatsappService.sendMessage(data.mobile, data.message);
-            
+
             // [NEW] Log to DB
             await db.logEvent(currentUser, 'WhatsApp', 'Test Message Sent', { mobile: data.mobile, messageSnippet: data.message.substring(0, 20) });
-            
+
             socket.emit('wa-test-result', { success: true, message: 'Test message sent successfully.' });
         } catch (err) {
             logger(`[WhatsApp] Test failed: ${err.message}`);
-            
+
             // [NEW] Log Failure
             await db.logEvent(currentUser, 'WhatsApp', 'Test Message Failed', { mobile: data.mobile, error: err.message });
-            
+
             socket.emit('wa-test-result', { success: false, error: err.message });
         }
     });

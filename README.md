@@ -132,7 +132,7 @@ You can run the application in **Demo Mode** to test features or demonstrate the
 
 **Features in Demo Mode:**
 * **Sandboxed Database:** Uses `demo.db` instead of `fenz.db` to ensure your real data is never touched.
-* **Static Scraping:** Instead of connecting to the live OSM website, the app scrapes a local static HTML file located at `public/resources/demo_osm_dasboard.html`.
+* **Static Scraping:** Instead of connecting to the live OSM website, the app scrapes a local static HTML file located at `public/demo/demo_osm_dasboard.html`.
 * **Dynamic Dates:** The system automatically adjusts the dates in the static file to appear current (relative to "today"), allowing you to test expiry logic effectively.
 * **Visual Indicators:** A "DEMO VERSION" banner appears on all pages, providing a link to view the source HTML used for scraping.
 * **Credential Reveal:** The login page includes a tool to reveal the demo Super Admin credentials for easy access.
