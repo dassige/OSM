@@ -491,6 +491,8 @@ io.on('connection', (socket) => {
                 name: m.name,
                 email: m.email,
                 mobile: m.mobile,
+                messengerId: m.messengerId,
+                notificationPreference: m.notificationPreference, // <--- ADD THIS LINE
                 skills: m.expiringSkills.map(s => ({
                     skill: s.skill, dueDate: s.dueDate, hasUrl: !!s.url, isCritical: !!s.isCritical
                 })),
@@ -540,7 +542,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         const dbMembers = await db.getMembers();
         const dbSkills = await db.getSkills();
         const prefs = await db.getPreferences();
-        
+
         // Email Config
         const templateConfig = {
             from: prefs.emailFrom, subject: prefs.emailSubject, intro: prefs.emailIntro,
@@ -600,7 +602,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                                 name: member.name.split(',')[1] || member.name,
                                 appname: config.ui.loginTitle
                             };
-                            
+
                             let waText = applyTemplate(waIntroTpl, memberVars);
 
                             waSkills.forEach(s => {
@@ -614,7 +616,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                                 const rowTpl = s.url ? waRowTpl : waRowNoUrlTpl;
                                 waText += "\n" + applyTemplate(rowTpl, skillVars);
                             });
-                            
+
                             waText += `\n\nPlease complete these ASAP.`;
 
                             await whatsappService.sendMessage(member.mobile, waText);

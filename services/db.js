@@ -42,14 +42,14 @@ async function initDB() {
         await db.exec('PRAGMA foreign_keys = ON;');
 
         // --- Core Tables ---
-        
+
         // Preferences (Global)
         await db.exec(`CREATE TABLE IF NOT EXISTS preferences (key TEXT PRIMARY KEY, value TEXT);`);
         await db.run(`INSERT INTO preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, 'app_version', packageJson.version);
 
         // Email History
         await db.exec(`CREATE TABLE IF NOT EXISTS email_history (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT DEFAULT CURRENT_TIMESTAMP, recipient_name TEXT, recipient_email TEXT, status TEXT, details TEXT);`);
-        
+
         // Event Log
         await db.exec(`CREATE TABLE IF NOT EXISTS event_log (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT DEFAULT CURRENT_TIMESTAMP, user TEXT, event_type TEXT, title TEXT, payload TEXT);`);
 
@@ -57,11 +57,12 @@ async function initDB() {
 
         // Members
         await db.exec(`CREATE TABLE IF NOT EXISTS members (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, mobile TEXT, messengerId TEXT, enabled INTEGER DEFAULT 1);`);
-        try { await db.exec(`ALTER TABLE members ADD COLUMN enabled INTEGER DEFAULT 1;`); } catch (e) {}
-
+        try { await db.exec(`ALTER TABLE members ADD COLUMN enabled INTEGER DEFAULT 1;`); } catch (e) { }
+        try { await db.exec(`ALTER TABLE members ADD COLUMN notificationPreference TEXT DEFAULT 'email';`); } catch (e) { }
+        
         // Skills
         await db.exec(`CREATE TABLE IF NOT EXISTS skills (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, url TEXT, critical_skill INTEGER DEFAULT 0, enabled INTEGER DEFAULT 1);`);
-        try { await db.exec(`ALTER TABLE skills ADD COLUMN enabled INTEGER DEFAULT 1;`); } catch (e) {}
+        try { await db.exec(`ALTER TABLE skills ADD COLUMN enabled INTEGER DEFAULT 1;`); } catch (e) { }
 
         // Users (Auth)
         await db.exec(`
@@ -74,7 +75,7 @@ async function initDB() {
                 role TEXT DEFAULT 'simple'
             );
         `);
-        try { await db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'simple';`); } catch (e) {}
+        try { await db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'simple';`); } catch (e) { }
 
         // User Preferences
         await db.exec(`
@@ -104,7 +105,7 @@ async function closeDB() {
 
 function getDbPath() {
     if (process.env.DB_PATH) return process.env.DB_PATH;
-    
+
     // Switch database file if in Demo mode
     const filename = (config.appMode === 'demo') ? 'demo.db' : 'fenz.db';
     return path.join(__dirname, '../' + filename);
@@ -114,23 +115,23 @@ async function verifyAndReplaceDb(newDbPath) {
     try {
         console.log(`[DB] Verifying integrity of uploaded file: ${newDbPath}`);
         tempDb = await open({ filename: newDbPath, driver: sqlite3.Database });
-        
+
         const tables = await tempDb.all("SELECT name FROM sqlite_master WHERE type='table'");
         const tableNames = tables.map(t => t.name);
         const requiredTables = ['members', 'skills', 'preferences'];
-        
+
         const missing = requiredTables.filter(t => !tableNames.includes(t));
         if (missing.length > 0) throw new Error(`Incompatible Database. Missing tables: ${missing.join(', ')}`);
-        
+
         let dbVersion = '0.0.0';
         try {
             const row = await tempDb.get("SELECT value FROM preferences WHERE key = 'app_version'");
             if (row && row.value) dbVersion = row.value;
-        } catch (e) {}
+        } catch (e) { }
 
         const currentVersion = packageJson.version;
         if (dbVersion !== currentVersion) throw new Error(`Version Mismatch! Uploaded DB is ${dbVersion}, App is ${currentVersion}.`);
-        
+
         await tempDb.close();
     } catch (e) {
         if (tempDb) await tempDb.close();
@@ -138,7 +139,7 @@ async function verifyAndReplaceDb(newDbPath) {
     }
 
     await closeDB();
-    
+
     const currentDbPath = getDbPath();
     try {
         console.log(`[DB] Replacing ${currentDbPath}...`);
@@ -248,8 +249,8 @@ async function getMembers() {
 async function addMember(member) {
     if (!db) await initDB();
     const result = await db.run(
-        `INSERT INTO members (name, email, mobile, messengerId, enabled) VALUES (?, ?, ?, ?, ?)`,
-        member.name, member.email, member.mobile, member.messengerId, member.enabled !== false ? 1 : 0
+        `INSERT INTO members (name, email, mobile, messengerId, enabled, notificationPreference) VALUES (?, ?, ?, ?, ?, ?)`,
+        member.name, member.email, member.mobile, member.messengerId, member.enabled !== false ? 1 : 0, member.notificationPreference || 'email'
     );
     return result.lastID;
 }
@@ -258,14 +259,15 @@ async function bulkAddMembers(members) {
     if (!db) await initDB();
     await db.exec('BEGIN TRANSACTION');
     try {
-        const stmt = await db.prepare('INSERT INTO members (name, email, mobile, messengerId, enabled) VALUES (?, ?, ?, ?, ?)');
+        const stmt = await db.prepare('INSERT INTO members (name, email, mobile, messengerId, enabled, notificationPreference) VALUES (?, ?, ?, ?, ?, ?)');
         for (const member of members) {
             await stmt.run(
                 member.name,
                 member.email,
                 member.mobile,
                 member.messengerId,
-                member.enabled !== false ? 1 : 0
+                member.enabled !== false ? 1 : 0,
+                member.notificationPreference || 'email'
             );
         }
         await stmt.finalize();
@@ -279,8 +281,8 @@ async function bulkAddMembers(members) {
 async function updateMember(id, member) {
     if (!db) await initDB();
     await db.run(
-        `UPDATE members SET name = ?, email = ?, mobile = ?, messengerId = ?, enabled = ? WHERE id = ?`,
-        member.name, member.email, member.mobile, member.messengerId, member.enabled ? 1 : 0, id
+        `UPDATE members SET name = ?, email = ?, mobile = ?, messengerId = ?, enabled = ?, notificationPreference = ? WHERE id = ?`,
+        member.name, member.email, member.mobile, member.messengerId, member.enabled ? 1 : 0, member.notificationPreference || 'email', id
     );
 }
 
@@ -437,7 +439,7 @@ async function getEventLogs(filters = {}) {
     if (!db) await initDB();
     let baseQuery = `FROM event_log WHERE 1=1`;
     const params = [];
-    
+
     if (filters.user) {
         baseQuery += ` AND user = ?`;
         params.push(filters.user);
@@ -463,7 +465,7 @@ async function getEventLogs(filters = {}) {
     const page = filters.page && filters.page > 0 ? parseInt(filters.page) : 1;
     const limit = filters.limit && filters.limit > 0 ? parseInt(filters.limit) : 50;
     const offset = (page - 1) * limit;
-    
+
     dataQuery += ` LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
@@ -535,7 +537,7 @@ module.exports = {
     closeDB,
     getDbPath,
     verifyAndReplaceDb,
-    
+
     // Auth & Users
     authenticateUser,
     getUsers,

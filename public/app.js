@@ -77,7 +77,7 @@ function setRunningState() {
     // Disable checkboxes and buttons
     document.querySelectorAll('.header-checkbox-label input').forEach(cb => cb.disabled = true);
     document.querySelectorAll('.btn-round').forEach(btn => btn.disabled = true);
-    
+
     terminal.textContent = '> Starting Notification Process...\n';
     statusSpan.innerText = 'Sending...';
     statusSpan.style.color = '#e67e22';
@@ -88,10 +88,10 @@ function setRunningState() {
 
 function setIdleState(code) {
     const isTableVisible = tableContainer.style.display !== 'none';
-    
+
     document.querySelectorAll('.header-checkbox-label input').forEach(cb => cb.disabled = !isTableVisible);
     document.querySelectorAll('.btn-round').forEach(btn => btn.disabled = false); // Re-enable buttons
-    
+
     viewBtn.disabled = false;
     updateSendButtonState();
 
@@ -141,7 +141,7 @@ function updateRoleUI(role) {
 
 function toggleConsole(isVisible) {
     const role = document.body.getAttribute('data-user-role');
-    if (role === 'guest' || role === 'simple') return; 
+    if (role === 'guest' || role === 'simple') return;
     const style = isVisible ? 'block' : 'none';
     if (terminal) terminal.style.display = style;
     if (consoleHeader) consoleHeader.style.display = style;
@@ -225,7 +225,50 @@ function renderTable() {
         }
         tr.appendChild(skillTd); tr.appendChild(dateTd);
 
-        // [UPDATED] Action Column - Groups Controls with Buttons
+        const prefs = (member.notificationPreference || 'email').split(',');
+        const defaultEmail = prefs.includes('email');
+        const defaultWa = prefs.includes('whatsapp');
+        const defaultMsg = prefs.includes('messenger');
+
+        // Now update the Checkbox creation lines within that loop:
+
+        // Email Checkbox line:
+        emailLabel.innerHTML = `<input type="checkbox" class="send-email-cb" data-name="${member.name}" ${hasEmail ? (defaultEmail ? 'checked' : '') : 'disabled'}> Email`;
+
+        // WhatsApp Checkbox line:
+        // Note: Ensure we don't auto-check if WA is disabled globally or for user
+        const shouldCheckWa = defaultWa && !isWaDisabled;
+        waLabel.innerHTML = `<input type="checkbox" class="send-wa-cb" data-name="${member.name}" ${isWaDisabled ? 'disabled' : (shouldCheckWa ? 'checked' : '')}> WhatsApp`;
+
+        // Messenger Checkbox line:
+        const shouldCheckMsg = defaultMsg && hasMsgId;
+        msgLabel.innerHTML = `<input type="checkbox" class="send-msg-cb" data-name="${member.name}" ${hasMsgId ? (shouldCheckMsg ? 'checked' : '') : 'disabled'}> Messenger`;
+
+
+        // 2. Add the new Reset Function at the end of the file (or anywhere suitable)
+        function resetCheckboxesToDefaults() {
+            currentOsmData.forEach(member => {
+                // Parse preferences
+                const prefs = (member.notificationPreference || 'email').split(',');
+                const wantsEmail = prefs.includes('email');
+                const wantsWa = prefs.includes('whatsapp');
+                const wantsMsg = prefs.includes('messenger');
+
+                // Find inputs for this member
+                // Note: data-name handles unique identification in the current DOM structure
+                const emailCb = document.querySelector(`.send-email-cb[data-name="${member.name}"]`);
+                const waCb = document.querySelector(`.send-wa-cb[data-name="${member.name}"]`);
+                const msgCb = document.querySelector(`.send-msg-cb[data-name="${member.name}"]`);
+
+                // Apply state (checking for disabled state to avoid enabling invalid options)
+                if (emailCb && !emailCb.disabled) emailCb.checked = wantsEmail;
+                if (waCb && !waCb.disabled) waCb.checked = wantsWa;
+                if (msgCb && !msgCb.disabled) msgCb.checked = wantsMsg;
+            });
+            updateSendButtonState();
+        }
+
+        // Action Column - Groups Controls with Buttons
         const actionTd = document.createElement('td');
         actionTd.className = 'member-cell';
 
@@ -253,7 +296,7 @@ function renderTable() {
             emailLabel.innerHTML = `<input type="checkbox" class="send-email-cb" data-name="${member.name}" ${hasEmail ? 'checked' : 'disabled'}> Email`;
             emailLabel.title = emailTitle;
             if (!hasEmail) emailLabel.style.opacity = "0.5";
-            
+
             // Email Round Button
             const btnEmail = document.createElement('button');
             btnEmail.className = 'btn-round';
@@ -357,14 +400,14 @@ function renderTable() {
 
 function setupMasterCheckbox(masterId, targetClass) {
     const master = document.getElementById(masterId);
-    if(!master) return;
-    
+    if (!master) return;
+
     const newMaster = master.cloneNode(true);
     master.parentNode.replaceChild(newMaster, master);
-    
+
     newMaster.addEventListener('change', (e) => {
         document.querySelectorAll(targetClass).forEach(cb => {
-            if(!cb.disabled) cb.checked = e.target.checked;
+            if (!cb.disabled) cb.checked = e.target.checked;
         });
         updateSendButtonState();
     });
@@ -374,17 +417,17 @@ function setupMasterCheckbox(masterId, targetClass) {
 function sendSingleAction(name, type) {
     const days = parseInt(daysInput.value) || 30;
     const label = type === 'email' ? 'Email' : 'WhatsApp';
-    
+
     if (confirm(`Send immediate ${label} reminder to ${name}?`)) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         setRunningState();
-        
-        const target = { 
-            name: name, 
-            sendEmail: type === 'email', 
-            sendWa: type === 'whatsapp' 
+
+        const target = {
+            name: name,
+            sendEmail: type === 'email',
+            sendWa: type === 'whatsapp'
         };
-        
+
         socket.emit('run-process-queue', [target], days);
     }
 }
@@ -412,7 +455,7 @@ sendEmailsBtn.addEventListener('click', () => {
     });
 
     if (targets.length === 0) return alert("No actions selected.");
-    
+
     if (confirm(`Process ${targets.length} members?`)) {
         setRunningState();
         const days = parseInt(daysInput.value) || 30;
