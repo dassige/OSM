@@ -540,6 +540,7 @@ io.on('connection', (socket) => {
                 name: m.name,
                 email: m.email,
                 mobile: m.mobile,
+                messengerId: m.messengerId,
                 skills: m.expiringSkills.map(s => ({
                     skill: s.skill, dueDate: s.dueDate, hasUrl: !!s.url, isCritical: !!s.isCritical
                 })),
