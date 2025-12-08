@@ -280,16 +280,16 @@
                 style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
-    <div id="controls" style="display: flex; align-items: center; flex-wrap: wrap;">
-        <div
-            style="margin-right: 15px; margin-bottom: 10px; background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc;">
-            <label for="daysInput" style="font-weight: bold; color: #555; font-size: 14px;">Days to Expiry:</label>
-            <input type="number" id="daysInput" value="30" min="1"
-                style="width: 50px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
+    <div class="action-bar" id="controls">
+        <div class="days-wrapper">
+            <label for="daysInput">Days to Expiry:</label>
+            <input type="number" id="daysInput" value="30" min="1">
         </div>
-        <button id="viewBtn">Reload Expiring Skills</button>
-        <button id="sendEmailsBtn" disabled>Send Notifications</button>
-        <span id="status" style="margin-left: 15px; font-weight: bold; color: #555; margin-bottom: 10px;">Idle</span>
+
+        <div class="action-group" style="flex-grow: 1; justify-content: flex-end;">
+            <button id="viewBtn" style="margin:0;">Reload Expiring Skills</button>
+            <button id="sendEmailsBtn" disabled style="margin:0;">Send Notifications</button>
+        </div>
     </div>
 
     <div id="progressContainer">
@@ -389,7 +389,8 @@
                 DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
                         style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
             </div>
-
+            <img id="aboutLogo" alt="App Logo"
+                style="max-width: 100px; margin-bottom: 15px; display: none; margin-left: auto; margin-right: auto;">
             <h2 style="margin-top: 0;">About</h2>
             <p style="font-size: 1.1em; color: #666;">FENZ OSM Automation Manager</p>
             <div style="margin: 20px 0; font-size: 0.9em;">
@@ -508,10 +509,20 @@
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // [NEW] Check for demo mode and show About modal banner
+        //  Load UI Config (Logo & Demo Mode)
         fetch('/ui-config')
             .then(r => r.json())
             .then(config => {
+                // 1. Load Logo
+                if (config.loginLogo) {
+                    const logo = document.getElementById('aboutLogo');
+                    if (logo) {
+                        logo.src = config.loginLogo;
+                        logo.style.display = 'block';
+                    }
+                }
+
+                // 2. Check Demo Mode
                 if (config.appMode === 'demo') {
                     const banner = document.getElementById('aboutDemoBanner');
                     if (banner) banner.style.display = 'block';

@@ -8,6 +8,7 @@ let currentOsmData = [];
 let currentSort = { column: 'name', order: 'asc' };
 // [NEW] Global State for WA Status
 let isWaReady = false;
+let showCompletionToast = false; // Control flag
 
 // Icons
 const ICON_ASC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
@@ -17,7 +18,6 @@ const ICON_DESC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14
 const sendEmailsBtn = document.getElementById('sendEmailsBtn');
 const viewBtn = document.getElementById('viewBtn');
 const terminal = document.getElementById('terminal');
-const statusSpan = document.getElementById('status');
 const tableContainer = document.getElementById('tableContainer');
 const skillsTableBody = document.querySelector('#skillsTable tbody');
 const daysInput = document.getElementById('daysInput');
@@ -80,8 +80,9 @@ function setRunningState() {
     document.querySelectorAll('.btn-round').forEach(btn => btn.disabled = true);
 
     terminal.textContent = '> Starting Notification Process...\n';
-    statusSpan.innerText = 'Sending...';
-    statusSpan.style.color = '#e67e22';
+
+    if (window.showToast) window.showToast('Starting process...', 'info');
+
     progressContainer.style.display = 'block';
     progressBar.style.width = '0%';
     progressBar.textContent = 'Starting...';
@@ -91,25 +92,33 @@ function setIdleState(code) {
     const isTableVisible = tableContainer.style.display !== 'none';
 
     document.querySelectorAll('.header-checkbox-label input').forEach(cb => cb.disabled = !isTableVisible);
-    document.querySelectorAll('.btn-round').forEach(btn => btn.disabled = false); // Re-enable buttons
+    document.querySelectorAll('.btn-round').forEach(btn => btn.disabled = false);
 
     viewBtn.disabled = false;
     updateSendButtonState();
 
     if (code === 0) {
-        statusSpan.innerText = 'Completed Successfully';
-        statusSpan.style.color = 'green';
+        // [CHANGED] Only show toast if user initiated the action
+        if (showCompletionToast && window.showToast) {
+            window.showToast('Completed Successfully', 'success');
+        }
+
         terminal.textContent += `\n> Process exited with code ${code}`;
         progressBar.style.width = '100%';
         progressBar.textContent = 'Completed';
     } else {
-        statusSpan.innerText = 'Failed';
+        // Always show errors
+        if (window.showToast) window.showToast('Process Failed', 'error');
+        statusSpan.innerText = 'Failed'; // Fallback if element exists
         statusSpan.style.color = 'red';
         terminal.textContent += `\n> Process exited with error code ${code}`;
     }
+
+    // [NEW] Reset the flag so next auto-refresh doesn't toast
+    showCompletionToast = false;
+
     setTimeout(() => { progressContainer.style.display = 'none'; }, 3000);
 }
-
 function updateSendButtonState() {
     const role = document.body.getAttribute('data-user-role');
     if (role === 'guest') {
@@ -351,7 +360,7 @@ function renderTable() {
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.addEventListener('change', updateSendButtonState));
     setupMasterCheckbox('selectAllEmail', '.send-email-cb');
     setupMasterCheckbox('selectAllWhatsapp', '.send-wa-cb');
-     updateSendButtonState();
+    updateSendButtonState();
 }
 
 
@@ -393,7 +402,10 @@ function sendSingleAction(name, type) {
 // 5. EVENT LISTENERS & ACTIONS
 // =============================================================================
 
-viewBtn.addEventListener('click', () => fetchData(true));
+viewBtn.addEventListener('click', () => {
+    showCompletionToast = true; // [NEW] User clicked, so we want a toast
+    fetchData(true);
+});
 
 sendEmailsBtn.addEventListener('click', () => {
     const targets = [];
@@ -414,6 +426,7 @@ sendEmailsBtn.addEventListener('click', () => {
     if (targets.length === 0) return showToast('No actions selected', 'error');
 
     if (confirm(`Process ${targets.length} members?`)) {
+        showCompletionToast = true; // [NEW] User clicked, so we want a toast
         setRunningState();
         const days = parseInt(daysInput.value) || 30;
         socket.emit('run-process-queue', targets, days);
@@ -505,7 +518,7 @@ function isDateInPast(dateStr) {
     return !isNaN(d.getTime()) && d < today;
 }
 //  Reset Logic for the Dashboard Header Button
-window.resetCheckboxesToDefaults = function() {
+window.resetCheckboxesToDefaults = function () {
     if (!currentOsmData || currentOsmData.length === 0) return;
 
     // Create a map for quick lookup
@@ -534,13 +547,13 @@ window.resetCheckboxesToDefaults = function() {
     // 3. Reset Master Checkboxes
     const masterEmail = document.getElementById('selectAllEmail');
     if (masterEmail) masterEmail.checked = false;
-    
+
     const masterWa = document.getElementById('selectAllWhatsapp');
     if (masterWa) masterWa.checked = false;
 
     // 4. Update UI State
     updateSendButtonState();
-    if(window.showToast) window.showToast("Reset to default preferences", "success");
+    if (window.showToast) window.showToast("Reset to default preferences", "success");
 };
 
 // Start
