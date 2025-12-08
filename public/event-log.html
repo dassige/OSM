@@ -294,6 +294,7 @@
 
     <script src="help.js"></script>
     <script src="theme.js"></script>
+    <script src="toast.js"></script> 
     <script>
         // Init UI
         fetch('/ui-config').then(r => r.json()).then(c => {
@@ -333,9 +334,9 @@
             if (!confirm("DANGER: This will permanently delete ALL events from the log.\n\nAre you sure?")) return;
             try {
                 const res = await fetch('/api/events/all', { method: 'DELETE' });
-                if (res.ok) { alert("Log purged."); applyFilters(1); }
+                if (res.ok) { showToast('Log purged', 'success'); applyFilters(1); }
                 else { throw new Error((await res.json()).error); }
-            } catch (e) { alert("Error: " + e.message); }
+            } catch (e) { showToast(e.message,"error"  ); }
         }
 
         async function pruneEvents() {
@@ -347,9 +348,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ days })
                 });
-                if (res.ok) { alert("Events pruned."); applyFilters(1); }
+                if (res.ok) { showToast("Events pruned.", "success"); applyFilters(1); }
                 else { throw new Error((await res.json()).error); }
-            } catch (e) { alert("Error: " + e.message); }
+            } catch (e) { showToast( e.message, "error"); }
         }
 
         function exportLog() {

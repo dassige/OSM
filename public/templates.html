@@ -499,9 +499,9 @@
                         if(data.subject) document.getElementById(prefix + 'Subject').value = data.subject;
                         if(data.body) tinymce.get(prefix + 'Body').setContent(textToChips(data.body));
                     }
-                    alert(`Template for '${currentImportType}' imported successfully!`);
+                    showToast(`Template for '${currentImportType}' imported successfully!`, 'success');
                 } catch (err) {
-                    alert('Error parsing JSON: ' + err.message);
+                    showToast('Error parsing JSON: ' + err.message, 'error');
                 }
             };
             reader.readAsText(file);
@@ -593,7 +593,7 @@
                 })
             });
 
-            alert("All templates saved successfully.");
+            showToast("All templates saved successfully.", "success");
         });
 
         setTimeout(loadData, 1000);
@@ -601,5 +601,6 @@
     </script>
     <script src="help.js"></script>
     <script src="theme.js"></script>
+    <script src="toast.js"></script>
 </body>
 </html>

@@ -372,7 +372,7 @@
                 });
                 renderTable(); // Update styles/opacity
             } catch (e) {
-                alert('Failed to update status');
+                showToast('Failed to update status', 'error');
                 skill.enabled = !newState; // Revert
                 renderTable();
             }
@@ -455,7 +455,7 @@
         async function processCSV(csv) {
             const lines = csv.split(/\r\n|\n/);
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-            if (!headers.includes('name')) { alert('Invalid CSV'); return; }
+            if (!headers.includes('name')) { showToast('Invalid CSV', 'error'); return; }
             const skills = [];
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
@@ -481,7 +481,7 @@
         }
 
         async function exportToCSV() {
-            if (!currentSkills || currentSkills.length === 0) { alert("No skills to export."); return; }
+            if (!currentSkills || currentSkills.length === 0) { showToast("No skills to export.", "warning"); return; }
             const headers = ['name', 'url', 'critical_skill', 'enabled'];
             const rows = currentSkills.map(skill => {
                 const rowData = { 
@@ -564,7 +564,7 @@
                 }
             } catch (e) {
                 loading.style.display = 'none';
-                alert("Error scanning OSM: " + e.message);
+                showToast("Error scanning OSM: " + e.message, "error");
                 closeModal('osmImportModal');
             }
         }
@@ -590,12 +590,12 @@
                 if (res.ok) {
                     closeModal('osmImportModal');
                     await reloadSkills();
-                    alert(`Successfully imported ${importPayload.length} skills.`);
+                    showToast(`Successfully imported ${importPayload.length} skills.`, 'success');
                 } else {
                     throw new Error("Server rejected import.");
                 }
             } catch (e) {
-                alert("Import failed: " + e.message);
+                showToast("Import failed: " + e.message, "error");
             }
         }
 
@@ -610,5 +610,6 @@
     </script>
     <script src="help.js"></script>
     <script src="theme.js"></script>
+    <script src="toast.js"></script>
 </body>
 </html>

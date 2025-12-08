@@ -623,7 +623,7 @@
                 });
                 renderTable(); // Update opacity
             } catch (e) {
-                alert('Failed to update status');
+                showToast('Failed to update status', 'error');
                 member.enabled = !newState;
                 renderTable();
             }
@@ -719,7 +719,7 @@
         async function processCSV(csv) {
             const lines = csv.split(/\r\n|\n/);
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-            if (!headers.includes('name') || !headers.includes('email')) { alert('Invalid CSV'); return; }
+            if (!headers.includes('name') || !headers.includes('email')) { showToast('Invalid CSV', 'error'); return; }
             const members = [];
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
@@ -743,7 +743,7 @@
         }
 
         async function exportToCSV() {
-            if (!currentMembers || currentMembers.length === 0) { alert("No members to export."); return; }
+            if (!currentMembers || currentMembers.length === 0) { showToast("No members to export.", "error"); return; }
             const headers = ['name', 'email', 'mobile', 'enabled'];
             const rows = currentMembers.map(member => {
                 const rowData = {
@@ -824,7 +824,7 @@
                 }
             } catch (e) {
                 loading.style.display = 'none';
-                alert("Error scanning OSM: " + e.message);
+                showToast("Error scanning OSM: " + e.message, "error");
                 closeModal('osmImportModal');
             }
         }
@@ -850,12 +850,12 @@
                 if (res.ok) {
                     closeModal('osmImportModal');
                     await reloadMembers();
-                    alert(`Successfully imported ${importPayload.length} members.`);
+                    showToast(`Successfully imported ${importPayload.length} members.`,'success');
                 } else {
                     throw new Error("Server rejected import.");
                 }
             } catch (e) {
-                alert("Import failed: " + e.message);
+                showToast("Import failed: " + e.message, "error");
             }
         }
 
@@ -870,6 +870,7 @@
     </script>
     <script src="help.js"></script>
     <script src="theme.js"></script>
+    <script src="toast.js"></script>
 </body>
 
 </html>

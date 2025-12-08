@@ -175,7 +175,7 @@
         function sendTestMessage() {
             const mobile = document.getElementById('testMobile').value;
             const message = document.getElementById('testMessage').value;
-            if(!mobile || !message) { alert("Please provide both a mobile number and a message."); return; }
+            if(!mobile || !message) { showToast("Please provide both a mobile number and a message.", "error"); return; }
             const btn = document.getElementById('btnSendTest');
             btn.disabled = true; btn.innerText = "Sending...";
             socket.emit('wa-send-test', { mobile, message });
@@ -234,8 +234,8 @@
         socket.on('wa-test-result', (res) => {
             const btn = document.getElementById('btnSendTest');
             btn.disabled = false; btn.innerText = "Send Test Message";
-            if (res.success) { alert("Success: " + res.message); closeModal('testModal'); } 
-            else { alert("Error: " + res.error); }
+            if (res.success) { showToast(res.message, 'success'); closeModal('testModal'); } 
+            else { showToast( res.error, 'error'); }
         });
 
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
@@ -246,5 +246,6 @@
     </script>
     <script src="help.js"></script>
     <script src="theme.js"></script>
+    <script src="toast.js"></script>
 </body>
 </html>

@@ -220,7 +220,7 @@
             .then(user => {
                 // Check if user is Admin (isEnvUser is true for Super Admin)
                 if (!user.isAdmin && !user.isEnvUser) {
-                    alert("Access Denied: Super Admin privileges required.");
+                    showToast("Access Denied: Super Admin privileges required.", "error");
                     window.location.href = "/";
                 }
             })
@@ -277,6 +277,7 @@
     </script>
     <script src="help.js"></script>
     <script src="theme.js"></script>
+    <script src="toast.js"></script>
 </body>
 
 </html>

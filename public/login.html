@@ -288,7 +288,7 @@
                 const data = await res.json();
 
                 if(res.ok) {
-                    alert('Success! Please check your email for the new password.');
+                    showToast('Please check your email for the new password.', 'success');
                     closeModal('forgotModal');
                     document.getElementById('forgotForm').reset();
                 } else {
@@ -312,6 +312,7 @@
     </script>
     <script src="help.js"></script>
     <script src="theme.js"></script>
+    <script src="toast.js"></script>
 </body>
 
 </html>

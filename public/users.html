@@ -313,7 +313,7 @@
         async function loadUsers() {
             try {
                 const res = await fetch('/api/users');
-                if (res.status === 403) { alert('Access Denied'); window.location.href = '/'; return; }
+                if (res.status === 403) { showToast('Access Denied', 'error'); window.location.href = '/'; return; }
                 
                 const users = await res.json();
                 const tbody = document.querySelector('#userTable tbody');
@@ -378,12 +378,12 @@
                     closeModal('userModal');
                     loadUsers();
                     document.getElementById('addUserForm').reset();
-                    alert('User created successfully!');
+                    showToast('User created successfully!', 'success');
                 } else {
                     const err = await res.json();
-                    alert('Error: ' + (err.error || 'Unknown error'));
+                    showToast('Error: ' + (err.error || 'Unknown error'), 'error');
                 }
-            } catch (error) { alert('Network Error'); } 
+            } catch (error) { showToast('Network Error', 'error'); } 
             finally {
                 btn.disabled = false;
                 spinner.style.display = 'none';
@@ -420,9 +420,9 @@
                     loadUsers();
                 } else {
                     const err = await res.json();
-                    alert('Error: ' + err.error);
+                    showToast('Error: ' + err.error, 'error');
                 }
-            } catch (e) { alert('Network Error'); }
+            } catch (e) { showToast('Network Error', 'error'); }
         });
 
         // --- RESET PASSWORD ---
@@ -455,12 +455,12 @@
 
                 if (res.ok) {
                     closeModal('resetModal');
-                    alert('Success! Password emailed.');
+                    showToast('Success! Password emailed.', 'success');
                 } else {
                     const err = await res.json();
-                    alert('Error: ' + (err.error || 'Failed'));
+                    showToast('Error: ' + (err.error || 'Failed', 'error'));
                 }
-            } catch (err) { alert('Network error'); } 
+            } catch (err) { showToast('Network error', 'error'); } 
             finally {
                 btn.disabled = false;
                 spinner.style.display = 'none';
@@ -473,7 +473,7 @@
             if (confirm('Delete this user?\n\nThis cannot be undone.')) {
                 const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
                 if (res.ok) loadUsers();
-                else alert("Failed to delete user.");
+                else showToast("Failed to delete user.", "error");
             }
         }
 
@@ -485,5 +485,6 @@
     </script>
     <script src="help.js"></script>
     <script src="theme.js"></script>
+    <script src="toast.js"></script>
 </body>
 </html>

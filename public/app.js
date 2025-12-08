@@ -411,7 +411,7 @@ sendEmailsBtn.addEventListener('click', () => {
         }
     });
 
-    if (targets.length === 0) return alert("No actions selected.");
+    if (targets.length === 0) return showToast('No actions selected', 'error');
 
     if (confirm(`Process ${targets.length} members?`)) {
         setRunningState();
