@@ -607,17 +607,24 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                             let waText = applyTemplate(waIntroTpl, memberVars);
 
                             waSkills.forEach(s => {
+                                //  Perform variable replacement on the URL
+                                let finalUrl = s.url || "";
+                                if (finalUrl) {
+                                    finalUrl = finalUrl
+                                        .replace(/{{member-name}}/g, encodeURIComponent(member.name))
+                                        .replace(/{{member-email}}/g, encodeURIComponent(member.email));
+                                }
+
                                 const skillVars = {
                                     skill: s.skill,
                                     date: s.dueDate,
-                                    url: s.url || "N/A",
+                                    url: finalUrl || "N/A",
                                     critical: s.isCritical ? "(CRITICAL)" : ""
                                 };
                                 // Select template based on URL existence
                                 const rowTpl = s.url ? waRowTpl : waRowNoUrlTpl;
                                 waText += "\n" + applyTemplate(rowTpl, skillVars);
                             });
-
                             waText += `\n\nPlease complete these ASAP.`;
 
                             await whatsappService.sendMessage(member.mobile, waText);

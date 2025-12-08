@@ -371,18 +371,6 @@
                 transform: rotate(360deg);
             }
         }
-
-        #manageSkillsTable td:nth-of-type(3)::before {
-            content: "Skill Name";
-        }
-
-        #manageSkillsTable td:nth-of-type(4)::before {
-            content: "Critical";
-        }
-
-        #manageSkillsTable td:nth-of-type(5)::before {
-            content: "Form URL";
-        }
     </style>
 </head>
 
@@ -661,9 +649,15 @@
                 return;
             }
             currentSkills.forEach((s, index) => {
-                const urlDisplay = s.url ? `<a href="${s.url}" target="_blank" style="color:#007bff;text-decoration:none;">Link</a>` : `<span style="color:#999; font-style:italic;">No Link</span>`;
-                const tr = document.createElement('tr');
+                let displayUrl = s.url;
+                if (displayUrl) {
+                    displayUrl = displayUrl
+                        .replace(/{{member-name}}/g, encodeURIComponent("TEST MEMBER"))
+                        .replace(/{{member-email}}/g, encodeURIComponent("test@example.com"));
+                }
 
+                const urlDisplay = s.url ? `<a href="${displayUrl}" target="_blank" style="color:#007bff;text-decoration:none;">Link</a>` : `<span style="color:#999; font-style:italic;">No Link</span>`;
+                const tr = document.createElement('tr');
                 // Opacity style for disabled row
                 const rowStyle = s.enabled ? '' : 'opacity: 0.6; background-color: #f9f9f9;';
                 tr.style = rowStyle;

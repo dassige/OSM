@@ -504,6 +504,44 @@ function isDateInPast(dateStr) {
     const d = new Date(dateStr);
     return !isNaN(d.getTime()) && d < today;
 }
+//  Reset Logic for the Dashboard Header Button
+window.resetCheckboxesToDefaults = function() {
+    if (!currentOsmData || currentOsmData.length === 0) return;
+
+    // Create a map for quick lookup
+    const memberMap = new Map(currentOsmData.map(m => [m.name, m]));
+
+    // 1. Reset Email Checkboxes
+    document.querySelectorAll('.send-email-cb').forEach(cb => {
+        const name = cb.getAttribute('data-name');
+        const member = memberMap.get(name);
+        if (member && !cb.disabled) {
+            const prefs = (member.notificationPreference || 'email').split(',');
+            cb.checked = prefs.includes('email');
+        }
+    });
+
+    // 2. Reset WhatsApp Checkboxes
+    document.querySelectorAll('.send-wa-cb').forEach(cb => {
+        const name = cb.getAttribute('data-name');
+        const member = memberMap.get(name);
+        if (member && !cb.disabled) {
+            const prefs = (member.notificationPreference || 'email').split(',');
+            cb.checked = prefs.includes('whatsapp');
+        }
+    });
+
+    // 3. Reset Master Checkboxes
+    const masterEmail = document.getElementById('selectAllEmail');
+    if (masterEmail) masterEmail.checked = false;
+    
+    const masterWa = document.getElementById('selectAllWhatsapp');
+    if (masterWa) masterWa.checked = false;
+
+    // 4. Update UI State
+    updateSendButtonState();
+    if(window.showToast) window.showToast("Reset to default preferences", "success");
+};
 
 // Start
 init();
