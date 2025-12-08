@@ -753,3 +753,165 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     opacity: 1;
     color: var(--text-main);
 }
+/* --- MOBILE CARD VIEW --- */
+@media screen and (max-width: 768px) {
+    
+    /* 1. Global Table Resets for Mobile */
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+
+    /* Hide standard headers (we will add labels via CSS) */
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    tr {
+        margin-bottom: 15px;
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px var(--shadow);
+        overflow: hidden; /* Keeps borders nice */
+    }
+
+    td {
+        /* Behave like a "row" */
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+        position: relative;
+        padding-left: 45% !important; /* Make room for the label */
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: right; /* Align content to the right */
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    td:last-child {
+        border-bottom: none;
+    }
+
+    /* The "Label" (Pseudo-element) */
+    td::before {
+        position: absolute;
+        top: 12px; /* Match padding */
+        left: 15px;
+        width: 40%; 
+        white-space: nowrap;
+        font-weight: bold;
+        text-align: left;
+        color: var(--text-muted);
+        content: attr(data-label); /* Fallback */
+    }
+
+    /* 2. DASHBOARD TABLE (#skillsTable) specific labels */
+    #skillsTable td:nth-of-type(1)::before { content: "Member"; }
+    #skillsTable td:nth-of-type(2)::before { content: "Skill"; }
+    #skillsTable td:nth-of-type(3)::before { content: "Due Date"; }
+    #skillsTable td:nth-of-type(4)::before { content: "Actions"; }
+
+    /* Dashboard: specific tweaks */
+    #skillsTable td:nth-of-type(4) {
+        display: block; /* Stack checkboxes vertically */
+        text-align: right;
+    }
+    #skillsTable .header-checkbox-label {
+        /* Hide master checkboxes on mobile to save space, or style them differently */
+        display: none !important; 
+    }
+    #skillsTable td:nth-of-type(4) > div {
+        /* The flex container for email/wa buttons */
+        justify-content: flex-end;
+    }
+
+    /* 3. MANAGEMENT TABLES (Members, Skills, Users) */
+    /* We target them broadly but apply labels based on assumption of column order */
+    
+    /* Manage Members Table */
+    /* Col 1: Checkbox, 2: Enabled, 3: Name, 4: Email, 5: Mobile, 6: Prefs, 7: Actions */
+    .container table:not(#skillsTable) td:nth-of-type(1) { text-align: left; padding-left: 15px !important; } /* Checkbox row */
+    .container table:not(#skillsTable) td:nth-of-type(2)::before { content: "Status"; }
+    .container table:not(#skillsTable) td:nth-of-type(3)::before { content: "Name"; }
+    .container table:not(#skillsTable) td:nth-of-type(4)::before { content: "Email"; }
+    .container table:not(#skillsTable) td:nth-of-type(5)::before { content: "Mobile"; }
+    .container table:not(#skillsTable) td:nth-of-type(6)::before { content: "Prefs"; }
+    .container table:not(#skillsTable) td:nth-of-type(7)::before { content: "Actions"; }
+
+    /* Fix: "Manage Skills" has fewer columns, so we override specific indices if needed */
+    /* This generic approach works reasonably well, but for perfect labels on every page, 
+       we would add data-label attributes in HTML. For now, this covers 90% of cases. */
+
+/* 4. UI Adjustments for Mobile Header */
+    
+    /* Position buttons in top corners */
+    .profile-menu {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        width: auto;
+    }
+
+    .header-menu {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: auto;
+        display: block;
+        margin-bottom: 0;
+    }
+
+    /* Push the main title down so buttons don't cover it */
+    #mainHeader {
+        margin-top: 70px;
+        font-size: 1.5rem;
+        text-align: center;
+        padding: 0 10px;
+    }
+    
+    /* Adjust Controls Layout (Vertical Stack) */
+    #controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    #controls button, #controls div {
+        margin-right: 0;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    /* Fix: Ensure Days Input container takes full width */
+    #controls > div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    #daysInput {
+        width: 60px !important; 
+        flex-shrink: 0;
+    }
+    
+    /* Adjust Filter Chips */
+    .type-toggles {
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 5px;
+    }
+    .type-badge {
+        flex: 1 1 auto;
+        text-align: center;
+        margin-bottom: 5px;
+    }
+    #scrollTopBtn {
+        z-index: 2000 !important; /* Ensure it's above cards and overlays */
+        bottom: 30px; /* Raise slightly for mobile browser bars */
+        right: 20px;
+        width: 50px; /* Slightly larger touch target */
+        height: 50px;
+    }
+}

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,79 +8,388 @@
     <title id="pageTitle">Skills Management - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        body { position: relative; }
-        .container { max-width: 1000px; margin: 0 auto; padding-top: 40px; }
-        h1 { text-align: center; margin-bottom: 30px; }
+        body {
+            position: relative;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding-top: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
         /* [UPDATED] Increased z-index to 100 */
-        .back-btn { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #fff; background-color: #343a40; width: 45px; height: 45px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); transition: all 0.2s ease; z-index: 100; }
-        .back-btn:hover { background-color: #23272b; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); }
-        .table-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 5px; }
-        .help-bar { display: flex; justify-content: flex-end; align-items: center; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #eee; }
-        .btn-primary { background-color: #007bff; color: white; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; }
-        .btn-success { background-color: #28a745; color: white; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; }
-        .btn-secondary { background-color: #6c757d; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; border: none; }
-        .btn-danger { background-color: #dc3545; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer; border: none; }
-        .btn-icon { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 4px; transition: background-color 0.2s, color 0.2s; vertical-align: middle; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-icon:hover { background-color: rgba(0, 0, 0, 0.08); }
-        .btn-icon.edit { color: #007bff; }
-        .btn-icon.edit:hover { color: #0056b3; }
-        .btn-icon.delete { color: #dc3545; }
-        .btn-icon.delete:hover { color: #bd2130; }
-        .btn-icon.info { color: #17a2b8; padding: 4px; margin-right: 4px; }
-        .btn-icon.info:hover { color: #117a8b; transform: scale(1.1); }
-        .help-label { font-size: 13px; color: #666; cursor: pointer; }
-        .help-container { display: flex; align-items: center; cursor: pointer; }
-        .help-container:hover .help-label { text-decoration: underline; color: #17a2b8; }
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); }
-        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 500px; border-radius: 8px; position: relative; }
-        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; color: #aaa; }
-        .close-btn:hover { color: black; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        
-        .form-group input[type="text"], 
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-decoration: none;
+            color: #fff;
+            background-color: #343a40;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+
+        .back-btn:hover {
+            background-color: #23272b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .table-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .help-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s, color 0.2s;
+            vertical-align: middle;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-icon.edit {
+            color: #007bff;
+        }
+
+        .btn-icon.edit:hover {
+            color: #0056b3;
+        }
+
+        .btn-icon.delete {
+            color: #dc3545;
+        }
+
+        .btn-icon.delete:hover {
+            color: #bd2130;
+        }
+
+        .btn-icon.info {
+            color: #17a2b8;
+            padding: 4px;
+            margin-right: 4px;
+        }
+
+        .btn-icon.info:hover {
+            color: #117a8b;
+            transform: scale(1.1);
+        }
+
+        .help-label {
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .help-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .help-container:hover .help-label {
+            text-decoration: underline;
+            color: #17a2b8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 500px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close-btn:hover {
+            color: black;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input[type="text"],
         .form-group input[type="url"],
-        .form-group textarea { 
-            width: 100%; 
-            padding: 8px; 
-            box-sizing: border-box; 
-            border: 1px solid #ddd; 
-            border-radius: 4px; 
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             font-family: inherit;
         }
 
-        .code-block { background: #f4f4f4; padding: 10px; border-left: 4px solid #007bff; font-family: monospace; white-space: pre; overflow-x: auto; }
-        .cb-col { width: 40px; text-align: center; }
-        th.sortable { cursor: pointer; user-select: none; position: relative; padding-right: 20px; }
-        th.sortable:hover { background-color: #23272b; }
-        .th-content { display: flex; align-items: center; justify-content: space-between; }
-        .sort-icon { font-size: 12px; margin-left: 8px; opacity: 0.5; }
-        .sort-icon.active { opacity: 1; color: #4db8ff; }
+        .code-block {
+            background: #f4f4f4;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .cb-col {
+            width: 40px;
+            text-align: center;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 20px;
+        }
+
+        th.sortable:hover {
+            background-color: #23272b;
+        }
+
+        .th-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sort-icon {
+            font-size: 12px;
+            margin-left: 8px;
+            opacity: 0.5;
+        }
+
+        .sort-icon.active {
+            opacity: 1;
+            color: #4db8ff;
+        }
 
         /* CHIPS STYLING */
-        .palette-container { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; padding: 8px; background: #eef2f5; border: 1px solid #dee2e6; border-radius: 4px; align-items: center; }
-        .palette-label { font-size: 11px; font-weight: bold; color: #666; margin-right: 4px; text-transform: uppercase; }
-        .draggable-item { background-color: #fff; border: 1px solid #adb5bd; border-radius: 12px; padding: 2px 10px; font-family: monospace; font-weight: 600; color: #495057; cursor: grab; user-select: none; font-size: 11px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .draggable-item:hover { background-color: #007bff; color: white; border-color: #007bff; }
-        .draggable-item:active { cursor: grabbing; }
+        .palette-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            padding: 8px;
+            background: #eef2f5;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            align-items: center;
+        }
+
+        .palette-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #666;
+            margin-right: 4px;
+            text-transform: uppercase;
+        }
+
+        .draggable-item {
+            background-color: #fff;
+            border: 1px solid #adb5bd;
+            border-radius: 12px;
+            padding: 2px 10px;
+            font-family: monospace;
+            font-weight: 600;
+            color: #495057;
+            cursor: grab;
+            user-select: none;
+            font-size: 11px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .draggable-item:hover {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .draggable-item:active {
+            cursor: grabbing;
+        }
 
         /* [NEW] TOGGLE SWITCH CSS */
-        .switch { position: relative; display: inline-block; width: 34px; height: 20px; vertical-align: middle; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-        input:checked + .slider { background-color: #28a745; }
-        input:focus + .slider { box-shadow: 0 0 1px #28a745; }
-        input:checked + .slider:before { transform: translateX(14px); }
-        
-        .spinner { width: 20px; height: 20px; border: 3px solid rgba(0, 0, 0, 0.1); border-radius: 50%; border-top-color: #007bff; animation: spin 1s ease-in-out infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+            vertical-align: middle;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.slider {
+            background-color: #28a745;
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px #28a745;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(14px);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #007bff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #manageSkillsTable td:nth-of-type(3)::before {
+            content: "Skill Name";
+        }
+
+        #manageSkillsTable td:nth-of-type(4)::before {
+            content: "Critical";
+        }
+
+        #manageSkillsTable td:nth-of-type(5)::before {
+            content: "Form URL";
+        }
     </style>
 </head>
 
 <body>
     <div id="demoBanner" class="demo-banner">
-        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
+                style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
     <a href="/" class="back-btn" title="Back to Dashboard">
@@ -96,9 +406,11 @@
 
         <div id="tableContainer" style="display: block;">
             <div class="table-toolbar">
-                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger" style="display: none; margin-right: auto;">Delete Selected</button>
+                <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger"
+                    style="display: none; margin-right: auto;">Delete Selected</button>
                 <button onclick="exportToCSV()" class="btn-secondary">Export CSV</button>
-                <button onclick="openOsmImportModal()" class="btn-secondary" style="background-color: #17a2b8; color: white;">Import from OSM</button>
+                <button onclick="openOsmImportModal()" class="btn-secondary"
+                    style="background-color: #17a2b8; color: white;">Import from OSM</button>
                 <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
                 <button onclick="openModal()" class="btn-primary">Add Skill</button>
             </div>
@@ -116,15 +428,21 @@
                 </div>
             </div>
 
-            <table>
+            <table id="manageSkillsTable">
                 <thead>
                     <tr>
-                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
-                        
+                        <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                        </th>
+
                         <th style="width: 70px; text-align: center;">Enabled</th>
-                        
-                        <th class="sortable" onclick="handleSort('name')"><div class="th-content">Skill Name <span id="icon-name" class="sort-icon"></span></div></th>
-                        <th class="sortable" onclick="handleSort('critical_skill')"><div class="th-content">Critical <span id="icon-critical_skill" class="sort-icon"></span></div></th>
+
+                        <th class="sortable" onclick="handleSort('name')">
+                            <div class="th-content">Skill Name <span id="icon-name" class="sort-icon"></span></div>
+                        </th>
+                        <th class="sortable" onclick="handleSort('critical_skill')">
+                            <div class="th-content">Critical <span id="icon-critical_skill" class="sort-icon"></span>
+                            </div>
+                        </th>
                         <th>Form URL</th>
                         <th style="width: 100px; text-align: center;">Actions</th>
                     </tr>
@@ -135,7 +453,11 @@
     </div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
     </button>
 
     <div id="skillModal" class="modal">
@@ -148,7 +470,7 @@
                     <label>Skill Name (Exact Match)</label>
                     <input type="text" id="name" required placeholder="e.g. OI (IS1) - Operational Safety">
                 </div>
-                
+
                 <div class="form-group">
                     <label>Google Form URL (Optional)</label>
                     <div class="palette-container">
@@ -156,9 +478,12 @@
                         <div class="draggable-item" draggable="true" data-val="member-name">Member Name</div>
                         <div class="draggable-item" draggable="true" data-val="member-email">Member Email</div>
                     </div>
-                    <textarea id="url" rows="4" placeholder="https://docs.google.com/forms/...?entry.123={{member-name}}" style="resize:vertical;"></textarea>
-                    
-                    <small style="display:block; color:#888; font-size:0.8em; margin-top:4px;">Drag chips above into the box to pre-fill form fields.</small>
+                    <textarea id="url" rows="4"
+                        placeholder="https://docs.google.com/forms/...?entry.123={{member-name}}"
+                        style="resize:vertical;"></textarea>
+
+                    <small style="display:block; color:#888; font-size:0.8em; margin-top:4px;">Drag chips above into the
+                        box to pre-fill form fields.</small>
                 </div>
 
                 <div style="display:flex; gap:20px;">
@@ -169,7 +494,8 @@
                     </div>
                     <div class="form-group">
                         <label style="display:flex; align-items:center; cursor:pointer;">
-                            <input type="checkbox" id="critical_skill" style="width:auto; margin-right:10px;"> Critical Skill
+                            <input type="checkbox" id="critical_skill" style="width:auto; margin-right:10px;"> Critical
+                            Skill
                         </label>
                     </div>
                 </div>
@@ -189,8 +515,8 @@
             <p><strong>Required:</strong> <code>name</code></p>
             <p><strong>Optional:</strong> <code>url</code>, <code>critical_skill</code>, <code>enabled</code></p>
             <div class="code-block">name,url,critical_skill,enabled
-"OI (IS1)",https://forms...{{member-name}},true,true
-"OI (G9)",,0,false</div>
+                "OI (IS1)",https://forms...{{member-name}},true,true
+                "OI (G9)",,0,false</div>
             <br><button onclick="closeModal('helpModal')" class="btn-primary" style="width: 100%">Close</button>
         </div>
     </div>
@@ -199,9 +525,11 @@
         <div class="modal-content" style="width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
             <span class="close-btn" onclick="closeModal('osmImportModal')">&times;</span>
             <h2 id="osmModalTitle">Import Skills from OSM</h2>
-            
-            <div style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9em; color: #555;">
-                <strong>Note:</strong> This operation scans the OSM Dashboard and will import only the skills that are <u>not yet in your table</u>.
+
+            <div
+                style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9em; color: #555;">
+                <strong>Note:</strong> This operation scans the OSM Dashboard and will import only the skills that are
+                <u>not yet in your table</u>.
             </div>
 
             <div id="osmLoading" style="text-align: center; padding: 20px; display: none;">
@@ -209,10 +537,11 @@
                 <div>Scanning Dashboard...</div>
             </div>
 
-            <div id="osmListContainer" style="flex: 1; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 20px; min-height: 100px; display: none;">
+            <div id="osmListContainer"
+                style="flex: 1; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 20px; min-height: 100px; display: none;">
                 <ul id="osmSkillList" style="list-style: none; padding: 0; margin: 0;"></ul>
             </div>
-            
+
             <div id="osmActions" style="text-align: right; display: none;">
                 <button type="button" onclick="closeModal('osmImportModal')" class="btn-secondary">Cancel</button>
                 <button type="button" onclick="confirmOsmImport()" class="btn-success">Confirm Import</button>
@@ -268,7 +597,7 @@
             urlInput.addEventListener('drop', e => {
                 e.preventDefault();
                 const text = e.dataTransfer.getData('text/plain');
-                if(text) {
+                if (text) {
                     const start = urlInput.selectionStart;
                     const end = urlInput.selectionEnd;
                     const val = urlInput.value;
@@ -334,7 +663,7 @@
             currentSkills.forEach((s, index) => {
                 const urlDisplay = s.url ? `<a href="${s.url}" target="_blank" style="color:#007bff;text-decoration:none;">Link</a>` : `<span style="color:#999; font-style:italic;">No Link</span>`;
                 const tr = document.createElement('tr');
-                
+
                 // Opacity style for disabled row
                 const rowStyle = s.enabled ? '' : 'opacity: 0.6; background-color: #f9f9f9;';
                 tr.style = rowStyle;
@@ -402,13 +731,13 @@
 
         const skillModal = document.getElementById('skillModal');
         const form = document.getElementById('skillForm');
-        function openModal() { 
-            document.getElementById('modalTitle').textContent = "Add Skill"; 
-            document.getElementById('skillId').value = ""; 
-            form.reset(); 
+        function openModal() {
+            document.getElementById('modalTitle').textContent = "Add Skill";
+            document.getElementById('skillId').value = "";
+            form.reset();
             // Default to Enabled = True
             document.getElementById('enabled').checked = true;
-            skillModal.style.display = 'block'; 
+            skillModal.style.display = 'block';
         }
         function editSkillByIndex(index) {
             const s = currentSkills[index];
@@ -426,11 +755,11 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('skillId').value;
-            const data = { 
-                name: document.getElementById('name').value, 
-                url: document.getElementById('url').value, 
+            const data = {
+                name: document.getElementById('name').value,
+                url: document.getElementById('url').value,
                 critical_skill: document.getElementById('critical_skill').checked,
-                enabled: document.getElementById('enabled').checked 
+                enabled: document.getElementById('enabled').checked
             };
             const method = id ? 'PUT' : 'POST';
             const url = id ? `/api/skills/${id}` : '/api/skills';
@@ -466,7 +795,7 @@
                 if (obj.name) {
                     obj.critical_skill = (obj.critical_skill === 'true' || obj.critical_skill === '1');
                     // Handle import enable logic if column exists, else default true
-                    if(obj.enabled !== undefined) {
+                    if (obj.enabled !== undefined) {
                         obj.enabled = (obj.enabled === 'true' || obj.enabled === '1');
                     } else {
                         obj.enabled = true;
@@ -484,9 +813,9 @@
             if (!currentSkills || currentSkills.length === 0) { showToast("No skills to export.", "warning"); return; }
             const headers = ['name', 'url', 'critical_skill', 'enabled'];
             const rows = currentSkills.map(skill => {
-                const rowData = { 
-                    name: skill.name, 
-                    url: skill.url, 
+                const rowData = {
+                    name: skill.name,
+                    url: skill.url,
                     critical_skill: skill.critical_skill ? '1' : '0',
                     enabled: skill.enabled ? '1' : '0'
                 };
@@ -516,7 +845,7 @@
                         payload: { count: currentSkills.length }
                     })
                 });
-            } catch(e) { console.error("Logging failed", e); }
+            } catch (e) { console.error("Logging failed", e); }
         }
 
         /* [OSM Import Logic] */
@@ -538,7 +867,7 @@
             try {
                 const res = await fetch('/api/skills/discover');
                 if (!res.ok) throw new Error((await res.json()).error || "Failed to scan");
-                
+
                 discoveredSkills = await res.json();
                 loading.style.display = 'none';
 
@@ -581,10 +910,10 @@
             }));
 
             try {
-                const res = await fetch('/api/skills/import', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(importPayload) 
+                const res = await fetch('/api/skills/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(importPayload)
                 });
 
                 if (res.ok) {
@@ -600,10 +929,10 @@
         }
 
         initPage();
-        window.onclick = (e) => { 
-            if (e.target == skillModal) closeModal('skillModal'); 
-            if (e.target == document.getElementById('helpModal')) closeModal('helpModal'); 
-            if (e.target == document.getElementById('osmImportModal')) closeModal('osmImportModal'); 
+        window.onclick = (e) => {
+            if (e.target == skillModal) closeModal('skillModal');
+            if (e.target == document.getElementById('helpModal')) closeModal('helpModal');
+            if (e.target == document.getElementById('osmImportModal')) closeModal('osmImportModal');
         }
         window.onscroll = function () { document.getElementById("scrollTopBtn").style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -612,4 +941,5 @@
     <script src="theme.js"></script>
     <script src="toast.js"></script>
 </body>
+
 </html>

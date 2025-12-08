@@ -4,19 +4,6 @@
 
 ### 1. User Experience (UX) Polish
 
-**A. Native Dark Mode Support**
-You already have a `styles.css`. Implementing a toggleable Dark Mode is a low-effort, high-impact visual upgrade.
-* **Implementation:** Use CSS Custom Properties (Variables) for colors (e.g., `--bg-color`, `--text-color`).
-* **Feature:** Add a toggle in the top-left Profile menu or next to the logout button. Persist the preference in `localStorage` so it remains after a refresh.
-
-**B. "Toast" Notifications instead of `alert()`**
-Currently, the app relies heavily on `alert()` and `confirm()`. These block the UI and look dated.
-* **Improvement:** Replace `alert()` with non-blocking "Toast" notifications (little popups in the corner) for success/error messages (e.g., "Email Sent", "User Created").
-* **Library:** [Toastify.js](https://github.com/apvarun/toastify-js) is lightweight and no-dependency, fitting your "vanilla" theme.
-
-**C. Mobile "Card View"**
-The `<table>` layouts are difficult to read on mobile phones.
-* **Improvement:** Use a CSS Media Query (`@media (max-width: 600px)`) to transform table rows into "Cards" where each cell becomes a key/value pair stacked vertically. This makes the "Expiring Skills Report" readable for officers checking on their phone in a truck.
 
 ### 2. Functional Improvements
 
@@ -65,8 +52,7 @@ You are currently handling DB schema changes with `try { await db.exec(...) } ca
 
 ### Recommended Roadmap
 
-1.  **Immediate (High Value / Low Effort):** Implement **Toast Notifications** and **Mobile Card View CSS**.
-2.  **Short Term:** Implement the **Automated Scheduler** (node-cron). This moves the app from a "tool" to an "automation platform."
-3.  **Long Term:** Add **Analytics** and **2FA**.
 
-Would you like to see a code example for any specific one of these ideas?
+1.  **Short Term:** Implement the **Automated Scheduler** (node-cron). This moves the app from a "tool" to an "automation platform."
+2.  **Long Term:** Add **Analytics** and **2FA**.
+
