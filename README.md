@@ -30,6 +30,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **Dockerized:** Ready for production deployment with a flexible configuration system.
   * **Demo Mode:** Run the application in a fully sandboxed environment using static local data and a separate database (`demo.db`). This allows for safe testing and demonstration without connecting to the live OSM Dashboard or risking production data.
   * **WhatsApp Integration:** Send expiring skill notifications directly to members' WhatsApp accounts using a headless client. Includes support for bulk sending, test messages, and session management.
+  * **Messenger Integration:** Send expiring skill notifications directly to members' Messenger accounts using a headless client. Includes support for bulk sending, test messages, and session management.
 
 ## Table of Contents
 
