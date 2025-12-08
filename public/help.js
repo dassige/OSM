@@ -10,8 +10,14 @@ const helpContent = {
             <ul>
                 <li><strong>Days to Expiry:</strong> Change this number and click 'Reload' to see skills expiring further in the future.</li>
                 <li><strong>Reload Expiring Skills:</strong> Fetches the latest data from the OSM Dashboard.</li>
-                <li><strong>Send Notifications:</strong> Select the <strong>Email</strong> or <strong>WhatsApp</strong> checkboxes for members and click 'Send Notifications' to process them in bulk.</li>
-                <li><strong>Quick Actions:</strong> Use the round <span style="background:#007bff; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✉</span> or <span style="background:#25D366; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✆</span> buttons to send a single reminder immediately.</li>
+                <li><strong>Send Notifications:</strong> Select the <strong>Email</strong>, <strong>WhatsApp</strong>, or <strong>Messenger</strong> checkboxes for members and click 'Send Notifications' to process them in bulk.</li>
+                <li><strong>Quick Actions:</strong> Use the round buttons to send a single reminder immediately:
+                    <ul>
+                        <li><span style="background:#007bff; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✉</span> <strong>Email</strong></li>
+                        <li><span style="background:#25D366; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✆</span> <strong>WhatsApp</strong></li>
+                        <li><span style="background:#0084FF; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">💬</span> <strong>Messenger</strong></li>
+                    </ul>
+                </li>
                 <li><strong>Filters:</strong> Use the toggle buttons at the top right of the table:
                     <ul>
                         <li><strong>Hide Empty:</strong> Hides members who have no expiring skills listed.</li>
@@ -48,6 +54,7 @@ const helpContent = {
             <p><strong>Add Member:</strong> Manually add a single member. Name must match OSM exactly.</p>
             <p><strong>Import CSV:</strong> Bulk upload members. <br>Format: <code>name, email, mobile, enabled</code>.</p>
             <p><strong>Edit/Delete:</strong> Use the pencil or trash icons to modify specific members.</p>
+            <p><strong>Messenger ID:</strong> This field stores the unique ID required to send Facebook Messenger notifications. It is generated when a user messages your configured Facebook Page.</p>
             <p><strong>Export CSV:</strong> Download the current list of members for backup or editing.</p>
         `
     },
@@ -82,10 +89,10 @@ const helpContent = {
                 <li><strong>Dual Row Templates:</strong> Customize how each skill row appears based on whether it has a URL or not.</li>
             </ul>
 
-            <h3>Expiring Skills (WhatsApp)</h3>
+            <h3>Expiring Skills (WhatsApp/Messenger)</h3>
             <p>Customize the text message sent to mobile phones.</p>
             <ul>
-                <li><strong>Formatting:</strong> WhatsApp supports simple markdown: <code>*bold*</code>, <code>_italic_</code>, <code>~strike~</code>. HTML is not supported.</li>
+                <li><strong>Formatting:</strong> WhatsApp supports simple markdown: <code>*bold*</code>, <code>_italic_</code>, <code>~strike~</code>. Messenger displays plain text. HTML is not supported.</li>
                 <li><strong>Intro & Rows:</strong> Define the opening message and the format for each skill in the list.</li>
             </ul>
 
@@ -164,10 +171,10 @@ const helpContent = {
     "third-parties": {
         title: "Third Party Services Help",
         body: `
-            <p><strong>WhatsApp Integration:</strong></p>
+            <h3>WhatsApp Integration</h3>
             <p>This service enables the system to send automated expiring skill notifications directly to member's WhatsApp accounts.</p>
             
-            <h3>Connection Steps</h3>
+            <h4>Connection Steps</h4>
             <ol>
                 <li>Click <strong>Start Service</strong> to launch the secure WhatsApp client on the server.</li>
                 <li>Wait for the <strong>QR Code</strong> to appear on the screen.</li>
@@ -175,13 +182,25 @@ const helpContent = {
                 <li>Once connected, the status will turn <span style="color:#28a745; font-weight:bold;">Green</span> and display the connected account name and number.</li>
             </ol>
 
-            <h3>Testing & Configuration</h3>
+            <h4>Testing & Configuration</h4>
             <ul>
                 <li><strong>Test Integration:</strong> Click this button to send a verification message to any mobile number you choose. This confirms the system can successfully send messages.</li>
                 <li><strong>Auto-Disconnect Preference:</strong> If enabled, the WhatsApp session will automatically log out when you sign out of the FENZ OSM Manager. This prevents your session from staying active on the server when you are not using it.</li>
             </ul>
 
-            <p><strong>Note:</strong> The phone associated with the WhatsApp account must be on and connected to the internet for messages to send.</p>
+            <hr style="margin: 20px 0;">
+
+            <h3>Facebook Messenger Integration</h3>
+            <p>Unlike WhatsApp, Messenger integration is stateless and uses an API Token configured in the server settings (<code>.env</code> file).</p>
+            
+            <h4>How it works</h4>
+            <p>You cannot send a message to a user until they message your Page first. This creates a "Page-Scoped ID" which the system needs.</p>
+            
+            <ol>
+                <li>Ask the member to message your configured Facebook Page (e.g. "DVFB Training Bot").</li>
+                <li>The server will capture their unique ID and log it to the system logs.</li>
+                <li>An administrator must copy this ID and paste it into the <strong>Messenger ID</strong> field in the Member's profile (Manage Members).</li>
+            </ol>
         `
     },
     // --- Default ---

@@ -9,25 +9,140 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         /* ... (Keep existing styles) ... */
-        th.sortable { cursor: pointer; user-select: none; position: relative; }
-        th.sortable:hover { background-color: #454d55; }
-        .th-content { display: flex; align-items: center; justify-content: space-between; }
-        .sort-icon { font-size: 12px; margin-left: 8px; opacity: 0.5; }
-        .sort-icon.active { opacity: 1; color: #4db8ff; }
-        .header-menu { position: absolute; top: 20px; right: 20px; display: inline-block; z-index: 100; }
-        .menu-btn { background-color: #343a40; color: white; padding: 10px 16px; font-size: 16px; border: none; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); transition: background-color 0.2s; }
-        .menu-btn:hover { background-color: #23272b; }
-        .dropdown-content { display: none; position: absolute; right: 0; background-color: #f9f9f9; min-width: 180px; box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2); border-radius: 4px; z-index: 1; overflow: hidden; margin-top: 5px; border: 1px solid #ddd; }
-        .dropdown-content a { color: #333; padding: 12px 16px; text-decoration: none; display: block; text-align: left; transition: background-color 0.2s; }
-        .dropdown-content a:hover { background-color: #f1f1f1; color: #007bff; }
-        .show { display: block; }
-        .profile-menu { position: absolute; top: 20px; left: 20px; z-index: 100; }
-        .profile-btn { background-color: white; color: #333; padding: 10px 16px; font-size: 16px; border: 1px solid #ddd; cursor: pointer; border-radius: 20px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); transition: all 0.2s; }
-        .profile-btn:hover { background-color: #f8f9fa; transform: translateY(-1px); }
-        .profile-dropdown { left: 0; right: auto; min-width: 160px; }
-        .logout { color: #dc3545 !important; border-top: 1px solid #eee; }
-        .logout:hover { background-color: #ffe6e6 !important; color: #bd2130 !important; }
-        .type-badge.expired-filter.active { background-color: #dc3545; border-color: #dc3545; color: white; }
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        th.sortable:hover {
+            background-color: #454d55;
+        }
+
+        .th-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sort-icon {
+            font-size: 12px;
+            margin-left: 8px;
+            opacity: 0.5;
+        }
+
+        .sort-icon.active {
+            opacity: 1;
+            color: #4db8ff;
+        }
+
+        .header-menu {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: inline-block;
+            z-index: 100;
+        }
+
+        .menu-btn {
+            background-color: #343a40;
+            color: white;
+            padding: 10px 16px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.2s;
+        }
+
+        .menu-btn:hover {
+            background-color: #23272b;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #f9f9f9;
+            min-width: 180px;
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            z-index: 1;
+            overflow: hidden;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+            color: #007bff;
+        }
+
+        .show {
+            display: block;
+        }
+
+        .profile-menu {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+
+        .profile-btn {
+            background-color: white;
+            color: #333;
+            padding: 10px 16px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+
+        .profile-btn:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
+        }
+
+        .profile-dropdown {
+            left: 0;
+            right: auto;
+            min-width: 160px;
+        }
+
+        .logout {
+            color: #dc3545 !important;
+            border-top: 1px solid #eee;
+        }
+
+        .logout:hover {
+            background-color: #ffe6e6 !important;
+            color: #bd2130 !important;
+        }
+
+        .type-badge.expired-filter.active {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
     </style>
 </head>
 
@@ -117,7 +232,9 @@
                     style="margin-right:8px;">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    <path
+                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                    </path>
                 </svg>
                 Third Party Services
             </a>
@@ -150,7 +267,8 @@
     <h1 id="mainHeader">FENZ OSM Automation</h1>
 
     <div id="demoBanner" class="demo-banner">
-        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
+                style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
     <div id="controls" style="display: flex; align-items: center; flex-wrap: wrap;">
@@ -211,8 +329,12 @@
                     <th style="width: 15%">Expiring Date</th>
                     <th style="width: 25%">
                         <div style="display:flex; flex-direction:column; gap:5px;">
-                            <label class="header-checkbox-label"><input type="checkbox" id="selectAllEmail" checked> Email</label>
-                            <label class="header-checkbox-label"><input type="checkbox" id="selectAllWhatsapp"> WhatsApp</label>
+                            <label class="header-checkbox-label"><input type="checkbox" id="selectAllEmail" checked>
+                                Email</label>
+                            <label class="header-checkbox-label"><input type="checkbox" id="selectAllWhatsapp">
+                                WhatsApp</label>
+                            <label class="header-checkbox-label"><input type="checkbox" id="selectAllMessenger">
+                                Messenger</label>
                         </div>
                     </th>
                 </tr>
@@ -243,7 +365,8 @@
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <span class="close-btn" onclick="closeModal('aboutModal')">&times;</span>
             <div id="aboutDemoBanner" class="demo-banner" style="display:none; margin: -20px -20px 20px -20px;">
-                DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+                DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
+                        style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
             </div>
 
             <h2 style="margin-top: 0;">About</h2>
@@ -361,14 +484,14 @@
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        
+
         // [NEW] Check for demo mode and show About modal banner
         fetch('/ui-config')
             .then(r => r.json())
             .then(config => {
                 if (config.appMode === 'demo') {
                     const banner = document.getElementById('aboutDemoBanner');
-                    if(banner) banner.style.display = 'block';
+                    if (banner) banner.style.display = 'block';
                 }
             });
     </script>

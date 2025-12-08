@@ -208,6 +208,7 @@ See [Installation on Google Cloud Run](Installation_google_run.md) for details.
 ## Integrations
 
 * [**WhatsApp Feature Guide**](whatsapp-feature.md): Detailed instructions on connecting your WhatsApp account, managing sessions, and sending mobile notifications.
+* [**Messenger Feature Guide**](messenger-feature.md): Instructions for configuring the Facebook Graph API to send notifications via Messenger.
 
 ## Project Structure
 

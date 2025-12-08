@@ -21,6 +21,7 @@ const {
 } = require('./services/mailer');
 // Import WhatsApp Service
 const whatsappService = require('./services/whatsapp-service');
+const messengerService = require('./services/messenger-service');
 
 // =============================================================================
 // 1. INITIALIZATION & MIDDLEWARE
@@ -152,6 +153,7 @@ app.get('/api/user-session', (req, res) => {
     else res.status(401).json({ error: "Not logged in" });
 });
 
+
 // --- GLOBAL ROUTE GUARD ---
 app.use((req, res, next) => {
     const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config', '/api/demo-credentials'];
@@ -185,6 +187,53 @@ app.get('/third-parties.html', (req, res, next) => {
 app.get('/templates.html', (req, res, next) => {
     const r = req.session?.user?.role;
     if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/');
+});
+
+// --- FACEBOOK WEBHOOK (To capture Messenger IDs) ---
+// 1. Verification Endpoint (Required by Facebook)
+app.get('/webhook', (req, res) => {
+    const VERIFY_TOKEN = process.env.SESSION_SECRET || 'my_verification_token'; // Use a secret
+
+    let mode = req.query['hub.mode'];
+    let token = req.query['hub.verify_token'];
+    let challenge = req.query['hub.challenge'];
+
+    if (mode && token) {
+        if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+            console.log('[Webhook] Verified!');
+            res.status(200).send(challenge);
+        } else {
+            res.sendStatus(403);
+        }
+    }
+});
+
+// 2. Event Handler (Logs the User ID when they message the page)
+app.post('/webhook', (req, res) => {
+    let body = req.body;
+
+    if (body.object === 'page') {
+        body.entry.forEach(function (entry) {
+            let webhook_event = entry.messaging[0];
+            if (webhook_event.message) {
+                const senderPsid = webhook_event.sender.id;
+                const text = webhook_event.message.text;
+                // LOG THIS TO CONSOLE SO ADMIN CAN SEE IT
+                console.log(`\n[MESSENGER] Message received from User!`);
+                console.log(`[MESSENGER] Content: "${text}"`);
+                console.log(`[MESSENGER] COPY THIS ID INTO MEMBER PROFILE: ${senderPsid}\n`);
+
+                // Optional: Auto-log to DB event log for easier copying
+                db.logEvent('System', 'Messenger', 'User ID Captured', {
+                    psid: senderPsid,
+                    message: text
+                });
+            }
+        });
+        res.status(200).send('EVENT_RECEIVED');
+    } else {
+        res.sendStatus(404);
+    }
 });
 
 // =============================================================================
@@ -540,14 +589,14 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         const dbMembers = await db.getMembers();
         const dbSkills = await db.getSkills();
         const prefs = await db.getPreferences();
-        
+
         // Email Config
         const templateConfig = {
             from: prefs.emailFrom, subject: prefs.emailSubject, intro: prefs.emailIntro,
             rowHtml: prefs.emailRow, rowHtmlNoUrl: prefs.emailRowNoUrl, filterOnlyWithUrl: prefs.emailOnlyWithUrl
         };
 
-        // [NEW] WhatsApp Config Defaults
+        //  WhatsApp Config Defaults
         const waDefaults = {
             intro: "*Expiring Skills Notification*\n\nHello {{name}}, you have skills expiring in OSM:\n",
             row: "- *{{skill}}*\n  Expires: {{date}}\n  Link: {{url}}",
@@ -600,7 +649,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                                 name: member.name.split(',')[1] || member.name,
                                 appname: config.ui.loginTitle
                             };
-                            
+
                             let waText = applyTemplate(waIntroTpl, memberVars);
 
                             waSkills.forEach(s => {
@@ -614,7 +663,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                                 const rowTpl = s.url ? waRowTpl : waRowNoUrlTpl;
                                 waText += "\n" + applyTemplate(rowTpl, skillVars);
                             });
-                            
+
                             waText += `\n\nPlease complete these ASAP.`;
 
                             await whatsappService.sendMessage(member.mobile, waText);
@@ -627,6 +676,26 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                     } catch (err) {
                         logger(`   [WhatsApp ERROR] ${member.name}: ${err.message}`);
                         await db.logEmailAction(member, 'WA_FAILED', err.message);
+                    }
+                }
+                // 3. SEND MESSENGER
+                if (target.sendMessenger) { // You need to add this flag from frontend
+                    try {
+                        if (member.messengerId) {
+                            let msgText = `Hello ${member.name}, you have expiring skills:\n`;
+                            member.expiringSkills.forEach(s => {
+                                msgText += `- ${s.skill} (${s.dueDate})\n`;
+                            });
+                            msgText += `\nPlease complete these ASAP.`;
+
+                            await messengerService.sendMessage(member.messengerId, msgText);
+                            logger(`   [Messenger] Sent to ${member.name}`);
+                            await db.logEmailAction(member, 'MSG_SENT', 'Messenger Sent');
+                        } else {
+                            logger(`   [Skipped Messenger] ${member.name} - No Messenger ID configured.`);
+                        }
+                    } catch (err) {
+                        logger(`   [Messenger ERROR] ${member.name}: ${err.message}`);
                     }
                 }
             } else {

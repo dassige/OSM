@@ -77,7 +77,7 @@ function setRunningState() {
     // Disable checkboxes and buttons
     document.querySelectorAll('.header-checkbox-label input').forEach(cb => cb.disabled = true);
     document.querySelectorAll('.btn-round').forEach(btn => btn.disabled = true);
-    
+
     terminal.textContent = '> Starting Notification Process...\n';
     statusSpan.innerText = 'Sending...';
     statusSpan.style.color = '#e67e22';
@@ -88,10 +88,10 @@ function setRunningState() {
 
 function setIdleState(code) {
     const isTableVisible = tableContainer.style.display !== 'none';
-    
+
     document.querySelectorAll('.header-checkbox-label input').forEach(cb => cb.disabled = !isTableVisible);
     document.querySelectorAll('.btn-round').forEach(btn => btn.disabled = false); // Re-enable buttons
-    
+
     viewBtn.disabled = false;
     updateSendButtonState();
 
@@ -141,7 +141,7 @@ function updateRoleUI(role) {
 
 function toggleConsole(isVisible) {
     const role = document.body.getAttribute('data-user-role');
-    if (role === 'guest' || role === 'simple') return; 
+    if (role === 'guest' || role === 'simple') return;
     const style = isVisible ? 'block' : 'none';
     if (terminal) terminal.style.display = style;
     if (consoleHeader) consoleHeader.style.display = style;
@@ -225,7 +225,7 @@ function renderTable() {
         }
         tr.appendChild(skillTd); tr.appendChild(dateTd);
 
-        // [UPDATED] Action Column - Groups Controls with Buttons
+        //  Action Column - Groups Controls with Buttons
         const actionTd = document.createElement('td');
         actionTd.className = 'member-cell';
 
@@ -253,7 +253,7 @@ function renderTable() {
             emailLabel.innerHTML = `<input type="checkbox" class="send-email-cb" data-name="${member.name}" ${hasEmail ? 'checked' : 'disabled'}> Email`;
             emailLabel.title = emailTitle;
             if (!hasEmail) emailLabel.style.opacity = "0.5";
-            
+
             // Email Round Button
             const btnEmail = document.createElement('button');
             btnEmail.className = 'btn-round';
@@ -328,8 +328,39 @@ function renderTable() {
             waRow.appendChild(waLabel);
             waRow.appendChild(btnWa);
 
+            // --- ROW 3: MESSENGER ---
+            const msgRow = document.createElement('div');
+            msgRow.style.display = 'flex';
+            msgRow.style.alignItems = 'center';
+            msgRow.style.justifyContent = 'space-between';
+            msgRow.style.gap = '10px';
+
+            const hasMsgId = member.messengerId && member.messengerId.length > 5;
+
+            const msgLabel = document.createElement('label');
+            msgLabel.className = 'email-label';
+            msgLabel.style.marginBottom = '0';
+            msgLabel.innerHTML = `<input type="checkbox" class="send-msg-cb" data-name="${member.name}" ${hasMsgId ? '' : 'disabled'}> Messenger`;
+            if (!hasMsgId) msgLabel.style.opacity = "0.5";
+
+            const btnMsg = document.createElement('button');
+            btnMsg.className = 'btn-round';
+            // Use a Messenger blue color
+            btnMsg.style.backgroundColor = '#0084FF';
+            btnMsg.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M12 2C6.48 2 2 6.03 2 11C2 13.66 3.39 16.03 5.61 17.58C5.61 17.58 5.42 19.31 5.3 20.73C5.27 21.1 5.67 21.36 5.99 21.18C7.57 20.29 9.38 19.18 9.38 19.18C10.23 19.42 11.1 19.54 12 19.54C17.52 19.54 22 15.5 22 10.54C22 5.57 17.52 1.54 12 1.54V2Z"/></svg>`; // Simplified Messenger Icon
+            btnMsg.onclick = () => sendSingleAction(member.name, 'messenger');
+            btnMsg.disabled = !hasMsgId;
+            if (!hasMsgId) {
+                btnMsg.style.backgroundColor = '#ccc';
+                btnMsg.style.opacity = '0.5';
+            }
+
+            msgRow.appendChild(msgLabel);
+            msgRow.appendChild(btnMsg);
+
             wrapper.appendChild(emailRow);
             wrapper.appendChild(waRow);
+            wrapper.appendChild(msgRow);
             actionTd.appendChild(wrapper);
         }
         tr.appendChild(actionTd);
@@ -357,14 +388,14 @@ function renderTable() {
 
 function setupMasterCheckbox(masterId, targetClass) {
     const master = document.getElementById(masterId);
-    if(!master) return;
-    
+    if (!master) return;
+
     const newMaster = master.cloneNode(true);
     master.parentNode.replaceChild(newMaster, master);
-    
+
     newMaster.addEventListener('change', (e) => {
         document.querySelectorAll(targetClass).forEach(cb => {
-            if(!cb.disabled) cb.checked = e.target.checked;
+            if (!cb.disabled) cb.checked = e.target.checked;
         });
         updateSendButtonState();
     });
@@ -374,17 +405,17 @@ function setupMasterCheckbox(masterId, targetClass) {
 function sendSingleAction(name, type) {
     const days = parseInt(daysInput.value) || 30;
     const label = type === 'email' ? 'Email' : 'WhatsApp';
-    
+
     if (confirm(`Send immediate ${label} reminder to ${name}?`)) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         setRunningState();
-        
-        const target = { 
-            name: name, 
-            sendEmail: type === 'email', 
-            sendWa: type === 'whatsapp' 
+
+        const target = {
+            name: name,
+            sendEmail: type === 'email',
+            sendWa: type === 'whatsapp'
         };
-        
+
         socket.emit('run-process-queue', [target], days);
     }
 }
@@ -403,16 +434,20 @@ sendEmailsBtn.addEventListener('click', () => {
 
         const name = emailCb.getAttribute('data-name');
         const sendEmail = emailCb.checked;
+
         const waCb = row.querySelector('.send-wa-cb');
         const sendWa = waCb ? waCb.checked : false;
 
-        if (sendEmail || sendWa) {
-            targets.push({ name, sendEmail, sendWa });
+        const msgCb = row.querySelector('.send-msg-cb');
+        const sendMessenger = msgCb ? msgCb.checked : false;
+
+        if (sendEmail || sendWa || sendMessenger) {
+            targets.push({ name, sendEmail, sendWa, sendMessenger });
         }
     });
 
     if (targets.length === 0) return alert("No actions selected.");
-    
+
     if (confirm(`Process ${targets.length} members?`)) {
         setRunningState();
         const days = parseInt(daysInput.value) || 30;
