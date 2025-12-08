@@ -159,6 +159,15 @@
         </button>
         <div id="profileDropdown" class="dropdown-content profile-dropdown">
             <a href="profile.html" id="navUserSettings">User Settings</a>
+            <div style="padding: 12px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border-top:1px solid var(--border-color);"
+                onclick="document.getElementById('darkModeToggle').click()">
+                <span style="color: var(--text-main); font-size: 16px;">Dark Mode</span>
+                <label class="switch" style="margin:0; pointer-events:none;">
+                    <input type="checkbox" id="darkModeToggle"
+                        onchange="toggleDarkMode(this.checked); event.stopPropagation();" style="pointer-events:auto;">
+                    <span class="slider"></span>
+                </label>
+            </div>
             <a href="#" id="logoutLinkLeft" class="logout">Logout</a>
         </div>
     </div>
@@ -401,6 +410,7 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="theme.js"></script>
     <script src="app.js"></script>
 
     <script>

@@ -1,17 +1,72 @@
+/* public/styles.css */
+
+:root {
+    /* Light Theme (Default) */
+    --bg-body: #f0f2f5;
+    --bg-card: #ffffff;
+    --bg-header: #343a40;
+    --bg-hover: #f8f9fa;
+    --text-main: #333333;
+    --text-muted: #666666;
+    --text-header: #ffffff;
+    --border-color: #dee2e6;
+    --input-bg: #ffffff;
+    --shadow: rgba(0, 0, 0, 0.1);
+    
+    /* Status Colors */
+    --success: #28a745;
+    --danger: #dc3545;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    --primary: #007bff;
+}
+
+/* Dark Mode Overrides */
+body.dark-mode {
+    --bg-body: #121212;
+    --bg-card: #1e1e1e;
+    --bg-header: #2c2c2c;
+    --bg-hover: #2a2a2a;
+    --text-main: #e0e0e0;
+    --text-muted: #b0b0b0;
+    --text-header: #e0e0e0;
+    --border-color: #444444;
+    --input-bg: #2d2d2d;
+    --shadow: rgba(0, 0, 0, 0.5);
+}
+/* Dark Tone Overlay for Background Images */
+body.dark-mode::before {
+    content: "";
+    position: fixed;
+    top: 0; 
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* 70% opacity black overlay - Adjust 0.7 to make it lighter/darker */
+    background-color: rgba(0, 0, 0, 0.7);
+    /* Places the overlay behind text/cards but in front of the body background */
+    z-index: -1;
+    pointer-events: none; /* Ensures clicks pass through to the page */
+}
 body { 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
     padding: 20px; 
     max-width: 900px; 
     margin: 0 auto; 
-    background-color: #f0f2f5;
+    background-color: var(--bg-body);
+    color: var(--text-main);
     background-repeat: no-repeat;
     background-position: center center;
     background-size: cover;
     background-attachment: fixed;
     min-height: 100vh;
+    transition: background-color 0.3s, color 0.3s;
 }
-h1 { color: #333; }
+
+h1, h2, h3, h4, h5, h6 { color: var(--text-main); }
+
 #controls { margin-bottom: 20px; }
+
 button {
     padding: 12px 24px;
     font-size: 16px;
@@ -20,22 +75,22 @@ button {
     border: none;
     cursor: pointer;
     border-radius: 6px;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.1s;
     margin-right: 10px;
     margin-bottom: 10px;
 }
 
 /* Send Emails Button - Blue */
-#sendEmailsBtn { background-color: #007bff; }
+#sendEmailsBtn { background-color: var(--primary); }
 #sendEmailsBtn:hover { background-color: #0056b3; }
 #sendEmailsBtn:disabled { background-color: #ccc; cursor: not-allowed; }
 
 /* Reload Button - Green */
-#viewBtn { background-color: #28a745; }
+#viewBtn { background-color: var(--success); }
 #viewBtn:hover { background-color: #218838; }
 
 #terminal {
-    background-color: #1e1e1e;
+    background-color: #1e1e1e; /* Console usually stays dark */
     color: #d4d4d4;
     border-radius: 6px;
     padding: 15px;
@@ -45,25 +100,25 @@ button {
     font-size: 14px;
     line-height: 1.4;
     white-space: pre-wrap;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px var(--shadow);
     margin-top: 30px; 
 }
 
 /* Progress Bar Styling */
 #progressContainer {
-    display: none; /* Hidden by default */
+    display: none; 
     margin-bottom: 20px;
-    background-color: #e9ecef;
+    background-color: var(--border-color);
     border-radius: 6px;
     overflow: hidden;
     height: 30px;
-    border: 1px solid #ccc;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 1px 2px var(--shadow);
 }
 #progressBar {
     width: 0%;
     height: 100%;
-    background-color: #17a2b8; /* Info Blue/Cyan */
+    background-color: var(--info);
     text-align: center;
     line-height: 30px;
     color: white;
@@ -73,34 +128,37 @@ button {
 }
 
 /* Table Styling */
-#tableContainer {
+#tableContainer, .card, .service-card {
     margin-top: 20px;
-    background: white;
+    background: var(--bg-card);
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    display: none;
+    box-shadow: 0 2px 4px var(--shadow);
 }
+#tableContainer { display: none; }
+
 table {
     width: 100%;
     border-collapse: collapse;
     font-size: 15px;
+    background-color: var(--bg-card);
+    color: var(--text-main);
 }
 th, td {
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--border-color);
     padding: 12px;
     text-align: left;
     vertical-align: middle;
 }
 th {
-    background-color: #343a40;
-    color: #fff;
+    background-color: var(--bg-header);
+    color: var(--text-header);
     font-weight: bold;
 }
 
 /* Alternating Colors */
-.row-even { background-color: #f2f2f2; }
-.row-odd { background-color: #faf0e6; }
+.row-even { background-color: var(--bg-card); }
+.row-odd { background-color: var(--bg-body); } 
 
 .member-cell {
     vertical-align: top;
@@ -110,9 +168,9 @@ th {
     border-top: none;
     border-bottom: none;
 }
-.skill-cell { color: #333; }
-.date-cell { color: #555; white-space: nowrap; }
-.no-skill { color: #28a745; font-style: italic; }
+.skill-cell { color: var(--text-main); }
+.date-cell { color: var(--text-muted); white-space: nowrap; }
+.no-skill { color: var(--success); font-style: italic; }
 
 /* Checkbox Styling */
 .email-label {
@@ -121,29 +179,33 @@ th {
     cursor: pointer;
     font-weight: normal;
     font-size: 14px;
+    color: var(--text-main);
 }
 .email-label input {
     margin-right: 8px;
     width: 16px;
     height: 16px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
 }
 /* Header Checkbox specific style */
 .header-checkbox-label {
     display: flex;
     align-items: center;
     cursor: pointer;
-    color: white;
+    color: var(--text-header);
 }
 .header-checkbox-label input {
     margin-right: 8px;
     width: 16px;
     height: 16px;
 }
+
 #logoutBtn {
     position: absolute;
     top: 20px;
     right: 20px;
-    background-color: #dc3545; /* Danger Red */
+    background-color: var(--danger);
     color: white;
     border: none;
     padding: 8px 16px;
@@ -151,12 +213,12 @@ th {
     cursor: pointer;
     font-weight: bold;
     font-size: 14px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px var(--shadow);
     transition: background-color 0.2s;
 }
 
 #logoutBtn:hover {
-    background-color: #c82333; /* Darker Red on hover */
+    background-color: #c82333; 
 }
 
 /* --- SCROLL TO TOP BUTTON --- */
@@ -168,17 +230,17 @@ th {
     font-size: 18px;
     border: none;
     outline: none;
-    background-color: #343a40;
+    background-color: var(--bg-header);
     color: white;
     cursor: pointer;
     padding: 10px;
     border-radius: 50%;
     width: 45px;
     height: 45px;
-    display: none; /* Hidden by default */
+    display: none; 
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 6px var(--shadow);
     transition: background-color 0.3s, transform 0.3s, opacity 0.3s;
 }
 
@@ -186,9 +248,10 @@ th {
     background-color: #23272b;
     transform: translateY(-3px);
 }
+
 /* --- MODAL STYLES --- */
 .modal {
-    display: none; /* Hidden by default */
+    display: none; 
     position: fixed; 
     z-index: 1000; 
     left: 0;
@@ -196,28 +259,27 @@ th {
     width: 100%; 
     height: 100%; 
     overflow: auto; 
-    background-color: rgb(0,0,0); 
-    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    background-color: rgba(0,0,0,0.4); 
 }
 
 .modal-content {
-    background-color: #fefefe;
-    margin: 10% auto; /* Reduced top margin to allow more space */
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    margin: 10% auto; 
     padding: 20px;
-    border: 1px solid #888;
+    border: 1px solid var(--border-color);
     width: 80%; 
     max-width: 500px;
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 8px var(--shadow);
     position: relative;
     animation: animatetop 0.4s;
-    /* Added scrollbar support */
     max-height: 80vh;
     overflow-y: auto;
 }
 
 .close-btn {
-    color: #aaa;
+    color: var(--text-muted);
     float: right;
     font-size: 28px;
     font-weight: bold;
@@ -229,42 +291,76 @@ th {
 
 .close-btn:hover,
 .close-btn:focus {
-    color: black;
+    color: var(--text-main);
     text-decoration: none;
     cursor: pointer;
 }
 
-/* Add Animation */
 @keyframes animatetop {
     from {top: -300px; opacity: 0}
     to {top: 0; opacity: 1}
 }
-/* --- TOP LEFT PROFILE MENU --- */
+
+/* --- GLOBAL INPUTS --- */
+input[type="text"], input[type="password"], input[type="email"], input[type="number"], select, textarea {
+    background-color: var(--input-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px;
+}
+
+/* --- TOP LEFT PROFILE MENU & DROPDOWNS --- */
 .profile-menu {
     position: absolute;
     top: 20px;
     left: 20px;
     z-index: 100;
 }
-.profile-btn {
-    background-color: white;
-    color: #333;
+.profile-btn, .menu-btn {
+    background-color: var(--bg-card);
+    color: var(--text-main);
     padding: 10px 16px;
     font-size: 16px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     cursor: pointer;
     border-radius: 20px;
     display: flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px var(--shadow);
     transition: all 0.2s;
 }
-.profile-btn:hover { background-color: #f8f9fa; transform: translateY(-1px); }
+.profile-btn:hover, .menu-btn:hover { background-color: var(--bg-hover); transform: translateY(-1px); }
+
+.dropdown-content {
+    background-color: var(--bg-card);
+    min-width: 180px;
+    box-shadow: 0 8px 16px 0 var(--shadow);
+    border-radius: 4px;
+    z-index: 1;
+    overflow: hidden;
+    margin-top: 5px;
+    border: 1px solid var(--border-color);
+}
+.dropdown-content a {
+    color: var(--text-main);
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+    transition: background-color 0.2s;
+}
+.dropdown-content a:hover {
+    background-color: var(--bg-hover);
+    color: var(--primary);
+}
+
 .profile-dropdown {
-    left: 0; right: auto; /* Align left */
+    left: 0; right: auto; 
     min-width: 160px;
 }
+
 /* --- PASSWORD INPUT GROUP --- */
 .password-wrapper {
     position: relative;
@@ -272,7 +368,7 @@ th {
     align-items: center;
 }
 .password-wrapper input {
-    padding-right: 40px; /* Make room for the button */
+    padding-right: 40px; 
 }
 .btn-toggle-pw {
     position: absolute;
@@ -280,17 +376,17 @@ th {
     background: none;
     border: none;
     cursor: pointer;
-    color: #666;
+    color: var(--text-muted);
     padding: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .btn-toggle-pw:hover {
-    color: #333;
+    color: var(--text-main);
 }
-/* --- GLOBAL HELP SYSTEM --- */
 
+/* --- GLOBAL HELP SYSTEM --- */
 #globalHelpBtn {
     position: fixed;
     top: 20px;
@@ -299,20 +395,19 @@ th {
     width: 45px;
     height: 45px;
     border-radius: 50%;
-    background-color: #17a2b8; /* Info Cyan */
+    background-color: var(--info);
     color: white;
     border: none;
     cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 6px var(--shadow);
     display: flex;
     align-items: center;
     justify-content: center;
     transition: transform 0.2s, background-color 0.2s;
     margin: 0;
-    padding: 0; /* Ensure no padding shrinks the icon */
+    padding: 0; 
 }
 
-/* NEW: Explicitly style the icon */
 #globalHelpBtn svg {
     width: 24px;
     height: 24px;
@@ -349,17 +444,17 @@ th {
 
 /* Modal Content */
 .help-modal-content {
-    background-color: #fefefe;
+    background-color: var(--bg-card);
+    color: var(--text-main);
     margin: 10vh auto;
     padding: 25px;
-    border: 1px solid #888;
+    border: 1px solid var(--border-color);
     width: 90%;
     max-width: 500px;
     border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px var(--shadow);
     position: relative;
     animation: slideDown 0.3s ease-out;
-    /* Added scrollbar support */
     max-height: 80vh;
     overflow-y: auto;
 }
@@ -370,7 +465,7 @@ th {
 }
 
 .help-close-btn {
-    color: #aaa;
+    color: var(--text-muted);
     float: right;
     font-size: 28px;
     font-weight: bold;
@@ -379,12 +474,12 @@ th {
 }
 
 .help-close-btn:hover {
-    color: #000;
+    color: var(--text-main);
 }
 
 .help-body {
     line-height: 1.6;
-    color: #333;
+    color: var(--text-main);
 }
 
 .help-body ul, .help-body ol {
@@ -395,14 +490,13 @@ th {
 .help-body li {
     margin-bottom: 8px;
 }
-/* ... (Keep existing styles) ... */
 
 /* --- EVENT LOG FILTERS --- */
 .filter-bar {
-    background: white;
+    background: var(--bg-card);
     padding: 15px 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px var(--shadow);
     margin-bottom: 20px;
     display: flex;
     flex-wrap: wrap;
@@ -419,7 +513,7 @@ th {
 .filter-group label {
     font-weight: bold;
     font-size: 13px;
-    color: #555;
+    color: var(--text-muted);
 }
 
 /* Event Type Chips */
@@ -433,35 +527,37 @@ th {
     border-radius: 15px;
     font-size: 13px;
     cursor: pointer;
-    border: 1px solid #ccc;
-    background: #f8f9fa;
-    color: #666;
+    border: 1px solid var(--border-color);
+    background: var(--bg-hover);
+    color: var(--text-muted);
     user-select: none;
     transition: all 0.2s;
 }
 
 .type-badge.active {
-    background-color: #343a40;
+    background-color: var(--bg-header);
     color: white;
-    border-color: #343a40;
+    border-color: var(--bg-header);
 }
 
 /* Custom Colors for Active States */
-.type-badge[data-type="System"].active { background-color: #17a2b8; border-color: #17a2b8; }
-.type-badge[data-type="Members"].active { background-color: #28a745; border-color: #28a745; }
-.type-badge[data-type="Skills"].active { background-color: #ffc107; border-color: #ffc107; color: #333; }
-.type-badge[data-type="Email"].active { background-color: #007bff; border-color: #007bff; }
+.type-badge[data-type="System"].active { background-color: var(--info); border-color: var(--info); }
+.type-badge[data-type="Members"].active { background-color: var(--success); border-color: var(--success); }
+.type-badge[data-type="Skills"].active { background-color: var(--warning); border-color: var(--warning); color: #333; }
+.type-badge[data-type="Email"].active { background-color: var(--primary); border-color: var(--primary); }
 
 /* Filter Inputs */
 .filter-select, .filter-date {
     padding: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     min-width: 140px;
+    background-color: var(--input-bg);
+    color: var(--text-main);
 }
 
 .btn-filter {
-    background-color: #007bff;
+    background-color: var(--primary);
     color: white;
     padding: 9px 20px;
     border: none;
@@ -487,15 +583,15 @@ th {
     justify-content: space-between;
     align-items: center;
     margin-top: 15px;
-    background: white;
+    background: var(--bg-card);
     padding: 10px 15px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px var(--shadow);
 }
 
 .pagination-info {
     font-size: 14px;
-    color: #666;
+    color: var(--text-muted);
 }
 
 .pagination-buttons {
@@ -505,9 +601,9 @@ th {
 
 .btn-page {
     padding: 6px 12px;
-    border: 1px solid #dee2e6;
-    background: white;
-    color: #007bff;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--primary);
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
@@ -515,21 +611,22 @@ th {
 }
 
 .btn-page:hover:not(:disabled) {
-    background-color: #e9ecef;
+    background-color: var(--bg-hover);
 }
 
 .btn-page:disabled {
     color: #ccc;
     cursor: not-allowed;
-    background: #f8f9fa;
+    background: var(--bg-hover);
 }
 
 .btn-page.active {
-    background-color: #007bff;
+    background-color: var(--primary);
     color: white;
-    border-color: #007bff;
+    border-color: var(--primary);
 }
-/* [NEW] Round Icon Button */
+
+/* Round Icon Button */
 .btn-round {
     width: 36px;
     height: 36px;
@@ -538,11 +635,11 @@ th {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background-color: #007bff;
+    background-color: var(--primary);
     color: white;
     border: none;
     cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 5px var(--shadow);
     transition: all 0.2s ease;
     margin: 0;
 }
@@ -550,39 +647,38 @@ th {
 .btn-round:hover {
     background-color: #0056b3;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 8px var(--shadow);
 }
 
 .btn-round svg {
     width: 18px;
     height: 18px;
     stroke-width: 2px;
-    /* Optional: slightly offset the plane icon to look optically centered */
     margin-right: 2px; 
     margin-top: 2px;
 }
+
 .spinner {
     width: 20px;
     height: 20px;
     border: 3px solid rgba(0, 0, 0, 0.1);
     border-radius: 50%;
-    border-top-color: #007bff;
+    border-top-color: var(--primary);
     animation: spin 1s ease-in-out infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/*  Demo Banner Global Style */
+/* Demo Banner Global Style */
 .demo-banner {
-    background-color: #ffc107;
+    background-color: var(--warning);
     color: #333;
     font-weight: bold;
     text-align: center;
     padding: 12px;
-    /* Negative margin to counteract body padding (20px) and stretch edge-to-edge */
     margin: -20px -20px 20px -20px; 
     border-bottom: 1px solid #e0a800;
-    display: none; /* Hidden by default */
+    display: none; 
     font-size: 14px;
     position: relative;
-    z-index: 50; /* Ensure it sits below absolute menus (z-index 100) */
+    z-index: 50; 
 }
