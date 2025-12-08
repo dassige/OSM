@@ -225,50 +225,14 @@ function renderTable() {
         }
         tr.appendChild(skillTd); tr.appendChild(dateTd);
 
+        // --- Calculate Preferences (Moved here to be ready for use) ---
         const prefs = (member.notificationPreference || 'email').split(',');
         const defaultEmail = prefs.includes('email');
         const defaultWa = prefs.includes('whatsapp');
         const defaultMsg = prefs.includes('messenger');
+        // -----------------------------------------------------------
 
-        // Now update the Checkbox creation lines within that loop:
-
-        // Email Checkbox line:
-        emailLabel.innerHTML = `<input type="checkbox" class="send-email-cb" data-name="${member.name}" ${hasEmail ? (defaultEmail ? 'checked' : '') : 'disabled'}> Email`;
-
-        // WhatsApp Checkbox line:
-        // Note: Ensure we don't auto-check if WA is disabled globally or for user
-        const shouldCheckWa = defaultWa && !isWaDisabled;
-        waLabel.innerHTML = `<input type="checkbox" class="send-wa-cb" data-name="${member.name}" ${isWaDisabled ? 'disabled' : (shouldCheckWa ? 'checked' : '')}> WhatsApp`;
-
-        // Messenger Checkbox line:
-        const shouldCheckMsg = defaultMsg && hasMsgId;
-        msgLabel.innerHTML = `<input type="checkbox" class="send-msg-cb" data-name="${member.name}" ${hasMsgId ? (shouldCheckMsg ? 'checked' : '') : 'disabled'}> Messenger`;
-
-
-        // 2. Add the new Reset Function at the end of the file (or anywhere suitable)
-        function resetCheckboxesToDefaults() {
-            currentOsmData.forEach(member => {
-                // Parse preferences
-                const prefs = (member.notificationPreference || 'email').split(',');
-                const wantsEmail = prefs.includes('email');
-                const wantsWa = prefs.includes('whatsapp');
-                const wantsMsg = prefs.includes('messenger');
-
-                // Find inputs for this member
-                // Note: data-name handles unique identification in the current DOM structure
-                const emailCb = document.querySelector(`.send-email-cb[data-name="${member.name}"]`);
-                const waCb = document.querySelector(`.send-wa-cb[data-name="${member.name}"]`);
-                const msgCb = document.querySelector(`.send-msg-cb[data-name="${member.name}"]`);
-
-                // Apply state (checking for disabled state to avoid enabling invalid options)
-                if (emailCb && !emailCb.disabled) emailCb.checked = wantsEmail;
-                if (waCb && !waCb.disabled) waCb.checked = wantsWa;
-                if (msgCb && !msgCb.disabled) msgCb.checked = wantsMsg;
-            });
-            updateSendButtonState();
-        }
-
-        // Action Column - Groups Controls with Buttons
+        // Action Column
         const actionTd = document.createElement('td');
         actionTd.className = 'member-cell';
 
@@ -276,7 +240,7 @@ function renderTable() {
             const wrapper = document.createElement('div');
             wrapper.style.display = 'flex';
             wrapper.style.flexDirection = 'column';
-            wrapper.style.gap = '8px'; // Gap between Email row and WhatsApp row
+            wrapper.style.gap = '8px';
 
             // --- ROW 1: EMAIL ---
             const emailRow = document.createElement('div');
@@ -285,22 +249,20 @@ function renderTable() {
             emailRow.style.justifyContent = 'space-between';
             emailRow.style.gap = '10px';
 
-            // Check for valid email
             const hasEmail = member.email && member.email.includes('@');
             const emailTitle = hasEmail ? `Email: ${member.email}` : "No email configured";
 
-            // Email Checkbox
             const emailLabel = document.createElement('label');
             emailLabel.className = 'email-label';
             emailLabel.style.marginBottom = '0';
-            emailLabel.innerHTML = `<input type="checkbox" class="send-email-cb" data-name="${member.name}" ${hasEmail ? 'checked' : 'disabled'}> Email`;
+            // Use calculated defaultEmail here
+            emailLabel.innerHTML = `<input type="checkbox" class="send-email-cb" data-name="${member.name}" ${hasEmail ? (defaultEmail ? 'checked' : '') : 'disabled'}> Email`;
             emailLabel.title = emailTitle;
             if (!hasEmail) emailLabel.style.opacity = "0.5";
 
-            // Email Round Button
             const btnEmail = document.createElement('button');
             btnEmail.className = 'btn-round';
-            btnEmail.style.backgroundColor = '#007bff';
+            btnEmail.style.backgroundColor = '#6f42c1'; // Purple
             btnEmail.style.flexShrink = '0';
             btnEmail.title = hasEmail ? "Send Email Immediately" : "No Email Address";
             btnEmail.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
@@ -323,31 +285,27 @@ function renderTable() {
             waRow.style.justifyContent = 'space-between';
             waRow.style.gap = '10px';
 
-            // Check Mobile and WA Status
             const hasMobile = member.mobile && member.mobile.length > 5;
             const isWaDisabled = !hasMobile || !isWaReady;
-
-            // Checkbox Title Logic
             let waTitle = `Mobile: ${member.mobile}`;
             if (!hasMobile) waTitle = "No mobile configured";
             else if (!isWaReady) waTitle = "WhatsApp service not started";
 
-            // WhatsApp Checkbox
             const waLabel = document.createElement('label');
             waLabel.className = 'email-label';
             waLabel.style.marginBottom = '0';
-            waLabel.innerHTML = `<input type="checkbox" class="send-wa-cb" data-name="${member.name}" ${isWaDisabled ? 'disabled' : ''}> WhatsApp`;
+            // Use calculated defaultWa here
+            const shouldCheckWa = defaultWa && !isWaDisabled;
+            waLabel.innerHTML = `<input type="checkbox" class="send-wa-cb" data-name="${member.name}" ${isWaDisabled ? 'disabled' : (shouldCheckWa ? 'checked' : '')}> WhatsApp`;
             waLabel.title = waTitle;
             if (isWaDisabled) waLabel.style.opacity = "0.5";
 
-            // WhatsApp Round Button
             const btnWa = document.createElement('button');
             btnWa.className = 'btn-round';
             btnWa.style.flexShrink = '0';
             btnWa.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>`;
             btnWa.onclick = () => sendSingleAction(member.name, 'whatsapp');
 
-            // Button Logic
             if (!hasMobile) {
                 btnWa.disabled = true;
                 btnWa.style.backgroundColor = '#ccc';
@@ -355,14 +313,12 @@ function renderTable() {
                 btnWa.style.cursor = 'not-allowed';
                 btnWa.title = "No Mobile Number";
             } else if (!isWaReady) {
-                // [NEW] Orange disabled state if service is down
                 btnWa.disabled = true;
-                btnWa.style.backgroundColor = '#fd7e14'; // Orange
+                btnWa.style.backgroundColor = '#fd7e14';
                 btnWa.style.opacity = '0.8';
                 btnWa.style.cursor = 'not-allowed';
                 btnWa.title = "Whatsapp service not started";
             } else {
-                // Ready state
                 btnWa.style.backgroundColor = '#25D366';
                 btnWa.title = `Send WhatsApp to ${member.mobile}`;
                 btnWa.disabled = false;
@@ -395,8 +351,9 @@ function renderTable() {
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.addEventListener('change', updateSendButtonState));
     setupMasterCheckbox('selectAllEmail', '.send-email-cb');
     setupMasterCheckbox('selectAllWhatsapp', '.send-wa-cb');
-    updateSendButtonState();
+     updateSendButtonState();
 }
+
 
 function setupMasterCheckbox(masterId, targetClass) {
     const master = document.getElementById(masterId);
