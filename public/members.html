@@ -325,6 +325,22 @@
                 transform: rotate(360deg);
             }
         }
+        
+        .pref-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px; 
+            height: 24px;
+            border-radius: 50%;
+            margin-right: 4px;
+            color: white;
+            opacity: 0.3; /* Default disabled */
+        }
+        .pref-icon.active { opacity: 1; }
+        .bg-email { background-color: #6f42c1; }
+        .bg-wa { background-color: #25D366; }
+        
     </style>
 </head>
 
@@ -385,6 +401,7 @@
                         <th class="sortable" onclick="handleSort('mobile')">
                             <div class="th-content">Mobile <span id="icon-mobile" class="sort-icon"></span></div>
                         </th>
+                        <th style="width: 80px; text-align: center;">Prefs</th>
                         <th style="width: 100px; text-align: center;">Actions</th>
                     </tr>
                 </thead>
@@ -392,17 +409,7 @@
             </table>
         </div>
     </div>
-    <div class="form-group">
-        <label>Notification Preference</label>
-        <div style="display:flex; gap:15px; flex-wrap:wrap;">
-            <label style="font-weight:normal; display:flex; align-items:center; gap:5px;">
-                <input type="checkbox" id="prefEmail" value="email"> Email
-            </label>
-            <label style="font-weight:normal; display:flex; align-items:center; gap:5px;">
-                <input type="checkbox" id="prefWa" value="whatsapp"> WhatsApp
-            </label>
-        </div>
-    </div>
+
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -421,6 +428,18 @@
                         placeholder="Exact name as seen in OSM"></div>
                 <div class="form-group"><label>Email Address</label><input type="email" id="email" required></div>
                 <div class="form-group"><label>Mobile (Optional)</label><input type="text" id="mobile"></div>
+
+                <div class="form-group">
+                    <label>Notification Preference</label>
+                    <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                        <label style="font-weight:normal; display:flex; align-items:center; gap:5px;">
+                            <input type="checkbox" id="prefEmail" value="email"> Email
+                        </label>
+                        <label style="font-weight:normal; display:flex; align-items:center; gap:5px;">
+                            <input type="checkbox" id="prefWa" value="whatsapp"> WhatsApp
+                        </label>
+                    </div>
+                </div>
 
                 <div class="form-group">
                     <label style="display:flex; align-items:center; cursor:pointer;">
@@ -515,7 +534,7 @@
                 currentMembers = await res.json();
                 applySort();
             } catch (err) {
-                document.getElementById('membersTableBody').innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Error: ${err.message}</td></tr>`;
+                document.getElementById('membersTableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Error: ${err.message}</td></tr>`;
             }
         }
 
@@ -552,7 +571,7 @@
             document.getElementById('selectAllCheckbox').checked = false;
             updateBulkDeleteButton();
             if (currentMembers.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#666;">No members found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#666;">No members found.</td></tr>`;
                 return;
             }
             currentMembers.forEach((m, index) => {
@@ -561,6 +580,11 @@
                 // Style disabled rows
                 const rowStyle = m.enabled ? '' : 'opacity: 0.6; background-color: #f9f9f9;';
                 tr.style = rowStyle;
+                
+                // Parse prefs for display
+                const prefs = (m.notificationPreference || '').split(',');
+                const hasEmail = prefs.includes('email') ? 'active' : '';
+                const hasWa = prefs.includes('whatsapp') ? 'active' : '';
 
                 tr.innerHTML = `
                     <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()"></td>
@@ -573,6 +597,12 @@
                     </td>
 
                     <td>${m.name}</td><td>${m.email}</td><td>${m.mobile || ''}</td>
+                    
+                    <td style="text-align:center; white-space:nowrap;">
+                        <span class="pref-icon bg-email ${hasEmail}" title="Email">✉</span>
+                        <span class="pref-icon bg-wa ${hasWa}" title="WhatsApp">✆</span>
+                    </td>
+
                     <td style="text-align: center;">
                         <button class="btn-icon edit" onclick="editMemberByIndex(${index})" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
                         <button class="btn-icon delete" onclick="deleteMember(${m.id})" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
@@ -626,10 +656,11 @@
         function openModal() {
             document.getElementById('modalTitle').textContent = "Add Member";
             document.getElementById('memberId').value = "";
-            document.getElementById('prefEmail').checked = true; // Default
-            document.getElementById('prefWa').checked = false;
             form.reset();
+            // Defaults
             document.getElementById('enabled').checked = true;
+            document.getElementById('prefEmail').checked = true; 
+            document.getElementById('prefWa').checked = false;
             memberModal.style.display = 'block';
         }
         function editMemberByIndex(index) {
@@ -640,9 +671,11 @@
             document.getElementById('email').value = m.email;
             document.getElementById('mobile').value = m.mobile;
             document.getElementById('enabled').checked = m.enabled;
+            
             const prefs = (m.notificationPreference || 'email').split(',');
             document.getElementById('prefEmail').checked = prefs.includes('email');
             document.getElementById('prefWa').checked = prefs.includes('whatsapp');
+            
             memberModal.style.display = 'block';
         }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -652,9 +685,9 @@
             e.preventDefault();
             const id = document.getElementById('memberId').value;
             const selectedPrefs = [];
-        if(document.getElementById('prefEmail').checked) selectedPrefs.push('email');
-        if(document.getElementById('prefWa').checked) selectedPrefs.push('whatsapp');
-        if(document.getElementById('prefMsg').checked) selectedPrefs.push('messenger');
+            if(document.getElementById('prefEmail').checked) selectedPrefs.push('email');
+            if(document.getElementById('prefWa').checked) selectedPrefs.push('whatsapp');
+            
             const data = {
                 name: document.getElementById('name').value,
                 email: document.getElementById('email').value,

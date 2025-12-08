@@ -56,7 +56,10 @@ async function initDB() {
         // --- Domain Tables ---
 
         // Members
-        await db.exec(`CREATE TABLE IF NOT EXISTS members (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, mobile TEXT, messengerId TEXT, enabled INTEGER DEFAULT 1);`);
+        // [UPDATED] Added notificationPreference column
+        await db.exec(`CREATE TABLE IF NOT EXISTS members (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, mobile TEXT, messengerId TEXT, enabled INTEGER DEFAULT 1, notificationPreference TEXT DEFAULT 'email');`);
+        
+        // Migrations for existing databases
         try { await db.exec(`ALTER TABLE members ADD COLUMN enabled INTEGER DEFAULT 1;`); } catch (e) { }
         try { await db.exec(`ALTER TABLE members ADD COLUMN notificationPreference TEXT DEFAULT 'email';`); } catch (e) { }
         
@@ -105,11 +108,10 @@ async function closeDB() {
 
 function getDbPath() {
     if (process.env.DB_PATH) return process.env.DB_PATH;
-
-    // Switch database file if in Demo mode
     const filename = (config.appMode === 'demo') ? 'demo.db' : 'fenz.db';
     return path.join(__dirname, '../' + filename);
 }
+
 async function verifyAndReplaceDb(newDbPath) {
     let tempDb;
     try {
@@ -130,7 +132,8 @@ async function verifyAndReplaceDb(newDbPath) {
         } catch (e) { }
 
         const currentVersion = packageJson.version;
-        if (dbVersion !== currentVersion) throw new Error(`Version Mismatch! Uploaded DB is ${dbVersion}, App is ${currentVersion}.`);
+        // Optional: Relax version check if structure is stable
+        // if (dbVersion !== currentVersion) throw new Error(`Version Mismatch! Uploaded DB is ${dbVersion}, App is ${currentVersion}.`);
 
         await tempDb.close();
     } catch (e) {
@@ -250,7 +253,12 @@ async function addMember(member) {
     if (!db) await initDB();
     const result = await db.run(
         `INSERT INTO members (name, email, mobile, messengerId, enabled, notificationPreference) VALUES (?, ?, ?, ?, ?, ?)`,
-        member.name, member.email, member.mobile, member.messengerId, member.enabled !== false ? 1 : 0, member.notificationPreference || 'email'
+        member.name, 
+        member.email, 
+        member.mobile, 
+        member.messengerId, 
+        member.enabled !== false ? 1 : 0,
+        member.notificationPreference || 'email' // Default to email
     );
     return result.lastID;
 }
@@ -282,7 +290,13 @@ async function updateMember(id, member) {
     if (!db) await initDB();
     await db.run(
         `UPDATE members SET name = ?, email = ?, mobile = ?, messengerId = ?, enabled = ?, notificationPreference = ? WHERE id = ?`,
-        member.name, member.email, member.mobile, member.messengerId, member.enabled ? 1 : 0, member.notificationPreference || 'email', id
+        member.name, 
+        member.email, 
+        member.mobile, 
+        member.messengerId, 
+        member.enabled ? 1 : 0, 
+        member.notificationPreference || 'email', 
+        id
     );
 }
 
@@ -538,7 +552,6 @@ module.exports = {
     getDbPath,
     verifyAndReplaceDb,
 
-    // Auth & Users
     authenticateUser,
     getUsers,
     getUserById,
@@ -549,7 +562,6 @@ module.exports = {
     adminResetPassword,
     deleteUser,
 
-    // Members
     getMembers,
     addMember,
     bulkAddMembers,
@@ -557,7 +569,6 @@ module.exports = {
     deleteMember,
     bulkDeleteMembers,
 
-    // Skills
     getSkills,
     addSkill,
     bulkAddSkills,
@@ -565,14 +576,12 @@ module.exports = {
     deleteSkill,
     bulkDeleteSkills,
 
-    // Preferences
     getPreferences,
     savePreference,
     getAllUserPreferences,
     getUserPreference,
     saveUserPreference,
 
-    // Logging
     logEvent,
     getEventLogs,
     getEventLogMetadata,

@@ -10,7 +10,9 @@ const helpContent = {
             <ul>
                 <li><strong>Days to Expiry:</strong> Change this number and click 'Reload' to see skills expiring further in the future.</li>
                 <li><strong>Reload Expiring Skills:</strong> Fetches the latest data from the OSM Dashboard.</li>
-                <li><strong>Send Notifications:</strong> Select the <strong>Email</strong> or <strong>WhatsApp</strong> checkboxes for members and click 'Send Notifications' to process them in bulk.</li>
+                <li><strong>Send Notifications:</strong> Select the <strong>Email</strong> or <strong>WhatsApp</strong> checkboxes for members and click 'Send Notifications' to process them in bulk.
+                    <br><em>Note: The default selection for each member is determined by their configured <strong>Notification Preferences</strong> (set in Manage Members).</em>
+                </li>
                 <li><strong>Quick Actions:</strong> Use the round <span style="background:#007bff; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✉</span> or <span style="background:#25D366; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✆</span> buttons to send a single reminder immediately.</li>
                 <li><strong>Filters:</strong> Use the toggle buttons at the top right of the table:
                     <ul>
@@ -45,9 +47,14 @@ const helpContent = {
             <p><strong>Import from OSM:</strong> Scans the live dashboard for any members not yet in your list and allows you to import them.</p>
             <p><strong>Enabled Toggle:</strong> Use the switch to enable/disable a member. Disabled members are ignored during checks.</p>
             <hr>
-            <p><strong>Add Member:</strong> Manually add a single member. Name must match OSM exactly.</p>
+            <p><strong>Add/Edit Member:</strong> Manually manage member details.</p>
+            <ul>
+                <li><strong>Name:</strong> Must match the OSM Dashboard exactly.</li>
+                <li><strong>Notification Preference:</strong> Select which channels (<strong>Email</strong>, <strong>WhatsApp</strong>) this member should receive notifications on by default.</li>
+            </ul>
+            <p><strong>Prefs Column:</strong> Shows icons indicating enabled channels: <span style="color:#6f42c1; font-weight:bold;">✉</span> (Email) and <span style="color:#25D366; font-weight:bold;">✆</span> (WhatsApp).</p>
+            <hr>
             <p><strong>Import CSV:</strong> Bulk upload members. <br>Format: <code>name, email, mobile, enabled</code>.</p>
-            <p><strong>Edit/Delete:</strong> Use the pencil or trash icons to modify specific members.</p>
             <p><strong>Export CSV:</strong> Download the current list of members for backup or editing.</p>
         `
     },

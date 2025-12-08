@@ -1,3 +1,4 @@
+// public/app.js
 const socket = io();
 
 // =============================================================================
@@ -225,11 +226,10 @@ function renderTable() {
         }
         tr.appendChild(skillTd); tr.appendChild(dateTd);
 
-        // --- Calculate Preferences (Moved here to be ready for use) ---
+        // --- Calculate Preferences ---
         const prefs = (member.notificationPreference || 'email').split(',');
         const defaultEmail = prefs.includes('email');
         const defaultWa = prefs.includes('whatsapp');
-        const defaultMsg = prefs.includes('messenger');
         // -----------------------------------------------------------
 
         // Action Column

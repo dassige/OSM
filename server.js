@@ -54,7 +54,7 @@ app.use(express.json());
 // Initialize DB & Proxy
 db.initDB().catch(err => console.error("DB Init Error:", err));
 
-// [UPDATED] Initialize WhatsApp Service with IO AND DB Logger
+// Initialize WhatsApp Service
 whatsappService.init(io, db.logEvent);
 
 if (config.enableWhatsApp) {
@@ -492,7 +492,8 @@ io.on('connection', (socket) => {
                 email: m.email,
                 mobile: m.mobile,
                 messengerId: m.messengerId,
-                notificationPreference: m.notificationPreference, // <--- ADD THIS LINE
+                // [UPDATED] Pass preference
+                notificationPreference: m.notificationPreference,
                 skills: m.expiringSkills.map(s => ({
                     skill: s.skill, dueDate: s.dueDate, hasUrl: !!s.url, isCritical: !!s.isCritical
                 })),
