@@ -39,22 +39,24 @@ function isExpiring(dueDateStr, daysThreshold) {
  * Maps raw scraped data to members and identifies expiring skills.
  * [UPDATED] Filters out disabled members.
  */
-function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold) {
-    // 1. Filter out disabled members immediately
+function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, trainingMap = {}) {
     const activeMembers = members.filter(m => m.enabled);
 
     const processedMembers = activeMembers.map(member => {
-        // Find all raw skills for this member
         const memberRawSkills = scrapedData.filter(item => item.name === member.name);
 
-        // Filter for actionable expiring skills
         const expiringSkills = memberRawSkills.filter(skill => {
             if (isExpiring(skill.dueDate, daysThreshold) || isExpired(skill.dueDate)) {
-                // Check if this skill exists in our config and is enabled
                 const config = skillsConfig.find(c => c.name === skill.skill);
                 if (config && config.enabled) {
                     skill.url = config.url;
                     skill.isCritical = config.critical_skill;
+                    
+                    // [NEW] Inject Next Planned Dates
+                    // If dates exist in the map, join them; otherwise default to empty string
+                    const dates = trainingMap[skill.skill] || [];
+                    skill.nextPlannedDates = dates.length > 0 ? dates.join(', ') : 'None planned';
+                    
                     return true;
                 }
             }

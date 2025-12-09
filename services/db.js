@@ -58,11 +58,11 @@ async function initDB() {
         // Members
         // [UPDATED] Added notificationPreference column
         await db.exec(`CREATE TABLE IF NOT EXISTS members (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, mobile TEXT, messengerId TEXT, enabled INTEGER DEFAULT 1, notificationPreference TEXT DEFAULT 'email');`);
-        
+
         // Migrations for existing databases
         try { await db.exec(`ALTER TABLE members ADD COLUMN enabled INTEGER DEFAULT 1;`); } catch (e) { }
         try { await db.exec(`ALTER TABLE members ADD COLUMN notificationPreference TEXT DEFAULT 'email';`); } catch (e) { }
-        
+
         // Skills
         await db.exec(`CREATE TABLE IF NOT EXISTS skills (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, url TEXT, critical_skill INTEGER DEFAULT 0, enabled INTEGER DEFAULT 1);`);
         try { await db.exec(`ALTER TABLE skills ADD COLUMN enabled INTEGER DEFAULT 1;`); } catch (e) { }
@@ -79,7 +79,15 @@ async function initDB() {
             );
         `);
         try { await db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'simple';`); } catch (e) { }
-
+        // Training Sessions
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS training_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL, 
+                skill_name TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
         // User Preferences
         await db.exec(`
             CREATE TABLE IF NOT EXISTS user_preferences (
@@ -253,10 +261,10 @@ async function addMember(member) {
     if (!db) await initDB();
     const result = await db.run(
         `INSERT INTO members (name, email, mobile, messengerId, enabled, notificationPreference) VALUES (?, ?, ?, ?, ?, ?)`,
-        member.name, 
-        member.email, 
-        member.mobile, 
-        member.messengerId, 
+        member.name,
+        member.email,
+        member.mobile,
+        member.messengerId,
         member.enabled !== false ? 1 : 0,
         member.notificationPreference || 'email' // Default to email
     );
@@ -290,12 +298,12 @@ async function updateMember(id, member) {
     if (!db) await initDB();
     await db.run(
         `UPDATE members SET name = ?, email = ?, mobile = ?, messengerId = ?, enabled = ?, notificationPreference = ? WHERE id = ?`,
-        member.name, 
-        member.email, 
-        member.mobile, 
-        member.messengerId, 
-        member.enabled ? 1 : 0, 
-        member.notificationPreference || 'email', 
+        member.name,
+        member.email,
+        member.mobile,
+        member.messengerId,
+        member.enabled ? 1 : 0,
+        member.notificationPreference || 'email',
         id
     );
 }
@@ -540,10 +548,46 @@ async function pruneEventLog(days) {
     const isoDate = cutoff.toISOString();
     await db.run('DELETE FROM event_log WHERE timestamp < ?', isoDate);
 }
+async function getTrainingSessions(startDate, endDate) {
+    if (!db) await initDB();
+    return await db.all(
+        'SELECT * FROM training_sessions WHERE date >= ? AND date <= ? ORDER BY date ASC',
+        startDate, endDate
+    );
+}
 
+async function addTrainingSession(date, skillName) {
+    if (!db) await initDB();
+    const result = await db.run(
+        'INSERT INTO training_sessions (date, skill_name) VALUES (?, ?)',
+        date, skillName
+    );
+    return result.lastID;
+}
+
+async function deleteTrainingSession(id) {
+    if (!db) await initDB();
+    await db.run('DELETE FROM training_sessions WHERE id = ?', id);
+}
 async function logEmailAction(member, status, details = '') {
     if (!db) await initDB();
     await db.run(`INSERT INTO email_history (recipient_name, recipient_email, status, details) VALUES (?, ?, ?, ?)`, member.name, member.email, status, details);
+}
+async function getAllFutureTrainingSessions() {
+    if (!db) await initDB();
+    
+    // [UPDATED] Use APP_TIMEZONE to determine "Today"
+    // We create a date string relative to the configured timezone
+    const nowString = new Date().toLocaleString('en-US', { timeZone: config.timezone });
+    const today = new Date(nowString);
+    
+    // Format manually to YYYY-MM-DD to avoid UTC conversion issues with toISOString()
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    const todayISO = `${y}-${m}-${d}`;
+
+    return await db.all('SELECT * FROM training_sessions WHERE date >= ? ORDER BY date ASC', todayISO);
 }
 
 module.exports = {
@@ -588,5 +632,10 @@ module.exports = {
     getEventLogsExport,
     purgeEventLog,
     pruneEventLog,
-    logEmailAction
+    logEmailAction,
+
+    getTrainingSessions, 
+    addTrainingSession, 
+    getAllFutureTrainingSessions,
+    deleteTrainingSession
 };

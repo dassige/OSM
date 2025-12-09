@@ -21,6 +21,10 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Skills:** Configure which skills to track and mark them as Critical.
       * **Smart Form Links:** Define Google Form URLs with dynamic placeholders (e.g., `{{member-name}}`) to pre-fill member details automatically.
       * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, New Users, Password Resets, and Account Deletions.
+  * **Training Planner:**
+      * **Visual Scheduling:** A drag-and-drop calendar to plan in-person training sessions for skills that don't have online forms.
+      * **Smart Filtering:** A "Show Training Day Only" toggle that hides irrelevant days and expands the calendar to fill the screen.
+      * **Training Day Highlight:** Define your brigade's standard training day in `.env` to have it automatically highlighted.
   * **System Maintenance & Auditing:**
       * **Database Backup & Restore:** Download full database snapshots and restore them with strict version compatibility checks.
       * **Event Log:** A comprehensive audit trail recording all major actions.
@@ -101,7 +105,8 @@ Open the `.env` file and configure the following parameters:
 
   * `APP_TIMEZONE`: The timezone used for date calculations (e.g., `Pacific/Auckland`). Defaults to NZ time.
   * `APP_LOCALE`: The locale used for date/time formatting strings (e.g., `en-NZ`, `en-US`). Defaults to `en-NZ`.
-    
+  * `TRAINING_DAY_OF_WEEK`: Your brigade's training day (e.g., `Monday`). Used to highlight the day in the Training Planner.   
+
 #### **OSM Dashboard Connection**
 
   * `OSM_BU_ID`: **Crucial.** Your unique Business Unit ID (GUID) for the dashboard (e.g., `87FF646A-FCBC-49A1-9BAC-76F1C368EEFA`). The system will automatically construct the correct URL.
@@ -188,8 +193,9 @@ node server.js
           * Example: `https://docs.google.com/forms/...?entry.123={{member-name}}`
           * The system will auto-fill the member's name and email when generating the link.
 3.  **Email Templates**: Use the tabbed editor to customize the `Expiring Skills`, `New User`, `Password Reset`, and `Account Deleted` emails. Drag and drop variables directly into the text.
-4.  **Event Log**: Use the yellow maintenance bar (Super Admin only) to prune old logs or purge the history.
-5.  **Run Dashboard**: Click **Reload Expiring Skills** to fetch live data, then select members to send reminders.
+4.  **Training Planner**: Use the planner to schedule in-person verification sessions for skills that don't have an online form. Drag skills from the list to the calendar.
+5.  **Event Log**: Use the yellow maintenance bar (Super Admin only) to prune old logs or purge the history.
+6.  **Run Dashboard**: Click **Reload Expiring Skills** to fetch live data, then select members to send reminders.
 
 ## Docker Deployment
 

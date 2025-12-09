@@ -981,3 +981,93 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
         box-sizing: border-box; /* Ensure padding doesn't overflow width */
     }
 }
+/* Training Planner Specifics */
+
+/* Highlight for the official training day */
+.day-column.training-day {
+    border: 2px solid var(--primary);
+    /* UPDATED: 'Sand' colour */
+    background-color: #f5f5dc; 
+}
+
+/* Optional: Update header to match or contrast nicely */
+.day-column.training-day .day-header {
+    background-color: #e0d6b9 !important; /* Darker sand for header */
+    color: #333 !important; /* Dark text for contrast on sand */
+    border-bottom: 3px solid #c2b89d;
+}
+
+/* When hidden by the toggle filter */
+.day-column.hidden-day {
+    display: none !important;
+}
+/* --- Training Planner Improvements --- */
+
+/* Teal Button */
+.btn-teal {
+    background-color: #20c997; /* Teal */
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.btn-teal:hover {
+    background-color: #1aa179;
+}
+
+/* Distinct Calendar Header */
+.day-header {
+    /* Overriding previous style */
+    background-color: #495057 !important; /* Darker distinct grey */
+    color: #fff !important;
+    border-bottom: 3px solid rgba(0,0,0,0.1);
+}
+.day-header.today {
+    background-color: var(--primary) !important; /* Keep Blue for Today */
+    border-bottom: 3px solid #0056b3;
+}
+
+/* Flex Layout for Expanding Columns */
+.week-grid {
+    display: flex !important;
+    gap: 10px;
+    overflow-x: hidden; /* CHANGED: Never show horizontal scrollbar */
+    height: 100%;       /* Ensure it uses vertical space */
+}
+
+.day-column {
+    flex: 1;            /* Default: Share space equally */
+    min-width: 0;       /* CHANGED: Allow shrinking to fit screen without scroll */
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Smooth resize */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Busy days get 3x the available space */
+.day-column.has-sessions {
+    flex: 3; 
+    /* Removed fixed min-width to prevent overflow */
+}
+
+/* Ensure hidden columns don't take up space */
+.day-column.hidden-day {
+    display: none !important;
+}
+/* Visual style for dates in the past */
+.day-column.past-day {
+    opacity: 0.6;
+    background-color: rgba(0, 0, 0, 0.05); /* Light grey tint */
+}
+
+/* Ensure the header also looks "inactive" */
+.day-column.past-day .day-header {
+    background-color: #6c757d !important; /* Muted grey */
+    opacity: 0.8;
+}
+
+/* In Dark Mode, adjust the tint */
+body.dark-mode .day-column.past-day {
+    background-color: rgba(255, 255, 255, 0.05);
+}
