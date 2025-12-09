@@ -83,17 +83,17 @@ const helpContent = {
             <p><strong>Overview:</strong> Customize the automated messages sent by the system for both Email and WhatsApp.</p>
             <p><strong>Tabs:</strong> Use the tabs at the top to switch between different template types.</p>
             
-            <h3>Expiring Skills (Email)</h3>
+            <h3>Expiring Skills (Email & WhatsApp)</h3>
             <ul>
                 <li><strong>Filter:</strong> Check <em>"Include only skills with Form URL"</em> to completely exclude any skill that doesn't have a link configured.</li>
                 <li><strong>Dual Row Templates:</strong> Customize how each skill row appears based on whether it has a URL or not.</li>
+                <li><strong>Next Planned Dates:</strong> For the "No URL" rows, you can use the <code>{{next-planned-dates}}</code> variable. This automatically inserts any future training sessions for that skill scheduled in the <strong>Skills Renewal Planner</strong>.</li>
             </ul>
 
-            <h3>Expiring Skills (WhatsApp)</h3>
+            <h3>WhatsApp Specifics</h3>
             <p>Customize the text message sent to mobile phones.</p>
             <ul>
                 <li><strong>Formatting:</strong> WhatsApp supports simple markdown: <code>*bold*</code>, <code>_italic_</code>, <code>~strike~</code>. HTML is not supported.</li>
-                <li><strong>Intro & Rows:</strong> Define the opening message and the format for each skill in the list.</li>
             </ul>
 
             <h3>General Editing</h3>
@@ -191,6 +191,32 @@ const helpContent = {
             <p><strong>Note:</strong> The phone associated with the WhatsApp account must be on and connected to the internet for messages to send.</p>
         `
     },
+    // --- NEW: Skills Renewal Planner ---
+    "training-planner": {
+        title: "Skills Renewal Planner Help",
+        body: `
+            <p><strong>Overview:</strong> Plan in-person training sessions by dragging expiring skills onto a calendar.</p>
+            
+            <h3>Left Panel: Expiring Skills</h3>
+            <p>Lists skills that <strong>do not have an online form URL</strong> and are expiring within the configured days.</p>
+            <ul>
+                <li><strong>Cards:</strong> Each skill appears as a rectangular card with the skill name on the left and a colored member count on the right.</li>
+                <li><strong>Drag & Drop:</strong> Click and drag the entire skill card to a day on the calendar to schedule a session.</li>
+                <li><strong>View Members:</strong> Click the <strong>colored number box</strong> on the right of the card to see exactly <em>who</em> has this skill expiring.</li>
+            </ul>
+
+            <h3>Right Panel: Calendar</h3>
+            <p>Displays a weekly view where you can schedule sessions. The configured <strong>Training Day</strong> (e.g., Monday) is highlighted.</p>
+            <ul>
+                <li><strong>Show Training Day Only:</strong> Toggle this switch in the top bar to focus the view. The calendar will hide empty days, and the remaining days will expand to fill the screen for better readability.</li>
+                <li><strong>Schedule:</strong> Drop a skill onto any day to create a session.</li>
+                <li><strong>View Details:</strong> Click the skill name within a calendar day to see the list of members again.</li>
+                <li><strong>Delete:</strong> Click the red <strong>&times;</strong> on a session card to remove it.</li>
+                <li><strong>Navigation:</strong> Use the Teal <strong>Prev/Next Week</strong> buttons to change dates, or the <strong>Calendar Icon</strong> button to jump back to Today.</li>
+            </ul>
+            <p><em>Note:</em> Scheduled trainings are saved to the database immediately and will automatically appear in email/WhatsApp notifications using the <code>{{next-planned-dates}}</code> variable.</p>
+        `
+    },
     // --- Default ---
     "default": {
         title: "Help",
@@ -208,13 +234,14 @@ const helpContent = {
     if (path === "/" || path.endsWith("index.html")) key = "index";
     else if (path.includes("members")) key = "members";
     else if (path.includes("skills")) key = "skills";
-    else if (path.includes("templates")) key = "templates"; // [UPDATED]
+    else if (path.includes("templates")) key = "templates";
     else if (path.includes("system-tools")) key = "system-tools";
     else if (path.includes("event-log")) key = "event-log";
     else if (path.includes("users")) key = "users";
     else if (path.includes("profile")) key = "profile";
     else if (path.includes("login")) key = "login";
     else if (path.includes("third-parties")) key = "third-parties";
+    else if (path.includes("training-planner")) key = "training-planner";
 
     const content = helpContent[key] || helpContent["default"];
 

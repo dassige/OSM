@@ -83,14 +83,15 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
 
         const criticalLabel = skill.isCritical ? '(CRITICAL)' : '';
 
-        let row = templateToUse
+let row = templateToUse
             .replace(/{{skill}}/g, skill.skill)
             .replace(/{{date}}/g, skill.dueDate)
             .replace(/{{critical}}/g, criticalLabel)
-            .replace(/{{url}}/g, fullUrl);
+            .replace(/{{url}}/g, fullUrl)
+            .replace(/{{next-planned-dates}}/g, skill.nextPlannedDates || "None"); 
 
         rowsHtml += row;
-        plainTextList += `- ${skill.skill} (${skill.dueDate})\n`;
+        plainTextList += `- ${skill.skill} (${skill.dueDate}) [Next: ${skill.nextPlannedDates}]\n`;
     });
 
     const messageHtml = `

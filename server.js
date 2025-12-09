@@ -419,6 +419,45 @@ app.post('/api/preferences', hasRole('admin'), async (req, res) => { try { await
 app.get('/api/user-preferences', async (req, res) => { try { res.json(await db.getAllUserPreferences(req.session.user.id || 0)); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post('/api/user-preferences', async (req, res) => { try { await db.saveUserPreference(req.session.user.id || 0, req.body.key, req.body.value); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
+
+// =============================================================================
+// API ROUTES - TRAINING PLANNER
+// =============================================================================
+
+app.get('/api/training-sessions', hasRole('simple'), async (req, res) => {
+    try {
+        const { start, end } = req.query;
+        // Basic ISO date validation could go here
+        const sessions = await db.getTrainingSessions(start, end);
+        res.json(sessions);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/training-sessions', hasRole('simple'), async (req, res) => {
+    try {
+        const { date, skillName } = req.body;
+        if (!date || !skillName) return res.status(400).json({ error: "Missing date or skill" });
+
+        const id = await db.addTrainingSession(date, skillName);
+        await db.logEvent(req.session.user.name, 'Training', `Scheduled ${skillName}`, { date });
+        res.json({ success: true, id });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.delete('/api/training-sessions/:id', hasRole('simple'), async (req, res) => {
+    try {
+        await db.deleteTrainingSession(req.params.id);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+
 // Static
 app.use(express.static('public'));
 
@@ -485,8 +524,9 @@ io.on('connection', (socket) => {
             const dbMembers = await db.getMembers();
             const dbSkills = await db.getSkills();
             const rawData = await getOIData(config.url, interval, currentProxy, logger);
-            const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold);
 
+            const trainingMap = await getTrainingMap();
+            const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold, trainingMap);
             const results = processedMembers.map(m => ({
                 name: m.name,
                 email: m.email,
@@ -543,7 +583,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         const dbMembers = await db.getMembers();
         const dbSkills = await db.getSkills();
         const prefs = await db.getPreferences();
-
+        const trainingMap = await getTrainingMap();
         // Email Config
         const templateConfig = {
             from: prefs.emailFrom, subject: prefs.emailSubject, intro: prefs.emailIntro,
@@ -562,8 +602,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         const waOnlyWithUrl = (prefs.waOnlyWithUrl === 'true' || prefs.waOnlyWithUrl === true);
 
         const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
-        const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, days);
-
+        const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, days, trainingMap);
         let current = 0;
 
         for (const target of targets) {
@@ -619,7 +658,8 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                                     skill: s.skill,
                                     date: s.dueDate,
                                     url: finalUrl || "N/A",
-                                    critical: s.isCritical ? "(CRITICAL)" : ""
+                                    critical: s.isCritical ? "(CRITICAL)" : "",
+                                    'next-planned-dates': s.nextPlannedDates || "None"
                                 };
                                 // Select template based on URL existence
                                 const rowTpl = s.url ? waRowTpl : waRowNoUrlTpl;
@@ -657,7 +697,17 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         socket.emit('script-complete', 1);
     }
 }
-
+// Helper: Get Training Map
+async function getTrainingMap() {
+    const sessions = await db.getAllFutureTrainingSessions();
+    const map = {};
+    sessions.forEach(s => {
+        if (!map[s.skill_name]) map[s.skill_name] = [];
+        // Format date nicely (optional) or keep ISO
+        map[s.skill_name].push(s.date);
+    });
+    return map;
+}
 const PORT = 3000;
 server.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);

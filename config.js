@@ -4,6 +4,10 @@ const packageJson = require('./package.json');
 const nodemailer = require('nodemailer');
 const path = require('path');
 
+// --- APP SETTINGS ---
+const timezone = process.env.APP_TIMEZONE || 'Pacific/Auckland';
+const locale = process.env.APP_LOCALE || 'en-NZ';
+
 // --- APP MODE ---
 const appMode = process.env.APP_MODE || 'production';
 
@@ -28,12 +32,10 @@ const ui = {
     loginLogo: process.env.UI_LOGO_URL || "resources/logo.png",       
     loginTitle: process.env.UI_LOGIN_TITLE || "FENZ OSM Automation Manager",
     version: packageJson.version,
-    deployDate: packageJson.versionDate
+    deployDate: packageJson.versionDate,
+    trainingDayIndex: getDayIndex(process.env.TRAINING_DAY_OF_WEEK),
+    timezone: timezone 
 };
-
-// --- APP SETTINGS ---
-const timezone = process.env.APP_TIMEZONE || 'Pacific/Auckland';
-const locale = process.env.APP_LOCALE || 'en-NZ';
 
 // --- DASHBOARD CONFIGURATION ---
 let url;
@@ -66,6 +68,19 @@ const dynamicProxySource = process.env.DYNAMIC_PROXY_SOURCE || null;
 // --- WHATSAPP CONFIG ---
 const enableWhatsApp = process.env.ENABLE_WHATSAPP === 'true';
 
+// Helper to convert day name to index (0=Sun, 1=Mon, etc.)
+function getDayIndex(dayName) {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const index = days.indexOf((dayName || '').toLowerCase().trim());
+    return index === -1 ? null : index; // Return null if invalid/not set
+}
+
+// Helper to convert day name to index (0=Sun, 1=Mon, etc.)
+function getDayIndex(dayName) {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const index = days.indexOf((dayName || '').toLowerCase().trim());
+    return index === -1 ? null : index; // Return null if invalid/not set
+}
 module.exports = {
     appMode, // Exported for use in other modules
     auth,
