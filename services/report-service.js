@@ -1,66 +1,25 @@
+// services/report-service.js
 const { getOIData } = require('./scraper');
 const db = require('./db');
 const config = require('../config');
 const { isExpiring, isExpired } = require('./member-manager');
 
-function getNameWithoutRank(fullName) {
-    if (!fullName) return "";
-    const parts = fullName.split(' ');
-    if (parts.length > 1) {
-        return parts.slice(1).join(' ');
-    }
-    return fullName;
-}
+// ... (keep getNameWithoutRank and getFreshData functions as they are) ...
 
-
-async function getFreshData(userId, proxyUrl) {
-    // 1. Get Configs & Preferences
-    const dbMembers = await db.getMembers();
-    const dbSkills = await db.getSkills();
-    
-    // Fetch 'daysToExpiry' preference (Default to 30)
-    let daysThreshold = 30;
-    try {
-        const pref = await db.getUserPreference(userId, 'daysToExpiry');
-        if (pref) daysThreshold = parseInt(pref);
-    } catch (e) { console.error("Error fetching pref:", e); }
-
-    // 2. Get Live/Cached Scrape Data
-    // [UPDATED] Pass the proxyUrl here
-    const scrapeData = await getOIData(config.url, config.scrapingInterval, proxyUrl);
-
-    // 3. Merge & Filter
-    const activeMembers = dbMembers.filter(m => m.enabled);
-    const enabledSkills = dbSkills.filter(s => s.enabled);
-
-    const reportData = [];
-
-    activeMembers.forEach(member => {
-        const memberSkills = scrapeData.filter(s => s.name === member.name);
-        
-        memberSkills.forEach(s => {
-            const skillConfig = enabledSkills.find(dbS => dbS.name === s.skill);
-            if (!skillConfig) return; // Skip untracked skills
-
-            const isDue = isExpiring(s.dueDate, daysThreshold) || isExpired(s.dueDate);
-            
-            if (isDue) {
-                reportData.push({
-                    member: member.name,
-                    sortName: getNameWithoutRank(member.name),
-                    skill: s.skill,
-                    dueDate: s.dueDate,
-                    isCritical: !!skillConfig.critical_skill
-                });
-            }
-        });
+// Helper to format the "Generated" date consistently
+function getGeneratedDate() {
+    return new Date().toLocaleDateString(config.locale, { 
+        timeZone: config.timezone,
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
     });
-
-    return { reportData, daysThreshold };
 }
 
 //  Pass proxyUrl down
 async function getGroupedByMember(userId, proxyUrl) {
+    console.log(`[ReportService] Generating 'By Member' Report...`);
     const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl);
     
     const grouped = {};
@@ -87,12 +46,13 @@ async function getGroupedByMember(userId, proxyUrl) {
         items: sortedMembers,
         meta: {
             filterDays: daysThreshold,
-            generated: new Date().toLocaleDateString()
+            generated: getGeneratedDate() // [UPDATED] Use helper
         }
     };
 }
 
 async function getGroupedBySkill(userId, proxyUrl) {
+    console.log(`[ReportService] Generating 'By Skill' Report...`);
     const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl);
 
     const grouped = {};
@@ -118,7 +78,7 @@ async function getGroupedBySkill(userId, proxyUrl) {
         items: sortedSkills,
         meta: {
             filterDays: daysThreshold,
-            generated: new Date().toLocaleDateString()
+            generated: getGeneratedDate() // [UPDATED] Use helper
         }
     };
 }

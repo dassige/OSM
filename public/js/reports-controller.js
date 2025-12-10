@@ -7,11 +7,30 @@ const reportPanel = document.getElementById('reportPanel');
 // Global Config
 let appConfig = {};
 
-// Init: Fetch Config
-fetch('/ui-config').then(r => r.json()).then(c => {
-    appConfig = c;
-    if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
-});
+// Init: Fetch Config & Session
+async function initReports() {
+    try {
+        // 1. UI Config
+        const c = await (await fetch('/ui-config')).json();
+        appConfig = c;
+        
+        if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+        if (c.loginTitle) document.title = "Reports - " + c.loginTitle;
+        if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+
+        // 2. User Session (Role Check)
+        const user = await (await fetch('/api/user-session')).json();
+        const role = user.role || 'guest';
+        
+        // Redirect if guest tries to access via direct URL (though server protects it too)
+        if (role === 'guest') {
+            window.location.href = '/';
+        }
+
+    } catch (e) {
+        console.error("Init Error:", e);
+    }
+}
 
 function loadReportDescription() {
     const key = reportSelect.value;
@@ -106,3 +125,6 @@ async function downloadPdf() {
         btn.disabled = false;
     }
 }
+
+// Start
+initReports();

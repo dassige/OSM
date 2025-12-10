@@ -232,6 +232,20 @@ const helpContent = {
             <p><em>Note:</em> Scheduled trainings are saved immediately and can be included in notifications using the <code>{{next-planned-dates}}</code> variable.</p>
         `
     },
+    // ---  Reports Page ---
+    "reports": {
+        title: "Reports Help",
+        body: `
+            <p><strong>Reports Console:</strong> Generate printable and downloadable reports based on the current expiring skills data.</p>
+            <ul>
+                <li><strong>Select Report:</strong> Choose a report type from the dropdown (e.g., grouped by Member or by Skill).</li>
+                <li><strong>Run Report:</strong> Generates the report on-screen using your current "Days to Expiry" preference from the Dashboard.</li>
+                <li><strong>Print:</strong> Opens your browser's print dialog (optimized for A4 paper).</li>
+                <li><strong>Export PDF:</strong> Generates a high-quality PDF file on the server and downloads it to your device.</li>
+            </ul>
+            <p><em>Note:</em> Reports exclude disabled members and skills.</p>
+        `
+    },
     // --- Default ---
     "default": {
         title: "Help",
@@ -257,6 +271,7 @@ const helpContent = {
     else if (path.includes("login")) key = "login";
     else if (path.includes("third-parties")) key = "third-parties";
     else if (path.includes("training-planner")) key = "training-planner";
+    else if (path.includes("reports")) key = "reports";
 
     const content = helpContent[key] || helpContent["default"];
 

@@ -5,12 +5,12 @@
         title: "Expiring Skills - Grouped by Member",
         description: "Lists members with skills expiring within your configured threshold, sorted by Name.",
         
-        // [UPDATED] Handle new data structure
         render: function(dataWrapper, uiConfig) {
             const data = dataWrapper.items || [];
             const meta = dataWrapper.meta || {};
             
             const appName = uiConfig.loginTitle || "FENZ OSM Manager";
+            const locale = uiConfig.locale || 'en-NZ'; // Use config locale
             
             let html = `
                 <div class="rpt-header">
@@ -40,10 +40,15 @@
                 member.skills.forEach(skill => {
                     const criticalClass = skill.isCritical ? 'critical' : '';
                     const criticalText = skill.isCritical ? ' (CRITICAL)' : '';
+                    
+                    // [UPDATED] Format date based on locale
+                    const dateObj = new Date(skill.dueDate);
+                    const formattedDate = isNaN(dateObj) ? skill.dueDate : dateObj.toLocaleDateString(locale);
+
                     html += `
                         <tr>
                             <td class="${criticalClass}">${skill.skill}${criticalText}</td>
-                            <td>${skill.dueDate}</td>
+                            <td>${formattedDate}</td>
                         </tr>
                     `;
                 });

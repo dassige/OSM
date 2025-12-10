@@ -5,12 +5,12 @@
         title: "Expiring Skills - Grouped by Skill",
         description: "Lists skills expiring within your configured threshold, grouped alphabetically.",
         
-        // [UPDATED] Handle new data structure
         render: function(dataWrapper, uiConfig) {
             const data = dataWrapper.items || [];
             const meta = dataWrapper.meta || {};
 
             const appName = uiConfig.loginTitle || "FENZ OSM Manager";
+            const locale = uiConfig.locale || 'en-NZ'; // Use config locale
 
             let html = `
                 <div class="rpt-header">
@@ -38,10 +38,14 @@
                 `;
                 
                 skillGroup.members.forEach(item => {
+                    // [UPDATED] Format date based on locale
+                    const dateObj = new Date(item.dueDate);
+                    const formattedDate = isNaN(dateObj) ? item.dueDate : dateObj.toLocaleDateString(locale);
+
                     html += `
                         <tr>
                             <td>${item.member}</td>
-                            <td>${item.dueDate}</td>
+                            <td>${formattedDate}</td>
                         </tr>
                     `;
                 });
