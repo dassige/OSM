@@ -1,7 +1,6 @@
 // services/member-manager.js
 const config = require('../config');
 
-// ... (Keep parseDate, isExpired, isExpiring functions the same) ...
 function parseDate(dateStr) {
     if (!dateStr) return null;
     const cleanStr = dateStr.trim();
@@ -18,6 +17,7 @@ function parseDate(dateStr) {
     const fallback = new Date(cleanStr);
     return isNaN(fallback.getTime()) ? null : fallback;
 }
+
 function isExpired(dueDateStr) {
     const date = parseDate(dueDateStr);
     if (!date) return false;
@@ -26,6 +26,7 @@ function isExpired(dueDateStr) {
     today.setHours(0, 0, 0, 0);
     return date < today;
 }
+
 function isExpiring(dueDateStr, daysThreshold) {
     const skillExpiryDate = parseDate(dueDateStr);
     if (!skillExpiryDate) return false;
@@ -35,10 +36,6 @@ function isExpiring(dueDateStr, daysThreshold) {
     return skillExpiryDate <= thresholdDate;
 }
 
-/**
- * Maps raw scraped data to members and identifies expiring skills.
- * [UPDATED] Filters out disabled members.
- */
 function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, trainingMap = {}) {
     const activeMembers = members.filter(m => m.enabled);
 
@@ -52,8 +49,6 @@ function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, 
                     skill.url = config.url;
                     skill.isCritical = config.critical_skill;
                     
-                    // [NEW] Inject Next Planned Dates
-                    // If dates exist in the map, join them; otherwise default to empty string
                     const dates = trainingMap[skill.skill] || [];
                     skill.nextPlannedDates = dates.length > 0 ? dates.join(', ') : 'None planned';
                     
@@ -72,4 +67,5 @@ function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, 
     return processedMembers;
 }
 
-module.exports = { processMemberSkills, isExpired, parseDate };
+// [FIX] Added isExpiring to the export list
+module.exports = { processMemberSkills, isExpired, isExpiring, parseDate };

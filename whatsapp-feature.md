@@ -50,7 +50,7 @@ On the **Third Party Services** page, once connected, the "Test Integration" but
 
 ### Sending Skill Notifications (Dashboard)
 
-On the main **Dashboard**, you will see a new **WhatsApp** column in the "Expiring Skills Report" table.
+On the main **Dashboard**, you will see a new **WhatsApp** column in the "Expiring Skills List" table.
 
   * **Bulk Sending:**
 

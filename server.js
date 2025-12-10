@@ -21,6 +21,8 @@ const {
 } = require('./services/mailer');
 // Import WhatsApp Service
 const whatsappService = require('./services/whatsapp-service');
+const puppeteer = require('puppeteer-core');
+const reportService = require('./services/report-service');
 
 // =============================================================================
 // 1. INITIALIZATION & MIDDLEWARE
@@ -462,8 +464,80 @@ app.delete('/api/training-sessions/:id', hasRole('admin'), async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
+// =============================================================================
+// API ROUTES - REPORTS
+// =============================================================================
 
+app.get('/reports.html', (req, res, next) => {
+    const role = req.session?.user?.role;
+    // Allow simple, admin, superadmin
+    if (role === 'simple' || role === 'admin' || role === 'superadmin') next();
+    else res.redirect('/');
+});
 
+app.get('/api/reports/data/:type', async (req, res) => {
+    const role = req.session?.user?.role;
+    if (!['simple', 'admin', 'superadmin'].includes(role)) {
+        return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+        const userId = req.session.user.id || 0;
+        const type = req.params.type;
+
+        // Pass 'currentProxy' defined in server.js
+        if (type === 'by-member') {
+            return res.json(await reportService.getGroupedByMember(userId, currentProxy));
+        }
+        else if (type === 'by-skill') {
+            return res.json(await reportService.getGroupedBySkill(userId, currentProxy));
+        }
+        res.status(404).json({ error: "Unknown report type" });
+    } catch (e) {
+        console.error("Report Data Error:", e); // Log to server console
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/reports/pdf', async (req, res) => {
+    const role = req.session?.user?.role;
+    if (!['simple', 'admin', 'superadmin'].includes(role)) {
+        return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    const { html, title } = req.body;
+    let browser;
+    try {
+        browser = await puppeteer.launch({
+            executablePath: '/usr/bin/chromium-browser',
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
+            headless: true
+        });
+
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: 'networkidle0' });
+
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' }
+        });
+
+        await browser.close();
+
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Length': pdfBuffer.length,
+            'Content-Disposition': `attachment; filename="${title || 'report'}.pdf"`
+        });
+        res.send(pdfBuffer);
+
+    } catch (e) {
+        if (browser) await browser.close();
+        console.error("PDF Gen Error:", e);
+        res.status(500).json({ error: "Failed to generate PDF: " + e.message });
+    }
+});
 // Static
 app.use(express.static('public'));
 
@@ -578,25 +652,36 @@ function applyTemplate(template, vars) {
     return text;
 }
 
-// [UPDATED] Queue Processing Function
 async function handleQueueProcessing(socket, targets, days, logger) {
     const currentUser = socket.request.session.user.name || socket.request.session.user;
+    
+    // --- [DEBUG] INPUT LOGGING ---
+    logger(`\n[DEBUG] --- Report Process Started ---`);
+    logger(`[DEBUG] User: ${currentUser}`);
+    logger(`[DEBUG] Targets: ${targets ? targets.length : 0}`);
+    logger(`[DEBUG] 'Days to Expiry' Argument: ${days} (Type: ${typeof days})`);
+    // -----------------------------
+
     logger(`> Starting Notification Process for ${targets.length} members...`);
     socket.emit('progress-update', { type: 'progress-start', total: targets.length });
 
     try {
         // Load Data
+        logger(`[DEBUG] Loading DB Members and Skills...`);
         const dbMembers = await db.getMembers();
         const dbSkills = await db.getSkills();
+        
+        logger(`[DEBUG] Loading Preferences...`);
         const prefs = await db.getPreferences();
         const trainingMap = await getTrainingMap();
+
         // Email Config
         const templateConfig = {
             from: prefs.emailFrom, subject: prefs.emailSubject, intro: prefs.emailIntro,
             rowHtml: prefs.emailRow, rowHtmlNoUrl: prefs.emailRowNoUrl, filterOnlyWithUrl: prefs.emailOnlyWithUrl
         };
 
-        // [NEW] WhatsApp Config Defaults
+        // WhatsApp Config Defaults
         const waDefaults = {
             intro: "*Expiring Skills Notification*\n\nHello {{name}}, you have skills expiring in OSM:\n",
             row: "- *{{skill}}*\n  Expires: {{date}}\n  Link: {{url}}",
@@ -607,7 +692,23 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         const waRowNoUrlTpl = prefs.waRowNoUrl || waDefaults.rowNoUrl;
         const waOnlyWithUrl = (prefs.waOnlyWithUrl === 'true' || prefs.waOnlyWithUrl === true);
 
-        const rawData = await getOIData(config.url, config.scrapingInterval || 0, currentProxy, logger);
+        // --- [DEBUG] SCRAPER CALL ---
+        const interval = config.scrapingInterval || 60; // Default to 60 to allow caching if available
+        logger(`[DEBUG] Calling Scraper -> URL: ${config.url}, Interval: ${interval}`);
+        
+        const rawData = await getOIData(config.url, interval, currentProxy, logger);
+        
+        if (!rawData) {
+            logger(`[ERROR] Scraper returned NULL or UNDEFINED.`);
+        } else {
+            logger(`[DEBUG] Scraper returned ${rawData.length} rows.`);
+        }
+
+        if (!rawData || rawData.length === 0) {
+             throw new Error("Failed to load data: Scraper returned 0 records. Check OSM credentials or Proxy.");
+        }
+        // ----------------------------
+
         const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, days, trainingMap);
         let current = 0;
 
@@ -619,8 +720,9 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                 continue;
             }
 
+            // ... (Rest of the loop logic remains the same) ...
             if (member.expiringSkills.length > 0) {
-                // 1. SEND EMAIL
+                // Email Sending Logic ...
                 if (target.sendEmail) {
                     try {
                         const result = await sendNotification(member, templateConfig, config.transporter, false, logger, config.ui.loginTitle);
@@ -632,10 +734,11 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                         await db.logEmailAction(member, 'EMAIL_FAILED', err.message);
                     }
                 }
-
-                // 2. SEND WHATSAPP
+                
+                // WhatsApp Sending Logic ...
                 if (target.sendWa && config.enableWhatsApp) {
-                    try {
+                    // ... (keep existing WA code) ...
+                     try {
                         // Filter Logic
                         let waSkills = member.expiringSkills;
                         if (waOnlyWithUrl) {
@@ -643,7 +746,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                         }
 
                         if (waSkills.length > 0) {
-                            // Construct message
+                            // ... (keep existing WA template logic) ...
                             const memberVars = {
                                 name: member.name.split(',')[1] || member.name,
                                 appname: config.ui.loginTitle
@@ -700,6 +803,8 @@ async function handleQueueProcessing(socket, targets, days, logger) {
 
     } catch (error) {
         logger(`FATAL ERROR: ${error.message}`);
+        // [DEBUG] Log stack trace to console
+        console.error(error); 
         socket.emit('script-complete', 1);
     }
 }
