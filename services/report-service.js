@@ -12,7 +12,7 @@ function getNameWithoutRank(fullName) {
     return fullName;
 }
 
-// [UPDATED] Now accepts proxyUrl
+
 async function getFreshData(userId, proxyUrl) {
     // 1. Get Configs & Preferences
     const dbMembers = await db.getMembers();
@@ -59,7 +59,7 @@ async function getFreshData(userId, proxyUrl) {
     return { reportData, daysThreshold };
 }
 
-// [UPDATED] Pass proxyUrl down
+//  Pass proxyUrl down
 async function getGroupedByMember(userId, proxyUrl) {
     const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl);
     
