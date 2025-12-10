@@ -261,16 +261,25 @@ function renderCalendar() {
         content.setAttribute('data-date', isoDate);
         content.setAttribute('data-day-index', dayIndex);
 
-        // Drag & Drop Events
-        // (Optional: You could wrap these in 'if (loopDate >= zonedToday)' to prevent dropping in the past)
-        content.addEventListener('dragover', (e) => { e.preventDefault(); content.classList.add('drag-over'); });
-        content.addEventListener('dragleave', () => content.classList.remove('drag-over'));
-        content.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            content.classList.remove('drag-over');
-            const skillName = e.dataTransfer.getData('text/plain');
-            if (skillName) await saveSession(isoDate, skillName);
-        });
+        //  Drag & Drop Events
+        // Only attach listeners if the date is NOT in the past
+        if (loopDate >= zonedToday) {
+            content.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                content.classList.add('drag-over');
+            });
+
+            content.addEventListener('dragleave', () => {
+                content.classList.remove('drag-over');
+            });
+
+            content.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                content.classList.remove('drag-over');
+                const skillName = e.dataTransfer.getData('text/plain');
+                if (skillName) await saveSession(isoDate, skillName);
+            });
+        }
 
         col.appendChild(header);
         col.appendChild(content);
