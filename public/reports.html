@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reports</title>
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Action Bar & Layout */
+        .action-bar {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px var(--shadow);
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        .controls-area {
+            flex: 0 0 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .desc-card {
+            flex: 1;
+            background: var(--bg-hover);
+            border-left: 4px solid var(--primary);
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--text-main);
+        }
+        .report-container {
+            max-width: 210mm; /* A4 width */
+            margin: 0 auto;
+            background: white; /* Always white for paper simulation */
+            color: black;
+            min-height: 297mm; /* A4 height */
+            padding: 20mm;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        
+        /* Print Overrides */
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .back-btn, .action-bar, #demoBanner { display: none !important; }
+            .report-container { 
+                box-shadow: none; 
+                margin: 0; 
+                padding: 0; 
+                width: 100%; 
+                max-width: none;
+                min-height: 0; 
+            }
+        }
+
+        /* Generic Report Table Styles */
+        .rpt-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; page-break-inside: avoid; }
+        .rpt-table th, .rpt-table td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; font-size: 12px; color: #000; }
+        .rpt-table th { background-color: #eee; font-weight: bold; }
+        .rpt-header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .rpt-group-header { background-color: #343a40; color: white; padding: 5px 10px; font-weight: bold; margin-top: 15px; font-size: 14px; page-break-after: avoid; }
+        .critical { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="demoBanner" class="demo-banner">DEMO VERSION</div>
+    <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></a>
+
+    <div class="container" style="max-width: 1100px;">
+        <div class="action-bar">
+            <div class="controls-area">
+                <label style="font-weight:bold;">Select Report:</label>
+                <select id="reportSelect" onchange="loadReportDescription()">
+                    <option value="" disabled selected>-- Choose a Report --</option>
+                    <option value="by-member">Expiring Skills (By Member)</option>
+                    <option value="by-skill">Expiring Skills (By Skill)</option>
+                </select>
+                
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button onclick="window.print()" class="btn-sm" style="background:#6c757d; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; color:white;">Print</button>
+                    <button onclick="downloadPdf()" class="btn-sm" style="background:#dc3545; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; color:white;">Export PDF</button>
+                    <button onclick="runReport()" class="btn-sm" style="background:#28a745; flex-grow:1; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; color:white;">Run Report</button>
+                </div>
+            </div>
+
+            <div id="descCard" class="desc-card">
+                <strong id="descTitle">No Report Selected</strong>
+                <p id="descBody" style="margin:5px 0 0 0;">Select a report to view details.</p>
+            </div>
+        </div>
+
+        <div id="reportPanel" class="report-container">
+            <div style="text-align:center; color:#ccc; padding-top:100px;">
+                Select a report above and click "Run Report"
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="toast.js"></script>
+    
+    <script src="reports/report-by-member.js"></script>
+    <script src="reports/report-by-skill.js"></script>
+
+    <script src="js/reports-controller.js"></script>
+</body>
+</html>
