@@ -109,7 +109,7 @@ Open the `.env` file and configure the following parameters:
 
 #### **OSM Dashboard Connection**
 
-  * `OSM_BU_ID`: **Crucial.** Your unique Business Unit ID (GUID) for the dashboard (e.g., `87FF646A-FCBC-49A1-9BAC-76F1C368EEFA`). The system will automatically construct the correct URL.
+  * `OSM_BU_ID`: **Crucial.** Your unique Business Unit ID (GUID) for the dashboard (e.g., `87FF646A-FCBC-49A1-9BAC-XXXXXXXXXXX`). The system will automatically construct the correct URL.
   * `DASHBOARD_URL`: (Optional) Override the automatic URL construction if you have a custom link.
   * `SCRAPING_INTERVAL`: Minutes to cache data before scraping the live site again (Default: `60`).
 
