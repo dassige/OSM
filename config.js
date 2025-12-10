@@ -34,6 +34,7 @@ const ui = {
     version: packageJson.version,
     deployDate: packageJson.versionDate,
     trainingDayIndex: getDayIndex(process.env.TRAINING_DAY_OF_WEEK),
+    trainingDayName: process.env.TRAINING_DAY_OF_WEEK || 'Monday',
     timezone: timezone 
 };
 

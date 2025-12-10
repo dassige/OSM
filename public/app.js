@@ -24,6 +24,7 @@ const daysInput = document.getElementById('daysInput');
 const btnHideNoSkills = document.getElementById('btnHideNoSkills');
 const btnHideNoUrl = document.getElementById('btnHideNoUrl');
 const btnExpiredOnly = document.getElementById('btnExpiredOnly');
+const btnHideWithUrl = document.getElementById('btnHideWithUrl');
 const progressContainer = document.getElementById('progressContainer');
 const progressBar = document.getElementById('progressBar');
 const showConsoleCheckbox = document.getElementById('showConsoleCheckbox');
@@ -198,12 +199,13 @@ function renderTable() {
     const hideNoSkills = btnHideNoSkills.classList.contains('active');
     const hideNoUrl = btnHideNoUrl.classList.contains('active');
     const expiredOnly = btnExpiredOnly.classList.contains('active');
+    const hideWithUrl = btnHideWithUrl.classList.contains('active');
 
     currentOsmData.forEach((member, index) => {
         let visibleSkills = member.skills;
         if (hideNoUrl) visibleSkills = visibleSkills.filter(s => s.hasUrl);
         if (expiredOnly) visibleSkills = visibleSkills.filter(s => isDateInPast(s.dueDate));
-
+        if (hideWithUrl) visibleSkills = visibleSkills.filter(s => !s.hasUrl);
         const hasVisibleSkills = visibleSkills.length > 0;
         if (hideNoSkills && !hasVisibleSkills) return;
 
@@ -230,6 +232,7 @@ function renderTable() {
         } else {
             let msg = "NO expiring skills";
             if (hideNoUrl && member.skills.length > 0) msg = " (Hidden by 'Has Form' filter)";
+            else if (hideWithUrl && member.skills.length > 0) msg = " (Hidden by 'No Form' filter)";
             else if (expiredOnly && member.skills.length > 0) msg = " (Hidden by 'Expired Only' filter)";
             skillTd.textContent = msg; skillTd.className = 'no-skill'; dateTd.textContent = "";
         }
@@ -446,12 +449,14 @@ function setupChipToggle(btnId, prefKey) {
 setupChipToggle('btnHideNoSkills', 'hideNoSkills');
 setupChipToggle('btnHideNoUrl', 'hideNoUrl');
 setupChipToggle('btnExpiredOnly', 'expiredOnly');
+setupChipToggle('btnHideWithUrl', 'hideWithUrl');
 
 // Socket Events
 socket.on('preferences-data', (prefs) => {
     if (prefs.daysToExpiry !== undefined) daysInput.value = prefs.daysToExpiry;
     if (prefs.hideNoSkills) btnHideNoSkills.classList.add('active');
     if (prefs.hideNoUrl) btnHideNoUrl.classList.add('active');
+    if (prefs.hideWithUrl) btnHideWithUrl.classList.add('active');
     if (prefs.expiredOnly) btnExpiredOnly.classList.add('active');
 
     const role = document.body.getAttribute('data-user-role');

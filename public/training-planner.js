@@ -43,7 +43,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (c.timezone) appTimezone = c.timezone;
             if (c.trainingDayIndex !== undefined) trainingDayIndex = c.trainingDayIndex;
 
-            // Initialize Date Logic using the correct Timezone
+            // [NEW] Update Training Day Label
+            if (c.trainingDayName) {
+                const labelEl = document.getElementById('filterDayLabel');
+                if (labelEl) {
+                    // Capitalize and ensure plural (e.g. "Monday" -> "Mondays")
+                    const dayRaw = c.trainingDayName.charAt(0).toUpperCase() + c.trainingDayName.slice(1).toLowerCase();
+                    const dayPlural = dayRaw.endsWith('s') ? dayRaw : dayRaw + 's';
+
+                    labelEl.innerHTML = `Show only ${dayPlural}<br><span style="font-weight:normal; font-size:0.85em; color:var(--text-muted);">(training day)</span>`;
+                }
+            }            // Initialize Date Logic using the correct Timezone
             currentStartDate = alignToMonday(getZonedToday());
 
             // Initial Render

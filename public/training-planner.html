@@ -252,9 +252,11 @@
                     <input type="checkbox" id="filterTrainingDay" onchange="toggleDayFilter(this.checked)">
                     <span class="slider"></span>
                 </label>
-                <span style="font-size: 14px; font-weight: bold; color: var(--text-main);">Show Training Day Only</span>
+                <span id="filterDayLabel"
+                    style="font-size: 14px; font-weight: bold; color: var(--text-main); line-height: 1.2;">
+                    Show Training Day Only
+                </span>
             </div>
-
             <button onclick="loadExpiringSkills()" class="btn-sm"
                 style="background: var(--info); border:none; color:white; padding:8px 16px; border-radius:4px; cursor:pointer; margin-left: auto;">Reload
                 Skills</button>
