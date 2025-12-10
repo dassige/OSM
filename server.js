@@ -465,17 +465,16 @@ app.delete('/api/training-sessions/:id', hasRole('admin'), async (req, res) => {
     }
 });
 // =============================================================================
-// API ROUTES - REPORTING
+// API ROUTES - REPORTS
 // =============================================================================
 
-// 1. Page Access (Any non-guest)
 app.get('/reports.html', (req, res, next) => {
     const role = req.session?.user?.role;
+    // Allow simple, admin, superadmin
     if (role === 'simple' || role === 'admin' || role === 'superadmin') next();
     else res.redirect('/');
 });
 
-// 2. Data API
 app.get('/api/reports/data/:type', async (req, res) => {
     const role = req.session?.user?.role;
     if (!['simple', 'admin', 'superadmin'].includes(role)) {
@@ -483,38 +482,41 @@ app.get('/api/reports/data/:type', async (req, res) => {
     }
 
     try {
-
-        const userId = req.session.user.id || 0; 
+        const userId = req.session.user.id || 0;
         const type = req.params.type;
-        
+
+        // [IMPORTANT] Pass 'currentProxy' defined in server.js
         if (type === 'by-member') {
-            return res.json(await reportService.getGroupedByMember(userId));
+            return res.json(await reportService.getGroupedByMember(userId, currentProxy));
         } 
         else if (type === 'by-skill') {
-            return res.json(await reportService.getGroupedBySkill(userId));
+            return res.json(await reportService.getGroupedBySkill(userId, currentProxy));
         }
         res.status(404).json({ error: "Unknown report type" });
     } catch (e) {
+        console.error("Report Data Error:", e); // Log to server console
         res.status(500).json({ error: e.message });
     }
 });
 
-// 3. PDF Export API
 app.post('/api/reports/pdf', async (req, res) => {
+    const role = req.session?.user?.role;
+    if (!['simple', 'admin', 'superadmin'].includes(role)) {
+        return res.status(403).json({ error: "Unauthorized" });
+    }
+
     const { html, title } = req.body;
     let browser;
     try {
-        // Launch Puppeteer using the installed Chromium
         browser = await puppeteer.launch({
-            executablePath: '/usr/bin/chromium-browser', // Alpine path
+            executablePath: '/usr/bin/chromium-browser', 
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
             headless: true
         });
 
         const page = await browser.newPage();
         await page.setContent(html, { waitUntil: 'networkidle0' });
-        
-        // Generate PDF
+
         const pdfBuffer = await page.pdf({
             format: 'A4',
             printBackground: true,
@@ -523,7 +525,6 @@ app.post('/api/reports/pdf', async (req, res) => {
 
         await browser.close();
 
-        // Send file
         res.set({
             'Content-Type': 'application/pdf',
             'Content-Length': pdfBuffer.length,
@@ -534,7 +535,7 @@ app.post('/api/reports/pdf', async (req, res) => {
     } catch (e) {
         if (browser) await browser.close();
         console.error("PDF Gen Error:", e);
-        res.status(500).json({ error: "Failed to generate PDF" });
+        res.status(500).json({ error: "Failed to generate PDF: " + e.message });
     }
 });
 // Static

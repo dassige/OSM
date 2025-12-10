@@ -1,7 +1,7 @@
 const { getOIData } = require('./scraper');
 const db = require('./db');
 const config = require('../config');
-const { isExpiring, isExpired } = require('./member-manager'); // Re-use existing logic
+const { isExpiring, isExpired } = require('./member-manager');
 
 function getNameWithoutRank(fullName) {
     if (!fullName) return "";
@@ -12,13 +12,13 @@ function getNameWithoutRank(fullName) {
     return fullName;
 }
 
-// [UPDATED] Accepts userId to fetch specific preferences
-async function getFreshData(userId) {
+// [UPDATED] Now accepts proxyUrl
+async function getFreshData(userId, proxyUrl) {
     // 1. Get Configs & Preferences
     const dbMembers = await db.getMembers();
     const dbSkills = await db.getSkills();
     
-    // Fetch 'daysToExpiry' preference (Default to 30 if not set)
+    // Fetch 'daysToExpiry' preference (Default to 30)
     let daysThreshold = 30;
     try {
         const pref = await db.getUserPreference(userId, 'daysToExpiry');
@@ -26,7 +26,8 @@ async function getFreshData(userId) {
     } catch (e) { console.error("Error fetching pref:", e); }
 
     // 2. Get Live/Cached Scrape Data
-    const scrapeData = await getOIData(config.url, config.scrapingInterval);
+    // [UPDATED] Pass the proxyUrl here
+    const scrapeData = await getOIData(config.url, config.scrapingInterval, proxyUrl);
 
     // 3. Merge & Filter
     const activeMembers = dbMembers.filter(m => m.enabled);
@@ -38,9 +39,6 @@ async function getFreshData(userId) {
         const memberSkills = scrapeData.filter(s => s.name === member.name);
         
         memberSkills.forEach(s => {
-            // [UPDATED] Filter Logic:
-            // 1. Must be a tracked skill (enabled in DB)
-            // 2. Must be Expiring OR Expired based on user's threshold
             const skillConfig = enabledSkills.find(dbS => dbS.name === s.skill);
             if (!skillConfig) return; // Skip untracked skills
 
@@ -61,9 +59,9 @@ async function getFreshData(userId) {
     return { reportData, daysThreshold };
 }
 
-// [UPDATED] Functions now accept userId
-async function getGroupedByMember(userId) {
-    const { reportData, daysThreshold } = await getFreshData(userId);
+// [UPDATED] Pass proxyUrl down
+async function getGroupedByMember(userId, proxyUrl) {
+    const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl);
     
     const grouped = {};
     reportData.forEach(item => {
@@ -85,7 +83,6 @@ async function getGroupedByMember(userId) {
         m.skills.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     });
 
-    // Return Wrapper with Metadata
     return {
         items: sortedMembers,
         meta: {
@@ -95,8 +92,8 @@ async function getGroupedByMember(userId) {
     };
 }
 
-async function getGroupedBySkill(userId) {
-    const { reportData, daysThreshold } = await getFreshData(userId);
+async function getGroupedBySkill(userId, proxyUrl) {
+    const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl);
 
     const grouped = {};
     reportData.forEach(item => {
