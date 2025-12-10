@@ -21,6 +21,10 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Skills:** Configure which skills to track and mark them as Critical.
       * **Smart Form Links:** Define Google Form URLs with dynamic placeholders (e.g., `{{member-name}}`) to pre-fill member details automatically.
       * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, New Users, Password Resets, and Account Deletions.
+  * **Reports Console:**
+      * **Flexible Reporting:** Generate comprehensive reports grouped by **Member** (for individual follow-up) or **Skill** (for planning training blocks).
+      * **Export Options:** Includes built-in support for browser Printing (A4 optimized) and direct **PDF Export**.
+      * **Localization:** Reports automatically respect your configured Date Format and Timezone settings.
   * **Training Planner:**
       * **Visual Scheduling:** A drag-and-drop calendar to plan in-person training sessions for skills that don't have online forms.
       * **Smart Filtering:** A "Show Training Day Only" toggle that hides irrelevant days and expands the calendar to fill the screen.
@@ -195,7 +199,8 @@ node server.js
 3.  **Email Templates**: Use the tabbed editor to customize the `Expiring Skills`, `New User`, `Password Reset`, and `Account Deleted` emails. Drag and drop variables directly into the text.
 4.  **Training Planner**: Use the planner to schedule in-person verification sessions for skills that don't have an online form. Drag skills from the list to the calendar.
 5.  **Event Log**: Use the yellow maintenance bar (Super Admin only) to prune old logs or purge the history.
-6.  **Run Dashboard**: Click **Reload Expiring Skills** to fetch live data, then select members to send reminders.
+6.  **Reports**: Navigate to the Reports Console to print or export PDF summaries of expiring competencies to display on station noticeboards.
+7.  **Run Dashboard**: Click **Reload Expiring Skills** to fetch live data, then select members to send reminders.
 
 ## Docker Deployment
 
@@ -224,6 +229,7 @@ See [Installation on Google Cloud Run](Installation_google_run.md) for details.
 ├── config.js               # Configuration loader
 ├── start.sh                # Startup Script (Litestream)
 ├── public/                 # Frontend Assets
+│   ├── reports/            # Report Renderers
 │   ├── email-templates.html # Template Editor
 │   ├── system-tools.html   # Backup/Restore
 │   ├── event-log.html      # Audit Log
@@ -231,6 +237,7 @@ See [Installation on Google Cloud Run](Installation_google_run.md) for details.
 ├── services/               # Backend Logic
 │   ├── db.js               # Database Adapter
 │   ├── mailer.js           # SMTP Service
+│   ├── report-service.js   # Reporting Logic
 │   ├── scraper.js          # Dashboard Scraper
 │   └── ...
 └── Dockerfile              # Container definition

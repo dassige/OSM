@@ -4,11 +4,19 @@ const db = require('./db');
 const config = require('../config');
 const { isExpiring, isExpired } = require('./member-manager');
 
-// ... (keep getNameWithoutRank and getFreshData functions as they are) ...
+// Helper: Strip rank (e.g. "QFF Skywalker" -> "Skywalker")
+function getNameWithoutRank(fullName) {
+    if (!fullName) return "";
+    const parts = fullName.split(' ');
+    if (parts.length > 1) {
+        return parts.slice(1).join(' ');
+    }
+    return fullName;
+}
 
-// Helper to format the "Generated" date consistently
+// Helper: Format "Generated" date consistently using App Locale
 function getGeneratedDate() {
-    return new Date().toLocaleDateString(config.locale, { 
+    return new Date().toLocaleDateString(config.locale || 'en-NZ', { 
         timeZone: config.timezone,
         weekday: 'long', 
         year: 'numeric', 
@@ -17,7 +25,76 @@ function getGeneratedDate() {
     });
 }
 
-//  Pass proxyUrl down
+// Core Data Fetching Logic
+async function getFreshData(userId, proxyUrl) {
+    console.log(`[ReportService] 🚀 Starting data fetch for User ID: ${userId}`);
+
+    // 1. Get Configs & Preferences
+    const dbMembers = await db.getMembers();
+    const dbSkills = await db.getSkills();
+    
+    // Fetch 'daysToExpiry' preference (Default to 30)
+    let daysThreshold = 30;
+    try {
+        const pref = await db.getUserPreference(userId, 'daysToExpiry');
+        if (pref) {
+            daysThreshold = parseInt(pref);
+            console.log(`[ReportService] ⚙️ User Preference Loaded: Days to Expiry = ${daysThreshold}`);
+        } else {
+            console.log(`[ReportService] ⚠️ No User Preference found. Using default: ${daysThreshold} days.`);
+        }
+    } catch (e) { 
+        console.error("[ReportService] ❌ Error fetching preferences:", e.message); 
+    }
+
+    // 2. Get Live/Cached Scrape Data
+    console.log(`[ReportService] 📡 Fetching Scrape Data (Interval: ${config.scrapingInterval}m)...`);
+    // Pass the proxyUrl from the controller
+    const scrapeData = await getOIData(config.url, config.scrapingInterval, proxyUrl);
+    
+    if (!scrapeData || scrapeData.length === 0) {
+        console.error(`[ReportService] 🛑 CRITICAL: Scraper returned 0 records.`);
+        throw new Error("Scraper returned no data. Please check connection.");
+    }
+    console.log(`[ReportService] ✅ Scraper returned ${scrapeData.length} raw records.`);
+
+    // 3. Merge & Filter
+    const activeMembers = dbMembers.filter(m => m.enabled);
+    const enabledSkills = dbSkills.filter(s => s.enabled);
+    
+    console.log(`[ReportService] 🔍 Filtering against ${activeMembers.length} active members and ${enabledSkills.length} tracked skills.`);
+
+    const reportData = [];
+    let matchCount = 0;
+
+    activeMembers.forEach(member => {
+        const memberSkills = scrapeData.filter(s => s.name === member.name);
+        
+        memberSkills.forEach(s => {
+            const skillConfig = enabledSkills.find(dbS => dbS.name === s.skill);
+            if (!skillConfig) return; // Skip untracked skills
+
+            // Check expiry logic
+            const isDue = isExpiring(s.dueDate, daysThreshold) || isExpired(s.dueDate);
+            
+            if (isDue) {
+                matchCount++;
+                reportData.push({
+                    member: member.name,
+                    sortName: getNameWithoutRank(member.name),
+                    skill: s.skill,
+                    dueDate: s.dueDate,
+                    isCritical: !!skillConfig.critical_skill
+                });
+            }
+        });
+    });
+
+    console.log(`[ReportService] 🏁 Report Generation Complete. Found ${matchCount} expiring items.`);
+    return { reportData, daysThreshold };
+}
+
+// Report: Group by Member
 async function getGroupedByMember(userId, proxyUrl) {
     console.log(`[ReportService] Generating 'By Member' Report...`);
     const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl);
@@ -46,11 +123,12 @@ async function getGroupedByMember(userId, proxyUrl) {
         items: sortedMembers,
         meta: {
             filterDays: daysThreshold,
-            generated: getGeneratedDate() // [UPDATED] Use helper
+            generated: getGeneratedDate()
         }
     };
 }
 
+// Report: Group by Skill
 async function getGroupedBySkill(userId, proxyUrl) {
     console.log(`[ReportService] Generating 'By Skill' Report...`);
     const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl);
@@ -78,7 +156,7 @@ async function getGroupedBySkill(userId, proxyUrl) {
         items: sortedSkills,
         meta: {
             filterDays: daysThreshold,
-            generated: getGeneratedDate() // [UPDATED] Use helper
+            generated: getGeneratedDate()
         }
     };
 }
