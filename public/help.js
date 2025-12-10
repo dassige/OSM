@@ -191,30 +191,45 @@ const helpContent = {
             <p><strong>Note:</strong> The phone associated with the WhatsApp account must be on and connected to the internet for messages to send.</p>
         `
     },
-    // --- NEW: Skills Renewal Planner ---
+    // --- : Skills Renewal Planner ---
     "training-planner": {
         title: "Skills Renewal Planner Help",
         body: `
-            <p><strong>Overview:</strong> Plan in-person training sessions by dragging expiring skills onto a calendar.</p>
+            <p><strong>Overview:</strong> Plan in-person training sessions by dragging expiring skills onto a calendar, or review upcoming sessions in a list.</p>
             
-            <h3>Left Panel: Expiring Skills</h3>
-            <p>Lists skills that <strong>do not have an online form URL</strong> and are expiring within the configured days.</p>
+            <h3>View Modes</h3>
+            <p>Use the buttons in the top toolbar to switch between views:</p>
             <ul>
-                <li><strong>Cards:</strong> Each skill appears as a rectangular card with the skill name on the left and a colored member count on the right.</li>
-                <li><strong>Drag & Drop:</strong> Click and drag the entire skill card to a day on the calendar to schedule a session.</li>
-                <li><strong>View Members:</strong> Click the <strong>colored number box</strong> on the right of the card to see exactly <em>who</em> has this skill expiring.</li>
+                <li><strong>Calendar:</strong> The standard weekly interface for scheduling sessions via drag-and-drop.</li>
+                <li><strong>Review List:</strong> A chronological list of all future days that have scheduled sessions.</li>
             </ul>
 
-            <h3>Right Panel: Calendar</h3>
-            <p>Displays a weekly view where you can schedule sessions. The configured <strong>Training Day</strong> (e.g., Monday) is highlighted.</p>
+            <h3>Calendar View</h3>
+            <p><strong>Left Panel: Expiring Skills</strong></p>
             <ul>
-                <li><strong>Show Training Day Only:</strong> Toggle this switch in the top bar to focus the view. The calendar will hide empty days, and the remaining days will expand to fill the screen for better readability.</li>
-                <li><strong>Schedule:</strong> Drop a skill onto any day to create a session.</li>
-                <li><strong>View Details:</strong> Click the skill name within a calendar day to see the list of members again.</li>
-                <li><strong>Delete:</strong> Click the red <strong>&times;</strong> on a session card to remove it.</li>
-                <li><strong>Navigation:</strong> Use the Teal <strong>Prev/Next Week</strong> buttons to change dates, or the <strong>Calendar Icon</strong> button to jump back to Today.</li>
+                <li><strong>Cards:</strong> Shows skills without an online form expiring soon.</li>
+                <li><strong>Drag & Drop:</strong> Drag a skill card to a calendar day to schedule a session. (Past dates are disabled).</li>
+                <li><strong>View Members:</strong> Click the colored number box to see exactly who needs the skill.</li>
             </ul>
-            <p><em>Note:</em> Scheduled trainings are saved to the database immediately and will automatically appear in email/WhatsApp notifications using the <code>{{next-planned-dates}}</code> variable.</p>
+
+            <p><strong>Right Panel: Calendar</strong></p>
+            <ul>
+                <li><strong>Training Day Filter:</strong> Toggle "Show only [Day]" to hide irrelevant days and expand the view.</li>
+                <li><strong>Manage Sessions:</strong> Click a scheduled skill to view members, or the red <strong>&times;</strong> to delete it.</li>
+                <li><strong>Navigation:</strong> Use the Teal buttons to change weeks, or the Calendar Icon to jump to Today.</li>
+            </ul>
+
+            <h3>Planned Sessions Review (List View)</h3>
+            <p>Displays a summary of all future training days.</p>
+            <ul>
+                <li><strong>Jump to Calendar:</strong> Click on any <strong>Date Header</strong> (e.g., "Monday, 12 Dec") to instantly switch back to the Calendar View focused on that specific week.</li>
+                <li><strong>Pagination:</strong> Use the controls at the bottom to navigate through pages of days.</li>
+                <li><strong>Preferences:</strong> Use the "Days per page" dropdown to control how much data is loaded at once (saved to your profile).</li>
+                <li><strong>Member Counts:</strong> The "View Members" button now displays the exact count of people expiring for that skill (e.g., "View Members: 5").</li>
+            </ul>
+
+            <hr>
+            <p><em>Note:</em> Scheduled trainings are saved immediately and can be included in notifications using the <code>{{next-planned-dates}}</code> variable.</p>
         `
     },
     // --- Default ---
