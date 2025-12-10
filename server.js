@@ -426,6 +426,12 @@ app.post('/api/user-preferences', async (req, res) => { try { await db.saveUserP
 
 app.get('/api/training-sessions', hasRole('simple'), async (req, res) => {
     try {
+        // [UPDATED] Handle 'future' view mode
+        if (req.query.view === 'future') {
+            const sessions = await db.getAllFutureTrainingSessions();
+            return res.json(sessions);
+        }
+
         const { start, end } = req.query;
         // Basic ISO date validation could go here
         const sessions = await db.getTrainingSessions(start, end);

@@ -7,7 +7,198 @@ let appTimezone = 'Pacific/Auckland'; // Default, will be overwritten by config
 let currentStartDate = null;          // Will be set after config loads
 let trainingDayIndex = null;
 let skillMembersMap = {};
+let currentView = 'calendar';
+let listPage = 1;
+let listLimit = 10;
+let cachedFutureSessions = []; // Store data for local pagination
+// --- VIEW SWITCHING ---
 
+window.switchView = function (view) {
+    currentView = view;
+
+    const calendarContainer = document.getElementById('calendarViewContainer');
+    const listContainer = document.getElementById('listViewContainer');
+
+    const btnCal = document.getElementById('btnViewCalendar');
+    const btnList = document.getElementById('btnViewList');
+
+    if (view === 'calendar') {
+        calendarContainer.style.display = 'flex';
+        listContainer.style.display = 'none';
+
+        // Update Buttons
+        btnCal.style.background = 'var(--primary)';
+        btnCal.style.color = 'white';
+        btnList.style.background = 'transparent';
+        btnList.style.color = 'var(--text-main)';
+
+        // Refresh Calendar
+        renderCalendar();
+        loadSessions();
+    } else {
+        calendarContainer.style.display = 'none';
+        listContainer.style.display = 'block';
+
+        // Update Buttons
+        btnList.style.background = 'var(--primary)';
+        btnList.style.color = 'white';
+        btnCal.style.background = 'transparent';
+        btnCal.style.color = 'var(--text-main)';
+
+        // Load List Data
+        loadFutureSessionsList();
+    }
+};
+
+// --- LIST VIEW LOGIC ---
+
+async function loadFutureSessionsList() {
+    const container = document.getElementById('listContent');
+    container.innerHTML = '<div class="spinner"></div>';
+    document.getElementById('listPagination').style.display = 'none';
+
+    try {
+        const res = await fetch('/api/training-sessions?view=future');
+        const sessions = await res.json();
+
+        cachedFutureSessions = sessions; // Save for pagination
+        listPage = 1; // Reset to first page on reload
+        renderFutureList();
+
+    } catch (e) {
+        container.innerHTML = `<p style="color:red;">Error loading sessions: ${e.message}</p>`;
+    }
+}
+
+function renderFutureList() {
+    const container = document.getElementById('listContent');
+
+    if (cachedFutureSessions.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top:20px;">No future training sessions found.</p>';
+        document.getElementById('listPagination').style.display = 'none';
+        return;
+    }
+
+    // 1. Group by Date
+    const grouped = {};
+    cachedFutureSessions.forEach(s => {
+        if (!grouped[s.date]) grouped[s.date] = [];
+        grouped[s.date].push(s);
+    });
+
+    const uniqueDates = Object.keys(grouped).sort();
+    const totalDays = uniqueDates.length;
+
+    // 2. Paginate
+    const totalPages = Math.ceil(totalDays / listLimit);
+    if (listPage > totalPages) listPage = totalPages;
+    if (listPage < 1) listPage = 1;
+
+    const startIndex = (listPage - 1) * listLimit;
+    const endIndex = Math.min(startIndex + listLimit, totalDays);
+    const visibleDates = uniqueDates.slice(startIndex, endIndex);
+
+    // 3. Render HTML
+    let html = '';
+
+    visibleDates.forEach(dateStr => {
+        const dateObj = new Date(dateStr);
+        const prettyDate = dateObj.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+
+        const items = grouped[dateStr].map(s => {
+            const safeName = s.skill_name.replace(/'/g, "\\'");
+
+            // [NEW] Calculate Member Count
+            // Use the global skillMembersMap to find how many people have this skill expiring
+            const count = (skillMembersMap[s.skill_name] || []).length;
+
+            return `
+                <div style="background:var(--bg-body); border:1px solid var(--border-color); padding:8px 12px; margin-bottom:5px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:500;">${s.skill_name}</span>
+                    
+                    <button class="btn-sm" onclick="showMemberPopup('${safeName}'); event.stopPropagation();" style="background:var(--info); font-size:12px; padding:2px 8px;">
+                        View Members: ${count}
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        html += `
+            <div onclick="jumpToDate('${dateStr}')" 
+                 style="cursor:pointer; border:1px solid var(--primary); border-left-width: 5px; background:var(--bg-card); margin-bottom:15px; border-radius:4px; overflow:hidden; transition: transform 0.2s;"
+                 onmouseover="this.style.transform='translateX(5px)'" 
+                 onmouseout="this.style.transform='translateX(0)'"
+                 title="Click to view in Calendar">
+                
+                <div style="background:var(--bg-hover); padding:10px 15px; font-weight:bold; color:var(--primary); border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between;">
+                    <span>${prettyDate}</span>
+                    <span style="font-size:0.8em; color:var(--text-muted);">Go to Week &rarr;</span>
+                </div>
+                <div style="padding:10px;">
+                    ${items}
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+
+    // 4. Update Pagination Controls
+    const paginationEl = document.getElementById('listPagination');
+    if (totalDays > listLimit) {
+        paginationEl.style.display = 'flex';
+        document.getElementById('listPageInfo').textContent = `Showing days ${startIndex + 1}-${endIndex} of ${totalDays}`;
+        document.getElementById('btnListPrev').disabled = (listPage <= 1);
+        document.getElementById('btnListNext').disabled = (listPage >= totalPages);
+    } else {
+        paginationEl.style.display = 'none';
+    }
+}
+
+// --- [NEW] PAGINATION ACTIONS ---
+
+window.changeListLimit = function (val) {
+    listLimit = parseInt(val);
+    listPage = 1; // Reset to start
+    renderFutureList();
+    // Save preference
+    socket.emit('update-preference', { key: 'trainingListLimit', value: listLimit });
+};
+
+window.changeListPage = function (delta) {
+    listPage += delta;
+    renderFutureList();
+    // Scroll to top of list container for better UX
+    const container = document.getElementById('listViewContainer');
+    if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+// --- NAVIGATION LOGIC ---
+
+window.jumpToDate = function (dateStr) {
+    const targetDate = new Date(dateStr);
+
+    // 1. Align the calendar start date to the Monday of that week
+    currentStartDate = alignToMonday(targetDate);
+
+    // 2. Switch back to calendar view
+    switchView('calendar');
+
+    // 3. Scroll to top to ensure the calendar is visible
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Optional: Highlight the specific day after render
+    setTimeout(() => {
+        const dayEl = document.getElementById(`day-${dateStr}`);
+        if (dayEl) {
+            dayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Flash effect
+            dayEl.style.transition = "background-color 0.5s";
+            const originalBg = dayEl.style.backgroundColor;
+            dayEl.style.backgroundColor = "#fff3cd"; // Flash yellow
+            setTimeout(() => { dayEl.style.backgroundColor = originalBg; }, 1500);
+        }
+    }, 500); // Wait for API load/render
+};
 // Helper: Get "Today" shifted to the App's Timezone
 // This creates a Date object that "looks" like the target timezone time
 // even if the browser is in a different timezone.
@@ -111,6 +302,18 @@ socket.on('preferences-data', (prefs) => {
             applyDayFilter();
         } else {
             applyDayFilter();
+        }
+    }
+    if (prefs.trainingListLimit) {
+        const val = parseInt(prefs.trainingListLimit);
+        if (!isNaN(val) && listLimit !== val) {
+            listLimit = val;
+            const select = document.getElementById('listLimitSelect');
+            if (select) select.value = val;
+            // Re-render if we are in list view and have data
+            if (currentView === 'list' && cachedFutureSessions.length > 0) {
+                renderFutureList();
+            }
         }
     }
 });
