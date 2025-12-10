@@ -202,7 +202,7 @@
                 </svg>
                 Manage Skills
             </a>
-            <a href="training-planner.html" style="border-top: 1px solid #eee;">
+            <a href="training-planner.html" id="navTrainingPlanner" style="border-top: 1px solid #eee;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     style="margin-right:8px;">
@@ -457,12 +457,13 @@
                 const manageUsers = document.getElementById('navManageUsers');
                 const systemTools = document.getElementById('navSystemTools');
                 const eventLog = document.getElementById('navEventLog');
-                const thirdParties = document.getElementById('navThirdParties'); // [NEW]
-
+                const thirdParties = document.getElementById('navThirdParties'); 
+                const trainingPlanner = document.getElementById('navTrainingPlanner');
                 // Defaults: Hide Admin stuff
                 if (manageMembers) manageMembers.style.display = 'none';
                 if (manageSkills) manageSkills.style.display = 'none';
                 if (emailTemplates) emailTemplates.style.display = 'none';
+                if (trainingPlanner) trainingPlanner.style.display = 'none';
                 // Event Log is hidden by default in HTML
 
                 // --- SUPER ADMIN ---
@@ -474,7 +475,8 @@
                     if (manageSkills) manageSkills.style.display = 'block';
                     if (emailTemplates) emailTemplates.style.display = 'block';
                     if (eventLog) eventLog.style.display = 'block';
-                    if (thirdParties) thirdParties.style.display = 'block'; // [NEW]
+                    if (thirdParties) thirdParties.style.display = 'block'; 
+if (trainingPlanner) trainingPlanner.style.display = 'block'; // Show
                 }
                 // --- ADMIN ---
                 else if (role === 'admin') {
@@ -483,7 +485,8 @@
                     if (manageSkills) manageSkills.style.display = 'block';
                     if (emailTemplates) emailTemplates.style.display = 'block';
                     if (eventLog) eventLog.style.display = 'block';
-                    if (thirdParties) thirdParties.style.display = 'block'; // [NEW]
+                    if (thirdParties) thirdParties.style.display = 'block'; 
+                    if (trainingPlanner) trainingPlanner.style.display = 'block'; // Show
                     // System Tools remains hidden for standard admin (per requirement "except superadmin restricted")
                 }
                 // --- SIMPLE / GUEST ---

@@ -374,7 +374,18 @@
                 event.target.style.display = "none";
             }
         }
+        // Access Control: Redirect Guest AND Simple users
+        fetch('/api/user-session')
+            .then(r => r.json())
+            .then(user => {
+                const role = user.role || 'guest';
 
+                // Allow ONLY 'admin' and 'superadmin'
+                if (role !== 'admin' && role !== 'superadmin') {
+                    window.location.href = '/'; // Redirect to dashboard
+                }
+            })
+            .catch(() => window.location.href = '/login.html');
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });

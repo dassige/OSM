@@ -424,7 +424,7 @@ app.post('/api/user-preferences', async (req, res) => { try { await db.saveUserP
 // API ROUTES - TRAINING PLANNER
 // =============================================================================
 
-app.get('/api/training-sessions', hasRole('simple'), async (req, res) => {
+app.get('/api/training-sessions', hasRole('admin'), async (req, res) => {
     try {
         // [UPDATED] Handle 'future' view mode
         if (req.query.view === 'future') {
@@ -441,7 +441,7 @@ app.get('/api/training-sessions', hasRole('simple'), async (req, res) => {
     }
 });
 
-app.post('/api/training-sessions', hasRole('simple'), async (req, res) => {
+app.post('/api/training-sessions', hasRole('admin'), async (req, res) => {
     try {
         const { date, skillName } = req.body;
         if (!date || !skillName) return res.status(400).json({ error: "Missing date or skill" });
@@ -454,7 +454,7 @@ app.post('/api/training-sessions', hasRole('simple'), async (req, res) => {
     }
 });
 
-app.delete('/api/training-sessions/:id', hasRole('simple'), async (req, res) => {
+app.delete('/api/training-sessions/:id', hasRole('admin'), async (req, res) => {
     try {
         await db.deleteTrainingSession(req.params.id);
         res.json({ success: true });
