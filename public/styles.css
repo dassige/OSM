@@ -858,14 +858,12 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
         width: auto;
     }
 
-    .header-menu {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        width: auto;
-        display: block;
-        margin-bottom: 0;
-    }
+.header-menu {
+    position: relative;
+    display: inline-block;
+    z-index: 100;
+    
+}
 
     /* Push the main title down so buttons don't cover it */
     #mainHeader {
@@ -1093,4 +1091,55 @@ body.dark-mode .day-column.past-day {
 .back-btn:hover {
     background-color: #23272b;
     transform: translateY(-2px);
+}
+/* --- Submenu Styles --- */
+
+/* The container for a menu item that has a submenu */
+.dropdown-submenu {
+    position: relative;
+}
+
+/* The arrow icon to indicate a submenu */
+.dropdown-submenu > a::after {
+    content: "◀"; /* Left arrow */
+    float: right;
+    margin-right: -5px;
+    font-size: 10px;
+    opacity: 0.7;
+    margin-top: 4px;
+}
+
+/* The hidden submenu list */
+.dropdown-submenu .submenu-content {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 100%; /* Pushes it to the LEFT of the parent */
+    margin-top: -1px; /* Aligns top borders */
+    background-color: var(--bg-card);
+    min-width: 200px;
+    box-shadow: 0 8px 16px 0 var(--shadow);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    z-index: 10;
+}
+
+/* Show submenu on hover */
+.dropdown-submenu:hover .submenu-content {
+    display: block;
+}
+
+/* Mobile Tweak: On small screens, just stack them instead of fly-out */
+@media screen and (max-width: 768px) {
+    .dropdown-submenu .submenu-content {
+        position: static;
+        box-shadow: none;
+        border: none;
+        border-left: 2px solid var(--border-color);
+        margin-left: 10px;
+    }
+    .dropdown-submenu > a::after {
+        content: "▼";
+        float: right;
+    }
 }

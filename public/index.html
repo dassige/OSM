@@ -72,7 +72,9 @@
             box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
             border-radius: 4px;
             z-index: 1;
-            overflow: hidden;
+
+            overflow: visible;
+
             margin-top: 5px;
             border: 1px solid #ddd;
         }
@@ -172,6 +174,13 @@
         </div>
     </div>
 
+
+    <h1 id="mainHeader">FENZ OSM Automation</h1>
+
+    <div id="demoBanner" class="demo-banner">
+        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
+                style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+    </div>
     <div class="header-menu">
         <button onclick="toggleMenu()" class="menu-btn">
             Menu
@@ -181,127 +190,44 @@
             </svg>
         </button>
         <div id="myDropdown" class="dropdown-content">
-            <a href="members.html">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="margin-right:8px;">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-                Manage Members
-            </a>
-            <a href="skills.html">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="margin-right:8px;">
-                    <path
-                        d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
-                    </path>
-                </svg>
-                Manage Skills
-            </a>
-            <a href="training-planner.html" id="navTrainingPlanner" style="border-top: 1px solid #eee;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="margin-right:8px;">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                Skills Renewal Planner
-            </a>
-            <a href="templates.html">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="margin-right:8px;">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                Templates
-            </a>
-            <a href="reports.html" id="navReports" style="display:none;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="margin-right:8px;">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-                Reports
-            </a>
 
-            <a href="system-tools.html" id="navSystemTools" style="display:none;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="margin-right:8px;">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path
-                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-                    </path>
-                </svg>
-                System Tools
-            </a>
-            <a href="event-log.html" id="navEventLog" style="display:none;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="margin-right:8px;">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-                Event Log
-            </a>
+            <div class="dropdown-submenu" id="groupOperations" style="display:none;">
+                <a href="#">Operations</a>
+                <div class="submenu-content">
+                    <a href="members.html" id="navManageMembers">
+                        Manage Members
+                    </a>
+                    <a href="skills.html" id="navManageSkills">Manage Skills</a>
+                    <a href="training-planner.html" id="navTrainingPlanner">Renewal Planner</a>
+                </div>
+            </div>
 
-            <a href="third-parties.html" id="navThirdParties" style="display:none;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="margin-right:8px;">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path
-                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
-                    </path>
-                </svg>
-                Third Party Services
-            </a>
+            <div class="dropdown-submenu" id="groupComms" style="display:none;">
+                <a href="#">Communication</a>
+                <div class="submenu-content">
+                    <a href="templates.html" id="navEmailTemplates">Templates</a>
+                    <a href="third-parties.html" id="navThirdParties">Third Party (WhatsApp)</a>
+                </div>
+            </div>
 
-            <a href="users.html" id="navManageUsers" style="display:none; border-top:1px solid #eee;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="margin-right:8px;">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-                Manage Users
-            </a>
+            <div class="dropdown-submenu" id="groupReports" style="display:none;">
+                <a href="#">Reports & Logs</a>
+                <div class="submenu-content">
+                    <a href="reports.html" id="navReports">Reports Console</a>
+                    <a href="event-log.html" id="navEventLog">Event Log</a>
+                </div>
+            </div>
 
-            <a href="#" onclick="openModal('aboutModal')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="margin-right:8px;">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                </svg>
-                About
-            </a>
+            <div class="dropdown-submenu" id="groupSystem" style="display:none;">
+                <a href="#">System Admin</a>
+                <div class="submenu-content">
+                    <a href="users.html" id="navManageUsers">Manage Users</a>
+                    <a href="system-tools.html" id="navSystemTools">System Tools</a>
+                </div>
+            </div>
+
+            <a href="#" onclick="openModal('aboutModal')">About</a>
         </div>
-    </div>
-
-    <h1 id="mainHeader">FENZ OSM Automation</h1>
-
-    <div id="demoBanner" class="demo-banner">
-        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
-                style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
     <div class="action-bar" id="controls">
@@ -463,67 +389,41 @@
                 document.getElementById('userNameDisplay').textContent = user.name || 'User';
                 const role = user.role || 'guest';
 
-                // 1. Menu Visibility (RBAC)
-                const manageMembers = document.querySelector('a[href="members.html"]');
-                const manageSkills = document.querySelector('a[href="skills.html"]');
-                const emailTemplates = document.querySelector('a[href="templates.html"]');
-                const manageUsers = document.getElementById('navManageUsers');
-                const systemTools = document.getElementById('navSystemTools');
-                const eventLog = document.getElementById('navEventLog');
-                const thirdParties = document.getElementById('navThirdParties');
-                const trainingPlanner = document.getElementById('navTrainingPlanner');
-                const navReports = document.getElementById('navReports');
+                // --- ROLE BASED MENU VISIBILITY ---
 
-                // Defaults: Hide Admin stuff
-                if (manageMembers) manageMembers.style.display = 'none';
-                if (manageSkills) manageSkills.style.display = 'none';
-                if (emailTemplates) emailTemplates.style.display = 'none';
-                if (trainingPlanner) trainingPlanner.style.display = 'none';
-                // Event Log is hidden by default in HTML
-
-                // --- SUPER ADMIN ---
+                // 1. Super Admin: See Everything
                 if (role === 'superadmin') {
-                    document.getElementById('navUserSettings').style.display = 'none';
-                    if (manageUsers) manageUsers.style.display = 'block';
-                    if (systemTools) systemTools.style.display = 'block';
-                    if (manageMembers) manageMembers.style.display = 'block';
-                    if (manageSkills) manageSkills.style.display = 'block';
-                    if (emailTemplates) emailTemplates.style.display = 'block';
-                    if (eventLog) eventLog.style.display = 'block';
-                    if (thirdParties) thirdParties.style.display = 'block';
-                    if (trainingPlanner) trainingPlanner.style.display = 'block';
-                    if (navReports) navReports.style.display = 'block';
+                    document.getElementById('groupOperations').style.display = 'block';
+                    document.getElementById('groupComms').style.display = 'block';
+                    document.getElementById('groupReports').style.display = 'block';
+                    document.getElementById('groupSystem').style.display = 'block';
+                    document.getElementById('navUserSettings').style.display = 'none'; // Superadmin defined in env
                 }
-                // --- ADMIN ---
+                // 2. Admin: See Everything EXCEPT System Tools
                 else if (role === 'admin') {
-                    if (manageUsers) manageUsers.style.display = 'block';
-                    if (manageMembers) manageMembers.style.display = 'block';
-                    if (manageSkills) manageSkills.style.display = 'block';
-                    if (emailTemplates) emailTemplates.style.display = 'block';
-                    if (eventLog) eventLog.style.display = 'block';
-                    if (thirdParties) thirdParties.style.display = 'block';
-                    if (trainingPlanner) trainingPlanner.style.display = 'block';
-                    if (navReports) navReports.style.display = 'block';
-                    // System Tools remains hidden for standard admin (per requirement "except superadmin restricted")
+                    document.getElementById('groupOperations').style.display = 'block';
+                    document.getElementById('groupComms').style.display = 'block';
+                    document.getElementById('groupReports').style.display = 'block';
+                    document.getElementById('groupSystem').style.display = 'block';
+
+                    // Hide specific Restricted Items inside groups
+                    document.getElementById('navSystemTools').style.display = 'none';
                 }
-                // --- SIMPLE ---
+                // 3. Simple User: See Reports Only
                 else if (role === 'simple') {
-                    if(navReports) navReports.style.display = 'block';
+                    document.getElementById('groupReports').style.display = 'block';
+                    // Hide Event Log for simple users
+                    document.getElementById('navEventLog').style.display = 'none';
                 }
-                // --- GUEST ---
+                // 4. Guest: See Nothing (only About/Profile)
                 else {
-                    // Can only see About, Logout, Profile
-                    // Event Log stays hidden
+                    // All groups remain display:none by default
                 }
 
-                // 2. Operational Logic (Handled in app.js via global var or attribute)
                 document.body.setAttribute('data-user-role', role);
-
-                // Trigger an event or let app.js read this attribute
                 if (window.updateRoleUI) window.updateRoleUI(role);
             })
             .catch(() => window.location.href = '/login.html');
-
         document.getElementById('logoutLinkLeft').addEventListener('click', () => window.location.href = '/logout');
 
         // Close dropdowns on click outside
@@ -568,6 +468,20 @@
                     if (banner) banner.style.display = 'block';
                 }
             });
+        // Close dropdowns on click outside
+        window.onclick = function (event) {
+            // FIX: Added !event.target.closest('.dropdown-content') to the condition
+            if (!event.target.closest('.menu-btn') &&
+                !event.target.closest('.profile-btn') &&
+                !event.target.closest('.dropdown-content')) {
+
+                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+
+                // Also hide the profile dropdown if open
+                const profileDropdown = document.getElementById("profileDropdown");
+                if (profileDropdown) profileDropdown.classList.remove("show");
+            }
+        }
     </script>
     <script src="help.js"></script>
 </body>
