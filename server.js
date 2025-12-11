@@ -492,6 +492,9 @@ app.get('/api/reports/data/:type', async (req, res) => {
         else if (type === 'by-skill') {
             return res.json(await reportService.getGroupedBySkill(userId, currentProxy));
         }
+        else if (type === 'planned-sessions') {
+            return res.json(await reportService.getPlannedSessions(userId, currentProxy));
+        }
         res.status(404).json({ error: "Unknown report type" });
     } catch (e) {
         console.error("Report Data Error:", e); // Log to server console

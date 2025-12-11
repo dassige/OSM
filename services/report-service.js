@@ -160,8 +160,63 @@ async function getGroupedBySkill(userId, proxyUrl) {
         }
     };
 }
+//  Report: Planned Sessions (Future Training + Members)
+async function getPlannedSessions(userId, proxyUrl) {
+    console.log(`[ReportService] Generating 'Planned Sessions' Report...`);
 
+    // 1. Get Live Expiring Data (Members + Skills)
+    const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl);
+
+    // 2. Get Future Training Sessions from DB
+    const futureSessions = await db.getAllFutureTrainingSessions();
+
+    // 3. Group Sessions by Date
+    // Structure: { "2025-12-01": [ { skill: "Pumps", members: [] } ] }
+    const groupedByDate = {};
+
+    // Sort sessions by date just in case
+    futureSessions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    futureSessions.forEach(session => {
+        const dateKey = session.date;
+        if (!groupedByDate[dateKey]) {
+            groupedByDate[dateKey] = [];
+        }
+
+        // Find members who need this specific skill
+        // We filter the live 'reportData' for matches
+        const relevantMembers = reportData
+            .filter(item => item.skill === session.skill_name)
+            .map(item => ({
+                name: item.member,
+                dueDate: item.dueDate,
+                isCritical: item.isCritical
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        groupedByDate[dateKey].push({
+            skill: session.skill_name,
+            members: relevantMembers
+        });
+    });
+
+    // Convert object to array for easier rendering
+    const sortedDates = Object.keys(groupedByDate).sort();
+    const reportItems = sortedDates.map(date => ({
+        date: date,
+        sessions: groupedByDate[date]
+    }));
+
+    return {
+        items: reportItems,
+        meta: {
+            filterDays: daysThreshold,
+            generated: getGeneratedDate()
+        }
+    };
+}
 module.exports = {
     getGroupedByMember,
-    getGroupedBySkill
+    getGroupedBySkill,
+    getPlannedSessions
 };
