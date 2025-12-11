@@ -279,7 +279,9 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     top: 100%; 
     margin-top: 0; /* Remove gap */
     
-    background-color: #f9f9f9;
+    background-color: #f9f9f9; /* Force Light Background */
+    color: #333333;           /* Force Dark Text */
+    
     min-width: 180px;
     box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
     border-radius: 4px;
@@ -294,7 +296,7 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 }
 
 .dropdown-content a {
-    color: #333;
+    color: #333; /* Explicit dark color */
     padding: 12px 16px;
     text-decoration: none;
     display: block;
@@ -331,7 +333,10 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     right: 100%; 
     
     margin-top: -1px; /* Align borders */
-    background-color: var(--bg-card);
+    
+    background-color: #f9f9f9; /* Force Light Background */
+    color: #333;               /* Force Dark Text */
+
     min-width: 200px;
     box-shadow: 0 8px 16px 0 var(--shadow);
     border-radius: 4px;
@@ -380,8 +385,107 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     position: relative; z-index: 50; 
 }
 
+/* --- HEADER ROW LAYOUT (Title + Menu + Logo) --- */
+.header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    margin-top: 10px;
+    padding-left: 60px; /* Space for Profile Button */
+    position: relative;
+    gap: 15px;
+}
+
+#headerLogo {
+    height: 50px;
+    width: auto;
+    margin-right: 15px;
+}
+
+#mainHeader {
+    margin: 0;
+    font-size: 2rem;
+    flex-grow: 1; 
+    text-align: center;
+    /* Adjust padding to balance logo and menu roughly */
+    padding-right: 60px; 
+}
+
+/* --- GLOBAL HELP SYSTEM REPAIR --- */
+#globalHelpBtn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background-color: var(--info);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background-color 0.2s;
+    margin: 0;
+    padding: 0;
+}
+#globalHelpBtn:hover {
+    background-color: #138496;
+    transform: scale(1.1);
+}
+
+.help-modal-overlay {
+    display: none; position: fixed; z-index: 3000; left: 0; top: 0;
+    width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); 
+    opacity: 0; transition: opacity 0.3s ease;
+}
+.help-modal-overlay.show { display: block; opacity: 1; }
+
+.help-modal-content {
+    background-color: var(--bg-card); color: var(--text-main);
+    margin: 10vh auto; padding: 25px; border: 1px solid var(--border-color);
+    width: 90%; max-width: 500px; border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative;
+    animation: slideDown 0.3s ease-out; max-height: 80vh; overflow-y: auto;
+}
+.help-close-btn {
+    color: var(--text-muted); float: right; font-size: 28px;
+    font-weight: bold; cursor: pointer; line-height: 20px;
+}
+.help-close-btn:hover { color: var(--text-main); }
+.help-body { line-height: 1.6; color: var(--text-main); }
+.help-body ul, .help-body ol { padding-left: 20px; margin-top: 10px; }
+.help-body li { margin-bottom: 8px; }
+
+@keyframes slideDown {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
 /* Mobile Responsiveness */
 @media screen and (max-width: 768px) {
+    /* Header Stack */
+    .header-row {
+        flex-direction: column;
+        padding-left: 0;
+        margin-top: 60px; /* Clear profile button */
+        gap: 15px;
+    }
+    #mainHeader {
+        margin: 0;
+        padding-right: 0;
+        text-align: center;
+        font-size: 1.5rem;
+    }
+    .header-menu { width: 100%; }
+    .menu-btn { width: 100%; justify-content: center; }
+    .dropdown-content { width: 100%; }
+    #headerLogo { margin-right: 0; height: 60px; } /* Slightly larger on mobile stack */
+
     /* Stack action bar */
     .action-bar, .action-group { flex-direction: column; align-items: stretch; }
     #controls button, #controls div { margin-right: 0; width: 100%; margin-bottom: 10px; }
@@ -402,119 +506,16 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
         text-align: left; color: var(--text-muted); content: attr(data-label);
     }
     
-    /* Dashboard specific labels */
     #skillsTable td:nth-of-type(1)::before { content: "Member"; }
     #skillsTable td:nth-of-type(2)::before { content: "Skill"; }
     #skillsTable td:nth-of-type(3)::before { content: "Due Date"; }
     #skillsTable td:nth-of-type(4)::before { content: "Actions"; }
     
-    /* Submenus stack on mobile */
     .dropdown-submenu .submenu-content {
-        position: static;
-        box-shadow: none;
-        border: none;
-        border-left: 2px solid var(--border-color);
-        margin-left: 10px;
+        position: static; box-shadow: none; border: none;
+        border-left: 2px solid var(--border-color); margin-left: 10px;
     }
     .dropdown-submenu > a::after { content: "▼"; float: right; }
     
     .profile-menu { top: 15px; left: 15px; }
-    #mainHeader { margin-top: 70px; }
-}
-#globalHelpBtn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 2000; /* High z-index to float above almost everything */
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background-color: var(--info); /* Cyan/Blue */
-    color: white;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s, background-color 0.2s;
-    
-    /* Ensure no browser defaults interfere */
-    margin: 0;
-    padding: 0;
-}
-
-#globalHelpBtn:hover {
-    background-color: #138496; /* Darker info color */
-    transform: scale(1.1);
-}
-
-/* Modal Overlay (Background Dimmer) */
-.help-modal-overlay {
-    display: none;
-    position: fixed; 
-    z-index: 3000; /* Highest layer, above the button */
-    left: 0;
-    top: 0;
-    width: 100%; 
-    height: 100%; 
-    background-color: rgba(0,0,0,0.5); 
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.help-modal-overlay.show {
-    display: block;
-    opacity: 1;
-}
-
-/* Modal Box */
-.help-modal-content {
-    background-color: var(--bg-card);
-    color: var(--text-main);
-    margin: 10vh auto; /* 10% from top */
-    padding: 25px;
-    border: 1px solid var(--border-color);
-    width: 90%;
-    max-width: 500px;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    position: relative;
-    animation: slideDown 0.3s ease-out;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-@keyframes slideDown {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-/* Close 'X' Button */
-.help-close-btn {
-    color: var(--text-muted);
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    line-height: 20px;
-}
-
-.help-close-btn:hover {
-    color: var(--text-main);
-}
-
-/* Content Formatting */
-.help-body {
-    line-height: 1.6;
-    color: var(--text-main);
-}
-
-.help-body ul, .help-body ol {
-    padding-left: 20px;
-    margin-top: 10px;
-}
-
-.help-body li {
-    margin-bottom: 8px;
 }
