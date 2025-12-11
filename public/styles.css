@@ -12,7 +12,7 @@
     --border-color: #dee2e6;
     --input-bg: #ffffff;
     --shadow: rgba(0, 0, 0, 0.1);
-
+    
     /* Status Colors */
     --success: #28a745;
     --danger: #dc3545;
@@ -35,27 +35,20 @@ body.dark-mode {
     --shadow: rgba(0, 0, 0, 0.5);
 }
 
-/* Dark Tone Overlay for Background Images */
 body.dark-mode::before {
     content: "";
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /* 70% opacity black overlay - Adjust 0.7 to make it lighter/darker */
+    top: 0; left: 0; width: 100%; height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
-    /* Places the overlay behind text/cards but in front of the body background */
     z-index: -1;
     pointer-events: none;
-    /* Ensures clicks pass through to the page */
 }
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding: 20px;
-    max-width: 900px;
-    margin: 0 auto;
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    padding: 20px; 
+    max-width: 900px; 
+    margin: 0 auto; 
     background-color: var(--bg-body);
     color: var(--text-main);
     background-repeat: no-repeat;
@@ -66,18 +59,9 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    color: var(--text-main);
-}
+h1, h2, h3, h4, h5, h6 { color: var(--text-main); }
 
-#controls {
-    margin-bottom: 20px;
-}
+#controls { margin-bottom: 20px; }
 
 button {
     padding: 12px 24px;
@@ -89,35 +73,19 @@ button {
     border-radius: 6px;
     transition: background-color 0.2s, transform 0.1s;
     margin-right: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 10px; /* Global button gap */
 }
 
-/* Send Emails Button - Blue */
-#sendEmailsBtn {
-    background-color: var(--primary);
-}
+/* Specific Buttons */
+#sendEmailsBtn { background-color: var(--primary); }
+#sendEmailsBtn:hover { background-color: #0056b3; }
+#sendEmailsBtn:disabled { background-color: #ccc; cursor: not-allowed; }
 
-#sendEmailsBtn:hover {
-    background-color: #0056b3;
-}
-
-#sendEmailsBtn:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
-/* Reload Button - Green */
-#viewBtn {
-    background-color: var(--success);
-}
-
-#viewBtn:hover {
-    background-color: #218838;
-}
+#viewBtn { background-color: var(--success); }
+#viewBtn:hover { background-color: #218838; }
 
 #terminal {
     background-color: #1e1e1e;
-    /* Console usually stays dark */
     color: #d4d4d4;
     border-radius: 6px;
     padding: 15px;
@@ -128,12 +96,11 @@ button {
     line-height: 1.4;
     white-space: pre-wrap;
     box-shadow: 0 4px 6px var(--shadow);
-    margin-top: 30px;
+    margin-top: 30px; 
 }
 
-/* Progress Bar Styling */
 #progressContainer {
-    display: none;
+    display: none; 
     margin-bottom: 20px;
     background-color: var(--border-color);
     border-radius: 6px;
@@ -142,7 +109,6 @@ button {
     border: 1px solid var(--border-color);
     box-shadow: inset 0 1px 2px var(--shadow);
 }
-
 #progressBar {
     width: 0%;
     height: 100%;
@@ -156,19 +122,14 @@ button {
 }
 
 /* Table Styling */
-#tableContainer,
-.card,
-.service-card {
+#tableContainer, .card, .service-card {
     margin-top: 20px;
     background: var(--bg-card);
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px var(--shadow);
 }
-
-#tableContainer {
-    display: none;
-}
+#tableContainer { display: none; }
 
 table {
     width: 100%;
@@ -177,353 +138,327 @@ table {
     background-color: var(--bg-card);
     color: var(--text-main);
 }
-
-th,
-td {
+th, td {
     border: 1px solid var(--border-color);
     padding: 12px;
     text-align: left;
     vertical-align: middle;
 }
-
 th {
     background-color: var(--bg-header);
     color: var(--text-header);
     font-weight: bold;
 }
+th.sortable { cursor: pointer; user-select: none; position: relative; }
+th.sortable:hover { background-color: #454d55; }
 
-/* Alternating Colors */
-.row-even {
-    background-color: var(--bg-card);
-}
+.row-even { background-color: var(--bg-card); }
+.row-odd { background-color: var(--bg-body); } 
+.member-cell { vertical-align: top; font-weight: 600; }
+.merged-cell { border-top: none; border-bottom: none; }
+.skill-cell { color: var(--text-main); }
+.date-cell { color: var(--text-muted); white-space: nowrap; }
+.no-skill { color: var(--success); font-style: italic; }
 
-.row-odd {
-    background-color: var(--bg-body);
-}
-
-.member-cell {
-    vertical-align: top;
-    font-weight: 600;
-}
-
-.merged-cell {
-    border-top: none;
-    border-bottom: none;
-}
-
-.skill-cell {
-    color: var(--text-main);
-}
-
-.date-cell {
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-
-.no-skill {
-    color: var(--success);
-    font-style: italic;
-}
-
-/* Checkbox Styling */
 .email-label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-weight: normal;
-    font-size: 14px;
-    color: var(--text-main);
+    display: flex; align-items: center; cursor: pointer;
+    font-weight: normal; font-size: 14px; color: var(--text-main);
 }
-
-.email-label input {
-    margin-right: 8px;
-    width: 16px;
-    height: 16px;
-    background-color: var(--input-bg);
-    border: 1px solid var(--border-color);
+.email-label input, .header-checkbox-label input {
+    margin-right: 8px; width: 16px; height: 16px;
+    background-color: var(--input-bg); border: 1px solid var(--border-color);
 }
-
-/* Header Checkbox specific style */
 .header-checkbox-label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    color: var(--text-header);
+    display: flex; align-items: center; cursor: pointer; color: var(--text-header);
 }
 
-.header-checkbox-label input {
-    margin-right: 8px;
-    width: 16px;
-    height: 16px;
-}
-
-#logoutBtn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background-color: var(--danger);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 14px;
-    box-shadow: 0 2px 4px var(--shadow);
-    transition: background-color 0.2s;
-}
-
-#logoutBtn:hover {
-    background-color: #c82333;
-}
-
-/* --- SCROLL TO TOP BUTTON --- */
-#scrollTopBtn {
+/* Global Floating Back Button (TOP LEFT) */
+.back-btn {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-    font-size: 18px;
-    border: none;
-    outline: none;
-    background-color: var(--bg-header);
-    color: white;
-    cursor: pointer;
-    padding: 10px;
-    border-radius: 50%;
+    top: 20px;
+    left: 20px;  /* Left aligned */
+    z-index: 2000;
+    text-decoration: none;
+    color: #fff;
+    background-color: #343a40;
     width: 45px;
     height: 45px;
-    display: none;
+    border-radius: 50%;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 6px var(--shadow);
-    transition: background-color 0.3s, transform 0.3s, opacity 0.3s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
 }
-
-#scrollTopBtn:hover {
+.back-btn:hover {
     background-color: #23272b;
-    transform: translateY(-3px);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0,0,0,0.4);
 }
 
-/* --- MODAL STYLES --- */
+#scrollTopBtn {
+    position: fixed; bottom: 20px; right: 20px; z-index: 1000;
+    font-size: 18px; border: none; outline: none;
+    background-color: var(--bg-header); color: white;
+    cursor: pointer; padding: 10px; border-radius: 50%;
+    width: 45px; height: 45px; display: none; align-items: center; justify-content: center;
+    box-shadow: 0 4px 6px var(--shadow); transition: all 0.3s;
+}
+#scrollTopBtn:hover {
+    background-color: #23272b; transform: translateY(-3px);
+}
+
+/* Modals */
 .modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4);
+    display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+    width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);
 }
-
 .modal-content {
-    background-color: var(--bg-card);
-    color: var(--text-main);
-    margin: 10% auto;
-    padding: 20px;
-    border: 1px solid var(--border-color);
-    width: 80%;
-    max-width: 500px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px var(--shadow);
-    position: relative;
-    animation: animatetop 0.4s;
-    max-height: 80vh;
-    overflow-y: auto;
+    background-color: var(--bg-card); color: var(--text-main);
+    margin: 10% auto; padding: 20px; border: 1px solid var(--border-color);
+    width: 80%; max-width: 500px; border-radius: 8px;
+    box-shadow: 0 4px 8px var(--shadow); position: relative;
+    max-height: 80vh; overflow-y: auto;
 }
-
 .close-btn {
-    color: var(--text-muted);
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    position: absolute;
-    top: 10px;
-    right: 15px;
+    color: var(--text-muted); float: right; font-size: 28px;
+    font-weight: bold; cursor: pointer; position: absolute; top: 10px; right: 15px;
+}
+.close-btn:hover { color: var(--text-main); }
+
+input[type="text"], input[type="password"], input[type="email"], input[type="number"], select, textarea {
+    background-color: var(--input-bg); color: var(--text-main);
+    border: 1px solid var(--border-color); border-radius: 4px; padding: 8px;
 }
 
-.close-btn:hover,
-.close-btn:focus {
-    color: var(--text-main);
-    text-decoration: none;
-    cursor: pointer;
-}
-
-@keyframes animatetop {
-    from {
-        top: -300px;
-        opacity: 0
-    }
-
-    to {
-        top: 0;
-        opacity: 1
-    }
-}
-
-/* --- GLOBAL INPUTS --- */
-input[type="text"],
-input[type="password"],
-input[type="email"],
-input[type="number"],
-select,
-textarea {
-    background-color: var(--input-bg);
-    color: var(--text-main);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 8px;
-}
-
-/* --- TOP LEFT PROFILE MENU & DROPDOWNS --- */
+/* Profile Menu */
 .profile-menu {
-    position: absolute;
-    top: 20px;
-    left: 20px;
+    position: absolute; top: 20px; left: 20px; z-index: 100;
+}
+.profile-btn {
+    background-color: var(--bg-card); color: var(--text-main);
+    padding: 10px 16px; font-size: 16px; border: 1px solid var(--border-color);
+    cursor: pointer; border-radius: 20px; display: flex; align-items: center;
+    gap: 8px; box-shadow: 0 2px 5px var(--shadow); transition: all 0.2s;
+}
+.profile-btn:hover { background-color: var(--bg-hover); transform: translateY(-1px); }
+
+/* --- HEADER MENU (DROPDOWN) --- */
+.header-menu {
+    position: relative; /* Flows with content */
+    display: inline-block;
     z-index: 100;
 }
 
-.profile-btn,
 .menu-btn {
-    background-color: var(--bg-card);
-    color: var(--text-main);
+    background-color: #343a40;
+    color: white;
     padding: 10px 16px;
     font-size: 16px;
-    border: 1px solid var(--border-color);
+    border: none;
     cursor: pointer;
-    border-radius: 20px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 2px 5px var(--shadow);
-    transition: all 0.2s;
-    margin-bottom: 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.2s;
+    
+    /* FIX: Remove bottom margin so menu attaches */
+    margin-bottom: 0 !important; 
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 }
-
-.profile-btn:hover,
-.menu-btn:hover {
-    background-color: var(--bg-hover);
-    transform: translateY(-1px);
-}
+.menu-btn:hover { background-color: #23272b; }
 
 .dropdown-content {
     display: none;
     position: absolute;
     right: 0;
-    
-    /* NEW: Anchoring & Gap Removal */
-    top: 100%;        /* Starts exactly at the bottom of the parent */
-    margin-top: 0;    /* Removes the 5px gap you had previously */
-    
-    /* NEW: Vital for submenus to work */
-    overflow: visible; /* Was 'hidden' - MUST be visible for fly-out menus */
+    /* Anchor to bottom of button */
+    top: 100%; 
+    margin-top: 0; /* Remove gap */
     
     background-color: #f9f9f9;
     min-width: 180px;
     box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
     border-radius: 4px;
-    border-top-right-radius: 0; /* Optional: Squaring the corner touching the button looks neater */
+    border-top-right-radius: 0; 
+    border-top-left-radius: 0;
     z-index: 1000;
     border: 1px solid #ddd;
+    border-top: none;
+    
+    /* FIX: Allow submenus to fly out */
+    overflow: visible; 
 }
+
 .dropdown-content a {
-    color: var(--text-main);
+    color: #333;
     padding: 12px 16px;
     text-decoration: none;
     display: block;
     text-align: left;
     transition: background-color 0.2s;
 }
-
 .dropdown-content a:hover {
-    background-color: var(--bg-hover);
-    color: var(--primary);
+    background-color: #f1f1f1;
+    color: #007bff;
 }
+.show { display: block; }
 
-.profile-dropdown {
-    left: 0;
-    right: auto;
-    min-width: 160px;
-}
+.profile-dropdown { left: 0; right: auto; min-width: 160px; }
+.logout { color: #dc3545 !important; border-top: 1px solid #eee; }
+.logout:hover { background-color: #ffe6e6 !important; color: #bd2130 !important; }
 
-/* --- PASSWORD INPUT GROUP --- */
-.password-wrapper {
+/* --- SUBMENU STYLES --- */
+.dropdown-submenu {
     position: relative;
-    display: flex;
-    align-items: center;
 }
-
-.password-wrapper input {
-    padding-right: 40px;
+.dropdown-submenu > a::after {
+    content: "◀"; /* Left arrow indicates flyout to left */
+    float: right;
+    margin-right: 0;
+    font-size: 10px;
+    opacity: 0.5;
+    margin-top: 4px;
 }
-
-.btn-toggle-pw {
+.dropdown-submenu .submenu-content {
+    display: none;
     position: absolute;
-    right: 5px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-muted);
-    padding: 5px;
+    /* Fly out to the LEFT of the main menu */
+    top: 0;
+    right: 100%; 
+    
+    margin-top: -1px; /* Align borders */
+    background-color: var(--bg-card);
+    min-width: 200px;
+    box-shadow: 0 8px 16px 0 var(--shadow);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    z-index: 20;
+}
+.dropdown-submenu:hover .submenu-content {
+    display: block;
+}
+
+/* Action Bar */
+.action-bar {
+    background-color: var(--bg-card);
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px var(--shadow);
+    margin-bottom: 20px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
+    gap: 15px;
+    border: 1px solid var(--border-color);
+}
+.action-group { display: flex; align-items: center; gap: 10px; }
+.days-wrapper {
+    display: flex; align-items: center; background-color: var(--bg-body);
+    padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border-color);
+}
+.days-wrapper input { width: 60px; text-align: center; }
+
+/* Filter Chips */
+.type-toggles { display: flex; gap: 8px; }
+.type-badge {
+    padding: 6px 12px; border-radius: 15px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border-color); background: var(--bg-hover);
+    color: var(--text-muted); user-select: none;
+}
+.type-badge.active { background-color: var(--bg-header); color: white; border-color: var(--bg-header); }
+.type-badge.expired-filter.active { background-color: #dc3545; border-color: #dc3545; }
+
+/* Demo Banner */
+.demo-banner {
+    background-color: var(--warning); color: #333; font-weight: bold;
+    text-align: center; padding: 12px; margin: -20px -20px 20px -20px;
+    border-bottom: 1px solid #e0a800; display: none; font-size: 14px;
+    position: relative; z-index: 50; 
 }
 
-.btn-toggle-pw:hover {
-    color: var(--text-main);
+/* Mobile Responsiveness */
+@media screen and (max-width: 768px) {
+    /* Stack action bar */
+    .action-bar, .action-group { flex-direction: column; align-items: stretch; }
+    #controls button, #controls div { margin-right: 0; width: 100%; margin-bottom: 10px; }
+    #daysInput { width: 100% !important; }
+    
+    /* Tables Card View */
+    table, thead, tbody, th, td, tr { display: block; }
+    thead tr { position: absolute; top: -9999px; left: -9999px; }
+    tr { margin-bottom: 15px; box-shadow: 0 2px 4px var(--shadow); }
+    td {
+        border: none; border-bottom: 1px solid var(--border-color);
+        position: relative; padding-left: 45%; text-align: right; min-height: 40px;
+        display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+    }
+    td:last-child { border-bottom: none; }
+    td::before {
+        position: absolute; left: 15px; width: 40%; font-weight: bold;
+        text-align: left; color: var(--text-muted); content: attr(data-label);
+    }
+    
+    /* Dashboard specific labels */
+    #skillsTable td:nth-of-type(1)::before { content: "Member"; }
+    #skillsTable td:nth-of-type(2)::before { content: "Skill"; }
+    #skillsTable td:nth-of-type(3)::before { content: "Due Date"; }
+    #skillsTable td:nth-of-type(4)::before { content: "Actions"; }
+    
+    /* Submenus stack on mobile */
+    .dropdown-submenu .submenu-content {
+        position: static;
+        box-shadow: none;
+        border: none;
+        border-left: 2px solid var(--border-color);
+        margin-left: 10px;
+    }
+    .dropdown-submenu > a::after { content: "▼"; float: right; }
+    
+    .profile-menu { top: 15px; left: 15px; }
+    #mainHeader { margin-top: 70px; }
 }
-
-/* --- GLOBAL HELP SYSTEM --- */
 #globalHelpBtn {
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 2000;
+    z-index: 2000; /* High z-index to float above almost everything */
     width: 45px;
     height: 45px;
     border-radius: 50%;
-    background-color: var(--info);
+    background-color: var(--info); /* Cyan/Blue */
     color: white;
     border: none;
     cursor: pointer;
-    box-shadow: 0 4px 6px var(--shadow);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     display: flex;
     align-items: center;
     justify-content: center;
     transition: transform 0.2s, background-color 0.2s;
+    
+    /* Ensure no browser defaults interfere */
     margin: 0;
     padding: 0;
 }
 
-#globalHelpBtn svg {
-    width: 24px;
-    height: 24px;
-    stroke: white;
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
 #globalHelpBtn:hover {
-    background-color: #138496;
+    background-color: #138496; /* Darker info color */
     transform: scale(1.1);
 }
 
-/* Modal Overlay */
+/* Modal Overlay (Background Dimmer) */
 .help-modal-overlay {
     display: none;
-    position: fixed;
-    z-index: 3000;
+    position: fixed; 
+    z-index: 3000; /* Highest layer, above the button */
     left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    width: 100%; 
+    height: 100%; 
+    background-color: rgba(0,0,0,0.5); 
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -533,17 +468,17 @@ textarea {
     opacity: 1;
 }
 
-/* Modal Content */
+/* Modal Box */
 .help-modal-content {
     background-color: var(--bg-card);
     color: var(--text-main);
-    margin: 10vh auto;
+    margin: 10vh auto; /* 10% from top */
     padding: 25px;
     border: 1px solid var(--border-color);
     width: 90%;
     max-width: 500px;
     border-radius: 8px;
-    box-shadow: 0 5px 15px var(--shadow);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     position: relative;
     animation: slideDown 0.3s ease-out;
     max-height: 80vh;
@@ -551,17 +486,11 @@ textarea {
 }
 
 @keyframes slideDown {
-    from {
-        transform: translateY(-50px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
+/* Close 'X' Button */
 .help-close-btn {
     color: var(--text-muted);
     float: right;
@@ -575,808 +504,17 @@ textarea {
     color: var(--text-main);
 }
 
+/* Content Formatting */
 .help-body {
     line-height: 1.6;
     color: var(--text-main);
 }
 
-.help-body ul,
-.help-body ol {
+.help-body ul, .help-body ol {
     padding-left: 20px;
     margin-top: 10px;
 }
 
 .help-body li {
     margin-bottom: 8px;
-}
-
-/* --- EVENT LOG FILTERS --- */
-.filter-bar {
-    background: var(--bg-card);
-    padding: 15px 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px var(--shadow);
-    margin-bottom: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    align-items: flex-end;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.filter-group label {
-    font-weight: bold;
-    font-size: 13px;
-    color: var(--text-muted);
-}
-
-/* Event Type Chips */
-.type-toggles {
-    display: flex;
-    gap: 8px;
-}
-
-.type-badge {
-    padding: 6px 12px;
-    border-radius: 15px;
-    font-size: 13px;
-    cursor: pointer;
-    border: 1px solid var(--border-color);
-    background: var(--bg-hover);
-    color: var(--text-muted);
-    user-select: none;
-    transition: all 0.2s;
-}
-
-.type-badge.active {
-    background-color: var(--bg-header);
-    color: white;
-    border-color: var(--bg-header);
-}
-
-/* Custom Colors for Active States */
-.type-badge[data-type="System"].active {
-    background-color: var(--info);
-    border-color: var(--info);
-}
-
-.type-badge[data-type="Members"].active {
-    background-color: var(--success);
-    border-color: var(--success);
-}
-
-.type-badge[data-type="Skills"].active {
-    background-color: var(--warning);
-    border-color: var(--warning);
-    color: #333;
-}
-
-.type-badge[data-type="Email"].active {
-    background-color: var(--primary);
-    border-color: var(--primary);
-}
-
-/* Filter Inputs */
-.filter-select,
-.filter-date {
-    padding: 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    min-width: 140px;
-    background-color: var(--input-bg);
-    color: var(--text-main);
-}
-
-.btn-filter {
-    background-color: var(--primary);
-    color: white;
-    padding: 9px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.btn-filter:hover {
-    background-color: #0056b3;
-}
-
-.btn-reset-filter {
-    background-color: #6c757d;
-    color: white;
-    padding: 9px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-reset-filter:hover {
-    background-color: #5a6268;
-}
-
-/* --- PAGINATION CONTROLS --- */
-.pagination-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 15px;
-    background: var(--bg-card);
-    padding: 10px 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px var(--shadow);
-}
-
-.pagination-info {
-    font-size: 14px;
-    color: var(--text-muted);
-}
-
-.pagination-buttons {
-    display: flex;
-    gap: 5px;
-}
-
-.btn-page {
-    padding: 6px 12px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-card);
-    color: var(--primary);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-
-.btn-page:hover:not(:disabled) {
-    background-color: var(--bg-hover);
-}
-
-.btn-page:disabled {
-    color: #ccc;
-    cursor: not-allowed;
-    background: var(--bg-hover);
-}
-
-.btn-page.active {
-    background-color: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-/* Round Icon Button */
-.btn-round {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--primary);
-    color: white;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 2px 5px var(--shadow);
-    transition: all 0.2s ease;
-    margin: 0;
-}
-
-.btn-round:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px var(--shadow);
-}
-
-.btn-round svg {
-    width: 18px;
-    height: 18px;
-    stroke-width: 2px;
-    margin-right: 2px;
-    margin-top: 2px;
-}
-
-.spinner {
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(0, 0, 0, 0.1);
-    border-radius: 50%;
-    border-top-color: var(--primary);
-    animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* Demo Banner Global Style */
-.demo-banner {
-    background-color: var(--warning);
-    color: #333;
-    font-weight: bold;
-    text-align: center;
-    padding: 12px;
-    margin: -20px -20px 20px -20px;
-    border-bottom: 1px solid #e0a800;
-    display: none;
-    font-size: 14px;
-    position: relative;
-    z-index: 50;
-}
-
-/* --- TOAST NOTIFICATIONS --- */
-#toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
-    /* Above everything */
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.toast {
-    background-color: var(--bg-card);
-    color: var(--text-main);
-    min-width: 300px;
-    max-width: 400px;
-    padding: 12px 16px;
-    border-radius: 6px;
-    box-shadow: 0 4px 12px var(--shadow);
-    display: flex;
-    align-items: flex-start;
-    /* Align top for long text */
-    gap: 12px;
-    opacity: 0;
-    transform: translateX(100%);
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    border-left: 5px solid var(--border-color);
-    font-size: 14px;
-    line-height: 1.4;
-}
-
-.toast.show {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-/* Toast Types (Using CSS Variables defined in Root) */
-.toast-success {
-    border-left-color: var(--success);
-}
-
-.toast-success .toast-icon {
-    color: var(--success);
-}
-
-.toast-error {
-    border-left-color: var(--danger);
-}
-
-.toast-error .toast-icon {
-    color: var(--danger);
-}
-
-.toast-warning {
-    border-left-color: var(--warning);
-}
-
-.toast-warning .toast-icon {
-    color: var(--warning);
-}
-
-.toast-info {
-    border-left-color: var(--info);
-}
-
-.toast-info .toast-icon {
-    color: var(--info);
-}
-
-/* Elements inside Toast */
-.toast-icon {
-    display: flex;
-    align-items: center;
-    margin-top: 2px;
-    /* Visual alignment with text */
-}
-
-.toast-message {
-    flex-grow: 1;
-    word-break: break-word;
-}
-
-.toast-close {
-    cursor: pointer;
-    font-size: 18px;
-    color: var(--text-muted);
-    line-height: 1;
-    opacity: 0.7;
-}
-
-.toast-close:hover {
-    opacity: 1;
-    color: var(--text-main);
-}
-
-/* --- MOBILE CARD VIEW --- */
-@media screen and (max-width: 768px) {
-
-    /* 1. Global Table Resets for Mobile */
-    table,
-    thead,
-    tbody,
-    th,
-    td,
-    tr {
-        display: block;
-    }
-
-    /* Hide standard headers (we will add labels via CSS) */
-    thead tr {
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
-    }
-
-    tr {
-        margin-bottom: 15px;
-        background-color: var(--bg-card);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        box-shadow: 0 2px 4px var(--shadow);
-        overflow: hidden;
-        /* Keeps borders nice */
-    }
-
-    td {
-        /* Behave like a "row" */
-        border: none;
-        border-bottom: 1px solid var(--border-color);
-        position: relative;
-        padding-left: 45% !important;
-        /* Make room for the label */
-        padding-top: 12px;
-        padding-bottom: 12px;
-        text-align: right;
-        /* Align content to the right */
-        min-height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    td:last-child {
-        border-bottom: none;
-    }
-
-    /* The "Label" (Pseudo-element) */
-    td::before {
-        position: absolute;
-        top: 12px;
-        /* Match padding */
-        left: 15px;
-        width: 40%;
-        white-space: nowrap;
-        font-weight: bold;
-        text-align: left;
-        color: var(--text-muted);
-        content: attr(data-label);
-        /* Fallback */
-    }
-
-    /* 2. DASHBOARD TABLE (#skillsTable) specific labels */
-    #skillsTable td:nth-of-type(1)::before {
-        content: "Member";
-    }
-
-    #skillsTable td:nth-of-type(2)::before {
-        content: "Skill";
-    }
-
-    #skillsTable td:nth-of-type(3)::before {
-        content: "Due Date";
-    }
-
-    #skillsTable td:nth-of-type(4)::before {
-        content: "Actions";
-    }
-
-    /* Dashboard: specific tweaks */
-    #skillsTable td:nth-of-type(4) {
-        display: block;
-        /* Stack checkboxes vertically */
-        text-align: right;
-    }
-
-    #skillsTable .header-checkbox-label {
-        /* Hide master checkboxes on mobile to save space, or style them differently */
-        display: none !important;
-    }
-
-    #skillsTable td:nth-of-type(4)>div {
-        /* The flex container for email/wa buttons */
-        justify-content: flex-end;
-    }
-
-    /* 3. MANAGEMENT TABLES (Members, Skills, Users) */
-    /* We target them broadly but apply labels based on assumption of column order */
-
-    /* Manage Members Table */
-    /* Col 1: Checkbox, 2: Enabled, 3: Name, 4: Email, 5: Mobile, 6: Prefs, 7: Actions */
-    .container table:not(#skillsTable) td:nth-of-type(1) {
-        text-align: left;
-        padding-left: 15px !important;
-    }
-
-    /* Checkbox row */
-    .container table:not(#skillsTable) td:nth-of-type(2)::before {
-        content: "Status";
-    }
-
-    .container table:not(#skillsTable) td:nth-of-type(3)::before {
-        content: "Name";
-    }
-
-    .container table:not(#skillsTable) td:nth-of-type(4)::before {
-        content: "Email";
-    }
-
-    .container table:not(#skillsTable) td:nth-of-type(5)::before {
-        content: "Mobile";
-    }
-
-    .container table:not(#skillsTable) td:nth-of-type(6)::before {
-        content: "Prefs";
-    }
-
-    .container table:not(#skillsTable) td:nth-of-type(7)::before {
-        content: "Actions";
-    }
-
-    /* Fix: "Manage Skills" has fewer columns, so we override specific indices if needed */
-    /* This generic approach works reasonably well, but for perfect labels on every page, 
-       we would add data-label attributes in HTML. For now, this covers 90% of cases. */
-
-    /* 4. UI Adjustments for Mobile Header */
-
-    /* Position buttons in top corners */
-    .profile-menu {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        width: auto;
-    }
-
-    .header-menu {
-        position: relative;
-        display: inline-block;
-        z-index: 100;
-
-    }
-
-    /* Push the main title down so buttons don't cover it */
-    #mainHeader {
-        margin-top: 70px;
-        font-size: 1.5rem;
-        text-align: center;
-        padding: 0 10px;
-    }
-
-    /* Adjust Controls Layout (Vertical Stack) */
-    #controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    #controls button,
-    #controls div {
-        margin-right: 0;
-        width: 100%;
-        margin-bottom: 10px;
-    }
-
-    /* Fix: Ensure Days Input container takes full width */
-    #controls>div {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    #daysInput {
-        width: 60px !important;
-        flex-shrink: 0;
-    }
-
-    /* Adjust Filter Chips */
-    .type-toggles {
-        flex-wrap: wrap;
-        justify-content: center;
-        margin-top: 5px;
-    }
-
-    .type-badge {
-        flex: 1 1 auto;
-        text-align: center;
-        margin-bottom: 5px;
-    }
-
-    #scrollTopBtn {
-        z-index: 2000 !important;
-        /* Ensure it's above cards and overlays */
-        bottom: 30px;
-        /* Raise slightly for mobile browser bars */
-        right: 20px;
-        width: 50px;
-        /* Slightly larger touch target */
-        height: 50px;
-    }
-}
-
-/* --- ACTION TOOLBAR --- */
-.action-bar {
-    background-color: var(--bg-card);
-    padding: 15px 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px var(--shadow);
-    margin-bottom: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 15px;
-    border: 1px solid var(--border-color);
-}
-
-.action-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-/* Adjustments for the Days Input within the bar */
-.days-wrapper {
-    display: flex;
-    align-items: center;
-    background-color: var(--bg-body);
-    padding: 5px 10px;
-    border-radius: 4px;
-    border: 1px solid var(--border-color);
-}
-
-.days-wrapper label {
-    margin-right: 8px;
-    font-weight: bold;
-    color: var(--text-muted);
-    font-size: 14px;
-}
-
-.days-wrapper input {
-    border: 1px solid var(--border-color);
-    width: 60px;
-    text-align: center;
-    padding: 4px;
-    background-color: var(--input-bg);
-    color: var(--text-main);
-}
-
-/* Mobile adjustments for the Action Bar */
-@media screen and (max-width: 768px) {
-    .action-bar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .action-group {
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .action-group button {
-        width: 100%;
-        margin-right: 0;
-    }
-
-    .days-wrapper {
-        justify-content: space-between;
-        width: 100%;
-        box-sizing: border-box;
-        /* Ensure padding doesn't overflow width */
-    }
-}
-
-/* Training Planner Specifics */
-
-/* Highlight for the official training day */
-.day-column.training-day {
-    border: 2px solid var(--primary);
-    /* UPDATED: 'Sand' colour */
-    background-color: #f5f5dc;
-}
-
-/* Optional: Update header to match or contrast nicely */
-.day-column.training-day .day-header {
-    background-color: #e0d6b9 !important;
-    /* Darker sand for header */
-    color: #333 !important;
-    /* Dark text for contrast on sand */
-    border-bottom: 3px solid #c2b89d;
-}
-
-/* When hidden by the toggle filter */
-.day-column.hidden-day {
-    display: none !important;
-}
-
-/* --- Training Planner Improvements --- */
-
-/* Teal Button */
-.btn-teal {
-    background-color: #20c997;
-    /* Teal */
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.btn-teal:hover {
-    background-color: #1aa179;
-}
-
-/* Distinct Calendar Header */
-.day-header {
-    /* Overriding previous style */
-    background-color: #495057 !important;
-    /* Darker distinct grey */
-    color: #fff !important;
-    border-bottom: 3px solid rgba(0, 0, 0, 0.1);
-}
-
-.day-header.today {
-    background-color: var(--primary) !important;
-    /* Keep Blue for Today */
-    border-bottom: 3px solid #0056b3;
-}
-
-/* Flex Layout for Expanding Columns */
-.week-grid {
-    display: flex !important;
-    gap: 10px;
-    overflow-x: hidden;
-    /* CHANGED: Never show horizontal scrollbar */
-    height: 100%;
-    /* Ensure it uses vertical space */
-}
-
-.day-column {
-    flex: 1;
-    /* Default: Share space equally */
-    min-width: 0;
-    /* CHANGED: Allow shrinking to fit screen without scroll */
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    /* Smooth resize */
-    display: flex;
-    flex-direction: column;
-}
-
-/* Busy days get 3x the available space */
-.day-column.has-sessions {
-    flex: 3;
-    /* Removed fixed min-width to prevent overflow */
-}
-
-/* Ensure hidden columns don't take up space */
-.day-column.hidden-day {
-    display: none !important;
-}
-
-/* Visual style for dates in the past */
-.day-column.past-day {
-    opacity: 0.6;
-    background-color: rgba(0, 0, 0, 0.05);
-    /* Light grey tint */
-}
-
-/* Ensure the header also looks "inactive" */
-.day-column.past-day .day-header {
-    background-color: #6c757d !important;
-    /* Muted grey */
-    opacity: 0.8;
-}
-
-/* In Dark Mode, adjust the tint */
-body.dark-mode .day-column.past-day {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-/* Global Floating Back Button (Paste this AFTER the final closing bracket) */
-.back-btn {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 2000;
-    text-decoration: none;
-    color: #fff;
-    background-color: #343a40;
-    /* Hardcoded color just to be safe */
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s ease;
-}
-
-.back-btn:hover {
-    background-color: #23272b;
-    transform: translateY(-2px);
-}
-
-/* --- Submenu Styles --- */
-
-/* The container for a menu item that has a submenu */
-.dropdown-submenu {
-    position: relative;
-}
-
-/* The arrow icon to indicate a submenu */
-.dropdown-submenu>a::after {
-    content: "◀";
-    /* Left arrow */
-    float: right;
-    margin-right: -5px;
-    font-size: 10px;
-    opacity: 0.7;
-    margin-top: 4px;
-}
-
-/* The hidden submenu list */
-.dropdown-submenu .submenu-content {
-    display: none;
-    position: absolute;
-    top: 0;
-    right: 100%;
-    /* Pushes it to the LEFT of the parent */
-    margin-top: -1px;
-    /* Aligns top borders */
-    background-color: var(--bg-card);
-    min-width: 200px;
-    box-shadow: 0 8px 16px 0 var(--shadow);
-    border-radius: 4px;
-    border: 1px solid var(--border-color);
-    z-index: 10;
-}
-
-/* Show submenu on hover */
-.dropdown-submenu:hover .submenu-content {
-    display: block;
-}
-
-/* Mobile Tweak: On small screens, just stack them instead of fly-out */
-@media screen and (max-width: 768px) {
-    .dropdown-submenu .submenu-content {
-        position: static;
-        box-shadow: none;
-        border: none;
-        border-left: 2px solid var(--border-color);
-        margin-left: 10px;
-    }
-
-    .dropdown-submenu>a::after {
-        content: "▼";
-        float: right;
-    }
 }

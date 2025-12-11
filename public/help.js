@@ -304,15 +304,16 @@ const helpContent = {
     const modal = document.getElementById('globalHelpModal');
     const close = document.querySelector('.help-close-btn');
 
-    // Adjust position if on Dashboard to avoid Menu overlap
+// Adjust position if on Dashboard 
     if (key === "index") {
-        btn.style.top = "80px";
+        // OLD: btn.style.top = "80px";
+        // NEW:
+        btn.style.top = "20px"; // Consistent with other pages
         btn.style.right = "20px";
     } else {
         btn.style.top = "20px";
         btn.style.right = "20px";
     }
-
     btn.addEventListener('click', () => {
         modal.classList.add('show');
     });
