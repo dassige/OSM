@@ -1071,3 +1071,26 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 body.dark-mode .day-column.past-day {
     background-color: rgba(255, 255, 255, 0.05);
 }
+/* Global Floating Back Button (Paste this AFTER the final closing bracket) */
+.back-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    text-decoration: none;
+    color: #fff;
+    background-color: #343a40; /* Hardcoded color just to be safe */
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+    background-color: #23272b;
+    transform: translateY(-2px);
+}
