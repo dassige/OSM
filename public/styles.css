@@ -12,7 +12,7 @@
     --border-color: #dee2e6;
     --input-bg: #ffffff;
     --shadow: rgba(0, 0, 0, 0.1);
-    
+
     /* Status Colors */
     --success: #28a745;
     --danger: #dc3545;
@@ -34,11 +34,12 @@ body.dark-mode {
     --input-bg: #2d2d2d;
     --shadow: rgba(0, 0, 0, 0.5);
 }
+
 /* Dark Tone Overlay for Background Images */
 body.dark-mode::before {
     content: "";
     position: fixed;
-    top: 0; 
+    top: 0;
     left: 0;
     width: 100%;
     height: 100%;
@@ -46,13 +47,15 @@ body.dark-mode::before {
     background-color: rgba(0, 0, 0, 0.7);
     /* Places the overlay behind text/cards but in front of the body background */
     z-index: -1;
-    pointer-events: none; /* Ensures clicks pass through to the page */
+    pointer-events: none;
+    /* Ensures clicks pass through to the page */
 }
-body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    padding: 20px; 
-    max-width: 900px; 
-    margin: 0 auto; 
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
     background-color: var(--bg-body);
     color: var(--text-main);
     background-repeat: no-repeat;
@@ -63,9 +66,18 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-h1, h2, h3, h4, h5, h6 { color: var(--text-main); }
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--text-main);
+}
 
-#controls { margin-bottom: 20px; }
+#controls {
+    margin-bottom: 20px;
+}
 
 button {
     padding: 12px 24px;
@@ -81,16 +93,31 @@ button {
 }
 
 /* Send Emails Button - Blue */
-#sendEmailsBtn { background-color: var(--primary); }
-#sendEmailsBtn:hover { background-color: #0056b3; }
-#sendEmailsBtn:disabled { background-color: #ccc; cursor: not-allowed; }
+#sendEmailsBtn {
+    background-color: var(--primary);
+}
+
+#sendEmailsBtn:hover {
+    background-color: #0056b3;
+}
+
+#sendEmailsBtn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
 
 /* Reload Button - Green */
-#viewBtn { background-color: var(--success); }
-#viewBtn:hover { background-color: #218838; }
+#viewBtn {
+    background-color: var(--success);
+}
+
+#viewBtn:hover {
+    background-color: #218838;
+}
 
 #terminal {
-    background-color: #1e1e1e; /* Console usually stays dark */
+    background-color: #1e1e1e;
+    /* Console usually stays dark */
     color: #d4d4d4;
     border-radius: 6px;
     padding: 15px;
@@ -101,12 +128,12 @@ button {
     line-height: 1.4;
     white-space: pre-wrap;
     box-shadow: 0 4px 6px var(--shadow);
-    margin-top: 30px; 
+    margin-top: 30px;
 }
 
 /* Progress Bar Styling */
 #progressContainer {
-    display: none; 
+    display: none;
     margin-bottom: 20px;
     background-color: var(--border-color);
     border-radius: 6px;
@@ -115,6 +142,7 @@ button {
     border: 1px solid var(--border-color);
     box-shadow: inset 0 1px 2px var(--shadow);
 }
+
 #progressBar {
     width: 0%;
     height: 100%;
@@ -128,14 +156,19 @@ button {
 }
 
 /* Table Styling */
-#tableContainer, .card, .service-card {
+#tableContainer,
+.card,
+.service-card {
     margin-top: 20px;
     background: var(--bg-card);
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px var(--shadow);
 }
-#tableContainer { display: none; }
+
+#tableContainer {
+    display: none;
+}
 
 table {
     width: 100%;
@@ -144,12 +177,15 @@ table {
     background-color: var(--bg-card);
     color: var(--text-main);
 }
-th, td {
+
+th,
+td {
     border: 1px solid var(--border-color);
     padding: 12px;
     text-align: left;
     vertical-align: middle;
 }
+
 th {
     background-color: var(--bg-header);
     color: var(--text-header);
@@ -157,20 +193,37 @@ th {
 }
 
 /* Alternating Colors */
-.row-even { background-color: var(--bg-card); }
-.row-odd { background-color: var(--bg-body); } 
+.row-even {
+    background-color: var(--bg-card);
+}
+
+.row-odd {
+    background-color: var(--bg-body);
+}
 
 .member-cell {
     vertical-align: top;
     font-weight: 600;
 }
+
 .merged-cell {
     border-top: none;
     border-bottom: none;
 }
-.skill-cell { color: var(--text-main); }
-.date-cell { color: var(--text-muted); white-space: nowrap; }
-.no-skill { color: var(--success); font-style: italic; }
+
+.skill-cell {
+    color: var(--text-main);
+}
+
+.date-cell {
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.no-skill {
+    color: var(--success);
+    font-style: italic;
+}
 
 /* Checkbox Styling */
 .email-label {
@@ -181,6 +234,7 @@ th {
     font-size: 14px;
     color: var(--text-main);
 }
+
 .email-label input {
     margin-right: 8px;
     width: 16px;
@@ -188,6 +242,7 @@ th {
     background-color: var(--input-bg);
     border: 1px solid var(--border-color);
 }
+
 /* Header Checkbox specific style */
 .header-checkbox-label {
     display: flex;
@@ -195,6 +250,7 @@ th {
     cursor: pointer;
     color: var(--text-header);
 }
+
 .header-checkbox-label input {
     margin-right: 8px;
     width: 16px;
@@ -218,7 +274,7 @@ th {
 }
 
 #logoutBtn:hover {
-    background-color: #c82333; 
+    background-color: #c82333;
 }
 
 /* --- SCROLL TO TOP BUTTON --- */
@@ -237,7 +293,7 @@ th {
     border-radius: 50%;
     width: 45px;
     height: 45px;
-    display: none; 
+    display: none;
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 6px var(--shadow);
@@ -251,24 +307,24 @@ th {
 
 /* --- MODAL STYLES --- */
 .modal {
-    display: none; 
-    position: fixed; 
-    z-index: 1000; 
+    display: none;
+    position: fixed;
+    z-index: 1000;
     left: 0;
     top: 0;
-    width: 100%; 
-    height: 100%; 
-    overflow: auto; 
-    background-color: rgba(0,0,0,0.4); 
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
 }
 
 .modal-content {
     background-color: var(--bg-card);
     color: var(--text-main);
-    margin: 10% auto; 
+    margin: 10% auto;
     padding: 20px;
     border: 1px solid var(--border-color);
-    width: 80%; 
+    width: 80%;
     max-width: 500px;
     border-radius: 8px;
     box-shadow: 0 4px 8px var(--shadow);
@@ -297,12 +353,24 @@ th {
 }
 
 @keyframes animatetop {
-    from {top: -300px; opacity: 0}
-    to {top: 0; opacity: 1}
+    from {
+        top: -300px;
+        opacity: 0
+    }
+
+    to {
+        top: 0;
+        opacity: 1
+    }
 }
 
 /* --- GLOBAL INPUTS --- */
-input[type="text"], input[type="password"], input[type="email"], input[type="number"], select, textarea {
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+select,
+textarea {
     background-color: var(--input-bg);
     color: var(--text-main);
     border: 1px solid var(--border-color);
@@ -317,7 +385,9 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     left: 20px;
     z-index: 100;
 }
-.profile-btn, .menu-btn {
+
+.profile-btn,
+.menu-btn {
     background-color: var(--bg-card);
     color: var(--text-main);
     padding: 10px 16px;
@@ -330,18 +400,34 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     gap: 8px;
     box-shadow: 0 2px 5px var(--shadow);
     transition: all 0.2s;
+    margin-bottom: 0;
 }
-.profile-btn:hover, .menu-btn:hover { background-color: var(--bg-hover); transform: translateY(-1px); }
+
+.profile-btn:hover,
+.menu-btn:hover {
+    background-color: var(--bg-hover);
+    transform: translateY(-1px);
+}
 
 .dropdown-content {
-    background-color: var(--bg-card);
+    display: none;
+    position: absolute;
+    right: 0;
+    
+    /* NEW: Anchoring & Gap Removal */
+    top: 100%;        /* Starts exactly at the bottom of the parent */
+    margin-top: 0;    /* Removes the 5px gap you had previously */
+    
+    /* NEW: Vital for submenus to work */
+    overflow: visible; /* Was 'hidden' - MUST be visible for fly-out menus */
+    
+    background-color: #f9f9f9;
     min-width: 180px;
-    box-shadow: 0 8px 16px 0 var(--shadow);
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
     border-radius: 4px;
-    z-index: 1;
-    overflow: hidden;
-    margin-top: 5px;
-    border: 1px solid var(--border-color);
+    border-top-right-radius: 0; /* Optional: Squaring the corner touching the button looks neater */
+    z-index: 1000;
+    border: 1px solid #ddd;
 }
 .dropdown-content a {
     color: var(--text-main);
@@ -351,13 +437,15 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     text-align: left;
     transition: background-color 0.2s;
 }
+
 .dropdown-content a:hover {
     background-color: var(--bg-hover);
     color: var(--primary);
 }
 
 .profile-dropdown {
-    left: 0; right: auto; 
+    left: 0;
+    right: auto;
     min-width: 160px;
 }
 
@@ -367,9 +455,11 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     display: flex;
     align-items: center;
 }
+
 .password-wrapper input {
-    padding-right: 40px; 
+    padding-right: 40px;
 }
+
 .btn-toggle-pw {
     position: absolute;
     right: 5px;
@@ -382,6 +472,7 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     align-items: center;
     justify-content: center;
 }
+
 .btn-toggle-pw:hover {
     color: var(--text-main);
 }
@@ -405,7 +496,7 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     justify-content: center;
     transition: transform 0.2s, background-color 0.2s;
     margin: 0;
-    padding: 0; 
+    padding: 0;
 }
 
 #globalHelpBtn svg {
@@ -426,13 +517,13 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 /* Modal Overlay */
 .help-modal-overlay {
     display: none;
-    position: fixed; 
-    z-index: 3000; 
+    position: fixed;
+    z-index: 3000;
     left: 0;
     top: 0;
-    width: 100%; 
-    height: 100%; 
-    background-color: rgba(0,0,0,0.5); 
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -460,8 +551,15 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 }
 
 @keyframes slideDown {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .help-close-btn {
@@ -482,7 +580,8 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     color: var(--text-main);
 }
 
-.help-body ul, .help-body ol {
+.help-body ul,
+.help-body ol {
     padding-left: 20px;
     margin-top: 10px;
 }
@@ -541,13 +640,30 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 }
 
 /* Custom Colors for Active States */
-.type-badge[data-type="System"].active { background-color: var(--info); border-color: var(--info); }
-.type-badge[data-type="Members"].active { background-color: var(--success); border-color: var(--success); }
-.type-badge[data-type="Skills"].active { background-color: var(--warning); border-color: var(--warning); color: #333; }
-.type-badge[data-type="Email"].active { background-color: var(--primary); border-color: var(--primary); }
+.type-badge[data-type="System"].active {
+    background-color: var(--info);
+    border-color: var(--info);
+}
+
+.type-badge[data-type="Members"].active {
+    background-color: var(--success);
+    border-color: var(--success);
+}
+
+.type-badge[data-type="Skills"].active {
+    background-color: var(--warning);
+    border-color: var(--warning);
+    color: #333;
+}
+
+.type-badge[data-type="Email"].active {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
 
 /* Filter Inputs */
-.filter-select, .filter-date {
+.filter-select,
+.filter-date {
     padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
@@ -565,7 +681,10 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     cursor: pointer;
     font-weight: bold;
 }
-.btn-filter:hover { background-color: #0056b3; }
+
+.btn-filter:hover {
+    background-color: #0056b3;
+}
 
 .btn-reset-filter {
     background-color: #6c757d;
@@ -575,7 +694,10 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     border-radius: 4px;
     cursor: pointer;
 }
-.btn-reset-filter:hover { background-color: #5a6268; }
+
+.btn-reset-filter:hover {
+    background-color: #5a6268;
+}
 
 /* --- PAGINATION CONTROLS --- */
 .pagination-container {
@@ -654,7 +776,7 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     width: 18px;
     height: 18px;
     stroke-width: 2px;
-    margin-right: 2px; 
+    margin-right: 2px;
     margin-top: 2px;
 }
 
@@ -666,7 +788,12 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     border-top-color: var(--primary);
     animation: spin 1s ease-in-out infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
 
 /* Demo Banner Global Style */
 .demo-banner {
@@ -675,19 +802,21 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     font-weight: bold;
     text-align: center;
     padding: 12px;
-    margin: -20px -20px 20px -20px; 
+    margin: -20px -20px 20px -20px;
     border-bottom: 1px solid #e0a800;
-    display: none; 
+    display: none;
     font-size: 14px;
     position: relative;
-    z-index: 50; 
+    z-index: 50;
 }
+
 /* --- TOAST NOTIFICATIONS --- */
 #toast-container {
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 10000; /* Above everything */
+    z-index: 10000;
+    /* Above everything */
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -702,7 +831,8 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     border-radius: 6px;
     box-shadow: 0 4px 12px var(--shadow);
     display: flex;
-    align-items: flex-start; /* Align top for long text */
+    align-items: flex-start;
+    /* Align top for long text */
     gap: 12px;
     opacity: 0;
     transform: translateX(100%);
@@ -718,23 +848,44 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 }
 
 /* Toast Types (Using CSS Variables defined in Root) */
-.toast-success { border-left-color: var(--success); }
-.toast-success .toast-icon { color: var(--success); }
+.toast-success {
+    border-left-color: var(--success);
+}
 
-.toast-error { border-left-color: var(--danger); }
-.toast-error .toast-icon { color: var(--danger); }
+.toast-success .toast-icon {
+    color: var(--success);
+}
 
-.toast-warning { border-left-color: var(--warning); }
-.toast-warning .toast-icon { color: var(--warning); }
+.toast-error {
+    border-left-color: var(--danger);
+}
 
-.toast-info { border-left-color: var(--info); }
-.toast-info .toast-icon { color: var(--info); }
+.toast-error .toast-icon {
+    color: var(--danger);
+}
+
+.toast-warning {
+    border-left-color: var(--warning);
+}
+
+.toast-warning .toast-icon {
+    color: var(--warning);
+}
+
+.toast-info {
+    border-left-color: var(--info);
+}
+
+.toast-info .toast-icon {
+    color: var(--info);
+}
 
 /* Elements inside Toast */
 .toast-icon {
     display: flex;
     align-items: center;
-    margin-top: 2px; /* Visual alignment with text */
+    margin-top: 2px;
+    /* Visual alignment with text */
 }
 
 .toast-message {
@@ -749,15 +900,22 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     line-height: 1;
     opacity: 0.7;
 }
+
 .toast-close:hover {
     opacity: 1;
     color: var(--text-main);
 }
+
 /* --- MOBILE CARD VIEW --- */
 @media screen and (max-width: 768px) {
-    
+
     /* 1. Global Table Resets for Mobile */
-    table, thead, tbody, th, td, tr {
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
         display: block;
     }
 
@@ -774,7 +932,8 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
         border: 1px solid var(--border-color);
         border-radius: 8px;
         box-shadow: 0 2px 4px var(--shadow);
-        overflow: hidden; /* Keeps borders nice */
+        overflow: hidden;
+        /* Keeps borders nice */
     }
 
     td {
@@ -782,10 +941,12 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
         border: none;
         border-bottom: 1px solid var(--border-color);
         position: relative;
-        padding-left: 45% !important; /* Make room for the label */
+        padding-left: 45% !important;
+        /* Make room for the label */
         padding-top: 12px;
         padding-bottom: 12px;
-        text-align: right; /* Align content to the right */
+        text-align: right;
+        /* Align content to the right */
         min-height: 40px;
         display: flex;
         align-items: center;
@@ -801,55 +962,93 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     /* The "Label" (Pseudo-element) */
     td::before {
         position: absolute;
-        top: 12px; /* Match padding */
+        top: 12px;
+        /* Match padding */
         left: 15px;
-        width: 40%; 
+        width: 40%;
         white-space: nowrap;
         font-weight: bold;
         text-align: left;
         color: var(--text-muted);
-        content: attr(data-label); /* Fallback */
+        content: attr(data-label);
+        /* Fallback */
     }
 
     /* 2. DASHBOARD TABLE (#skillsTable) specific labels */
-    #skillsTable td:nth-of-type(1)::before { content: "Member"; }
-    #skillsTable td:nth-of-type(2)::before { content: "Skill"; }
-    #skillsTable td:nth-of-type(3)::before { content: "Due Date"; }
-    #skillsTable td:nth-of-type(4)::before { content: "Actions"; }
+    #skillsTable td:nth-of-type(1)::before {
+        content: "Member";
+    }
+
+    #skillsTable td:nth-of-type(2)::before {
+        content: "Skill";
+    }
+
+    #skillsTable td:nth-of-type(3)::before {
+        content: "Due Date";
+    }
+
+    #skillsTable td:nth-of-type(4)::before {
+        content: "Actions";
+    }
 
     /* Dashboard: specific tweaks */
     #skillsTable td:nth-of-type(4) {
-        display: block; /* Stack checkboxes vertically */
+        display: block;
+        /* Stack checkboxes vertically */
         text-align: right;
     }
+
     #skillsTable .header-checkbox-label {
         /* Hide master checkboxes on mobile to save space, or style them differently */
-        display: none !important; 
+        display: none !important;
     }
-    #skillsTable td:nth-of-type(4) > div {
+
+    #skillsTable td:nth-of-type(4)>div {
         /* The flex container for email/wa buttons */
         justify-content: flex-end;
     }
 
     /* 3. MANAGEMENT TABLES (Members, Skills, Users) */
     /* We target them broadly but apply labels based on assumption of column order */
-    
+
     /* Manage Members Table */
     /* Col 1: Checkbox, 2: Enabled, 3: Name, 4: Email, 5: Mobile, 6: Prefs, 7: Actions */
-    .container table:not(#skillsTable) td:nth-of-type(1) { text-align: left; padding-left: 15px !important; } /* Checkbox row */
-    .container table:not(#skillsTable) td:nth-of-type(2)::before { content: "Status"; }
-    .container table:not(#skillsTable) td:nth-of-type(3)::before { content: "Name"; }
-    .container table:not(#skillsTable) td:nth-of-type(4)::before { content: "Email"; }
-    .container table:not(#skillsTable) td:nth-of-type(5)::before { content: "Mobile"; }
-    .container table:not(#skillsTable) td:nth-of-type(6)::before { content: "Prefs"; }
-    .container table:not(#skillsTable) td:nth-of-type(7)::before { content: "Actions"; }
+    .container table:not(#skillsTable) td:nth-of-type(1) {
+        text-align: left;
+        padding-left: 15px !important;
+    }
+
+    /* Checkbox row */
+    .container table:not(#skillsTable) td:nth-of-type(2)::before {
+        content: "Status";
+    }
+
+    .container table:not(#skillsTable) td:nth-of-type(3)::before {
+        content: "Name";
+    }
+
+    .container table:not(#skillsTable) td:nth-of-type(4)::before {
+        content: "Email";
+    }
+
+    .container table:not(#skillsTable) td:nth-of-type(5)::before {
+        content: "Mobile";
+    }
+
+    .container table:not(#skillsTable) td:nth-of-type(6)::before {
+        content: "Prefs";
+    }
+
+    .container table:not(#skillsTable) td:nth-of-type(7)::before {
+        content: "Actions";
+    }
 
     /* Fix: "Manage Skills" has fewer columns, so we override specific indices if needed */
     /* This generic approach works reasonably well, but for perfect labels on every page, 
        we would add data-label attributes in HTML. For now, this covers 90% of cases. */
 
-/* 4. UI Adjustments for Mobile Header */
-    
+    /* 4. UI Adjustments for Mobile Header */
+
     /* Position buttons in top corners */
     .profile-menu {
         position: absolute;
@@ -858,12 +1057,12 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
         width: auto;
     }
 
-.header-menu {
-    position: relative;
-    display: inline-block;
-    z-index: 100;
-    
-}
+    .header-menu {
+        position: relative;
+        display: inline-block;
+        z-index: 100;
+
+    }
 
     /* Push the main title down so buttons don't cover it */
     #mainHeader {
@@ -872,47 +1071,57 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
         text-align: center;
         padding: 0 10px;
     }
-    
+
     /* Adjust Controls Layout (Vertical Stack) */
     #controls {
         flex-direction: column;
         align-items: stretch;
     }
-    #controls button, #controls div {
+
+    #controls button,
+    #controls div {
         margin-right: 0;
         width: 100%;
         margin-bottom: 10px;
     }
+
     /* Fix: Ensure Days Input container takes full width */
-    #controls > div {
+    #controls>div {
         display: flex;
         align-items: center;
         justify-content: space-between;
     }
+
     #daysInput {
-        width: 60px !important; 
+        width: 60px !important;
         flex-shrink: 0;
     }
-    
+
     /* Adjust Filter Chips */
     .type-toggles {
         flex-wrap: wrap;
         justify-content: center;
         margin-top: 5px;
     }
+
     .type-badge {
         flex: 1 1 auto;
         text-align: center;
         margin-bottom: 5px;
     }
+
     #scrollTopBtn {
-        z-index: 2000 !important; /* Ensure it's above cards and overlays */
-        bottom: 30px; /* Raise slightly for mobile browser bars */
+        z-index: 2000 !important;
+        /* Ensure it's above cards and overlays */
+        bottom: 30px;
+        /* Raise slightly for mobile browser bars */
         right: 20px;
-        width: 50px; /* Slightly larger touch target */
+        width: 50px;
+        /* Slightly larger touch target */
         height: 50px;
     }
 }
+
 /* --- ACTION TOOLBAR --- */
 .action-bar {
     background-color: var(--bg-card);
@@ -965,33 +1174,40 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
         flex-direction: column;
         align-items: stretch;
     }
+
     .action-group {
         flex-direction: column;
         width: 100%;
     }
+
     .action-group button {
         width: 100%;
         margin-right: 0;
     }
+
     .days-wrapper {
         justify-content: space-between;
         width: 100%;
-        box-sizing: border-box; /* Ensure padding doesn't overflow width */
+        box-sizing: border-box;
+        /* Ensure padding doesn't overflow width */
     }
 }
+
 /* Training Planner Specifics */
 
 /* Highlight for the official training day */
 .day-column.training-day {
     border: 2px solid var(--primary);
     /* UPDATED: 'Sand' colour */
-    background-color: #f5f5dc; 
+    background-color: #f5f5dc;
 }
 
 /* Optional: Update header to match or contrast nicely */
 .day-column.training-day .day-header {
-    background-color: #e0d6b9 !important; /* Darker sand for header */
-    color: #333 !important; /* Dark text for contrast on sand */
+    background-color: #e0d6b9 !important;
+    /* Darker sand for header */
+    color: #333 !important;
+    /* Dark text for contrast on sand */
     border-bottom: 3px solid #c2b89d;
 }
 
@@ -999,11 +1215,13 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 .day-column.hidden-day {
     display: none !important;
 }
+
 /* --- Training Planner Improvements --- */
 
 /* Teal Button */
 .btn-teal {
-    background-color: #20c997; /* Teal */
+    background-color: #20c997;
+    /* Teal */
     color: white;
     border: none;
     padding: 6px 12px;
@@ -1011,6 +1229,7 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     cursor: pointer;
     transition: background-color 0.2s;
 }
+
 .btn-teal:hover {
     background-color: #1aa179;
 }
@@ -1018,12 +1237,15 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 /* Distinct Calendar Header */
 .day-header {
     /* Overriding previous style */
-    background-color: #495057 !important; /* Darker distinct grey */
+    background-color: #495057 !important;
+    /* Darker distinct grey */
     color: #fff !important;
-    border-bottom: 3px solid rgba(0,0,0,0.1);
+    border-bottom: 3px solid rgba(0, 0, 0, 0.1);
 }
+
 .day-header.today {
-    background-color: var(--primary) !important; /* Keep Blue for Today */
+    background-color: var(--primary) !important;
+    /* Keep Blue for Today */
     border-bottom: 3px solid #0056b3;
 }
 
@@ -1031,21 +1253,26 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 .week-grid {
     display: flex !important;
     gap: 10px;
-    overflow-x: hidden; /* CHANGED: Never show horizontal scrollbar */
-    height: 100%;       /* Ensure it uses vertical space */
+    overflow-x: hidden;
+    /* CHANGED: Never show horizontal scrollbar */
+    height: 100%;
+    /* Ensure it uses vertical space */
 }
 
 .day-column {
-    flex: 1;            /* Default: Share space equally */
-    min-width: 0;       /* CHANGED: Allow shrinking to fit screen without scroll */
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Smooth resize */
+    flex: 1;
+    /* Default: Share space equally */
+    min-width: 0;
+    /* CHANGED: Allow shrinking to fit screen without scroll */
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    /* Smooth resize */
     display: flex;
     flex-direction: column;
 }
 
 /* Busy days get 3x the available space */
 .day-column.has-sessions {
-    flex: 3; 
+    flex: 3;
     /* Removed fixed min-width to prevent overflow */
 }
 
@@ -1053,15 +1280,18 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 .day-column.hidden-day {
     display: none !important;
 }
+
 /* Visual style for dates in the past */
 .day-column.past-day {
     opacity: 0.6;
-    background-color: rgba(0, 0, 0, 0.05); /* Light grey tint */
+    background-color: rgba(0, 0, 0, 0.05);
+    /* Light grey tint */
 }
 
 /* Ensure the header also looks "inactive" */
 .day-column.past-day .day-header {
-    background-color: #6c757d !important; /* Muted grey */
+    background-color: #6c757d !important;
+    /* Muted grey */
     opacity: 0.8;
 }
 
@@ -1069,6 +1299,7 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 body.dark-mode .day-column.past-day {
     background-color: rgba(255, 255, 255, 0.05);
 }
+
 /* Global Floating Back Button (Paste this AFTER the final closing bracket) */
 .back-btn {
     position: fixed;
@@ -1077,14 +1308,15 @@ body.dark-mode .day-column.past-day {
     z-index: 2000;
     text-decoration: none;
     color: #fff;
-    background-color: #343a40; /* Hardcoded color just to be safe */
+    background-color: #343a40;
+    /* Hardcoded color just to be safe */
     width: 45px;
     height: 45px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     transition: all 0.2s ease;
 }
 
@@ -1092,6 +1324,7 @@ body.dark-mode .day-column.past-day {
     background-color: #23272b;
     transform: translateY(-2px);
 }
+
 /* --- Submenu Styles --- */
 
 /* The container for a menu item that has a submenu */
@@ -1100,8 +1333,9 @@ body.dark-mode .day-column.past-day {
 }
 
 /* The arrow icon to indicate a submenu */
-.dropdown-submenu > a::after {
-    content: "◀"; /* Left arrow */
+.dropdown-submenu>a::after {
+    content: "◀";
+    /* Left arrow */
     float: right;
     margin-right: -5px;
     font-size: 10px;
@@ -1114,8 +1348,10 @@ body.dark-mode .day-column.past-day {
     display: none;
     position: absolute;
     top: 0;
-    right: 100%; /* Pushes it to the LEFT of the parent */
-    margin-top: -1px; /* Aligns top borders */
+    right: 100%;
+    /* Pushes it to the LEFT of the parent */
+    margin-top: -1px;
+    /* Aligns top borders */
     background-color: var(--bg-card);
     min-width: 200px;
     box-shadow: 0 8px 16px 0 var(--shadow);
@@ -1138,7 +1374,8 @@ body.dark-mode .day-column.past-day {
         border-left: 2px solid var(--border-color);
         margin-left: 10px;
     }
-    .dropdown-submenu > a::after {
+
+    .dropdown-submenu>a::after {
         content: "▼";
         float: right;
     }
