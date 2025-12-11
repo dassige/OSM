@@ -1,20 +1,15 @@
 // public/app.js
 const socket = io();
 
-// =============================================================================
-// 1. GLOBAL STATE & CONFIG
-// =============================================================================
+// ... (Keep existing GLOBAL STATE & CONFIG) ...
 let currentOsmData = [];
 let currentSort = { column: 'name', order: 'asc' };
-// [NEW] Global State for WA Status
 let isWaReady = false;
-let showCompletionToast = false; // Control flag
+let showCompletionToast = false;
 
-// Icons
 const ICON_ASC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
 const ICON_DESC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 
-// Elements
 const sendEmailsBtn = document.getElementById('sendEmailsBtn');
 const viewBtn = document.getElementById('viewBtn');
 const terminal = document.getElementById('terminal');
@@ -30,10 +25,7 @@ const progressBar = document.getElementById('progressBar');
 const showConsoleCheckbox = document.getElementById('showConsoleCheckbox');
 const consoleHeader = document.getElementById('consoleHeader');
 
-// =============================================================================
-// 2. INITIALIZATION
-// =============================================================================
-
+// ... (Keep existing INITIALIZATION) ...
 function init() {
     socket.on("connect_error", (err) => {
         if (err.message === "unauthorized") window.location.href = "/login.html";
@@ -41,7 +33,6 @@ function init() {
 
     socket.on('connect', () => {
         socket.emit('get-preferences');
-        // [NEW] Check WA status on connect
         socket.emit('wa-get-status');
     });
 
@@ -55,8 +46,6 @@ function init() {
             if (config.appBackground) document.body.style.backgroundImage = `url('${config.appBackground}')`;
             if (config.version) document.getElementById('disp-version').textContent = config.version;
             if (config.deployDate) document.getElementById('disp-date').textContent = config.deployDate;
-
-            // Demo Banner
             if (config.appMode === 'demo') {
                 document.getElementById('demoBanner').style.display = 'block';
             }
@@ -69,21 +58,14 @@ function init() {
     });
 }
 
-// =============================================================================
-// 3. UI HELPERS
-// =============================================================================
-
+// ... (Keep existing UI HELPERS) ...
 function setRunningState() {
     sendEmailsBtn.disabled = true;
     viewBtn.disabled = true;
-    // Disable checkboxes and buttons
     document.querySelectorAll('.header-checkbox-label input').forEach(cb => cb.disabled = true);
     document.querySelectorAll('.btn-round').forEach(btn => btn.disabled = true);
-
     terminal.textContent = '> Starting Notification Process...\n';
-
     if (window.showToast) window.showToast('Starting process...', 'info');
-
     progressContainer.style.display = 'block';
     progressBar.style.width = '0%';
     progressBar.textContent = 'Starting...';
@@ -91,35 +73,26 @@ function setRunningState() {
 
 function setIdleState(code) {
     const isTableVisible = tableContainer.style.display !== 'none';
-
     document.querySelectorAll('.header-checkbox-label input').forEach(cb => cb.disabled = !isTableVisible);
     document.querySelectorAll('.btn-round').forEach(btn => btn.disabled = false);
-
     viewBtn.disabled = false;
     updateSendButtonState();
 
     if (code === 0) {
-        // [CHANGED] Only show toast if user initiated the action
         if (showCompletionToast && window.showToast) {
             window.showToast('Completed Successfully', 'success');
         }
-
         terminal.textContent += `\n> Process exited with code ${code}`;
         progressBar.style.width = '100%';
         progressBar.textContent = 'Completed';
     } else {
-        // Always show errors
         if (window.showToast) window.showToast('Process Failed', 'error');
-        statusSpan.innerText = 'Failed'; // Fallback if element exists
-        statusSpan.style.color = 'red';
         terminal.textContent += `\n> Process exited with error code ${code}`;
     }
-
-    // [NEW] Reset the flag so next auto-refresh doesn't toast
     showCompletionToast = false;
-
     setTimeout(() => { progressContainer.style.display = 'none'; }, 3000);
 }
+
 function updateSendButtonState() {
     const role = document.body.getAttribute('data-user-role');
     if (role === 'guest') {
@@ -139,14 +112,12 @@ function updateRoleUI(role) {
         if (terminal) terminal.style.display = 'none';
         if (consoleHeader) consoleHeader.style.display = 'none';
     }
-
     if (role === 'guest') {
         if (sendEmailsBtn) sendEmailsBtn.style.display = 'none';
         if (viewBtn) {
             viewBtn.disabled = false;
             viewBtn.style.display = 'inline-block';
         }
-        // Hide action buttons via CSS or logic if needed
     }
 }
 
@@ -158,10 +129,7 @@ function toggleConsole(isVisible) {
     if (consoleHeader) consoleHeader.style.display = style;
 }
 
-// =============================================================================
-// 4. DATA & SORTING
-// =============================================================================
-
+// ... (Keep existing DATA & SORTING & RENDER) ...
 function fetchData(forceRefresh = false) {
     const days = parseInt(daysInput.value) || 30;
     viewBtn.disabled = true;
@@ -238,13 +206,10 @@ function renderTable() {
         }
         tr.appendChild(skillTd); tr.appendChild(dateTd);
 
-        // --- Calculate Preferences ---
         const prefs = (member.notificationPreference || 'email').split(',');
         const defaultEmail = prefs.includes('email');
         const defaultWa = prefs.includes('whatsapp');
-        // -----------------------------------------------------------
 
-        // Action Column
         const actionTd = document.createElement('td');
         actionTd.className = 'member-cell';
 
@@ -254,7 +219,6 @@ function renderTable() {
             wrapper.style.flexDirection = 'column';
             wrapper.style.gap = '8px';
 
-            // --- ROW 1: EMAIL ---
             const emailRow = document.createElement('div');
             emailRow.style.display = 'flex';
             emailRow.style.alignItems = 'center';
@@ -262,19 +226,15 @@ function renderTable() {
             emailRow.style.gap = '10px';
 
             const hasEmail = member.email && member.email.includes('@');
-            const emailTitle = hasEmail ? `Email: ${member.email}` : "No email configured";
-
             const emailLabel = document.createElement('label');
             emailLabel.className = 'email-label';
             emailLabel.style.marginBottom = '0';
-            // Use calculated defaultEmail here
             emailLabel.innerHTML = `<input type="checkbox" class="send-email-cb" data-name="${member.name}" ${hasEmail ? (defaultEmail ? 'checked' : '') : 'disabled'}> Email`;
-            emailLabel.title = emailTitle;
             if (!hasEmail) emailLabel.style.opacity = "0.5";
 
             const btnEmail = document.createElement('button');
             btnEmail.className = 'btn-round';
-            btnEmail.style.backgroundColor = '#6f42c1'; // Purple
+            btnEmail.style.backgroundColor = '#6f42c1'; 
             btnEmail.style.flexShrink = '0';
             btnEmail.title = hasEmail ? "Send Email Immediately" : "No Email Address";
             btnEmail.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
@@ -286,11 +246,9 @@ function renderTable() {
                 btnEmail.style.opacity = '0.5';
                 btnEmail.style.cursor = 'not-allowed';
             }
-
             emailRow.appendChild(emailLabel);
             emailRow.appendChild(btnEmail);
 
-            // --- ROW 2: WHATSAPP ---
             const waRow = document.createElement('div');
             waRow.style.display = 'flex';
             waRow.style.alignItems = 'center';
@@ -299,17 +257,11 @@ function renderTable() {
 
             const hasMobile = member.mobile && member.mobile.length > 5;
             const isWaDisabled = !hasMobile || !isWaReady;
-            let waTitle = `Mobile: ${member.mobile}`;
-            if (!hasMobile) waTitle = "No mobile configured";
-            else if (!isWaReady) waTitle = "WhatsApp service not started";
-
             const waLabel = document.createElement('label');
             waLabel.className = 'email-label';
             waLabel.style.marginBottom = '0';
-            // Use calculated defaultWa here
             const shouldCheckWa = defaultWa && !isWaDisabled;
             waLabel.innerHTML = `<input type="checkbox" class="send-wa-cb" data-name="${member.name}" ${isWaDisabled ? 'disabled' : (shouldCheckWa ? 'checked' : '')}> WhatsApp`;
-            waLabel.title = waTitle;
             if (isWaDisabled) waLabel.style.opacity = "0.5";
 
             const btnWa = document.createElement('button');
@@ -359,7 +311,6 @@ function renderTable() {
         }
     });
 
-    // Listeners
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.addEventListener('change', updateSendButtonState));
     setupMasterCheckbox('selectAllEmail', '.send-email-cb');
     setupMasterCheckbox('selectAllWhatsapp', '.send-wa-cb');
@@ -370,10 +321,8 @@ function renderTable() {
 function setupMasterCheckbox(masterId, targetClass) {
     const master = document.getElementById(masterId);
     if (!master) return;
-
     const newMaster = master.cloneNode(true);
     master.parentNode.replaceChild(newMaster, master);
-
     newMaster.addEventListener('change', (e) => {
         document.querySelectorAll(targetClass).forEach(cb => {
             if (!cb.disabled) cb.checked = e.target.checked;
@@ -382,12 +331,13 @@ function setupMasterCheckbox(masterId, targetClass) {
     });
 }
 
-// Single Action Logic
-function sendSingleAction(name, type) {
+// [UPDATED] Single Action Logic using confirmAction
+async function sendSingleAction(name, type) {
     const days = parseInt(daysInput.value) || 30;
     const label = type === 'email' ? 'Email' : 'WhatsApp';
 
-    if (confirm(`Send immediate ${label} reminder to ${name}?`)) {
+    // ASYNC CONFIRMATION
+    if (await confirmAction('Send Immediate Reminder', `Send immediate ${label} reminder to ${name}?`)) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         setRunningState();
 
@@ -406,11 +356,12 @@ function sendSingleAction(name, type) {
 // =============================================================================
 
 viewBtn.addEventListener('click', () => {
-    showCompletionToast = true; // [NEW] User clicked, so we want a toast
+    showCompletionToast = true;
     fetchData(true);
 });
 
-sendEmailsBtn.addEventListener('click', () => {
+// [UPDATED] Send Emails Handler
+sendEmailsBtn.addEventListener('click', async () => {
     const targets = [];
     document.querySelectorAll('#skillsTable tbody tr').forEach(row => {
         const emailCb = row.querySelector('.send-email-cb');
@@ -428,8 +379,9 @@ sendEmailsBtn.addEventListener('click', () => {
 
     if (targets.length === 0) return showToast('No actions selected', 'error');
 
-    if (confirm(`Process ${targets.length} members?`)) {
-        showCompletionToast = true; // [NEW] User clicked, so we want a toast
+    // ASYNC CONFIRMATION
+    if (await confirmAction('Bulk Notification', `Process ${targets.length} members?`)) {
+        showCompletionToast = true;
         setRunningState();
         const days = parseInt(daysInput.value) || 30;
         socket.emit('run-process-queue', targets, days);
@@ -451,7 +403,6 @@ setupChipToggle('btnHideNoUrl', 'hideNoUrl');
 setupChipToggle('btnExpiredOnly', 'expiredOnly');
 setupChipToggle('btnHideWithUrl', 'hideWithUrl');
 
-// Socket Events
 socket.on('preferences-data', (prefs) => {
     if (prefs.daysToExpiry !== undefined) daysInput.value = prefs.daysToExpiry;
     if (prefs.hideNoSkills) btnHideNoSkills.classList.add('active');
@@ -472,10 +423,8 @@ socket.on('preferences-data', (prefs) => {
     fetchData(false);
 });
 
-// [NEW] Listeners for WA Status Updates
 socket.on('wa-status-data', (data) => {
     isWaReady = (data.status === 'READY');
-    // Re-render table to update button states if data is already loaded
     if (currentOsmData.length > 0) renderTable();
 });
 
@@ -502,7 +451,6 @@ socket.on('expiring-skills-data', (data) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-// Helper: Utils
 function buildSkillHtml(skillObj) {
     let html = skillObj.skill;
     if (skillObj.isCritical) html = `<b>${html}</b>`;
@@ -522,14 +470,10 @@ function isDateInPast(dateStr) {
     const d = new Date(dateStr);
     return !isNaN(d.getTime()) && d < today;
 }
-//  Reset Logic for the Dashboard Header Button
+
 window.resetCheckboxesToDefaults = function () {
     if (!currentOsmData || currentOsmData.length === 0) return;
-
-    // Create a map for quick lookup
     const memberMap = new Map(currentOsmData.map(m => [m.name, m]));
-
-    // 1. Reset Email Checkboxes
     document.querySelectorAll('.send-email-cb').forEach(cb => {
         const name = cb.getAttribute('data-name');
         const member = memberMap.get(name);
@@ -538,8 +482,6 @@ window.resetCheckboxesToDefaults = function () {
             cb.checked = prefs.includes('email');
         }
     });
-
-    // 2. Reset WhatsApp Checkboxes
     document.querySelectorAll('.send-wa-cb').forEach(cb => {
         const name = cb.getAttribute('data-name');
         const member = memberMap.get(name);
@@ -548,18 +490,12 @@ window.resetCheckboxesToDefaults = function () {
             cb.checked = prefs.includes('whatsapp');
         }
     });
-
-    // 3. Reset Master Checkboxes
     const masterEmail = document.getElementById('selectAllEmail');
     if (masterEmail) masterEmail.checked = false;
-
     const masterWa = document.getElementById('selectAllWhatsapp');
     if (masterWa) masterWa.checked = false;
-
-    // 4. Update UI State
     updateSendButtonState();
     if (window.showToast) window.showToast("Reset to default preferences", "success");
 };
 
-// Start
 init();

@@ -271,6 +271,7 @@
     <script src="help.js"></script>
     <script src="theme.js"></script>
     <script src="toast.js"></script> 
+    <script src="utils.js"></script>
     <script>
         // Init UI
         fetch('/ui-config').then(r => r.json()).then(c => {
@@ -305,9 +306,10 @@
             } catch (e) { console.error("Auth check failed", e); }
         }
 
-        //  Maintenance Actions
+//  Maintenance Actions
         async function purgeLog() {
-            if (!confirm("DANGER: This will permanently delete ALL events from the log.\n\nAre you sure?")) return;
+            // ASYNC CONFIRM
+            if (!await confirmAction('Purge Log', "DANGER: This will permanently delete ALL events from the log.\n\nAre you sure?")) return;
             try {
                 const res = await fetch('/api/events/all', { method: 'DELETE' });
                 if (res.ok) { showToast('Log purged', 'success'); applyFilters(1); }
@@ -317,7 +319,8 @@
 
         async function pruneEvents() {
             const days = document.getElementById('pruneDays').value;
-            if (!confirm(`Delete events older than ${days} days?`)) return;
+            // ASYNC CONFIRM
+            if (!await confirmAction('Prune Events', `Delete events older than ${days} days?`)) return;
             try {
                 const res = await fetch('/api/events/prune', {
                     method: 'POST',
@@ -328,7 +331,6 @@
                 else { throw new Error((await res.json()).error); }
             } catch (e) { showToast( e.message, "error"); }
         }
-
         function exportLog() {
             // Build query string from current filters to export what is seen (or all if filters empty)
             const activeTypes = Array.from(document.querySelectorAll('.type-badge.active')).map(b => b.getAttribute('data-type'));

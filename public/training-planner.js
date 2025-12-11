@@ -409,51 +409,32 @@ function showMemberPopup(skillName) {
 
 function renderCalendar() {
     if (!currentStartDate) return;
-
     const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '';
-
     const options = { month: 'short', day: 'numeric' };
     const labelStart = new Date(currentStartDate);
     const labelEnd = new Date(currentStartDate);
     labelEnd.setDate(labelEnd.getDate() + 6);
-
-    document.getElementById('currentWeekLabel').textContent =
-        `${labelStart.toLocaleDateString('en-NZ', options)} - ${labelEnd.toLocaleDateString('en-NZ', options)}`;
-
-    // Determine "Today" based on the APP_TIMEZONE
+    document.getElementById('currentWeekLabel').textContent = `${labelStart.toLocaleDateString('en-NZ', options)} - ${labelEnd.toLocaleDateString('en-NZ', options)}`;
     const zonedToday = getZonedToday();
     const todayStr = `${zonedToday.getFullYear()}-${String(zonedToday.getMonth() + 1).padStart(2, '0')}-${String(zonedToday.getDate()).padStart(2, '0')}`;
 
     for (let i = 0; i < 7; i++) {
         const loopDate = new Date(currentStartDate);
         loopDate.setDate(loopDate.getDate() + i);
-
         const y = loopDate.getFullYear();
         const m = String(loopDate.getMonth() + 1).padStart(2, '0');
         const d = String(loopDate.getDate()).padStart(2, '0');
         const isoDate = `${y}-${m}-${d}`;
-
         const dayIndex = loopDate.getDay();
-
         const col = document.createElement('div');
         col.className = 'day-column';
-
-        // 1. Highlight Training Day
-        if (trainingDayIndex !== null && dayIndex === trainingDayIndex) {
-            col.classList.add('training-day');
-        }
-
-        // 2. [NEW] Grey out Past Days
-        // Since getZonedToday returns midnight, and loopDate is midnight, strict comparison works
-        if (loopDate < zonedToday) {
-            col.classList.add('past-day');
-        }
+        if (trainingDayIndex !== null && dayIndex === trainingDayIndex) col.classList.add('training-day');
+        if (loopDate < zonedToday) col.classList.add('past-day');
 
         const header = document.createElement('div');
         header.className = 'day-header';
         if (isoDate === todayStr) header.classList.add('today');
-
         const dayName = loopDate.toLocaleDateString('en-NZ', { weekday: 'short' });
         const dayNum = loopDate.getDate();
         header.textContent = `${dayName} ${dayNum}`;
@@ -464,31 +445,13 @@ function renderCalendar() {
         content.setAttribute('data-date', isoDate);
         content.setAttribute('data-day-index', dayIndex);
 
-        //  Drag & Drop Events
-        // Only attach listeners if the date is NOT in the past
         if (loopDate >= zonedToday) {
-            content.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                content.classList.add('drag-over');
-            });
-
-            content.addEventListener('dragleave', () => {
-                content.classList.remove('drag-over');
-            });
-
-            content.addEventListener('drop', async (e) => {
-                e.preventDefault();
-                content.classList.remove('drag-over');
-                const skillName = e.dataTransfer.getData('text/plain');
-                if (skillName) await saveSession(isoDate, skillName);
-            });
+            content.addEventListener('dragover', (e) => { e.preventDefault(); content.classList.add('drag-over'); });
+            content.addEventListener('dragleave', () => { content.classList.remove('drag-over'); });
+            content.addEventListener('drop', async (e) => { e.preventDefault(); content.classList.remove('drag-over'); const skillName = e.dataTransfer.getData('text/plain'); if (skillName) await saveSession(isoDate, skillName); });
         }
-
-        col.appendChild(header);
-        col.appendChild(content);
-        grid.appendChild(col);
+        col.appendChild(header); col.appendChild(content); grid.appendChild(col);
     }
-
     applyDayFilter();
 }
 function applyDayFilter() {
@@ -519,40 +482,29 @@ function applyDayFilter() {
 }
 
 // --- DATA & API ---
-
+// --- DATA & API ---
 async function loadSessions() {
     if (!currentStartDate) return;
-
     const start = new Date(currentStartDate);
     const end = new Date(currentStartDate);
     end.setDate(end.getDate() + 6);
-
-    // Format as YYYY-MM-DD using local math to preserve Zoned date
-    const formatDate = (date) => {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    };
-
+    const formatDate = (date) => { const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; };
     const startStr = formatDate(start);
     const endStr = formatDate(end);
 
     try {
         const res = await fetch(`/api/training-sessions?start=${startStr}&end=${endStr}`);
         const sessions = await res.json();
-
         document.querySelectorAll('.day-content').forEach(el => el.innerHTML = '');
-
         sessions.forEach(sess => {
             const container = document.getElementById(`day-${sess.date}`);
             if (container) {
                 const card = document.createElement('div');
                 card.className = 'session-card';
                 const safeName = sess.skill_name.replace(/'/g, "\\'");
-
+                // [UPDATED] Pass extra info to deleteSession
                 card.innerHTML = `
-                    <span class="session-delete" onclick="deleteSession(${sess.id}); event.stopPropagation();" title="Remove Session">&times;</span>
+                    <span class="session-delete" onclick="deleteSession(${sess.id}, '${safeName}', '${sess.date}'); event.stopPropagation();" title="Remove Session">&times;</span>
                     <div style="cursor:pointer;" onclick="showMemberPopup('${safeName}')" title="View expiring members">
                         <strong>${sess.skill_name}</strong>
                     </div>
@@ -560,32 +512,20 @@ async function loadSessions() {
                 container.appendChild(card);
             }
         });
-
         applyDayFilter();
-
-    } catch (e) {
-        if (window.showToast) window.showToast("Failed to load schedule", "error");
-    }
+    } catch (e) { if (window.showToast) window.showToast("Failed to load schedule", "error"); }
 }
 
 async function saveSession(date, skillName) {
     try {
-        const res = await fetch('/api/training-sessions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ date, skillName })
-        });
-        if (res.ok) {
-            await loadSessions();
-            if (window.showToast) window.showToast("Training scheduled", "success");
-        }
-    } catch (e) {
-        if (window.showToast) window.showToast("Error saving training", "error");
-    }
+        const res = await fetch('/api/training-sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, skillName }) });
+        if (res.ok) { await loadSessions(); if (window.showToast) window.showToast("Training scheduled", "success"); }
+    } catch (e) { if (window.showToast) window.showToast("Error saving training", "error"); }
 }
 
-async function deleteSession(id) {
-    if (!confirm("Remove this training session?")) return;
+// [UPDATED] Delete Session with Context
+async function deleteSession(id, skillName, date) {
+    if (!await confirmAction('Remove Session', `Remove '${skillName}' on ${date}?`)) return;
     try {
         await fetch(`/api/training-sessions/${id}`, { method: 'DELETE' });
         await loadSessions();
@@ -593,8 +533,7 @@ async function deleteSession(id) {
         if (window.showToast) window.showToast("Error removing session", "error");
     }
 }
-
-// --- SCROLL UTILS ---
+//-- SCROLL UTILS ---
 const scrollTopBtn = document.getElementById("scrollTopBtn");
 window.onscroll = function () {
     if (scrollTopBtn) {
