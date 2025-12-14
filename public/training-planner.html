@@ -98,16 +98,15 @@
             border: 1px solid var(--border-color);
             min-width: 0;
             overflow: hidden;
-            /* NEW: Ensures the header corners clip correctly */
+            /* Ensures the header corners clip correctly */
         }
 
         .calendar-controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            /* NEW: Header Styling */
+            /* Header Styling */
             background-color: var(--bg-body);
-            /* Distinct background (Light Grey / Dark Grey) */
             border-bottom: 1px solid var(--border-color);
 
             /* Negative margins to pull the header to the edges of the panel */
@@ -118,7 +117,39 @@
             color: var(--text-main);
         }
 
-        /* Note: .week-grid is now Flex via styles.css */
+        /* Navigation Buttons */
+        .btn-nav {
+            background-color: #7c8085; /* Dark Grey */
+            color: white;
+            border: 1px solid #343a40;
+            padding: 8px 16px;
+            border-radius: 30px; /* Rounded pill shape */
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-nav:hover {
+            background-color: #23272b; /* Darker on hover */
+            border-color: #1d2124;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .btn-nav:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        /* Basic Grid Definition */
+        .week-grid {
+            display: flex;
+            flex-direction: row;
+            height: 100%;
+            overflow: hidden; /* Desktop: Clip overflow */
+        }
 
         .day-column {
             background: var(--bg-body);
@@ -127,15 +158,39 @@
             display: flex;
             flex-direction: column;
             min-height: 400px;
+            flex: 1; /* Distribute space evenly by default */
+            margin: 0 4px; /* Slight gap between cols */
+            transition: flex-grow 0.3s ease; /* Smooth animation when days are hidden */
         }
 
+        /* [NEW] Training Day Highlight (Light Pink) */
+        .training-day {
+            background-color: #ffe6e6 !important; 
+            border-color: #ffcccc;
+        }
+
+        .hidden-day {
+            display: none !important;
+        }
+
+        .has-sessions {
+            flex: 1.5; /* Give slightly more width to busy days */
+        }
+
+        /* [UPDATED] Day Header - Dark Grey Background */
         .day-header {
+            background-color: #7c8085;
+            color: white;
             padding: 10px;
             text-align: center;
-            /* Header styles are now augmented by styles.css (dark grey) */
             border-radius: 5px 5px 0 0;
             font-weight: bold;
             font-size: 0.9em;
+        }
+
+        /* Highlight for 'Today' in the header */
+        .day-header.today {
+            background-color: var(--primary); /* Blue for current day */
         }
 
         .day-content {
@@ -196,23 +251,46 @@
             border-bottom: none;
         }
 
+        /* --- MOBILE OVERRIDES (Agenda View) --- */
         @media screen and (max-width: 768px) {
             .planner-container {
                 flex-direction: column;
-                height: auto;
-                /* Allow scrolling */
+                height: auto; /* Allow full page scroll */
                 overflow: visible;
             }
 
+            /* 1. Limit the Source Panel Height */
             .skill-source-panel {
                 width: 100%;
                 min-width: 0;
-                max-height: 200px;
-                /* Limit height when stacked */
+                max-height: 250px; /* Scrollable area for skills */
+                margin-bottom: 15px;
             }
 
+            /* 2. Transform Calendar to Vertical List */
             .calendar-panel {
                 min-height: 500px;
+                height: auto;
+                overflow: visible;
+            }
+
+            .week-grid {
+                flex-direction: column; /* Stack days vertically */
+                height: auto;
+            }
+
+            .day-column {
+                min-height: 150px; /* Smaller height per day */
+                margin-bottom: 10px;
+                margin-left: 0;
+                margin-right: 0;
+            }
+            
+            /* 3. Adjust Header for Vertical View */
+            .day-header {
+                text-align: left;
+                padding-left: 15px;
+                border-radius: 6px 6px 0 0;
             }
         }
     </style>
@@ -279,7 +357,7 @@
 
             <div class="calendar-panel">
                 <div class="calendar-controls">
-                    <button onclick="changeWeek(-1)" class="btn-teal">&lt; Prev Week</button>
+                    <button onclick="changeWeek(-1)" class="btn-nav">&lt; Prev Week</button>
                     <div style="display:flex; align-items:center; gap:15px;">
                         <span id="currentWeekLabel" style="font-weight:bold; font-size: 1.1em;">...</span>
                         <button onclick="goToToday()" class="btn-sm"
@@ -296,7 +374,7 @@
                             </svg>
                         </button>
                     </div>
-                    <button onclick="changeWeek(1)" class="btn-teal">Next Week &gt;</button>
+                    <button onclick="changeWeek(1)" class="btn-nav">Next Week &gt;</button>
                 </div>
                 <div id="calendarGrid" class="week-grid"></div>
             </div>
@@ -353,6 +431,16 @@
                 <button onclick="closeModal('memberModal')"
                     style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Close</button>
             </div>
+        </div>
+    </div>
+
+    <div id="mobileScheduleModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('mobileScheduleModal')">&times;</span>
+            <h2 id="schedModalTitle" style="margin-top:0; border-bottom:1px solid #ddd; padding-bottom:10px;">Schedule Training</h2>
+            <p>Select a day for: <strong id="schedSkillName"></strong></p>
+            <div id="schedDayButtons" style="display:flex; flex-direction:column; gap:8px; margin-top:15px;">
+                </div>
         </div>
     </div>
 
