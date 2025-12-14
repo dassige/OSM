@@ -8,45 +8,216 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         /* ... (Keep styles) ... */
-        .container { max-width: 900px; margin: 40px auto; }
-        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); margin-top: 20px; color: #333; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        th { background: #f8f9fa; font-weight: bold; color: black; }
-        .btn-add { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; float: right; }
-        .btn-icon { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 4px; transition: background-color 0.2s, color 0.2s; vertical-align: middle; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-icon:hover { background-color: rgba(0, 0, 0, 0.08); }
-        .btn-icon.edit { color: #007bff; }
-        .btn-icon.edit:hover { color: #0056b3; }
-        .btn-icon.reset { color: #ffc107; }
-        .btn-icon.reset:hover { color: #d39e00; }
-        .btn-icon.delete { color: #dc3545; }
-        .btn-icon.delete:hover { color: #bd2130; }
-        .btn-del { background: #dc3545; }
-        .btn-reset { background: #ffc107; color: #333; }
-        .btn-edit { background: #007bff; }
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); }
-        .modal-content { background: #fff; margin: 10% auto; padding: 20px; width: 400px; border-radius: 8px; position: relative; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
-        .close-btn { position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 20px; }
-        .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-right: 8px; vertical-align: middle; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .btn-content { display: flex; align-items: center; justify-content: center; }
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 12px; color: white; }
-        .badge-admin { background: #6f42c1; }
-        .badge-simple { background: #17a2b8; }
-        .badge-guest { background: #6c757d; }
-        .badge-superadmin { background: #d63384; }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            color: #333;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: black;
+        }
+
+        .btn-add {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s, color 0.2s;
+            vertical-align: middle;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-icon.edit {
+            color: #007bff;
+        }
+
+        .btn-icon.edit:hover {
+            color: #0056b3;
+        }
+
+        .btn-icon.reset {
+            color: #ffc107;
+        }
+
+        .btn-icon.reset:hover {
+            color: #d39e00;
+        }
+
+        .btn-icon.delete {
+            color: #dc3545;
+        }
+
+        .btn-icon.delete:hover {
+            color: #bd2130;
+        }
+
+        .btn-del {
+            background: #dc3545;
+        }
+
+        .btn-reset {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-edit {
+            background: #007bff;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            width: 400px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: white;
+        }
+
+        .badge-admin {
+            background: #6f42c1;
+        }
+
+        .badge-simple {
+            background: #17a2b8;
+        }
+
+        .badge-guest {
+            background: #6c757d;
+        }
+
+        .badge-superadmin {
+            background: #d63384;
+        }
+
+        .modal-content {
+            background: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            width: 90%;
+            /* Changed from 400px */
+            max-width: 400px;
+            /* Added cap */
+            border-radius: 8px;
+            position: relative;
+        }
     </style>
 </head>
 
 <body>
     <div id="demoBanner" class="demo-banner">
-        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
+                style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
-    <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></a>
+    <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg></a>
 
     <div class="container">
         <button class="btn-add" onclick="openAddModal()">Add User</button>
@@ -63,7 +234,9 @@
                 </tr>
             </thead>
             <tbody>
-                <tr><td colspan="4">Loading...</td></tr>
+                <tr>
+                    <td colspan="4">Loading...</td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -75,8 +248,10 @@
             <form id="addUserForm" autocomplete="off">
                 <input type="text" style="display:none">
                 <input type="password" style="display:none">
-                <div class="form-group"><label>Name</label><input type="text" id="newName" required autocomplete="off"></div>
-                <div class="form-group"><label>Email</label><input type="email" id="newEmail" required autocomplete="off"></div>
+                <div class="form-group"><label>Name</label><input type="text" id="newName" required autocomplete="off">
+                </div>
+                <div class="form-group"><label>Email</label><input type="email" id="newEmail" required
+                        autocomplete="off"></div>
                 <div class="form-group">
                     <label>Role</label>
                     <select id="newRole">
@@ -85,8 +260,15 @@
                         <option value="admin">Admin (Full Access)</option>
                     </select>
                 </div>
-                <div style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: #555;"><p style="margin: 0;">A random password will be generated automatically and emailed to the user.</p></div>
-                <button type="submit" class="btn-add" id="createBtn" style="width:100%"><div class="btn-content"><div class="spinner" id="createSpinner"></div><span id="btnText">Create User & Send Email</span></div></button>
+                <div
+                    style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: #555;">
+                    <p style="margin: 0;">A random password will be generated automatically and emailed to the user.</p>
+                </div>
+                <button type="submit" class="btn-add" id="createBtn" style="width:100%">
+                    <div class="btn-content">
+                        <div class="spinner" id="createSpinner"></div><span id="btnText">Create User & Send Email</span>
+                    </div>
+                </button>
             </form>
         </div>
     </div>
@@ -120,19 +302,35 @@
             <form id="resetForm" autocomplete="off">
                 <input type="hidden" id="resetUserId">
                 <input type="hidden" id="resetUserEmail">
-                <div style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: #555;"><p style="margin: 0;">A new random password will be generated and sent to the user's email address.</p></div>
-                <button type="submit" class="btn-reset" id="resetBtn" style="width:100%; border:none; padding:10px;"><div class="btn-content"><div class="spinner" id="resetSpinner"></div><span id="resetBtnText">Reset & Email Password</span></div></button>
+                <div
+                    style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: #555;">
+                    <p style="margin: 0;">A new random password will be generated and sent to the user's email address.
+                    </p>
+                </div>
+                <button type="submit" class="btn-reset" id="resetBtn" style="width:100%; border:none; padding:10px;">
+                    <div class="btn-content">
+                        <div class="spinner" id="resetSpinner"></div><span id="resetBtnText">Reset & Email
+                            Password</span>
+                    </div>
+                </button>
             </form>
         </div>
     </div>
-
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
     <script src="help.js"></script>
     <script src="theme.js"></script>
     <script src="toast.js"></script>
-    <script src="utils.js"></script> <script>
-        fetch('/ui-config').then(r => r.json()).then(c => { 
-            if (c.loginTitle) document.getElementById('pageHeader').innerText = "System Users - " + c.loginTitle; 
-            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`; 
+    <script src="utils.js"></script>
+    <script>
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) document.getElementById('pageHeader').innerText = "System Users - " + c.loginTitle;
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });
 
@@ -150,13 +348,19 @@
                     // [UPDATED] deleteUser now takes ID and Name
                     const nameEscaped = u.name.replace(/'/g, "\\'");
                     tr.innerHTML = `
-                        <td>${u.name}</td>
-                        <td>${u.email}</td>
-                        <td><span class="badge badge-${u.role || 'simple'}">${u.role || 'simple'}</span></td>
-                        <td style="text-align: right; white-space: nowrap;">
-                            <button class="btn-icon edit" onclick="openEditModal(${userObj})" title="Edit User"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
-                            <button class="btn-icon reset" onclick="openReset('${u.id}', '${nameEscaped}', '${u.email}')" title="Reset Password"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg></button>
-                            <button class="btn-icon delete" onclick="deleteUser('${u.id}', '${nameEscaped}')" title="Delete User"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                        <td data-label="Name">${u.name}</td>
+                        <td data-label="Email (Username)">${u.email}</td>
+                        <td data-label="Role"><span class="badge badge-${u.role || 'simple'}">${u.role || 'simple'}</span></td>
+                        <td data-label="Actions" style="text-align: right; white-space: nowrap;">
+                            <button class="btn-icon edit" onclick="openEditModal(${userObj})" title="Edit User">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            </button>
+                            <button class="btn-icon reset" onclick="openReset('${u.id}', '${nameEscaped}', '${u.email}')" title="Reset Password">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                            </button>
+                            <button class="btn-icon delete" onclick="deleteUser('${u.id}', '${nameEscaped}')" title="Delete User">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            </button>
                         </td>`;
                     tbody.appendChild(tr);
                 });
@@ -183,7 +387,7 @@
                 } else {
                     const err = await res.json(); showToast('Error: ' + (err.error || 'Unknown error'), 'error');
                 }
-            } catch (error) { showToast('Network Error', 'error'); } 
+            } catch (error) { showToast('Network Error', 'error'); }
             finally { btn.disabled = false; spinner.style.display = 'none'; btnText.innerText = 'Create User & Send Email'; }
         });
 
@@ -199,10 +403,12 @@
             e.preventDefault();
             const id = document.getElementById('editUserId').value;
             try {
-                const res = await fetch(`/api/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-                    name: document.getElementById('editName').value, email: document.getElementById('editEmail').value, role: document.getElementById('editRole').value
-                })});
-                if (res.ok) { closeModal('editUserModal'); loadUsers(); } 
+                const res = await fetch(`/api/users/${id}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+                        name: document.getElementById('editName').value, email: document.getElementById('editEmail').value, role: document.getElementById('editRole').value
+                    })
+                });
+                if (res.ok) { closeModal('editUserModal'); loadUsers(); }
                 else { const err = await res.json(); showToast('Error: ' + err.error, 'error'); }
             } catch (e) { showToast('Network Error', 'error'); }
         });
@@ -227,9 +433,9 @@
             btn.disabled = true; spinner.style.display = 'inline-block'; btnText.innerText = 'Resetting...';
             try {
                 const res = await fetch(`/api/users/${id}/reset`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
-                if (res.ok) { closeModal('resetModal'); showToast('Success! Password emailed.', 'success'); } 
+                if (res.ok) { closeModal('resetModal'); showToast('Success! Password emailed.', 'success'); }
                 else { const err = await res.json(); showToast('Error: ' + (err.error || 'Failed', 'error')); }
-            } catch (err) { showToast('Network error', 'error'); } 
+            } catch (err) { showToast('Network error', 'error'); }
             finally { btn.disabled = false; spinner.style.display = 'none'; btnText.innerText = 'Reset & Email Password'; }
         });
 
@@ -245,6 +451,17 @@
         function openAddModal() { document.getElementById('userModal').style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         loadUsers();
+        // Scroll To Top Logic
+        const scrollTopBtn = document.getElementById("scrollTopBtn");
+        window.onscroll = function () {
+            if (scrollTopBtn) {
+                scrollTopBtn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none";
+            }
+        };
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     </script>
 </body>
+
 </html>

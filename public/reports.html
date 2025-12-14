@@ -7,21 +7,6 @@
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Action Bar & Layout */
-        .action-bar {
-            display: flex;
-            align-items: flex-start;
-            gap: 20px;
-            background: var(--bg-card);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px var(--shadow);
-            margin-top: 60px;
-            /* Increased to clear back button */
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-        }
-
         .controls-area {
             flex: 0 0 300px;
             display: flex;
@@ -147,6 +132,31 @@
         #scrollTopBtn:hover {
             background-color: #23272b;
             transform: translateY(-3px);
+        }
+
+        @media screen and (max-width: 768px) {
+            .action-bar {
+                flex-direction: column;
+                /* Stack controls on top of description */
+            }
+
+            .controls-area {
+                flex: 1;
+                width: 100%;
+                /* Full width */
+            }
+
+            .desc-card {
+                width: 100%;
+                /* Full width */
+                margin-top: 10px;
+            }
+
+            /* Allow report container to scroll horizontally if content is too wide */
+            .report-container {
+                padding: 10mm;
+                overflow-x: auto;
+            }
         }
     </style>
 </head>

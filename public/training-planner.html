@@ -8,7 +8,6 @@
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <link rel="stylesheet" href="styles.css">
     <style>
-
         /* --- Page Layout --- */
         .planner-container {
             display: flex;
@@ -195,6 +194,26 @@
 
         #memberList li:last-child {
             border-bottom: none;
+        }
+
+        @media screen and (max-width: 768px) {
+            .planner-container {
+                flex-direction: column;
+                height: auto;
+                /* Allow scrolling */
+                overflow: visible;
+            }
+
+            .skill-source-panel {
+                width: 100%;
+                min-width: 0;
+                max-height: 200px;
+                /* Limit height when stacked */
+            }
+
+            .calendar-panel {
+                min-height: 500px;
+            }
         }
     </style>
 </head>

@@ -1,56 +1,273 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Third Party Services - FENZ OSM</title>
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <link rel="stylesheet" href="styles.css">
     <style>
-        .container { max-width: 800px; margin: 40px auto; }
-        .service-card { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px; }
-        .service-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
-        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .status-disconnected { background: #dc3545; color: white; }
-        .status-initializing { background: #ffc107; color: #333; }
-        .status-ready { background: #28a745; color: white; }
-        
-        .qr-container { text-align: center; margin: 20px 0; min-height: 260px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 8px; border: 2px dashed #ddd; }
-        .qr-image { max-width: 250px; border: 1px solid #ccc; }
-        
-        .btn-wa { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: background 0.2s; }
-        .btn-start { background-color: #28a745; }
-        .btn-start:hover { background-color: #218838; }
-        .btn-stop { background-color: #dc3545; }
-        .btn-stop:hover { background-color: #c82333; }
-        .btn-test { background-color: #007bff; }
-        .btn-test:hover { background-color: #0056b3; }
-        .btn-disabled { background-color: #ccc; cursor: not-allowed; }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+        }
 
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); }
-        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 25px; border-radius: 8px; width: 400px; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; color: #aaa; }
-        .close-btn:hover { color: black; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        .service-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
 
-        .switch { position: relative; display: inline-block; width: 34px; height: 20px; vertical-align: middle; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-        input:checked + .slider { background-color: #28a745; }
-        input:focus + .slider { box-shadow: 0 0 1px #28a745; }
-        input:checked + .slider:before { transform: translateX(14px); }
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
 
-        .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background: #17a2b8; color: white; border-radius: 50%; font-size: 12px; font-weight: bold; margin-left: 8px; cursor: pointer; }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-disconnected {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-initializing {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .status-ready {
+            background: #28a745;
+            color: white;
+        }
+
+        .qr-container {
+            text-align: center;
+            margin: 20px 0;
+            min-height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #ddd;
+        }
+
+        .qr-image {
+            max-width: 250px;
+            border: 1px solid #ccc;
+        }
+
+        .btn-wa {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: background 0.2s;
+        }
+
+        .btn-start {
+            background-color: #28a745;
+        }
+
+        .btn-start:hover {
+            background-color: #218838;
+        }
+
+        .btn-stop {
+            background-color: #dc3545;
+        }
+
+        .btn-stop:hover {
+            background-color: #c82333;
+        }
+
+        .btn-test {
+            background-color: #007bff;
+        }
+
+        .btn-test:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 25px;
+            border-radius: 8px;
+            width: 400px;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close-btn:hover {
+            color: black;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+            vertical-align: middle;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.slider {
+            background-color: #28a745;
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px #28a745;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(14px);
+        }
+
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: #17a2b8;
+            color: white;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+            cursor: pointer;
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            /* Allow wrapping */
+            gap: 10px;
+            /* Add gap for when it wraps */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            /* Changed from 400px */
+            max-width: 400px;
+            /* Added cap */
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
+
 <body>
     <div id="demoBanner" class="demo-banner">
-        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
+                style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
-    <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></a>
+    <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg></a>
 
     <div class="container">
         <h1 id="pageHeader">Third Party Services</h1>
@@ -58,24 +275,31 @@
         <div class="service-card">
             <div class="service-header">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <svg viewBox="0 0 24 24" width="32" height="32" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="#25D366">
+                        <path
+                            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                    </svg>
                     <h2 style="margin:0;">WhatsApp Integration</h2>
                 </div>
                 <span id="waStatus" class="status-badge status-disconnected">Disconnected</span>
             </div>
 
             <p>Connect a WhatsApp account to send expiring skill notifications directly to members' mobile phones.</p>
-            
+
             <div id="qrArea" class="qr-container" style="display:none;">
                 <div style="text-align:center">
                     <img id="qrImage" class="qr-image" src="" alt="QR Code">
                     <p style="margin-top:10px; font-weight:bold; color:#555;">Scan with WhatsApp (Linked Devices)</p>
                 </div>
             </div>
-            
+
             <div id="readyArea" class="qr-container" style="display:none; background:#d4edda; border-color:#c3e6cb;">
                 <div style="text-align:center; color:#155724;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
                     <h3>WhatsApp Connected!</h3>
                     <p id="waAccountInfo" style="margin-top:5px; font-weight:bold;"></p>
                     <p style="margin-top:5px;">The system is ready to send messages.</p>
@@ -85,12 +309,13 @@
             <div style="margin-top:20px; display:flex; gap:10px; flex-wrap: wrap;">
                 <button id="btnStart" class="btn-wa btn-start" onclick="controlWa('start')">Start Service</button>
                 <button id="btnStop" class="btn-wa btn-stop" onclick="controlWa('stop')">Disconnect / Logout</button>
-                <button id="btnTest" class="btn-wa btn-test btn-disabled" disabled onclick="openModal('testModal')">Test Integration</button>
+                <button id="btnTest" class="btn-wa btn-test btn-disabled" disabled onclick="openModal('testModal')">Test
+                    Integration</button>
             </div>
 
             <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
                 <h3 style="margin-top: 0; color: #555; font-size: 16px;">Preferences</h3>
-                
+
                 <div style="display:flex; align-items:center; gap: 10px;">
                     <label class="switch">
                         <input type="checkbox" id="waAutoDisconnect" onchange="toggleAutoDisconnect(this.checked)">
@@ -116,7 +341,8 @@
                 <label>Message</label>
                 <textarea id="testMessage" rows="4">This is a test message from FENZ OSM Manager.</textarea>
             </div>
-            <button id="btnSendTest" class="btn-wa btn-test" style="width:100%;" onclick="sendTestMessage()">Send Test Message</button>
+            <button id="btnSendTest" class="btn-wa btn-test" style="width:100%;" onclick="sendTestMessage()">Send Test
+                Message</button>
         </div>
     </div>
 
@@ -125,16 +351,25 @@
             <span class="close-btn" onclick="closeModal('prefHelpModal')">&times;</span>
             <h2 style="margin-top:0;">Preference Help</h2>
             <p><strong>Auto-disconnect on Logout</strong></p>
-            <p>If this option is enabled, your WhatsApp session will be automatically terminated (logged out) whenever you sign out of the FENZ OSM Manager application.</p>
-            <p>This is a security feature to ensure that subsequent users (who might share this login or computer) cannot access or send messages using your personal WhatsApp account.</p>
-            <button class="btn-wa btn-test" style="width:100%; margin-top:20px;" onclick="closeModal('prefHelpModal')">Close</button>
+            <p>If this option is enabled, your WhatsApp session will be automatically terminated (logged out) whenever
+                you sign out of the FENZ OSM Manager application.</p>
+            <p>This is a security feature to ensure that subsequent users (who might share this login or computer)
+                cannot access or send messages using your personal WhatsApp account.</p>
+            <button class="btn-wa btn-test" style="width:100%; margin-top:20px;"
+                onclick="closeModal('prefHelpModal')">Close</button>
         </div>
     </div>
-
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        
+
         const statusBadge = document.getElementById('waStatus');
         const qrArea = document.getElementById('qrArea');
         const readyArea = document.getElementById('readyArea');
@@ -143,12 +378,12 @@
         const btnStart = document.getElementById('btnStart');
         const btnStop = document.getElementById('btnStop');
         const btnTest = document.getElementById('btnTest');
-        const waAutoDisconnect = document.getElementById('waAutoDisconnect'); 
+        const waAutoDisconnect = document.getElementById('waAutoDisconnect');
 
-        fetch('/ui-config').then(r=>r.json()).then(c=>{ 
-            if(c.loginTitle) document.getElementById('pageHeader').innerText = "Services - "+c.loginTitle;
-            if(c.appBackground) document.body.style.backgroundImage=`url('${c.appBackground}')`;
-            if(c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) document.getElementById('pageHeader').innerText = "Services - " + c.loginTitle;
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });
 
         socket.on('connect', () => {
@@ -173,7 +408,7 @@
         function sendTestMessage() {
             const mobile = document.getElementById('testMobile').value;
             const message = document.getElementById('testMessage').value;
-            if(!mobile || !message) { showToast("Please provide both a mobile number and a message.", "error"); return; }
+            if (!mobile || !message) { showToast("Please provide both a mobile number and a message.", "error"); return; }
             const btn = document.getElementById('btnSendTest');
             btn.disabled = true; btn.innerText = "Sending...";
             socket.emit('wa-send-test', { mobile, message });
@@ -185,7 +420,7 @@
             qrArea.style.display = 'none';
             readyArea.style.display = 'none';
             waAccountInfo.innerText = ''; // Reset info
-            
+
             btnStart.disabled = false; btnStart.classList.remove('btn-disabled');
             btnTest.disabled = true; btnTest.classList.add('btn-disabled');
 
@@ -193,25 +428,25 @@
                 statusBadge.classList.add('status-disconnected');
                 statusBadge.innerText = 'Disconnected';
                 btnStop.disabled = true; btnStop.classList.add('btn-disabled');
-            } 
+            }
             else if (status === 'INITIALIZING') {
                 statusBadge.classList.add('status-initializing');
                 statusBadge.innerText = 'Initializing...';
                 btnStart.disabled = true; btnStart.classList.add('btn-disabled');
-            } 
+            }
             else if (status === 'QR_READY') {
                 statusBadge.classList.add('status-initializing');
                 statusBadge.innerText = 'Scan QR Code';
                 qrArea.style.display = 'flex';
                 btnStart.disabled = true; btnStart.classList.add('btn-disabled');
-            } 
+            }
             else if (status === 'READY') {
                 statusBadge.classList.add('status-ready');
                 statusBadge.innerText = 'Connected';
                 readyArea.style.display = 'flex';
                 btnStart.disabled = true; btnStart.classList.add('btn-disabled');
                 btnTest.disabled = false; btnTest.classList.remove('btn-disabled');
-                
+
                 // Display Info
                 if (info && info.number) {
                     const nameStr = info.name ? ` (${info.name})` : '';
@@ -223,7 +458,7 @@
         // Socket Listeners
         socket.on('wa-status-data', (data) => {
             updateUi(data.status, data.info); // Pass info
-            if(data.qr) qrImage.src = data.qr;
+            if (data.qr) qrImage.src = data.qr;
         });
 
         socket.on('wa-status', (status) => updateUi(status)); // Basic update
@@ -232,18 +467,29 @@
         socket.on('wa-test-result', (res) => {
             const btn = document.getElementById('btnSendTest');
             btn.disabled = false; btn.innerText = "Send Test Message";
-            if (res.success) { showToast(res.message, 'success'); closeModal('testModal'); } 
-            else { showToast( res.error, 'error'); }
+            if (res.success) { showToast(res.message, 'success'); closeModal('testModal'); }
+            else { showToast(res.error, 'error'); }
         });
 
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (event.target.classList.contains('modal')) event.target.style.display = "none";
+        }
+        // Scroll To Top Logic
+        const scrollTopBtn = document.getElementById("scrollTopBtn");
+        window.onscroll = function () {
+            if (scrollTopBtn) {
+                scrollTopBtn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none";
+            }
+        };
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
     <script src="help.js"></script>
     <script src="theme.js"></script>
     <script src="toast.js"></script>
 </body>
+
 </html>

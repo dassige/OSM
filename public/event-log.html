@@ -8,6 +8,7 @@
     <title id="pageTitle">Event Log - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <style>
+        /* Page Layout */
         .container {
             max-width: 1100px;
             margin: 0 auto;
@@ -15,32 +16,290 @@
             padding-bottom: 40px;
         }
 
+        /* --- FILTER BAR (Action Bar) --- */
+        .filter-bar {
+            background-color: var(--bg-card);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px var(--shadow);
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        /* Force Event Types to take full width on top row */
+        .filter-group.full-width {
+            flex: 1 1 100%;
+            width: 100%;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        .filter-select,
+        .filter-date {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            height: 38px;
+            /* Fixed height for alignment */
+            box-sizing: border-box;
+        }
+
+        .filter-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* --- MAINTENANCE BAR --- */
+        .maintenance-bar {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+
+            /* Horizontal Layout by default */
+            display: none;
+            /* Controlled by JS */
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Groups inside maintenance bar */
+        .maint-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* --- EVENT TYPES (Chips) --- */
+        .type-toggles {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            width: 100%;
+            /* Ensure it uses available space */
+        }
+
+        .type-badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: var(--bg-hover);
+            color: var(--text-muted);
+            user-select: none;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .type-badge:hover {
+            background-color: var(--border-color);
+        }
+
+        .type-badge.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* --- BUTTONS --- */
+        .btn-filter,
+        .btn-reset-filter {
+            padding: 0 16px;
+            /* Use flex alignment for height */
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+            height: 38px;
+            /* Match input height */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        /* Maintenance Buttons: Uniform Size */
+        .btn-maint {
+            min-width: 120px;
+        }
+
+        .btn-filter {
+            background-color: var(--primary);
+        }
+
+        .btn-filter:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-reset-filter {
+            background-color: #6c757d;
+        }
+
+        .btn-reset-filter:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        /* --- TABLE --- */
         #eventTable {
             width: 100%;
             border-collapse: collapse;
-            background: white;
+            background: var(--bg-card);
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px var(--shadow);
         }
 
         #eventTable th,
         #eventTable td {
             padding: 12px 15px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
         }
 
         #eventTable th {
-            background-color: #343a40;
-            color: white;
-            font-weight: 600;
+            background-color: var(--bg-header);
+            color: var(--text-header);
         }
 
-        #eventTable tbody tr:hover {
-            background-color: #f8f9fa;
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media screen and (max-width: 768px) {
+
+            .filter-bar,
+            .maintenance-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .maint-group {
+                flex-direction: column;
+                align-items: stretch;
+                width: 100%;
+            }
+
+            .filter-group {
+                width: 100%;
+                flex: 1 1 auto;
+                /* Reset flex sizing */
+            }
+
+            .filter-actions {
+                margin-left: 0;
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .filter-select,
+            .filter-date,
+            .btn-filter,
+            .btn-reset-filter,
+            .btn-maint {
+                width: 100%;
+            }
+
+            /* Card View for Table */
+            #eventTable,
+            #eventTable thead,
+            #eventTable tbody,
+            #eventTable th,
+            #eventTable td,
+            #eventTable tr {
+                display: block;
+            }
+
+            #eventTable thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            #eventTable tr {
+                margin-bottom: 15px;
+                box-shadow: 0 2px 4px var(--shadow);
+                border-radius: 6px;
+                overflow: hidden;
+                background: var(--bg-card);
+            }
+
+            #eventTable td {
+                border: none;
+                border-bottom: 1px solid var(--border-color);
+                position: relative;
+                padding-left: 35%;
+                min-height: 30px;
+                display: flex;
+                align-items: center;
+            }
+
+            #eventTable td:before {
+                position: absolute;
+                left: 10px;
+                width: 30%;
+                padding-right: 10px;
+                white-space: nowrap;
+                font-weight: bold;
+                color: var(--text-muted);
+                content: attr(data-label);
+            }
+
+            /* Adjust Info button alignment on mobile */
+            #eventTable td[data-label="Info"] {
+                justify-content: flex-start;
+                padding-left: 35%;
+            }
         }
 
+        /* Badges & Utilities */
         .badge {
             padding: 4px 8px;
             border-radius: 4px;
@@ -83,15 +342,47 @@
             color: white;
         }
 
-        .btn-info {
+        .btn-icon {
             background: none;
             border: none;
             cursor: pointer;
-            color: #007bff;
+            color: var(--info);
+            padding: 5px;
         }
 
-        .btn-info:hover {
-            color: #0056b3;
+        .btn-icon:hover {
+            color: #117a8b;
+            transform: scale(1.1);
+        }
+
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .pagination-info {
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+
+        .btn-page {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+
+        .btn-page:hover:not(:disabled) {
+            background-color: var(--bg-hover);
+        }
+
+        .btn-page:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* Modal Styles */
@@ -107,15 +398,17 @@
         }
 
         .modal-content {
-            background-color: #fefefe;
+            background-color: var(--bg-card);
+            color: var(--text-main);
             margin: 10% auto;
             padding: 20px;
             border-radius: 8px;
-            width: 70%;
+            width: 90%;
             max-width: 700px;
             position: relative;
             max-height: 80vh;
             overflow-y: auto;
+            border: 1px solid var(--border-color);
         }
 
         .close-btn {
@@ -125,26 +418,29 @@
             font-size: 24px;
             font-weight: bold;
             cursor: pointer;
-            color: #aaa;
+            color: var(--text-muted);
         }
 
         .close-btn:hover {
-            color: black;
+            color: var(--text-main);
         }
 
         pre {
-            background: #f4f4f4;
+            background: var(--bg-body);
             padding: 15px;
             border-radius: 4px;
             overflow-x: auto;
             font-size: 0.9em;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
         }
     </style>
 </head>
 
 <body>
     <div id="demoBanner" class="demo-banner">
-        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
+                style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
     <a href="/" class="back-btn" title="Back to Dashboard">
@@ -154,25 +450,18 @@
             <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
     </a>
-    <div id="maintenanceToolbar" class="filter-bar"
-        style="display:none; background-color: #fff3cd; border: 1px solid #ffeeba;">
-        <div style="display:flex; align-items:center; width:100%; justify-content: space-between;">
 
-            <div style="display:flex; gap:15px; align-items:center;">
-                <strong style="color:#856404;">Maintenance:</strong>
+    <div id="maintenanceToolbar" class="filter-bar maintenance-bar">
+        <div class="maint-group" style="flex-grow: 1;">
+            <strong>Maintenance:</strong>
+            <input type="number" id="pruneDays" class="filter-select" style="width:80px" value="90" min="1">
+            <span style="font-size:13px; white-space:nowrap;">days</span>
+            <button onclick="pruneEvents()" class="btn-filter btn-warning btn-maint">Prune Old</button>
+            <button onclick="purgeLog()" class="btn-filter btn-danger btn-maint">Purge All</button>
+        </div>
 
-                <div style="display:flex; gap:5px; align-items:center;">
-                    <input type="number" id="pruneDays" class="filter-select" style="width:70px" value="90" min="1">
-                    <span style="font-size:13px;">days</span>
-                    <button onclick="pruneEvents()" class="btn-filter"
-                        style="background-color: #ffc107; color: #333;">Prune Old</button>
-                </div>
-
-                <button onclick="purgeLog()" class="btn-filter"
-                    style="background-color: #dc3545; margin-left:10px;">Purge All</button>
-            </div>
-
-            <button onclick="exportLog()" class="btn-filter" style="background-color: #28a745;">
+        <div class="maint-group">
+            <button onclick="exportLog()" class="btn-filter btn-success btn-maint">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     style="vertical-align:text-bottom; margin-right:5px;">
@@ -184,16 +473,17 @@
             </button>
         </div>
     </div>
+
     <div class="container">
         <h1 id="pageHeader">System Event Log</h1>
 
         <div class="filter-bar">
-            <div class="filter-group">
+            <div class="filter-group full-width">
                 <label>Event Types:</label>
                 <div class="type-toggles" id="typeToggles"></div>
             </div>
 
-            <div class="filter-group">
+            <div class="filter-group" style="flex: 1 1 150px;">
                 <label>User:</label>
                 <select id="userFilter" class="filter-select">
                     <option value="">All Users</option>
@@ -201,12 +491,12 @@
                 </select>
             </div>
 
-            <div class="filter-group">
+            <div class="filter-group" style="flex: 1 1 250px;">
                 <label>Date Range:</label>
                 <div style="display:flex; gap:5px; align-items:center;">
-                    <input type="date" id="startDate" class="filter-date">
-                    <span style="color:#aaa;">to</span>
-                    <input type="date" id="endDate" class="filter-date">
+                    <input type="date" id="startDate" class="filter-date" style="flex:1;">
+                    <span style="color:var(--text-muted);">to</span>
+                    <input type="date" id="endDate" class="filter-date" style="flex:1;">
                 </div>
             </div>
 
@@ -221,7 +511,7 @@
                 </select>
             </div>
 
-            <div class="filter-group" style="margin-left: auto; flex-direction: row; gap: 10px;">
+            <div class="filter-actions">
                 <button onclick="applyFilters(1)" class="btn-filter">Apply Filters</button>
                 <button onclick="resetFilters()" class="btn-reset-filter">Reset</button>
             </div>
@@ -234,7 +524,7 @@
                     <th style="width: 150px;">User</th>
                     <th style="width: 120px;">Event Type</th>
                     <th>Title</th>
-                    <th style="width: 60px;">Info</th>
+                    <th style="width: 60px; text-align:center;">Info</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
@@ -267,10 +557,16 @@
             <pre id="modalPayload"></pre>
         </div>
     </div>
-
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
     <script src="help.js"></script>
     <script src="theme.js"></script>
-    <script src="toast.js"></script> 
+    <script src="toast.js"></script>
     <script src="utils.js"></script>
     <script>
         // Init UI
@@ -290,7 +586,7 @@
         let totalCount = 0;
 
         async function init() {
-            await checkAdmin(); // <--- Check privileges first
+            await checkAdmin();
             await loadMetadata();
             await loadUserPrefs();
             await applyFilters(1);
@@ -301,25 +597,23 @@
                 const user = await res.json();
                 // Show maintenance bar ONLY if EnvUser (Super Admin) or specifically isAdmin
                 if (user.isEnvUser === true || user.isAdmin === true) {
-                    document.getElementById('maintenanceToolbar').style.display = 'block';
+                    document.getElementById('maintenanceToolbar').style.display = 'flex'; // Changed to flex for proper layout
                 }
             } catch (e) { console.error("Auth check failed", e); }
         }
 
-//  Maintenance Actions
+        // Maintenance Actions
         async function purgeLog() {
-            // ASYNC CONFIRM
             if (!await confirmAction('Purge Log', "DANGER: This will permanently delete ALL events from the log.\n\nAre you sure?")) return;
             try {
                 const res = await fetch('/api/events/all', { method: 'DELETE' });
                 if (res.ok) { showToast('Log purged', 'success'); applyFilters(1); }
                 else { throw new Error((await res.json()).error); }
-            } catch (e) { showToast(e.message,"error"  ); }
+            } catch (e) { showToast(e.message, "error"); }
         }
 
         async function pruneEvents() {
             const days = document.getElementById('pruneDays').value;
-            // ASYNC CONFIRM
             if (!await confirmAction('Prune Events', `Delete events older than ${days} days?`)) return;
             try {
                 const res = await fetch('/api/events/prune', {
@@ -329,10 +623,10 @@
                 });
                 if (res.ok) { showToast("Events pruned.", "success"); applyFilters(1); }
                 else { throw new Error((await res.json()).error); }
-            } catch (e) { showToast( e.message, "error"); }
+            } catch (e) { showToast(e.message, "error"); }
         }
+
         function exportLog() {
-            // Build query string from current filters to export what is seen (or all if filters empty)
             const activeTypes = Array.from(document.querySelectorAll('.type-badge.active')).map(b => b.getAttribute('data-type'));
             const user = document.getElementById('userFilter').value;
             const start = document.getElementById('startDate').value;
@@ -344,9 +638,9 @@
             if (start) params.append('startDate', start);
             if (end) params.append('endDate', end);
 
-            // Trigger download
             window.location.href = `/api/events/export?${params.toString()}`;
         }
+
         async function loadUserPrefs() {
             try {
                 const res = await fetch('/api/user-preferences/eventLogLimit');
@@ -368,7 +662,6 @@
             applyFilters(1);
         }
 
-        // UPDATED: Dynamically load both Users and Event Types
         async function loadMetadata() {
             try {
                 const res = await fetch('/api/events/meta');
@@ -387,7 +680,7 @@
 
                     // 2. Populate Event Types (Dynamic Badges)
                     const typeContainer = document.getElementById('typeToggles');
-                    typeContainer.innerHTML = ''; // Clear previous content
+                    typeContainer.innerHTML = '';
 
                     if (data.types && data.types.length > 0) {
                         data.types.forEach(type => {
@@ -396,7 +689,6 @@
                             badge.setAttribute('data-type', type);
                             badge.textContent = type;
 
-                            // Add click handler
                             badge.addEventListener('click', () => {
                                 badge.classList.toggle('active');
                             });
@@ -404,7 +696,7 @@
                             typeContainer.appendChild(badge);
                         });
                     } else {
-                        typeContainer.innerHTML = '<span style="font-size:13px; color:#888;">No events recorded yet.</span>';
+                        typeContainer.innerHTML = '<span style="font-size:13px; color:var(--text-muted);">No events recorded yet.</span>';
                     }
                 }
             } catch (e) { console.error(e); }
@@ -473,23 +765,23 @@
             tbody.innerHTML = '';
 
             if (!events || events.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #666;">No events matching criteria.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-muted);">No events matching criteria.</td></tr>';
                 return;
             }
 
             events.forEach(evt => {
                 const tr = document.createElement('tr');
                 const btn = document.createElement('button');
-                btn.className = 'btn-icon btn-info';
+                btn.className = 'btn-icon';
                 btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
                 btn.onclick = () => showModal(evt);
 
                 tr.innerHTML = `
-                    <td>${formatDate(evt.timestamp)}</td>
-                    <td><strong>${evt.user}</strong></td>
-                    <td><span class="badge ${getBadgeClass(evt.event_type)}">${evt.event_type}</span></td>
-                    <td>${evt.title}</td>
-                    <td style="text-align:center;"></td>
+                    <td data-label="Datetime">${formatDate(evt.timestamp)}</td>
+                    <td data-label="User"><strong>${evt.user}</strong></td>
+                    <td data-label="Event Type"><span class="badge ${getBadgeClass(evt.event_type)}">${evt.event_type}</span></td>
+                    <td data-label="Title">${evt.title}</td>
+                    <td data-label="Info" style="text-align:center;"></td>
                 `;
                 tr.querySelector('td:last-child').appendChild(btn);
                 tbody.appendChild(tr);
@@ -526,6 +818,16 @@
             if (event.target == document.getElementById('payloadModal')) {
                 document.getElementById('payloadModal').style.display = "none";
             }
+        }
+        // Scroll To Top Logic
+        const scrollTopBtn = document.getElementById("scrollTopBtn");
+        window.onscroll = function () {
+            if (scrollTopBtn) {
+                scrollTopBtn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none";
+            }
+        };
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
 </body>
