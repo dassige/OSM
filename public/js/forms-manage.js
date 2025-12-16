@@ -4,7 +4,36 @@ let forms = [];
 let currentForm = null;
 let currentFields = [];
 let originalFormState = null; // [NEW] Track baseline state
+let formSortMode = 'name_asc'; // Options: name_asc, name_desc, status_asc, status_desc
 
+function toggleFormSort() {
+    const btn = document.getElementById('btnSortForms');
+    
+    // Cycle modes
+    switch (formSortMode) {
+        case 'name_asc': 
+            formSortMode = 'name_desc';
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="3" y2="18"></line></svg>`;
+            btn.title = "Sort by Name (Z-A)";
+            break;
+        case 'name_desc': 
+            formSortMode = 'status_active';
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`;
+            btn.title = "Sort by Status (Active First)";
+            break;
+        case 'status_active': 
+            formSortMode = 'status_disabled';
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>`;
+            btn.title = "Sort by Status (Disabled First)";
+            break;
+        default: 
+            formSortMode = 'name_asc';
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18H3M21 6H3M17 12H3"/></svg>`;
+            btn.title = "Sort by Name (A-Z)";
+            break;
+    }
+    renderFormList();
+}
 document.addEventListener('DOMContentLoaded', () => {
     fetch('/ui-config').then(r => r.json()).then(c => {
         if (c.loginTitle) {
@@ -194,10 +223,33 @@ function renderFormList() {
     const list = document.getElementById('formList');
     list.innerHTML = '';
 
-    forms.forEach(f => {
+    // Create a copy to sort
+    const sortedForms = [...forms].sort((a, b) => {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        const statusA = a.status; // 1 or 0
+        const statusB = b.status;
+
+        switch (formSortMode) {
+            case 'name_asc': return nameA.localeCompare(nameB);
+            case 'name_desc': return nameB.localeCompare(nameA);
+            case 'status_active': 
+                // Active (1) first, then by Name
+                if (statusA !== statusB) return statusB - statusA;
+                return nameA.localeCompare(nameB);
+            case 'status_disabled': 
+                // Disabled (0) first, then by Name
+                if (statusA !== statusB) return statusA - statusB;
+                return nameA.localeCompare(nameB);
+            default: return 0;
+        }
+    });
+
+    sortedForms.forEach(f => {
         const item = document.createElement('div');
         item.className = `form-item ${currentForm && currentForm.id === f.id ? 'active' : ''}`;
 
+        // ... rest of item generation remains identical ...
         const toggleHtml = `
             <label class="switch" onclick="event.stopPropagation();" title="Toggle On/Off">
                 <input type="checkbox" ${f.status ? 'checked' : ''} onchange="updateStatus(${f.id}, this.checked)">
@@ -211,13 +263,12 @@ function renderFormList() {
             </div>
             ${toggleHtml}
         `;
-        // [UPDATED] Check dirty before switching
         item.onclick = () => selectForm(f.id);
         list.appendChild(item);
     });
 }
 
-// [UPDATED] Check dirty before creating new
+//  Check dirty before creating new
 async function createNewForm() {
     if (document.getElementById('builderPanel').style.display === 'flex') {
         if (!await checkDirty()) return;
@@ -225,7 +276,7 @@ async function createNewForm() {
     loadEditor({ name: "New Form", status: 0, intro: "", structure: [] });
 }
 
-// [UPDATED] Check dirty before switching
+// Check dirty before switching
 async function selectForm(id) {
     if (currentForm && currentForm.id === id) return; // Clicked same form
     if (document.getElementById('builderPanel').style.display === 'flex') {

@@ -98,8 +98,15 @@
             border-bottom: 1px solid var(--border-color);
             background: var(--bg-hover);
             display: flex;
-            align-items: flex-start;
-            gap: 15px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             flex-wrap: wrap;
         }
 
@@ -117,6 +124,9 @@
             font-family: inherit;
             line-height: 1.4;
             height: 36px;
+            font-size: 24px;
+            /* Optional: Make title slightly larger since it has more room */
+            margin-bottom: 5px;
         }
 
         .editor-content {
@@ -355,7 +365,18 @@
         <div class="manager-container">
             <div class="sidebar">
                 <div class="sidebar-header">
-                    <h3 style="margin:0;">My Forms</h3>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <h3 style="margin:0;">My Forms</h3>
+                        <button onclick="toggleFormSort()" id="btnSortForms" class="btn-sm"
+                            style="background:transparent; color:var(--text-main); border:1px solid var(--border-color); padding:4px 8px; border-radius:4px; cursor:pointer;"
+                            title="Sort by Name (A-Z)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M15 18H3M21 6H3M17 12H3" />
+                            </svg>
+                        </button>
+                    </div>
                     <button onclick="createNewForm()" class="btn-sm"
                         style="background:var(--success); color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">+
                         New</button>
@@ -367,16 +388,18 @@
 
             <div id="builderPanel" class="editor-panel" style="display:none;">
                 <div class="editor-header">
-                    <div style="flex:1;">
+                    <div style="width:100%;">
                         <textarea id="formName" placeholder="Form Name" rows="1"
                             oninput="this.style.height='';this.style.height=this.scrollHeight+'px'"></textarea>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; align-self: center;">
+
+                    <div class="editor-toolbar">
                         <button onclick="previewForm()" class="btn-sm"
                             style="background:#6f42c1; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer;">Preview</button>
                         <button onclick="saveForm()" class="btn-sm"
                             style="background:var(--primary); color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer;">Save</button>
 
+                        <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 5px;"></div>
                         <button onclick="toggleAllFields()" class="btn-sm"
                             style="background:#6c757d; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;"
                             title="Expand/Collapse All">
@@ -391,7 +414,8 @@
                         <button onclick="copyFormLink()" class="btn-sm"
                             style="background:var(--info); color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;"
                             title="Copy Public Link">🔗</button>
-                        <button onclick="deleteForm()" class="btn-sm"
+
+                        <div style="flex:1;"></div> <button onclick="deleteForm()" class="btn-sm"
                             style="background:var(--danger); color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;"
                             title="Delete Form">🗑</button>
                     </div>
@@ -419,7 +443,6 @@
                     </div>
                 </div>
             </div>
-
             <div id="emptyPanel" class="editor-panel" style="align-items:center; justify-content:center;">
                 <div class="empty-state">
                     <h3>Select a form to edit</h3>
