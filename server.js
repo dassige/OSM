@@ -233,7 +233,7 @@ app.get('/api/forms', hasRole('admin'), async (req, res) => {
     }
 });
 
-// [NEW] Export ALL Forms
+// [NEW] Export ALL Forms (Add this block)
 app.get('/api/forms/export/all', hasRole('admin'), async (req, res) => {
     try {
         const forms = await formsService.getAllFormsFull();
@@ -247,7 +247,7 @@ app.get('/api/forms/export/all', hasRole('admin'), async (req, res) => {
     }
 });
 
-// [NEW] Import ALL Forms (Bulk)
+// [NEW] Import ALL Forms (Bulk) (Add this block)
 app.post('/api/forms/import/all', hasRole('admin'), upload.single('formsFile'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
 
@@ -255,8 +255,13 @@ app.post('/api/forms/import/all', hasRole('admin'), upload.single('formsFile'), 
         const fileContent = fs.readFileSync(req.file.path, 'utf8');
         const data = JSON.parse(fileContent);
 
+        // Basic Compatibility Check
         if (!Array.isArray(data)) {
             throw new Error("Invalid file format. Expected a JSON array of forms.");
+        }
+        // Check first item structure roughly
+        if (data.length > 0 && (!data[0].name || !data[0].structure)) {
+             throw new Error("Invalid form data structure in import file.");
         }
 
         await formsService.importBulkForms(data);
@@ -271,7 +276,7 @@ app.post('/api/forms/import/all', hasRole('admin'), upload.single('formsFile'), 
     }
 });
 
-// Get single form details
+// Get single form details (Ensure this comes AFTER specific paths like /export/all)
 app.get('/api/forms/:id', async (req, res) => {
     if (!req.session.loggedIn) return res.status(401).json({ error: "Unauthorized" });
     try {
@@ -282,7 +287,6 @@ app.get('/api/forms/:id', async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
-
 // Create new form
 app.post('/api/forms', hasRole('admin'), async (req, res) => {
     try {
