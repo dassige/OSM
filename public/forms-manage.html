@@ -105,14 +105,14 @@
             background-color: #f8f9fa;
         }
 
-        /* --- Field Cards (Draggable Items) --- */
+        /* --- Field Cards --- */
         .field-card {
             background: white;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             margin-bottom: 15px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            overflow: hidden; /* Clean corners */
+            overflow: hidden;
         }
         
         .field-header {
@@ -122,13 +122,12 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            cursor: pointer; /* Entire header is clickable for collapse */
+            cursor: pointer;
             user-select: none;
             transition: background 0.2s;
         }
         .field-header:hover { background: #e9ecef; }
 
-        /* Collapsed State Logic */
         .field-body { padding: 15px; display: none; }
         .field-card.expanded .field-body { display: block; }
 
@@ -145,7 +144,6 @@
             padding: 3px 8px; border-radius: 4px; color: #495057; font-weight: bold;
         }
 
-        /* Header Controls */
         .header-controls {
             margin-left: 20px; 
             display: flex; 
@@ -186,7 +184,7 @@
         .option-row { display: flex; gap: 5px; margin-bottom: 5px; align-items: center; }
         .empty-state { text-align: center; color: var(--text-muted); margin-top: 50px; }
 
-        /* Switch Styling (Shared) */
+        /* Switch Styling */
         .switch { position: relative; display: inline-block; width: 34px; height: 20px; vertical-align: middle; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 20px; }
@@ -194,7 +192,6 @@
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(14px); }
 
-        /* Mobile */
         @media screen and (max-width: 768px) {
             .manager-container { flex-direction: column; height: auto; }
             .sidebar { width: 100%; position: static; max-height: 250px; }
@@ -235,6 +232,14 @@
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; align-self: center;">
                         <button onclick="previewForm()" class="btn-sm" style="background:#6f42c1; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer;">Preview</button>
                         <button onclick="saveForm()" class="btn-sm" style="background:var(--primary); color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer;">Save</button>
+                        
+                        <button onclick="toggleAllFields()" class="btn-sm" style="background:#6c757d; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;" title="Expand/Collapse All">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="7 13 12 18 17 13"></polyline>
+                                <polyline points="7 11 12 6 17 11"></polyline>
+                            </svg>
+                        </button>
+
                         <button onclick="copyFormLink()" class="btn-sm" style="background:var(--info); color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;" title="Copy Public Link">🔗</button>
                         <button onclick="deleteForm()" class="btn-sm" style="background:var(--danger); color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;" title="Delete Form">🗑</button>
                     </div>

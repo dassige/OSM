@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// [UPDATED] Matches the field editor configuration
 function initMainEditor() {
     tinymce.init({
         selector: '#formIntro',
@@ -86,17 +85,14 @@ async function saveForm() {
 
         // Get Options
         let options = [];
-        let renderAs = 'radio'; // Default
+        let renderAs = 'radio';
 
         if (type === 'radio' || type === 'checkboxes') {
             const optInputs = card.querySelectorAll('.option-input');
             options = Array.from(optInputs).map(inp => inp.value).filter(v => v.trim() !== "");
             
-            // [UPDATED] Capture renderAs setting for radio buttons
             const renderSelect = card.querySelector('.field-render-as');
-            if (renderSelect) {
-                renderAs = renderSelect.value;
-            }
+            if (renderSelect) renderAs = renderSelect.value;
         }
 
         const required = card.querySelector('.field-required-check').checked;
@@ -284,7 +280,6 @@ function renderFieldItem(field) {
     `;
 
     if (field.type === 'radio' || field.type === 'checkboxes') {
-        // [UPDATED] Render Mode Selector for Radio only
         if (field.type === 'radio') {
              const selectedRadio = (!field.renderAs || field.renderAs === 'radio') ? 'selected' : '';
              const selectedDropdown = (field.renderAs === 'dropdown') ? 'selected' : '';
@@ -313,11 +308,20 @@ function renderFieldItem(field) {
     div.innerHTML = html;
     canvas.appendChild(div);
 
-    // Initialize TinyMCE for the field description
     setTimeout(() => initFieldEditor(`editor_${field.id}`), 50);
 }
 
-// Helper to toggle collapse via onclick
+// [NEW] Toggle All Fields
+window.toggleAllFields = function() {
+    const cards = document.querySelectorAll('.field-card');
+    // If ANY card is collapsed (not expanded), expand all. Otherwise collapse all.
+    const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
+    cards.forEach(c => {
+        if(anyCollapsed) c.classList.add('expanded');
+        else c.classList.remove('expanded');
+    });
+}
+
 window.toggleFieldCard = function(header) {
     header.parentElement.classList.toggle('expanded');
 }
@@ -325,9 +329,7 @@ window.toggleFieldCard = function(header) {
 async function handleRemoveField(id) {
     if(await confirmAction("Remove Question", "Are you sure you want to delete this question?")) {
         currentFields = currentFields.filter(f => f.id !== id);
-        // Remove TinyMCE instance first
         if(tinymce.get(`editor_${id}`)) tinymce.get(`editor_${id}`).remove();
-        
         const card = document.querySelector(`.field-card[data-id="${id}"]`);
         if(card) card.remove();
     }
