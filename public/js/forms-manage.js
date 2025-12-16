@@ -3,6 +3,7 @@
 let forms = [];
 let currentForm = null;
 let currentFields = [];
+let originalFormState = null; // [NEW] Track baseline state
 
 document.addEventListener('DOMContentLoaded', () => {
     fetch('/ui-config').then(r => r.json()).then(c => {
@@ -55,6 +56,62 @@ function initFieldEditor(id) {
     });
 }
 
+// --- [NEW] State Management Helpers ---
+
+function getFormData() {
+    const name = document.getElementById('formName').value;
+    // Safe check for TinyMCE initialization
+    const introEditor = tinymce.get('formIntro');
+    const intro = introEditor ? introEditor.getContent() : "";
+    
+    // Status is NOT part of the dirty check for the editor panel (it's handled in the sidebar)
+    // We strictly check Name, Intro, and Structure.
+
+    const fieldCards = document.querySelectorAll('.field-card');
+    const structure = Array.from(fieldCards).map(card => {
+        const id = card.getAttribute('data-id');
+        const type = card.getAttribute('data-type');
+
+        // Get content
+        const editorId = `editor_${id}`;
+        const ed = tinymce.get(editorId);
+        const description = ed ? ed.getContent() : "";
+
+        // Get Options
+        let options = [];
+        let renderAs = 'radio';
+
+        if (type === 'radio' || type === 'checkboxes') {
+            const optInputs = card.querySelectorAll('.option-input');
+            // Filter empty options to match save logic
+            options = Array.from(optInputs).map(inp => inp.value).filter(v => v.trim() !== "");
+
+            const renderSelect = card.querySelector('.field-render-as');
+            if (renderSelect) renderAs = renderSelect.value;
+        }
+
+        const required = card.querySelector('.field-required-check').checked;
+
+        return { id, type, description, required, options, renderAs };
+    });
+
+    return { name, intro, structure };
+}
+
+function isFormDirty() {
+    if (!originalFormState) return false;
+    const current = getFormData();
+    return JSON.stringify(current) !== JSON.stringify(originalFormState);
+}
+
+async function checkDirty(actionName) {
+    if (isFormDirty()) {
+        const confirm = await confirmAction("Unsaved Changes", `You have unsaved changes in "${currentForm.name || 'New Form'}".\n\nDo you want to discard them?`);
+        return confirm; // True = Discard & Proceed, False = Cancel & Stay
+    }
+    return true; // No changes, proceed
+}
+
 // --- API Interactions ---
 
 async function loadForms() {
@@ -67,42 +124,13 @@ async function loadForms() {
 }
 
 async function saveForm() {
-    if (!currentForm) return;
+    // [UPDATED] Use helper to get data
+    const data = getFormData();
+    const status = currentForm ? currentForm.status : 0; // Preserve status
 
-    const name = document.getElementById('formName').value;
-    const intro = tinymce.get('formIntro').getContent();
-    const status = currentForm.status;
-
-    // Gather Fields
-    const fieldCards = document.querySelectorAll('.field-card');
-    const structure = Array.from(fieldCards).map(card => {
-        const id = card.getAttribute('data-id');
-        const type = card.getAttribute('data-type');
-
-        // Get content
-        const editorId = `editor_${id}`;
-        const description = tinymce.get(editorId) ? tinymce.get(editorId).getContent() : "";
-
-        // Get Options
-        let options = [];
-        let renderAs = 'radio';
-
-        if (type === 'radio' || type === 'checkboxes') {
-            const optInputs = card.querySelectorAll('.option-input');
-            options = Array.from(optInputs).map(inp => inp.value).filter(v => v.trim() !== "");
-
-            const renderSelect = card.querySelector('.field-render-as');
-            if (renderSelect) renderAs = renderSelect.value;
-        }
-
-        const required = card.querySelector('.field-required-check').checked;
-
-        return { id, type, description, required, options, renderAs };
-    });
-
-    const payload = { name, status, intro, structure };
-    const method = currentForm.id ? 'PUT' : 'POST';
-    const url = currentForm.id ? `/api/forms/${currentForm.id}` : '/api/forms';
+    const payload = { ...data, status };
+    const method = currentForm && currentForm.id ? 'PUT' : 'POST';
+    const url = currentForm && currentForm.id ? `/api/forms/${currentForm.id}` : '/api/forms';
 
     try {
         const res = await fetch(url, {
@@ -112,8 +140,16 @@ async function saveForm() {
         });
         if (!res.ok) throw new Error("Failed to save");
         const result = await res.json();
-        if (result.id) currentForm.id = result.id;
+        
+        if (result.id) {
+            currentForm = { ...payload, id: result.id };
+        } else {
+            currentForm = { ...currentForm, ...payload };
+        }
 
+        // [NEW] Update baseline state
+        originalFormState = getFormData();
+        
         showToast("Form saved successfully", "success");
         loadForms();
     } catch (e) { showToast(e.message, 'error'); }
@@ -140,6 +176,7 @@ async function deleteForm() {
         await fetch(`/api/forms/${currentForm.id}`, { method: 'DELETE' });
         showToast("Form deleted", "success");
         currentForm = null;
+        originalFormState = null; // Clear state
         document.getElementById('builderPanel').style.display = 'none';
         document.getElementById('emptyPanel').style.display = 'flex';
         loadForms();
@@ -174,16 +211,27 @@ function renderFormList() {
             </div>
             ${toggleHtml}
         `;
+        // [UPDATED] Check dirty before switching
         item.onclick = () => selectForm(f.id);
         list.appendChild(item);
     });
 }
 
-function createNewForm() {
+// [UPDATED] Check dirty before creating new
+async function createNewForm() {
+    if (document.getElementById('builderPanel').style.display === 'flex') {
+        if (!await checkDirty()) return;
+    }
     loadEditor({ name: "New Form", status: 0, intro: "", structure: [] });
 }
 
+// [UPDATED] Check dirty before switching
 async function selectForm(id) {
+    if (currentForm && currentForm.id === id) return; // Clicked same form
+    if (document.getElementById('builderPanel').style.display === 'flex') {
+        if (!await checkDirty()) return;
+    }
+
     try {
         const res = await fetch(`/api/forms/${id}`);
         loadEditor(await res.json());
@@ -207,6 +255,24 @@ function loadEditor(form) {
     if (tinymce.get('formIntro')) tinymce.get('formIntro').setContent(form.intro || "");
 
     renderFields();
+
+    // [NEW] Set Baseline State
+    // We construct the state object manually from the loaded data to match the format of getFormData()
+    // This avoids race conditions with TinyMCE/DOM not being ready yet.
+    originalFormState = {
+        name: form.name || "",
+        intro: form.intro || "",
+        // Deep copy structure to ensure we have a clean comparison object
+        // Note: We might need to ensure 'renderAs' etc are present to match getFormData defaults
+        structure: (form.structure || []).map(f => ({
+            id: f.id,
+            type: f.type,
+            description: f.description || "",
+            required: !!f.required,
+            options: f.options || [],
+            renderAs: f.renderAs || 'radio'
+        }))
+    };
 }
 
 function copyFormLink() {
@@ -229,11 +295,16 @@ function addField(type) {
     renderFieldItem(newField, true);
 
     // Scroll to bottom
-    const main = document.querySelector('body');
     setTimeout(() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }, 100);
 }
 
+function cleanupFieldEditors() {
+    const editors = tinymce.get().filter(ed => ed.id.startsWith('editor_'));
+    editors.forEach(ed => ed.remove());
+}
+
 function renderFields() {
+    cleanupFieldEditors();
     const canvas = document.getElementById('fieldsCanvas');
     canvas.innerHTML = '';
     currentFields.forEach(field => renderFieldItem(field));
@@ -242,7 +313,6 @@ function renderFields() {
 function renderFieldItem(field) {
     const canvas = document.getElementById('fieldsCanvas');
     const div = document.createElement('div');
-    // Default to expanded for new/loaded items
     div.className = 'field-card expanded';
     div.setAttribute('data-id', field.id);
     div.setAttribute('data-type', field.type);
@@ -311,10 +381,8 @@ function renderFieldItem(field) {
     setTimeout(() => initFieldEditor(`editor_${field.id}`), 50);
 }
 
-// [NEW] Toggle All Fields
 window.toggleAllFields = function () {
     const cards = document.querySelectorAll('.field-card');
-    // If ANY card is collapsed (not expanded), expand all. Otherwise collapse all.
     const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
     cards.forEach(c => {
         if (anyCollapsed) c.classList.add('expanded');
@@ -328,8 +396,8 @@ window.toggleFieldCard = function (header) {
 
 async function handleRemoveField(id) {
     if (await confirmAction("Remove Question", "Are you sure you want to delete this question?")) {
-        currentFields = currentFields.filter(f => f.id !== id);
         if (tinymce.get(`editor_${id}`)) tinymce.get(`editor_${id}`).remove();
+        currentFields = currentFields.filter(f => f.id !== id);
         const card = document.querySelector(`.field-card[data-id="${id}"]`);
         if (card) card.remove();
     }
