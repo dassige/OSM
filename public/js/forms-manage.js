@@ -5,37 +5,26 @@ let currentForm = null;
 let currentFields = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. App Configuration & Theme
-    fetch('/ui-config')
-        .then(r => r.json())
-        .then(c => {
-            if (c.loginTitle) {
-                document.title = "Forms Manager - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "Forms Manager";
-            }
-            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
-        });
+    fetch('/ui-config').then(r => r.json()).then(c => {
+        if (c.loginTitle) {
+            document.title = "Forms Manager - " + c.loginTitle;
+            document.getElementById('pageHeader').innerText = "Forms Manager";
+        }
+        if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+        if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+    });
 
-    // 2. Role Check (Protect UI)
-    fetch('/api/user-session')
-        .then(r => r.json())
-        .then(user => {
-            const role = user.role || 'guest';
-            // Only 'admin' or 'superadmin' can edit forms
-            if (role !== 'admin' && role !== 'superadmin') {
-                alert("Access Denied: You must be an Administrator to manage forms.");
-                window.location.href = '/';
-            } else {
-                // 3. Load Data only if authorized
-                loadForms();
-            }
-        })
-        .catch(() => window.location.href = '/login.html');
+    fetch('/api/user-session').then(r => r.json()).then(user => {
+        const role = user.role || 'guest';
+        if (role !== 'admin' && role !== 'superadmin') {
+            alert("Access Denied."); window.location.href = '/';
+        } else {
+            loadForms();
+        }
+    }).catch(() => window.location.href = '/login.html');
 
-    initTinyMCE();
+    initMainEditor();
     
-    // Init SortableJS
     const canvas = document.getElementById('fieldsCanvas');
     new Sortable(canvas, {
         handle: '.drag-handle',
@@ -43,70 +32,67 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-function initTinyMCE() {
+function initMainEditor() {
     tinymce.init({
-        selector: '.rich-editor',
+        selector: '#formIntro',
         height: 150,
         menubar: false,
         plugins: 'link lists autolink',
         toolbar: 'bold italic underline | bullist numlist | link removeformat',
-        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px; color: #333; } body.dark-mode { background: #333; color: #fff; }'
+        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px; } body.dark-mode { background: #333; color: #fff; }'
     });
 }
 
+function initFieldEditor(id) {
+    tinymce.init({
+        selector: '#' + id,
+        height: 120, 
+        menubar: false,
+        plugins: 'link lists autolink image',
+        toolbar: 'bold italic | bullist numlist | image link',
+        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px; margin: 8px; } body.dark-mode { background: #333; color: #fff; }'
+    });
+}
 
 // --- API Interactions ---
 
 async function loadForms() {
     try {
         const res = await fetch('/api/forms');
-        if (!res.ok) throw new Error("Failed to load forms");
+        if (!res.ok) throw new Error("Failed to load");
         forms = await res.json();
         renderFormList();
-    } catch (e) {
-        console.error(e);
-        if(window.showToast) showToast(e.message, 'error');
-    }
+    } catch (e) { showToast(e.message, 'error'); }
 }
 
 async function saveForm() {
     if (!currentForm) return;
 
-    // 1. Gather Data
     const name = document.getElementById('formName').value;
-    const status = document.getElementById('formStatus').checked;
     const intro = tinymce.get('formIntro').getContent();
+    const status = currentForm.status; 
 
-    // 2. Gather Fields from DOM to ensure order matches visual
+    // Gather Fields
     const fieldCards = document.querySelectorAll('.field-card');
     const structure = Array.from(fieldCards).map(card => {
         const id = card.getAttribute('data-id');
-        // Find the data object in memory that matches this DOM ID
-        const fieldData = currentFields.find(f => f.id === id);
+        const type = card.getAttribute('data-type');
         
-        // Update mutable properties from inputs
-        if(fieldData) {
-            fieldData.label = card.querySelector('.field-label-input').value;
-            
-            // Required Toggle (if exists)
-            const reqCheck = card.querySelector('.field-required-check');
-            if(reqCheck) fieldData.required = reqCheck.checked;
+        // Get content
+        const editorId = `editor_${id}`;
+        const description = tinymce.get(editorId) ? tinymce.get(editorId).getContent() : "";
 
-            // Options (if exists)
-            if(fieldData.options) {
-                const optInputs = card.querySelectorAll('.option-input');
-                fieldData.options = Array.from(optInputs).map(inp => inp.value).filter(v => v.trim() !== "");
-            }
-            
-            // Description (TinyMCE) - Need to use ID to get content
-            // Note: TinyMCE might be heavy for every field. 
-            // For simplicity, we assume plain text description or a single shared editor instance in complex apps.
-            // Here, we'll use a simple textarea for field description to save resources.
-            const descInput = card.querySelector('.field-desc-input');
-            if(descInput) fieldData.description = descInput.value;
+        // Get Options
+        let options = [];
+        if (type === 'radio' || type === 'checkboxes') {
+            const optInputs = card.querySelectorAll('.option-input');
+            options = Array.from(optInputs).map(inp => inp.value).filter(v => v.trim() !== "");
         }
-        return fieldData;
-    }).filter(f => f); // remove nulls
+
+        const required = card.querySelector('.field-required-check').checked;
+
+        return { id, type, description, required, options };
+    });
 
     const payload = { name, status, intro, structure };
     const method = currentForm.id ? 'PUT' : 'POST';
@@ -118,22 +104,31 @@ async function saveForm() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        
         if (!res.ok) throw new Error("Failed to save");
-        
         const result = await res.json();
-        if(result.id) currentForm.id = result.id; // Handle new ID
+        if(result.id) currentForm.id = result.id;
         
         showToast("Form saved successfully", "success");
-        loadForms(); // Refresh list
-    } catch (e) {
-        showToast(e.message, 'error');
-    }
+        loadForms(); 
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function updateStatus(id, enabled) {
+    try {
+        await fetch(`/api/forms/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ status: enabled ? 1 : 0 })
+        });
+        const f = forms.find(x => x.id === id);
+        if(f) f.status = enabled ? 1 : 0;
+        showToast(`Form ${enabled ? 'Enabled' : 'Disabled'}`, "success");
+    } catch (e) { showToast("Failed to update status", "error"); loadForms(); }
 }
 
 async function deleteForm() {
     if(!currentForm || !currentForm.id) return;
-    if(!await confirmAction("Delete Form", `Are you sure you want to delete '${currentForm.name}'?`)) return;
+    if(!await confirmAction("Delete Form", `Delete '${currentForm.name}'?`)) return;
 
     try {
         await fetch(`/api/forms/${currentForm.id}`, { method: 'DELETE' });
@@ -142,9 +137,12 @@ async function deleteForm() {
         document.getElementById('builderPanel').style.display = 'none';
         document.getElementById('emptyPanel').style.display = 'flex';
         loadForms();
-    } catch (e) {
-        showToast(e.message, 'error');
-    }
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+function previewForm() {
+    if(!currentForm || !currentForm.id) return showToast("Please save the form first.", "warning");
+    window.open(`forms-view.html?id=${currentForm.id}&preview=true`, '_blank');
 }
 
 // --- UI Rendering ---
@@ -157,14 +155,18 @@ function renderFormList() {
         const item = document.createElement('div');
         item.className = `form-item ${currentForm && currentForm.id === f.id ? 'active' : ''}`;
         
-        const color = f.status ? '#28a745' : '#dc3545';
-        
+        const toggleHtml = `
+            <label class="switch" onclick="event.stopPropagation();" title="Toggle On/Off">
+                <input type="checkbox" ${f.status ? 'checked' : ''} onchange="updateStatus(${f.id}, this.checked)">
+                <span class="slider"></span>
+            </label>
+        `;
+
         item.innerHTML = `
-            <div style="font-weight:bold;">${f.name}</div>
-            <div style="font-size:12px; color:#666; margin-top:4px;">
-                <span class="form-status-dot" style="background:${color}"></span>
-                ${f.status ? 'Enabled' : 'Disabled'}
+            <div class="form-info">
+                <div class="form-name">${f.name}</div>
             </div>
+            ${toggleHtml}
         `;
         item.onclick = () => selectForm(f.id);
         list.appendChild(item);
@@ -172,81 +174,56 @@ function renderFormList() {
 }
 
 function createNewForm() {
-    const newForm = { name: "New Form", status: 0, intro: "", structure: [] };
-    loadEditor(newForm);
+    loadEditor({ name: "New Form", status: 0, intro: "", structure: [] });
 }
 
 async function selectForm(id) {
-    // Show loading?
     try {
         const res = await fetch(`/api/forms/${id}`);
-        const fullForm = await res.json();
-        loadEditor(fullForm);
+        loadEditor(await res.json());
     } catch (e) { console.error(e); }
 }
 
 function loadEditor(form) {
     currentForm = form;
-    currentFields = form.structure || []; // Deep copy if needed, but simple assignment ok here
+    currentFields = form.structure || [];
     
-    // UI Toggle
     document.getElementById('emptyPanel').style.display = 'none';
     document.getElementById('builderPanel').style.display = 'flex';
-    renderFormList(); // Re-render to update active state
+    renderFormList();
 
-    // Bind Data
-    document.getElementById('formName').value = form.name || "";
-    document.getElementById('formStatus').checked = !!form.status;
-    updateStatusLabel(!!form.status);
+    const nameInput = document.getElementById('formName');
+    nameInput.value = form.name || "";
+    // Trigger auto-resize
+    nameInput.style.height = 'auto';
+    nameInput.style.height = nameInput.scrollHeight + 'px';
     
-    // TinyMCE Set Content
-    if(tinymce.get('formIntro')) {
-        tinymce.get('formIntro').setContent(form.intro || "");
-    }
+    if(tinymce.get('formIntro')) tinymce.get('formIntro').setContent(form.intro || "");
 
     renderFields();
 }
 
-document.getElementById('formStatus').addEventListener('change', (e) => updateStatusLabel(e.target.checked));
-
-function updateStatusLabel(checked) {
-    const lbl = document.getElementById('statusLabel');
-    lbl.textContent = checked ? "Enabled" : "Disabled";
-    lbl.style.color = checked ? "var(--success)" : "var(--text-muted)";
-}
-
 function copyFormLink() {
-    if(!currentForm.id) {
-        showToast("Save the form first.", "warning");
-        return;
-    }
+    if(!currentForm.id) return showToast("Save form first", "warning");
     const url = `${window.location.origin}/forms-view.html?id=${currentForm.id}`;
     navigator.clipboard.writeText(url);
-    showToast("Link copied to clipboard!", "success");
+    showToast("Link copied!", "success");
 }
 
-// --- Field Builder Logic ---
-
 function addField(type) {
-    const id = 'fld_' + Date.now().toString(36);
     const newField = {
-        id: id,
+        id: 'fld_' + Date.now().toString(36),
         type: type,
-        label: "New Question",
         required: false,
         description: "",
-        options: (type === 'radio' || type === 'checkboxes' || type === 'select') ? ["Option 1", "Option 2"] : []
+        options: (type === 'radio' || type === 'checkboxes') ? ["Option 1"] : []
     };
-    
-    if(type === 'html_block') {
-        newField.label = "Information Block";
-    }
-
     currentFields.push(newField);
-    renderFieldItem(newField, true); // Append single item
+    renderFieldItem(newField, true);
+    
     // Scroll to bottom
-    const canvas = document.getElementById('fieldsCanvas');
-    canvas.scrollTop = canvas.scrollHeight;
+    const main = document.querySelector('body'); // Changed to body scroll
+    setTimeout(() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }, 100);
 }
 
 function renderFields() {
@@ -255,69 +232,60 @@ function renderFields() {
     currentFields.forEach(field => renderFieldItem(field));
 }
 
-function renderFieldItem(field, append = false) {
+function renderFieldItem(field) {
     const canvas = document.getElementById('fieldsCanvas');
     const div = document.createElement('div');
-    div.className = 'field-card expanded'; // Default expanded for editing
+    div.className = 'field-card expanded'; 
     div.setAttribute('data-id', field.id);
+    div.setAttribute('data-type', field.type);
 
-    // Header
     let html = `
         <div class="field-header" onclick="this.parentElement.classList.toggle('expanded')">
             <span class="drag-handle">☰</span>
             <span class="field-type-badge">${field.type}</span>
-            <span style="flex:1; font-weight:bold; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${field.label}</span>
+            <span style="flex:1;"></span>
             <button class="btn-icon delete" onclick="removeField(event, '${field.id}')" title="Delete">×</button>
         </div>
         <div class="field-body">
             <div class="form-group">
-                <label>Label / Question</label>
-                <input type="text" class="field-label-input" value="${field.label || ''}" onkeyup="this.closest('.field-card').querySelector('.field-header span:nth-child(3)').innerText = this.value">
+                <label>Question / Content (Rich Text)</label>
+                <textarea id="editor_${field.id}" class="field-desc-input">${field.description || ''}</textarea>
             </div>
-            <div class="form-group">
-                <label>Description / Help Text</label>
-                <textarea class="field-desc-input" rows="2">${field.description || ''}</textarea>
-            </div>
-    `;
-
-    // Type Specific Settings
-    if(field.type !== 'html_block' && field.type !== 'boolean') {
-        html += `
+            
             <div class="form-group">
                 <label style="display:inline-flex; align-items:center; cursor:pointer;">
                     <input type="checkbox" class="field-required-check" ${field.required ? 'checked' : ''} style="width:auto; margin-right:8px;"> 
-                    Mandatory Field
+                    Mandatory Answer
                 </label>
             </div>
-        `;
-    }
+    `;
 
-    // Options Editor (Radio, Select, Checkboxes)
-    if(field.options) {
+    if (field.type === 'radio' || field.type === 'checkboxes') {
         html += `<div class="form-group"><label>Options</label><div class="options-container">`;
-        field.options.forEach(opt => {
-            html += generateOptionRow(opt);
-        });
-        html += `</div><button type="button" class="btn-sm" style="margin-top:5px;" onclick="addOptionRow(this)">+ Add Option</button></div>`;
+        if(field.options) {
+            field.options.forEach(opt => {
+                html += generateOptionRow(opt);
+            });
+        }
+        html += `</div><button type="button" class="btn-sm" style="margin-top:5px; background:#6c757d; color:white;" onclick="addOptionRow(this)">+ Add Option</button></div>`;
     }
 
-    html += `</div>`; // Close Body
+    html += `</div>`;
     div.innerHTML = html;
+    canvas.appendChild(div);
 
-    if(append) canvas.appendChild(div);
-    else canvas.appendChild(div);
+    setTimeout(() => initFieldEditor(`editor_${field.id}`), 50);
 }
 
-function removeField(e, id) {
-    e.stopPropagation(); // Prevent toggle
-    if(!confirm("Delete this field?")) return;
-    
-    // Remove from array
-    currentFields = currentFields.filter(f => f.id !== id);
-    // Remove from DOM
-    const card = document.querySelector(`.field-card[data-id="${id}"]`);
-    if(card) card.remove();
+async function handleRemoveField(id) {
+    if(await confirmAction("Remove Question", "Are you sure you want to delete this question?")) {
+        currentFields = currentFields.filter(f => f.id !== id);
+        if(tinymce.get(`editor_${id}`)) tinymce.get(`editor_${id}`).remove();
+        const card = document.querySelector(`.field-card[data-id="${id}"]`);
+        if(card) card.remove();
+    }
 }
+window.removeField = function(e, id) { e.stopPropagation(); handleRemoveField(id); }
 
 function generateOptionRow(value) {
     return `
@@ -328,13 +296,9 @@ function generateOptionRow(value) {
     `;
 }
 
-// Exposed to global scope for the inline onclick handler
 window.addOptionRow = function(btn) {
     const container = btn.previousElementSibling;
     const div = document.createElement('div');
     div.innerHTML = generateOptionRow("");
     container.appendChild(div.firstElementChild);
 }
-
-// Expose delete function to global scope for inline onclick
-window.removeField = removeField;

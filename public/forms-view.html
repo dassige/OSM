@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <title>Form Viewer - FENZ OSM</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { background-color: var(--bg-body); padding-top: 40px; }
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+        .form-header { margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
+        .form-title { margin: 0 0 10px 0; color: var(--primary); }
+        .form-intro { color: var(--text-main); line-height: 1.6; }
+        
+        .question-card {
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+        .question-text { font-weight: bold; margin-bottom: 15px; color: var(--text-main); font-size: 1.1em; }
+        .question-text p { margin: 0; }
+        
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-label:hover { border-color: var(--primary); background: #f0f8ff; }
+        .option-label input { width: auto; margin-right: 12px; transform: scale(1.2); }
+        
+        .preview-banner {
+            background: #ffc107; color: #333; text-align: center;
+            padding: 10px; position: fixed; top: 0; left: 0; width: 100%;
+            font-weight: bold; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .btn-submit {
+            background: var(--success); color: white; border: none;
+            padding: 12px 30px; border-radius: 4px; font-size: 16px;
+            cursor: pointer; width: 100%; margin-top: 20px; font-weight: bold;
+        }
+        .btn-submit:hover { background-color: #218838; }
+    </style>
+</head>
+<body>
+    <div id="previewBanner" class="preview-banner" style="display:none;">
+        PREVIEW MODE - Responses will not be saved. 
+        <button onclick="window.close()" style="margin-left:15px; padding:4px 10px; background:white; border:none; cursor:pointer; border-radius:4px;">Close Window</button>
+    </div>
+
+    <div class="container">
+        <div id="loading" class="spinner" style="margin: 50px auto; display:block;"></div>
+        
+        <div id="formContent" class="form-container" style="display:none;">
+            <div class="form-header">
+                <h1 id="formName" class="form-title"></h1>
+                <div id="formIntro" class="form-intro"></div>
+            </div>
+            
+            <form id="submissionForm">
+                <div id="questionsContainer"></div>
+                <button type="submit" class="btn-submit">Submit Form</button>
+            </form>
+        </div>
+
+        <div id="errorState" style="display:none; text-align:center; margin-top:50px;">
+            <h2>Form Not Available</h2>
+            <p id="errorMsg" style="color:var(--text-muted);"></p>
+        </div>
+    </div>
+
+    <script src="toast.js"></script>
+    <script src="theme.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            const isPreview = params.get('preview') === 'true';
+
+            if(isPreview) document.getElementById('previewBanner').style.display = 'block';
+
+            if(!id) return showError("No form ID specified.");
+
+            try {
+                const res = await fetch(`/api/forms/${id}`);
+                if(!res.ok) throw new Error("Form not found.");
+                const form = await res.json();
+
+                if(!form.status && !isPreview) throw new Error("This form is currently closed.");
+
+                renderForm(form);
+            } catch(e) {
+                showError(e.message);
+            }
+        });
+
+        function renderForm(form) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('formContent').style.display = 'block';
+            document.getElementById('formName').innerText = form.name;
+            document.getElementById('formIntro').innerHTML = form.intro;
+            document.title = form.name + " - FENZ OSM";
+
+            const container = document.getElementById('questionsContainer');
+            
+            (form.structure || []).forEach(field => {
+                const div = document.createElement('div');
+                div.className = 'question-card';
+                
+                // Question Text (Rich HTML from TinyMCE)
+                let labelHtml = `<div class="question-text">${field.description}</div>`;
+                if(field.required) labelHtml += `<div style="text-align:right; margin-bottom:5px;"><span style="color:red; font-size:12px; background:#ffe6e6; padding:2px 6px; border-radius:4px;">* Required</span></div>`;
+                
+                let inputHtml = '';
+                const fieldName = field.id;
+
+                switch(field.type) {
+                    case 'text_multi': // Paragraph
+                        inputHtml = `<textarea name="${fieldName}" rows="4" style="width:100%; padding:10px; border-radius:4px; border:1px solid #ccc; font-family:inherit;" ${field.required ? 'required' : ''} placeholder="Type your answer here..."></textarea>`;
+                        break;
+                    case 'radio':
+                        if(field.options) {
+                            field.options.forEach(opt => {
+                                inputHtml += `<label class="option-label"><input type="radio" name="${fieldName}" value="${opt}" ${field.required ? 'required' : ''}> ${opt}</label>`;
+                            });
+                        }
+                        break;
+                    case 'checkboxes':
+                        if(field.options) {
+                            field.options.forEach(opt => {
+                                inputHtml += `<label class="option-label"><input type="checkbox" name="${fieldName}[]" value="${opt}"> ${opt}</label>`;
+                            });
+                        }
+                        break;
+                    case 'boolean':
+                        inputHtml = `
+                            <label class="option-label"><input type="radio" name="${fieldName}" value="Yes" ${field.required ? 'required' : ''}> Yes</label>
+                            <label class="option-label"><input type="radio" name="${fieldName}" value="No"> No</label>
+                        `;
+                        break;
+                }
+
+                div.innerHTML = labelHtml + inputHtml;
+                container.appendChild(div);
+            });
+        }
+
+        function showError(msg) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMsg').innerText = msg;
+        }
+
+        document.getElementById('submissionForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // In a real app, POST to /api/submissions would go here
+            if(window.showToast) showToast("Form Submitted! (This is a demo)", "success");
+            
+            setTimeout(() => {
+                if(window.location.search.includes('preview')) window.close();
+                else window.location.href = "/";
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
