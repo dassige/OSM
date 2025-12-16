@@ -502,7 +502,11 @@
     <script>
         let currentSkills = [];
         let currentSort = { column: 'name', order: 'asc' };
-        // ... (Icons & Init) ...
+
+        // Track where to insert the URL when the modal closes
+        let pendingDropTarget = null;
+        let pendingDropIndex = 0;
+
         const ICON_ASC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
         const ICON_DESC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
         const ICON_NONE = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5"/><path d="M7 9l5-5 5 5"/></svg>';
@@ -527,36 +531,184 @@
                     if (prefs.sortSkillsPage) currentSort = prefs.sortSkillsPage;
                 }
             } catch (e) { }
+
             await reloadSkills();
-            setupDragAndDrop();
+            injectFormSelectionModal(); // <--- 1. Inject Modal HTML
+            addSingleFormChip();        // <--- 2. Add the special Chip
+            setupDragAndDrop();         // <--- 3. Initialize Drag Logic
         }
 
-        // ... (Drag & Drop, Reload) ...
+        // --- 1. Inject Modal HTML dynamically ---
+        function injectFormSelectionModal() {
+            if (document.getElementById('formSelectionModal')) return;
+
+            const modalHtml = `
+            <div id="formSelectionModal" class="modal">
+                <div class="modal-content" style="width: 400px;">
+                    <span class="close-btn" onclick="document.getElementById('formSelectionModal').style.display='none'">&times;</span>
+                    <h2 style="margin-top:0;">Select a Form</h2>
+                    <p style="color:#666; font-size:0.9em;">Choose a form to insert its link.</p>
+                    <div id="formSelectionList" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px;">
+                        <div style="padding:20px; text-align:center;">Loading...</div>
+                    </div>
+                    <div style="text-align: right; margin-top: 15px;">
+                        <button onclick="document.getElementById('formSelectionModal').style.display='none'" class="btn-secondary">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // --- 2. Add Special Chip ---
+        function addSingleFormChip() {
+            const container = document.querySelector('.palette-container');
+            if (!container || document.getElementById('chip-app-form')) return;
+
+            // Add separator
+            const sep = document.createElement('span');
+            sep.className = 'palette-label';
+            sep.style.marginLeft = '10px';
+            sep.style.color = '#007bff';
+            sep.innerText = '|';
+            container.appendChild(sep);
+
+            // Add Chip
+            const chip = document.createElement('div');
+            chip.id = 'chip-app-form';
+            chip.className = 'draggable-item';
+            chip.draggable = true;
+            chip.setAttribute('data-val', 'APP_FORM_TRIGGER'); // Special flag
+            chip.style.borderColor = '#007bff';
+            chip.style.color = '#007bff';
+            chip.style.backgroundColor = '#f0f8ff';
+            chip.innerText = 'App Form Link';
+            container.appendChild(chip);
+        }
+
+        // --- 3. Drag and Drop Logic ---
         function setupDragAndDrop() {
+            // Re-attach listeners to all chips
             document.querySelectorAll('.draggable-item').forEach(item => {
                 item.addEventListener('dragstart', (e) => {
                     const val = item.getAttribute('data-val');
-                    const text = `{{${val}}}`;
-                    e.dataTransfer.setData('text/plain', text);
+                    e.dataTransfer.setData('text/plain', val === 'APP_FORM_TRIGGER' ? '[[FORM_INSERT_PENDING]]' : `{{${val}}}`);
+                    e.dataTransfer.setData('application/x-fenz-type', val === 'APP_FORM_TRIGGER' ? 'form-modal' : 'variable');
                 });
             });
+
             const urlInput = document.getElementById('url');
-            urlInput.addEventListener('dragover', e => e.preventDefault());
-            urlInput.addEventListener('drop', e => {
+
+            // Remove old listeners to avoid duplicates
+            const newUrlInput = urlInput.cloneNode(true);
+            urlInput.parentNode.replaceChild(newUrlInput, urlInput);
+
+            newUrlInput.addEventListener('dragover', e => e.preventDefault());
+
+            newUrlInput.addEventListener('drop', async e => {
                 e.preventDefault();
-                const text = e.dataTransfer.getData('text/plain');
-                if (text) {
-                    const start = urlInput.selectionStart;
-                    const end = urlInput.selectionEnd;
-                    const val = urlInput.value;
-                    urlInput.value = val.substring(0, start) + text + val.substring(end);
-                    urlInput.focus();
-                    const newPos = start + text.length;
-                    urlInput.setSelectionRange(newPos, newPos);
+
+                const type = e.dataTransfer.getData('application/x-fenz-type');
+
+                // Capture drop position
+                const start = newUrlInput.selectionStart;
+                const end = newUrlInput.selectionEnd;
+
+                if (type === 'form-modal') {
+                    // SPECIAL HANDLER: Open Modal
+                    pendingDropTarget = newUrlInput;
+                    pendingDropIndex = start;
+                    await openFormSelector();
+                } else {
+                    // STANDARD HANDLER: Insert Variable
+                    const text = e.dataTransfer.getData('text/plain');
+                    if (text && text !== '[[FORM_INSERT_PENDING]]') {
+                        const val = newUrlInput.value;
+                        newUrlInput.value = val.substring(0, start) + text + val.substring(end);
+                        newUrlInput.focus();
+                        const newPos = start + text.length;
+                        newUrlInput.setSelectionRange(newPos, newPos);
+                    }
                 }
             });
         }
 
+        // --- 4. Modal Logic ---
+        async function openFormSelector() {
+            const modal = document.getElementById('formSelectionModal');
+            const listContainer = document.getElementById('formSelectionList');
+
+            modal.style.display = 'block';
+            listContainer.innerHTML = '<div class="spinner" style="margin:20px auto; display:block;"></div>';
+
+            try {
+                const res = await fetch('/api/forms');
+                if (res.ok) {
+                    const forms = await res.json();
+                    // REMOVED FILTER: const activeForms = forms.filter(f => f.status === 1);
+
+                    listContainer.innerHTML = '';
+
+                    if (forms.length === 0) {
+                        listContainer.innerHTML = '<div style="padding:15px; text-align:center; color:#666;">No forms found.<br><a href="forms-manage.html">Create one here</a></div>';
+                        return;
+                    }
+
+                    forms.forEach(f => {
+                        const isDisabled = f.status === 0;
+                        const row = document.createElement('div');
+                        row.style.padding = '10px 15px';
+                        row.style.borderBottom = '1px solid #eee';
+                        row.style.cursor = 'pointer';
+                        row.style.display = 'flex';
+                        row.style.justifyContent = 'space-between';
+                        row.style.alignItems = 'center';
+                        row.style.transition = 'background 0.2s';
+
+                        // Visual distinction for disabled forms
+                        if (isDisabled) {
+                            row.style.opacity = '0.7';
+                            row.style.backgroundColor = '#fdfdfd';
+                        }
+
+                        const statusBadge = isDisabled
+                            ? '<span style="font-size:10px; background:#6c757d; color:white; padding:2px 6px; border-radius:4px; text-transform:uppercase;">Disabled</span>'
+                            : '<span style="font-size:10px; background:#28a745; color:white; padding:2px 6px; border-radius:4px; text-transform:uppercase;">Active</span>';
+
+                        row.innerHTML = `<span style="font-weight:bold; color: ${isDisabled ? '#666' : '#000'}">${f.name}</span> ${statusBadge}`;
+
+                        row.onmouseover = () => row.style.background = '#f8f9fa';
+                        row.onmouseout = () => row.style.background = isDisabled ? '#fdfdfd' : 'transparent';
+
+                        row.onclick = () => {
+                            insertFormUrl(f.public_id);
+                            modal.style.display = 'none';
+                        };
+
+                        listContainer.appendChild(row);
+                    });
+                }
+            } catch (e) {
+                listContainer.innerHTML = `<div style="padding:15px; color:red;">Error loading forms: ${e.message}</div>`;
+            }
+        }
+        function insertFormUrl(publicId) {
+            if (!pendingDropTarget) return;
+
+            const fullUrl = `${window.location.origin}/forms-view.html?id=${publicId}`;
+            const input = pendingDropTarget;
+            const val = input.value;
+            const pos = pendingDropIndex;
+
+            input.value = val.substring(0, pos) + fullUrl + val.substring(pos);
+            input.focus();
+            // Move cursor to end of inserted URL
+            input.setSelectionRange(pos + fullUrl.length, pos + fullUrl.length);
+        }
+
+        // ... (Keep existing reloadSkills, sorting, modal, file upload, etc.) ...
+
+        // --- [KEEP EXISTING FUNCTIONS BELOW THIS LINE UNCHANGED] ---
         async function reloadSkills() {
             try {
                 const res = await fetch('/api/skills');
@@ -568,7 +720,7 @@
             }
         }
 
-        // ... (Sorting) ...
+
         function handleSort(column) {
             if (currentSort.column === column) {
                 currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
@@ -604,49 +756,73 @@
             tbody.innerHTML = '';
             document.getElementById('selectAllCheckbox').checked = false;
             updateBulkDeleteButton();
+
             if (currentSkills.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#666;">No skills found.</td></tr>`;
                 return;
             }
+
             currentSkills.forEach((s, index) => {
+                // Prepare the clickable URL (with dummy data for variables)
                 let displayUrl = s.url;
                 if (displayUrl) {
                     displayUrl = displayUrl
                         .replace(/{{member-name}}/g, encodeURIComponent("TEST MEMBER"))
                         .replace(/{{member-email}}/g, encodeURIComponent("test@example.com"));
                 }
-                const urlDisplay = s.url ? `<a href="${displayUrl}" target="_blank" style="color:#007bff;text-decoration:none;">Link</a>` : `<span style="color:#999; font-style:italic;">No Link</span>`;
+
+                // --- NEW: Determine Link Label (App Link vs External) ---
+                let linkLabel = "External Link";
+                if (s.url) {
+                    try {
+                        // Check if the URL origin matches the current app's origin
+                        // Passing window.location.origin as the base allows this to handle relative URLs correctly too
+                        const urlObj = new URL(s.url, window.location.origin);
+                        if (urlObj.origin === window.location.origin) {
+                            linkLabel = "App Form";
+                        }
+                    } catch (e) {
+                        // If URL parsing fails, default to External
+                        linkLabel = "External Link";
+                    }
+                }
+
+                // Render the link or 'No Link' placeholder
+                const urlDisplay = s.url
+                    ? `<a href="${displayUrl}" target="_blank" style="color:#007bff; text-decoration:none; font-weight:500;">${linkLabel}</a>`
+                    : `<span style="color:#999; font-style:italic;">No Link</span>`;
+
+                // Construct the Table Row
                 const tr = document.createElement('tr');
                 const rowStyle = s.enabled ? '' : 'opacity: 0.6; background-color: #f9f9f9;';
                 tr.style = rowStyle;
+
                 tr.innerHTML = `
-                    <td class="cb-col" data-label="Select">
-                        <input type="checkbox" class="skill-checkbox" value="${s.id}" onchange="updateBulkDeleteButton()">
-                    </td>
-                    <td style="text-align: center;" data-label="Enabled">
-                        <label class="switch">
-                            <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSkillEnabled(${s.id}, this.checked)">
-                            <span class="slider"></span>
-                        </label>
-                    </td>
-                    <td data-label="Skill Name">${s.name}</td>
-                    <td style="text-align:center;" data-label="Critical">
-                        ${s.critical_skill ? '<b style="color:red;">Yes</b>' : 'No'}
-                    </td>
-                    <td data-label="Form URL">${urlDisplay}</td>
-                    <td style="text-align: center;" data-label="Actions">
-                        <button class="btn-icon edit" onclick="editSkillByIndex(${index})" title="Edit">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                        </button>
-                        <button class="btn-icon delete" onclick="deleteSkill(${s.id})" title="Delete">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                        </button>
-                    </td>`;
+                <td class="cb-col" data-label="Select">
+                    <input type="checkbox" class="skill-checkbox" value="${s.id}" onchange="updateBulkDeleteButton()">
+                </td>
+                <td style="text-align: center;" data-label="Enabled">
+                    <label class="switch">
+                        <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSkillEnabled(${s.id}, this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </td>
+                <td data-label="Skill Name">${s.name}</td>
+                <td style="text-align:center;" data-label="Critical">
+                    ${s.critical_skill ? '<b style="color:red;">Yes</b>' : 'No'}
+                </td>
+                <td data-label="Form URL">${urlDisplay}</td>
+                <td style="text-align: center;" data-label="Actions">
+                    <button class="btn-icon edit" onclick="editSkillByIndex(${index})" title="Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                    </button>
+                    <button class="btn-icon delete" onclick="deleteSkill(${s.id})" title="Delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </td>`;
                 tbody.appendChild(tr);
             });
         }
-
-        // ... (toggleSkillEnabled, toggleSelectAll, updateBulkDeleteButton) ...
         async function toggleSkillEnabled(id, newState) {
             const skill = currentSkills.find(s => s.id == id);
             if (!skill) return;
@@ -681,7 +857,6 @@
             }
         }
 
-        // ... (Modal open/close logic) ...
         const skillModal = document.getElementById('skillModal');
         const form = document.getElementById('skillForm');
         function openModal() {
@@ -720,7 +895,6 @@
             reloadSkills();
         });
 
-        // [UPDATED] Delete Skill with Context
         async function deleteSkill(id) {
             const skill = currentSkills.find(s => s.id == id);
             const name = skill ? skill.name : 'this skill';
@@ -730,7 +904,6 @@
             }
         }
 
-        // ... (File Upload & CSV) ...
         function handleFileUpload(input) {
             const file = input.files[0];
             if (!file) return;
@@ -794,7 +967,6 @@
             } catch (e) { }
         }
 
-        // ... (OSM Import) ...
         let discoveredSkills = [];
         async function openOsmImportModal() {
             const modal = document.getElementById('osmImportModal');
@@ -859,6 +1031,7 @@
             if (e.target == skillModal) closeModal('skillModal');
             if (e.target == document.getElementById('helpModal')) closeModal('helpModal');
             if (e.target == document.getElementById('osmImportModal')) closeModal('osmImportModal');
+            if (e.target == document.getElementById('formSelectionModal')) document.getElementById('formSelectionModal').style.display = 'none';
         }
         window.onscroll = function () { document.getElementById("scrollTopBtn").style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
