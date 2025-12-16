@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initMainEditor();
     
+    // Initialize Sortable for drag-and-drop
     const canvas = document.getElementById('fieldsCanvas');
     new Sortable(canvas, {
         handle: '.drag-handle',
@@ -32,24 +33,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// [UPDATED] Matches the field editor configuration
 function initMainEditor() {
     tinymce.init({
         selector: '#formIntro',
         height: 150,
         menubar: false,
-        plugins: 'link lists autolink',
-        toolbar: 'bold italic underline | bullist numlist | link removeformat',
-        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px; } body.dark-mode { background: #333; color: #fff; }'
+        plugins: 'link lists autolink image preview searchreplace visualblocks code fullscreen table help wordcount',
+        toolbar: 'undo redo | styles | bold italic underline forecolor | alignleft aligncenter alignright | bullist numlist | link image | table | removeformat code',
+        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px; margin: 8px; } body.dark-mode { background: #333; color: #fff; }'
     });
 }
 
 function initFieldEditor(id) {
     tinymce.init({
         selector: '#' + id,
-        height: 120, 
+        height: 200, 
         menubar: false,
-        plugins: 'link lists autolink image',
-        toolbar: 'bold italic | bullist numlist | image link',
+        plugins: 'link lists autolink image preview searchreplace visualblocks code fullscreen table help wordcount',
+        toolbar: 'undo redo | styles | bold italic underline forecolor | alignleft aligncenter alignright | bullist numlist | link image | table | removeformat code',
         content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px; margin: 8px; } body.dark-mode { background: #333; color: #fff; }'
     });
 }
@@ -84,14 +86,22 @@ async function saveForm() {
 
         // Get Options
         let options = [];
+        let renderAs = 'radio'; // Default
+
         if (type === 'radio' || type === 'checkboxes') {
             const optInputs = card.querySelectorAll('.option-input');
             options = Array.from(optInputs).map(inp => inp.value).filter(v => v.trim() !== "");
+            
+            // [UPDATED] Capture renderAs setting for radio buttons
+            const renderSelect = card.querySelector('.field-render-as');
+            if (renderSelect) {
+                renderAs = renderSelect.value;
+            }
         }
 
         const required = card.querySelector('.field-required-check').checked;
 
-        return { id, type, description, required, options };
+        return { id, type, description, required, options, renderAs };
     });
 
     const payload = { name, status, intro, structure };
@@ -216,13 +226,14 @@ function addField(type) {
         type: type,
         required: false,
         description: "",
-        options: (type === 'radio' || type === 'checkboxes') ? ["Option 1"] : []
+        options: (type === 'radio' || type === 'checkboxes') ? ["Option 1"] : [],
+        renderAs: 'radio'
     };
     currentFields.push(newField);
     renderFieldItem(newField, true);
     
     // Scroll to bottom
-    const main = document.querySelector('body'); // Changed to body scroll
+    const main = document.querySelector('body'); 
     setTimeout(() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }, 100);
 }
 
@@ -235,32 +246,60 @@ function renderFields() {
 function renderFieldItem(field) {
     const canvas = document.getElementById('fieldsCanvas');
     const div = document.createElement('div');
+    // Default to expanded for new/loaded items
     div.className = 'field-card expanded'; 
     div.setAttribute('data-id', field.id);
     div.setAttribute('data-type', field.type);
 
+    const requiredCheck = field.required ? 'checked' : '';
+
     let html = `
-        <div class="field-header" onclick="this.parentElement.classList.toggle('expanded')">
-            <span class="drag-handle">☰</span>
+        <div class="field-header" onclick="toggleFieldCard(this)">
+            <span class="drag-handle" title="Drag to reorder" onclick="event.stopPropagation()">☰</span>
             <span class="field-type-badge">${field.type}</span>
+            
+            <div class="header-controls" onclick="event.stopPropagation()" title="Toggle Mandatory">
+                <label class="switch" style="transform: scale(0.8);">
+                    <input type="checkbox" class="field-required-check" ${requiredCheck}>
+                    <span class="slider"></span>
+                </label>
+                <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Mandatory</span>
+            </div>
+
             <span style="flex:1;"></span>
-            <button class="btn-icon delete" onclick="removeField(event, '${field.id}')" title="Delete">×</button>
+            
+            <button class="btn-icon delete" onclick="removeField(event, '${field.id}')" title="Delete Question" style="margin-right: 15px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #dc3545;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </button>
+
+            <span class="arrow-icon" title="Toggle Collapse">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </span>
         </div>
         <div class="field-body">
             <div class="form-group">
                 <label>Question / Content (Rich Text)</label>
                 <textarea id="editor_${field.id}" class="field-desc-input">${field.description || ''}</textarea>
             </div>
-            
-            <div class="form-group">
-                <label style="display:inline-flex; align-items:center; cursor:pointer;">
-                    <input type="checkbox" class="field-required-check" ${field.required ? 'checked' : ''} style="width:auto; margin-right:8px;"> 
-                    Mandatory Answer
-                </label>
-            </div>
     `;
 
     if (field.type === 'radio' || field.type === 'checkboxes') {
+        // [UPDATED] Render Mode Selector for Radio only
+        if (field.type === 'radio') {
+             const selectedRadio = (!field.renderAs || field.renderAs === 'radio') ? 'selected' : '';
+             const selectedDropdown = (field.renderAs === 'dropdown') ? 'selected' : '';
+             
+             html += `
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="font-size:13px; font-weight:bold; color:var(--text-muted); display:inline-block; margin-bottom:5px;">Display As:</label>
+                    <select class="field-render-as" style="padding:6px; border-radius:4px; border:1px solid #ccc; font-size:14px; background:var(--input-bg); color:var(--text-main);">
+                        <option value="radio" ${selectedRadio}>Radio Buttons</option>
+                        <option value="dropdown" ${selectedDropdown}>Dropdown Menu</option>
+                    </select>
+                </div>
+             `;
+        }
+
         html += `<div class="form-group"><label>Options</label><div class="options-container">`;
         if(field.options) {
             field.options.forEach(opt => {
@@ -274,13 +313,21 @@ function renderFieldItem(field) {
     div.innerHTML = html;
     canvas.appendChild(div);
 
+    // Initialize TinyMCE for the field description
     setTimeout(() => initFieldEditor(`editor_${field.id}`), 50);
+}
+
+// Helper to toggle collapse via onclick
+window.toggleFieldCard = function(header) {
+    header.parentElement.classList.toggle('expanded');
 }
 
 async function handleRemoveField(id) {
     if(await confirmAction("Remove Question", "Are you sure you want to delete this question?")) {
         currentFields = currentFields.filter(f => f.id !== id);
+        // Remove TinyMCE instance first
         if(tinymce.get(`editor_${id}`)) tinymce.get(`editor_${id}`).remove();
+        
         const card = document.querySelector(`.field-card[data-id="${id}"]`);
         if(card) card.remove();
     }
@@ -291,7 +338,9 @@ function generateOptionRow(value) {
     return `
         <div class="option-row">
             <input type="text" class="option-input" value="${value}" placeholder="Option label">
-            <button class="btn-icon delete" onclick="this.parentElement.remove()" style="color:#dc3545;">&times;</button>
+            <button class="btn-icon delete" onclick="this.parentElement.remove()" style="color:#dc3545;" title="Remove Option">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </button>
         </div>
     `;
 }

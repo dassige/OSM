@@ -135,13 +135,28 @@
                     case 'text_multi': // Paragraph
                         inputHtml = `<textarea name="${fieldName}" rows="4" style="width:100%; padding:10px; border-radius:4px; border:1px solid #ccc; font-family:inherit;" ${field.required ? 'required' : ''} placeholder="Type your answer here..."></textarea>`;
                         break;
+                    
                     case 'radio':
-                        if(field.options) {
-                            field.options.forEach(opt => {
-                                inputHtml += `<label class="option-label"><input type="radio" name="${fieldName}" value="${opt}" ${field.required ? 'required' : ''}> ${opt}</label>`;
-                            });
+                        // [UPDATED] Check for Dropdown vs Radio
+                        if(field.renderAs === 'dropdown') {
+                            inputHtml += `<select name="${fieldName}" style="width:100%; padding:10px; border-radius:4px; border:1px solid #ccc; font-size:16px;" ${field.required ? 'required' : ''}>`;
+                            inputHtml += `<option value="" disabled selected>-- Select an Option --</option>`;
+                            if(field.options) {
+                                field.options.forEach(opt => {
+                                    inputHtml += `<option value="${opt}">${opt}</option>`;
+                                });
+                            }
+                            inputHtml += `</select>`;
+                        } else {
+                            // Default: Radio Buttons
+                            if(field.options) {
+                                field.options.forEach(opt => {
+                                    inputHtml += `<label class="option-label"><input type="radio" name="${fieldName}" value="${opt}" ${field.required ? 'required' : ''}> ${opt}</label>`;
+                                });
+                            }
                         }
                         break;
+                        
                     case 'checkboxes':
                         if(field.options) {
                             field.options.forEach(opt => {
