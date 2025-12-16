@@ -212,8 +212,28 @@ async function deleteForm() {
     } catch (e) { showToast(e.message, 'error'); }
 }
 
-function previewForm() {
-    if (!currentForm || !currentForm.id) return showToast("Please save the form first.", "warning");
+async function previewForm() {
+    // 1. Check for unsaved changes
+    if (isFormDirty()) {
+        // Reuse the custom modal for confirmation
+        const doSave = await confirmAction("Unsaved Changes", "You have unsaved changes.\n\nSave now to see them in the preview?");
+        
+        if (doSave) {
+            await saveForm();
+            // If save failed (still dirty), stop here
+            if (isFormDirty()) return; 
+        } else {
+            // User declined to save, cancel the preview action
+            return; 
+        }
+    }
+
+    // 2. Standard check (Form must exist in DB to have a public link)
+    if (!currentForm || !currentForm.id) {
+        return showToast("Please save the form first.", "warning");
+    }
+
+    // 3. Open the preview
     window.open(`forms-view.html?id=${currentForm.public_id}&preview=true`, '_blank');
 }
 
