@@ -17,10 +17,10 @@ const helpContent = {
                 <li><strong>Filters:</strong> Use the toggle buttons at the top right of the table:
                     <ul>
                         <li><strong>Hide Empty:</strong> Hides members who have no expiring skills listed.</li>
-                        <li><strong>Has Form Only:</strong> Hides skills that do not have a configured Google Form URL.</li>
+                        <li><strong>Has Form Only:</strong> Hides skills that do not have a configured Online Form URL.</li>
                         <li><strong>Expired Only:</strong> Shows only skills that have already passed their due date.</li>
                     </ul>
-                </li>
+                </li>            
             </ul>
             <p><em>Note:</em> Skills in <strong>bold</strong> are Critical. 
             <span style="display: inline-flex; align-items: center; vertical-align: bottom;">
@@ -67,7 +67,7 @@ const helpContent = {
             <hr>
             <p><strong>Add Skill:</strong> Define a new skill to track. The name must match the OSM Dashboard exactly.</p>
             <p><strong>Import CSV:</strong> Bulk upload skills. <br>Format: <code>name, url, critical_skill, enabled</code>.</p>
-            <p><strong>Form URL:</strong> Paste the Google Form link here.</p>
+            <p><strong>Form URL:</strong> Paste the Online Form link here.</p>
             <p><strong>URL Templating:</strong> You can pre-fill form fields using variables:</p>
             <ul>
                 <li><code>{{member-name}}</code> - Inserts the member's name.</li>
@@ -324,7 +324,7 @@ const helpContent = {
     const modal = document.getElementById('globalHelpModal');
     const close = document.querySelector('.help-close-btn');
 
-// Adjust position if on Dashboard 
+    // Adjust position if on Dashboard 
     if (key === "index") {
         // OLD: btn.style.top = "80px";
         // NEW:

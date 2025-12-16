@@ -519,3 +519,49 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
     
     .profile-menu { top: 15px; left: 15px; }
 }
+/* --- TOAST NOTIFICATIONS --- */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.toast {
+    background-color: var(--bg-header); /* Use header dark grey */
+    color: #fff;
+    padding: 15px 20px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease-in-out;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-message {
+    flex-grow: 1;
+    font-size: 14px;
+}
+
+.toast-close {
+    cursor: pointer;
+    font-size: 20px;
+    opacity: 0.7;
+    line-height: 1;
+}
+.toast-close:hover { opacity: 1; }
+
+.toast-success { border-left: 5px solid #28a745; }
+.toast-error { border-left: 5px solid #dc3545; }
+.toast-info { border-left: 5px solid #17a2b8; }
+.toast-warning { border-left: 5px solid #ffc107; }

@@ -19,7 +19,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **Web-Based Management:**
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
       * **Skills:** Configure which skills to track and mark them as Critical.
-      * **Smart Form Links:** Define Google Form URLs with dynamic placeholders (e.g., `{{member-name}}`) to pre-fill member details automatically.
+      * **Smart Form Links:** Define Online Form URLs with dynamic placeholders (e.g., `{{member-name}}`) to pre-fill member details automatically.
       * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, New Users, Password Resets, and Account Deletions.
   * **Reports Console:**
       * **Flexible Reporting:** Generate comprehensive reports grouped by **Member** (for individual follow-up) or **Skill** (for planning training blocks).
