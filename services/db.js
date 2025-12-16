@@ -56,16 +56,17 @@ async function initDB() {
         // --- Domain Tables ---
 
         // Members
-        // [UPDATED] Added notificationPreference column
         await db.exec(`CREATE TABLE IF NOT EXISTS members (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, mobile TEXT, messengerId TEXT, enabled INTEGER DEFAULT 1, notificationPreference TEXT DEFAULT 'email');`);
 
-        // Migrations for existing databases
         try { await db.exec(`ALTER TABLE members ADD COLUMN enabled INTEGER DEFAULT 1;`); } catch (e) { }
         try { await db.exec(`ALTER TABLE members ADD COLUMN notificationPreference TEXT DEFAULT 'email';`); } catch (e) { }
 
         // Skills
-        await db.exec(`CREATE TABLE IF NOT EXISTS skills (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, url TEXT, critical_skill INTEGER DEFAULT 0, enabled INTEGER DEFAULT 1);`);
+        // [UPDATED] Added url_type column
+        await db.exec(`CREATE TABLE IF NOT EXISTS skills (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, url TEXT, critical_skill INTEGER DEFAULT 0, enabled INTEGER DEFAULT 1, url_type TEXT DEFAULT 'external');`);
+        
         try { await db.exec(`ALTER TABLE skills ADD COLUMN enabled INTEGER DEFAULT 1;`); } catch (e) { }
+        try { await db.exec(`ALTER TABLE skills ADD COLUMN url_type TEXT DEFAULT 'external';`); } catch (e) { }
 
         // Users (Auth)
         await db.exec(`
@@ -79,6 +80,7 @@ async function initDB() {
             );
         `);
         try { await db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'simple';`); } catch (e) { }
+        
         // Training Sessions
         await db.exec(`
             CREATE TABLE IF NOT EXISTS training_sessions (
@@ -88,6 +90,7 @@ async function initDB() {
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
         `);
+        
         // User Preferences
         await db.exec(`
             CREATE TABLE IF NOT EXISTS user_preferences (
@@ -102,17 +105,7 @@ async function initDB() {
         await db.exec(`
             CREATE TABLE IF NOT EXISTS forms (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                status INTEGER DEFAULT 0, -- 0: Disabled, 1: Enabled
-                intro TEXT,               -- HTML content for form header
-                structure TEXT,           -- JSON string defining fields
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-        await db.exec(`
-            CREATE TABLE IF NOT EXISTS forms (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                public_id TEXT UNIQUE,    -- New UUID field
+                public_id TEXT UNIQUE,
                 name TEXT NOT NULL,
                 status INTEGER DEFAULT 0,
                 intro TEXT,
@@ -121,15 +114,9 @@ async function initDB() {
             );
         `);
 
-        // Migration: Add public_id to existing tables if missing
-        try { 
-            await db.exec(`ALTER TABLE forms ADD COLUMN public_id TEXT UNIQUE;`); 
-            console.log("[DB] Migration: Added 'public_id' to forms table.");
-        } catch (e) { 
-            // Column likely exists, ignore error
-        }
+        try { await db.exec(`ALTER TABLE forms ADD COLUMN public_id TEXT UNIQUE;`); } catch (e) { }
 
-        // Backfill Migration: Generate UUIDs for existing forms that have NULL public_id
+        // Backfill Migration: Generate UUIDs for existing forms
         const formsWithoutId = await db.all("SELECT id FROM forms WHERE public_id IS NULL");
         if (formsWithoutId.length > 0) {
             console.log(`[DB] Backfilling UUIDs for ${formsWithoutId.length} legacy forms...`);
@@ -175,16 +162,6 @@ async function verifyAndReplaceDb(newDbPath) {
         const missing = requiredTables.filter(t => !tableNames.includes(t));
         if (missing.length > 0) throw new Error(`Incompatible Database. Missing tables: ${missing.join(', ')}`);
 
-        let dbVersion = '0.0.0';
-        try {
-            const row = await tempDb.get("SELECT value FROM preferences WHERE key = 'app_version'");
-            if (row && row.value) dbVersion = row.value;
-        } catch (e) { }
-
-        const currentVersion = packageJson.version;
-        // Optional: Relax version check if structure is stable
-        // if (dbVersion !== currentVersion) throw new Error(`Version Mismatch! Uploaded DB is ${dbVersion}, App is ${currentVersion}.`);
-
         await tempDb.close();
     } catch (e) {
         if (tempDb) await tempDb.close();
@@ -206,10 +183,7 @@ async function verifyAndReplaceDb(newDbPath) {
     }
 }
 
-// =============================================================================
-// 3. AUTHENTICATION & USER MANAGEMENT
-// =============================================================================
-
+// ... (Authentication functions remain unchanged) ...
 async function authenticateUser(email, password) {
     if (!db) await initDB();
     const user = await db.get('SELECT * FROM users WHERE email = ?', email);
@@ -289,10 +263,7 @@ async function deleteUser(id) {
     await db.run(`DELETE FROM users WHERE id = ?`, id);
 }
 
-// =============================================================================
-// 4. MEMBERS MANAGEMENT
-// =============================================================================
-
+// ... (Members functions remain unchanged) ...
 async function getMembers() {
     if (!db) await initDB();
     const members = await db.all('SELECT * FROM members ORDER BY name ASC');
@@ -303,12 +274,7 @@ async function addMember(member) {
     if (!db) await initDB();
     const result = await db.run(
         `INSERT INTO members (name, email, mobile, messengerId, enabled, notificationPreference) VALUES (?, ?, ?, ?, ?, ?)`,
-        member.name,
-        member.email,
-        member.mobile,
-        member.messengerId,
-        member.enabled !== false ? 1 : 0,
-        member.notificationPreference || 'email' // Default to email
+        member.name, member.email, member.mobile, member.messengerId, member.enabled !== false ? 1 : 0, member.notificationPreference || 'email'
     );
     return result.lastID;
 }
@@ -319,14 +285,7 @@ async function bulkAddMembers(members) {
     try {
         const stmt = await db.prepare('INSERT INTO members (name, email, mobile, messengerId, enabled, notificationPreference) VALUES (?, ?, ?, ?, ?, ?)');
         for (const member of members) {
-            await stmt.run(
-                member.name,
-                member.email,
-                member.mobile,
-                member.messengerId,
-                member.enabled !== false ? 1 : 0,
-                member.notificationPreference || 'email'
-            );
+            await stmt.run(member.name, member.email, member.mobile, member.messengerId, member.enabled !== false ? 1 : 0, member.notificationPreference || 'email');
         }
         await stmt.finalize();
         await db.exec('COMMIT');
@@ -340,13 +299,7 @@ async function updateMember(id, member) {
     if (!db) await initDB();
     await db.run(
         `UPDATE members SET name = ?, email = ?, mobile = ?, messengerId = ?, enabled = ?, notificationPreference = ? WHERE id = ?`,
-        member.name,
-        member.email,
-        member.mobile,
-        member.messengerId,
-        member.enabled ? 1 : 0,
-        member.notificationPreference || 'email',
-        id
+        member.name, member.email, member.mobile, member.messengerId, member.enabled ? 1 : 0, member.notificationPreference || 'email', id
     );
 }
 
@@ -371,20 +324,29 @@ async function bulkDeleteMembers(ids) {
 }
 
 // =============================================================================
-// 5. SKILLS MANAGEMENT
+// 5. SKILLS MANAGEMENT (UPDATED)
 // =============================================================================
 
 async function getSkills() {
     if (!db) await initDB();
     const skills = await db.all('SELECT * FROM skills ORDER BY name ASC');
-    return skills.map(s => ({ ...s, critical_skill: !!s.critical_skill, enabled: s.enabled !== 0 }));
+    return skills.map(s => ({ 
+        ...s, 
+        critical_skill: !!s.critical_skill, 
+        enabled: s.enabled !== 0,
+        url_type: s.url_type || 'external' 
+    }));
 }
 
 async function addSkill(skill) {
     if (!db) await initDB();
     const result = await db.run(
-        `INSERT INTO skills (name, url, critical_skill, enabled) VALUES (?, ?, ?, ?)`,
-        skill.name, skill.url, skill.critical_skill ? 1 : 0, skill.enabled !== false ? 1 : 0
+        `INSERT INTO skills (name, url, critical_skill, enabled, url_type) VALUES (?, ?, ?, ?, ?)`,
+        skill.name, 
+        skill.url, 
+        skill.critical_skill ? 1 : 0, 
+        skill.enabled !== false ? 1 : 0,
+        skill.url_type || 'external'
     );
     return result.lastID;
 }
@@ -393,13 +355,14 @@ async function bulkAddSkills(skills) {
     if (!db) await initDB();
     await db.exec('BEGIN TRANSACTION');
     try {
-        const stmt = await db.prepare('INSERT INTO skills (name, url, critical_skill, enabled) VALUES (?, ?, ?, ?)');
+        const stmt = await db.prepare('INSERT INTO skills (name, url, critical_skill, enabled, url_type) VALUES (?, ?, ?, ?, ?)');
         for (const skill of skills) {
             await stmt.run(
                 skill.name,
                 skill.url,
                 skill.critical_skill ? 1 : 0,
-                skill.enabled !== false ? 1 : 0
+                skill.enabled !== false ? 1 : 0,
+                skill.url_type || 'external'
             );
         }
         await stmt.finalize();
@@ -413,8 +376,13 @@ async function bulkAddSkills(skills) {
 async function updateSkill(id, skill) {
     if (!db) await initDB();
     await db.run(
-        `UPDATE skills SET name = ?, url = ?, critical_skill = ?, enabled = ? WHERE id = ?`,
-        skill.name, skill.url, skill.critical_skill ? 1 : 0, skill.enabled ? 1 : 0, id
+        `UPDATE skills SET name = ?, url = ?, critical_skill = ?, enabled = ?, url_type = ? WHERE id = ?`,
+        skill.name, 
+        skill.url, 
+        skill.critical_skill ? 1 : 0, 
+        skill.enabled ? 1 : 0, 
+        skill.url_type || 'external', 
+        id
     );
 }
 
@@ -438,10 +406,7 @@ async function bulkDeleteSkills(ids) {
     }
 }
 
-// =============================================================================
-// 6. PREFERENCES (GLOBAL & USER)
-// =============================================================================
-
+// ... (Rest of the file: Preferences, Logs, Training Sessions, Forms) ...
 async function getPreferences() {
     if (!db) await initDB();
     const rows = await db.all('SELECT key, value FROM preferences');
@@ -482,10 +447,6 @@ async function saveUserPreference(userId, key, value) {
         userId, key, JSON.stringify(value)
     );
 }
-
-// =============================================================================
-// 7. LOGGING & AUDITING
-// =============================================================================
 
 async function logEvent(user, type, title, payload) {
     if (!db) await initDB();
@@ -590,6 +551,7 @@ async function pruneEventLog(days) {
     const isoDate = cutoff.toISOString();
     await db.run('DELETE FROM event_log WHERE timestamp < ?', isoDate);
 }
+
 async function getTrainingSessions(startDate, endDate) {
     if (!db) await initDB();
     return await db.all(
@@ -611,73 +573,29 @@ async function deleteTrainingSession(id) {
     if (!db) await initDB();
     await db.run('DELETE FROM training_sessions WHERE id = ?', id);
 }
+
 async function logEmailAction(member, status, details = '') {
     if (!db) await initDB();
     await db.run(`INSERT INTO email_history (recipient_name, recipient_email, status, details) VALUES (?, ?, ?, ?)`, member.name, member.email, status, details);
 }
+
 async function getAllFutureTrainingSessions() {
     if (!db) await initDB();
-
-    // [UPDATED] Use APP_TIMEZONE to determine "Today"
-    // We create a date string relative to the configured timezone
     const nowString = new Date().toLocaleString('en-US', { timeZone: config.timezone });
     const today = new Date(nowString);
-
-    // Format manually to YYYY-MM-DD to avoid UTC conversion issues with toISOString()
     const y = today.getFullYear();
     const m = String(today.getMonth() + 1).padStart(2, '0');
     const d = String(today.getDate()).padStart(2, '0');
     const todayISO = `${y}-${m}-${d}`;
-
     return await db.all('SELECT * FROM training_sessions WHERE date >= ? ORDER BY date ASC', todayISO);
 }
 
 module.exports = {
-    initDB,
-    closeDB,
-    getDbPath,
-    verifyAndReplaceDb,
-
-    authenticateUser,
-    getUsers,
-    getUserById,
-    getUserByEmail,
-    addUser,
-    updateUser,
-    updateUserProfile,
-    adminResetPassword,
-    deleteUser,
-
-    getMembers,
-    addMember,
-    bulkAddMembers,
-    updateMember,
-    deleteMember,
-    bulkDeleteMembers,
-
-    getSkills,
-    addSkill,
-    bulkAddSkills,
-    updateSkill,
-    deleteSkill,
-    bulkDeleteSkills,
-
-    getPreferences,
-    savePreference,
-    getAllUserPreferences,
-    getUserPreference,
-    saveUserPreference,
-
-    logEvent,
-    getEventLogs,
-    getEventLogMetadata,
-    getEventLogsExport,
-    purgeEventLog,
-    pruneEventLog,
-    logEmailAction,
-
-    getTrainingSessions,
-    addTrainingSession,
-    getAllFutureTrainingSessions,
-    deleteTrainingSession
+    initDB, closeDB, getDbPath, verifyAndReplaceDb,
+    authenticateUser, getUsers, getUserById, getUserByEmail, addUser, updateUser, updateUserProfile, adminResetPassword, deleteUser,
+    getMembers, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers,
+    getSkills, addSkill, bulkAddSkills, updateSkill, deleteSkill, bulkDeleteSkills,
+    getPreferences, savePreference, getAllUserPreferences, getUserPreference, saveUserPreference,
+    logEvent, getEventLogs, getEventLogMetadata, getEventLogsExport, purgeEventLog, pruneEventLog, logEmailAction,
+    getTrainingSessions, addTrainingSession, getAllFutureTrainingSessions, deleteTrainingSession
 };

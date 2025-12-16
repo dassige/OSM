@@ -38,6 +38,10 @@ function isExpiring(dueDateStr, daysThreshold) {
 
 function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, trainingMap = {}) {
     const activeMembers = members.filter(m => m.enabled);
+    
+    // Attempt to determine base URL from environment or default (needed for Internal Forms in Emails)
+    // In production, users should set APP_BASE_URL. Fallback to localhost if missing.
+    const appBaseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
 
     const processedMembers = activeMembers.map(member => {
         const memberRawSkills = scrapedData.filter(item => item.name === member.name);
@@ -46,7 +50,16 @@ function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, 
             if (isExpiring(skill.dueDate, daysThreshold) || isExpired(skill.dueDate)) {
                 const config = skillsConfig.find(c => c.name === skill.skill);
                 if (config && config.enabled) {
-                    skill.url = config.url;
+                    
+                    // [UPDATED] URL Construction Logic
+                    if (config.url_type === 'internal') {
+                        // For internal forms, construct the full link using the Public ID stored in 'url'
+                        skill.url = `${appBaseUrl}/forms-view.html?id=${config.url}`;
+                    } else {
+                        // For external forms, use the stored URL as-is
+                        skill.url = config.url;
+                    }
+
                     skill.isCritical = config.critical_skill;
                     
                     const dates = trainingMap[skill.skill] || [];
@@ -67,5 +80,4 @@ function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, 
     return processedMembers;
 }
 
-// [FIX] Added isExpiring to the export list
 module.exports = { processMemberSkills, isExpired, isExpiring, parseDate };
