@@ -246,6 +246,25 @@ const helpContent = {
             <p><em>Note:</em> Reports exclude disabled members and skills.</p>
         `
     },
+    // --- Forms Manager ---
+    "forms-manage": {
+        title: "Forms Manager Help",
+        body: `
+            <p><strong>Overview:</strong> Create and manage internal skill verification forms.</p>
+            <ul>
+                <li><strong>Builder:</strong> Drag and drop fields from the toolbox to create your form structure.</li>
+                <li><strong>Ordering:</strong> Click the drag handle (☰) on a field header to reorder it.</li>
+                <li><strong>Status:</strong> Use the toggle at the top right to Enable/Disable a form. Disabled forms cannot be accessed by volunteers.</li>
+                <li><strong>Integration:</strong> Click the Link icon (🔗) to copy the public URL. Paste this URL into the 'Form URL' field on the <strong>Manage Skills</strong> page.</li>
+            </ul>
+            <p><strong>Field Types:</strong></p>
+            <ul>
+                <li><strong>Text/Paragraph:</strong> Standard text inputs.</li>
+                <li><strong>Info Block:</strong> Use this to insert headers, instructions, or reading material (no input required).</li>
+                <li><strong>Yes/No:</strong> A simple boolean toggle.</li>
+            </ul>
+        `
+    },
     // --- Default ---
     "default": {
         title: "Help",
@@ -271,6 +290,7 @@ const helpContent = {
     else if (path.includes("login")) key = "login";
     else if (path.includes("third-parties")) key = "third-parties";
     else if (path.includes("training-planner")) key = "training-planner";
+    else if (path.includes("forms-manage")) key = "forms-manage";
     else if (path.includes("reports")) key = "reports";
 
     const content = helpContent[key] || helpContent["default"];

@@ -98,6 +98,18 @@ async function initDB() {
             );
         `);
 
+        // --- Forms Management Table ---
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS forms (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                status INTEGER DEFAULT 0, -- 0: Disabled, 1: Enabled
+                intro TEXT,               -- HTML content for form header
+                structure TEXT,           -- JSON string defining fields
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
         console.log('[DB] Database initialized successfully.');
         return db;
     } catch (error) {
@@ -575,12 +587,12 @@ async function logEmailAction(member, status, details = '') {
 }
 async function getAllFutureTrainingSessions() {
     if (!db) await initDB();
-    
+
     // [UPDATED] Use APP_TIMEZONE to determine "Today"
     // We create a date string relative to the configured timezone
     const nowString = new Date().toLocaleString('en-US', { timeZone: config.timezone });
     const today = new Date(nowString);
-    
+
     // Format manually to YYYY-MM-DD to avoid UTC conversion issues with toISOString()
     const y = today.getFullYear();
     const m = String(today.getMonth() + 1).padStart(2, '0');
@@ -634,8 +646,8 @@ module.exports = {
     pruneEventLog,
     logEmailAction,
 
-    getTrainingSessions, 
-    addTrainingSession, 
+    getTrainingSessions,
+    addTrainingSession,
     getAllFutureTrainingSessions,
     deleteTrainingSession
 };

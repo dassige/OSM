@@ -23,6 +23,7 @@ const {
 const whatsappService = require('./services/whatsapp-service');
 const puppeteer = require('puppeteer-core');
 const reportService = require('./services/report-service');
+const formsService = require('./services/forms-service');
 
 // =============================================================================
 // 1. INITIALIZATION & MIDDLEWARE
@@ -541,6 +542,125 @@ app.post('/api/reports/pdf', async (req, res) => {
         res.status(500).json({ error: "Failed to generate PDF: " + e.message });
     }
 });
+
+// =============================================================================
+// API ROUTES - FORMS MANAGEMENT
+// =============================================================================
+
+// List all forms (Lightweight payload)
+app.get('/api/forms', hasRole('admin'), async (req, res) => {
+    try {
+        res.json(await formsService.getAllForms());
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Get single form details (Full payload)
+app.get('/api/forms/:id', async (req, res) => {
+    // Note: Allow 'simple' or 'guest' roles if you want them to View/Run the form
+    // For editing, stick to 'admin'. Here we check if the user is logged in.
+    if (!req.session.loggedIn) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+        const form = await formsService.getFormById(req.params.id);
+        if (!form) return res.status(404).json({ error: "Form not found" });
+        res.json(form);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Create new form
+app.post('/api/forms', hasRole('admin'), async (req, res) => {
+    try {
+        const { name, status, intro, structure } = req.body;
+        if (!name) return res.status(400).json({ error: "Form name is required" });
+        
+        const id = await formsService.createForm(name, status, intro, structure);
+        await db.logEvent(req.session.user.name, 'Forms', `Created form: ${name}`, { id });
+        res.json({ success: true, id });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Update form
+app.put('/api/forms/:id', hasRole('admin'), async (req, res) => {
+    try {
+        await formsService.updateForm(req.params.id, req.body);
+        await db.logEvent(req.session.user.name, 'Forms', `Updated form ID: ${req.params.id}`, {});
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Delete form
+app.delete('/api/forms/:id', hasRole('admin'), async (req, res) => {
+    try {
+        await formsService.deleteForm(req.params.id);
+        await db.logEvent(req.session.user.name, 'Forms', `Deleted form ID: ${req.params.id}`, {});
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Export Form (JSON Download)
+app.get('/api/forms/:id/export', hasRole('admin'), async (req, res) => {
+    try {
+        const form = await formsService.getFormById(req.params.id);
+        if (!form) return res.status(404).send("Form not found");
+
+        const filename = `form_export_${form.id}_${form.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'application/json');
+        
+        // Export just the necessary data to recreate it
+        const exportData = {
+            name: form.name,
+            intro: form.intro,
+            status: form.status,
+            structure: form.structure
+        };
+        
+        res.send(JSON.stringify(exportData, null, 2));
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+});
+
+// Import Form (JSON Upload)
+app.post('/api/forms/import', hasRole('admin'), upload.single('formFile'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded." });
+    
+    try {
+        const fileContent = fs.readFileSync(req.file.path, 'utf8');
+        const data = JSON.parse(fileContent);
+
+        // Basic validation
+        if (!data.name || !Array.isArray(data.structure)) {
+            throw new Error("Invalid form structure file.");
+        }
+
+        const id = await formsService.createForm(data.name, data.status, data.intro, data.structure);
+        
+        // Cleanup temp file
+        fs.unlinkSync(req.file.path);
+        
+        await db.logEvent(req.session.user.name, 'Forms', `Imported form: ${data.name}`, { id });
+        res.json({ success: true, id });
+
+    } catch (e) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.status(500).json({ error: "Import failed: " + e.message });
+    }
+});
+
+
+
+
 // Static
 app.use(express.static('public'));
 
