@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const packageJson = require('../package.json');
 const config = require('../config');
-
+const { v4: uuidv4 } = require('uuid'); 
 let db;
 
 // =============================================================================
@@ -109,6 +109,36 @@ async function initDB() {
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
         `);
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS forms (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                public_id TEXT UNIQUE,    -- New UUID field
+                name TEXT NOT NULL,
+                status INTEGER DEFAULT 0,
+                intro TEXT,
+                structure TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
+        // Migration: Add public_id to existing tables if missing
+        try { 
+            await db.exec(`ALTER TABLE forms ADD COLUMN public_id TEXT UNIQUE;`); 
+            console.log("[DB] Migration: Added 'public_id' to forms table.");
+        } catch (e) { 
+            // Column likely exists, ignore error
+        }
+
+        // Backfill Migration: Generate UUIDs for existing forms that have NULL public_id
+        const formsWithoutId = await db.all("SELECT id FROM forms WHERE public_id IS NULL");
+        if (formsWithoutId.length > 0) {
+            console.log(`[DB] Backfilling UUIDs for ${formsWithoutId.length} legacy forms...`);
+            const stmt = await db.prepare("UPDATE forms SET public_id = ? WHERE id = ?");
+            for (const f of formsWithoutId) {
+                await stmt.run(crypto.randomUUID(), f.id);
+            }
+            await stmt.finalize();
+        }
 
         console.log('[DB] Database initialized successfully.');
         return db;

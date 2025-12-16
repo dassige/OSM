@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch(() => window.location.href = '/login.html');
 
     initMainEditor();
-    
+
     // Initialize Sortable for drag-and-drop
     const canvas = document.getElementById('fieldsCanvas');
     new Sortable(canvas, {
@@ -47,7 +47,7 @@ function initMainEditor() {
 function initFieldEditor(id) {
     tinymce.init({
         selector: '#' + id,
-        height: 200, 
+        height: 200,
         menubar: false,
         plugins: 'link lists autolink image preview searchreplace visualblocks code fullscreen table help wordcount',
         toolbar: 'undo redo | styles | bold italic underline forecolor | alignleft aligncenter alignright | bullist numlist | link image | table | removeformat code',
@@ -71,14 +71,14 @@ async function saveForm() {
 
     const name = document.getElementById('formName').value;
     const intro = tinymce.get('formIntro').getContent();
-    const status = currentForm.status; 
+    const status = currentForm.status;
 
     // Gather Fields
     const fieldCards = document.querySelectorAll('.field-card');
     const structure = Array.from(fieldCards).map(card => {
         const id = card.getAttribute('data-id');
         const type = card.getAttribute('data-type');
-        
+
         // Get content
         const editorId = `editor_${id}`;
         const description = tinymce.get(editorId) ? tinymce.get(editorId).getContent() : "";
@@ -90,7 +90,7 @@ async function saveForm() {
         if (type === 'radio' || type === 'checkboxes') {
             const optInputs = card.querySelectorAll('.option-input');
             options = Array.from(optInputs).map(inp => inp.value).filter(v => v.trim() !== "");
-            
+
             const renderSelect = card.querySelector('.field-render-as');
             if (renderSelect) renderAs = renderSelect.value;
         }
@@ -112,10 +112,10 @@ async function saveForm() {
         });
         if (!res.ok) throw new Error("Failed to save");
         const result = await res.json();
-        if(result.id) currentForm.id = result.id;
-        
+        if (result.id) currentForm.id = result.id;
+
         showToast("Form saved successfully", "success");
-        loadForms(); 
+        loadForms();
     } catch (e) { showToast(e.message, 'error'); }
 }
 
@@ -123,18 +123,18 @@ async function updateStatus(id, enabled) {
     try {
         await fetch(`/api/forms/${id}`, {
             method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: enabled ? 1 : 0 })
         });
         const f = forms.find(x => x.id === id);
-        if(f) f.status = enabled ? 1 : 0;
+        if (f) f.status = enabled ? 1 : 0;
         showToast(`Form ${enabled ? 'Enabled' : 'Disabled'}`, "success");
     } catch (e) { showToast("Failed to update status", "error"); loadForms(); }
 }
 
 async function deleteForm() {
-    if(!currentForm || !currentForm.id) return;
-    if(!await confirmAction("Delete Form", `Delete '${currentForm.name}'?`)) return;
+    if (!currentForm || !currentForm.id) return;
+    if (!await confirmAction("Delete Form", `Delete '${currentForm.name}'?`)) return;
 
     try {
         await fetch(`/api/forms/${currentForm.id}`, { method: 'DELETE' });
@@ -147,8 +147,8 @@ async function deleteForm() {
 }
 
 function previewForm() {
-    if(!currentForm || !currentForm.id) return showToast("Please save the form first.", "warning");
-    window.open(`forms-view.html?id=${currentForm.id}&preview=true`, '_blank');
+    if (!currentForm || !currentForm.id) return showToast("Please save the form first.", "warning");
+    window.open(`forms-view.html?id=${currentForm.public_id}&preview=true`, '_blank');
 }
 
 // --- UI Rendering ---
@@ -156,11 +156,11 @@ function previewForm() {
 function renderFormList() {
     const list = document.getElementById('formList');
     list.innerHTML = '';
-    
+
     forms.forEach(f => {
         const item = document.createElement('div');
         item.className = `form-item ${currentForm && currentForm.id === f.id ? 'active' : ''}`;
-        
+
         const toggleHtml = `
             <label class="switch" onclick="event.stopPropagation();" title="Toggle On/Off">
                 <input type="checkbox" ${f.status ? 'checked' : ''} onchange="updateStatus(${f.id}, this.checked)">
@@ -193,7 +193,7 @@ async function selectForm(id) {
 function loadEditor(form) {
     currentForm = form;
     currentFields = form.structure || [];
-    
+
     document.getElementById('emptyPanel').style.display = 'none';
     document.getElementById('builderPanel').style.display = 'flex';
     renderFormList();
@@ -203,15 +203,15 @@ function loadEditor(form) {
     // Trigger auto-resize
     nameInput.style.height = 'auto';
     nameInput.style.height = nameInput.scrollHeight + 'px';
-    
-    if(tinymce.get('formIntro')) tinymce.get('formIntro').setContent(form.intro || "");
+
+    if (tinymce.get('formIntro')) tinymce.get('formIntro').setContent(form.intro || "");
 
     renderFields();
 }
 
 function copyFormLink() {
-    if(!currentForm.id) return showToast("Save form first", "warning");
-    const url = `${window.location.origin}/forms-view.html?id=${currentForm.id}`;
+    if (!currentForm.id) return showToast("Save form first", "warning");
+    const url = `${window.location.origin}/forms-view.html?id=${currentForm.public_id}`;
     navigator.clipboard.writeText(url);
     showToast("Link copied!", "success");
 }
@@ -227,9 +227,9 @@ function addField(type) {
     };
     currentFields.push(newField);
     renderFieldItem(newField, true);
-    
+
     // Scroll to bottom
-    const main = document.querySelector('body'); 
+    const main = document.querySelector('body');
     setTimeout(() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }, 100);
 }
 
@@ -243,7 +243,7 @@ function renderFieldItem(field) {
     const canvas = document.getElementById('fieldsCanvas');
     const div = document.createElement('div');
     // Default to expanded for new/loaded items
-    div.className = 'field-card expanded'; 
+    div.className = 'field-card expanded';
     div.setAttribute('data-id', field.id);
     div.setAttribute('data-type', field.type);
 
@@ -281,10 +281,10 @@ function renderFieldItem(field) {
 
     if (field.type === 'radio' || field.type === 'checkboxes') {
         if (field.type === 'radio') {
-             const selectedRadio = (!field.renderAs || field.renderAs === 'radio') ? 'selected' : '';
-             const selectedDropdown = (field.renderAs === 'dropdown') ? 'selected' : '';
-             
-             html += `
+            const selectedRadio = (!field.renderAs || field.renderAs === 'radio') ? 'selected' : '';
+            const selectedDropdown = (field.renderAs === 'dropdown') ? 'selected' : '';
+
+            html += `
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label style="font-size:13px; font-weight:bold; color:var(--text-muted); display:inline-block; margin-bottom:5px;">Display As:</label>
                     <select class="field-render-as" style="padding:6px; border-radius:4px; border:1px solid #ccc; font-size:14px; background:var(--input-bg); color:var(--text-main);">
@@ -296,7 +296,7 @@ function renderFieldItem(field) {
         }
 
         html += `<div class="form-group"><label>Options</label><div class="options-container">`;
-        if(field.options) {
+        if (field.options) {
             field.options.forEach(opt => {
                 html += generateOptionRow(opt);
             });
@@ -312,29 +312,29 @@ function renderFieldItem(field) {
 }
 
 // [NEW] Toggle All Fields
-window.toggleAllFields = function() {
+window.toggleAllFields = function () {
     const cards = document.querySelectorAll('.field-card');
     // If ANY card is collapsed (not expanded), expand all. Otherwise collapse all.
     const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
     cards.forEach(c => {
-        if(anyCollapsed) c.classList.add('expanded');
+        if (anyCollapsed) c.classList.add('expanded');
         else c.classList.remove('expanded');
     });
 }
 
-window.toggleFieldCard = function(header) {
+window.toggleFieldCard = function (header) {
     header.parentElement.classList.toggle('expanded');
 }
 
 async function handleRemoveField(id) {
-    if(await confirmAction("Remove Question", "Are you sure you want to delete this question?")) {
+    if (await confirmAction("Remove Question", "Are you sure you want to delete this question?")) {
         currentFields = currentFields.filter(f => f.id !== id);
-        if(tinymce.get(`editor_${id}`)) tinymce.get(`editor_${id}`).remove();
+        if (tinymce.get(`editor_${id}`)) tinymce.get(`editor_${id}`).remove();
         const card = document.querySelector(`.field-card[data-id="${id}"]`);
-        if(card) card.remove();
+        if (card) card.remove();
     }
 }
-window.removeField = function(e, id) { e.stopPropagation(); handleRemoveField(id); }
+window.removeField = function (e, id) { e.stopPropagation(); handleRemoveField(id); }
 
 function generateOptionRow(value) {
     return `
@@ -347,7 +347,7 @@ function generateOptionRow(value) {
     `;
 }
 
-window.addOptionRow = function(btn) {
+window.addOptionRow = function (btn) {
     const container = btn.previousElementSibling;
     const div = document.createElement('div');
     div.innerHTML = generateOptionRow("");

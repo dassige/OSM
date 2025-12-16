@@ -1,16 +1,32 @@
 // services/forms-service.js
 const db = require('./db');
+const crypto = require('crypto'); // Required for UUID generation
 
 async function getAllForms() {
     const database = await db.initDB();
-    return await database.all('SELECT id, name, status, created_at FROM forms ORDER BY name ASC');
+    // [UPDATED] Include public_id in the result
+    return await database.all('SELECT id, public_id, name, status, created_at FROM forms ORDER BY name ASC');
+}
+
+// [NEW] Get Form by Public UUID
+async function getFormByPublicId(publicId) {
+    const database = await db.initDB();
+    const form = await database.get('SELECT * FROM forms WHERE public_id = ?', publicId);
+    if (form) {
+        try {
+            form.structure = JSON.parse(form.structure);
+        } catch (e) {
+            form.structure = [];
+        }
+    }
+    return form;
 }
 
 async function getFormById(id) {
+    // ... existing logic ...
     const database = await db.initDB();
     const form = await database.get('SELECT * FROM forms WHERE id = ?', id);
     if (form) {
-        // Parse the JSON structure for the frontend
         try {
             form.structure = JSON.parse(form.structure);
         } catch (e) {
@@ -23,10 +39,11 @@ async function getFormById(id) {
 async function createForm(name, status = 0, intro = '', structure = []) {
     const database = await db.initDB();
     const jsonStructure = JSON.stringify(structure);
+    const publicId = crypto.randomUUID(); // Generate UUID
     
     const result = await database.run(
-        `INSERT INTO forms (name, status, intro, structure) VALUES (?, ?, ?, ?)`,
-        name, status ? 1 : 0, intro, jsonStructure
+        `INSERT INTO forms (public_id, name, status, intro, structure) VALUES (?, ?, ?, ?, ?)`,
+        publicId, name, status ? 1 : 0, intro, jsonStructure
     );
     return result.lastID;
 }
@@ -59,6 +76,7 @@ async function deleteForm(id) {
 module.exports = {
     getAllForms,
     getFormById,
+    getFormByPublicId,
     createForm,
     updateForm,
     deleteForm

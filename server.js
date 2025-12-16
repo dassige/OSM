@@ -157,8 +157,19 @@ app.get('/api/user-session', (req, res) => {
 
 // --- GLOBAL ROUTE GUARD ---
 app.use((req, res, next) => {
-    const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config', '/api/demo-credentials'];
-    if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/') || req.path.startsWith('/demo/')) return next();
+    const publicPaths = [
+        '/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config', '/api/demo-credentials',
+        '/forms-view.html', // Public viewer page
+        '/public/js/toast.js', '/public/theme.js' // Ensure dependencies are loaded
+    ];
+
+    if (publicPaths.includes(req.path) ||
+        req.path.startsWith('/socket.io/') ||
+        req.path.startsWith('/resources/') ||
+        req.path.startsWith('/demo/') ||
+        req.path.startsWith('/api/forms/public/') // Allow public API access
+    ) return next();
+
     if (req.session && req.session.loggedIn) return next();
     if (req.path.startsWith('/api/')) return res.status(401).json({ error: "Unauthorized" });
     return res.redirect('/login.html');
@@ -576,7 +587,7 @@ app.post('/api/forms', hasRole('admin'), async (req, res) => {
     try {
         const { name, status, intro, structure } = req.body;
         if (!name) return res.status(400).json({ error: "Form name is required" });
-        
+
         const id = await formsService.createForm(name, status, intro, structure);
         await db.logEvent(req.session.user.name, 'Forms', `Created form: ${name}`, { id });
         res.json({ success: true, id });
@@ -616,7 +627,7 @@ app.get('/api/forms/:id/export', hasRole('admin'), async (req, res) => {
         const filename = `form_export_${form.id}_${form.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.setHeader('Content-Type', 'application/json');
-        
+
         // Export just the necessary data to recreate it
         const exportData = {
             name: form.name,
@@ -624,7 +635,7 @@ app.get('/api/forms/:id/export', hasRole('admin'), async (req, res) => {
             status: form.status,
             structure: form.structure
         };
-        
+
         res.send(JSON.stringify(exportData, null, 2));
     } catch (e) {
         res.status(500).send(e.message);
@@ -634,7 +645,7 @@ app.get('/api/forms/:id/export', hasRole('admin'), async (req, res) => {
 // Import Form (JSON Upload)
 app.post('/api/forms/import', hasRole('admin'), upload.single('formFile'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
-    
+
     try {
         const fileContent = fs.readFileSync(req.file.path, 'utf8');
         const data = JSON.parse(fileContent);
@@ -645,10 +656,10 @@ app.post('/api/forms/import', hasRole('admin'), upload.single('formFile'), async
         }
 
         const id = await formsService.createForm(data.name, data.status, data.intro, data.structure);
-        
+
         // Cleanup temp file
         fs.unlinkSync(req.file.path);
-        
+
         await db.logEvent(req.session.user.name, 'Forms', `Imported form: ${data.name}`, { id });
         res.json({ success: true, id });
 
@@ -658,7 +669,23 @@ app.post('/api/forms/import', hasRole('admin'), upload.single('formFile'), async
     }
 });
 
-
+app.get('/api/forms/public/:publicId', async (req, res) => {
+    try {
+        const form = await formsService.getFormByPublicId(req.params.publicId);
+        
+        if (!form) return res.status(404).json({ error: "Form not found" });
+        
+        // Return only what is needed for rendering
+        res.json({
+            name: form.name,
+            intro: form.intro,
+            status: form.status,
+            structure: form.structure
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 
 
 // Static
@@ -777,7 +804,7 @@ function applyTemplate(template, vars) {
 
 async function handleQueueProcessing(socket, targets, days, logger) {
     const currentUser = socket.request.session.user.name || socket.request.session.user;
-    
+
     // --- [DEBUG] INPUT LOGGING ---
     logger(`\n[DEBUG] --- Report Process Started ---`);
     logger(`[DEBUG] User: ${currentUser}`);
@@ -793,7 +820,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         logger(`[DEBUG] Loading DB Members and Skills...`);
         const dbMembers = await db.getMembers();
         const dbSkills = await db.getSkills();
-        
+
         logger(`[DEBUG] Loading Preferences...`);
         const prefs = await db.getPreferences();
         const trainingMap = await getTrainingMap();
@@ -818,9 +845,9 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         // --- [DEBUG] SCRAPER CALL ---
         const interval = config.scrapingInterval || 60; // Default to 60 to allow caching if available
         logger(`[DEBUG] Calling Scraper -> URL: ${config.url}, Interval: ${interval}`);
-        
+
         const rawData = await getOIData(config.url, interval, currentProxy, logger);
-        
+
         if (!rawData) {
             logger(`[ERROR] Scraper returned NULL or UNDEFINED.`);
         } else {
@@ -828,7 +855,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         }
 
         if (!rawData || rawData.length === 0) {
-             throw new Error("Failed to load data: Scraper returned 0 records. Check OSM credentials or Proxy.");
+            throw new Error("Failed to load data: Scraper returned 0 records. Check OSM credentials or Proxy.");
         }
         // ----------------------------
 
@@ -857,11 +884,11 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                         await db.logEmailAction(member, 'EMAIL_FAILED', err.message);
                     }
                 }
-                
+
                 // WhatsApp Sending Logic ...
                 if (target.sendWa && config.enableWhatsApp) {
                     // ... (keep existing WA code) ...
-                     try {
+                    try {
                         // Filter Logic
                         let waSkills = member.expiringSkills;
                         if (waOnlyWithUrl) {
@@ -927,7 +954,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
     } catch (error) {
         logger(`FATAL ERROR: ${error.message}`);
         // [DEBUG] Log stack trace to console
-        console.error(error); 
+        console.error(error);
         socket.emit('script-complete', 1);
     }
 }
