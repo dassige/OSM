@@ -3,13 +3,11 @@
 let forms = [];
 let currentForm = null;
 let currentFields = [];
-let originalFormState = null; // [NEW] Track baseline state
-let formSortMode = 'name_asc'; // Options: name_asc, name_desc, status_asc, status_desc
+let originalFormState = null; 
+let formSortMode = 'name_asc'; 
 
 function toggleFormSort() {
     const btn = document.getElementById('btnSortForms');
-    
-    // Cycle modes
     switch (formSortMode) {
         case 'name_asc': 
             formSortMode = 'name_desc';
@@ -55,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initMainEditor();
 
-    // Initialize Sortable for drag-and-drop
     const canvas = document.getElementById('fieldsCanvas');
     new Sortable(canvas, {
         handle: '.drag-handle',
@@ -85,34 +82,25 @@ function initFieldEditor(id) {
     });
 }
 
-// --- [NEW] State Management Helpers ---
-
 function getFormData() {
     const name = document.getElementById('formName').value;
-    // Safe check for TinyMCE initialization
     const introEditor = tinymce.get('formIntro');
     const intro = introEditor ? introEditor.getContent() : "";
     
-    // Status is NOT part of the dirty check for the editor panel (it's handled in the sidebar)
-    // We strictly check Name, Intro, and Structure.
-
     const fieldCards = document.querySelectorAll('.field-card');
     const structure = Array.from(fieldCards).map(card => {
         const id = card.getAttribute('data-id');
         const type = card.getAttribute('data-type');
 
-        // Get content
         const editorId = `editor_${id}`;
         const ed = tinymce.get(editorId);
         const description = ed ? ed.getContent() : "";
 
-        // Get Options
         let options = [];
         let renderAs = 'radio';
 
         if (type === 'radio' || type === 'checkboxes') {
             const optInputs = card.querySelectorAll('.option-input');
-            // Filter empty options to match save logic
             options = Array.from(optInputs).map(inp => inp.value).filter(v => v.trim() !== "");
 
             const renderSelect = card.querySelector('.field-render-as');
@@ -136,9 +124,9 @@ function isFormDirty() {
 async function checkDirty(actionName) {
     if (isFormDirty()) {
         const confirm = await confirmAction("Unsaved Changes", `You have unsaved changes in "${currentForm.name || 'New Form'}".\n\nDo you want to discard them?`);
-        return confirm; // True = Discard & Proceed, False = Cancel & Stay
+        return confirm; 
     }
-    return true; // No changes, proceed
+    return true; 
 }
 
 // --- API Interactions ---
@@ -153,9 +141,8 @@ async function loadForms() {
 }
 
 async function saveForm() {
-    // [UPDATED] Use helper to get data
     const data = getFormData();
-    const status = currentForm ? currentForm.status : 0; // Preserve status
+    const status = currentForm ? currentForm.status : 0;
 
     const payload = { ...data, status };
     const method = currentForm && currentForm.id ? 'PUT' : 'POST';
@@ -176,7 +163,6 @@ async function saveForm() {
             currentForm = { ...currentForm, ...payload };
         }
 
-        // [NEW] Update baseline state
         originalFormState = getFormData();
         
         showToast("Form saved successfully", "success");
@@ -205,7 +191,7 @@ async function deleteForm() {
         await fetch(`/api/forms/${currentForm.id}`, { method: 'DELETE' });
         showToast("Form deleted", "success");
         currentForm = null;
-        originalFormState = null; // Clear state
+        originalFormState = null; 
         document.getElementById('builderPanel').style.display = 'none';
         document.getElementById('emptyPanel').style.display = 'flex';
         loadForms();
@@ -213,28 +199,113 @@ async function deleteForm() {
 }
 
 async function previewForm() {
-    // 1. Check for unsaved changes
     if (isFormDirty()) {
-        // Reuse the custom modal for confirmation
         const doSave = await confirmAction("Unsaved Changes", "You have unsaved changes.\n\nSave now to see them in the preview?");
-        
         if (doSave) {
             await saveForm();
-            // If save failed (still dirty), stop here
             if (isFormDirty()) return; 
         } else {
-            // User declined to save, cancel the preview action
             return; 
         }
     }
 
-    // 2. Standard check (Form must exist in DB to have a public link)
     if (!currentForm || !currentForm.id) {
         return showToast("Please save the form first.", "warning");
     }
 
-    // 3. Open the preview
     window.open(`forms-view.html?id=${currentForm.public_id}&preview=true`, '_blank');
+}
+
+// --- Import/Export Logic ---
+
+// Single Form Export
+async function exportSingleForm() {
+    // If saved form, use API
+    if (currentForm && currentForm.id) {
+        window.location.href = `/api/forms/${currentForm.id}/export`;
+    } else {
+        // If unsaved/new, generate JSON locally
+        const data = getFormData();
+        const filename = `form_export_${data.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+}
+
+// Single Form Import
+function importSingleForm(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data.name || !Array.isArray(data.structure)) throw new Error("Invalid form format");
+            
+            // Populate editor
+            loadEditor({
+                ...currentForm, // Keep ID if exists (overwrite fields)
+                name: data.name,
+                intro: data.intro || "",
+                status: data.status || 0,
+                structure: data.structure
+            });
+            showToast("Form imported into editor. Click Save to persist.", "success");
+        } catch (err) {
+            showToast("Import failed: " + err.message, "error");
+        }
+    };
+    reader.readAsText(file);
+    input.value = ''; // Reset
+}
+
+// Bulk Export
+function exportAllForms() {
+    window.location.href = '/api/forms/export/all';
+}
+
+// Bulk Import
+async function importAllForms(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // --- [CONFIRMATION MODAL] ---
+    if (!await confirmAction("Bulk Import", "WARNING: This will DELETE ALL existing forms and replace them with the imported file.\n\nAre you sure?")) {
+        input.value = ''; // Clear input if user cancels
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('formsFile', file);
+
+    try {
+        const res = await fetch('/api/forms/import/all', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await res.json();
+        
+        if (res.ok) {
+            showToast(`Successfully imported ${result.count} forms.`, "success");
+            // Reset view
+            currentForm = null;
+            document.getElementById('builderPanel').style.display = 'none';
+            document.getElementById('emptyPanel').style.display = 'flex';
+            loadForms();
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (e) {
+        showToast("Bulk import failed: " + e.message, "error");
+    }
+    input.value = '';
 }
 
 // --- UI Rendering ---
@@ -243,22 +314,19 @@ function renderFormList() {
     const list = document.getElementById('formList');
     list.innerHTML = '';
 
-    // Create a copy to sort
     const sortedForms = [...forms].sort((a, b) => {
         const nameA = (a.name || '').toLowerCase();
         const nameB = (b.name || '').toLowerCase();
-        const statusA = a.status; // 1 or 0
+        const statusA = a.status; 
         const statusB = b.status;
 
         switch (formSortMode) {
             case 'name_asc': return nameA.localeCompare(nameB);
             case 'name_desc': return nameB.localeCompare(nameA);
             case 'status_active': 
-                // Active (1) first, then by Name
                 if (statusA !== statusB) return statusB - statusA;
                 return nameA.localeCompare(nameB);
             case 'status_disabled': 
-                // Disabled (0) first, then by Name
                 if (statusA !== statusB) return statusA - statusB;
                 return nameA.localeCompare(nameB);
             default: return 0;
@@ -269,7 +337,6 @@ function renderFormList() {
         const item = document.createElement('div');
         item.className = `form-item ${currentForm && currentForm.id === f.id ? 'active' : ''}`;
 
-        // ... rest of item generation remains identical ...
         const toggleHtml = `
             <label class="switch" onclick="event.stopPropagation();" title="Toggle On/Off">
                 <input type="checkbox" ${f.status ? 'checked' : ''} onchange="updateStatus(${f.id}, this.checked)">
@@ -288,7 +355,6 @@ function renderFormList() {
     });
 }
 
-//  Check dirty before creating new
 async function createNewForm() {
     if (document.getElementById('builderPanel').style.display === 'flex') {
         if (!await checkDirty()) return;
@@ -296,9 +362,8 @@ async function createNewForm() {
     loadEditor({ name: "New Form", status: 0, intro: "", structure: [] });
 }
 
-// Check dirty before switching
 async function selectForm(id) {
-    if (currentForm && currentForm.id === id) return; // Clicked same form
+    if (currentForm && currentForm.id === id) return; 
     if (document.getElementById('builderPanel').style.display === 'flex') {
         if (!await checkDirty()) return;
     }
@@ -319,7 +384,6 @@ function loadEditor(form) {
 
     const nameInput = document.getElementById('formName');
     nameInput.value = form.name || "";
-    // Trigger auto-resize
     nameInput.style.height = 'auto';
     nameInput.style.height = nameInput.scrollHeight + 'px';
 
@@ -327,14 +391,9 @@ function loadEditor(form) {
 
     renderFields();
 
-    // [NEW] Set Baseline State
-    // We construct the state object manually from the loaded data to match the format of getFormData()
-    // This avoids race conditions with TinyMCE/DOM not being ready yet.
     originalFormState = {
         name: form.name || "",
         intro: form.intro || "",
-        // Deep copy structure to ensure we have a clean comparison object
-        // Note: We might need to ensure 'renderAs' etc are present to match getFormData defaults
         structure: (form.structure || []).map(f => ({
             id: f.id,
             type: f.type,
@@ -365,7 +424,6 @@ function addField(type) {
     currentFields.push(newField);
     renderFieldItem(newField, true);
 
-    // Scroll to bottom
     setTimeout(() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }, 100);
 }
 

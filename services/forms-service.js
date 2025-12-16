@@ -1,14 +1,56 @@
 // services/forms-service.js
 const db = require('./db');
-const crypto = require('crypto'); // Required for UUID generation
+const crypto = require('crypto');
 
 async function getAllForms() {
     const database = await db.initDB();
-    // [UPDATED] Include public_id in the result
     return await database.all('SELECT id, public_id, name, status, created_at FROM forms ORDER BY name ASC');
 }
 
-// [NEW] Get Form by Public UUID
+// [NEW] Get all forms with full structure for bulk export
+async function getAllFormsFull() {
+    const database = await db.initDB();
+    const forms = await database.all('SELECT * FROM forms ORDER BY name ASC');
+    return forms.map(f => {
+        try {
+            f.structure = JSON.parse(f.structure);
+        } catch (e) {
+            f.structure = [];
+        }
+        return f;
+    });
+}
+
+// [NEW] Bulk Import (Wipe and Replace)
+async function importBulkForms(formsArray) {
+    const database = await db.initDB();
+    
+    await database.exec('BEGIN TRANSACTION');
+    try {
+        // 1. Delete all existing forms
+        await database.run('DELETE FROM forms');
+        
+        // 2. Insert new forms
+        const stmt = await database.prepare(`INSERT INTO forms (public_id, name, status, intro, structure, created_at) VALUES (?, ?, ?, ?, ?, ?)`);
+        
+        for (const f of formsArray) {
+            const structureStr = typeof f.structure === 'string' ? f.structure : JSON.stringify(f.structure || []);
+            const pubId = f.public_id || crypto.randomUUID();
+            const status = f.status !== undefined ? f.status : 0;
+            const createdAt = f.created_at || new Date().toISOString();
+            
+            await stmt.run(pubId, f.name, status, f.intro || '', structureStr, createdAt);
+        }
+        
+        await stmt.finalize();
+        await database.exec('COMMIT');
+        return true;
+    } catch (e) {
+        await database.exec('ROLLBACK');
+        throw e;
+    }
+}
+
 async function getFormByPublicId(publicId) {
     const database = await db.initDB();
     const form = await database.get('SELECT * FROM forms WHERE public_id = ?', publicId);
@@ -23,7 +65,6 @@ async function getFormByPublicId(publicId) {
 }
 
 async function getFormById(id) {
-    // ... existing logic ...
     const database = await db.initDB();
     const form = await database.get('SELECT * FROM forms WHERE id = ?', id);
     if (form) {
@@ -39,7 +80,7 @@ async function getFormById(id) {
 async function createForm(name, status = 0, intro = '', structure = []) {
     const database = await db.initDB();
     const jsonStructure = JSON.stringify(structure);
-    const publicId = crypto.randomUUID(); // Generate UUID
+    const publicId = crypto.randomUUID();
     
     const result = await database.run(
         `INSERT INTO forms (public_id, name, status, intro, structure) VALUES (?, ?, ?, ?, ?)`,
@@ -52,8 +93,6 @@ async function updateForm(id, data) {
     const database = await db.initDB();
     const { name, status, intro, structure } = data;
     
-    // Only update fields that are provided
-    // Note: structure is expected to be a JS Object/Array here, we stringify it for DB
     const updates = [];
     const params = [];
 
@@ -75,6 +114,8 @@ async function deleteForm(id) {
 
 module.exports = {
     getAllForms,
+    getAllFormsFull, // Exported
+    importBulkForms, // Exported
     getFormById,
     getFormByPublicId,
     createForm,
