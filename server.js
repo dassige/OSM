@@ -390,9 +390,6 @@ app.post('/api/forms/import', hasRole('admin'), upload.single('formFile'), async
 app.get('/api/forms/public/:publicId', async (req, res) => {
     try { const form = await formsService.getFormByPublicId(req.params.publicId); if (!form) return res.status(404).json({ error: "Form not found" }); res.json({ name: form.name, intro: form.intro, status: form.status, structure: form.structure }); } catch (e) { res.status(500).json({ error: e.message }); }
 });
-// =============================================================================
-// API ROUTES - LIVE FORMS 
-// =============================================================================
 
 // =============================================================================
 // API ROUTES - LIVE FORMS 
@@ -407,7 +404,8 @@ app.get('/api/live-forms', hasRole('admin'), async (req, res) => {
             sentStart: req.query.sentStart,
             sentEnd: req.query.sentEnd,
             subStart: req.query.subStart,
-            subEnd: req.query.subEnd
+            subEnd: req.query.subEnd,
+            tries: req.query.tries
         };
 
         const page = parseInt(req.query.page) || 1;
@@ -433,7 +431,8 @@ app.get('/api/live-forms/export', hasRole('admin'), async (req, res) => {
             sentStart: req.query.sentStart,
             sentEnd: req.query.sentEnd,
             subStart: req.query.subStart,
-            subEnd: req.query.subEnd
+            subEnd: req.query.subEnd,
+            tries: req.query.tries
         };
 
         // No pagination for export
@@ -459,7 +458,8 @@ app.delete('/api/live-forms/all', hasRole('superadmin'), async (req, res) => {
             sentStart: req.query.sentStart || req.body.sentStart,
             sentEnd: req.query.sentEnd || req.body.sentEnd,
             subStart: req.query.subStart || req.body.subStart,
-            subEnd: req.query.subEnd || req.body.subEnd
+            subEnd: req.query.subEnd || req.body.subEnd,
+            tries: req.query.tries || req.body.tries
         };
 
         const count = await formsService.purgeLiveForms(filters);
@@ -552,18 +552,124 @@ app.get('/api/live-forms/review/:id', hasRole('admin'), async (req, res) => {
         if (!result) return res.status(404).json({ error: "Record not found" });
 
         res.json({
+            // CRITICAL FIX: Pass ID and Status to frontend
+            id: result.id,
+            form_status: result.form_status, 
+            tries: result.tries,
+            
+            // Form Data
             name: result.form_name,
             intro: result.intro,
             structure: result.structure,
+            
+            // Context & Contact Info (for notifications)
             member: result.member_name,
+            member_email: result.member_email,   
+            member_mobile: result.member_mobile, 
+            member_prefs: result.member_prefs,
             skill: result.skill_name,
-            submittedData: result.form_submitted_data, // The actual answers
+            
+            // Submission Data
+            submittedData: result.form_submitted_data,
             submittedAt: result.form_submitted_datetime
         });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
 });
+
+// Accept Submission
+app.post('/api/live-forms/accept/:id', hasRole('admin'), async (req, res) => {
+    try {
+        const { notifyEmail, notifyWa } = req.body;
+        const id = req.params.id;
+
+        // 1. Update Status
+        await formsService.updateLiveFormStatus(id, 'accepted');
+
+        // 2. Fetch Context for Notification
+        const form = await formsService.getLiveFormSubmission(id);
+        const member = { 
+            name: form.member_name, 
+            email: form.member_email, 
+            mobile: form.member_mobile 
+        };
+
+        // 3. Send Notifications
+        const message = `Hello ${member.name}, your submission for "${form.skill_name}" has been APPROVED. No further action is required.`;
+
+        if (notifyEmail && member.email) {
+            await config.transporter.sendMail({
+                from: config.ui.loginTitle + " <noreply@fenz.osm>",
+                to: member.email,
+                subject: "Skill Verification Approved",
+                text: message
+            });
+        }
+        if (notifyWa && member.mobile && config.enableWhatsApp) {
+            await whatsappService.sendMessage(member.mobile, message);
+        }
+
+        await db.logEvent(req.session.user.name, 'Live Forms', `Accepted submission #${id}`, { member: member.name });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Reject Submission
+app.post('/api/live-forms/reject/:id', hasRole('admin'), async (req, res) => {
+    try {
+        const { notifyEmail, notifyWa, generateNew } = req.body;
+        const id = req.params.id;
+
+        // 1. Update Status
+        await formsService.updateLiveFormStatus(id, 'rejected');
+        
+        // 2. Fetch Context
+        const form = await formsService.getLiveFormSubmission(id);
+        const member = { 
+            name: form.member_name, 
+            email: form.member_email, 
+            mobile: form.member_mobile 
+        };
+
+        let message = `Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted.`;
+        
+        // 3. Handle Retry Generation
+        if (generateNew) {
+            const newCode = await formsService.createRetryLiveForm(id);
+            // Build new link (assuming internal structure)
+            const baseUrl = req.protocol + '://' + req.get('host');
+            const newLink = `${baseUrl}/forms-view.html?code=${newCode}`;
+            
+            message += `\n\nA new form has been generated. Please review your answers and submit again here:\n${newLink}`;
+        } else {
+            message += `\n\nPlease contact an administrator for more details.`;
+        }
+
+        // 4. Send Notifications
+        if (notifyEmail && member.email) {
+            await config.transporter.sendMail({
+                from: config.ui.loginTitle + " <noreply@fenz.osm>",
+                to: member.email,
+                subject: "Skill Verification Returned",
+                text: message
+            });
+        }
+        if (notifyWa && member.mobile && config.enableWhatsApp) {
+            await whatsappService.sendMessage(member.mobile, message);
+        }
+
+        await db.logEvent(req.session.user.name, 'Live Forms', `Rejected submission #${id}`, { member: member.name, retry: generateNew });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+
+
 //==============================================================================    
 //  SERVE STATIC FILES
 app.use(express.static('public'));

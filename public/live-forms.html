@@ -106,7 +106,7 @@
         .btn-tool.export { background-color: var(--success); }
         .btn-tool.purge { background-color: var(--danger); }
 
-        /* [UPDATED] Tools Bar: Now a rounded panel */
+        /* Tools Bar */
         .tools-bar {
             background-color: var(--bg-card);
             padding: 15px;
@@ -124,7 +124,7 @@
             align-items: center;
             gap: 8px;
             font-size: 14px;
-            color: var(--text-main); /* Ensure text is visible in dark mode */
+            color: var(--text-main);
             font-weight: 500;
         }
 
@@ -193,11 +193,13 @@
         .status-open { background-color: #17a2b8; color: white; }
         .status-submitted { background-color: #28a745; color: white; }
         .status-disabled { background-color: #6c757d; color: white; }
+        .status-accepted { background-color: #007bff; color: white; }
+        .status-rejected { background-color: #dc3545; color: white; }
 
         .btn-icon { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-muted); transition: transform 0.2s; }
         .btn-icon:hover { transform: scale(1.1); color: var(--primary); }
         .btn-icon.delete:hover { color: #dc3545; }
-        .btn-icon.download:hover { color: var(--success); } /* Green for download */
+        .btn-icon.download:hover { color: var(--success); }
 
         @media screen and (max-width: 768px) {
             .filter-bar { flex-direction: column; align-items: stretch; }
@@ -233,6 +235,8 @@
                     <option value="">All Statuses</option>
                     <option value="open">Open</option>
                     <option value="submitted">Submitted</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
                     <option value="disabled">Disabled</option>
                 </select>
             </div>
@@ -247,6 +251,11 @@
                 <select id="filterSkill" class="filter-select">
                     <option value="">All Skills</option>
                 </select>
+            </div>
+            
+            <div class="filter-group" style="flex: 0 1 100px; min-width:100px;">
+                <label>Tries</label>
+                <input type="number" id="filterTries" class="filter-select" min="1" placeholder="Any">
             </div>
 
             <div class="filter-group filter-group-date">
@@ -299,6 +308,7 @@
                     <tr>
                         <th onclick="handleSort('member_name')">Member <span id="icon-member_name"></span></th>
                         <th onclick="handleSort('skill_name')">Skill <span id="icon-skill_name"></span></th>
+                        <th onclick="handleSort('tries')" style="width: 70px; text-align:center;">Tries <span id="icon-tries"></span></th>
                         <th onclick="handleSort('form_sent_datetime')">Sent Date <span id="icon-form_sent_datetime"></span></th>
                         <th onclick="handleSort('form_submitted_datetime')">Submitted Date <span id="icon-form_submitted_datetime"></span></th>
                         <th onclick="handleSort('form_status')">Status <span id="icon-form_status"></span></th>
@@ -307,7 +317,7 @@
                 </thead>
                 <tbody id="tableBody">
                     <tr>
-                        <td colspan="6" style="text-align:center;">Loading...</td>
+                        <td colspan="7" style="text-align:center;">Loading...</td>
                     </tr>
                 </tbody>
             </table>
@@ -328,6 +338,7 @@
             <h2>Update Status</h2>
             <p><strong>Member:</strong> <span id="editMember"></span></p>
             <p><strong>Skill:</strong> <span id="editSkill"></span></p>
+            <p><strong>Access Code:</strong> <span id="editCode" style="font-family:monospace; font-size:0.9em; color:#666; user-select: all;"></span></p>
             <input type="hidden" id="editId">
 
             <div class="form-group" style="margin-top:20px;">
@@ -335,6 +346,8 @@
                 <select id="editStatusSelect" class="filter-select">
                     <option value="open">Open</option>
                     <option value="submitted">Submitted</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
                     <option value="disabled">Disabled</option>
                 </select>
             </div>
@@ -361,35 +374,29 @@
         let currentData = [];
         let currentSort = { column: 'form_sent_datetime', order: 'desc' };
         
-        // Pagination State
         let currentPage = 1;
         let currentLimit = 25;
         let totalCount = 0;
 
-        // [NEW] Localization Defaults
         let appLocale = 'en-NZ';
         let appTimezone = 'Pacific/Auckland';
 
-        // Icon Constants
         const ICON_ASC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
         const ICON_DESC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
         const ICON_NONE = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3;"><path d="M7 15l5 5 5-5"/><path d="M7 9l5-5 5 5"/></svg>';
 
         async function init() {
-            // 1. Load UI Config & Localization
             try {
                 const c = await (await fetch('/ui-config')).json();
                 if (c.loginTitle) document.getElementById('pageTitle').innerText = "Live Forms - " + c.loginTitle;
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
                 if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
                 
-                // [NEW] Set Locale
                 if (c.locale) appLocale = c.locale;
                 if (c.timezone) appTimezone = c.timezone;
 
             } catch (e) { }
 
-            // 2. Load User Preferences (Sort & Limit)
             try {
                 const prefRes = await fetch('/api/user-preferences');
                 const prefs = await prefRes.json();
@@ -400,7 +407,6 @@
                 }
             } catch (e) { console.error("Pref error", e); }
 
-            // 3. Load Filters (Members/Skills)
             try {
                 const mRes = await fetch('/api/members');
                 const members = await mRes.json();
@@ -423,16 +429,16 @@
             if (getVal('filterStatus')) params.append('status', getVal('filterStatus'));
             if (getVal('filterMember')) params.append('memberId', getVal('filterMember'));
             if (getVal('filterSkill')) params.append('skillId', getVal('filterSkill'));
+            if (getVal('filterTries')) params.append('tries', getVal('filterTries'));
             if (getVal('filterSentStart')) params.append('sentStart', getVal('filterSentStart'));
             if (getVal('filterSentEnd')) params.append('sentEnd', getVal('filterSentEnd'));
             if (getVal('filterSubStart')) params.append('subStart', getVal('filterSubStart'));
             if (getVal('filterSubEnd')) params.append('subEnd', getVal('filterSubEnd'));
             
-            // Pagination
             params.append('page', currentPage);
             params.append('limit', currentLimit);
 
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading...</td></tr>';
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading...</td></tr>';
 
             try {
                 const res = await fetch(`/api/live-forms?${params.toString()}`);
@@ -442,10 +448,10 @@
                 currentData = result.records || [];
                 totalCount = result.total || 0;
                 
-                applySort(); // Sorts the *current page* client-side
+                applySort(); 
                 updatePagination();
             } catch (e) {
-                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Error: ${e.message}</td></tr>`;
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Error: ${e.message}</td></tr>`;
             }
         }
 
@@ -467,7 +473,7 @@
 
         function changeLimit(val) {
             currentLimit = parseInt(val);
-            currentPage = 1; // Reset to first page
+            currentPage = 1;
             fetch('/api/user-preferences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -477,7 +483,7 @@
         }
 
         function resetFilters() {
-            document.querySelectorAll('select.filter-select, input.filter-date').forEach(el => el.value = '');
+            document.querySelectorAll('select.filter-select, input.filter-date, input[type="number"]').forEach(el => el.value = '');
             applyFilters(1);
         }
 
@@ -491,10 +497,10 @@
             
             const params = new URLSearchParams();
             const getVal = (id) => document.getElementById(id).value;
-            // Reconstruct filters
             if (getVal('filterStatus')) params.append('status', getVal('filterStatus'));
             if (getVal('filterMember')) params.append('memberId', getVal('filterMember'));
             if (getVal('filterSkill')) params.append('skillId', getVal('filterSkill'));
+            if (getVal('filterTries')) params.append('tries', getVal('filterTries'));
             if (getVal('filterSentStart')) params.append('sentStart', getVal('filterSentStart'));
             if (getVal('filterSentEnd')) params.append('sentEnd', getVal('filterSentEnd'));
             if (getVal('filterSubStart')) params.append('subStart', getVal('filterSubStart'));
@@ -517,10 +523,10 @@
         function exportJson() {
             const params = new URLSearchParams();
             const getVal = (id) => document.getElementById(id).value;
-            // Reconstruct filters
             if (getVal('filterStatus')) params.append('status', getVal('filterStatus'));
             if (getVal('filterMember')) params.append('memberId', getVal('filterMember'));
             if (getVal('filterSkill')) params.append('skillId', getVal('filterSkill'));
+            if (getVal('filterTries')) params.append('tries', getVal('filterTries'));
             if (getVal('filterSentStart')) params.append('sentStart', getVal('filterSentStart'));
             if (getVal('filterSentEnd')) params.append('sentEnd', getVal('filterSentEnd'));
             if (getVal('filterSubStart')) params.append('subStart', getVal('filterSubStart'));
@@ -529,11 +535,9 @@
             window.location.href = `/api/live-forms/export?${params.toString()}`;
         }
 
-        // [NEW] Download Single Row JSON
         function downloadSingleJson(id) {
             const record = currentData.find(r => r.id == id);
             if(!record) return;
-            
             const filename = `live_form_${record.member_name}_${record.skill_name}.json`.replace(/[^a-z0-9._-]/gi, '_');
             const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -552,41 +556,37 @@
                 currentSort.column = col;
                 currentSort.order = 'asc';
             }
-
-            // Save Preference
             fetch('/api/user-preferences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key: 'sortLiveForms', value: currentSort })
             }).catch(e => console.error("Failed to save preference", e));
-
             applySort();
         }
 
         function applySort() {
-            // Sort Client-Side (current page)
             currentData.sort((a, b) => {
                 const valA = (a[currentSort.column] || '').toString().toLowerCase();
                 const valB = (b[currentSort.column] || '').toString().toLowerCase();
+                
+                // Handle numeric sort
+                if (currentSort.column === 'tries') {
+                    const numA = parseInt(a.tries) || 1;
+                    const numB = parseInt(b.tries) || 1;
+                    return currentSort.order === 'asc' ? numA - numB : numB - numA;
+                }
+
                 if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
                 if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
                 return 0;
             });
-
-            // Update Icons
-            const columns = ['member_name', 'skill_name', 'form_sent_datetime', 'form_submitted_datetime', 'form_status'];
+            const columns = ['member_name', 'skill_name', 'tries', 'form_sent_datetime', 'form_submitted_datetime', 'form_status'];
             columns.forEach(col => {
                 const iconSpan = document.getElementById(`icon-${col}`);
-                if (iconSpan) {
-                    iconSpan.innerHTML = ICON_NONE;
-                }
+                if (iconSpan) iconSpan.innerHTML = ICON_NONE;
             });
-
             const activeIcon = document.getElementById(`icon-${currentSort.column}`);
-            if (activeIcon) {
-                activeIcon.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC;
-            }
-
+            if (activeIcon) activeIcon.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC;
             renderTable();
         }
 
@@ -595,11 +595,10 @@
             tbody.innerHTML = '';
 
             if (currentData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#666;">No records found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#666;">No records found.</td></tr>';
                 return;
             }
 
-            // [NEW] Date Format Helper
             const fmtDate = (dStr) => {
                 if(!dStr) return '<span style="color:#ccc;">-</span>';
                 return new Date(dStr).toLocaleString(appLocale, { 
@@ -614,7 +613,8 @@
                 const subDate = fmtDate(row.form_submitted_datetime);
 
                 let reviewBtn = '';
-                if (row.form_status === 'submitted' && row.form_submitted_data) {
+                // Allow reviewing for submitted, accepted, and rejected
+                if (['submitted', 'accepted', 'rejected'].includes(row.form_status)) {
                     reviewBtn = `
                 <button class="btn-icon" onclick="openReview('${row.id}')" title="Review Submission" style="color:#17a2b8;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -626,6 +626,7 @@
                 tr.innerHTML = `
             <td>${row.member_name || 'Unknown'}</td>
             <td>${row.skill_name || 'Unknown'}</td>
+            <td style="text-align:center;">${row.tries || 1}</td>
             <td style="font-size:0.9em;">${sentDate}</td>
             <td style="font-size:0.9em;">${subDate}</td>
             <td><span class="status-badge status-${row.form_status}">${row.form_status}</span></td>
@@ -636,7 +637,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 </button>
 
-                <button class="btn-icon" onclick="openEdit('${row.id}', '${row.member_name || ''}', '${row.skill_name || ''}', '${row.form_status}')" title="Edit Status">
+                <button class="btn-icon" onclick="openEdit('${row.id}', '${row.member_name || ''}', '${row.skill_name || ''}', '${row.form_status}', '${row.form_access_code || ''}')" title="Edit Status">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 </button>
                 <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete">
@@ -648,15 +649,17 @@
             });
         }
 
-        // ... existing functions (openReview, openEdit, saveStatus, deleteRecord, closeModal) ...
         function openReview(id) { window.open(`forms-view.html?reviewId=${id}`, '_blank'); }
-        function openEdit(id, member, skill, status) {
+        
+        function openEdit(id, member, skill, status, code) {
             document.getElementById('editId').value = id;
             document.getElementById('editMember').textContent = member;
             document.getElementById('editSkill').textContent = skill;
+            document.getElementById('editCode').textContent = code || 'N/A'; // Populate Code
             document.getElementById('editStatusSelect').value = status;
             document.getElementById('statusModal').style.display = 'block';
         }
+
         async function saveStatus() {
             const id = document.getElementById('editId').value;
             const status = document.getElementById('editStatusSelect').value;
@@ -665,6 +668,7 @@
                 if (res.ok) { closeModal('statusModal'); loadData(); showToast("Status updated", "success"); } else throw new Error("Update failed");
             } catch (e) { showToast(e.message, "error"); }
         }
+
         async function deleteRecord(id) {
             if (!await confirmAction("Delete Record", "Are you sure you want to delete this record? This cannot be undone.")) return;
             try {
@@ -673,6 +677,7 @@
                 showToast("Record deleted", "success");
             } catch (e) { showToast("Delete failed", "error"); }
         }
+
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; }
         const scrollTopBtn = document.getElementById("scrollTopBtn");

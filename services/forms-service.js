@@ -87,17 +87,17 @@ async function deleteForm(id) {
 }
 
 //  Check/Create Live Form Instance
+// Update ensureLiveForm to respect the default tries = 1
 async function ensureLiveForm(memberId, skillId, skillExpiringDate, formPublicId) {
     const database = await db.initDB();
-    // 1. Check for existing OPEN form for this member/skill
     const existing = await database.get(
         `SELECT form_access_code FROM live_forms WHERE member_id = ? AND skill_id = ? AND form_status = 'open'`,
         memberId, skillId
     );
     if (existing) { return existing.form_access_code; }
 
-    // 2. Create new record
     const accessCode = crypto.randomUUID();
+    // 'tries' will default to 1 due to schema definition
     await database.run(
         `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status) VALUES (?, ?, ?, ?, ?, 'open')`,
         skillId, skillExpiringDate, memberId, formPublicId, accessCode
@@ -105,6 +105,26 @@ async function ensureLiveForm(memberId, skillId, skillExpiringDate, formPublicId
     return accessCode;
 }
 
+//  Create a retry form based on a previous attempt
+async function createRetryLiveForm(previousId) {
+    const database = await db.initDB();
+
+    // 1. Get previous form data
+    const prev = await database.get(`SELECT * FROM live_forms WHERE id = ?`, previousId);
+    if (!prev) throw new Error("Original form not found");
+
+    // 2. Create new record
+    const accessCode = crypto.randomUUID();
+    const newTries = (prev.tries || 1) + 1;
+
+    await database.run(
+        `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, tries) 
+         VALUES (?, ?, ?, ?, ?, 'open', ?)`,
+        prev.skill_id, prev.skill_expiring_date, prev.member_id, prev.skill_form_public_id, accessCode, newTries
+    );
+
+    return accessCode;
+}
 // --- HELPER: Build WHERE clause for Live Forms ---
 function buildLiveFormsWhere(filters) {
     let clauses = ['1=1'];
@@ -121,7 +141,8 @@ function buildLiveFormsWhere(filters) {
     // Date Range: Submitted
     if (filters.subStart) { clauses.push('lf.form_submitted_datetime >= ?'); params.push(filters.subStart + ' 00:00:00'); }
     if (filters.subEnd) { clauses.push('lf.form_submitted_datetime <= ?'); params.push(filters.subEnd + ' 23:59:59'); }
-
+    //  Tries Filter
+    if (filters.tries) { clauses.push('lf.tries = ?'); params.push(filters.tries); }
     return { where: clauses.join(' AND '), params };
 }
 
@@ -152,7 +173,7 @@ async function getLiveForms(filters = {}, pagination = null) {
     }
 
     const records = await database.all(query, dataParams);
-    
+
     return { records, total };
 }
 
@@ -160,13 +181,13 @@ async function getLiveForms(filters = {}, pagination = null) {
 async function purgeLiveForms(filters) {
     const database = await db.initDB();
     const { where, params } = buildLiveFormsWhere(filters);
-    
+
     // Note: buildLiveFormsWhere prefixes columns with 'lf.'.
     // For DELETE, we need to be careful with aliases in SQLite.
     // However, since we filter on ID/Status/Date which exist on the main table,
     // we can strip the 'lf.' prefix for the DELETE query or use a subquery.
     // Subquery is safer to reuse logic.
-    
+
     const deleteQuery = `DELETE FROM live_forms WHERE id IN (SELECT lf.id FROM live_forms lf WHERE ${where})`;
     const result = await database.run(deleteQuery, params);
     return result.changes;
@@ -201,10 +222,10 @@ async function getLiveFormByCode(code) {
     if (result) {
         // Parse structure if it exists
         try { result.structure = JSON.parse(result.structure); } catch (e) { result.structure = []; }
-        
+
         // Parse previously submitted data if it exists
         if (result.form_submitted_data) {
-            try { result.form_submitted_data = JSON.parse(result.form_submitted_data); } catch (e) {}
+            try { result.form_submitted_data = JSON.parse(result.form_submitted_data); } catch (e) { }
         }
     }
     return result;
@@ -226,7 +247,7 @@ async function getLiveFormSubmission(id) {
     const database = await db.initDB();
     const result = await database.get(`
         SELECT lf.*, f.name as form_name, f.intro, f.structure, 
-               m.name as member_name, m.email as member_email,
+               m.name as member_name, m.email as member_email, m.mobile as member_mobile, m.notificationPreference as member_prefs,
                s.name as skill_name
         FROM live_forms lf
         LEFT JOIN forms f ON lf.skill_form_public_id = f.public_id
@@ -237,9 +258,8 @@ async function getLiveFormSubmission(id) {
 
     if (result) {
         try { result.structure = JSON.parse(result.structure); } catch (e) { result.structure = []; }
-        // Parse the stored JSON answer data
         if (result.form_submitted_data) {
-            try { result.form_submitted_data = JSON.parse(result.form_submitted_data); } catch (e) {}
+            try { result.form_submitted_data = JSON.parse(result.form_submitted_data); } catch (e) { }
         }
     }
     return result;
@@ -249,5 +269,5 @@ module.exports = {
     getAllForms, getAllFormsFull, importBulkForms, getFormById, getFormByPublicId, createForm, updateForm, deleteForm, ensureLiveForm,
     getLiveForms, purgeLiveForms, updateLiveFormStatus, deleteLiveForm,
     getLiveFormByCode, submitLiveForm,
-    getLiveFormSubmission 
+    getLiveFormSubmission, createRetryLiveForm
 };

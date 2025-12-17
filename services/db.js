@@ -59,10 +59,10 @@ async function initDB() {
         // Users
         await db.exec(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL, name TEXT, hash TEXT NOT NULL, salt TEXT NOT NULL, role TEXT DEFAULT 'simple');`);
         try { await db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'simple';`); } catch (e) { }
-        
+
         // Training Sessions
         await db.exec(`CREATE TABLE IF NOT EXISTS training_sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, skill_name TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
-        
+
         // User Preferences
         await db.exec(`CREATE TABLE IF NOT EXISTS user_preferences (user_id INTEGER NOT NULL, key TEXT NOT NULL, value TEXT, PRIMARY KEY (user_id, key));`);
 
@@ -70,7 +70,7 @@ async function initDB() {
         await db.exec(`CREATE TABLE IF NOT EXISTS forms (id INTEGER PRIMARY KEY AUTOINCREMENT, public_id TEXT UNIQUE, name TEXT NOT NULL, status INTEGER DEFAULT 0, intro TEXT, structure TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
         try { await db.exec(`ALTER TABLE forms ADD COLUMN public_id TEXT UNIQUE;`); } catch (e) { }
 
-        // [NEW] Live Forms Table
+        //  Live Forms Table 
         await db.exec(`
             CREATE TABLE IF NOT EXISTS live_forms (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,11 +83,14 @@ async function initDB() {
                 form_sent_datetime TEXT DEFAULT CURRENT_TIMESTAMP,
                 form_submitted_datetime TEXT,
                 form_submitted_data TEXT,
+                tries INTEGER DEFAULT 1,
                 FOREIGN KEY(skill_id) REFERENCES skills(id) ON DELETE CASCADE,
                 FOREIGN KEY(member_id) REFERENCES members(id) ON DELETE CASCADE
             );
         `);
 
+        // Migration for existing tables
+        try { await db.exec(`ALTER TABLE live_forms ADD COLUMN tries INTEGER DEFAULT 1;`); } catch (e) { }
         // Backfill UUIDs for forms if missing
         const formsWithoutId = await db.all("SELECT id FROM forms WHERE public_id IS NULL");
         if (formsWithoutId.length > 0) {
