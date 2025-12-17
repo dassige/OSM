@@ -7,7 +7,7 @@
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <title id="pageTitle">FENZ OSM Console</title>
     <link rel="stylesheet" href="styles.css">
-    </head>
+</head>
 
 <body>
 
@@ -43,9 +43,9 @@
 
     <div class="header-row">
         <img src="resources/logo.png" id="headerLogo" alt="Station Logo">
-        
+
         <h1 id="mainHeader">FENZ OSM Automation</h1>
-        
+
         <div class="header-menu">
             <button onclick="toggleMenu()" class="menu-btn">
                 Menu
@@ -59,14 +59,20 @@
                 <div class="dropdown-submenu" id="groupOperations" style="display:none;">
                     <a href="#">Operations</a>
                     <div class="submenu-content">
-                        <a href="members.html" id="navManageMembers">Manage Members</a>
-                        <a href="skills.html" id="navManageSkills">Manage Skills</a>
+
+                        <div class="dropdown-submenu">
+                            <a href="#">Maintenance</a>
+                            <div class="submenu-content">
+                                <a href="members.html" id="navManageMembers">Manage Members</a>
+                                <a href="skills.html" id="navManageSkills">Manage Skills</a>
+                                <a href="forms-manage.html" id="navManageForms">Manage Forms</a>
+                            </div>
+                        </div>
+
                         <a href="training-planner.html" id="navTrainingPlanner">Renewal Planner</a>
-                        <a href="forms-manage.html" id="navManageForms">Manage Forms</a>
-                        <a href="live-forms.html" id="navLiveForms">Live Forms</a> 
+                        <a href="live-forms.html" id="navLiveForms">Live Forms</a>
                     </div>
                 </div>
-
                 <div class="dropdown-submenu" id="groupComms" style="display:none;">
                     <a href="#">Communication</a>
                     <div class="submenu-content">
@@ -113,21 +119,25 @@
     </div>
 
     <div id="tableContainer">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
             <h2 style="margin: 0;">Expiring Skills List</h2>
             <div class="type-toggles" style="display: flex; gap: 8px; align-items: center;">
                 <span style="font-size:13px; font-weight:bold; color:#666;">Filters:</span>
-                <div id="btnHideNoSkills" class="type-badge" title="Hide members with 'NO expiring skills'">Hide Empty</div>
+                <div id="btnHideNoSkills" class="type-badge" title="Hide members with 'NO expiring skills'">Hide Empty
+                </div>
                 <div id="btnHideNoUrl" class="type-badge" title="Hide Skills without Online form">Has Form Only</div>
                 <div id="btnHideWithUrl" class="type-badge" title="Hide Skills with Online form">No Form Only</div>
-                <div id="btnExpiredOnly" class="type-badge expired-filter" title="Display only expired skills">Expired Only</div>
+                <div id="btnExpiredOnly" class="type-badge expired-filter" title="Display only expired skills">Expired
+                    Only</div>
             </div>
         </div>
 
         <p style="margin-top: -5px; margin-bottom: 15px; color: #666; font-size: 14px;">
             <em>Skills displayed in <b>bold</b> are configured as 'Critical'.
                 <span style="display: inline-flex; align-items: center; vertical-align: bottom;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #007bff;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round" style="color: #007bff;">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
                         <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -136,7 +146,9 @@
                     </svg>
                 </span>
                 indicates a direct form link is available.
-                Dates highlighted in <span style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px;">Red</span> are overdue.
+                Dates highlighted in <span
+                    style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px;">Red</span> are
+                overdue.
             </em>
         </p>
         <table id="skillsTable">
@@ -148,18 +160,25 @@
                     <th style="width: 35%">Expiring Skill</th>
                     <th style="width: 15%">Expiring Date</th>
                     <th style="width: 25%">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 4px;">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 4px;">
                             <span>Notification</span>
-                            <button id="btnResetDefaults" class="btn-icon" title="Reset to Member Defaults" onclick="resetCheckboxesToDefaults()" style="color:white; padding: 4px; background-color: rgba(0, 0, 0, 0); border-radius: 4px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <button id="btnResetDefaults" class="btn-icon" title="Reset to Member Defaults"
+                                onclick="resetCheckboxesToDefaults()"
+                                style="color:white; padding: 4px; background-color: rgba(0, 0, 0, 0); border-radius: 4px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
                                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                                     <path d="M3 3v5h5"></path>
                                 </svg>
                             </button>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:5px;">
-                            <label class="header-checkbox-label"><input type="checkbox" id="selectAllEmail" checked> Email</label>
-                            <label class="header-checkbox-label"><input type="checkbox" id="selectAllWhatsapp"> WhatsApp</label>
+                            <label class="header-checkbox-label"><input type="checkbox" id="selectAllEmail" checked>
+                                Email</label>
+                            <label class="header-checkbox-label"><input type="checkbox" id="selectAllWhatsapp">
+                                WhatsApp</label>
                         </div>
                     </th>
                 </tr>
@@ -168,7 +187,8 @@
         </table>
     </div>
 
-    <div style="margin-top: 20px; margin-bottom: 60px; text-align: right; border-top: 1px solid #eee; padding-top: 20px;">
+    <div
+        style="margin-top: 20px; margin-bottom: 60px; text-align: right; border-top: 1px solid #eee; padding-top: 20px;">
         <label style="cursor: pointer; color: #555; font-weight: bold; font-size: 14px;">
             <input type="checkbox" id="showConsoleCheckbox" style="vertical-align: middle; margin-right: 8px;">
             Show Console Log
@@ -178,7 +198,8 @@
     <div id="terminal" style="display: none;"></div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="19" x2="12" y2="5"></line>
             <polyline points="5 12 12 5 19 12"></polyline>
         </svg>
@@ -188,26 +209,31 @@
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <span class="close-btn" onclick="closeModal('aboutModal')">&times;</span>
             <div id="aboutDemoBanner" class="demo-banner" style="display:none; margin: -20px -20px 20px -20px;">
-                DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+                DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
+                        style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
             </div>
-            <img id="aboutLogo" alt="App Logo" style="max-width: 100px; margin-bottom: 15px; display: none; margin-left: auto; margin-right: auto;">
+            <img id="aboutLogo" alt="App Logo"
+                style="max-width: 100px; margin-bottom: 15px; display: none; margin-left: auto; margin-right: auto;">
             <h2 style="margin-top: 0;">About</h2>
             <p style="font-size: 1.1em; color: #666;">FENZ OSM Automation Manager</p>
             <div style="margin: 20px 0; font-size: 0.9em;">
                 <p style="margin: 10px 0;"><strong>Version:</strong> <span id="disp-version">...</span></p>
                 <p style="margin: 10px 0;"><strong>Date:</strong> <span id="disp-date">...</span></p>
             </div>
-            <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; font-size: 0.85em; text-align: left; color: #555;">
+            <div
+                style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; font-size: 0.85em; text-align: left; color: #555;">
                 <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">Credits</p>
                 <ul style="padding-left: 20px; margin: 0; line-height: 1.6;">
-                    <li><strong>Developer:</strong> Gerardo Dassi (<a href="https://github.com/dassige/OSM" target="_blank">Github</a>)</li>
+                    <li><strong>Developer:</strong> Gerardo Dassi (<a href="https://github.com/dassige/OSM"
+                            target="_blank">Github</a>)</li>
                     <li><strong>Persistence:</strong> Litestream</li>
                     <li><strong>Icons:</strong> Feather Icons</li>
                 </ul>
             </div>
-            
+
             <div style="margin-top: 20px; text-align: center;">
-                <button onclick="closeModal('aboutModal')" style="background-color: #6c757d; border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer;">Close</button>
+                <button onclick="closeModal('aboutModal')"
+                    style="background-color: #6c757d; border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer;">Close</button>
             </div>
 
         </div>
@@ -243,7 +269,7 @@
                     document.getElementById('groupComms').style.display = 'block';
                     document.getElementById('groupReports').style.display = 'block';
                     document.getElementById('groupSystem').style.display = 'block';
-                    document.getElementById('navUserSettings').style.display = 'none'; 
+                    document.getElementById('navUserSettings').style.display = 'none';
                 } else if (role === 'admin') {
                     document.getElementById('groupOperations').style.display = 'block';
                     document.getElementById('groupComms').style.display = 'block';
@@ -263,10 +289,10 @@
 
         // Close dropdowns on click outside (Improved to support submenus)
         window.onclick = function (event) {
-            if (!event.target.closest('.menu-btn') && 
-                !event.target.closest('.profile-btn') && 
+            if (!event.target.closest('.menu-btn') &&
+                !event.target.closest('.profile-btn') &&
                 !event.target.closest('.dropdown-content')) {
-                
+
                 document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
                 const profileDropdown = document.getElementById("profileDropdown");
                 if (profileDropdown) profileDropdown.classList.remove("show");
@@ -305,4 +331,5 @@
     </script>
 
 </body>
+
 </html>
