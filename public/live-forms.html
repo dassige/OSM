@@ -39,11 +39,9 @@
             flex-direction: column;
             gap: 5px;
             flex: 1 1 150px;
-            /* Grow: 1, Shrink: 1, Basis: 150px */
             min-width: 150px;
         }
 
-        /* [UPDATED] Date Groups: Larger basis and higher grow factor to stay equal */
         .filter-group-date {
             flex: 2 1 300px;
             min-width: 300px;
@@ -64,22 +62,17 @@
             color: var(--text-main);
             box-sizing: border-box;
             height: 38px;
-            /* Force consistent height */
         }
 
-        /* [NEW] Container for the two date inputs */
         .date-range-container {
             display: flex;
             gap: 5px;
             width: 100%;
         }
 
-        /* [NEW] Force inputs to share space equally */
         .date-range-container .filter-date {
             width: 0;
-            /* CSS Flexbox trick: allow shrinking below content size if needed */
             flex: 1;
-            /* Grow equally */
         }
 
         .filter-select {
@@ -93,7 +86,8 @@
         }
 
         .btn-filter,
-        .btn-reset {
+        .btn-reset,
+        .btn-tool {
             padding: 8px 16px;
             border: none;
             border-radius: 4px;
@@ -102,15 +96,66 @@
             color: white;
             white-space: nowrap;
             height: 38px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .btn-filter {
-            background-color: var(--primary);
+        .btn-filter { background-color: var(--primary); }
+        .btn-reset { background-color: #6c757d; }
+        .btn-tool.export { background-color: var(--success); }
+        .btn-tool.purge { background-color: var(--danger); }
+
+        /* [UPDATED] Tools Bar: Now a rounded panel */
+        .tools-bar {
+            background-color: var(--bg-card);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px var(--shadow);
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .page-limit-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-main); /* Ensure text is visible in dark mode */
+            font-weight: 500;
         }
 
-        .btn-reset {
-            background-color: #6c757d;
+        /* Pagination Controls */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 10px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            border-radius: 0 0 8px 8px;
         }
+
+        .pagination-info {
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+
+        .btn-page {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+
+        .btn-page:hover:not(:disabled) { background-color: var(--bg-hover); }
+        .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* Table */
         .table-wrapper {
@@ -126,8 +171,7 @@
             min-width: 800px;
         }
 
-        th,
-        td {
+        th, td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
@@ -142,75 +186,25 @@
             white-space: nowrap;
         }
 
-        th:hover {
-            background-color: #454d55;
-        }
+        th:hover { background-color: #454d55; }
 
         /* Status Badges */
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .status-open { background-color: #17a2b8; color: white; }
+        .status-submitted { background-color: #28a745; color: white; }
+        .status-disabled { background-color: #6c757d; color: white; }
 
-        .status-open {
-            background-color: #17a2b8;
-            color: white;
-        }
+        .btn-icon { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-muted); transition: transform 0.2s; }
+        .btn-icon:hover { transform: scale(1.1); color: var(--primary); }
+        .btn-icon.delete:hover { color: #dc3545; }
+        .btn-icon.download:hover { color: var(--success); } /* Green for download */
 
-        .status-submitted {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .status-disabled {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        /* Actions */
-        .btn-icon {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-            color: var(--text-muted);
-            transition: transform 0.2s;
-        }
-
-        .btn-icon:hover {
-            transform: scale(1.1);
-            color: var(--primary);
-        }
-
-        .btn-icon.delete:hover {
-            color: #dc3545;
-        }
-
-        /* Mobile */
         @media screen and (max-width: 768px) {
-            .filter-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .filter-actions {
-                width: 100%;
-                justify-content: space-between;
-                margin-left: 0;
-            }
-
-            .btn-filter,
-            .btn-reset {
-                flex: 1;
-            }
-
-            .filter-group-date {
-                min-width: 100%;
-                flex: 1 1 auto;
-            }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-actions { width: 100%; justify-content: space-between; margin-left: 0; }
+            .btn-filter, .btn-reset, .btn-tool { flex: 1; }
+            .filter-group-date { min-width: 100%; flex: 1 1 auto; }
+            .tools-bar { flex-direction: column; gap: 10px; align-items: flex-start; }
         }
     </style>
 </head>
@@ -272,8 +266,30 @@
             </div>
 
             <div class="filter-actions">
-                <button onclick="loadData()" class="btn-filter">Apply</button>
+                <button onclick="applyFilters(1)" class="btn-filter">Apply</button>
                 <button onclick="resetFilters()" class="btn-reset">Reset</button>
+            </div>
+        </div>
+
+        <div class="tools-bar">
+            <div class="page-limit-selector">
+                <label>Rows per page:</label>
+                <select id="rowsPerPage" onchange="changeLimit(this.value)" style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="500">500</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="exportJson()" class="btn-tool export" title="Download filtered records as JSON">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download JSON
+                </button>
+                <button onclick="purgeFiltered()" class="btn-tool purge" title="Delete ALL records matching current filters">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    Purge Filtered
+                </button>
             </div>
         </div>
 
@@ -283,10 +299,8 @@
                     <tr>
                         <th onclick="handleSort('member_name')">Member <span id="icon-member_name"></span></th>
                         <th onclick="handleSort('skill_name')">Skill <span id="icon-skill_name"></span></th>
-                        <th onclick="handleSort('form_sent_datetime')">Sent Date <span
-                                id="icon-form_sent_datetime"></span></th>
-                        <th onclick="handleSort('form_submitted_datetime')">Submitted <span
-                                id="icon-form_submitted_datetime"></span></th>
+                        <th onclick="handleSort('form_sent_datetime')">Sent Date <span id="icon-form_sent_datetime"></span></th>
+                        <th onclick="handleSort('form_submitted_datetime')">Submitted Date <span id="icon-form_submitted_datetime"></span></th>
                         <th onclick="handleSort('form_status')">Status <span id="icon-form_status"></span></th>
                         <th style="text-align:center;">Actions</th>
                     </tr>
@@ -297,6 +311,14 @@
                     </tr>
                 </tbody>
             </table>
+            
+            <div id="paginationControls" class="pagination-container" style="display:none;">
+                <span class="pagination-info" id="pageInfo">Showing 0-0 of 0</span>
+                <div style="display:flex; gap:5px;">
+                    <button class="btn-page" id="btnPrev" onclick="changePage(-1)">Previous</button>
+                    <button class="btn-page" id="btnNext" onclick="changePage(1)">Next</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -337,8 +359,16 @@
     <script src="help.js"></script>
     <script>
         let currentData = [];
-        // Default sort state
         let currentSort = { column: 'form_sent_datetime', order: 'desc' };
+        
+        // Pagination State
+        let currentPage = 1;
+        let currentLimit = 25;
+        let totalCount = 0;
+
+        // [NEW] Localization Defaults
+        let appLocale = 'en-NZ';
+        let appTimezone = 'Pacific/Auckland';
 
         // Icon Constants
         const ICON_ASC = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
@@ -346,24 +376,29 @@
         const ICON_NONE = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3;"><path d="M7 15l5 5 5-5"/><path d="M7 9l5-5 5 5"/></svg>';
 
         async function init() {
-            // 1. Load UI Config
+            // 1. Load UI Config & Localization
             try {
                 const c = await (await fetch('/ui-config')).json();
                 if (c.loginTitle) document.getElementById('pageTitle').innerText = "Live Forms - " + c.loginTitle;
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
                 if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+                
+                // [NEW] Set Locale
+                if (c.locale) appLocale = c.locale;
+                if (c.timezone) appTimezone = c.timezone;
+
             } catch (e) { }
 
-            // 2. Load User Preference for Sorting
+            // 2. Load User Preferences (Sort & Limit)
             try {
-                const prefRes = await fetch('/api/user-preferences/sortLiveForms');
-                const pref = await prefRes.json();
-                if (pref.value) {
-                    currentSort = pref.value;
+                const prefRes = await fetch('/api/user-preferences');
+                const prefs = await prefRes.json();
+                if (prefs.sortLiveForms) currentSort = prefs.sortLiveForms;
+                if (prefs.liveFormsLimit) {
+                    currentLimit = parseInt(prefs.liveFormsLimit);
+                    document.getElementById('rowsPerPage').value = currentLimit;
                 }
-            } catch (e) {
-                console.error("Failed to load sort preference", e);
-            }
+            } catch (e) { console.error("Pref error", e); }
 
             // 3. Load Filters (Members/Skills)
             try {
@@ -392,22 +427,122 @@
             if (getVal('filterSentEnd')) params.append('sentEnd', getVal('filterSentEnd'));
             if (getVal('filterSubStart')) params.append('subStart', getVal('filterSubStart'));
             if (getVal('filterSubEnd')) params.append('subEnd', getVal('filterSubEnd'));
+            
+            // Pagination
+            params.append('page', currentPage);
+            params.append('limit', currentLimit);
 
             document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading...</td></tr>';
 
             try {
                 const res = await fetch(`/api/live-forms?${params.toString()}`);
                 if (!res.ok) throw new Error("Failed to load");
-                currentData = await res.json();
-                applySort();
+                const result = await res.json();
+                
+                currentData = result.records || [];
+                totalCount = result.total || 0;
+                
+                applySort(); // Sorts the *current page* client-side
+                updatePagination();
             } catch (e) {
                 document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Error: ${e.message}</td></tr>`;
             }
         }
 
-        function resetFilters() {
-            document.querySelectorAll('select, input').forEach(el => el.value = '');
+        function updatePagination() {
+            const totalPages = Math.ceil(totalCount / currentLimit);
+            const start = totalCount === 0 ? 0 : ((currentPage - 1) * currentLimit) + 1;
+            const end = Math.min(currentPage * currentLimit, totalCount);
+
+            document.getElementById('paginationControls').style.display = totalCount > 0 ? 'flex' : 'none';
+            document.getElementById('pageInfo').textContent = `Showing ${start}-${end} of ${totalCount}`;
+            document.getElementById('btnPrev').disabled = currentPage <= 1;
+            document.getElementById('btnNext').disabled = currentPage >= totalPages;
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
             loadData();
+        }
+
+        function changeLimit(val) {
+            currentLimit = parseInt(val);
+            currentPage = 1; // Reset to first page
+            fetch('/api/user-preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'liveFormsLimit', value: currentLimit })
+            });
+            loadData();
+        }
+
+        function resetFilters() {
+            document.querySelectorAll('select.filter-select, input.filter-date').forEach(el => el.value = '');
+            applyFilters(1);
+        }
+
+        function applyFilters(page = 1) {
+            currentPage = page;
+            loadData();
+        }
+
+        async function purgeFiltered() {
+            if (!await confirmAction("Purge Records", `DANGER: This will delete ALL ${totalCount} records matching the current filters.\n\nThis cannot be undone. Are you sure?`)) return;
+            
+            const params = new URLSearchParams();
+            const getVal = (id) => document.getElementById(id).value;
+            // Reconstruct filters
+            if (getVal('filterStatus')) params.append('status', getVal('filterStatus'));
+            if (getVal('filterMember')) params.append('memberId', getVal('filterMember'));
+            if (getVal('filterSkill')) params.append('skillId', getVal('filterSkill'));
+            if (getVal('filterSentStart')) params.append('sentStart', getVal('filterSentStart'));
+            if (getVal('filterSentEnd')) params.append('sentEnd', getVal('filterSentEnd'));
+            if (getVal('filterSubStart')) params.append('subStart', getVal('filterSubStart'));
+            if (getVal('filterSubEnd')) params.append('subEnd', getVal('filterSubEnd'));
+
+            try {
+                const res = await fetch(`/api/live-forms/all?${params.toString()}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Purged ${data.count} records.`, "success");
+                    loadData();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                showToast("Purge failed: " + e.message, "error");
+            }
+        }
+
+        function exportJson() {
+            const params = new URLSearchParams();
+            const getVal = (id) => document.getElementById(id).value;
+            // Reconstruct filters
+            if (getVal('filterStatus')) params.append('status', getVal('filterStatus'));
+            if (getVal('filterMember')) params.append('memberId', getVal('filterMember'));
+            if (getVal('filterSkill')) params.append('skillId', getVal('filterSkill'));
+            if (getVal('filterSentStart')) params.append('sentStart', getVal('filterSentStart'));
+            if (getVal('filterSentEnd')) params.append('sentEnd', getVal('filterSentEnd'));
+            if (getVal('filterSubStart')) params.append('subStart', getVal('filterSubStart'));
+            if (getVal('filterSubEnd')) params.append('subEnd', getVal('filterSubEnd'));
+
+            window.location.href = `/api/live-forms/export?${params.toString()}`;
+        }
+
+        // [NEW] Download Single Row JSON
+        function downloadSingleJson(id) {
+            const record = currentData.find(r => r.id == id);
+            if(!record) return;
+            
+            const filename = `live_form_${record.member_name}_${record.skill_name}.json`.replace(/[^a-z0-9._-]/gi, '_');
+            const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         function handleSort(col) {
@@ -429,7 +564,7 @@
         }
 
         function applySort() {
-            // 1. Sort Data
+            // Sort Client-Side (current page)
             currentData.sort((a, b) => {
                 const valA = (a[currentSort.column] || '').toString().toLowerCase();
                 const valB = (b[currentSort.column] || '').toString().toLowerCase();
@@ -438,7 +573,7 @@
                 return 0;
             });
 
-            // 2. Update Icons
+            // Update Icons
             const columns = ['member_name', 'skill_name', 'form_sent_datetime', 'form_submitted_datetime', 'form_status'];
             columns.forEach(col => {
                 const iconSpan = document.getElementById(`icon-${col}`);
@@ -464,13 +599,20 @@
                 return;
             }
 
-            currentData.forEach(row => {
-                const sentDate = new Date(row.form_sent_datetime).toLocaleDateString() + ' ' + new Date(row.form_sent_datetime).toLocaleTimeString();
-                const subDate = row.form_submitted_datetime
-                    ? new Date(row.form_submitted_datetime).toLocaleDateString()
-                    : '<span style="color:#ccc;">-</span>';
+            // [NEW] Date Format Helper
+            const fmtDate = (dStr) => {
+                if(!dStr) return '<span style="color:#ccc;">-</span>';
+                return new Date(dStr).toLocaleString(appLocale, { 
+                    timeZone: appTimezone,
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+            };
 
-                // Check if reviewable
+            currentData.forEach(row => {
+                const sentDate = fmtDate(row.form_sent_datetime);
+                const subDate = fmtDate(row.form_submitted_datetime);
+
                 let reviewBtn = '';
                 if (row.form_status === 'submitted' && row.form_submitted_data) {
                     reviewBtn = `
@@ -489,6 +631,11 @@
             <td><span class="status-badge status-${row.form_status}">${row.form_status}</span></td>
             <td style="text-align:center; white-space:nowrap;">
                 ${reviewBtn}
+                
+                <button class="btn-icon download" onclick="downloadSingleJson('${row.id}')" title="Download Data">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                </button>
+
                 <button class="btn-icon" onclick="openEdit('${row.id}', '${row.member_name || ''}', '${row.skill_name || ''}', '${row.form_status}')" title="Edit Status">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 </button>
@@ -501,10 +648,8 @@
             });
         }
 
-        function openReview(id) {
-            window.open(`forms-view.html?reviewId=${id}`, '_blank');
-        }
-        // Actions
+        // ... existing functions (openReview, openEdit, saveStatus, deleteRecord, closeModal) ...
+        function openReview(id) { window.open(`forms-view.html?reviewId=${id}`, '_blank'); }
         function openEdit(id, member, skill, status) {
             document.getElementById('editId').value = id;
             document.getElementById('editMember').textContent = member;
@@ -512,43 +657,24 @@
             document.getElementById('editStatusSelect').value = status;
             document.getElementById('statusModal').style.display = 'block';
         }
-
         async function saveStatus() {
             const id = document.getElementById('editId').value;
             const status = document.getElementById('editStatusSelect').value;
-
             try {
-                const res = await fetch(`/api/live-forms/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status })
-                });
-                if (res.ok) {
-                    closeModal('statusModal');
-                    loadData();
-                    showToast("Status updated", "success");
-                } else throw new Error("Update failed");
+                const res = await fetch(`/api/live-forms/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+                if (res.ok) { closeModal('statusModal'); loadData(); showToast("Status updated", "success"); } else throw new Error("Update failed");
             } catch (e) { showToast(e.message, "error"); }
         }
-
         async function deleteRecord(id) {
-            const row = currentData.find(r => r.id == id);
-            const info = row
-                ? `Member: ${row.member_name}\nSkill: ${row.skill_name}\nSent: ${new Date(row.form_sent_datetime).toLocaleDateString()}`
-                : 'this record';
-
-            if (!await confirmAction("Delete Record", `Are you sure you want to delete this form?\n\n${info}\n\nThis cannot be undone.`)) return;
-
+            if (!await confirmAction("Delete Record", "Are you sure you want to delete this record? This cannot be undone.")) return;
             try {
                 await fetch(`/api/live-forms/${id}`, { method: 'DELETE' });
                 loadData();
                 showToast("Record deleted", "success");
             } catch (e) { showToast("Delete failed", "error"); }
         }
-
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; }
-
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }

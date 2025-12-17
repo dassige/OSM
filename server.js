@@ -394,6 +394,10 @@ app.get('/api/forms/public/:publicId', async (req, res) => {
 // API ROUTES - LIVE FORMS 
 // =============================================================================
 
+// =============================================================================
+// API ROUTES - LIVE FORMS 
+// =============================================================================
+
 app.get('/api/live-forms', hasRole('admin'), async (req, res) => {
     try {
         const filters = {
@@ -405,7 +409,63 @@ app.get('/api/live-forms', hasRole('admin'), async (req, res) => {
             subStart: req.query.subStart,
             subEnd: req.query.subEnd
         };
-        res.json(await formsService.getLiveForms(filters));
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const offset = (page - 1) * limit;
+
+        const result = await formsService.getLiveForms(filters, { limit, offset });
+        
+        // Return { records: [], total: 100, page: 1, limit: 25 }
+        res.json({ ...result, page, limit });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// [NEW] Export JSON endpoint
+app.get('/api/live-forms/export', hasRole('admin'), async (req, res) => {
+    try {
+        const filters = {
+            memberId: req.query.memberId,
+            skillId: req.query.skillId,
+            status: req.query.status,
+            sentStart: req.query.sentStart,
+            sentEnd: req.query.sentEnd,
+            subStart: req.query.subStart,
+            subEnd: req.query.subEnd
+        };
+
+        // No pagination for export
+        const result = await formsService.getLiveForms(filters, null);
+        
+        const filename = `live_forms_export_${new Date().toISOString().split('T')[0]}.json`;
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify(result.records, null, 2));
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+});
+
+// [NEW] Purge endpoint
+app.delete('/api/live-forms/all', hasRole('superadmin'), async (req, res) => {
+    try {
+        // Allow filters in query or body
+        const filters = {
+            memberId: req.query.memberId || req.body.memberId,
+            skillId: req.query.skillId || req.body.skillId,
+            status: req.query.status || req.body.status,
+            sentStart: req.query.sentStart || req.body.sentStart,
+            sentEnd: req.query.sentEnd || req.body.sentEnd,
+            subStart: req.query.subStart || req.body.subStart,
+            subEnd: req.query.subEnd || req.body.subEnd
+        };
+
+        const count = await formsService.purgeLiveForms(filters);
+        await db.logEvent(req.session.user.name, 'Live Forms', `Purged ${count} records`, { filters });
+        
+        res.json({ success: true, count });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

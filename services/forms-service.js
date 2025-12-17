@@ -105,56 +105,71 @@ async function ensureLiveForm(memberId, skillId, skillExpiringDate, formPublicId
     return accessCode;
 }
 
-//  Get Live Forms with Filters
-async function getLiveForms(filters = {}) {
-    const database = await db.initDB();
+// --- HELPER: Build WHERE clause for Live Forms ---
+function buildLiveFormsWhere(filters) {
+    let clauses = ['1=1'];
+    let params = [];
 
+    if (filters.memberId) { clauses.push('lf.member_id = ?'); params.push(filters.memberId); }
+    if (filters.skillId) { clauses.push('lf.skill_id = ?'); params.push(filters.skillId); }
+    if (filters.status) { clauses.push('lf.form_status = ?'); params.push(filters.status); }
+
+    // Date Range: Sent
+    if (filters.sentStart) { clauses.push('lf.form_sent_datetime >= ?'); params.push(filters.sentStart + ' 00:00:00'); }
+    if (filters.sentEnd) { clauses.push('lf.form_sent_datetime <= ?'); params.push(filters.sentEnd + ' 23:59:59'); }
+
+    // Date Range: Submitted
+    if (filters.subStart) { clauses.push('lf.form_submitted_datetime >= ?'); params.push(filters.subStart + ' 00:00:00'); }
+    if (filters.subEnd) { clauses.push('lf.form_submitted_datetime <= ?'); params.push(filters.subEnd + ' 23:59:59'); }
+
+    return { where: clauses.join(' AND '), params };
+}
+
+//  Get Live Forms with Filters & Pagination
+async function getLiveForms(filters = {}, pagination = null) {
+    const database = await db.initDB();
+    const { where, params } = buildLiveFormsWhere(filters);
+
+    // 1. Get Count
+    const countResult = await database.get(`SELECT COUNT(*) as total FROM live_forms lf WHERE ${where}`, params);
+    const total = countResult.total;
+
+    // 2. Get Data
     let query = `
         SELECT lf.*, m.name as member_name, s.name as skill_name 
         FROM live_forms lf 
         LEFT JOIN members m ON lf.member_id = m.id 
         LEFT JOIN skills s ON lf.skill_id = s.id 
-        WHERE 1=1
+        WHERE ${where}
+        ORDER BY lf.form_sent_datetime DESC
     `;
 
-    const params = [];
+    const dataParams = [...params];
 
-    if (filters.memberId) {
-        query += ` AND lf.member_id = ?`;
-        params.push(filters.memberId);
-    }
-    if (filters.skillId) {
-        query += ` AND lf.skill_id = ?`;
-        params.push(filters.skillId);
-    }
-    if (filters.status) {
-        query += ` AND lf.form_status = ?`;
-        params.push(filters.status);
+    if (pagination && pagination.limit) {
+        query += ` LIMIT ? OFFSET ?`;
+        dataParams.push(pagination.limit, pagination.offset || 0);
     }
 
-    // Date Range: Sent
-    if (filters.sentStart) {
-        query += ` AND lf.form_sent_datetime >= ?`;
-        params.push(filters.sentStart + ' 00:00:00');
-    }
-    if (filters.sentEnd) {
-        query += ` AND lf.form_sent_datetime <= ?`;
-        params.push(filters.sentEnd + ' 23:59:59');
-    }
+    const records = await database.all(query, dataParams);
+    
+    return { records, total };
+}
 
-    // Date Range: Submitted
-    if (filters.subStart) {
-        query += ` AND lf.form_submitted_datetime >= ?`;
-        params.push(filters.subStart + ' 00:00:00');
-    }
-    if (filters.subEnd) {
-        query += ` AND lf.form_submitted_datetime <= ?`;
-        params.push(filters.subEnd + ' 23:59:59');
-    }
-
-    query += ` ORDER BY lf.form_sent_datetime DESC`;
-
-    return await database.all(query, params);
+// Purge Live Forms based on filters
+async function purgeLiveForms(filters) {
+    const database = await db.initDB();
+    const { where, params } = buildLiveFormsWhere(filters);
+    
+    // Note: buildLiveFormsWhere prefixes columns with 'lf.'.
+    // For DELETE, we need to be careful with aliases in SQLite.
+    // However, since we filter on ID/Status/Date which exist on the main table,
+    // we can strip the 'lf.' prefix for the DELETE query or use a subquery.
+    // Subquery is safer to reuse logic.
+    
+    const deleteQuery = `DELETE FROM live_forms WHERE id IN (SELECT lf.id FROM live_forms lf WHERE ${where})`;
+    const result = await database.run(deleteQuery, params);
+    return result.changes;
 }
 
 //  Update Live Form Status
@@ -232,7 +247,7 @@ async function getLiveFormSubmission(id) {
 
 module.exports = {
     getAllForms, getAllFormsFull, importBulkForms, getFormById, getFormByPublicId, createForm, updateForm, deleteForm, ensureLiveForm,
-    getLiveForms, updateLiveFormStatus, deleteLiveForm,
+    getLiveForms, purgeLiveForms, updateLiveFormStatus, deleteLiveForm,
     getLiveFormByCode, submitLiveForm,
     getLiveFormSubmission 
 };

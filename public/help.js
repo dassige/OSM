@@ -246,40 +246,52 @@ const helpContent = {
             <p><em>Note:</em> Reports exclude disabled members and skills.</p>
         `
     },
-    // --- Forms Manager ---
+// --- Forms Manager ---
     "forms-manage": {
         title: "Forms Manager Help",
         body: `
-            <p><strong>Overview:</strong> Create and manage internal skill verification forms.</p>
+            <p><strong>Overview:</strong> Design custom verification forms for your skills. These forms replace external tools (like Google Forms) and integrate directly with the <strong>Live Forms</strong> tracking system.</p>
+            
+            <h3>Building a Form</h3>
             <ul>
-                <li><strong>Builder:</strong> Drag and drop fields from the toolbox to create your form structure.</li>
-                <li><strong>Ordering:</strong> Click the drag handle (☰) on a field header to reorder it.</li>
-                <li><strong>Status:</strong> Use the toggle at the top right to Enable/Disable a form. Disabled forms cannot be accessed by volunteers.</li>
-                <li><strong>Integration:</strong> Click the Link icon (🔗) to copy the public URL. Paste this URL into the 'Form URL' field on the <strong>Manage Skills</strong> page.</li>
+                <li><strong>Toolbox:</strong> Click buttons like <em>+ Paragraph</em> or <em>+ Yes/No</em> to add fields to the canvas.</li>
+                <li><strong>Drag & Drop:</strong> Use the handle (☰) on any field to reorder it.</li>
+                <li><strong>Rich Text:</strong> Use the editor to add formatting, links, or instructions to questions.</li>
             </ul>
-            <p><strong>Field Types:</strong></p>
-            <ul>
-                <li><strong>Text/Paragraph:</strong> Standard text inputs.</li>
-                <li><strong>Info Block:</strong> Use this to insert headers, instructions, or reading material (no input required).</li>
-                <li><strong>Yes/No:</strong> A simple boolean toggle.</li>
-            </ul>
+
+            <h3>Integration Steps</h3>
+            <ol>
+                <li>Create and <strong>Save</strong> your form.</li>
+                <li>Copy the public link using the <strong>Link Icon (🔗)</strong> in the toolbar.</li>
+                <li>Go to <strong>Manage Skills</strong>.</li>
+                <li>Paste the link into the 'Form URL' field for the relevant skill.</li>
+            </ol>
+            <p><em>When the system sends a notification for this skill, it will automatically generate a unique "Live Form" link for that specific member.</em></p>
         `
     },
+
+    // --- Live Forms ---
     "live-forms": {
-        title: "Live Forms Help",
+        title: "Live Forms Management Help",
         body: `
-            <p><strong>Overview:</strong> View and manage the specific form instances sent to members for expiring skills.</p>
+            <p><strong>Overview:</strong> Track every form sent to members. Unlike generic links, "Live Forms" are unique instances that track the specific member, skill, and submission status.</p>
+            
+            <h3>Status Definitions</h3>
             <ul>
-                <li><strong>Status:</strong>
-                    <ul>
-                        <li><span style="color:#17a2b8; font-weight:bold;">OPEN</span>: The form has been sent but not yet submitted.</li>
-                        <li><span style="color:#28a745; font-weight:bold;">SUBMITTED</span>: The member has completed the form.</li>
-                        <li><span style="color:#6c757d; font-weight:bold;">DISABLED</span>: Administratively closed.</li>
-                    </ul>
-                </li>
-                <li><strong>Filters:</strong> Use the toolbar to filter by Date Sent, Member, Skill, or Status.</li>
-                <li><strong>Editing:</strong> Click the pencil icon to manually change the status of a form (e.g., to re-open a submitted form or disable a sent one).</li>
+                <li><span style="color:#17a2b8; font-weight:bold;">OPEN</span>: The link has been sent, but the member hasn't submitted it yet.</li>
+                <li><span style="color:#28a745; font-weight:bold;">SUBMITTED</span>: The member completed the form. </li>
+                <li><span style="color:#6c757d; font-weight:bold;">DISABLED</span>: The link is no longer accessible (administratively closed).</li>
             </ul>
+
+            <h3>Toolbar & Actions</h3>
+            <ul>
+                <li><strong>Rows per Page:</strong> Adjust how many records appear in the table (saved to your preferences).</li>
+                <li><strong>Download JSON:</strong> Exports the <em>currently filtered</em> list of forms to a JSON file for external analysis or backup.</li>
+                <li><strong>Purge Filtered:</strong> <span style="color:#dc3545; font-weight:bold;">(Careful!)</span> Permanently deletes ALL records that match your current filters. Useful for cleaning up old data (e.g., "Delete all 'Submitted' forms from 2023").</li>
+            </ul>
+
+            <h3>Reviewing Data</h3>
+            <p>Click the <strong>Review Icon</strong> (eye) on a 'Submitted' row to see exactly what the member entered.</p>
         `
     },
     // --- Default ---

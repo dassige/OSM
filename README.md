@@ -11,6 +11,11 @@ It automates the process of checking a dashboard for expiring skills, persists d
 
   * **Real-Time Web Dashboard:** A responsive UI using Socket.IO to view scraping progress, logs, and sending status in real-time.
   * **Database Driven:** All members and skills are stored in a local SQLite database (`fenz.db`).
+  * **Integrated Form System (Live Forms):**
+      * **Form Builder:** Drag-and-drop interface to create custom skill verification forms internally.
+      * **Unique Tracking:** System generates unique, secure links for every member/skill combination.
+      * **Lifecycle Management:** Track exactly when a form was sent, opened, and submitted.
+      * **Data Review:** Admins can review submission answers directly within the app.  * 
   * **Multi-User System:**
       * **Super Admin:** A resilient system account defined via environment variables.
       * **User Management:** Create multiple database-backed administrators with secure password hashing.
@@ -201,6 +206,30 @@ node server.js
 5.  **Event Log**: Use the yellow maintenance bar (Super Admin only) to prune old logs or purge the history.
 6.  **Reports**: Navigate to the Reports Console to print or export PDF summaries of expiring competencies to display on station noticeboards.
 7.  **Run Dashboard**: Click **Reload Expiring Skills** to fetch live data, then select members to send reminders.
+
+### 4. Live Forms Workflow
+
+The application includes a self-contained form system designed to replace external tools like Google Forms.
+
+1.  **Create a Form:**
+    * Go to **Manage Forms**.
+    * Build your questionnaire (Text, Yes/No, Checkboxes).
+    * Save and copy the **Public Link** (🔗).
+
+2.  **Link to a Skill:**
+    * Go to **Manage Skills**.
+    * Paste the internal link into the URL field for the relevant skill.
+    * *Note:* The system automatically detects this is an internal form.
+
+3.  **Automatic Distribution:**
+    * When you send an email/WhatsApp reminder, the system generates a unique **Access Code**.
+    * The member receives a personalized link (e.g., `.../forms-view.html?code=uuid`).
+
+4.  **Tracking & Review:**
+    * Go to **Live Forms**.
+    * Filter by Status (Open/Submitted) or Date.
+    * **Review:** Click the Eye icon to see the member's answers.
+    * **Maintenance:** Use **Purge Filtered** to clean up old records or **Download JSON** for offline archiving.
 
 ## Docker Deployment
 
