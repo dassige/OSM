@@ -108,7 +108,7 @@ async function ensureLiveForm(memberId, skillId, skillExpiringDate, formPublicId
 //  Get Live Forms with Filters
 async function getLiveForms(filters = {}) {
     const database = await db.initDB();
-    
+
     let query = `
         SELECT lf.*, m.name as member_name, s.name as skill_name 
         FROM live_forms lf 
@@ -116,7 +116,7 @@ async function getLiveForms(filters = {}) {
         LEFT JOIN skills s ON lf.skill_id = s.id 
         WHERE 1=1
     `;
-    
+
     const params = [];
 
     if (filters.memberId) {
@@ -131,7 +131,7 @@ async function getLiveForms(filters = {}) {
         query += ` AND lf.form_status = ?`;
         params.push(filters.status);
     }
-    
+
     // Date Range: Sent
     if (filters.sentStart) {
         query += ` AND lf.form_sent_datetime >= ?`;
@@ -169,7 +169,46 @@ async function deleteLiveForm(id) {
     await database.run(`DELETE FROM live_forms WHERE id = ?`, id);
 }
 
+//  Get Live Form Context by Access Code (Public Access)
+async function getLiveFormByCode(code) {
+    const database = await db.initDB();
+    const result = await database.get(`
+        SELECT lf.*, f.name as form_name, f.intro, f.structure, 
+               m.name as member_name, m.email as member_email,
+               s.name as skill_name
+        FROM live_forms lf
+        LEFT JOIN forms f ON lf.skill_form_public_id = f.public_id
+        LEFT JOIN members m ON lf.member_id = m.id
+        LEFT JOIN skills s ON lf.skill_id = s.id
+        WHERE lf.form_access_code = ?
+    `, code);
+
+    if (result) {
+        // Parse structure if it exists
+        try { result.structure = JSON.parse(result.structure); } catch (e) { result.structure = []; }
+        
+        // Parse previously submitted data if it exists
+        if (result.form_submitted_data) {
+            try { result.form_submitted_data = JSON.parse(result.form_submitted_data); } catch (e) {}
+        }
+    }
+    return result;
+}
+
+//  Submit Live Form
+async function submitLiveForm(code, formData) {
+    const database = await db.initDB();
+    await database.run(`
+        UPDATE live_forms 
+        SET form_status = 'submitted', 
+            form_submitted_datetime = CURRENT_TIMESTAMP,
+            form_submitted_data = ?
+        WHERE form_access_code = ?
+    `, JSON.stringify(formData), code);
+}
+
 module.exports = {
     getAllForms, getAllFormsFull, importBulkForms, getFormById, getFormByPublicId, createForm, updateForm, deleteForm, ensureLiveForm,
-    getLiveForms, updateLiveFormStatus, deleteLiveForm // Exported new functions
+    getLiveForms, updateLiveFormStatus, deleteLiveForm,
+    getLiveFormByCode, submitLiveForm 
 };

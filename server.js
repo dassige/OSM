@@ -43,7 +43,7 @@ const sessionMiddleware = session({
     secret: config.auth?.sessionSecret || 'fallback_secret_key',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } 
+    cookie: { secure: false }
 });
 
 app.use(sessionMiddleware);
@@ -68,7 +68,14 @@ initializeProxy();
 // --- GLOBAL ROUTE GUARD ---
 app.use((req, res, next) => {
     const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config', '/api/demo-credentials', '/forms-view.html', '/public/js/toast.js', '/public/theme.js'];
-    if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/') || req.path.startsWith('/demo/') || req.path.startsWith('/api/forms/public/')) return next();
+
+    if (publicPaths.includes(req.path) ||
+        req.path.startsWith('/socket.io/') ||
+        req.path.startsWith('/resources/') ||
+        req.path.startsWith('/demo/') ||
+        req.path.startsWith('/api/live-forms/access/') ||
+        req.path.startsWith('/api/live-forms/submit/')) return next();
+
     if (req.session && req.session.loggedIn) return next();
     if (req.path.startsWith('/api/')) return res.status(401).json({ error: "Unauthorized" });
     return res.redirect('/login.html');
@@ -84,8 +91,8 @@ app.get('/third-parties.html', (req, res, next) => { const r = req.session?.user
 app.get('/templates.html', (req, res, next) => { const r = req.session?.user?.role; if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/'); });
 app.get('/live-forms.html', (req, res, next) => {
     const r = req.session?.user?.role;
-    if (r === 'admin' || r === 'superadmin') next(); 
-    else res.redirect('/'); 
+    if (r === 'admin' || r === 'superadmin') next();
+    else res.redirect('/');
 });
 // =============================================================================
 //  AUTH & ROLE MIDDLEWARE
@@ -253,20 +260,20 @@ app.post('/api/skills/import', hasRole('admin'), async (req, res) => { await db.
 app.get('/api/preferences', async (req, res) => { res.json(await db.getPreferences()); });
 app.post('/api/preferences', hasRole('admin'), async (req, res) => { await db.savePreference(req.body.key, req.body.value); res.json({ success: true }); });
 // 
-app.get('/api/user-preferences', async (req, res) => { 
-    res.json(await db.getAllUserPreferences(req.session.user.id || 0)); 
+app.get('/api/user-preferences', async (req, res) => {
+    res.json(await db.getAllUserPreferences(req.session.user.id || 0));
 });
 
-app.get('/api/user-preferences/:key', async (req, res) => { 
-    res.json({ value: await db.getUserPreference(req.session.user.id || 0, req.params.key) }); 
+app.get('/api/user-preferences/:key', async (req, res) => {
+    res.json({ value: await db.getUserPreference(req.session.user.id || 0, req.params.key) });
 });
 
-app.post('/api/user-preferences', async (req, res) => { 
-    await db.saveUserPreference(req.session.user.id || 0, req.body.key, req.body.value); 
-    res.json({ success: true }); 
+app.post('/api/user-preferences', async (req, res) => {
+    await db.saveUserPreference(req.session.user.id || 0, req.body.key, req.body.value);
+    res.json({ success: true });
 });
 
-app.get('/api/events', hasRole('admin'), async (req, res) => { res.json(await db.getEventLogs(req.query)); });app.get('/api/events/meta', hasRole('admin'), async (req, res) => { res.json(await db.getEventLogMetadata()); });
+app.get('/api/events', hasRole('admin'), async (req, res) => { res.json(await db.getEventLogs(req.query)); }); app.get('/api/events/meta', hasRole('admin'), async (req, res) => { res.json(await db.getEventLogMetadata()); });
 app.get('/api/events/export', hasRole('admin'), async (req, res) => {
     try {
         const data = await db.getEventLogsExport(req.query);
@@ -384,7 +391,7 @@ app.get('/api/forms/public/:publicId', async (req, res) => {
     try { const form = await formsService.getFormByPublicId(req.params.publicId); if (!form) return res.status(404).json({ error: "Form not found" }); res.json({ name: form.name, intro: form.intro, status: form.status, structure: form.structure }); } catch (e) { res.status(500).json({ error: e.message }); }
 });
 // =============================================================================
-// API ROUTES - LIVE FORMS (Add this section near Forms Management)
+// API ROUTES - LIVE FORMS 
 // =============================================================================
 
 app.get('/api/live-forms', hasRole('admin'), async (req, res) => {
@@ -423,12 +430,68 @@ app.delete('/api/live-forms/:id', hasRole('admin'), async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
+// --- PUBLIC LIVE FORM ACCESS ---
 
+app.get('/api/live-forms/access/:code', async (req, res) => {
+    try {
+        const result = await formsService.getLiveFormByCode(req.params.code);
 
+        if (!result) {
+            // [SECURITY] If code doesn't exist, return 404.
+            return res.status(404).json({ error: "Form link invalid or expired." });
+        }
+
+        // [SECURITY] Check Status
+        if (result.form_status === 'submitted') {
+            return res.status(403).json({ error: "This form has been already submitted", status: 'submitted' });
+        }
+        if (result.form_status === 'disabled') {
+            return res.status(403).json({ error: "This form has been disabled", status: 'disabled' });
+        }
+
+        // Only return data if 'open'
+        res.json({
+            status: 'open',
+            name: result.form_name,
+            intro: result.intro,
+            structure: result.structure,
+            member: result.member_name,
+            skill: result.skill_name
+        });
+
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/live-forms/submit/:code', async (req, res) => {
+    try {
+        // 1. Verify status is still open (prevent double submission race condition)
+        const form = await formsService.getLiveFormByCode(req.params.code);
+        if (!form) return res.status(404).json({ error: "Invalid form" });
+        if (form.form_status !== 'open') return res.status(403).json({ error: "Form is no longer open" });
+
+        // 2. Submit Data
+        await formsService.submitLiveForm(req.params.code, req.body);
+
+        // 3. Log System Event
+        await db.logEvent('System', 'Live Forms', `Form Submitted by ${form.member_name}`, {
+            skill: form.skill_name,
+            code: req.params.code
+        });
+
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+//==============================================================================    
+//  SERVE STATIC FILES
 app.use(express.static('public'));
 
 // =============================================================================
-// 8. SOCKET.IO EVENTS
+//  SOCKET.IO EVENTS
 // =============================================================================
 
 const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);

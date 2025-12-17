@@ -145,29 +145,72 @@
 
     <script src="toast.js"></script>
     <script src="theme.js"></script>
+
     <script>
+        let submissionCode = null;
+
         document.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
-            const publicId = params.get('id'); // This is now the UUID
+            const code = params.get('code');       // Live Form Access Code
+            const publicId = params.get('id');     // Admin Preview ID
             const isPreview = params.get('preview') === 'true';
 
+            // Show preview banner if applicable
             if (isPreview) document.getElementById('previewBanner').style.display = 'block';
 
-            if (!publicId) return showError("No form ID specified.");
+            if (code) {
+                // --- LIVE MODE (Public) ---
+                submissionCode = code;
+                try {
+                    const res = await fetch(`/api/live-forms/access/${code}`);
+                    const data = await res.json();
 
-            try {
-                // [UPDATED] Call the public endpoint
-                const res = await fetch(`/api/forms/public/${publicId}`);
-                if (!res.ok) throw new Error("Form not found or unavailable.");
-                const form = await res.json();
+                    if (!res.ok) {
+                        // Handle specific blocked states
+                        throw new Error(data.error || "Unable to load form.");
+                    }
 
-                if (!form.status && !isPreview) throw new Error("This form is currently closed.");
+                    // Show Context (Member/Skill)
+                    if (data.member || data.skill) {
+                        const infoDiv = document.createElement('div');
+                        infoDiv.style.cssText = "background:#e8f0fe; padding:12px; border-radius:6px; margin-bottom:20px; color:#0d47a1; font-size:0.95em; border:1px solid #b8d4fe;";
+                        infoDiv.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span><strong>Member:</strong> ${data.member || 'N/A'}</span>
+                                <span><strong>Skill:</strong> ${data.skill || 'N/A'}</span>
+                            </div>`;
+                        document.querySelector('.form-header').insertBefore(infoDiv, document.getElementById('formName'));
+                    }
 
-                renderForm(form);
-            } catch (e) {
-                showError(e.message);
+                    renderForm(data);
+
+                } catch (e) {
+                    showError(e.message);
+                }
+
+            } else if (publicId) {
+                // --- PREVIEW MODE (Admin Only) ---
+                // Because we removed /api/forms/public/ from the whitelist, 
+                // this fetch will FAIL (401) if the user is not logged in.
+                try {
+                    const res = await fetch(`/api/forms/public/${publicId}`);
+                    if (res.status === 401) throw new Error("Unauthorized: Preview is for admins only.");
+                    if (!res.ok) throw new Error("Form not found.");
+
+                    const form = await res.json();
+
+                    // Even admins can't preview disabled forms unless explicitly in preview mode
+                    if (!form.status && !isPreview) throw new Error("This form is currently closed.");
+
+                    renderForm(form);
+                } catch (e) {
+                    showError(e.message);
+                }
+            } else {
+                showError("Invalid link. No access code provided.");
             }
         });
+
         function renderForm(form) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('formContent').style.display = 'block';
@@ -181,54 +224,33 @@
                 const div = document.createElement('div');
                 div.className = 'question-card';
 
-                // Question Text (Rich HTML from TinyMCE)
+                // Question Text
                 let labelHtml = `<div class="question-text">${field.description}</div>`;
-                if (field.required) labelHtml += `<div style="text-align:right; margin-bottom:5px;"><span style="color:red; font-size:12px; background:#ffe6e6; padding:2px 6px; border-radius:4px;">* Required</span></div>`;
+                if (field.required) labelHtml += `<div style="text-align:right; margin-bottom:5px;"><span style="color:#dc3545; font-size:11px; font-weight:bold; background:#ffe6e6; padding:2px 6px; border-radius:4px;">* Required</span></div>`;
 
                 let inputHtml = '';
                 const fieldName = field.id;
 
                 switch (field.type) {
-                    case 'text_multi': // Paragraph
+                    case 'text_multi':
                         inputHtml = `<textarea name="${fieldName}" rows="4" style="width:100%; padding:10px; border-radius:4px; border:1px solid #ccc; font-family:inherit;" ${field.required ? 'required' : ''} placeholder="Type your answer here..."></textarea>`;
                         break;
-
                     case 'radio':
-                        // [UPDATED] Check for Dropdown vs Radio
                         if (field.renderAs === 'dropdown') {
-                            inputHtml += `<select name="${fieldName}" style="width:100%; padding:10px; border-radius:4px; border:1px solid #ccc; font-size:16px;" ${field.required ? 'required' : ''}>`;
-                            inputHtml += `<option value="" disabled selected>-- Select an Option --</option>`;
-                            if (field.options) {
-                                field.options.forEach(opt => {
-                                    inputHtml += `<option value="${opt}">${opt}</option>`;
-                                });
-                            }
+                            inputHtml += `<select name="${fieldName}" style="width:100%; padding:10px; border-radius:4px; border:1px solid #ccc; font-size:16px; background:white;" ${field.required ? 'required' : ''}><option value="" disabled selected>-- Select an Option --</option>`;
+                            if (field.options) field.options.forEach(opt => inputHtml += `<option value="${opt}">${opt}</option>`);
                             inputHtml += `</select>`;
                         } else {
-                            // Default: Radio Buttons
-                            if (field.options) {
-                                field.options.forEach(opt => {
-                                    inputHtml += `<label class="option-label"><input type="radio" name="${fieldName}" value="${opt}" ${field.required ? 'required' : ''}> ${opt}</label>`;
-                                });
-                            }
+                            if (field.options) field.options.forEach(opt => inputHtml += `<label class="option-label"><input type="radio" name="${fieldName}" value="${opt}" ${field.required ? 'required' : ''}> ${opt}</label>`);
                         }
                         break;
-
                     case 'checkboxes':
-                        if (field.options) {
-                            field.options.forEach(opt => {
-                                inputHtml += `<label class="option-label"><input type="checkbox" name="${fieldName}[]" value="${opt}"> ${opt}</label>`;
-                            });
-                        }
+                        if (field.options) field.options.forEach(opt => inputHtml += `<label class="option-label"><input type="checkbox" name="${fieldName}[]" value="${opt}"> ${opt}</label>`);
                         break;
                     case 'boolean':
-                        inputHtml = `
-                            <label class="option-label"><input type="radio" name="${fieldName}" value="Yes" ${field.required ? 'required' : ''}> Yes</label>
-                            <label class="option-label"><input type="radio" name="${fieldName}" value="No"> No</label>
-                        `;
+                        inputHtml = `<label class="option-label"><input type="radio" name="${fieldName}" value="Yes" ${field.required ? 'required' : ''}> Yes</label><label class="option-label"><input type="radio" name="${fieldName}" value="No"> No</label>`;
                         break;
                 }
-
                 div.innerHTML = labelHtml + inputHtml;
                 container.appendChild(div);
             });
@@ -236,19 +258,62 @@
 
         function showError(msg) {
             document.getElementById('loading').style.display = 'none';
+            document.getElementById('formContent').style.display = 'none'; // Ensure form is hidden
             document.getElementById('errorState').style.display = 'block';
             document.getElementById('errorMsg').innerText = msg;
         }
 
-        document.getElementById('submissionForm').addEventListener('submit', (e) => {
+        document.getElementById('submissionForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            // In a real app, POST to /api/submissions would go here
-            if (window.showToast) showToast("Form Submitted! (This is a demo)", "success");
 
-            setTimeout(() => {
-                if (window.location.search.includes('preview')) window.close();
-                else window.location.href = "/";
-            }, 1500);
+            const formData = new FormData(e.target);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                if (data[key]) {
+                    if (!Array.isArray(data[key])) data[key] = [data[key]];
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+
+            const btn = e.target.querySelector('.btn-submit');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Submitting...";
+
+            if (submissionCode) {
+                // --- REAL SUBMISSION ---
+                try {
+                    const res = await fetch(`/api/live-forms/submit/${submissionCode}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (res.ok) {
+                        document.getElementById('formContent').innerHTML = `
+                            <div style="text-align:center; padding:40px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <h2 style="color:#28a745; margin-top:20px;">Thank You!</h2>
+                                <p style="color:#555; margin-bottom:20px;">Your skill verification has been submitted successfully.</p>
+                                <button onclick="window.close()" style="padding:10px 20px; border:none; background:#6c757d; color:white; border-radius:4px; cursor:pointer;">Close Window</button>
+                            </div>
+                        `;
+                    } else {
+                        const err = await res.json();
+                        throw new Error(err.error || "Submission failed");
+                    }
+                } catch (err) {
+                    showToast(err.message, "error");
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                }
+            } else {
+                // --- PREVIEW SUBMISSION ---
+                if (window.showToast) showToast("Form Validated! (Preview Mode)", "success");
+                setTimeout(() => { window.close(); }, 1500);
+            }
         });
     </script>
 </body>
