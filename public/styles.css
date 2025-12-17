@@ -932,3 +932,36 @@ textarea {
 .toast-warning {
     border-left: 5px solid #ffc107;
 }
+/* [NEW] Status Circles for Dashboard */
+.status-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-left: 6px;
+    vertical-align: middle;
+    transition: transform 0.2s ease;
+}
+
+.status-circle:hover {
+    transform: scale(1.1);
+}
+
+.status-circle.sent {
+    background-color: #e7f5ff; /* Light Blue/Teal bg */
+    border: 1px solid #17a2b8;
+    color: #17a2b8;
+}
+
+.status-circle.submitted {
+    background-color: #e6ffed; /* Light Green bg */
+    border: 1px solid #28a745;
+    color: #28a745;
+}
+
+/* Remove link underlines if the circle is inside an anchor */
+a .status-circle {
+    text-decoration: none;
+}

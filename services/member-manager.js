@@ -36,11 +36,9 @@ function isExpiring(dueDateStr, daysThreshold) {
     return skillExpiryDate <= thresholdDate;
 }
 
-function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, trainingMap = {}) {
+function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, trainingMap = {}, liveFormsMap = {}) {
     const activeMembers = members.filter(m => m.enabled);
     
-    // Attempt to determine base URL from environment or default (needed for Internal Forms in Emails)
-    // In production, users should set APP_BASE_URL. Fallback to localhost if missing.
     const appBaseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
 
     const processedMembers = activeMembers.map(member => {
@@ -50,13 +48,16 @@ function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, 
             if (isExpiring(skill.dueDate, daysThreshold) || isExpired(skill.dueDate)) {
                 const config = skillsConfig.find(c => c.name === skill.skill);
                 if (config && config.enabled) {
-                    
-                    // [UPDATED] URL Construction Logic
+                    skill.skillId = config.id;
                     if (config.url_type === 'internal') {
-                        // For internal forms, construct the full link using the Public ID stored in 'url'
                         skill.url = `${appBaseUrl}/forms-view.html?id=${config.url}`;
+                        
+                        // [NEW] Lookup Live Form Status
+                        // Key format matches what we build in server.js
+                        const key = `${member.id}_${config.id}`;
+                        skill.liveFormStatus = liveFormsMap[key] || null;
+
                     } else {
-                        // For external forms, use the stored URL as-is
                         skill.url = config.url;
                     }
 
@@ -79,5 +80,4 @@ function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, 
 
     return processedMembers;
 }
-
 module.exports = { processMemberSkills, isExpired, isExpiring, parseDate };

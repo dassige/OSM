@@ -190,10 +190,10 @@
 
         /* Status Badges */
         .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .status-open { background-color: #17a2b8; color: white; }
-        .status-submitted { background-color: #28a745; color: white; }
+        .status-sent { background-color: #17a2b8; color: white; }
+        .status-submitted { background-color:#007bff ; color: white; }
         .status-disabled { background-color: #6c757d; color: white; }
-        .status-accepted { background-color: #007bff; color: white; }
+        .status-accepted { background-color: #28a745; color: white; }
         .status-rejected { background-color: #dc3545; color: white; }
 
         .btn-icon { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-muted); transition: transform 0.2s; }
@@ -233,7 +233,7 @@
                 <label>Status</label>
                 <select id="filterStatus" class="filter-select">
                     <option value="">All Statuses</option>
-                    <option value="open">Open</option>
+                    <option value="sent">Sent</option>
                     <option value="submitted">Submitted</option>
                     <option value="accepted">Accepted</option>
                     <option value="rejected">Rejected</option>
@@ -344,7 +344,7 @@
             <div class="form-group" style="margin-top:20px;">
                 <label>New Status</label>
                 <select id="editStatusSelect" class="filter-select">
-                    <option value="open">Open</option>
+                    <option value="sent">Sent</option>
                     <option value="submitted">Submitted</option>
                     <option value="accepted">Accepted</option>
                     <option value="rejected">Rejected</option>
@@ -407,7 +407,7 @@
                 }
             } catch (e) { console.error("Pref error", e); }
 
-            try {
+try {
                 const mRes = await fetch('/api/members');
                 const members = await mRes.json();
                 const mSel = document.getElementById('filterMember');
@@ -419,6 +419,15 @@
                 skills.forEach(s => sSel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
             } catch (e) { }
 
+            // [NEW] Apply URL Parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.has('memberId')) document.getElementById('filterMember').value = urlParams.get('memberId');
+            if (urlParams.has('skillId')) document.getElementById('filterSkill').value = urlParams.get('skillId');
+            if (urlParams.has('status')) document.getElementById('filterStatus').value = urlParams.get('status');
+            
+            // Optional: Auto-expand limits if filtering specific item? 
+            // For now, standard loadData() will use these values.           
             loadData();
         }
 

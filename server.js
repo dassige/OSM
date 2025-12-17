@@ -413,7 +413,7 @@ app.get('/api/live-forms', hasRole('admin'), async (req, res) => {
         const offset = (page - 1) * limit;
 
         const result = await formsService.getLiveForms(filters, { limit, offset });
-        
+
         // Return { records: [], total: 100, page: 1, limit: 25 }
         res.json({ ...result, page, limit });
     } catch (e) {
@@ -437,7 +437,7 @@ app.get('/api/live-forms/export', hasRole('admin'), async (req, res) => {
 
         // No pagination for export
         const result = await formsService.getLiveForms(filters, null);
-        
+
         const filename = `live_forms_export_${new Date().toISOString().split('T')[0]}.json`;
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.setHeader('Content-Type', 'application/json');
@@ -464,7 +464,7 @@ app.delete('/api/live-forms/all', hasRole('superadmin'), async (req, res) => {
 
         const count = await formsService.purgeLiveForms(filters);
         await db.logEvent(req.session.user.name, 'Live Forms', `Purged ${count} records`, { filters });
-        
+
         res.json({ success: true, count });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -509,9 +509,9 @@ app.get('/api/live-forms/access/:code', async (req, res) => {
             return res.status(403).json({ error: "This form has been disabled", status: 'disabled' });
         }
 
-        // Only return data if 'open'
+        // Only return data if 'sent'
         res.json({
-            status: 'open',
+            status: 'sent',
             name: result.form_name,
             intro: result.intro,
             structure: result.structure,
@@ -529,7 +529,7 @@ app.post('/api/live-forms/submit/:code', async (req, res) => {
         // 1. Verify status is still open (prevent double submission race condition)
         const form = await formsService.getLiveFormByCode(req.params.code);
         if (!form) return res.status(404).json({ error: "Invalid form" });
-        if (form.form_status !== 'open') return res.status(403).json({ error: "Form is no longer open" });
+        if (form.form_status !== 'sent') return res.status(403).json({ error: "Form is no longer open" });
 
         // 2. Submit Data
         await formsService.submitLiveForm(req.params.code, req.body);
@@ -554,21 +554,21 @@ app.get('/api/live-forms/review/:id', hasRole('admin'), async (req, res) => {
         res.json({
             // CRITICAL FIX: Pass ID and Status to frontend
             id: result.id,
-            form_status: result.form_status, 
+            form_status: result.form_status,
             tries: result.tries,
-            
+
             // Form Data
             name: result.form_name,
             intro: result.intro,
             structure: result.structure,
-            
+
             // Context & Contact Info (for notifications)
             member: result.member_name,
-            member_email: result.member_email,   
-            member_mobile: result.member_mobile, 
+            member_email: result.member_email,
+            member_mobile: result.member_mobile,
             member_prefs: result.member_prefs,
             skill: result.skill_name,
-            
+
             // Submission Data
             submittedData: result.form_submitted_data,
             submittedAt: result.form_submitted_datetime
@@ -589,10 +589,10 @@ app.post('/api/live-forms/accept/:id', hasRole('admin'), async (req, res) => {
 
         // 2. Fetch Context for Notification
         const form = await formsService.getLiveFormSubmission(id);
-        const member = { 
-            name: form.member_name, 
-            email: form.member_email, 
-            mobile: form.member_mobile 
+        const member = {
+            name: form.member_name,
+            email: form.member_email,
+            mobile: form.member_mobile
         };
 
         // 3. Send Notifications
@@ -625,24 +625,24 @@ app.post('/api/live-forms/reject/:id', hasRole('admin'), async (req, res) => {
 
         // 1. Update Status
         await formsService.updateLiveFormStatus(id, 'rejected');
-        
+
         // 2. Fetch Context
         const form = await formsService.getLiveFormSubmission(id);
-        const member = { 
-            name: form.member_name, 
-            email: form.member_email, 
-            mobile: form.member_mobile 
+        const member = {
+            name: form.member_name,
+            email: form.member_email,
+            mobile: form.member_mobile
         };
 
         let message = `Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted.`;
-        
+
         // 3. Handle Retry Generation
         if (generateNew) {
             const newCode = await formsService.createRetryLiveForm(id);
             // Build new link (assuming internal structure)
             const baseUrl = req.protocol + '://' + req.get('host');
             const newLink = `${baseUrl}/forms-view.html?code=${newCode}`;
-            
+
             message += `\n\nA new form has been generated. Please review your answers and submit again here:\n${newLink}`;
         } else {
             message += `\n\nPlease contact an administrator for more details.`;
@@ -702,15 +702,49 @@ io.on('connection', (socket) => {
     });
     socket.on('view-expiring-skills', async (days, forceRefresh) => {
         try {
-            const daysThreshold = parseInt(days) || 30; const interval = forceRefresh ? 0 : config.scrapingInterval;
+            const daysThreshold = parseInt(days) || 30;
+            const interval = forceRefresh ? 0 : config.scrapingInterval;
+
             logger(`> Fetching View Data (Threshold: ${daysThreshold} days${forceRefresh ? ', Force Refresh' : ', Cached OK'})...`);
-            const dbMembers = await db.getMembers(); const dbSkills = await db.getSkills();
+
+            const dbMembers = await db.getMembers();
+            const dbSkills = await db.getSkills();
             const rawData = await getOIData(config.url, interval, currentProxy, logger);
             const trainingMap = await getTrainingMap();
-            const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold, trainingMap);
-            const results = processedMembers.map(m => ({ name: m.name, email: m.email, mobile: m.mobile, notificationPreference: m.notificationPreference, skills: m.expiringSkills.map(s => ({ skill: s.skill, dueDate: s.dueDate, hasUrl: !!s.url, isCritical: !!s.isCritical })), emailEligible: m.expiringSkills.length > 0 }));
-            socket.emit('expiring-skills-data', results); socket.emit('script-complete', 0);
-        } catch (e) { logger(e.message); socket.emit('script-complete', 1); }
+
+            // [NEW] Fetch Live Form Statuses
+            const liveForms = await formsService.getAllActiveStatuses();
+            const liveFormsMap = {};
+            liveForms.forEach(r => {
+                liveFormsMap[`${r.member_id}_${r.skill_id}`] = r.form_status;
+            });
+
+            // [UPDATED] Pass liveFormsMap
+            const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold, trainingMap, liveFormsMap);
+
+            const results = processedMembers.map(m => ({
+                id: m.id, // [NEW] Pass Member ID
+                name: m.name,
+                email: m.email,
+                mobile: m.mobile,
+                notificationPreference: m.notificationPreference,
+                skills: m.expiringSkills.map(s => ({
+                    skillId: s.skillId, // [NEW] Pass Skill ID
+                    skill: s.skill,
+                    dueDate: s.dueDate,
+                    hasUrl: !!s.url,
+                    isCritical: !!s.isCritical,
+                    liveFormStatus: s.liveFormStatus
+                })),
+                emailEligible: m.expiringSkills.length > 0
+            }));
+
+            socket.emit('expiring-skills-data', results);
+            socket.emit('script-complete', 0);
+        } catch (e) {
+            logger(e.message);
+            socket.emit('script-complete', 1);
+        }
     });
     socket.on('run-process-queue', async (targets, days) => { if (userLevel < ROLES.simple) { socket.emit('terminal-output', 'Error: Unauthorized.\n'); return; } await handleQueueProcessing(socket, targets, parseInt(days) || 30, logger); });
 });
@@ -733,15 +767,24 @@ async function handleQueueProcessing(socket, targets, days, logger) {
             if (!member.expiringSkills || member.expiringSkills.length === 0) continue;
             logger(`> Processing: ${member.name}`);
 
-            // [NEW] Live Form Logic
             for (const skill of member.expiringSkills) {
                 const skillConfig = dbSkills.find(s => s.name === skill.skill);
                 if (skillConfig && skillConfig.url_type === 'internal' && skillConfig.url) {
                     try {
-                        const accessCode = await formsService.ensureLiveForm(member.id, skillConfig.id, skill.dueDate, skillConfig.url);
-                        const separator = skill.url.includes('?') ? '&' : '?';
-                        skill.url = `${skill.url}${separator}code=${accessCode}`;
-                        logger(`  - Live Form ready for "${skill.skill}"`);
+                        // 1. Check if already submitted
+                        const isSubmitted = await formsService.checkSubmittedStatus(member.id, skillConfig.id);
+
+                        if (isSubmitted) {
+                            skill.isSubmitted = true; // Flag for Mailer/WhatsApp
+                            skill.url = null;         // Ensure no link is rendered
+                            logger(`  - Skipped Live Form for "${skill.skill}" (Status: Submitted/Pending Review)`);
+                        } else {
+                            // 2. Standard Flow: Ensure Open Form
+                            const accessCode = await formsService.ensureLiveForm(member.id, skillConfig.id, skill.dueDate, skillConfig.url);
+                            const separator = skill.url.includes('?') ? '&' : '?';
+                            skill.url = `${skill.url}${separator}code=${accessCode}`;
+                            logger(`  - Live Form ready for "${skill.skill}"`);
+                        }
                     } catch (e) { logger(`  ! Error creating live form for ${skill.skill}: ${e.message}`); }
                 }
             }
@@ -755,11 +798,23 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                     const waTemplate = { intro: prefs.waIntro, row: prefs.waRow, rowNoUrl: prefs.waRowNoUrl, filterOnlyWithUrl: prefs.waOnlyWithUrl };
                     let msg = (waTemplate.intro || '').replace('{{name}}', member.name).replace('{{appname}}', config.ui.loginTitle);
                     let hasSkills = false;
+
                     member.expiringSkills.forEach(s => {
-                        if (waTemplate.filterOnlyWithUrl && !s.url) return;
+                        // [UPDATED] WhatsApp Logic
+                        if (waTemplate.filterOnlyWithUrl && !s.url && !s.isSubmitted) return;
+
                         hasSkills = true;
-                        const tpl = s.url ? (waTemplate.row || '- {{skill}} {{url}}') : (waTemplate.rowNoUrl || '- {{skill}}');
-                        const row = tpl.replace('{{skill}}', s.skill).replace('{{date}}', s.dueDate).replace('{{url}}', s.url || '').replace('{{critical}}', s.isCritical ? '!' : '');
+                        let row = '';
+
+                        if (s.isSubmitted) {
+                            // Custom text for submitted status
+                            row = `- *${s.skill}*: Form submitted and awaiting review.`;
+                        } else {
+                            // Standard Templates
+                            const tpl = s.url ? (waTemplate.row || '- {{skill}} {{url}}') : (waTemplate.rowNoUrl || '- {{skill}}');
+                            row = tpl.replace('{{skill}}', s.skill).replace('{{date}}', s.dueDate).replace('{{url}}', s.url || '').replace('{{critical}}', s.isCritical ? '!' : '');
+                        }
+
                         msg += `\n${row}`;
                     });
                     if (hasSkills) { await whatsappService.sendMessage(member.mobile, msg); logger(`  - WhatsApp sent to ${member.mobile}`); await db.logEvent(currentUser, 'WhatsApp', 'Notification Sent', { member: member.name }); }

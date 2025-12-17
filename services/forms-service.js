@@ -86,20 +86,19 @@ async function deleteForm(id) {
     await database.run('DELETE FROM forms WHERE id = ?', id);
 }
 
-//  Check/Create Live Form Instance
-// Update ensureLiveForm to respect the default tries = 1
 async function ensureLiveForm(memberId, skillId, skillExpiringDate, formPublicId) {
     const database = await db.initDB();
+    // [UPDATED] Check for 'sent'
     const existing = await database.get(
-        `SELECT form_access_code FROM live_forms WHERE member_id = ? AND skill_id = ? AND form_status = 'open'`,
+        `SELECT form_access_code FROM live_forms WHERE member_id = ? AND skill_id = ? AND form_status = 'sent'`,
         memberId, skillId
     );
     if (existing) { return existing.form_access_code; }
 
     const accessCode = crypto.randomUUID();
-    // 'tries' will default to 1 due to schema definition
+    // [UPDATED] Insert 'sent'
     await database.run(
-        `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status) VALUES (?, ?, ?, ?, ?, 'open')`,
+        `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status) VALUES (?, ?, ?, ?, ?, 'sent')`,
         skillId, skillExpiringDate, memberId, formPublicId, accessCode
     );
     return accessCode;
@@ -108,23 +107,22 @@ async function ensureLiveForm(memberId, skillId, skillExpiringDate, formPublicId
 //  Create a retry form based on a previous attempt
 async function createRetryLiveForm(previousId) {
     const database = await db.initDB();
-
-    // 1. Get previous form data
     const prev = await database.get(`SELECT * FROM live_forms WHERE id = ?`, previousId);
     if (!prev) throw new Error("Original form not found");
 
-    // 2. Create new record
     const accessCode = crypto.randomUUID();
     const newTries = (prev.tries || 1) + 1;
 
+    // [UPDATED] Insert 'sent'
     await database.run(
         `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, tries) 
-         VALUES (?, ?, ?, ?, ?, 'open', ?)`,
+         VALUES (?, ?, ?, ?, ?, 'sent', ?)`,
         prev.skill_id, prev.skill_expiring_date, prev.member_id, prev.skill_form_public_id, accessCode, newTries
     );
 
     return accessCode;
 }
+
 // --- HELPER: Build WHERE clause for Live Forms ---
 function buildLiveFormsWhere(filters) {
     let clauses = ['1=1'];
@@ -264,10 +262,23 @@ async function getLiveFormSubmission(id) {
     }
     return result;
 }
+// Check if a form is currently in 'submitted' state
+async function checkSubmittedStatus(memberId, skillId) {
+    const database = await db.initDB();
+    const record = await database.get(
+        `SELECT id FROM live_forms WHERE member_id = ? AND skill_id = ? AND form_status = 'submitted'`,
+        memberId, skillId
+    );
+    return !!record;
+}
+async function getAllActiveStatuses() {
+    const database = await db.initDB();
+    return await database.all("SELECT member_id, skill_id, form_status FROM live_forms WHERE form_status IN ('sent', 'submitted')");
+}
 
 module.exports = {
     getAllForms, getAllFormsFull, importBulkForms, getFormById, getFormByPublicId, createForm, updateForm, deleteForm, ensureLiveForm,
     getLiveForms, purgeLiveForms, updateLiveFormStatus, deleteLiveForm,
     getLiveFormByCode, submitLiveForm,
-    getLiveFormSubmission, createRetryLiveForm
+    getLiveFormSubmission, createRetryLiveForm, checkSubmittedStatus, getAllActiveStatuses
 };

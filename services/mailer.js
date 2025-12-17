@@ -35,10 +35,10 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
 
     // --- FILTER LOGIC ---
     let skillsToProcess = member.expiringSkills;
-    
+
     // Check if filtering is enabled (handle string/boolean)
     const isFilterEnabled = templateConfig.filterOnlyWithUrl === true || templateConfig.filterOnlyWithUrl === 'true';
-    
+
     if (isFilterEnabled) {
         skillsToProcess = skillsToProcess.filter(s => !!s.url);
     }
@@ -68,8 +68,15 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
     let plainTextList = '';
 
     skillsToProcess.forEach(skill => {
+        // [NEW] Handle Submitted Status
+        if (skill.isSubmitted) {
+            const criticalLabel = skill.isCritical ? '(CRITICAL)' : '';
+            rowsHtml += `<li style="color:#555;"><strong>${skill.skill}</strong> ${criticalLabel} <br> <span style="color:#17a2b8; font-weight:bold; font-size:0.9em;">&#9432; Form submitted and awaiting review</span></li>`;
+            plainTextList += `- ${skill.skill}: Form submitted and awaiting review\n`;
+            return; // Skip standard template processing for this row
+        }
         let fullUrl = skill.url || '';
-        
+
         // --- TEMPLATE SELECTION ---
         // Choose the template based on whether a URL exists
         const templateToUse = fullUrl ? defaults.rowHtml : defaults.rowHtmlNoUrl;
@@ -83,12 +90,12 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
 
         const criticalLabel = skill.isCritical ? '(CRITICAL)' : '';
 
-let row = templateToUse
+        let row = templateToUse
             .replace(/{{skill}}/g, skill.skill)
             .replace(/{{date}}/g, skill.dueDate)
             .replace(/{{critical}}/g, criticalLabel)
             .replace(/{{url}}/g, fullUrl)
-            .replace(/{{next-planned-dates}}/g, skill.nextPlannedDates || "None"); 
+            .replace(/{{next-planned-dates}}/g, skill.nextPlannedDates || "None");
 
         rowsHtml += row;
         plainTextList += `- ${skill.skill} (${skill.dueDate}) [Next: ${skill.nextPlannedDates}]\n`;

@@ -79,7 +79,7 @@ async function initDB() {
                 member_id INTEGER NOT NULL,
                 skill_form_public_id TEXT,
                 form_access_code TEXT UNIQUE,
-                form_status TEXT DEFAULT 'open', 
+                form_status TEXT DEFAULT 'sent',  
                 form_sent_datetime TEXT DEFAULT CURRENT_TIMESTAMP,
                 form_submitted_datetime TEXT,
                 form_submitted_data TEXT,

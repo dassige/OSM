@@ -133,24 +133,37 @@
             </div>
         </div>
 
-        <p style="margin-top: -5px; margin-bottom: 15px; color: #666; font-size: 14px;">
-            <em>Skills displayed in <b>bold</b> are configured as 'Critical'.
-                <span style="display: inline-flex; align-items: center; vertical-align: bottom;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
-                        stroke-linecap="round" stroke-linejoin="round" style="color: #007bff;">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
+        <p style="margin-top: -5px; margin-bottom: 15px; color: #666; font-size: 14px; line-height: 1.6;">
+            <em>
+                Skills displayed in <b>bold</b> are configured as 'Critical'.<br>
+                <span
+                    style="display: inline-flex; align-items: center; vertical-align: text-bottom; margin-right: 15px;">
+                    <span class="status-circle sent" style="margin-left:0; margin-right:5px; width:20px; height:20px;">
+                        <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2"
+                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </span> Form Sent
                 </span>
-                indicates a direct form link is available.
-                Dates highlighted in <span
-                    style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px;">Red</span> are
-                overdue.
+
+                <span
+                    style="display: inline-flex; align-items: center; vertical-align: text-bottom; margin-right: 15px;">
+                    <span class="status-circle submitted"
+                        style="margin-left:0; margin-right:5px; width:20px; height:20px;">
+                        <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3"
+                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6L9 17l-5-5"></path>
+                        </svg>
+                    </span> Form Submitted
+                </span>
+
+                <span
+                    style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red
+                    Date</span> = Overdue.
             </em>
         </p>
+
         <table id="skillsTable">
             <thead>
                 <tr>
