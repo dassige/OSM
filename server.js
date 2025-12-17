@@ -252,12 +252,21 @@ app.post('/api/skills/import', hasRole('admin'), async (req, res) => { await db.
 
 app.get('/api/preferences', async (req, res) => { res.json(await db.getPreferences()); });
 app.post('/api/preferences', hasRole('admin'), async (req, res) => { await db.savePreference(req.body.key, req.body.value); res.json({ success: true }); });
-app.get('/api/user-preferences', async (req, res) => { res.json(await db.getAllUserPreferences(req.session.user.id)); });
-app.get('/api/user-preferences/:key', async (req, res) => { res.json({ value: await db.getUserPreference(req.session.user.id, req.params.key) }); });
-app.post('/api/user-preferences', async (req, res) => { await db.saveUserPreference(req.session.user.id, req.body.key, req.body.value); res.json({ success: true }); });
+// 
+app.get('/api/user-preferences', async (req, res) => { 
+    res.json(await db.getAllUserPreferences(req.session.user.id || 0)); 
+});
 
-app.get('/api/events', hasRole('admin'), async (req, res) => { res.json(await db.getEventLogs(req.query)); });
-app.get('/api/events/meta', hasRole('admin'), async (req, res) => { res.json(await db.getEventLogMetadata()); });
+app.get('/api/user-preferences/:key', async (req, res) => { 
+    res.json({ value: await db.getUserPreference(req.session.user.id || 0, req.params.key) }); 
+});
+
+app.post('/api/user-preferences', async (req, res) => { 
+    await db.saveUserPreference(req.session.user.id || 0, req.body.key, req.body.value); 
+    res.json({ success: true }); 
+});
+
+app.get('/api/events', hasRole('admin'), async (req, res) => { res.json(await db.getEventLogs(req.query)); });app.get('/api/events/meta', hasRole('admin'), async (req, res) => { res.json(await db.getEventLogMetadata()); });
 app.get('/api/events/export', hasRole('admin'), async (req, res) => {
     try {
         const data = await db.getEventLogsExport(req.query);
