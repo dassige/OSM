@@ -265,6 +265,23 @@ const helpContent = {
             </ul>
         `
     },
+    "live-forms": {
+        title: "Live Forms Help",
+        body: `
+            <p><strong>Overview:</strong> View and manage the specific form instances sent to members for expiring skills.</p>
+            <ul>
+                <li><strong>Status:</strong>
+                    <ul>
+                        <li><span style="color:#17a2b8; font-weight:bold;">OPEN</span>: The form has been sent but not yet submitted.</li>
+                        <li><span style="color:#28a745; font-weight:bold;">SUBMITTED</span>: The member has completed the form.</li>
+                        <li><span style="color:#6c757d; font-weight:bold;">DISABLED</span>: Administratively closed.</li>
+                    </ul>
+                </li>
+                <li><strong>Filters:</strong> Use the toolbar to filter by Date Sent, Member, Skill, or Status.</li>
+                <li><strong>Editing:</strong> Click the pencil icon to manually change the status of a form (e.g., to re-open a submitted form or disable a sent one).</li>
+            </ul>
+        `
+    },
     // --- Default ---
     "default": {
         title: "Help",
@@ -292,6 +309,7 @@ const helpContent = {
     else if (path.includes("training-planner")) key = "training-planner";
     else if (path.includes("forms-manage")) key = "forms-manage";
     else if (path.includes("reports")) key = "reports";
+    else if (path.includes("live-forms")) key = "live-forms";
 
     const content = helpContent[key] || helpContent["default"];
 

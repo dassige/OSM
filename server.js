@@ -23,8 +23,11 @@ const whatsappService = require('./services/whatsapp-service');
 const reportService = require('./services/report-service');
 const formsService = require('./services/forms-service');
 
+
+
+
 // =============================================================================
-// 1. INITIALIZATION & MIDDLEWARE
+//  INITIALIZATION & MIDDLEWARE
 // =============================================================================
 
 const app = express();
@@ -62,8 +65,30 @@ async function initializeProxy() {
 }
 initializeProxy();
 
+// --- GLOBAL ROUTE GUARD ---
+app.use((req, res, next) => {
+    const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config', '/api/demo-credentials', '/forms-view.html', '/public/js/toast.js', '/public/theme.js'];
+    if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/') || req.path.startsWith('/demo/') || req.path.startsWith('/api/forms/public/')) return next();
+    if (req.session && req.session.loggedIn) return next();
+    if (req.path.startsWith('/api/')) return res.status(401).json({ error: "Unauthorized" });
+    return res.redirect('/login.html');
+});
+
+app.get('/ui-config', (req, res) => res.json({ ...config.ui, appMode: config.appMode }));
+
+// --- PAGE ACCESS CONTROL ---
+app.get('/system-tools.html', (req, res, next) => { if (req.session?.user?.role === 'superadmin') next(); else res.redirect('/'); });
+app.get('/users.html', (req, res, next) => { const r = req.session?.user?.role; if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/'); });
+app.get('/event-log.html', (req, res, next) => { const r = req.session?.user?.role; if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/'); });
+app.get('/third-parties.html', (req, res, next) => { const r = req.session?.user?.role; if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/'); });
+app.get('/templates.html', (req, res, next) => { const r = req.session?.user?.role; if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/'); });
+app.get('/live-forms.html', (req, res, next) => {
+    const r = req.session?.user?.role;
+    if (r === 'admin' || r === 'superadmin') next(); 
+    else res.redirect('/'); 
+});
 // =============================================================================
-// 2. AUTH & ROLE MIDDLEWARE
+//  AUTH & ROLE MIDDLEWARE
 // =============================================================================
 
 const ROLES = { guest: 0, simple: 1, admin: 2, superadmin: 3 };
@@ -77,7 +102,7 @@ const hasRole = (requiredRole) => (req, res, next) => {
 };
 
 // =============================================================================
-// 3. API ROUTES - AUTHENTICATION
+//  API ROUTES - AUTHENTICATION
 // =============================================================================
 
 app.post('/login', async (req, res) => {
@@ -133,26 +158,9 @@ app.get('/api/user-session', (req, res) => {
     else res.status(401).json({ error: "Not logged in" });
 });
 
-// --- GLOBAL ROUTE GUARD ---
-app.use((req, res, next) => {
-    const publicPaths = ['/login.html', '/login', '/forgot-password', '/styles.css', '/ui-config', '/api/demo-credentials', '/forms-view.html', '/public/js/toast.js', '/public/theme.js'];
-    if (publicPaths.includes(req.path) || req.path.startsWith('/socket.io/') || req.path.startsWith('/resources/') || req.path.startsWith('/demo/') || req.path.startsWith('/api/forms/public/')) return next();
-    if (req.session && req.session.loggedIn) return next();
-    if (req.path.startsWith('/api/')) return res.status(401).json({ error: "Unauthorized" });
-    return res.redirect('/login.html');
-});
-
-app.get('/ui-config', (req, res) => res.json({ ...config.ui, appMode: config.appMode }));
-
-// Page Access Control
-app.get('/system-tools.html', (req, res, next) => { if (req.session?.user?.role === 'superadmin') next(); else res.redirect('/'); });
-app.get('/users.html', (req, res, next) => { const r = req.session?.user?.role; if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/'); });
-app.get('/event-log.html', (req, res, next) => { const r = req.session?.user?.role; if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/'); });
-app.get('/third-parties.html', (req, res, next) => { const r = req.session?.user?.role; if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/'); });
-app.get('/templates.html', (req, res, next) => { const r = req.session?.user?.role; if (r === 'admin' || r === 'superadmin') next(); else res.redirect('/'); });
 
 // =============================================================================
-// 4. API ROUTES - USER MANAGEMENT & PROFILE
+//  API ROUTES - USER MANAGEMENT & PROFILE
 // =============================================================================
 
 app.get('/api/users', hasRole('admin'), async (req, res) => { res.json(await db.getUsers()); });
@@ -203,7 +211,7 @@ app.put('/api/profile', async (req, res) => {
 });
 
 // =============================================================================
-// 5. API ROUTES - MEMBERS & SKILLS
+//  API ROUTES - MEMBERS & SKILLS
 // =============================================================================
 
 app.get('/api/members', hasRole('admin'), async (req, res) => res.json(await db.getMembers()));
@@ -239,7 +247,7 @@ app.get('/api/skills/discover', hasRole('admin'), async (req, res) => {
 app.post('/api/skills/import', hasRole('admin'), async (req, res) => { await db.bulkAddSkills(req.body); res.json({ success: true }); });
 
 // =============================================================================
-// 7. API ROUTES - SYSTEM
+//  API ROUTES - SYSTEM
 // =============================================================================
 
 app.get('/api/preferences', async (req, res) => { res.json(await db.getPreferences()); });
@@ -366,6 +374,47 @@ app.post('/api/forms/import', hasRole('admin'), upload.single('formFile'), async
 app.get('/api/forms/public/:publicId', async (req, res) => {
     try { const form = await formsService.getFormByPublicId(req.params.publicId); if (!form) return res.status(404).json({ error: "Form not found" }); res.json({ name: form.name, intro: form.intro, status: form.status, structure: form.structure }); } catch (e) { res.status(500).json({ error: e.message }); }
 });
+// =============================================================================
+// API ROUTES - LIVE FORMS (Add this section near Forms Management)
+// =============================================================================
+
+app.get('/api/live-forms', hasRole('admin'), async (req, res) => {
+    try {
+        const filters = {
+            memberId: req.query.memberId,
+            skillId: req.query.skillId,
+            status: req.query.status,
+            sentStart: req.query.sentStart,
+            sentEnd: req.query.sentEnd,
+            subStart: req.query.subStart,
+            subEnd: req.query.subEnd
+        };
+        res.json(await formsService.getLiveForms(filters));
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.put('/api/live-forms/:id', hasRole('admin'), async (req, res) => {
+    try {
+        await formsService.updateLiveFormStatus(req.params.id, req.body.status);
+        await db.logEvent(req.session.user.name, 'Live Forms', `Updated status ID: ${req.params.id}`, { status: req.body.status });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.delete('/api/live-forms/:id', hasRole('admin'), async (req, res) => {
+    try {
+        await formsService.deleteLiveForm(req.params.id);
+        await db.logEvent(req.session.user.name, 'Live Forms', `Deleted record ID: ${req.params.id}`, {});
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 
 app.use(express.static('public'));
 

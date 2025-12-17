@@ -86,7 +86,7 @@ async function deleteForm(id) {
     await database.run('DELETE FROM forms WHERE id = ?', id);
 }
 
-// [NEW] Check/Create Live Form Instance
+//  Check/Create Live Form Instance
 async function ensureLiveForm(memberId, skillId, skillExpiringDate, formPublicId) {
     const database = await db.initDB();
     // 1. Check for existing OPEN form for this member/skill
@@ -105,6 +105,71 @@ async function ensureLiveForm(memberId, skillId, skillExpiringDate, formPublicId
     return accessCode;
 }
 
+//  Get Live Forms with Filters
+async function getLiveForms(filters = {}) {
+    const database = await db.initDB();
+    
+    let query = `
+        SELECT lf.*, m.name as member_name, s.name as skill_name 
+        FROM live_forms lf 
+        LEFT JOIN members m ON lf.member_id = m.id 
+        LEFT JOIN skills s ON lf.skill_id = s.id 
+        WHERE 1=1
+    `;
+    
+    const params = [];
+
+    if (filters.memberId) {
+        query += ` AND lf.member_id = ?`;
+        params.push(filters.memberId);
+    }
+    if (filters.skillId) {
+        query += ` AND lf.skill_id = ?`;
+        params.push(filters.skillId);
+    }
+    if (filters.status) {
+        query += ` AND lf.form_status = ?`;
+        params.push(filters.status);
+    }
+    
+    // Date Range: Sent
+    if (filters.sentStart) {
+        query += ` AND lf.form_sent_datetime >= ?`;
+        params.push(filters.sentStart + ' 00:00:00');
+    }
+    if (filters.sentEnd) {
+        query += ` AND lf.form_sent_datetime <= ?`;
+        params.push(filters.sentEnd + ' 23:59:59');
+    }
+
+    // Date Range: Submitted
+    if (filters.subStart) {
+        query += ` AND lf.form_submitted_datetime >= ?`;
+        params.push(filters.subStart + ' 00:00:00');
+    }
+    if (filters.subEnd) {
+        query += ` AND lf.form_submitted_datetime <= ?`;
+        params.push(filters.subEnd + ' 23:59:59');
+    }
+
+    query += ` ORDER BY lf.form_sent_datetime DESC`;
+
+    return await database.all(query, params);
+}
+
+//  Update Live Form Status
+async function updateLiveFormStatus(id, status) {
+    const database = await db.initDB();
+    await database.run(`UPDATE live_forms SET form_status = ? WHERE id = ?`, status, id);
+}
+
+//  Delete Live Form
+async function deleteLiveForm(id) {
+    const database = await db.initDB();
+    await database.run(`DELETE FROM live_forms WHERE id = ?`, id);
+}
+
 module.exports = {
-    getAllForms, getAllFormsFull, importBulkForms, getFormById, getFormByPublicId, createForm, updateForm, deleteForm, ensureLiveForm
+    getAllForms, getAllFormsFull, importBulkForms, getFormById, getFormByPublicId, createForm, updateForm, deleteForm, ensureLiveForm,
+    getLiveForms, updateLiveFormStatus, deleteLiveForm // Exported new functions
 };
