@@ -485,7 +485,25 @@ app.post('/api/live-forms/submit/:code', async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
+app.get('/api/live-forms/review/:id', hasRole('admin'), async (req, res) => {
+    try {
+        const result = await formsService.getLiveFormSubmission(req.params.id);
 
+        if (!result) return res.status(404).json({ error: "Record not found" });
+
+        res.json({
+            name: result.form_name,
+            intro: result.intro,
+            structure: result.structure,
+            member: result.member_name,
+            skill: result.skill_name,
+            submittedData: result.form_submitted_data, // The actual answers
+            submittedAt: result.form_submitted_datetime
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 //==============================================================================    
 //  SERVE STATIC FILES
 app.use(express.static('public'));

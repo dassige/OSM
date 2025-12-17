@@ -81,6 +81,14 @@
             transform: scale(1.2);
         }
 
+        /* [NEW] Review Mode Styling */
+        body.review-mode .option-label.checked-answer {
+            background-color: #ffe6e6 !important; /* Light Pink */
+            border-color: #ffb3b3 !important;     /* Darker Pink Border */
+            color: #721c24;                       /* Dark Red Text */
+            font-weight: bold;
+        }
+
         .preview-banner {
             background: #ffc107;
             color: #333;
@@ -118,7 +126,7 @@
     <div id="previewBanner" class="preview-banner" style="display:none;">
         PREVIEW MODE - Responses will not be saved.
         <button onclick="window.close()"
-            style="margin-left:15px; padding:4px 10px; background:rgb(104, 5, 5); border:none; cursor:pointer; border-radius:4px;">Close
+            style="margin-left:15px; padding:4px 10px; background:rgb(104, 5, 5); border:none; cursor:pointer; border-radius:4px; color:white;">Close
             Window</button>
     </div>
 
@@ -145,20 +153,50 @@
 
     <script src="toast.js"></script>
     <script src="theme.js"></script>
-
     <script>
         let submissionCode = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
-            const code = params.get('code');       // Live Form Access Code
-            const publicId = params.get('id');     // Admin Preview ID
+            const code = params.get('code');
+            const publicId = params.get('id');
+            const reviewId = params.get('reviewId');
             const isPreview = params.get('preview') === 'true';
 
-            // Show preview banner if applicable
             if (isPreview) document.getElementById('previewBanner').style.display = 'block';
 
-            if (code) {
+            if (reviewId) {
+                // --- REVIEW MODE (Admin Only) ---
+                document.body.classList.add('review-mode'); // [NEW] Apply Styling Class
+
+                try {
+                    const res = await fetch(`/api/live-forms/review/${reviewId}`);
+                    if (res.status === 403 || res.status === 401) throw new Error("Unauthorized: Admin access required.");
+                    if (!res.ok) throw new Error("Could not load submission.");
+                    
+                    const data = await res.json();
+
+                    // Inject Review Banner
+                    const infoDiv = document.createElement('div');
+                    infoDiv.style.cssText = "background:#17a2b8; color:white; padding:15px; border-radius:6px; margin-bottom:20px; font-size:1em; text-align:center; font-weight:bold;";
+                    infoDiv.innerHTML = `REVIEW MODE &bull; Submitted on ${new Date(data.submittedAt).toLocaleString()}`;
+                    document.querySelector('.form-header').insertBefore(infoDiv, document.getElementById('formName'));
+
+                    // Inject Context
+                    const contextDiv = document.createElement('div');
+                    contextDiv.style.cssText = "background:#f8f9fa; padding:10px; border-radius:4px; margin-bottom:15px; border:1px solid #ddd; color:#555;";
+                    contextDiv.innerHTML = `<strong>Member:</strong> ${data.member} &nbsp;|&nbsp; <strong>Skill:</strong> ${data.skill}`;
+                    document.querySelector('.form-header').insertBefore(contextDiv, document.getElementById('formName'));
+
+                    renderForm(data);
+                    fillForm(data.submittedData);
+                    disableForm();
+
+                } catch (e) {
+                    showError(e.message);
+                }
+
+            } else if (code) {
                 // --- LIVE MODE (Public) ---
                 submissionCode = code;
                 try {
@@ -166,19 +204,18 @@
                     const data = await res.json();
 
                     if (!res.ok) {
-                        // Handle specific blocked states
+                        if (data.status === 'submitted') throw new Error("This form has been already submitted");
+                        if (data.status === 'disabled') throw new Error("This form has been disabled");
                         throw new Error(data.error || "Unable to load form.");
                     }
 
-                    // Show Context (Member/Skill)
                     if (data.member || data.skill) {
                         const infoDiv = document.createElement('div');
                         infoDiv.style.cssText = "background:#e8f0fe; padding:12px; border-radius:6px; margin-bottom:20px; color:#0d47a1; font-size:0.95em; border:1px solid #b8d4fe;";
                         infoDiv.innerHTML = `
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <span><strong>Member:</strong> ${data.member || 'N/A'}</span>
-                                <span><strong>Skill:</strong> ${data.skill || 'N/A'}</span>
-                            </div>`;
+                                <span><strong>Skill:</strong> ${data.skill || 'N/A'}`;
                         document.querySelector('.form-header').insertBefore(infoDiv, document.getElementById('formName'));
                     }
 
@@ -189,25 +226,21 @@
                 }
 
             } else if (publicId) {
-                // --- PREVIEW MODE (Admin Only) ---
-                // Because we removed /api/forms/public/ from the whitelist, 
-                // this fetch will FAIL (401) if the user is not logged in.
+                // --- PREVIEW MODE ---
                 try {
                     const res = await fetch(`/api/forms/public/${publicId}`);
-                    if (res.status === 401) throw new Error("Unauthorized: Preview is for admins only.");
+                    if (res.status === 401) throw new Error("Unauthorized");
                     if (!res.ok) throw new Error("Form not found.");
-
+                    
                     const form = await res.json();
-
-                    // Even admins can't preview disabled forms unless explicitly in preview mode
                     if (!form.status && !isPreview) throw new Error("This form is currently closed.");
-
+                    
                     renderForm(form);
                 } catch (e) {
                     showError(e.message);
                 }
             } else {
-                showError("Invalid link. No access code provided.");
+                showError("No form specified.");
             }
         });
 
@@ -224,7 +257,6 @@
                 const div = document.createElement('div');
                 div.className = 'question-card';
 
-                // Question Text
                 let labelHtml = `<div class="question-text">${field.description}</div>`;
                 if (field.required) labelHtml += `<div style="text-align:right; margin-bottom:5px;"><span style="color:#dc3545; font-size:11px; font-weight:bold; background:#ffe6e6; padding:2px 6px; border-radius:4px;">* Required</span></div>`;
 
@@ -258,14 +290,56 @@
 
         function showError(msg) {
             document.getElementById('loading').style.display = 'none';
-            document.getElementById('formContent').style.display = 'none'; // Ensure form is hidden
+            document.getElementById('formContent').style.display = 'none';
             document.getElementById('errorState').style.display = 'block';
             document.getElementById('errorMsg').innerText = msg;
         }
 
+        // [UPDATED] Fill Form & Highlight Answers
+        function fillForm(data) {
+            if (!data) return;
+            
+            Object.keys(data).forEach(fieldName => {
+                const val = data[fieldName];
+                // Select generic name or array name (checkboxes)
+                const elements = document.querySelectorAll(`[name="${fieldName}"], [name="${fieldName}[]"]`);
+                
+                if (elements.length > 0) {
+                    const type = elements[0].type;
+                    
+                    if (type === 'radio') {
+                        elements.forEach(el => {
+                            if (el.value === val) {
+                                el.checked = true;
+                                if(el.closest('.option-label')) el.closest('.option-label').classList.add('checked-answer');
+                            }
+                        });
+                    } else if (type === 'checkbox') {
+                        const arr = Array.isArray(val) ? val : [val];
+                        elements.forEach(el => {
+                            if (arr.includes(el.value)) {
+                                el.checked = true;
+                                if(el.closest('.option-label')) el.closest('.option-label').classList.add('checked-answer');
+                            }
+                        });
+                    } else {
+                        // Textarea, Select
+                        elements[0].value = val;
+                    }
+                }
+            });
+        }
+
+        function disableForm() {
+            const form = document.getElementById('submissionForm');
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.style.display = 'none';
+            const inputs = form.querySelectorAll('input, textarea, select');
+            inputs.forEach(el => el.disabled = true);
+        }
+
         document.getElementById('submissionForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const formData = new FormData(e.target);
             const data = {};
             for (let [key, value] of formData.entries()) {
@@ -283,14 +357,12 @@
             btn.innerText = "Submitting...";
 
             if (submissionCode) {
-                // --- REAL SUBMISSION ---
                 try {
                     const res = await fetch(`/api/live-forms/submit/${submissionCode}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                     });
-
                     if (res.ok) {
                         document.getElementById('formContent').innerHTML = `
                             <div style="text-align:center; padding:40px;">
@@ -310,12 +382,10 @@
                     btn.innerText = originalText;
                 }
             } else {
-                // --- PREVIEW SUBMISSION ---
-                if (window.showToast) showToast("Form Validated! (Preview Mode)", "success");
+                if(window.showToast) showToast("Form Validated! (Preview Mode)", "success");
                 setTimeout(() => { window.close(); }, 1500);
             }
         });
     </script>
 </body>
-
 </html>

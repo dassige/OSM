@@ -206,9 +206,33 @@ async function submitLiveForm(code, formData) {
         WHERE form_access_code = ?
     `, JSON.stringify(formData), code);
 }
+// Admin: Get specific submission details
+async function getLiveFormSubmission(id) {
+    const database = await db.initDB();
+    const result = await database.get(`
+        SELECT lf.*, f.name as form_name, f.intro, f.structure, 
+               m.name as member_name, m.email as member_email,
+               s.name as skill_name
+        FROM live_forms lf
+        LEFT JOIN forms f ON lf.skill_form_public_id = f.public_id
+        LEFT JOIN members m ON lf.member_id = m.id
+        LEFT JOIN skills s ON lf.skill_id = s.id
+        WHERE lf.id = ?
+    `, id);
+
+    if (result) {
+        try { result.structure = JSON.parse(result.structure); } catch (e) { result.structure = []; }
+        // Parse the stored JSON answer data
+        if (result.form_submitted_data) {
+            try { result.form_submitted_data = JSON.parse(result.form_submitted_data); } catch (e) {}
+        }
+    }
+    return result;
+}
 
 module.exports = {
     getAllForms, getAllFormsFull, importBulkForms, getFormById, getFormByPublicId, createForm, updateForm, deleteForm, ensureLiveForm,
     getLiveForms, updateLiveFormStatus, deleteLiveForm,
-    getLiveFormByCode, submitLiveForm 
+    getLiveFormByCode, submitLiveForm,
+    getLiveFormSubmission 
 };

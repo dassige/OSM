@@ -8,8 +8,17 @@
     <title id="pageTitle">Live Forms Management - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        .container { max-width: 1200px; margin: 0 auto; padding-top: 40px; padding-bottom: 40px; }
-        h1 { text-align: center; margin-bottom: 30px; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 40px;
+            padding-bottom: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
 
         /* Filter Toolbar */
         .filter-bar {
@@ -25,30 +34,39 @@
             align-items: flex-end;
         }
 
-        .filter-group { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 5px; 
-            flex: 1 1 150px; /* Grow: 1, Shrink: 1, Basis: 150px */
-            min-width: 150px; 
-        }
-        
-        /* [UPDATED] Date Groups: Larger basis and higher grow factor to stay equal */
-        .filter-group-date { 
-            flex: 2 1 300px; 
-            min-width: 300px; 
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1 1 150px;
+            /* Grow: 1, Shrink: 1, Basis: 150px */
+            min-width: 150px;
         }
 
-        .filter-group label { font-size: 13px; font-weight: bold; color: var(--text-muted); }
-        
-        .filter-select, .filter-date {
-            padding: 8px; border: 1px solid var(--border-color);
-            border-radius: 4px; background-color: var(--input-bg);
-            color: var(--text-main); 
-            box-sizing: border-box;
-            height: 38px; /* Force consistent height */
+        /* [UPDATED] Date Groups: Larger basis and higher grow factor to stay equal */
+        .filter-group-date {
+            flex: 2 1 300px;
+            min-width: 300px;
         }
-        
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        .filter-select,
+        .filter-date {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            box-sizing: border-box;
+            height: 38px;
+            /* Force consistent height */
+        }
+
         /* [NEW] Container for the two date inputs */
         .date-range-container {
             display: flex;
@@ -58,46 +76,141 @@
 
         /* [NEW] Force inputs to share space equally */
         .date-range-container .filter-date {
-            width: 0;   /* CSS Flexbox trick: allow shrinking below content size if needed */
-            flex: 1;    /* Grow equally */
+            width: 0;
+            /* CSS Flexbox trick: allow shrinking below content size if needed */
+            flex: 1;
+            /* Grow equally */
         }
 
-        .filter-select { width: 100%; }
-
-        .filter-actions { display: flex; gap: 10px; margin-left: auto; }
-        
-        .btn-filter, .btn-reset {
-            padding: 8px 16px; border: none; border-radius: 4px;
-            cursor: pointer; font-weight: bold; color: white;
-            white-space: nowrap; height: 38px;
+        .filter-select {
+            width: 100%;
         }
-        .btn-filter { background-color: var(--primary); }
-        .btn-reset { background-color: #6c757d; }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .btn-filter,
+        .btn-reset {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            white-space: nowrap;
+            height: 38px;
+        }
+
+        .btn-filter {
+            background-color: var(--primary);
+        }
+
+        .btn-reset {
+            background-color: #6c757d;
+        }
 
         /* Table */
-        .table-wrapper { background: var(--bg-card); border-radius: 8px; box-shadow: 0 2px 5px var(--shadow); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
-        th { background-color: var(--bg-header); color: var(--text-header); cursor: pointer; user-select: none; white-space: nowrap; }
-        th:hover { background-color: #454d55; }
-        
+        .table-wrapper {
+            background: var(--bg-card);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px var(--shadow);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        th {
+            background-color: var(--bg-header);
+            color: var(--text-header);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        th:hover {
+            background-color: #454d55;
+        }
+
         /* Status Badges */
-        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .status-open { background-color: #17a2b8; color: white; }
-        .status-submitted { background-color: #28a745; color: white; }
-        .status-disabled { background-color: #6c757d; color: white; }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-open {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .status-submitted {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-disabled {
+            background-color: #6c757d;
+            color: white;
+        }
 
         /* Actions */
-        .btn-icon { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-muted); transition: transform 0.2s; }
-        .btn-icon:hover { transform: scale(1.1); color: var(--primary); }
-        .btn-icon.delete:hover { color: #dc3545; }
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+
+        .btn-icon:hover {
+            transform: scale(1.1);
+            color: var(--primary);
+        }
+
+        .btn-icon.delete:hover {
+            color: #dc3545;
+        }
 
         /* Mobile */
         @media screen and (max-width: 768px) {
-            .filter-bar { flex-direction: column; align-items: stretch; }
-            .filter-actions { width: 100%; justify-content: space-between; margin-left: 0; }
-            .btn-filter, .btn-reset { flex: 1; }
-            .filter-group-date { min-width: 100%; flex: 1 1 auto; }
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-actions {
+                width: 100%;
+                justify-content: space-between;
+                margin-left: 0;
+            }
+
+            .btn-filter,
+            .btn-reset {
+                flex: 1;
+            }
+
+            .filter-group-date {
+                min-width: 100%;
+                flex: 1 1 auto;
+            }
         }
     </style>
 </head>
@@ -131,13 +244,17 @@
             </div>
             <div class="filter-group">
                 <label>Member</label>
-                <select id="filterMember" class="filter-select"><option value="">All Members</option></select>
+                <select id="filterMember" class="filter-select">
+                    <option value="">All Members</option>
+                </select>
             </div>
             <div class="filter-group">
                 <label>Skill</label>
-                <select id="filterSkill" class="filter-select"><option value="">All Skills</option></select>
+                <select id="filterSkill" class="filter-select">
+                    <option value="">All Skills</option>
+                </select>
             </div>
-            
+
             <div class="filter-group filter-group-date">
                 <label>Sent Date</label>
                 <div class="date-range-container">
@@ -166,14 +283,18 @@
                     <tr>
                         <th onclick="handleSort('member_name')">Member <span id="icon-member_name"></span></th>
                         <th onclick="handleSort('skill_name')">Skill <span id="icon-skill_name"></span></th>
-                        <th onclick="handleSort('form_sent_datetime')">Sent Date <span id="icon-form_sent_datetime"></span></th>
-                        <th onclick="handleSort('form_submitted_datetime')">Submitted <span id="icon-form_submitted_datetime"></span></th>
+                        <th onclick="handleSort('form_sent_datetime')">Sent Date <span
+                                id="icon-form_sent_datetime"></span></th>
+                        <th onclick="handleSort('form_submitted_datetime')">Submitted <span
+                                id="icon-form_submitted_datetime"></span></th>
                         <th onclick="handleSort('form_status')">Status <span id="icon-form_status"></span></th>
                         <th style="text-align:center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="6" style="text-align:center;">Loading...</td></tr>
+                    <tr>
+                        <td colspan="6" style="text-align:center;">Loading...</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -186,7 +307,7 @@
             <p><strong>Member:</strong> <span id="editMember"></span></p>
             <p><strong>Skill:</strong> <span id="editSkill"></span></p>
             <input type="hidden" id="editId">
-            
+
             <div class="form-group" style="margin-top:20px;">
                 <label>New Status</label>
                 <select id="editStatusSelect" class="filter-select">
@@ -195,7 +316,7 @@
                     <option value="disabled">Disabled</option>
                 </select>
             </div>
-            
+
             <div style="text-align:right; margin-top:20px;">
                 <button onclick="saveStatus()" class="btn-filter" style="width:100%;">Save Changes</button>
             </div>
@@ -214,7 +335,7 @@
     <script src="toast.js"></script>
     <script src="theme.js"></script>
     <script src="help.js"></script>
-<script>
+    <script>
         let currentData = [];
         // Default sort state
         let currentSort = { column: 'form_sent_datetime', order: 'desc' };
@@ -231,7 +352,7 @@
                 if (c.loginTitle) document.getElementById('pageTitle').innerText = "Live Forms - " + c.loginTitle;
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
                 if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
-            } catch(e){}
+            } catch (e) { }
 
             // 2. Load User Preference for Sorting
             try {
@@ -255,7 +376,7 @@
                 const skills = await sRes.json();
                 const sSel = document.getElementById('filterSkill');
                 skills.forEach(s => sSel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
-            } catch(e){}
+            } catch (e) { }
 
             loadData();
         }
@@ -263,17 +384,17 @@
         async function loadData() {
             const params = new URLSearchParams();
             const getVal = (id) => document.getElementById(id).value;
-            
-            if(getVal('filterStatus')) params.append('status', getVal('filterStatus'));
-            if(getVal('filterMember')) params.append('memberId', getVal('filterMember'));
-            if(getVal('filterSkill')) params.append('skillId', getVal('filterSkill'));
-            if(getVal('filterSentStart')) params.append('sentStart', getVal('filterSentStart'));
-            if(getVal('filterSentEnd')) params.append('sentEnd', getVal('filterSentEnd'));
-            if(getVal('filterSubStart')) params.append('subStart', getVal('filterSubStart'));
-            if(getVal('filterSubEnd')) params.append('subEnd', getVal('filterSubEnd'));
+
+            if (getVal('filterStatus')) params.append('status', getVal('filterStatus'));
+            if (getVal('filterMember')) params.append('memberId', getVal('filterMember'));
+            if (getVal('filterSkill')) params.append('skillId', getVal('filterSkill'));
+            if (getVal('filterSentStart')) params.append('sentStart', getVal('filterSentStart'));
+            if (getVal('filterSentEnd')) params.append('sentEnd', getVal('filterSentEnd'));
+            if (getVal('filterSubStart')) params.append('subStart', getVal('filterSubStart'));
+            if (getVal('filterSubEnd')) params.append('subEnd', getVal('filterSubEnd'));
 
             document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading...</td></tr>';
-            
+
             try {
                 const res = await fetch(`/api/live-forms?${params.toString()}`);
                 if (!res.ok) throw new Error("Failed to load");
@@ -296,7 +417,7 @@
                 currentSort.column = col;
                 currentSort.order = 'asc';
             }
-            
+
             // Save Preference
             fetch('/api/user-preferences', {
                 method: 'POST',
@@ -345,30 +466,44 @@
 
             currentData.forEach(row => {
                 const sentDate = new Date(row.form_sent_datetime).toLocaleDateString() + ' ' + new Date(row.form_sent_datetime).toLocaleTimeString();
-                const subDate = row.form_submitted_datetime 
-                    ? new Date(row.form_submitted_datetime).toLocaleDateString() 
+                const subDate = row.form_submitted_datetime
+                    ? new Date(row.form_submitted_datetime).toLocaleDateString()
                     : '<span style="color:#ccc;">-</span>';
+
+                // Check if reviewable
+                let reviewBtn = '';
+                if (row.form_status === 'submitted' && row.form_submitted_data) {
+                    reviewBtn = `
+                <button class="btn-icon" onclick="openReview('${row.id}')" title="Review Submission" style="color:#17a2b8;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+            `;
+                }
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${row.member_name || 'Unknown'}</td>
-                    <td>${row.skill_name || 'Unknown'}</td>
-                    <td style="font-size:0.9em;">${sentDate}</td>
-                    <td style="font-size:0.9em;">${subDate}</td>
-                    <td><span class="status-badge status-${row.form_status}">${row.form_status}</span></td>
-                    <td style="text-align:center; white-space:nowrap;">
-                        <button class="btn-icon" onclick="openEdit('${row.id}', '${row.member_name || ''}', '${row.skill_name || ''}', '${row.form_status}')" title="Edit Status">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        </button>
-                        <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        </button>
-                    </td>
-                `;
+            <td>${row.member_name || 'Unknown'}</td>
+            <td>${row.skill_name || 'Unknown'}</td>
+            <td style="font-size:0.9em;">${sentDate}</td>
+            <td style="font-size:0.9em;">${subDate}</td>
+            <td><span class="status-badge status-${row.form_status}">${row.form_status}</span></td>
+            <td style="text-align:center; white-space:nowrap;">
+                ${reviewBtn}
+                <button class="btn-icon" onclick="openEdit('${row.id}', '${row.member_name || ''}', '${row.skill_name || ''}', '${row.form_status}')" title="Edit Status">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            </td>
+        `;
                 tbody.appendChild(tr);
             });
         }
 
+        function openReview(id) {
+            window.open(`forms-view.html?reviewId=${id}`, '_blank');
+        }
         // Actions
         function openEdit(id, member, skill, status) {
             document.getElementById('editId').value = id;
@@ -381,11 +516,11 @@
         async function saveStatus() {
             const id = document.getElementById('editId').value;
             const status = document.getElementById('editStatusSelect').value;
-            
+
             try {
                 const res = await fetch(`/api/live-forms/${id}`, {
                     method: 'PUT',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status })
                 });
                 if (res.ok) {
@@ -398,12 +533,12 @@
 
         async function deleteRecord(id) {
             const row = currentData.find(r => r.id == id);
-            const info = row 
-                ? `Member: ${row.member_name}\nSkill: ${row.skill_name}\nSent: ${new Date(row.form_sent_datetime).toLocaleDateString()}` 
+            const info = row
+                ? `Member: ${row.member_name}\nSkill: ${row.skill_name}\nSent: ${new Date(row.form_sent_datetime).toLocaleDateString()}`
                 : 'this record';
-            
+
             if (!await confirmAction("Delete Record", `Are you sure you want to delete this form?\n\n${info}\n\nThis cannot be undone.`)) return;
-            
+
             try {
                 await fetch(`/api/live-forms/${id}`, { method: 'DELETE' });
                 loadData();
@@ -412,8 +547,8 @@
         }
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        window.onclick = (e) => { if(e.target.classList.contains('modal')) e.target.style.display = 'none'; }
-        
+        window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; }
+
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -421,4 +556,5 @@
         init();
     </script>
 </body>
+
 </html>
