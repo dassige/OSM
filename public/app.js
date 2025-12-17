@@ -129,14 +129,33 @@ function toggleConsole(isVisible) {
     if (consoleHeader) consoleHeader.style.display = style;
 }
 
-// ... (Keep existing DATA & SORTING & RENDER) ...
+// [UPDATED] Inject skeletons before network request
 function fetchData(forceRefresh = false) {
     const days = parseInt(daysInput.value) || 30;
     viewBtn.disabled = true;
     viewBtn.textContent = "Loading Data...";
+
+    // Show Skeletons
+    renderSkeletons();
+
     const modeText = forceRefresh ? " (Force Refresh)" : "";
     terminal.textContent += `> Fetching View Data (Threshold: ${days} days)${modeText}... please wait.\n`;
     socket.emit('view-expiring-skills', days, forceRefresh);
+}
+// [NEW] Helper to render skeleton rows
+function renderSkeletons() {
+    skillsTableBody.innerHTML = '';
+    // Generate 5 dummy rows
+    for (let i = 0; i < 5; i++) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><div class="skeleton" style="width: 50%;"></div></td>
+            <td><div class="skeleton" style="width: 80%;"></div></td>
+            <td><div class="skeleton" style="width: 30%;"></div></td>
+            <td><div class="skeleton" style="width: 60%;"></div></td>
+        `;
+        skillsTableBody.appendChild(tr);
+    }
 }
 
 function handleSort(column) {
@@ -169,6 +188,8 @@ function renderTable() {
     const expiredOnly = btnExpiredOnly.classList.contains('active');
     const hideWithUrl = btnHideWithUrl.classList.contains('active');
 
+    let visibleCount = 0;
+
     currentOsmData.forEach((member, index) => {
         let visibleSkills = member.skills;
         if (hideNoUrl) visibleSkills = visibleSkills.filter(s => s.hasUrl);
@@ -177,6 +198,9 @@ function renderTable() {
         const hasVisibleSkills = visibleSkills.length > 0;
         if (hideNoSkills && !hasVisibleSkills) return;
 
+        visibleCount++;
+
+        // ... (Existing row generation logic remains the same) ...
         const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
         const tr = document.createElement('tr');
         tr.className = rowClass;
@@ -190,6 +214,7 @@ function renderTable() {
         const dateTd = document.createElement('td');
 
         if (hasVisibleSkills) {
+            // [UPDATED from previous step] Pass member.id
             skillTd.innerHTML = buildSkillHtml(visibleSkills[0], member.id);
             skillTd.className = 'skill-cell';
             dateTd.textContent = visibleSkills[0].dueDate;
@@ -206,6 +231,7 @@ function renderTable() {
         }
         tr.appendChild(skillTd); tr.appendChild(dateTd);
 
+        // ... (Actions Column Logic - Email/WA buttons) ...
         const prefs = (member.notificationPreference || 'email').split(',');
         const defaultEmail = prefs.includes('email');
         const defaultWa = prefs.includes('whatsapp');
@@ -219,6 +245,7 @@ function renderTable() {
             wrapper.style.flexDirection = 'column';
             wrapper.style.gap = '8px';
 
+            // Email Row
             const emailRow = document.createElement('div');
             emailRow.style.display = 'flex';
             emailRow.style.alignItems = 'center';
@@ -249,6 +276,7 @@ function renderTable() {
             emailRow.appendChild(emailLabel);
             emailRow.appendChild(btnEmail);
 
+            // WA Row
             const waRow = document.createElement('div');
             waRow.style.display = 'flex';
             waRow.style.alignItems = 'center';
@@ -302,9 +330,12 @@ function renderTable() {
         for (let i = 1; i < visibleSkills.length; i++) {
             const subTr = document.createElement('tr'); subTr.className = rowClass;
             const emptyNameTd = document.createElement('td'); emptyNameTd.className = 'merged-cell'; subTr.appendChild(emptyNameTd);
-            const subSkillTd = document.createElement('td'); 
-            subSkillTd.innerHTML = buildSkillHtml(visibleSkills[i], member.id); 
+
+            // [UPDATED from previous step] Pass member.id
+            const subSkillTd = document.createElement('td');
+            subSkillTd.innerHTML = buildSkillHtml(visibleSkills[i], member.id);
             subSkillTd.className = 'skill-cell';
+
             const subDateTd = document.createElement('td'); subDateTd.textContent = visibleSkills[i].dueDate; subDateTd.className = 'date-cell';
             if (isDateInPast(visibleSkills[i].dueDate)) { subDateTd.style.backgroundColor = '#dc3545'; subDateTd.style.color = 'white'; subDateTd.style.fontWeight = 'bold'; }
             subTr.appendChild(subSkillTd); subTr.appendChild(subDateTd);
@@ -313,13 +344,30 @@ function renderTable() {
         }
     });
 
+    // [NEW] Enhanced Empty State
+    if (visibleCount === 0) {
+        skillsTableBody.innerHTML = `
+            <tr class="empty-state-row">
+                <td colspan="4">
+                    <div class="empty-state-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color:#d1d5db;">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        <h3>All Caught Up!</h3>
+                        <p>No expiring skills found matching your filters.</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    // ... (Checkbox listeners logic) ...
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.addEventListener('change', updateSendButtonState));
     setupMasterCheckbox('selectAllEmail', '.send-email-cb');
     setupMasterCheckbox('selectAllWhatsapp', '.send-wa-cb');
     updateSendButtonState();
 }
-
-
 function setupMasterCheckbox(masterId, targetClass) {
     const master = document.getElementById(masterId);
     if (!master) return;
@@ -458,7 +506,7 @@ socket.on('expiring-skills-data', (data) => {
 function buildSkillHtml(skillObj, memberId) {
     let html = skillObj.skill;
     if (skillObj.isCritical) html = `<b>${html}</b>`;
-    
+
     // Form Link Icon (Unchanged)
     if (skillObj.hasUrl) {
         html += ` <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; color: #007bff; margin-left: 4px;" title="Direct Form Link Available"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
@@ -466,17 +514,17 @@ function buildSkillHtml(skillObj, memberId) {
 
     // [UPDATED] Status Icons with Circles
     const canLink = memberId && skillObj.skillId;
-    
+
     if (skillObj.liveFormStatus === 'submitted') {
         // Green Check Icon inside Circle
         const icon = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 6L9 17l-5-5"></path>
         </svg>`;
-        
+
         const wrapper = `<span class="status-circle submitted" title="Form Submitted - Awaiting Review">${icon}</span>`;
-        
+
         if (canLink) {
-            html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=submitted" target="_blank" style="text-decoration:none;">${wrapper}</a>`;
+            html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=submitted" target="_self" style="text-decoration:none;">${wrapper}</a>`;
         } else {
             html += ` ${wrapper}`;
         }
@@ -491,7 +539,7 @@ function buildSkillHtml(skillObj, memberId) {
         const wrapper = `<span class="status-circle sent" title="Form Sent - Waiting for Member">${icon}</span>`;
 
         if (canLink) {
-            html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=sent" target="_blank" style="text-decoration:none;">${wrapper}</a>`;
+            html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=sent" target="_self" style="text-decoration:none;">${wrapper}</a>`;
         } else {
             html += ` ${wrapper}`;
         }
