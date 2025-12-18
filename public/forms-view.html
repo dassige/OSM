@@ -288,6 +288,18 @@
         let appLocale = 'en-NZ';
         let appTimezone = 'Pacific/Auckland';
 
+        function updateCommentVisibility() {
+            const emailChecked = document.getElementById('revEmailCb').checked;
+            const waChecked = document.getElementById('revWaCb').checked;
+            const commentSection = document.getElementById('commentSection');
+            if (commentSection) {
+                commentSection.style.display = (emailChecked || waChecked) ? 'block' : 'none';
+            }
+        }
+
+        document.getElementById('revEmailCb').addEventListener('change', updateCommentVisibility);
+        document.getElementById('revWaCb').addEventListener('change', updateCommentVisibility);
+        
         document.addEventListener('DOMContentLoaded', async () => {
             // 1. Fetch Config for Locale/Timezone
             try {
@@ -592,19 +604,18 @@
         // --- REVIEW MODAL LOGIC (OPEN/SUBMIT) ---
         function openReviewModal(action) {
             currentAction = action;
+            const btn = document.getElementById('btnConfirmReview');
+            const modal = document.getElementById('reviewModal');
+
+            // Populate Member/Skill Info
             document.getElementById('revMember').textContent = reviewData.member;
             document.getElementById('revSkill').textContent = reviewData.skill;
             document.getElementById('revDate').textContent = new Date(reviewData.submittedAt).toLocaleDateString(appLocale);
-            document.getElementById('reviewModal').style.display = 'block';
-            const btn = document.getElementById('btnConfirmReview');
-
-            // Populate Info
-            document.getElementById('revMember').textContent = reviewData.member;
-            document.getElementById('revSkill').textContent = reviewData.skill;
-            document.getElementById('revDate').textContent = new Date(reviewData.submittedAt).toLocaleDateString(appLocale, { timeZone: appTimezone });
             document.getElementById('revTries').textContent = reviewData.tries || '1';
 
-            // Configure UI based on Action
+            // Clear previous comment
+            document.getElementById('revCustomComment').value = "";
+
             if (action === 'accept') {
                 document.getElementById('reviewModalTitle').textContent = "Accept Submission";
                 document.getElementById('rejectOptions').style.display = 'none';
@@ -614,41 +625,37 @@
                 document.getElementById('reviewModalTitle').textContent = "Reject Submission";
                 document.getElementById('rejectOptions').style.display = 'block';
                 btn.style.backgroundColor = '#dc3545';
-                btn.textContent = "Reject";
+                btn.textContent = "Reject & Notify";
             }
 
-            // Configure Checkboxes based on member data and preferences
             const prefs = (reviewData.member_prefs || '').split(',');
 
-            // Email Logic
+            // Set Email state
             const emailCb = document.getElementById('revEmailCb');
-            const emailPref = document.getElementById('revEmailPref');
             if (reviewData.member_email) {
                 emailCb.disabled = false;
                 emailCb.checked = prefs.includes('email');
-                emailPref.textContent = prefs.includes('email') ? "(Preferred)" : "";
             } else {
                 emailCb.disabled = true;
                 emailCb.checked = false;
-                emailPref.textContent = "(Not Available)";
             }
 
-            // WhatsApp Logic
+            // Set WA state
             const waCb = document.getElementById('revWaCb');
-            const waPref = document.getElementById('revWaPref');
             if (reviewData.member_mobile) {
                 waCb.disabled = false;
                 waCb.checked = prefs.includes('whatsapp');
-                waPref.textContent = prefs.includes('whatsapp') ? "(Preferred)" : "";
             } else {
                 waCb.disabled = true;
                 waCb.checked = false;
-                waPref.textContent = "(Not Available)";
             }
+
+            // [CRITICAL FIX] Call the visibility update manually because 
+            // setting .checked via code doesn't fire the 'change' event
+            updateCommentVisibility();
 
             modal.style.display = 'block';
         }
-
         async function submitReviewAction() {
             if (!reviewData.id || !currentAction) return;
 
@@ -659,15 +666,12 @@
 
             const payload = {
                 notifyEmail: document.getElementById('revEmailCb').checked,
-                notifyWa: document.getElementById('revWaCb').checked
+                notifyWa: document.getElementById('revWaCb').checked,
+                customComment: document.getElementById('revCustomComment').value, // [NEW] Added to payload
+                generateNew: currentAction === 'reject' ? document.getElementById('revGenerateNew').checked : false
             };
 
-            if (currentAction === 'reject') {
-                payload.generateNew = document.getElementById('revGenerateNew').checked;
-            }
-
             try {
-                // Assuming reviewData.id corresponds to the live_form id in the DB
                 const res = await fetch(`/api/live-forms/${currentAction}/${reviewData.id}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -677,11 +681,8 @@
                 if (res.ok) {
                     showToast("Action completed successfully", "success");
                     document.getElementById('reviewModal').style.display = 'none';
-                    // Hide actions and adjust padding
                     document.getElementById('reviewActions').style.display = 'none';
-                    document.body.style.paddingTop = '40px';
-                    // Optionally refresh the page or show a success banner
-                    setTimeout(() => window.close(), 2000);
+                    setTimeout(() => window.close(), 1500);
                 } else {
                     const err = await res.json();
                     throw new Error(err.error || "Action failed");
@@ -691,7 +692,54 @@
                 btn.disabled = false;
                 btn.textContent = originalText;
             }
-        }    </script>
+        }
+
+
+        if (!reviewData.id || !currentAction) return;
+
+        const btn = document.getElementById('btnConfirmReview');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Processing...";
+
+        const payload = {
+            notifyEmail: document.getElementById('revEmailCb').checked,
+            notifyWa: document.getElementById('revWaCb').checked
+        };
+
+        if (currentAction === 'reject') {
+            payload.generateNew = document.getElementById('revGenerateNew').checked;
+        }
+
+        try {
+            // Assuming reviewData.id corresponds to the live_form id in the DB
+            const res = await fetch(`/api/live-forms/${currentAction}/${reviewData.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                showToast("Action completed successfully", "success");
+                document.getElementById('reviewModal').style.display = 'none';
+                // Hide actions and adjust padding
+                document.getElementById('reviewActions').style.display = 'none';
+                document.body.style.paddingTop = '40px';
+                // Optionally refresh the page or show a success banner
+                setTimeout(() => window.close(), 2000);
+            } else {
+                const err = await res.json();
+                throw new Error(err.error || "Action failed");
+            }
+        } catch (e) {
+            showToast(e.message, "error");
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+
+
+
+    </script>
 </body>
 
 </html>
