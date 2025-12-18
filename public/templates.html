@@ -134,7 +134,7 @@
         #tab-delete .palette-container,
         #tab-accepted .palette-container,
         #tab-rejected .palette-container {
-            margin-top: 10px; 
+            margin-top: 10px;
         }
 
         #tab-whatsapp .palette-container {
@@ -293,13 +293,8 @@
                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                     <polyline points="22,6 12,13 2,6"></polyline>
-                </svg> Expiring Skills (Email)</div>
-            <div class="tab" onclick="switchTab('whatsapp')"><svg class="tab-icon" width="16" height="16" fill="#25D366"
-                    viewBox="0 0 24 24">
-                    <path
-                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z">
-                    </path>
-                </svg> Expiring Skills (WhatsApp)</div>
+                </svg> Expiring Skills</div>
+            
             <div class="tab" onclick="switchTab('accepted')"><svg class="tab-icon" width="16" height="16"
                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -317,26 +312,41 @@
         </div>
 
         <form id="templateForm">
+            
             <div id="tab-skills" class="tab-content active">
                 <div class="template-actions"><button type="button" class="btn-sm"
                         onclick="triggerImport('skills')">Import</button><button type="button" class="btn-sm"
                         onclick="exportTemplate('skills')">Export</button></div>
-                <div class="checkbox-group"><input type="checkbox" id="skillsFilterNoUrl"><label
+                
+                <h3 style="border-bottom:1px solid #eee; margin-top:0; color:#007bff;">Email Template</h3>
+                
+                <div class="checkbox-group" style="margin-top:10px;"><input type="checkbox" id="skillsFilterNoUrl"><label
                         for="skillsFilterNoUrl">Include only skills with Form URL?</label></div>
+                
                 <div class="palette-container">
                     <span class="palette-label">Drag variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                     <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
                     <div class="draggable-item" draggable="true" data-val="email">Member Email</div>
                 </div>
+                
                 <div class="form-group"><label>Sender (From)</label><input type="text" id="skillsFrom"
                         class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
                 <div class="form-group"><label>Subject</label><input type="text" id="skillsSubject"
                         class="droppable-input" placeholder="{{appname}}: Expiring Skills"></div>
-                <div class="form-group"><label>Intro Body</label><textarea id="skillsIntro"
-                        class="rich-editor"></textarea></div>
-                <hr style="margin: 20px 0; border:0; border-top:1px dashed #ccc;">
-                <div style="display: flex; gap: 30px; flex-direction: column;">
+                
+                <div class="form-group">
+                    <label>Intro Body</label>
+                    <div class="palette-container" style="margin-top:0; margin-bottom:5px;">
+                        <span class="palette-label">Drag variables:</span>
+                        <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                        <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                        <div class="draggable-item" draggable="true" data-val="email">Member Email</div>
+                    </div>
+                    <textarea id="skillsIntro" class="rich-editor"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 30px; flex-direction: column; margin-top:20px;">
                     <div style="flex: 1;"><label style="font-weight:bold; color: #007bff;">Repeated Skill Row (With
                             URL)</label>
                         <div class="palette-container">
@@ -348,21 +358,26 @@
                     <div style="flex: 1;"><label style="font-weight:bold; color: #6c757d;">Repeated Skill Row (No
                             URL)</label>
                         <div class="palette-container">
-                            <div class="draggable-item" draggable="true" data-val="next-planned-dates">Next Planned
-                                Dates</div>
+                            <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                            <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                            <div class="draggable-item" draggable="true" data-val="next-planned-dates">Next Planned Dates</div>
                         </div><textarea id="skillsRowNoUrl" class="rich-editor"></textarea>
                     </div>
                 </div>
-            </div>
 
-            <div id="tab-whatsapp" class="tab-content">
-                <div class="template-actions"><button type="button" class="btn-sm"
-                        onclick="triggerImport('whatsapp')">Import</button><button type="button" class="btn-sm"
-                        onclick="exportTemplate('whatsapp')">Export</button></div>
+                <h3 style="border-bottom:1px solid #eee; margin-top:40px; color:#25D366;">WhatsApp Template</h3>
+                
                 <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>, <code>_italic_</code>,
                     <code>~strike~</code>.</div>
-                <div class="checkbox-group" style="margin-top:20px;"><input type="checkbox" id="waFilterNoUrl"><label
+                
+                <div class="checkbox-group" style="margin-top:10px;"><input type="checkbox" id="waFilterNoUrl"><label
                         for="waFilterNoUrl">Include only skills with Form URL?</label></div>
+
+                <div class="palette-container">
+                    <span class="palette-label">Intro Variables:</span>
+                    <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                    <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                </div>
 
                 <div class="form-group wa-input-wrapper">
                     <label>Intro Message</label>
@@ -379,6 +394,11 @@
                 <div style="display: flex; gap: 30px; flex-direction: column;">
                     <div style="flex: 1;">
                         <label style="font-weight:bold; color: #007bff;">Row (With URL)</label>
+                        <div class="palette-container">
+                            <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                            <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                            <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
+                        </div>
                         <div class="wa-input-wrapper form-group">
                             <div class="wa-toolbar">
                                 <button type="button" class="wa-btn" onclick="formatText('waRow', '*')">B</button>
@@ -392,6 +412,11 @@
                     </div>
                     <div style="flex: 1;">
                         <label style="font-weight:bold; color: #6c757d;">Row (No URL)</label>
+                        <div class="palette-container">
+                            <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                            <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                            <div class="draggable-item" draggable="true" data-val="next-planned-dates" style="border-color:#20c997; color:#20c997;">Next Planned</div>
+                        </div>
                         <div class="wa-input-wrapper form-group">
                             <div class="wa-toolbar">
                                 <button type="button" class="wa-btn" onclick="formatText('waRowNoUrl', '*')">B</button>
@@ -412,6 +437,7 @@
                         onclick="exportTemplate('accepted')">Export</button></div>
                 
                 <h3 style="border-bottom:1px solid #eee; margin-top:0; color:#007bff;">Email Template</h3>
+                
                 <div class="palette-container" style="margin-top:10px;"><span class="palette-label">Variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                     <div class="draggable-item" draggable="true" data-val="name">Member Name</div>

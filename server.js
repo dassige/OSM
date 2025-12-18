@@ -578,16 +578,25 @@ app.get('/api/live-forms/review/:id', hasRole('admin'), async (req, res) => {
     }
 });
 
-// Accept Submission
+// Helper to convert HTML to Text with formatting preservation
+function convertHtmlToText(html) {
+    if (!html) return "";
+    return html
+        .replace(/<br\s*\/?>/gi, '\n') // Convert <br> to newline
+        .replace(/<\/p>/gi, '\n\n')    // Convert </p> to double newline
+        .replace(/<\/div>/gi, '\n')    // Convert </div> to newline
+        .replace(/<[^>]*>/g, '')       // Strip remaining tags
+        .trim();                       // Trim whitespace
+}
+
+// --- ACCEPT SUBMISSION ---
 app.post('/api/live-forms/accept/:id', hasRole('admin'), async (req, res) => {
     try {
         const { notifyEmail, notifyWa } = req.body;
         const id = req.params.id;
 
-        // 1. Update Status
         await formsService.updateLiveFormStatus(id, 'accepted');
 
-        // 2. Fetch Context
         const form = await formsService.getLiveFormSubmission(id);
         const member = {
             name: form.member_name,
@@ -595,15 +604,16 @@ app.post('/api/live-forms/accept/:id', hasRole('admin'), async (req, res) => {
             mobile: form.member_mobile
         };
 
-        // [NEW] 3. Load Templates
+        // Load Templates
         const prefs = await db.getPreferences();
-        let tplEmail = { subject: "Skill Verification Approved", body: null };
+        let tplEmail = { from: null, subject: "Skill Verification Approved", body: null };
         let tplWa = { body: null };
 
         if (prefs.tpl_accepted) {
             try {
                 const parsed = JSON.parse(prefs.tpl_accepted);
                 if (parsed.email) {
+                    if (parsed.email.from) tplEmail.from = parsed.email.from;
                     if (parsed.email.subject) tplEmail.subject = parsed.email.subject;
                     if (parsed.email.body) tplEmail.body = parsed.email.body;
                 }
@@ -613,52 +623,39 @@ app.post('/api/live-forms/accept/:id', hasRole('admin'), async (req, res) => {
             } catch (e) { console.error("Template parse error", e); }
         }
 
-        // Helper Replacer
         const applyVars = (text) => {
             if (!text) return "";
             return text
                 .replace(/{{name}}/g, member.name)
+                .replace(/{{email}}/g, member.email) // Added Email
                 .replace(/{{skill}}/g, form.skill_name)
                 .replace(/{{appname}}/g, config.ui.loginTitle);
         };
 
-        // 4. Send Email
+        // Send Email
         if (notifyEmail && member.email) {
-            // Use Template or Fallback
+            const from = tplEmail.from ? applyVars(tplEmail.from) : (config.ui.loginTitle + " <noreply@fenz.osm>");
             const subject = applyVars(tplEmail.subject);
+            
             let htmlBody = "";
             let textBody = "";
 
             if (tplEmail.body) {
                 htmlBody = applyVars(tplEmail.body);
-                // Strip HTML for text version
-                textBody = htmlBody.replace(/<[^>]*>?/gm, ''); 
+                textBody = convertHtmlToText(htmlBody); // Improved conversion
             } else {
-                // Default fallback
                 textBody = `Hello ${member.name}, your submission for "${form.skill_name}" has been APPROVED. No further action is required.`;
                 htmlBody = `<p>${textBody}</p>`;
             }
 
             await config.transporter.sendMail({
-                from: config.ui.loginTitle + " <noreply@fenz.osm>",
-                to: member.email,
-                subject: subject,
-                text: textBody,
-                html: htmlBody
+                from, to: member.email, subject, text: textBody, html: htmlBody
             });
         }
 
-        // 5. Send WhatsApp
+        // Send WhatsApp
         if (notifyWa && member.mobile && config.enableWhatsApp) {
-            let message = "";
-            
-            if (tplWa.body) {
-                message = applyVars(tplWa.body);
-            } else {
-                // Default fallback
-                message = `Hello ${member.name}, your submission for "${form.skill_name}" has been APPROVED. No further action is required.`;
-            }
-
+            let message = tplWa.body ? applyVars(tplWa.body) : `Hello ${member.name}, your submission for "${form.skill_name}" has been APPROVED.`;
             await whatsappService.sendMessage(member.mobile, message);
         }
 
@@ -668,17 +665,15 @@ app.post('/api/live-forms/accept/:id', hasRole('admin'), async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
-// Reject Submission
 
+// --- REJECT SUBMISSION ---
 app.post('/api/live-forms/reject/:id', hasRole('admin'), async (req, res) => {
     try {
         const { notifyEmail, notifyWa, generateNew } = req.body;
         const id = req.params.id;
 
-        // 1. Update Status
         await formsService.updateLiveFormStatus(id, 'rejected');
 
-        // 2. Fetch Context
         const form = await formsService.getLiveFormSubmission(id);
         const member = {
             name: form.member_name,
@@ -686,7 +681,7 @@ app.post('/api/live-forms/reject/:id', hasRole('admin'), async (req, res) => {
             mobile: form.member_mobile
         };
 
-        // 3. Load Templates
+        // Load Templates
         const prefs = await db.getPreferences();
         let tplEmail = { from: null, subject: "Skill Verification Returned", bodyRetry: null, bodySimple: null };
         let tplWa = { bodyRetry: null, bodySimple: null };
@@ -699,21 +694,19 @@ app.post('/api/live-forms/reject/:id', hasRole('admin'), async (req, res) => {
                     if (parsed.email.subject) tplEmail.subject = parsed.email.subject;
                     if (parsed.email.bodyRetry) tplEmail.bodyRetry = parsed.email.bodyRetry;
                     if (parsed.email.bodySimple) tplEmail.bodySimple = parsed.email.bodySimple;
-                    
-                    // Fallback for migration (if old single 'body' exists but new ones don't)
+                    // Backward Compat
                     if (parsed.email.body && !tplEmail.bodyRetry) tplEmail.bodyRetry = parsed.email.body;
                 }
                 if (parsed.whatsapp) {
                     if (parsed.whatsapp.bodyRetry) tplWa.bodyRetry = parsed.whatsapp.bodyRetry;
                     if (parsed.whatsapp.bodySimple) tplWa.bodySimple = parsed.whatsapp.bodySimple;
-                    
-                    // Fallback
+                    // Backward Compat
                     if (parsed.whatsapp.body && !tplWa.bodyRetry) tplWa.bodyRetry = parsed.whatsapp.body;
                 }
             } catch (e) { console.error("Template parse error", e); }
         }
 
-        // 4. Handle Link Generation
+        // Generate Link if needed
         let newLink = "";
         if (generateNew) {
             const newCode = await formsService.createRetryLiveForm(id);
@@ -721,64 +714,51 @@ app.post('/api/live-forms/reject/:id', hasRole('admin'), async (req, res) => {
             newLink = `${baseUrl}/forms-view.html?code=${newCode}`;
         }
 
-        // Helper Replacer
         const applyVars = (text) => {
             if (!text) return "";
             return text
                 .replace(/{{name}}/g, member.name)
+                .replace(/{{email}}/g, member.email) // Added Email
                 .replace(/{{skill}}/g, form.skill_name)
                 .replace(/{{appname}}/g, config.ui.loginTitle)
                 .replace(/{{url}}/g, newLink);
         };
 
-        // 5. Send Email
+        // Send Email
         if (notifyEmail && member.email) {
             const from = tplEmail.from ? applyVars(tplEmail.from) : (config.ui.loginTitle + " <noreply@fenz.osm>");
             const subject = applyVars(tplEmail.subject);
             
-            // Select template based on action
             const rawBody = generateNew ? tplEmail.bodyRetry : tplEmail.bodySimple;
-            
             let htmlBody = "";
             let textBody = "";
 
             if (rawBody) {
                 htmlBody = applyVars(rawBody);
-                textBody = htmlBody.replace(/<[^>]*>?/gm, ''); 
+                textBody = convertHtmlToText(htmlBody); // Improved conversion
             } else {
-                // Hardcoded defaults if template missing
-                if (generateNew) {
-                    textBody = `Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted.\n\nPlease submit again here: ${newLink}`;
-                } else {
-                    textBody = `Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted.\n\nPlease contact an administrator.`;
-                }
+                textBody = `Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted.`;
+                if (newLink) textBody += `\n\nPlease submit again here: ${newLink}`;
+                else textBody += `\n\nPlease contact an administrator.`;
                 htmlBody = `<p>${textBody.replace(/\n/g, '<br>')}</p>`;
             }
 
             await config.transporter.sendMail({
-                from: from,
-                to: member.email,
-                subject: subject,
-                text: textBody,
-                html: htmlBody
+                from, to: member.email, subject, text: textBody, html: htmlBody
             });
         }
 
-        // 6. Send WhatsApp
+        // Send WhatsApp
         if (notifyWa && member.mobile && config.enableWhatsApp) {
-            // Select template based on action
             const rawBody = generateNew ? tplWa.bodyRetry : tplWa.bodySimple;
             let message = "";
             
             if (rawBody) {
                 message = applyVars(rawBody);
             } else {
-                // Hardcoded defaults
-                if (generateNew) {
-                    message = `Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted. Please try again: ${newLink}`;
-                } else {
-                    message = `Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted. Please contact an administrator.`;
-                }
+                message = `Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted.`;
+                if (newLink) message += ` Please try again: ${newLink}`;
+                else message += ` Please contact an administrator.`;
             }
 
             await whatsappService.sendMessage(member.mobile, message);
@@ -790,6 +770,7 @@ app.post('/api/live-forms/reject/:id', hasRole('admin'), async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
+
 //==============================================================================    
 //  SERVE STATIC FILES
 app.use(express.static('public'));
