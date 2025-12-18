@@ -1071,3 +1071,8 @@ a .status-circle {
         margin-bottom: 10px; /* Stack on mobile if needed, or keep inline */
     }
 }
+.btn-icon svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+}

@@ -156,6 +156,34 @@
             cursor: pointer;
             color: #aaa;
         }
+
+        /* Review highlights */
+        body.review-mode .option-label.review-correct {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            color: #155724;
+            font-weight: bold;
+        }
+
+        body.review-mode .option-label.review-wrong {
+            background-color: #f8d7da !important;
+            border-color: #dc3545 !important;
+            color: #721c24;
+        }
+
+        body.review-mode .option-label.expected-border {
+            border: 4px solid #28a745 !important;
+            box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+        }
+
+        .reference-box {
+            background: #e8f0fe;
+            border-left: 4px solid #007bff;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #0d47a1;
+        }
     </style>
 </head>
 
@@ -432,34 +460,86 @@
             document.getElementById('errorMsg').innerText = msg;
         }
 
-        function fillForm(data) {
-            if (!data) return;
-            Object.keys(data).forEach(fieldName => {
-                const val = data[fieldName];
-                const elements = document.querySelectorAll(`[name="${fieldName}"], [name="${fieldName}[]"]`);
-                if (elements.length > 0) {
-                    const type = elements[0].type;
-                    if (type === 'radio') {
-                        elements.forEach(el => {
-                            if (el.value === val) {
-                                el.checked = true;
-                                if (el.closest('.option-label')) el.closest('.option-label').classList.add('checked-answer');
-                            }
-                        });
-                    } else if (type === 'checkbox') {
-                        const arr = Array.isArray(val) ? val : [val];
-                        elements.forEach(el => {
-                            if (arr.includes(el.value)) {
-                                el.checked = true;
-                                if (el.closest('.option-label')) el.closest('.option-label').classList.add('checked-answer');
-                            }
-                        });
-                    } else {
-                        elements[0].value = val;
-                    }
+function fillForm(submittedData) {
+    if (!reviewData) return; // Standard user view logic
+
+    reviewData.structure.forEach(field => {
+        const submitted = submittedData[field.id];
+        const correct = field.correctAnswer;
+        const labels = document.querySelectorAll(`[name="${field.id}"], [name="${field.id}[]"]`);
+
+        if (field.type === 'radio' || field.type === 'boolean') {
+            labels.forEach(el => {
+                const label = el.closest('.option-label');
+                if (el.value === submitted) {
+                    el.checked = true;
+                    label.classList.add(submitted === correct ? 'review-correct' : 'review-wrong');
+                }
+                // Add border to correct answer if member missed it
+                if (el.value === correct && submitted !== correct) {
+                    label.classList.add('expected-border');
                 }
             });
+        } 
+        else if (field.type === 'checkboxes') {
+            const subArr = Array.isArray(submitted) ? submitted : [submitted];
+            const corrArr = Array.isArray(correct) ? correct : [];
+            
+            labels.forEach(el => {
+                const label = el.closest('.option-label');
+                const isSelected = subArr.includes(el.value);
+                const isCorrect = corrArr.includes(el.value);
+
+                if (isSelected) {
+                    el.checked = true;
+                    label.classList.add(isCorrect ? 'review-correct' : 'review-wrong');
+                }
+                // Add border to correct options that were not selected
+                if (isCorrect && !isSelected) {
+                    label.classList.add('expected-border');
+                }
+            });
+        } 
+        else if (field.type === 'text_multi') {
+            const ta = document.querySelector(`textarea[name="${field.id}"]`);
+            if (ta) {
+                ta.value = submitted;
+                const refBox = document.createElement('div');
+                refBox.className = 'reference-box';
+                refBox.innerHTML = `<strong>Admin Reference Answer:</strong><br>${field.correctAnswer || 'No reference provided.'}`;
+                ta.parentNode.appendChild(refBox);
+            }
         }
+    });
+}
+ 
+        if (!data) return;
+        Object.keys(data).forEach(fieldName => {
+            const val = data[fieldName];
+            const elements = document.querySelectorAll(`[name="${fieldName}"], [name="${fieldName}[]"]`);
+            if (elements.length > 0) {
+                const type = elements[0].type;
+                if (type === 'radio') {
+                    elements.forEach(el => {
+                        if (el.value === val) {
+                            el.checked = true;
+                            if (el.closest('.option-label')) el.closest('.option-label').classList.add('checked-answer');
+                        }
+                    });
+                } else if (type === 'checkbox') {
+                    const arr = Array.isArray(val) ? val : [val];
+                    elements.forEach(el => {
+                        if (arr.includes(el.value)) {
+                            el.checked = true;
+                            if (el.closest('.option-label')) el.closest('.option-label').classList.add('checked-answer');
+                        }
+                    });
+                } else {
+                    elements[0].value = val;
+                }
+            }
+        });
+
 
         function disableForm() {
             const form = document.getElementById('submissionForm');
