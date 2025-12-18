@@ -1076,3 +1076,16 @@ a .status-circle {
     width: 18px;
     height: 18px;
 }
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+select,
+textarea {
+    background-color: var(--input-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;          /* Ensure consistent internal padding */
+    box-sizing: border-box; /* [FIX] Ensures width:100% includes padding/border */
+}

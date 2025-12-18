@@ -84,21 +84,28 @@ function initFieldEditor(id) {
 
 function getFormData() {
     const name = document.getElementById('formName').value;
-    const intro = tinymce.get('formIntro') ? tinymce.get('formIntro').getContent() : "";
+    const introEditor = tinymce.get('formIntro');
+    // Normalize intro: TinyMCE can sometimes return an empty string or a single break
+    const intro = introEditor ? introEditor.getContent() : "";
 
     const structure = Array.from(document.querySelectorAll('.field-card')).map(card => {
         const id = card.getAttribute('data-id');
         const type = card.getAttribute('data-type');
         const editor = tinymce.get(`editor_${id}`);
         const description = editor ? editor.getContent() : "";
-        const required = card.querySelector('.field-required-check').checked;
+        const required = !!card.querySelector('.field-required-check').checked;
 
-        let correctAnswer = null;
         let options = [];
+        let renderAs = 'radio';
+        let correctAnswer = null;
 
         if (type === 'radio' || type === 'checkboxes') {
             const rows = card.querySelectorAll('.option-row');
-            options = Array.from(rows).map(r => r.querySelector('.option-input').value).filter(v => v !== "");
+            // Filter out empty labels to match load state
+            options = Array.from(rows).map(r => r.querySelector('.option-input').value).filter(v => v.trim() !== "");
+
+            const sel = card.querySelector('.field-render-as');
+            if (sel) renderAs = sel.value;
 
             if (type === 'radio') {
                 const selected = Array.from(rows).find(r => r.querySelector('.correct-mark-radio')?.checked);
@@ -109,17 +116,30 @@ function getFormData() {
                     .map(r => r.querySelector('.option-input').value);
             }
         } else if (type === 'boolean') {
+            const sel = card.querySelector('.field-render-as');
+            if (sel) renderAs = sel.value;
             const selected = card.querySelector('.bool-correct:checked');
             correctAnswer = selected ? selected.value : null;
         } else if (type === 'text_multi') {
+            // Normalize empty reference answer to empty string
             correctAnswer = card.querySelector('.reference-answer-input')?.value || "";
         }
 
-        return { id, type, description, required, options, correctAnswer };
+        // IMPORTANT: The key order here must match originalFormState in loadEditor exactly
+        return {
+            id,
+            type,
+            description,
+            required,
+            options,
+            renderAs,
+            correctAnswer
+        };
     });
 
     return { name, intro, structure };
 }
+
 function isFormDirty() {
     if (!originalFormState) return false;
     const current = getFormData();
@@ -387,15 +407,14 @@ function loadEditor(form) {
     document.getElementById('builderPanel').style.display = 'flex';
     renderFormList();
 
+    // Populate UI
     const nameInput = document.getElementById('formName');
     nameInput.value = form.name || "";
-    nameInput.style.height = 'auto';
-    nameInput.style.height = nameInput.scrollHeight + 'px';
-
     if (tinymce.get('formIntro')) tinymce.get('formIntro').setContent(form.intro || "");
 
     renderFields();
 
+    // Setup initial state for dirty checking
     originalFormState = {
         name: form.name || "",
         intro: form.intro || "",
@@ -405,12 +424,11 @@ function loadEditor(form) {
             description: f.description || "",
             required: !!f.required,
             options: f.options || [],
-            renderAs: f.renderAs || 'radio'
+            renderAs: f.renderAs || 'radio',
+            // Normalize correctAnswer to null if undefined to match collector
+            correctAnswer: f.correctAnswer !== undefined ? f.correctAnswer : null
         }))
     };
-    // Reset global toggle icon to 'up' (default expanded state)
-    const globalToggleIcon = document.getElementById('iconToggleAll');
-    if (globalToggleIcon) globalToggleIcon.style.transform = 'rotate(180deg)';
 }
 
 function copyFormLink() {
@@ -510,9 +528,19 @@ function renderFieldItem(field) {
             </div>`;
     }
     else if (field.type === 'boolean') {
+        const selectedRadio = (!field.renderAs || field.renderAs === 'radio') ? 'selected' : '';
+        const selectedDropdown = (field.renderAs === 'dropdown') ? 'selected' : '';
+
         const yesCheck = (field.correctAnswer === 'Yes') ? 'checked' : '';
         const noCheck = (field.correctAnswer === 'No') ? 'checked' : '';
         html += `
+            <div class="form-group">
+                <label style="color:var(--text-muted); font-size:13px;">Display Style:</label>
+                <select class="field-render-as" style="padding:8px; border-radius:4px; border:1px solid #ccc; background:var(--input-bg); color:var(--text-main); width:200px;">
+                    <option value="radio" ${selectedRadio}>Radio Buttons</option>
+                    <option value="dropdown" ${selectedDropdown}>Dropdown Menu</option>
+                </select>
+            </div>
             <div class="form-group">
                 <label>Correct Answer:</label>
                 <div class="bool-correct-wrapper">
@@ -520,8 +548,7 @@ function renderFieldItem(field) {
                     <label style="font-weight:normal; margin-bottom:0 !important; cursor:pointer;"><input type="radio" name="bool_correct_${field.id}" class="bool-correct" value="No" ${noCheck}> No</label>
                 </div>
             </div>`;
-    }
-    else if (field.type === 'text_multi') {
+    } else if (field.type === 'text_multi') {
         html += `
             <div class="form-group">
                 <label>Expected/Reference Answer (Admin Use)</label>
