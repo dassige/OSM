@@ -81,11 +81,45 @@ async function updateForm(id, data) {
     await database.run(`UPDATE forms SET ${updates.join(', ')} WHERE id = ?`, params);
 }
 
-async function deleteForm(id) {
+// [NEW] Get a list of skill names using this form
+async function getFormUsage(id) {
     const database = await db.initDB();
-    await database.run('DELETE FROM forms WHERE id = ?', id);
+    // First find the public_id associated with this internal ID
+    const form = await database.get('SELECT public_id FROM forms WHERE id = ?', id);
+    if (!form) return [];
+
+    const skills = await database.all(
+        "SELECT name FROM skills WHERE url = ? AND url_type = 'internal'",
+        form.public_id
+    );
+    return skills.map(s => s.name);
 }
 
+// [UPDATED] Delete form and clean up skill references
+async function deleteForm(id) {
+    const database = await db.initDB();
+
+    // Fetch public_id to identify references in the skills table
+    const form = await database.get('SELECT public_id FROM forms WHERE id = ?', id);
+    if (!form) return;
+
+    await database.exec('BEGIN TRANSACTION');
+    try {
+        // 1. Remove the reference from any skills using this form
+        await database.run(
+            "UPDATE skills SET url = '', url_type = 'external' WHERE url = ? AND url_type = 'internal'",
+            form.public_id
+        );
+
+        // 2. Delete the form itself
+        await database.run('DELETE FROM forms WHERE id = ?', id);
+
+        await database.exec('COMMIT');
+    } catch (e) {
+        await database.exec('ROLLBACK');
+        throw e;
+    }
+}
 async function ensureLiveForm(memberId, skillId, skillExpiringDate, formPublicId) {
     const database = await db.initDB();
     // [UPDATED] Check for 'sent'
@@ -280,5 +314,5 @@ module.exports = {
     getAllForms, getAllFormsFull, importBulkForms, getFormById, getFormByPublicId, createForm, updateForm, deleteForm, ensureLiveForm,
     getLiveForms, purgeLiveForms, updateLiveFormStatus, deleteLiveForm,
     getLiveFormByCode, submitLiveForm,
-    getLiveFormSubmission, createRetryLiveForm, checkSubmittedStatus, getAllActiveStatuses
+    getLiveFormSubmission, createRetryLiveForm, checkSubmittedStatus, getAllActiveStatuses, getFormUsage
 };

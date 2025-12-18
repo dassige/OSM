@@ -210,17 +210,40 @@ async function updateStatus(id, enabled) {
 
 async function deleteForm() {
     if (!currentForm || !currentForm.id) return;
-    if (!await confirmAction("Delete Form", `Delete '${currentForm.name}'?`)) return;
 
     try {
-        await fetch(`/api/forms/${currentForm.id}`, { method: 'DELETE' });
-        showToast("Form deleted", "success");
+        // 1. Check if form is used by any skills
+        const usageRes = await fetch(`/api/forms/${currentForm.id}/usage`);
+        const usageData = await usageRes.json();
+
+        let message = `Are you sure you want to delete the form '${currentForm.name}'?`;
+        let title = "Delete Form";
+
+        if (usageData.count > 0) {
+            title = "Form In Use!";
+            const skillList = usageData.skills.join(', ');
+            message = `⚠️ WARNING: This form is currently used by the following skills: \n\n[ ${skillList} ]\n\nDeleting this form will remove the link from all these skills. Do you want to proceed?`;
+        }
+
+        // 2. Show the custom modal (confirmAction uses the custom UI from utils.js)
+        if (!await confirmAction(title, message)) return;
+
+        // 3. Proceed with deletion
+        const delRes = await fetch(`/api/forms/${currentForm.id}`, { method: 'DELETE' });
+        if (!delRes.ok) throw new Error("Deletion failed");
+
+        showToast("Form deleted and skill references removed", "success");
+
+        // Reset UI
         currentForm = null;
         originalFormState = null;
         document.getElementById('builderPanel').style.display = 'none';
         document.getElementById('emptyPanel').style.display = 'flex';
         loadForms();
-    } catch (e) { showToast(e.message, 'error'); }
+
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
 }
 
 async function previewForm() {

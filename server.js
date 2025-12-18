@@ -390,7 +390,14 @@ app.post('/api/forms/import', hasRole('admin'), upload.single('formFile'), async
 app.get('/api/forms/public/:publicId', async (req, res) => {
     try { const form = await formsService.getFormByPublicId(req.params.publicId); if (!form) return res.status(404).json({ error: "Form not found" }); res.json({ name: form.name, intro: form.intro, status: form.status, structure: form.structure }); } catch (e) { res.status(500).json({ error: e.message }); }
 });
-
+app.get('/api/forms/:id/usage', hasRole('admin'), async (req, res) => {
+    try {
+        const usage = await formsService.getFormUsage(req.params.id);
+        res.json({ count: usage.length, skills: usage });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 // =============================================================================
 // API ROUTES - LIVE FORMS 
 // =============================================================================
