@@ -85,7 +85,7 @@ function initFieldEditor(id) {
 function getFormData() {
     const name = document.getElementById('formName').value;
     const intro = tinymce.get('formIntro') ? tinymce.get('formIntro').getContent() : "";
-    
+
     const structure = Array.from(document.querySelectorAll('.field-card')).map(card => {
         const id = card.getAttribute('data-id');
         const type = card.getAttribute('data-type');
@@ -99,7 +99,7 @@ function getFormData() {
         if (type === 'radio' || type === 'checkboxes') {
             const rows = card.querySelectorAll('.option-row');
             options = Array.from(rows).map(r => r.querySelector('.option-input').value).filter(v => v !== "");
-            
+
             if (type === 'radio') {
                 const selected = Array.from(rows).find(r => r.querySelector('.correct-mark-radio')?.checked);
                 correctAnswer = selected ? selected.querySelector('.option-input').value : null;
@@ -408,6 +408,9 @@ function loadEditor(form) {
             renderAs: f.renderAs || 'radio'
         }))
     };
+    // Reset global toggle icon to 'up' (default expanded state)
+    const globalToggleIcon = document.getElementById('iconToggleAll');
+    if (globalToggleIcon) globalToggleIcon.style.transform = 'rotate(180deg)';
 }
 
 function copyFormLink() {
@@ -488,7 +491,7 @@ function renderFieldItem(field) {
         }
 
         const correctAnswers = Array.isArray(field.correctAnswer) ? field.correctAnswer : [field.correctAnswer];
-        
+
         html += `
             <div class="form-group">
                 <label>Options (Select correct answer mark)</label>
@@ -505,7 +508,7 @@ function renderFieldItem(field) {
                 </div>
                 <button type="button" class="btn-sm" style="margin-top:15px; background-color:#6c757d;" onclick="addOptionRow(this)">+ Add Option</button>
             </div>`;
-    } 
+    }
     else if (field.type === 'boolean') {
         const yesCheck = (field.correctAnswer === 'Yes') ? 'checked' : '';
         const noCheck = (field.correctAnswer === 'No') ? 'checked' : '';
@@ -534,13 +537,27 @@ function renderFieldItem(field) {
 
 window.toggleAllFields = function () {
     const cards = document.querySelectorAll('.field-card');
-    const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
-    cards.forEach(c => {
-        if (anyCollapsed) c.classList.add('expanded');
-        else c.classList.remove('expanded');
-    });
-}
+    const btnIcon = document.getElementById('iconToggleAll');
 
+    // Logic: If any card is collapsed, expand everything. 
+    // Otherwise (if all are expanded), collapse everything.
+    const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
+
+    cards.forEach(c => {
+        if (anyCollapsed) {
+            c.classList.add('expanded');
+        } else {
+            c.classList.remove('expanded');
+        }
+    });
+
+    // Update the global toggle icon direction
+    if (btnIcon) {
+        // Point Up (Expanded) if anyCollapsed was true (meaning we just expanded all)
+        // Point Down (Collapsed) if anyCollapsed was false (meaning we just collapsed all)
+        btnIcon.style.transform = anyCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+}
 window.toggleFieldCard = function (header) {
     header.parentElement.classList.toggle('expanded');
 }
@@ -559,10 +576,10 @@ function generateOptionRow(type, fieldId, value = "", isCorrect = false) {
     const markerType = type === 'radio' ? 'radio' : 'checkbox';
     const markerClass = type === 'radio' ? 'correct-mark-radio' : 'correct-mark-cb';
     const checked = isCorrect ? 'checked' : '';
-    
+
     // Use fieldId in the name so radio groups are scoped to their specific question
     const groupName = `correct_marker_${fieldId}`;
-    
+
     const deleteIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2 2v2"></path></svg>`;
 
     return `
@@ -581,7 +598,7 @@ window.addOptionRow = function (btn) {
     const type = card.getAttribute('data-type');
     const fieldId = card.getAttribute('data-id');
     const container = card.querySelector('.options-container');
-    
+
     const div = document.createElement('div');
     div.innerHTML = generateOptionRow(type, fieldId, "");
     container.appendChild(div.firstElementChild);
