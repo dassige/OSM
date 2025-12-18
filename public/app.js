@@ -632,41 +632,40 @@ async function updateNotificationBadges() {
         console.error("Failed to update notification badges", e);
     }
 }
-async function checkPendingReviews() {
-    // 1. Check Session Flag (Prevent spamming on refresh)
-    if (sessionStorage.getItem('hasShownReviewModal')) return;
 
-    // 2. [NEW] Check User Preference
-    try {
-        const prefRes = await fetch('/api/user-preferences/show_pending_reviews_alert');
-        if (prefRes.ok) {
-            const prefData = await prefRes.json();
-            // If value is explicitly 'false', skip the alert
-            if (prefData.value === 'false') return;
+    async function checkPendingReviews() {
+        if (sessionStorage.getItem('hasShownReviewModal')) return;
+
+        try {
+            const prefRes = await fetch('/api/user-preferences/show_pending_reviews_alert');
+            if (prefRes.ok) {
+                const prefData = await prefRes.json();
+                // Check against boolean false
+                if (prefData.value === false) return;
+            }
+        } catch (e) {
+            console.warn("Could not fetch user preferences, proceeding with default.");
         }
-    } catch (e) {
-        console.warn("Could not fetch user preferences, proceeding with default (Show Alert).");
+
+        try {
+            const res = await fetch('/api/live-forms?status=submitted&limit=1');
+            const data = await res.json();
+            const count = data.total || 0;
+
+            if (count > 0) {
+                document.getElementById('pendingCountDisplay').textContent = count;
+                document.getElementById('pendingReviewsModal').style.display = 'block';
+
+                // Set flag so it doesn't show again in this session
+                sessionStorage.setItem('hasShownReviewModal', 'true');
+            }
+        } catch (e) {
+            console.error("Error checking pending reviews:", e);
+        }
     }
 
-    try {
-        const res = await fetch('/api/live-forms?status=submitted&limit=1');
-        const data = await res.json();
-        const count = data.total || 0;
 
-        if (count > 0) {
-            document.getElementById('pendingCountDisplay').textContent = count;
-            document.getElementById('pendingReviewsModal').style.display = 'block';
-            
-            // Set flag so it doesn't show again in this session
-            sessionStorage.setItem('hasShownReviewModal', 'true');
-        }
-    } catch (e) {
-        console.error("Error checking pending reviews:", e);
-    }
-}
-
-
-// =============================================================================
-//  INITIALIZATION
-// =============================================================================
-init();
+    // =============================================================================
+    //  INITIALIZATION
+    // =============================================================================
+    init();
