@@ -1007,3 +1007,67 @@ a .status-circle {
     margin: 0;
     font-size: 0.9em;
 }
+.notification-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-right: 10px; /* Gap between bell and menu */
+}
+
+.notification-btn {
+    background-color: #343a40;
+    color: white;
+    width: 44px; /* Fixed width for square shape */
+    height: 44px; /* Matches standard button height roughly */
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    position: relative; /* Anchor for badges */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.2s;
+}
+
+.notification-btn:hover {
+    background-color: #23272b;
+    color: #fff;
+}
+
+.notif-badge {
+    position: absolute;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    border: 1px solid #fff; /* Slight border to separate from button */
+}
+
+/* Bottom-Left: Sent Status */
+.badge-sent {
+    background-color: #a19f2e;
+    bottom: -6px;
+    left: -6px;
+    z-index: 10;
+}
+
+/* Bottom-Right: Submitted Status */
+.badge-submitted {
+    background-color: #007bff;
+    bottom: -6px;
+    right: -6px;
+    z-index: 10;
+}
+
+/* Mobile Adjustment to keep header aligned */
+@media screen and (max-width: 768px) {
+    .notification-wrapper {
+        margin-right: 0;
+        margin-bottom: 10px; /* Stack on mobile if needed, or keep inline */
+    }
+}

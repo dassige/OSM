@@ -35,7 +35,7 @@ function init() {
         socket.emit('get-preferences');
         socket.emit('wa-get-status');
     });
-
+    updateNotificationBadges();
     fetch('/ui-config')
         .then(response => response.json())
         .then(config => {
@@ -586,5 +586,48 @@ window.resetCheckboxesToDefaults = function () {
     updateSendButtonState();
     if (window.showToast) window.showToast("Reset to default preferences", "success");
 };
+async function updateNotificationBadges() {
+    try {
+        // 1. Fetch Counts
+        const resSent = await fetch('/api/live-forms?status=sent&limit=1');
+        const dataSent = await resSent.json();
+        const countSent = dataSent.total || 0;
+
+        const resSub = await fetch('/api/live-forms?status=submitted&limit=1');
+        const dataSub = await resSub.json();
+        const countSub = dataSub.total || 0;
+
+        // 2. Get Elements
+        const badgeSent = document.getElementById('badgeSent');
+        const badgeSub = document.getElementById('badgeSubmitted');
+        const btn = document.getElementById('liveFormsNotifBtn');
+
+        // 3. Update Badges Visuals
+        if (countSent > 0) {
+            badgeSent.textContent = countSent > 99 ? '99+' : countSent;
+            badgeSent.style.display = 'flex';
+        } else {
+            badgeSent.style.display = 'none';
+        }
+
+        if (countSub > 0) {
+            badgeSub.textContent = countSub > 99 ? '99+' : countSub;
+            badgeSub.style.display = 'flex';
+        } else {
+            badgeSub.style.display = 'none';
+        }
+
+        // 4. Update Tooltip Text (Dynamic & Multi-line)
+        // Logic handles pluralization (e.g., "1 form" vs "2 forms")
+        const sentText = `${countSent} form${countSent !== 1 ? 's' : ''} sent`;
+        const subText = `${countSub} form${countSub !== 1 ? 's' : ''} awaiting review`;
+        
+        // \n creates the line break in the tooltip
+        btn.title = `${sentText}\n${subText}`;
+
+    } catch (e) {
+        console.error("Failed to update notification badges", e);
+    }
+}
 
 init();
