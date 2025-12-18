@@ -260,7 +260,13 @@
                     WhatsApp <span id="revWaPref" style="font-size:0.8em; color:#28a745; font-weight:bold;"></span>
                 </label>
             </div>
-
+            <div id="commentSection"
+                style="display:none; margin-top:20px; border-top: 1px solid #eee; padding-top:15px;">
+                <label style="display:block; font-weight:bold; margin-bottom:8px;">Additional Comment (Optional)</label>
+                <textarea id="revCustomComment" rows="3"
+                    style="width:100%; box-sizing:border-box; padding:10px; border-radius:4px; border:1px solid #ccc; font-family:inherit;"
+                    placeholder="This text will replace {{custom_comment}} in your templates..."></textarea>
+            </div>
             <div style="text-align:right; margin-top:25px; border-top:1px solid #eee; padding-top:15px;">
                 <button onclick="document.getElementById('reviewModal').style.display='none'"
                     style="background:#6c757d; border:none; padding:10px 20px; color:white; border-radius:4px; cursor:pointer; margin-right:10px;">Cancel</button>
@@ -535,8 +541,53 @@
                 if (window.showToast) showToast("Form Validated! (Preview Mode)", "success");
                 return;
             }
-            // ... (Rest of standard submission logic)
+            const formData = new FormData(e.target);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                if (data[key]) {
+                    if (!Array.isArray(data[key])) data[key] = [data[key]];
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+
+            const btn = e.target.querySelector('.btn-submit');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Submitting...";
+
+            if (submissionCode) {
+                try {
+                    const res = await fetch(`/api/live-forms/submit/${submissionCode}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (res.ok) {
+                        document.getElementById('formContent').innerHTML = `
+                            <div style="text-align:center; padding:40px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <h2 style="color:#28a745; margin-top:20px;">Thank You!</h2>
+                                <p style="color:#555; margin-bottom:20px;">Your skill verification has been submitted successfully.</p>
+                                <button onclick="window.close()" style="padding:10px 20px; border:none; background:#6c757d; color:white; border-radius:4px; cursor:pointer;">Close Window</button>
+                            </div>
+                        `;
+                    } else {
+                        const err = await res.json();
+                        throw new Error(err.error || "Submission failed");
+                    }
+                } catch (err) {
+                    showToast(err.message, "error");
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                }
+            } else {
+                if (window.showToast) showToast("Form Validated! (Preview Mode)", "success");
+                setTimeout(() => { window.close(); }, 1500);
+            }
         });
+
 
         // --- REVIEW MODAL LOGIC (OPEN/SUBMIT) ---
         function openReviewModal(action) {
@@ -545,9 +596,102 @@
             document.getElementById('revSkill').textContent = reviewData.skill;
             document.getElementById('revDate').textContent = new Date(reviewData.submittedAt).toLocaleDateString(appLocale);
             document.getElementById('reviewModal').style.display = 'block';
-            // ... (Rest of modal population)
+            const btn = document.getElementById('btnConfirmReview');
+
+            // Populate Info
+            document.getElementById('revMember').textContent = reviewData.member;
+            document.getElementById('revSkill').textContent = reviewData.skill;
+            document.getElementById('revDate').textContent = new Date(reviewData.submittedAt).toLocaleDateString(appLocale, { timeZone: appTimezone });
+            document.getElementById('revTries').textContent = reviewData.tries || '1';
+
+            // Configure UI based on Action
+            if (action === 'accept') {
+                document.getElementById('reviewModalTitle').textContent = "Accept Submission";
+                document.getElementById('rejectOptions').style.display = 'none';
+                btn.style.backgroundColor = '#28a745';
+                btn.textContent = "Accept & Notify";
+            } else {
+                document.getElementById('reviewModalTitle').textContent = "Reject Submission";
+                document.getElementById('rejectOptions').style.display = 'block';
+                btn.style.backgroundColor = '#dc3545';
+                btn.textContent = "Reject";
+            }
+
+            // Configure Checkboxes based on member data and preferences
+            const prefs = (reviewData.member_prefs || '').split(',');
+
+            // Email Logic
+            const emailCb = document.getElementById('revEmailCb');
+            const emailPref = document.getElementById('revEmailPref');
+            if (reviewData.member_email) {
+                emailCb.disabled = false;
+                emailCb.checked = prefs.includes('email');
+                emailPref.textContent = prefs.includes('email') ? "(Preferred)" : "";
+            } else {
+                emailCb.disabled = true;
+                emailCb.checked = false;
+                emailPref.textContent = "(Not Available)";
+            }
+
+            // WhatsApp Logic
+            const waCb = document.getElementById('revWaCb');
+            const waPref = document.getElementById('revWaPref');
+            if (reviewData.member_mobile) {
+                waCb.disabled = false;
+                waCb.checked = prefs.includes('whatsapp');
+                waPref.textContent = prefs.includes('whatsapp') ? "(Preferred)" : "";
+            } else {
+                waCb.disabled = true;
+                waCb.checked = false;
+                waPref.textContent = "(Not Available)";
+            }
+
+            modal.style.display = 'block';
         }
-    </script>
+
+        async function submitReviewAction() {
+            if (!reviewData.id || !currentAction) return;
+
+            const btn = document.getElementById('btnConfirmReview');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "Processing...";
+
+            const payload = {
+                notifyEmail: document.getElementById('revEmailCb').checked,
+                notifyWa: document.getElementById('revWaCb').checked
+            };
+
+            if (currentAction === 'reject') {
+                payload.generateNew = document.getElementById('revGenerateNew').checked;
+            }
+
+            try {
+                // Assuming reviewData.id corresponds to the live_form id in the DB
+                const res = await fetch(`/api/live-forms/${currentAction}/${reviewData.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    showToast("Action completed successfully", "success");
+                    document.getElementById('reviewModal').style.display = 'none';
+                    // Hide actions and adjust padding
+                    document.getElementById('reviewActions').style.display = 'none';
+                    document.body.style.paddingTop = '40px';
+                    // Optionally refresh the page or show a success banner
+                    setTimeout(() => window.close(), 2000);
+                } else {
+                    const err = await res.json();
+                    throw new Error(err.error || "Action failed");
+                }
+            } catch (e) {
+                showToast(e.message, "error");
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }    </script>
 </body>
 
 </html>

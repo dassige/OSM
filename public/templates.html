@@ -23,7 +23,8 @@
             border-bottom: 2px solid #ddd;
             margin-bottom: 20px;
             flex-wrap: wrap;
-            position: relative; /* Context for z-index */
+            position: relative;
+            /* Context for z-index */
         }
 
         .tab {
@@ -35,13 +36,15 @@
             border-top-right-radius: 6px;
             transition: all 0.2s;
             background: #f8f9fa;
-            margin-right: 4px; /* Increased gap */
+            margin-right: 4px;
+            /* Increased gap */
             border: 1px solid #ddd;
             border-bottom: none;
             display: flex;
             align-items: center;
             gap: 8px;
-            position: relative; /* For z-index to work */
+            position: relative;
+            /* For z-index to work */
         }
 
         .tab:hover {
@@ -53,9 +56,9 @@
             color: #007bff;
             /* Ensure active tab sits on top of the border */
             z-index: 2;
-            border-bottom: 2px solid #fff; 
+            border-bottom: 2px solid #fff;
             margin-bottom: -2px;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
         }
 
         .tab-content {
@@ -272,7 +275,7 @@
             border-top-right-radius: 0;
             font-family: monospace !important;
         }
-        
+
         .helper-text {
             font-size: 0.85em;
             color: #666;
@@ -283,19 +286,20 @@
 
         /* Sub-navigation Switcher */
         .sub-nav-container {
-            display:flex; 
-            background:#e9ecef; 
-            padding:3px; 
-            border-radius:6px; 
-            width: fit-content; 
+            display: flex;
+            background: #e9ecef;
+            padding: 3px;
+            border-radius: 6px;
+            width: fit-content;
             margin-bottom: 20px;
         }
+
         .btn-sub-nav {
-            margin:0; 
-            padding:6px 12px; 
-            border-radius:4px; 
-            border:none; 
-            font-size:14px;
+            margin: 0;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            font-size: 14px;
             cursor: pointer;
             font-weight: 500;
             transition: all 0.2s;
@@ -321,7 +325,7 @@
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                     <polyline points="22,6 12,13 2,6"></polyline>
                 </svg> Expiring Skills</div>
-            
+
             <div class="tab" onclick="switchTab('accepted')"><svg class="tab-icon" width="16" height="16"
                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -339,33 +343,37 @@
         </div>
 
         <form id="templateForm">
-            
+
             <div id="tab-skills" class="tab-content active">
                 <div class="template-actions">
                     <button type="button" class="btn-sm" onclick="triggerImport('skills')">Import</button>
                     <button type="button" class="btn-sm" onclick="exportTemplate('skills')">Export</button>
                 </div>
-                
+
                 <div class="sub-nav-container">
-                    <button type="button" id="btn-skills-email" class="btn-sub-nav" onclick="toggleSubTab('skills', 'email')" 
-                        style="background:var(--primary); color:white;">Email Template</button>
-                    <button type="button" id="btn-skills-wa" class="btn-sub-nav" onclick="toggleSubTab('skills', 'wa')" 
+                    <button type="button" id="btn-skills-email" class="btn-sub-nav"
+                        onclick="toggleSubTab('skills', 'email')" style="background:var(--primary); color:white;">Email
+                        Template</button>
+                    <button type="button" id="btn-skills-wa" class="btn-sub-nav" onclick="toggleSubTab('skills', 'wa')"
                         style="background:transparent; color:var(--text-main);">WhatsApp Template</button>
                 </div>
 
                 <div id="panel-skills-email">
-                    <div class="checkbox-group"><input type="checkbox" id="skillsFilterNoUrl"><label for="skillsFilterNoUrl">Include only skills with Form URL?</label></div>
-                    
+                    <div class="checkbox-group"><input type="checkbox" id="skillsFilterNoUrl"><label
+                            for="skillsFilterNoUrl">Include only skills with Form URL?</label></div>
+
                     <div class="palette-container">
                         <span class="palette-label">Drag variables:</span>
                         <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                         <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
                         <div class="draggable-item" draggable="true" data-val="email">Member Email</div>
                     </div>
-                    
-                    <div class="form-group"><label>Sender (From)</label><input type="text" id="skillsFrom" class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
-                    <div class="form-group"><label>Subject</label><input type="text" id="skillsSubject" class="droppable-input" placeholder="{{appname}}: Expiring Skills"></div>
-                    
+
+                    <div class="form-group"><label>Sender (From)</label><input type="text" id="skillsFrom"
+                            class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
+                    <div class="form-group"><label>Subject</label><input type="text" id="skillsSubject"
+                            class="droppable-input" placeholder="{{appname}}: Expiring Skills"></div>
+
                     <div class="form-group">
                         <label>Intro Body</label>
                         <div class="palette-container">
@@ -376,29 +384,34 @@
                         </div>
                         <textarea id="skillsIntro" class="rich-editor"></textarea>
                     </div>
-                    
+
                     <div style="display: flex; gap: 30px; flex-direction: column; margin-top:20px;">
-                        <div style="flex: 1;"><label style="font-weight:bold; color: #007bff;">Repeated Skill Row (With URL)</label>
+                        <div style="flex: 1;"><label style="font-weight:bold; color: #007bff;">Repeated Skill Row (With
+                                URL)</label>
                             <div class="palette-container">
                                 <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
                                 <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
                                 <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
                             </div><textarea id="skillsRow" class="rich-editor"></textarea>
                         </div>
-                        <div style="flex: 1;"><label style="font-weight:bold; color: #6c757d;">Repeated Skill Row (No URL)</label>
+                        <div style="flex: 1;"><label style="font-weight:bold; color: #6c757d;">Repeated Skill Row (No
+                                URL)</label>
                             <div class="palette-container">
                                 <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
                                 <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
-                                <div class="draggable-item" draggable="true" data-val="next-planned-dates">Next Planned Dates</div>
+                                <div class="draggable-item" draggable="true" data-val="next-planned-dates">Next Planned
+                                    Dates</div>
                             </div><textarea id="skillsRowNoUrl" class="rich-editor"></textarea>
                         </div>
                     </div>
                 </div>
 
                 <div id="panel-skills-wa" style="display:none;">
-                    <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>, <code>_italic_</code>, <code>~strike~</code>.</div>
-                    
-                    <div class="checkbox-group"><input type="checkbox" id="waFilterNoUrl"><label for="waFilterNoUrl">Include only skills with Form URL?</label></div>
+                    <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>,
+                        <code>_italic_</code>, <code>~strike~</code>.</div>
+
+                    <div class="checkbox-group"><input type="checkbox" id="waFilterNoUrl"><label
+                            for="waFilterNoUrl">Include only skills with Form URL?</label></div>
 
                     <div class="palette-container">
                         <span class="palette-label">Intro Variables:</span>
@@ -410,8 +423,10 @@
                         <label>Intro Message</label>
                         <div class="wa-toolbar">
                             <button type="button" class="wa-btn" onclick="formatText('waIntro', '*')">B</button>
-                            <button type="button" class="wa-btn" onclick="formatText('waIntro', '_')" style="font-style:italic;">I</button>
-                            <button type="button" class="wa-btn" onclick="formatText('waIntro', '~')" style="text-decoration:line-through;">S</button>
+                            <button type="button" class="wa-btn" onclick="formatText('waIntro', '_')"
+                                style="font-style:italic;">I</button>
+                            <button type="button" class="wa-btn" onclick="formatText('waIntro', '~')"
+                                style="text-decoration:line-through;">S</button>
                         </div>
                         <textarea id="waIntro" class="droppable-input" rows="4"></textarea>
                     </div>
@@ -433,7 +448,8 @@
                             <div class="palette-container">
                                 <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
                                 <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
-                                <div class="draggable-item" draggable="true" data-val="next-planned-dates" style="border-color:#20c997; color:#20c997;">Next Planned</div>
+                                <div class="draggable-item" draggable="true" data-val="next-planned-dates"
+                                    style="border-color:#20c997; color:#20c997;">Next Planned</div>
                             </div>
                             <div class="wa-input-wrapper form-group">
                                 <textarea id="waRowNoUrl" class="droppable-input" rows="3"></textarea>
@@ -448,43 +464,52 @@
                     <button type="button" class="btn-sm" onclick="triggerImport('accepted')">Import</button>
                     <button type="button" class="btn-sm" onclick="exportTemplate('accepted')">Export</button>
                 </div>
-                
+
                 <div class="sub-nav-container">
-                    <button type="button" id="btn-accepted-email" class="btn-sub-nav" onclick="toggleSubTab('accepted', 'email')" 
+                    <button type="button" id="btn-accepted-email" class="btn-sub-nav"
+                        onclick="toggleSubTab('accepted', 'email')"
                         style="background:var(--primary); color:white;">Email Template</button>
-                    <button type="button" id="btn-accepted-wa" class="btn-sub-nav" onclick="toggleSubTab('accepted', 'wa')" 
+                    <button type="button" id="btn-accepted-wa" class="btn-sub-nav"
+                        onclick="toggleSubTab('accepted', 'wa')"
                         style="background:transparent; color:var(--text-main);">WhatsApp Template</button>
                 </div>
 
                 <div id="panel-accepted-email">
-                    <div class="palette-container"><span class="palette-label">Variables:</span>
+                    <div class="palette-container"><span class="palette-label">Drag variables:</span>
                         <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                         <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
                         <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
                     </div>
-                    <div class="form-group"><label>Sender (From)</label><input type="text" id="acceptedEmailFrom" class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
-                    <div class="form-group"><label>Subject</label><input type="text" id="acceptedEmailSubject" class="droppable-input"></div>
-                    
+                    <div class="form-group"><label>Sender (From)</label><input type="text" id="acceptedEmailFrom"
+                            class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
+                    <div class="form-group"><label>Subject</label><input type="text" id="acceptedEmailSubject"
+                            class="droppable-input"></div>
+
                     <div class="form-group"><label>Email Body</label>
                         <div class="palette-container">
-                            <span class="palette-label">Variables:</span>
+                            <span class="palette-label">Drag variables:</span>
                             <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                             <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
                             <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                            <div class="draggable-item" draggable="true" data-val="custom_comment"
+                                style="border-color:#17a2b8; color:#17a2b8;">Custom Comment</div>
                         </div>
                         <textarea id="acceptedEmailBody" class="rich-editor"></textarea>
                     </div>
                 </div>
-                
+
                 <div id="panel-accepted-wa" style="display:none;">
-                    <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>, <code>_italic_</code>, <code>~strike~</code>.</div>
+                    <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>,
+                        <code>_italic_</code>, <code>~strike~</code>.</div>
                     <div class="form-group wa-input-wrapper">
                         <label>Message Body</label>
                         <div class="palette-container" style="margin-bottom:5px;">
-                            <span class="palette-label">Variables:</span>
+                            <span class="palette-label">Drag variables:</span>
                             <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                             <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
                             <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                            <div class="draggable-item" draggable="true" data-val="custom_comment"
+                                style="border-color:#17a2b8; color:#17a2b8;">Custom Comment</div>
                         </div>
                         <textarea id="acceptedWaBody" class="droppable-input" rows="4"></textarea>
                     </div>
@@ -496,40 +521,50 @@
                     <button type="button" class="btn-sm" onclick="triggerImport('rejected')">Import</button>
                     <button type="button" class="btn-sm" onclick="exportTemplate('rejected')">Export</button>
                 </div>
-                
+
                 <div class="sub-nav-container">
-                    <button type="button" id="btn-rejected-email" class="btn-sub-nav" onclick="toggleSubTab('rejected', 'email')" 
+                    <button type="button" id="btn-rejected-email" class="btn-sub-nav"
+                        onclick="toggleSubTab('rejected', 'email')"
                         style="background:var(--primary); color:white;">Email Template</button>
-                    <button type="button" id="btn-rejected-wa" class="btn-sub-nav" onclick="toggleSubTab('rejected', 'wa')" 
+                    <button type="button" id="btn-rejected-wa" class="btn-sub-nav"
+                        onclick="toggleSubTab('rejected', 'wa')"
                         style="background:transparent; color:var(--text-main);">WhatsApp Template</button>
                 </div>
 
-                <div class="wa-note" style="border-left-color: #dc3545; background-color: #fff5f5; color: #721c24; margin-top:0;">
-                    <strong>Note:</strong> Two variations are available. "With Retry Link" is used when you check 'Generate new form attempt' during rejection. "Simple Rejection" is used otherwise.
+                <div class="wa-note"
+                    style="border-left-color: #dc3545; background-color: #fff5f5; color: #721c24; margin-top:0;">
+                    <strong>Note:</strong> Two variations are available. "With Retry Link" is used when you check
+                    'Generate new form attempt' during rejection. "Simple Rejection" is used otherwise.
                 </div>
 
                 <div id="panel-rejected-email">
                     <div class="palette-container">
-                        <span class="palette-label">Variables:</span>
+                        <span class="palette-label">Drag variables:</span>
                         <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                         <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
                         <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
-                        <div class="draggable-item" draggable="true" data-val="url" style="border-color:#dc3545; color:#dc3545;">Retry Link</div>
+                        <div class="draggable-item" draggable="true" data-val="url"
+                            style="border-color:#dc3545; color:#dc3545;">Retry Link</div>
                     </div>
 
-                    <div class="form-group"><label>Sender (From)</label><input type="text" id="rejectedEmailFrom" class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
-                    <div class="form-group"><label>Subject</label><input type="text" id="rejectedEmailSubject" class="droppable-input" placeholder="Skill Verification Returned"></div>
-                    
+                    <div class="form-group"><label>Sender (From)</label><input type="text" id="rejectedEmailFrom"
+                            class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
+                    <div class="form-group"><label>Subject</label><input type="text" id="rejectedEmailSubject"
+                            class="droppable-input" placeholder="Skill Verification Returned"></div>
+
                     <div style="display:flex; gap:20px; margin-top:20px;">
                         <div style="flex:1;">
                             <label style="font-weight:bold; color:#28a745;">Rejection Body (With Retry Link)</label>
                             <div class="helper-text">Include <code>{{url}}</code> here.</div>
                             <div class="palette-container">
-                                <span class="palette-label">Variables:</span>
+                                <span class="palette-label">Drag variables:</span>
                                 <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                                 <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
                                 <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
-                                <div class="draggable-item" draggable="true" data-val="url" style="border-color:#dc3545; color:#dc3545;">Retry Link</div>
+                                <div class="draggable-item" draggable="true" data-val="url"
+                                    style="border-color:#dc3545; color:#dc3545;">Retry Link</div>
+                                <div class="draggable-item" draggable="true" data-val="custom_comment"
+                                    style="border-color:#17a2b8; color:#17a2b8;">Custom Comment</div>
                             </div>
                             <textarea id="rejectedEmailBodyRetry" class="rich-editor"></textarea>
                         </div>
@@ -537,10 +572,12 @@
                             <label style="font-weight:bold; color:#6c757d;">Rejection Body (Simple)</label>
                             <div class="helper-text">Used for final rejections.</div>
                             <div class="palette-container">
-                                <span class="palette-label">Variables:</span>
+                                <span class="palette-label">Drag variables:</span>
                                 <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                                 <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
                                 <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                                <div class="draggable-item" draggable="true" data-val="custom_comment"
+                                    style="border-color:#17a2b8; color:#17a2b8;">Custom Comment</div>
                             </div>
                             <textarea id="rejectedEmailBodySimple" class="rich-editor"></textarea>
                         </div>
@@ -548,27 +585,33 @@
                 </div>
 
                 <div id="panel-rejected-wa" style="display:none;">
-                    <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>, <code>_italic_</code>, <code>~strike~</code>.</div>
-                    
+                    <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>,
+                        <code>_italic_</code>, <code>~strike~</code>.</div>
+
                     <div class="palette-container" style="margin-bottom:5px;">
-                        <span class="palette-label">Variables:</span>
+                        <span class="palette-label">Drag variables:</span>
                         <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                         <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
                         <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
-                        <div class="draggable-item" draggable="true" data-val="url" style="border-color:#dc3545; color:#dc3545;">Retry Link</div>
+                        <div class="draggable-item" draggable="true" data-val="url"
+                            style="border-color:#dc3545; color:#dc3545;">Retry Link</div>
+                        <div class="draggable-item" draggable="true" data-val="custom_comment"
+                            style="border-color:#17a2b8; color:#17a2b8;">Custom Comment</div>
                     </div>
 
                     <div style="display:flex; gap:20px; margin-top:20px;">
                         <div style="flex:1;">
                             <label style="font-weight:bold; color:#28a745;">Message Body (With Retry Link)</label>
                             <div class="wa-input-wrapper form-group">
-                                <textarea id="rejectedWaBodyRetry" class="droppable-input" rows="4" placeholder="Your submission for {{skill}} was rejected. Try again: {{url}}"></textarea>
+                                <textarea id="rejectedWaBodyRetry" class="droppable-input" rows="4"
+                                    placeholder="Your submission for {{skill}} was rejected. Try again: {{url}}"></textarea>
                             </div>
                         </div>
                         <div style="flex:1;">
                             <label style="font-weight:bold; color:#6c757d;">Message Body (Simple)</label>
                             <div class="wa-input-wrapper form-group">
-                                <textarea id="rejectedWaBodySimple" class="droppable-input" rows="4" placeholder="Your submission for {{skill}} was rejected. Contact admin."></textarea>
+                                <textarea id="rejectedWaBodySimple" class="droppable-input" rows="4"
+                                    placeholder="Your submission for {{skill}} was rejected. Contact admin."></textarea>
                             </div>
                         </div>
                     </div>
@@ -588,9 +631,11 @@
                     <div class="draggable-item" draggable="true" data-val="email">User Email</div>
                     <div class="draggable-item" draggable="true" data-val="password">Temp Password</div>
                 </div>
-                <div class="form-group"><label>Sender</label><input type="text" id="newUserFrom" class="droppable-input"></div>
+                <div class="form-group"><label>Sender</label><input type="text" id="newUserFrom"
+                        class="droppable-input"></div>
                 <div class="form-group"><label>Subject</label><input type="text" id="newUserSubject"></div>
-                <div class="form-group"><label>Body</label><textarea id="newUserBody" class="rich-editor"></textarea></div>
+                <div class="form-group"><label>Body</label><textarea id="newUserBody" class="rich-editor"></textarea>
+                </div>
             </div>
 
             <div id="tab-reset" class="tab-content">
@@ -598,16 +643,19 @@
                     <button type="button" class="btn-sm" onclick="triggerImport('reset')">Import</button>
                     <button type="button" class="btn-sm" onclick="exportTemplate('reset')">Export</button>
                 </div>
-                <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Password Reset Notification</h3>
+                <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Password Reset Notification
+                </h3>
                 <div class="palette-container">
                     <span class="palette-label">Variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                     <div class="draggable-item" draggable="true" data-val="email">User Email</div>
                     <div class="draggable-item" draggable="true" data-val="password">New Password</div>
                 </div>
-                <div class="form-group"><label>Sender</label><input type="text" id="resetFrom" class="droppable-input"></div>
+                <div class="form-group"><label>Sender</label><input type="text" id="resetFrom" class="droppable-input">
+                </div>
                 <div class="form-group"><label>Subject</label><input type="text" id="resetSubject"></div>
-                <div class="form-group"><label>Body</label><textarea id="resetBody" class="rich-editor"></textarea></div>
+                <div class="form-group"><label>Body</label><textarea id="resetBody" class="rich-editor"></textarea>
+                </div>
             </div>
 
             <div id="tab-delete" class="tab-content">
@@ -615,16 +663,19 @@
                     <button type="button" class="btn-sm" onclick="triggerImport('delete')">Import</button>
                     <button type="button" class="btn-sm" onclick="exportTemplate('delete')">Export</button>
                 </div>
-                <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Account Deleted Notification</h3>
+                <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Account Deleted
+                    Notification</h3>
                 <div class="palette-container">
                     <span class="palette-label">Variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                     <div class="draggable-item" draggable="true" data-val="name">User Name</div>
                     <div class="draggable-item" draggable="true" data-val="email">User Email</div>
                 </div>
-                <div class="form-group"><label>Sender</label><input type="text" id="deleteFrom" class="droppable-input"></div>
+                <div class="form-group"><label>Sender</label><input type="text" id="deleteFrom" class="droppable-input">
+                </div>
                 <div class="form-group"><label>Subject</label><input type="text" id="deleteSubject"></div>
-                <div class="form-group"><label>Body</label><textarea id="deleteBody" class="rich-editor"></textarea></div>
+                <div class="form-group"><label>Body</label><textarea id="deleteBody" class="rich-editor"></textarea>
+                </div>
             </div>
 
             <div class="btn-container"><button type="submit" class="btn-save">Save All Templates</button></div>
@@ -675,7 +726,7 @@
         function switchTab(tabId) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
+
             // FIX: "whatsapp" removed from array to match DOM indices correctly
             const tabs = ['skills', 'accepted', 'rejected', 'newuser', 'reset', 'delete'];
             const idx = tabs.indexOf(tabId);
@@ -843,7 +894,7 @@
                     if (data.row) tinymce.get('skillsRow').setContent(textToChips(data.row));
                     if (data.rowNoUrl) tinymce.get('skillsRowNoUrl').setContent(textToChips(data.rowNoUrl));
                     if (data.filterOnlyWithUrl !== undefined) document.getElementById('skillsFilterNoUrl').checked = data.filterOnlyWithUrl;
-                    
+
                     // Import WA
                     if (data.waIntro) document.getElementById('waIntro').value = data.waIntro;
                     if (data.waRow) document.getElementById('waRow').value = data.waRow;
@@ -894,7 +945,7 @@
                     const rej = JSON.parse(prefs.tpl_rejected);
                     document.getElementById('rejectedEmailFrom').value = rej.email.from || '';
                     document.getElementById('rejectedEmailSubject').value = rej.email.subject || '';
-                    
+
                     if (rej.email.bodyRetry) tinymce.get('rejectedEmailBodyRetry').setContent(textToChips(rej.email.bodyRetry));
                     else if (rej.email.body) tinymce.get('rejectedEmailBodyRetry').setContent(textToChips(rej.email.body));
 
@@ -948,7 +999,7 @@
                     bodyRetry: chipsToText(tinymce.get('rejectedEmailBodyRetry').getContent()),
                     bodySimple: chipsToText(tinymce.get('rejectedEmailBodySimple').getContent())
                 },
-                whatsapp: { 
+                whatsapp: {
                     bodyRetry: document.getElementById('rejectedWaBodyRetry').value,
                     bodySimple: document.getElementById('rejectedWaBodySimple').value
                 }
@@ -979,7 +1030,7 @@
             showToast("Templates saved!", "success");
         });
 
-        setTimeout(loadData, 1500); 
+        setTimeout(loadData, 1500);
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }

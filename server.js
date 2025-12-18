@@ -599,7 +599,7 @@ function convertHtmlToText(html) {
 // --- ACCEPT SUBMISSION ---
 app.post('/api/live-forms/accept/:id', hasRole('admin'), async (req, res) => {
     try {
-        const { notifyEmail, notifyWa } = req.body;
+        const { notifyEmail, notifyWa, customComment, generateNew } = req.body;
         const id = req.params.id;
 
         await formsService.updateLiveFormStatus(id, 'accepted');
@@ -630,20 +630,24 @@ app.post('/api/live-forms/accept/:id', hasRole('admin'), async (req, res) => {
             } catch (e) { console.error("Template parse error", e); }
         }
 
+
+
         const applyVars = (text) => {
             if (!text) return "";
             return text
                 .replace(/{{name}}/g, member.name)
-                .replace(/{{email}}/g, member.email) // Added Email
+                .replace(/{{email}}/g, member.email)
                 .replace(/{{skill}}/g, form.skill_name)
-                .replace(/{{appname}}/g, config.ui.loginTitle);
+                .replace(/{{appname}}/g, config.ui.loginTitle)
+                .replace(/{{url}}/g, newLink || "")
+                .replace(/{{custom_comment}}/g, customComment || ""); // [NEW]
         };
 
         // Send Email
         if (notifyEmail && member.email) {
             const from = tplEmail.from ? applyVars(tplEmail.from) : (config.ui.loginTitle + " <noreply@fenz.osm>");
             const subject = applyVars(tplEmail.subject);
-            
+
             let htmlBody = "";
             let textBody = "";
 
@@ -676,7 +680,7 @@ app.post('/api/live-forms/accept/:id', hasRole('admin'), async (req, res) => {
 // --- REJECT SUBMISSION ---
 app.post('/api/live-forms/reject/:id', hasRole('admin'), async (req, res) => {
     try {
-        const { notifyEmail, notifyWa, generateNew } = req.body;
+        const { notifyEmail, notifyWa, customComment, generateNew } = req.body;
         const id = req.params.id;
 
         await formsService.updateLiveFormStatus(id, 'rejected');
@@ -725,17 +729,18 @@ app.post('/api/live-forms/reject/:id', hasRole('admin'), async (req, res) => {
             if (!text) return "";
             return text
                 .replace(/{{name}}/g, member.name)
-                .replace(/{{email}}/g, member.email) // Added Email
+                .replace(/{{email}}/g, member.email)
                 .replace(/{{skill}}/g, form.skill_name)
                 .replace(/{{appname}}/g, config.ui.loginTitle)
-                .replace(/{{url}}/g, newLink);
+                .replace(/{{url}}/g, newLink || "")
+                .replace(/{{custom_comment}}/g, customComment || ""); // [NEW]
         };
 
         // Send Email
         if (notifyEmail && member.email) {
             const from = tplEmail.from ? applyVars(tplEmail.from) : (config.ui.loginTitle + " <noreply@fenz.osm>");
             const subject = applyVars(tplEmail.subject);
-            
+
             const rawBody = generateNew ? tplEmail.bodyRetry : tplEmail.bodySimple;
             let htmlBody = "";
             let textBody = "";
@@ -759,7 +764,7 @@ app.post('/api/live-forms/reject/:id', hasRole('admin'), async (req, res) => {
         if (notifyWa && member.mobile && config.enableWhatsApp) {
             const rawBody = generateNew ? tplWa.bodyRetry : tplWa.bodySimple;
             let message = "";
-            
+
             if (rawBody) {
                 message = applyVars(rawBody);
             } else {
