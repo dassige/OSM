@@ -35,7 +35,10 @@ function init() {
         socket.emit('get-preferences');
         socket.emit('wa-get-status');
     });
+
     updateNotificationBadges();
+    checkPendingReviews();
+
     fetch('/ui-config')
         .then(response => response.json())
         .then(config => {
@@ -621,7 +624,7 @@ async function updateNotificationBadges() {
         // Logic handles pluralization (e.g., "1 form" vs "2 forms")
         const sentText = `${countSent} form${countSent !== 1 ? 's' : ''} sent`;
         const subText = `${countSub} form${countSub !== 1 ? 's' : ''} awaiting review`;
-        
+
         // \n creates the line break in the tooltip
         btn.title = `${sentText}\n${subText}`;
 
@@ -629,5 +632,41 @@ async function updateNotificationBadges() {
         console.error("Failed to update notification badges", e);
     }
 }
+async function checkPendingReviews() {
+    // 1. Check Session Flag (Prevent spamming on refresh)
+    if (sessionStorage.getItem('hasShownReviewModal')) return;
 
+    // 2. [NEW] Check User Preference
+    try {
+        const prefRes = await fetch('/api/user-preferences/show_pending_reviews_alert');
+        if (prefRes.ok) {
+            const prefData = await prefRes.json();
+            // If value is explicitly 'false', skip the alert
+            if (prefData.value === 'false') return;
+        }
+    } catch (e) {
+        console.warn("Could not fetch user preferences, proceeding with default (Show Alert).");
+    }
+
+    try {
+        const res = await fetch('/api/live-forms?status=submitted&limit=1');
+        const data = await res.json();
+        const count = data.total || 0;
+
+        if (count > 0) {
+            document.getElementById('pendingCountDisplay').textContent = count;
+            document.getElementById('pendingReviewsModal').style.display = 'block';
+            
+            // Set flag so it doesn't show again in this session
+            sessionStorage.setItem('hasShownReviewModal', 'true');
+        }
+    } catch (e) {
+        console.error("Error checking pending reviews:", e);
+    }
+}
+
+
+// =============================================================================
+//  INITIALIZATION
+// =============================================================================
 init();
