@@ -80,24 +80,19 @@ const helpContent = {
     "templates": {
         title: "Templates Help",
         body: `
-            <p><strong>Overview:</strong> Customize the automated messages sent by the system for both Email and WhatsApp.</p>
-            <p><strong>Tabs:</strong> Use the tabs at the top to switch between different template types.</p>
+            <p><strong>Overview:</strong> Customize the automated messages for Email and WhatsApp across all system triggers.</p>
             
-            <h3>Expiring Skills (Email & WhatsApp)</h3>
+            <h3>Notification Categories</h3>
             <ul>
-                <li><strong>Filter:</strong> Check <em>"Include only skills with Form URL"</em> to completely exclude any skill that doesn't have a link configured.</li>
-                <li><strong>Dual Row Templates:</strong> Customize how each skill row appears based on whether it has a URL or not.</li>
-                <li><strong>Next Planned Dates:</strong> For the "No URL" rows, you can use the <code>{{next-planned-dates}}</code> variable. This automatically inserts any future training sessions for that skill scheduled in the <strong>Skills Renewal Planner</strong>.</li>
+                <li><strong>Expiring Skills:</strong> The primary reminders sent for upcoming competencies.</li>
+                <li><strong>Form Accepted/Rejected:</strong> [NEW] Feedback messages sent to members after an admin reviews their <strong>Live Form</strong> submission.</li>
             </ul>
 
-            <h3>WhatsApp Specifics</h3>
-            <p>Customize the text message sent to mobile phones.</p>
+            <h3>Variables & Customization</h3>
             <ul>
-                <li><strong>Formatting:</strong> WhatsApp supports simple markdown: <code>*bold*</code>, <code>_italic_</code>, <code>~strike~</code>. HTML is not supported.</li>
+                <li><strong>Custom Comment:</strong> Use the <code>{{custom_comment}}</code> chip in Accepted/Rejected templates. This placeholder is replaced by the specific feedback you type into the review modal.</li>
+                <li><strong>Retry Links:</strong> In Rejected templates, <code>{{url}}</code> automatically inserts the link for a member's new attempt if you chose to generate one.</li>
             </ul>
-
-            <h3>General Editing</h3>
-            <p><strong>Drag & Drop Variables:</strong> Drag the gray chips (e.g., <code>{{name}}</code>) into the editor to insert dynamic placeholders.</p>
         `
     },
     // --- System Tools ---
@@ -250,70 +245,48 @@ const helpContent = {
     "forms-manage": {
         title: "Forms Manager Help",
         body: `
-            <p><strong>Overview:</strong> Design custom verification forms for your skills. These forms replace external tools (like Google Forms) and integrate directly with the <strong>Live Forms</strong> tracking system.</p>
+            <p><strong>Overview:</strong> Build internal verification questionnaires to replace external tools.</p>
             
-            <h3>Building a Form</h3>
+            <h3>Question Types</h3>
             <ul>
-                <li><strong>Toolbox:</strong> Click buttons like <em>+ Paragraph</em> or <em>+ Yes/No</em> to add fields to the canvas.</li>
-                <li><strong>Drag & Drop:</strong> Use the handle (☰) on any field to reorder it.</li>
-                <li><strong>Rich Text:</strong> Use the editor to add formatting, links, or instructions to questions.</li>
+                <li><strong>Yes/No (Boolean):</strong> You can choose to display these as standard <strong>Radio Buttons</strong> or a compact <strong>Dropdown Menu</strong> to save space.</li>
+                <li><strong>Paragraph:</strong> Multiline text fields for detailed explanations.</li>
             </ul>
-
-            <h3>Integration Steps</h3>
-            <ol>
-                <li>Create and <strong>Save</strong> your form.</li>
-                <li>Copy the public link using the <strong>Link Icon (🔗)</strong> in the toolbar.</li>
-                <li>Go to <strong>Manage Skills</strong>.</li>
-                <li>Paste the link into the 'Form URL' field for the relevant skill.</li>
-            </ol>
-            <p><em>When the system sends a notification for this skill, it will automatically generate a unique "Live Form" link for that specific member.</em></p>
         `
     },
 
-    // --- Live Forms ---
     "live-forms": {
-        title: "Live Forms Management Help",
+        title: "Live Forms & Review Help",
         body: `
-            <p><strong>Overview:</strong> Track every form sent to members. Unlike generic links, "Live Forms" are unique instances that track the specific member, skill, and submission status.</p>
+            <p><strong>Overview:</strong> Track and validate member submissions in real-time.</p>
             
-            <h3>Status Definitions</h3>
+            <h3>Reviewing Submissions</h3>
+            <p>Click the <strong>Review Icon</strong> (eye) to enter the comparison view:</p>
             <ul>
-                <li><span style="color:#17a2b8; font-weight:bold;">OPEN</span>: The link has been sent, but the member hasn't submitted it yet.</li>
-                <li><span style="color:#28a745; font-weight:bold;">SUBMITTED</span>: The member completed the form. </li>
-                <li><span style="color:#6c757d; font-weight:bold;">DISABLED</span>: The link is no longer accessible (administratively closed).</li>
+                <li><span style="background:#d4edda; padding:0 4px;">Green:</span> Correct answer submitted.</li>
+                <li><span style="background:#f8d7da; padding:0 4px;">Red:</span> Incorrect answer submitted.</li>
+                <li><span style="background:#fff3cd; padding:0 4px;">Yellow:</span> [NEW] Question was left unanswered (for non-mandatory fields).</li>
+                <li><strong>Reference Boxes:</strong> Admins see the expected answers below member responses for easy grading.</li>
             </ul>
 
-            <h3>Toolbar & Actions</h3>
+            <h3>Accept/Reject Workflow</h3>
             <ul>
-                <li><strong>Rows per Page:</strong> Adjust how many records appear in the table (saved to your preferences).</li>
-                <li><strong>Download JSON:</strong> Exports the <em>currently filtered</em> list of forms to a JSON file for external analysis or backup.</li>
-                <li><strong>Purge Filtered:</strong> <span style="color:#dc3545; font-weight:bold;">(Careful!)</span> Permanently deletes ALL records that match your current filters. Useful for cleaning up old data (e.g., "Delete all 'Submitted' forms from 2023").</li>
+                <li><strong>Accept:</strong> Marks the skill as verified and sends an optional "Success" notification with your custom feedback.</li>
+                <li><strong>Reject:</strong> Marks the submission as invalid. You can optionally generate a <strong>New Attempt</strong>, creating a fresh unique link for the member to try again immediately.</li>
             </ul>
-
-            <h3>Reviewing Data</h3>
-            <p>Click the <strong>Review Icon</strong> (eye) on a 'Submitted' row to see exactly what the member entered.</p>
         `
     },
     "statistics": {
         title: "Statistics Dashboard Help",
         body: `
-            <p><strong>Overview:</strong> This dashboard provides a visual representation of team readiness and competency distribution based on current OSM data.</p>
+            <p><strong>Overview:</strong> High-level visual analytics of brigade readiness using Chart.js.</p>
             
-            <h3>Available Views</h3>
+            <h3>Key Features</h3>
             <ul>
-                <li><strong>Overall Compliance Overview:</strong> A high-level look at how many active members are fully up-to-date versus those with expiring skills.</li>
+                <li><strong>Dynamic Threshold:</strong> Charts automatically respect the "Days to Expiry" setting from your main Dashboard.</li>
+                <li><strong>Audit Info:</strong> The top-right corner displays the exact date and time the data was last refreshed from OSM.</li>
+                <li><strong>Exporting:</strong> Use the <strong>Export PDF</strong> button to generate a high-quality report containing static snapshots of your charts for offline meetings.</li>
             </ul>
-
-            <h3>Understanding the Charts</h3>
-            <ul>
-                <li><strong>Member Compliance:</strong> A doughnut chart showing the split between 'Compliant' members (zero expiring skills) and those requiring action.</li>
-                <li><strong>Expiring Skill Priority:</strong> A pie chart categorizing all current expiring items into <strong>Critical</strong> and <strong>Standard</strong> skills.</li>
-            </ul>
-
-            <h3>Data Context</h3>
-            <p>The charts respect the <strong>Days to Expiry</strong> threshold set on your main Dashboard. For example, if your threshold is 30 days, the statistics reflect members who have skills expiring within that window.</p>
-            
-            <p><em>Note:</em> Click <strong>Refresh Data</strong> to ensure you are viewing the most recent scrape results from the OSM Dashboard.</p>
         `
     },
     // --- Default ---

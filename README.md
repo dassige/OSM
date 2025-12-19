@@ -207,7 +207,7 @@ node server.js
 6.  **Reports**: Navigate to the Reports Console to print or export PDF summaries of expiring competencies to display on station noticeboards.
 7.  **Run Dashboard**: Click **Reload Expiring Skills** to fetch live data, then select members to send reminders.
 
-### 4. Live Forms Workflow
+### 4\. Live Forms Workflow
 
 The application includes a self-contained form system designed to replace external tools like Google Forms.
 
