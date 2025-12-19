@@ -233,8 +233,10 @@
             border-radius: 8px;
             display: flex;
             justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
+            gap: 8px;
+            /* Reduced gap to save space */
+            flex-wrap: nowrap;
+            /* [CHANGED] Prevents wrapping to a second row */
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             margin-top: 20px;
             z-index: 100;
@@ -340,13 +342,22 @@
 
             .toolbox {
                 bottom: 10px;
-                padding: 5px;
+                padding: 8px;
+                gap: 5px;
+                /* Tighter gap on mobile */
             }
 
             .btn-tool {
-                flex: 1 1 30%;
-                font-size: 11px;
-                padding: 6px;
+                flex: 1;
+                /* [CHANGED] Distributes space evenly */
+                font-size: 10px;
+                /* [REDUCED] Smaller text for mobile fit */
+                padding: 8px 4px;
+                /* [ADJUSTED] Reduced horizontal padding */
+                white-space: nowrap;
+                /* Ensures text doesn't wrap inside the button */
+                min-width: 0;
+                /* Allows buttons to shrink below their content size */
             }
         }
 
