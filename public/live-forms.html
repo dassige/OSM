@@ -101,10 +101,21 @@
             gap: 6px;
         }
 
-        .btn-filter { background-color: var(--primary); }
-        .btn-reset { background-color: #6c757d; }
-        .btn-tool.export { background-color: var(--success); }
-        .btn-tool.purge { background-color: var(--danger); }
+        .btn-filter {
+            background-color: var(--primary);
+        }
+
+        .btn-reset {
+            background-color: #6c757d;
+        }
+
+        .btn-tool.export {
+            background-color: var(--success);
+        }
+
+        .btn-tool.purge {
+            background-color: var(--danger);
+        }
 
         /* Tools Bar */
         .tools-bar {
@@ -118,7 +129,7 @@
             align-items: center;
             margin-bottom: 20px;
         }
-        
+
         .page-limit-selector {
             display: flex;
             align-items: center;
@@ -154,8 +165,14 @@
             color: var(--text-main);
         }
 
-        .btn-page:hover:not(:disabled) { background-color: var(--bg-hover); }
-        .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-page:hover:not(:disabled) {
+            background-color: var(--bg-hover);
+        }
+
+        .btn-page:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
         /* Table */
         .table-wrapper {
@@ -171,7 +188,8 @@
             min-width: 800px;
         }
 
-        th, td {
+        th,
+        td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
@@ -186,27 +204,94 @@
             white-space: nowrap;
         }
 
-        th:hover { background-color: #454d55; }
+        th:hover {
+            background-color: #454d55;
+        }
 
         /* Status Badges */
-        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .status-sent { background-color: #a19f2e; color: white; }
-        .status-submitted { background-color:#007bff ; color: white; }
-        .status-disabled { background-color: #6c757d; color: white; }
-        .status-accepted { background-color: #28a745; color: white; }
-        .status-rejected { background-color: #dc3545; color: white; }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
 
-        .btn-icon { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-muted); transition: transform 0.2s; }
-        .btn-icon:hover { transform: scale(1.1); color: var(--primary); }
-        .btn-icon.delete:hover { color: #dc3545; }
-        .btn-icon.download:hover { color: var(--success); }
+        .status-sent {
+            background-color: #a19f2e;
+            color: white;
+        }
+
+        .status-submitted {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .status-disabled {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .status-accepted {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-rejected {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+
+        .btn-icon:hover {
+            transform: scale(1.1);
+            color: var(--primary);
+        }
+
+        .btn-icon.delete:hover {
+            color: #dc3545;
+        }
+
+        .btn-icon.download:hover {
+            color: var(--success);
+        }
 
         @media screen and (max-width: 768px) {
-            .filter-bar { flex-direction: column; align-items: stretch; }
-            .filter-actions { width: 100%; justify-content: space-between; margin-left: 0; }
-            .btn-filter, .btn-reset, .btn-tool { flex: 1; }
-            .filter-group-date { min-width: 100%; flex: 1 1 auto; }
-            .tools-bar { flex-direction: column; gap: 10px; align-items: flex-start; }
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-actions {
+                width: 100%;
+                justify-content: space-between;
+                margin-left: 0;
+            }
+
+            .btn-filter,
+            .btn-reset,
+            .btn-tool {
+                flex: 1;
+            }
+
+            .filter-group-date {
+                min-width: 100%;
+                flex: 1 1 auto;
+            }
+
+            .tools-bar {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
@@ -252,7 +337,7 @@
                     <option value="">All Skills</option>
                 </select>
             </div>
-            
+
             <div class="filter-group" style="flex: 0 1 100px; min-width:100px;">
                 <label>Tries</label>
                 <input type="number" id="filterTries" class="filter-select" min="1" placeholder="Any">
@@ -281,9 +366,19 @@
         </div>
 
         <div class="tools-bar">
+            <button onclick="loadData()" class="btn-icon" title="Refresh Table"
+                style="margin-right: 15px; color: var(--primary); display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
             <div class="page-limit-selector">
                 <label>Rows per page:</label>
-                <select id="rowsPerPage" onchange="changeLimit(this.value)" style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+                <select id="rowsPerPage" onchange="changeLimit(this.value)"
+                    style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
                     <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
@@ -292,11 +387,21 @@
             </div>
             <div style="display:flex; gap:10px;">
                 <button onclick="exportJson()" class="btn-tool export" title="Download filtered records as JSON">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
                     Download JSON
                 </button>
-                <button onclick="purgeFiltered()" class="btn-tool purge" title="Delete ALL records matching current filters">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                <button onclick="purgeFiltered()" class="btn-tool purge"
+                    title="Delete ALL records matching current filters">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
                     Purge Filtered
                 </button>
             </div>
@@ -308,9 +413,12 @@
                     <tr>
                         <th onclick="handleSort('member_name')">Member <span id="icon-member_name"></span></th>
                         <th onclick="handleSort('skill_name')">Skill <span id="icon-skill_name"></span></th>
-                        <th onclick="handleSort('tries')" style="width: 70px; text-align:center;">Tries <span id="icon-tries"></span></th>
-                        <th onclick="handleSort('form_sent_datetime')">Sent Date <span id="icon-form_sent_datetime"></span></th>
-                        <th onclick="handleSort('form_submitted_datetime')">Submitted Date <span id="icon-form_submitted_datetime"></span></th>
+                        <th onclick="handleSort('tries')" style="width: 70px; text-align:center;">Tries <span
+                                id="icon-tries"></span></th>
+                        <th onclick="handleSort('form_sent_datetime')">Sent Date <span
+                                id="icon-form_sent_datetime"></span></th>
+                        <th onclick="handleSort('form_submitted_datetime')">Submitted Date <span
+                                id="icon-form_submitted_datetime"></span></th>
                         <th onclick="handleSort('form_status')">Status <span id="icon-form_status"></span></th>
                         <th style="text-align:center;">Actions</th>
                     </tr>
@@ -321,7 +429,7 @@
                     </tr>
                 </tbody>
             </table>
-            
+
             <div id="paginationControls" class="pagination-container" style="display:none;">
                 <span class="pagination-info" id="pageInfo">Showing 0-0 of 0</span>
                 <div style="display:flex; gap:5px;">
@@ -338,7 +446,8 @@
             <h2>Update Status</h2>
             <p><strong>Member:</strong> <span id="editMember"></span></p>
             <p><strong>Skill:</strong> <span id="editSkill"></span></p>
-            <p><strong>Access Code:</strong> <span id="editCode" style="font-family:monospace; font-size:0.9em; color:#666; user-select: all;"></span></p>
+            <p><strong>Access Code:</strong> <span id="editCode"
+                    style="font-family:monospace; font-size:0.9em; color:#666; user-select: all;"></span></p>
             <input type="hidden" id="editId">
 
             <div class="form-group" style="margin-top:20px;">
@@ -373,7 +482,7 @@
     <script>
         let currentData = [];
         let currentSort = { column: 'form_sent_datetime', order: 'desc' };
-        
+
         let currentPage = 1;
         let currentLimit = 25;
         let totalCount = 0;
@@ -391,7 +500,7 @@
                 if (c.loginTitle) document.getElementById('pageTitle').innerText = "Live Forms - " + c.loginTitle;
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
                 if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
-                
+
                 if (c.locale) appLocale = c.locale;
                 if (c.timezone) appTimezone = c.timezone;
 
@@ -407,7 +516,7 @@
                 }
             } catch (e) { console.error("Pref error", e); }
 
-try {
+            try {
                 const mRes = await fetch('/api/members');
                 const members = await mRes.json();
                 const mSel = document.getElementById('filterMember');
@@ -421,11 +530,11 @@ try {
 
             // [NEW] Apply URL Parameters
             const urlParams = new URLSearchParams(window.location.search);
-            
+
             if (urlParams.has('memberId')) document.getElementById('filterMember').value = urlParams.get('memberId');
             if (urlParams.has('skillId')) document.getElementById('filterSkill').value = urlParams.get('skillId');
             if (urlParams.has('status')) document.getElementById('filterStatus').value = urlParams.get('status');
-            
+
             // Optional: Auto-expand limits if filtering specific item? 
             // For now, standard loadData() will use these values.           
             loadData();
@@ -443,7 +552,7 @@ try {
             if (getVal('filterSentEnd')) params.append('sentEnd', getVal('filterSentEnd'));
             if (getVal('filterSubStart')) params.append('subStart', getVal('filterSubStart'));
             if (getVal('filterSubEnd')) params.append('subEnd', getVal('filterSubEnd'));
-            
+
             params.append('page', currentPage);
             params.append('limit', currentLimit);
 
@@ -453,11 +562,11 @@ try {
                 const res = await fetch(`/api/live-forms?${params.toString()}`);
                 if (!res.ok) throw new Error("Failed to load");
                 const result = await res.json();
-                
+
                 currentData = result.records || [];
                 totalCount = result.total || 0;
-                
-                applySort(); 
+
+                applySort();
                 updatePagination();
             } catch (e) {
                 document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Error: ${e.message}</td></tr>`;
@@ -503,7 +612,7 @@ try {
 
         async function purgeFiltered() {
             if (!await confirmAction("Purge Records", `DANGER: This will delete ALL ${totalCount} records matching the current filters.\n\nThis cannot be undone. Are you sure?`)) return;
-            
+
             const params = new URLSearchParams();
             const getVal = (id) => document.getElementById(id).value;
             if (getVal('filterStatus')) params.append('status', getVal('filterStatus'));
@@ -546,7 +655,7 @@ try {
 
         function downloadSingleJson(id) {
             const record = currentData.find(r => r.id == id);
-            if(!record) return;
+            if (!record) return;
             const filename = `live_form_${record.member_name}_${record.skill_name}.json`.replace(/[^a-z0-9._-]/gi, '_');
             const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -577,7 +686,7 @@ try {
             currentData.sort((a, b) => {
                 const valA = (a[currentSort.column] || '').toString().toLowerCase();
                 const valB = (b[currentSort.column] || '').toString().toLowerCase();
-                
+
                 // Handle numeric sort
                 if (currentSort.column === 'tries') {
                     const numA = parseInt(a.tries) || 1;
@@ -609,8 +718,8 @@ try {
             }
 
             const fmtDate = (dStr) => {
-                if(!dStr) return '<span style="color:#ccc;">-</span>';
-                return new Date(dStr).toLocaleString(appLocale, { 
+                if (!dStr) return '<span style="color:#ccc;">-</span>';
+                return new Date(dStr).toLocaleString(appLocale, {
                     timeZone: appTimezone,
                     year: 'numeric', month: '2-digit', day: '2-digit',
                     hour: '2-digit', minute: '2-digit', second: '2-digit'
@@ -659,7 +768,7 @@ try {
         }
 
         function openReview(id) { window.open(`forms-view.html?reviewId=${id}`, '_blank'); }
-        
+
         function openEdit(id, member, skill, status, code) {
             document.getElementById('editId').value = id;
             document.getElementById('editMember').textContent = member;
@@ -686,6 +795,14 @@ try {
                 showToast("Record deleted", "success");
             } catch (e) { showToast("Delete failed", "error"); }
         }
+        // [NEW] Automatic refresh when browser window/tab gets focus
+        window.addEventListener('focus', () => {
+            // Check if the table is already visible (user is logged in and page is initialized)
+            if (document.getElementById('tableBody')) {
+                console.log("[LiveForms] Tab focused, refreshing data...");
+                loadData(); // Reuses existing loadData logic which respects current filters
+            }
+        });
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; }
