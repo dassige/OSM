@@ -630,7 +630,7 @@ app.post('/api/live-forms/accept/:id', hasRole('admin'), async (req, res) => {
             } catch (e) { console.error("Template parse error", e); }
         }
 
-
+        const newLink = "";
 
         const applyVars = (text) => {
             if (!text) return "";
