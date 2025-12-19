@@ -246,7 +246,7 @@ const helpContent = {
             <p><em>Note:</em> Reports exclude disabled members and skills.</p>
         `
     },
-// --- Forms Manager ---
+    // --- Forms Manager ---
     "forms-manage": {
         title: "Forms Manager Help",
         body: `
@@ -294,6 +294,28 @@ const helpContent = {
             <p>Click the <strong>Review Icon</strong> (eye) on a 'Submitted' row to see exactly what the member entered.</p>
         `
     },
+    "statistics": {
+        title: "Statistics Dashboard Help",
+        body: `
+            <p><strong>Overview:</strong> This dashboard provides a visual representation of team readiness and competency distribution based on current OSM data.</p>
+            
+            <h3>Available Views</h3>
+            <ul>
+                <li><strong>Overall Compliance Overview:</strong> A high-level look at how many active members are fully up-to-date versus those with expiring skills.</li>
+            </ul>
+
+            <h3>Understanding the Charts</h3>
+            <ul>
+                <li><strong>Member Compliance:</strong> A doughnut chart showing the split between 'Compliant' members (zero expiring skills) and those requiring action.</li>
+                <li><strong>Expiring Skill Priority:</strong> A pie chart categorizing all current expiring items into <strong>Critical</strong> and <strong>Standard</strong> skills.</li>
+            </ul>
+
+            <h3>Data Context</h3>
+            <p>The charts respect the <strong>Days to Expiry</strong> threshold set on your main Dashboard. For example, if your threshold is 30 days, the statistics reflect members who have skills expiring within that window.</p>
+            
+            <p><em>Note:</em> Click <strong>Refresh Data</strong> to ensure you are viewing the most recent scrape results from the OSM Dashboard.</p>
+        `
+    },
     // --- Default ---
     "default": {
         title: "Help",
@@ -322,6 +344,7 @@ const helpContent = {
     else if (path.includes("forms-manage")) key = "forms-manage";
     else if (path.includes("reports")) key = "reports";
     else if (path.includes("live-forms")) key = "live-forms";
+    else if (path.includes("statistics")) key = "statistics";
 
     const content = helpContent[key] || helpContent["default"];
 

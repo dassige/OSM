@@ -22,9 +22,9 @@ const {
 const whatsappService = require('./services/whatsapp-service');
 const reportService = require('./services/report-service');
 const formsService = require('./services/forms-service');
+const statisticsService = require('./services/statistics-service');
 
-
-
+const puppeteer = require('puppeteer-core');
 
 // =============================================================================
 //  INITIALIZATION & MIDDLEWARE
@@ -94,6 +94,7 @@ app.get('/live-forms.html', (req, res, next) => {
     if (r === 'admin' || r === 'superadmin') next();
     else res.redirect('/');
 });
+
 // =============================================================================
 //  AUTH & ROLE MIDDLEWARE
 // =============================================================================
@@ -108,6 +109,8 @@ const hasRole = (requiredRole) => (req, res, next) => {
     else res.status(403).json({ error: `Forbidden: Requires ${requiredRole} access.` });
 };
 
+app.get('/statistics.html', hasRole('simple'), (req, res, next) => next());
+
 // =============================================================================
 //  API ROUTES - AUTHENTICATION
 // =============================================================================
@@ -116,8 +119,14 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     if (username === config.auth.username && password === config.auth.password) {
         req.session.loggedIn = true;
-        req.session.user = { name: 'Super Admin', email: username, role: 'superadmin', isAdmin: true, isEnvUser: true };
-        return res.status(200).send({ success: true });
+        req.session.user = {
+            id: 0,
+            name: 'Super Admin',
+            email: username,
+            role: 'superadmin',
+            isAdmin: true,
+            isEnvUser: true
+        }; return res.status(200).send({ success: true });
     }
     try {
         const user = await db.authenticateUser(username, password);
@@ -329,16 +338,37 @@ app.get('/api/reports/data/:type', async (req, res) => {
 });
 app.post('/api/reports/pdf', async (req, res) => {
     try {
-        const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
+        // [FIXED] Added executablePath to find Chromium in Alpine/Linux environments
+        const browser = await puppeteer.launch({
+            headless: 'new',
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage'
+            ]
+        });
+
         const page = await browser.newPage();
+
+        // Set the content from the request body
         await page.setContent(req.body.html, { waitUntil: 'networkidle0' });
-        const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '10mm', bottom: '10mm' } });
+
+        const pdf = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: { top: '10mm', bottom: '10mm' }
+        });
+
         await browser.close();
+
         res.contentType('application/pdf');
         res.send(pdf);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) {
+        console.error("[PDF Export Error]", e.message);
+        res.status(500).json({ error: e.message });
+    }
 });
-
 // =============================================================================
 // API ROUTES - FORMS MANAGEMENT
 // =============================================================================
@@ -783,6 +813,19 @@ app.post('/api/live-forms/reject/:id', hasRole('admin'), async (req, res) => {
     }
 });
 
+// =============================================================================
+// API ROUTES - STATISTICS
+// =============================================================================    
+app.get('/api/statistics/data/:key', hasRole('simple'), async (req, res) => {
+    try {
+        if (req.params.key === 'compliance-overview') {
+            const data = await statisticsService.getComplianceOverview(req.session.user.id);
+            res.json(data);
+        } else {
+            res.status(400).json({ error: "Unknown statistic type" });
+        }
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
 //==============================================================================    
 //  SERVE STATIC FILES
 app.use(express.static('public'));
