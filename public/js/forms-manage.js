@@ -454,12 +454,6 @@ function loadEditor(form) {
     };
 }
 
-function copyFormLink() {
-    if (!currentForm.id) return showToast("Save form first", "warning");
-    const url = `${window.location.origin}/forms-view.html?id=${currentForm.public_id}`;
-    navigator.clipboard.writeText(url);
-    showToast("Link copied!", "success");
-}
 
 function addField(type) {
     const newField = {

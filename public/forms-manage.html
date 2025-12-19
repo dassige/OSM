@@ -507,66 +507,73 @@
                             </svg>
                         </button>
 
-                        <button onclick="copyFormLink()" class="btn-sm"
-                            style="background:var(--info); color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;"
-                            title="Copy Public Link">🔗</button>
 
                         <div style="flex:1;"></div>
                         <button onclick="deleteForm()" class="btn-sm"
-                            style="background:var(--danger); color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;"
-                            title="Delete Form">🗑</button>
+                            style="background:var(--danger); color:white; width:36px; height:36px; padding:0; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center;"
+                            title="Delete Form">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="editor-content">
+                        <div
+                            style="background:var(--bg-card); padding:15px; border-radius:6px; border:1px solid var(--border-color); margin-bottom:20px;">
+                            <label style="font-weight:bold; margin-bottom:5px; display:block;">Form Intro /
+                                Header</label>
+                            <textarea id="formIntro" class="rich-editor"></textarea>
+                        </div>
+
+                        <div
+                            style="border-bottom: 2px dashed var(--border-color); margin-bottom:20px; text-align:center;">
+                            <span
+                                style="background:var(--bg-body); padding:0 10px; color:var(--text-muted); font-size:12px; position:relative; top:10px;">Questions</span>
+                        </div>
+
+                        <div id="fieldsCanvas"></div>
+
+                        <div class="toolbox">
+                            <button class="btn-tool" onclick="addField('text_multi')">+ Paragraph</button>
+                            <button class="btn-tool" onclick="addField('radio')">+ Radio</button>
+                            <button class="btn-tool" onclick="addField('checkboxes')">+ Checkboxes</button>
+                            <button class="btn-tool" onclick="addField('boolean')">+ Yes/No</button>
+                        </div>
                     </div>
                 </div>
-
-                <div class="editor-content">
-                    <div
-                        style="background:var(--bg-card); padding:15px; border-radius:6px; border:1px solid var(--border-color); margin-bottom:20px;">
-                        <label style="font-weight:bold; margin-bottom:5px; display:block;">Form Intro / Header</label>
-                        <textarea id="formIntro" class="rich-editor"></textarea>
+                <div id="emptyPanel" class="editor-panel" style="align-items:center; justify-content:center;">
+                    <div class="empty-state">
+                        <h3>Select a form to edit</h3>
+                        <p>Or click "+ New" to create one.</p>
                     </div>
-
-                    <div style="border-bottom: 2px dashed var(--border-color); margin-bottom:20px; text-align:center;">
-                        <span
-                            style="background:var(--bg-body); padding:0 10px; color:var(--text-muted); font-size:12px; position:relative; top:10px;">Questions</span>
-                    </div>
-
-                    <div id="fieldsCanvas"></div>
-
-                    <div class="toolbox">
-                        <button class="btn-tool" onclick="addField('text_multi')">+ Paragraph</button>
-                        <button class="btn-tool" onclick="addField('radio')">+ Radio</button>
-                        <button class="btn-tool" onclick="addField('checkboxes')">+ Checkboxes</button>
-                        <button class="btn-tool" onclick="addField('boolean')">+ Yes/No</button>
-                    </div>
-                </div>
-            </div>
-            <div id="emptyPanel" class="editor-panel" style="align-items:center; justify-content:center;">
-                <div class="empty-state">
-                    <h3>Select a form to edit</h3>
-                    <p>Or click "+ New" to create one.</p>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script src="utils.js"></script>
-    <script src="toast.js"></script>
-    <script src="theme.js"></script>
-    <script src="help.js"></script>
-    <script src="js/forms-manage.js"></script>
+        <script src="utils.js"></script>
+        <script src="toast.js"></script>
+        <script src="theme.js"></script>
+        <script src="help.js"></script>
+        <script src="js/forms-manage.js"></script>
 
-    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="19" x2="12" y2="5"></line>
-            <polyline points="5 12 12 5 19 12"></polyline>
-        </svg>
-    </button>
-    <script>
-        const scrollTopBtn = document.getElementById("scrollTopBtn");
-        window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
-        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
-    </script>
+        <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+        </button>
+        <script>
+            const scrollTopBtn = document.getElementById("scrollTopBtn");
+            window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
+            function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        </script>
 </body>
 
 </html>
