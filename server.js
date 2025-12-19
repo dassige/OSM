@@ -523,9 +523,9 @@ app.get('/api/live-forms/access/:code', async (req, res) => {
             intro: result.intro,
             structure: result.structure,
             member: result.member_name,
-            skill: result.skill_name
+            skill: result.skill_name,
+            tries: result.tries || 1 // [NEW] Added attempt count
         });
-
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
