@@ -228,6 +228,43 @@ async function saveForm() {
     showToast(e.message, "error");
   }
 }
+async function saveForm() {
+  const data = getFormData();
+  const status = currentForm ? currentForm.status : 0;
+
+  const payload = { ...data, status };
+  const method = currentForm && currentForm.id ? "PUT" : "POST";
+  const url =
+    currentForm && currentForm.id
+      ? `/api/forms/${currentForm.id}`
+      : "/api/forms";
+
+  try {
+    const res = await fetch(url, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) throw new Error("Failed to save");
+
+    const result = await res.json();
+
+    if (method === "POST") {
+      // For new forms, result now contains the full object including public_id
+      currentForm = result;
+    } else {
+      // For updates, merge the payload into existing state
+      currentForm = { ...currentForm, ...payload };
+    }
+
+    originalFormState = getFormData();
+    showToast("Form saved successfully", "success");
+    loadForms(); // Refreshes the sidebar list
+  } catch (e) {
+    showToast(e.message, "error");
+  }
+}
 
 async function updateStatus(id, enabled) {
   try {
@@ -239,7 +276,7 @@ async function updateStatus(id, enabled) {
     const f = forms.find((x) => x.id === id);
     if (f) f.status = enabled ? 1 : 0;
     if (currentForm && currentForm.id === id) {
-        currentForm.status = enabled ? 1 : 0;
+      currentForm.status = enabled ? 1 : 0;
     }
     showToast(`Form ${enabled ? "Enabled" : "Disabled"}`, "success");
   } catch (e) {
@@ -504,6 +541,11 @@ function loadEditor(form) {
 
   renderFields();
 
+  const btnIcon = document.getElementById("iconToggleAll");
+  if (btnIcon) {
+    btnIcon.style.transform = "rotate(180deg)";
+  }
+  
   // Setup initial state for dirty checking
   originalFormState = {
     name: form.name || "",
