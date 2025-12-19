@@ -230,6 +230,8 @@ The application includes a self-contained form system designed to replace extern
     * Filter by Status (Open/Submitted) or Date.
     * **Review:** Click the Eye icon to see the member's answers.
     * **Maintenance:** Use **Purge Filtered** to clean up old records or **Download JSON** for offline archiving.
+5.  **Form Validation:** 
+    * Administrators can "Test the Form" in Demo Mode directly from the management table to verify layout and variables before final approval.
 
 ## Docker Deployment
 

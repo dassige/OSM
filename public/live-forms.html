@@ -480,6 +480,7 @@
     <script src="theme.js"></script>
     <script src="help.js"></script>
     <script>
+        let appMode = 'production';
         let currentData = [];
         let currentSort = { column: 'form_sent_datetime', order: 'desc' };
 
@@ -497,6 +498,7 @@
         async function init() {
             try {
                 const c = await (await fetch('/ui-config')).json();
+                appMode = c.appMode || 'production';
                 if (c.loginTitle) document.getElementById('pageTitle').innerText = "Live Forms - " + c.loginTitle;
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
                 if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
@@ -734,35 +736,48 @@
                 // Allow reviewing for submitted, accepted, and rejected
                 if (['submitted', 'accepted', 'rejected'].includes(row.form_status)) {
                     reviewBtn = `
-                <button class="btn-icon" onclick="openReview('${row.id}')" title="Review Submission" style="color:#17a2b8;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                </button>
-            `;
+                        <button class="btn-icon" onclick="openReview('${row.id}')" title="Review Submission" style="color:#17a2b8;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    `;
                 }
-
+                let testBtn = '';
+                if (appMode === 'demo' && row.form_status === 'sent') {
+                    testBtn = `
+                        <button class="btn-icon" onclick="window.open('forms-view.html?code=${row.form_access_code}', '_blank')" 
+                                title="Test the Form (Demo Mode Only)" style="color:#6f42c1;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </button>
+                    `;
+                }
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-            <td>${row.member_name || 'Unknown'}</td>
-            <td>${row.skill_name || 'Unknown'}</td>
-            <td style="text-align:center;">${row.tries || 1}</td>
-            <td style="font-size:0.9em;">${sentDate}</td>
-            <td style="font-size:0.9em;">${subDate}</td>
-            <td><span class="status-badge status-${row.form_status}">${row.form_status}</span></td>
-            <td style="text-align:center; white-space:nowrap;">
-                ${reviewBtn}
-                
-                <button class="btn-icon download" onclick="downloadSingleJson('${row.id}')" title="Download Data">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                </button>
+                        <td>${row.member_name || 'Unknown'}</td>
+                        <td>${row.skill_name || 'Unknown'}</td>
+                        <td style="text-align:center;">${row.tries || 1}</td>
+                        <td style="font-size:0.9em;">${sentDate}</td>
+                        <td style="font-size:0.9em;">${subDate}</td>
+                        <td><span class="status-badge status-${row.form_status}">${row.form_status}</span></td>
+                        <td style="text-align:center; white-space:nowrap;">
+                            ${testBtn}
+                            ${reviewBtn}
 
-                <button class="btn-icon" onclick="openEdit('${row.id}', '${row.member_name || ''}', '${row.skill_name || ''}', '${row.form_status}', '${row.form_access_code || ''}')" title="Edit Status">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                </button>
-                <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>
-            </td>
-        `;
+                            <button class="btn-icon download" onclick="downloadSingleJson('${row.id}')" title="Download Data">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            </button>
+
+                            <button class="btn-icon" onclick="openEdit('${row.id}', '${row.member_name || ''}', '${row.skill_name || ''}', '${row.form_status}', '${row.form_access_code || ''}')" title="Edit Status">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </button>
+                            <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </td>
+                    `;
                 tbody.appendChild(tr);
             });
         }

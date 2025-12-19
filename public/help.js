@@ -12,6 +12,7 @@ const helpContent = {
                 <li><strong>Reload Expiring Skills:</strong> Fetches the latest data from the OSM Dashboard.</li>
                 <li><strong>Send Notifications:</strong> Select the <strong>Email</strong> or <strong>WhatsApp</strong> checkboxes for members and click 'Send Notifications' to process them in bulk.
                     <br><em>Note: The default selection for each member is determined by their configured <strong>Notification Preferences</strong> (set in Manage Members).</em>
+                    <br><em><strong>Demo Mode:</strong> Notification logic is fully simulated. Internal records and logs are created, but no external messages are sent.</em>
                 </li>
                 <li><strong>Quick Actions:</strong> Use the round <span style="background:#007bff; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✉</span> or <span style="background:#25D366; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✆</span> buttons to send a single reminder immediately.</li>
                 <li><strong>Filters:</strong> Use the toggle buttons at the top right of the table:
