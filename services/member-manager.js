@@ -36,8 +36,10 @@ function isExpiring(dueDateStr, daysThreshold) {
     return skillExpiryDate <= thresholdDate;
 }
 
-function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, trainingMap = {}) {
+function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, trainingMap = {}, liveFormsMap = {}) {
     const activeMembers = members.filter(m => m.enabled);
+    
+    const appBaseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
 
     const processedMembers = activeMembers.map(member => {
         const memberRawSkills = scrapedData.filter(item => item.name === member.name);
@@ -46,7 +48,19 @@ function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, 
             if (isExpiring(skill.dueDate, daysThreshold) || isExpired(skill.dueDate)) {
                 const config = skillsConfig.find(c => c.name === skill.skill);
                 if (config && config.enabled) {
-                    skill.url = config.url;
+                    skill.skillId = config.id;
+                    if (config.url_type === 'internal') {
+                        skill.url = `${appBaseUrl}/forms-view.html?id=${config.url}`;
+                        
+                        // [NEW] Lookup Live Form Status
+                        // Key format matches what we build in server.js
+                        const key = `${member.id}_${config.id}`;
+                        skill.liveFormStatus = liveFormsMap[key] || null;
+
+                    } else {
+                        skill.url = config.url;
+                    }
+
                     skill.isCritical = config.critical_skill;
                     
                     const dates = trainingMap[skill.skill] || [];
@@ -66,6 +80,4 @@ function processMemberSkills(members, scrapedData, skillsConfig, daysThreshold, 
 
     return processedMembers;
 }
-
-// [FIX] Added isExpiring to the export list
 module.exports = { processMemberSkills, isExpired, isExpiring, parseDate };

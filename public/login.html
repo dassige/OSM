@@ -230,6 +230,7 @@
 
                 if (response.ok) {
                     window.location.href = '/';
+                    sessionStorage.removeItem('hasShownReviewModal');
                 } else {
                     errorMsg.textContent = "Invalid credentials";
                     errorMsg.style.display = 'block';

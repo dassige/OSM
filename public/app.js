@@ -36,6 +36,9 @@ function init() {
         socket.emit('wa-get-status');
     });
 
+    updateNotificationBadges();
+    checkPendingReviews();
+
     fetch('/ui-config')
         .then(response => response.json())
         .then(config => {
@@ -129,14 +132,33 @@ function toggleConsole(isVisible) {
     if (consoleHeader) consoleHeader.style.display = style;
 }
 
-// ... (Keep existing DATA & SORTING & RENDER) ...
+// [UPDATED] Inject skeletons before network request
 function fetchData(forceRefresh = false) {
     const days = parseInt(daysInput.value) || 30;
     viewBtn.disabled = true;
     viewBtn.textContent = "Loading Data...";
+
+    // Show Skeletons
+    renderSkeletons();
+
     const modeText = forceRefresh ? " (Force Refresh)" : "";
     terminal.textContent += `> Fetching View Data (Threshold: ${days} days)${modeText}... please wait.\n`;
     socket.emit('view-expiring-skills', days, forceRefresh);
+}
+// [NEW] Helper to render skeleton rows
+function renderSkeletons() {
+    skillsTableBody.innerHTML = '';
+    // Generate 5 dummy rows
+    for (let i = 0; i < 5; i++) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><div class="skeleton" style="width: 50%;"></div></td>
+            <td><div class="skeleton" style="width: 80%;"></div></td>
+            <td><div class="skeleton" style="width: 30%;"></div></td>
+            <td><div class="skeleton" style="width: 60%;"></div></td>
+        `;
+        skillsTableBody.appendChild(tr);
+    }
 }
 
 function handleSort(column) {
@@ -169,6 +191,8 @@ function renderTable() {
     const expiredOnly = btnExpiredOnly.classList.contains('active');
     const hideWithUrl = btnHideWithUrl.classList.contains('active');
 
+    let visibleCount = 0;
+
     currentOsmData.forEach((member, index) => {
         let visibleSkills = member.skills;
         if (hideNoUrl) visibleSkills = visibleSkills.filter(s => s.hasUrl);
@@ -177,6 +201,9 @@ function renderTable() {
         const hasVisibleSkills = visibleSkills.length > 0;
         if (hideNoSkills && !hasVisibleSkills) return;
 
+        visibleCount++;
+
+        // ... (Existing row generation logic remains the same) ...
         const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
         const tr = document.createElement('tr');
         tr.className = rowClass;
@@ -190,7 +217,8 @@ function renderTable() {
         const dateTd = document.createElement('td');
 
         if (hasVisibleSkills) {
-            skillTd.innerHTML = buildSkillHtml(visibleSkills[0]);
+            // [UPDATED from previous step] Pass member.id
+            skillTd.innerHTML = buildSkillHtml(visibleSkills[0], member.id);
             skillTd.className = 'skill-cell';
             dateTd.textContent = visibleSkills[0].dueDate;
             dateTd.className = 'date-cell';
@@ -206,6 +234,7 @@ function renderTable() {
         }
         tr.appendChild(skillTd); tr.appendChild(dateTd);
 
+        // ... (Actions Column Logic - Email/WA buttons) ...
         const prefs = (member.notificationPreference || 'email').split(',');
         const defaultEmail = prefs.includes('email');
         const defaultWa = prefs.includes('whatsapp');
@@ -219,6 +248,7 @@ function renderTable() {
             wrapper.style.flexDirection = 'column';
             wrapper.style.gap = '8px';
 
+            // Email Row
             const emailRow = document.createElement('div');
             emailRow.style.display = 'flex';
             emailRow.style.alignItems = 'center';
@@ -234,7 +264,7 @@ function renderTable() {
 
             const btnEmail = document.createElement('button');
             btnEmail.className = 'btn-round';
-            btnEmail.style.backgroundColor = '#6f42c1'; 
+            btnEmail.style.backgroundColor = '#6f42c1';
             btnEmail.style.flexShrink = '0';
             btnEmail.title = hasEmail ? "Send Email Immediately" : "No Email Address";
             btnEmail.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
@@ -249,6 +279,7 @@ function renderTable() {
             emailRow.appendChild(emailLabel);
             emailRow.appendChild(btnEmail);
 
+            // WA Row
             const waRow = document.createElement('div');
             waRow.style.display = 'flex';
             waRow.style.alignItems = 'center';
@@ -302,7 +333,12 @@ function renderTable() {
         for (let i = 1; i < visibleSkills.length; i++) {
             const subTr = document.createElement('tr'); subTr.className = rowClass;
             const emptyNameTd = document.createElement('td'); emptyNameTd.className = 'merged-cell'; subTr.appendChild(emptyNameTd);
-            const subSkillTd = document.createElement('td'); subSkillTd.innerHTML = buildSkillHtml(visibleSkills[i]); subSkillTd.className = 'skill-cell';
+
+            // [UPDATED from previous step] Pass member.id
+            const subSkillTd = document.createElement('td');
+            subSkillTd.innerHTML = buildSkillHtml(visibleSkills[i], member.id);
+            subSkillTd.className = 'skill-cell';
+
             const subDateTd = document.createElement('td'); subDateTd.textContent = visibleSkills[i].dueDate; subDateTd.className = 'date-cell';
             if (isDateInPast(visibleSkills[i].dueDate)) { subDateTd.style.backgroundColor = '#dc3545'; subDateTd.style.color = 'white'; subDateTd.style.fontWeight = 'bold'; }
             subTr.appendChild(subSkillTd); subTr.appendChild(subDateTd);
@@ -311,13 +347,30 @@ function renderTable() {
         }
     });
 
+    // [NEW] Enhanced Empty State
+    if (visibleCount === 0) {
+        skillsTableBody.innerHTML = `
+            <tr class="empty-state-row">
+                <td colspan="4">
+                    <div class="empty-state-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color:#d1d5db;">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        <h3>All Caught Up!</h3>
+                        <p>No expiring skills found matching your filters.</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    // ... (Checkbox listeners logic) ...
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.addEventListener('change', updateSendButtonState));
     setupMasterCheckbox('selectAllEmail', '.send-email-cb');
     setupMasterCheckbox('selectAllWhatsapp', '.send-wa-cb');
     updateSendButtonState();
 }
-
-
 function setupMasterCheckbox(masterId, targetClass) {
     const master = document.getElementById(masterId);
     if (!master) return;
@@ -451,13 +504,52 @@ socket.on('expiring-skills-data', (data) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-function buildSkillHtml(skillObj) {
+// public/app.js
+
+function buildSkillHtml(skillObj, memberId) {
     let html = skillObj.skill;
     if (skillObj.isCritical) html = `<b>${html}</b>`;
-    if (skillObj.hasUrl) html += ` <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; color: #007bff; margin-left: 4px;" title="Direct Form Link Available"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+
+    // Form Link Icon (Unchanged)
+    if (skillObj.hasUrl) {
+        html += ` <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; color: #007bff; margin-left: 4px;" title="Direct Form Link Available"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+    }
+
+    // [UPDATED] Status Icons with Circles
+    const canLink = memberId && skillObj.skillId;
+
+    if (skillObj.liveFormStatus === 'submitted') {
+        // Green Check Icon inside Circle
+        const icon = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6L9 17l-5-5"></path>
+        </svg>`;
+
+        const wrapper = `<span class="status-circle submitted" title="Form Submitted - Awaiting Review">${icon}</span>`;
+
+        if (canLink) {
+            html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=submitted" target="_self" style="text-decoration:none;">${wrapper}</a>`;
+        } else {
+            html += ` ${wrapper}`;
+        }
+
+    } else if (skillObj.liveFormStatus === 'sent') {
+        // Teal Plane/Send Icon inside Circle
+        const icon = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>`;
+
+        const wrapper = `<span class="status-circle sent" title="Form Sent - Waiting for Member">${icon}</span>`;
+
+        if (canLink) {
+            html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=sent" target="_self" style="text-decoration:none;">${wrapper}</a>`;
+        } else {
+            html += ` ${wrapper}`;
+        }
+    }
+
     return html;
 }
-
 function isDateInPast(dateStr) {
     if (!dateStr) return false;
     if (dateStr.toLowerCase().includes('expired')) return true;
@@ -497,5 +589,83 @@ window.resetCheckboxesToDefaults = function () {
     updateSendButtonState();
     if (window.showToast) window.showToast("Reset to default preferences", "success");
 };
+async function updateNotificationBadges() {
+    try {
+        // 1. Fetch Counts
+        const resSent = await fetch('/api/live-forms?status=sent&limit=1');
+        const dataSent = await resSent.json();
+        const countSent = dataSent.total || 0;
 
-init();
+        const resSub = await fetch('/api/live-forms?status=submitted&limit=1');
+        const dataSub = await resSub.json();
+        const countSub = dataSub.total || 0;
+
+        // 2. Get Elements
+        const badgeSent = document.getElementById('badgeSent');
+        const badgeSub = document.getElementById('badgeSubmitted');
+        const btn = document.getElementById('liveFormsNotifBtn');
+
+        // 3. Update Badges Visuals
+        if (countSent > 0) {
+            badgeSent.textContent = countSent > 99 ? '99+' : countSent;
+            badgeSent.style.display = 'flex';
+        } else {
+            badgeSent.style.display = 'none';
+        }
+
+        if (countSub > 0) {
+            badgeSub.textContent = countSub > 99 ? '99+' : countSub;
+            badgeSub.style.display = 'flex';
+        } else {
+            badgeSub.style.display = 'none';
+        }
+
+        // 4. Update Tooltip Text (Dynamic & Multi-line)
+        // Logic handles pluralization (e.g., "1 form" vs "2 forms")
+        const sentText = `${countSent} form${countSent !== 1 ? 's' : ''} sent`;
+        const subText = `${countSub} form${countSub !== 1 ? 's' : ''} awaiting review`;
+
+        // \n creates the line break in the tooltip
+        btn.title = `${sentText}\n${subText}`;
+
+    } catch (e) {
+        console.error("Failed to update notification badges", e);
+    }
+}
+
+    async function checkPendingReviews() {
+        if (sessionStorage.getItem('hasShownReviewModal')) return;
+
+        try {
+            const prefRes = await fetch('/api/user-preferences/show_pending_reviews_alert');
+            if (prefRes.ok) {
+                const prefData = await prefRes.json();
+                // Check against boolean false
+                if (prefData.value === false) return;
+            }
+        } catch (e) {
+            console.warn("Could not fetch user preferences, proceeding with default.");
+        }
+
+        try {
+            const res = await fetch('/api/live-forms?status=submitted&limit=1');
+            const data = await res.json();
+            const count = data.total || 0;
+
+            if (count > 0) {
+                document.getElementById('pendingCountDisplay').textContent = count;
+                document.getElementById('pendingReviewsModal').style.display = 'block';
+
+                // Set flag so it doesn't show again in this session
+                sessionStorage.setItem('hasShownReviewModal', 'true');
+            }
+        } catch (e) {
+            console.error("Error checking pending reviews:", e);
+        }
+    }
+
+
+    // =============================================================================
+    //  INITIALIZATION
+    // =============================================================================
+    init();

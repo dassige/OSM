@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Compliance Statistics - FENZ OSM</title>
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stats-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 2px 5px var(--shadow);
+        }
+
+        .chart-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .report-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20mm;
+            min-height: 200mm;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        @media print {
+
+            .back-btn,
+            .action-bar,
+            #demoBanner,
+            #scrollTopBtn {
+                display: none !important;
+            }
+
+            .report-container {
+                box-shadow: none;
+                padding: 0;
+                width: 100%;
+            }
+        }
+
+        .desc-card {
+            flex: 1;
+            background: var(--bg-hover);
+            border-left: 4px solid var(--primary);
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--text-main);
+        }
+
+        /* Ensure the description paragraph has a slight top margin */
+        #descBody {
+            margin: 5px 0 0 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="demoBanner" class="demo-banner">DEMO VERSION...</div>
+    <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg></a>
+
+    <div class="container" style="max-width: 1100px;">
+        <h1 id="pageHeader" style="text-align: center; margin-top: 40px;">Statistics Dashboard</h1>
+
+        <div class="action-bar">
+            <div style="flex: 0 0 300px; display: flex; flex-direction: column; gap: 10px;">
+                <label style="font-weight:bold;">Select Statistic View:</label>
+                <select id="statSelect" onchange="loadStatDescription()">
+                    <option value="" disabled selected>-- Choose a View --</option>
+                    <option value="compliance-overview">Overall Compliance Overview</option>
+                </select>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button onclick="window.print()" class="btn-sm"
+                        style="background:#6c757d; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; color:white;">Print</button>
+                    <button onclick="downloadPdf()" class="btn-sm"
+                        style="background:#dc3545; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; color:white;">Export
+                        PDF</button>
+                    <button onclick="runStat()" class="btn-sm"
+                        style="background:#28a745; flex-grow:1; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; color:white;">Refresh
+                        Data</button>
+                </div>
+            </div>
+            <div id="descCard" class="desc-card">
+                <strong id="descTitle">No Statistic Selected</strong>
+                <p id="descBody">Select a view to visualize compliance data.</p>
+            </div>
+        </div>
+
+        <div id="statPanel" class="report-container">
+            <div style="text-align:center; color:#ccc; padding-top:100px;">Select a view above and click "Refresh Data"
+            </div>
+        </div>
+    </div>
+    <button onclick="window.scrollTo({ top: 0, behavior: 'smooth' })" id="scrollTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="toast.js"></script>
+    <script src="theme.js"></script>
+    <script src="help.js"></script>
+    <script src="utils.js"></script>
+    <script src="statistics/compliance-overview.js"></script>
+    <script src="js/statistics-controller.js"></script>
+</body>
+
+</html>

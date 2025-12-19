@@ -23,6 +23,8 @@
             border-bottom: 2px solid #ddd;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            position: relative;
+            /* Context for z-index */
         }
 
         .tab {
@@ -34,12 +36,15 @@
             border-top-right-radius: 6px;
             transition: all 0.2s;
             background: #f8f9fa;
-            margin-right: 2px;
+            margin-right: 4px;
+            /* Increased gap */
             border: 1px solid #ddd;
             border-bottom: none;
             display: flex;
             align-items: center;
             gap: 8px;
+            position: relative;
+            /* For z-index to work */
         }
 
         .tab:hover {
@@ -49,8 +54,11 @@
         .tab.active {
             background-color: #fff;
             color: #007bff;
+            /* Ensure active tab sits on top of the border */
+            z-index: 2;
             border-bottom: 2px solid #fff;
             margin-bottom: -2px;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
         }
 
         .tab-content {
@@ -129,14 +137,17 @@
             max-width: 100%;
         }
 
-        /* Fix for overlap in specific tabs where palette is the first element */
-        #tab-newuser .palette-container,
-        #tab-reset .palette-container,
-        #tab-delete .palette-container {
-            margin-top: 40px;
+        /* Adjust margins for palettes inside specific sections */
+        .form-group .palette-container {
+            margin-top: 5px;
+            margin-bottom: 5px;
         }
 
-        #tab-whatsapp .palette-container {
+        #tab-newuser .palette-container,
+        #tab-reset .palette-container,
+        #tab-delete .palette-container,
+        #panel-accepted-email .palette-container,
+        #panel-rejected-email .palette-container {
             margin-top: 10px;
         }
 
@@ -205,7 +216,7 @@
             color: #1a73e8;
             font-weight: bold;
             margin-bottom: 20px;
-            margin-top: 40px;
+            margin-top: 20px;
         }
 
         .checkbox-group input {
@@ -213,7 +224,6 @@
             margin-right: 10px;
         }
 
-        /* [UPDATED] Added margin-top to clear the absolute positioned Import/Export buttons */
         .wa-note {
             font-size: 0.9em;
             color: #666;
@@ -221,14 +231,14 @@
             padding: 10px;
             border-left: 4px solid #25D366;
             margin-bottom: 15px;
-            margin-top: 40px;
+            margin-top: 20px;
         }
 
         .tab-icon {
             margin-right: 6px;
         }
 
-        /* [UPDATED] WhatsApp Toolbar Styles: Added color: black */
+        /* WhatsApp Toolbar Styles */
         .wa-toolbar {
             display: flex;
             gap: 5px;
@@ -265,68 +275,71 @@
             border-top-right-radius: 0;
             font-family: monospace !important;
         }
+
+        .helper-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        /* Sub-navigation Switcher */
+        .sub-nav-container {
+            display: flex;
+            background: #e9ecef;
+            padding: 3px;
+            border-radius: 6px;
+            width: fit-content;
+            margin-bottom: 20px;
+        }
+
+        .btn-sub-nav {
+            margin: 0;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
     </style>
 </head>
 
 <body>
-    <div id="demoBanner" class="demo-banner">
-        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
-                style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
-    </div>
-
-    <a href="/" class="back-btn" title="Back to Dashboard"><svg xmlns="http://www.w3.org/2000/svg" width="24"
-            height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <div id="demoBanner" class="demo-banner">DEMO VERSION <span>...</span></div>
+    <a href="/" class="back-btn" title="Back to Dashboard"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
         </svg></a>
 
     <div class="container">
         <h1 id="pageHeader">Templates</h1>
-
         <input type="file" id="importFile" accept=".json" style="display: none;">
 
         <div class="tab-container">
-            <div class="tab active" onclick="switchTab('skills')">
-                <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="tab active" onclick="switchTab('skills')"><svg class="tab-icon" width="16" height="16"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                     <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                Expiring Skills (Email)
-            </div>
-            <div class="tab" onclick="switchTab('whatsapp')">
-                <svg class="tab-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"
-                    style="color:#25D366;">
-                    <path
-                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-                </svg>
-                Expiring Skills (WhatsApp)
-            </div>
-            <div class="tab" onclick="switchTab('newuser')">
-                <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                New User
-            </div>
-            <div class="tab" onclick="switchTab('reset')">
-                <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                Password Reset
-            </div>
-            <div class="tab" onclick="switchTab('delete')">
-                <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                Delete Account
-            </div>
+                </svg> Expiring Skills</div>
+
+            <div class="tab" onclick="switchTab('accepted')"><svg class="tab-icon" width="16" height="16"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg> Form Accepted</div>
+            <div class="tab" onclick="switchTab('rejected')"><svg class="tab-icon" width="16" height="16"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg> Form Rejected</div>
+            <div class="tab" onclick="switchTab('newuser')">New User</div>
+            <div class="tab" onclick="switchTab('reset')">Password Reset</div>
+            <div class="tab" onclick="switchTab('delete')">Delete Account</div>
         </div>
 
         <form id="templateForm">
@@ -337,150 +350,269 @@
                     <button type="button" class="btn-sm" onclick="exportTemplate('skills')">Export</button>
                 </div>
 
-                <div class="checkbox-group">
-                    <input type="checkbox" id="skillsFilterNoUrl">
-                    <label for="skillsFilterNoUrl" style="margin:0; display:inline;">Include only skills with Form
-                        URL?</label>
+                <div class="sub-nav-container">
+                    <button type="button" id="btn-skills-email" class="btn-sub-nav"
+                        onclick="toggleSubTab('skills', 'email')" style="background:var(--primary); color:white;">Email
+                        Template</button>
+                    <button type="button" id="btn-skills-wa" class="btn-sub-nav" onclick="toggleSubTab('skills', 'wa')"
+                        style="background:transparent; color:var(--text-main);">WhatsApp Template</button>
                 </div>
 
-                <div class="palette-container">
-                    <span class="palette-label">Drag variables:</span>
-                    <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
-                    <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
-                    <div class="draggable-item" draggable="true" data-val="email">Member Email</div>
-                </div>
-                <div class="form-group"><label>Sender (From)</label><input type="text" id="skillsFrom"
-                        class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
-                <div class="form-group"><label>Subject</label><input type="text" id="skillsSubject"
-                        class="droppable-input" placeholder="{{appname}}: Expiring Skills"></div>
-                <div class="form-group"><label>Intro Body</label><textarea id="skillsIntro"
-                        class="rich-editor"></textarea></div>
+                <div id="panel-skills-email">
+                    <div class="checkbox-group"><input type="checkbox" id="skillsFilterNoUrl"><label
+                            for="skillsFilterNoUrl">Include only skills with Form URL?</label></div>
 
-                <hr style="margin: 20px 0; border:0; border-top:1px dashed #ccc;">
-
-                <div style="display: flex; flex-direction: column; gap: 30px;">
-
-                    <div style="flex: 1; width: 100%;">
-                        <label style="font-weight:bold; color: #007bff;">Repeated Skill Row (With URL)</label>
-                        <p style="font-size: 12px; color: #666; margin-top: -5px; margin-bottom: 8px;">Used when the
-                            skill has a Form URL configured.</p>
-
-                        <div class="palette-container">
-                            <span class="palette-label">Row Variables:</span>
-                            <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
-                            <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
-                            <div class="draggable-item" draggable="true" data-val="critical">Critical Label</div>
-                            <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
-                        </div>
-
-                        <textarea id="skillsRow" class="rich-editor"></textarea>
+                    <div class="palette-container">
+                        <span class="palette-label">Drag variables:</span>
+                        <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                        <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                        <div class="draggable-item" draggable="true" data-val="email">Member Email</div>
                     </div>
 
-                    <div style="flex: 1; width: 100%;">
-                        <label style="font-weight:bold; color: #6c757d;">Repeated Skill Row (No URL)</label>
-                        <p style="font-size: 12px; color: #666; margin-top: -5px; margin-bottom: 8px;">Used when no Form
-                            URL is available (unless filtered out).</p>
+                    <div class="form-group"><label>Sender (From)</label><input type="text" id="skillsFrom"
+                            class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
+                    <div class="form-group"><label>Subject</label><input type="text" id="skillsSubject"
+                            class="droppable-input" placeholder="{{appname}}: Expiring Skills"></div>
 
+                    <div class="form-group">
+                        <label>Intro Body</label>
                         <div class="palette-container">
-                            <span class="palette-label">Row Variables:</span>
-                            <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
-                            <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
-                            <div class="draggable-item" draggable="true" data-val="critical">Critical Label</div>
-                            <div class="draggable-item" draggable="true" data-val="next-planned-dates"
-                                style="border-color: #20c997; color: #20c997;">Next Planned Dates</div>
+                            <span class="palette-label">Drag variables:</span>
+                            <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                            <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                            <div class="draggable-item" draggable="true" data-val="email">Member Email</div>
                         </div>
+                        <textarea id="skillsIntro" class="rich-editor"></textarea>
+                    </div>
 
-                        <textarea id="skillsRowNoUrl" class="rich-editor"></textarea>
+                    <div style="display: flex; gap: 30px; flex-direction: column; margin-top:20px;">
+                        <div style="flex: 1;"><label style="font-weight:bold; color: #007bff;">Repeated Skill Row (With
+                                URL)</label>
+                            <div class="palette-container">
+                                <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                                <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                                <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
+                            </div><textarea id="skillsRow" class="rich-editor"></textarea>
+                        </div>
+                        <div style="flex: 1;"><label style="font-weight:bold; color: #6c757d;">Repeated Skill Row (No
+                                URL)</label>
+                            <div class="palette-container">
+                                <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                                <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                                <div class="draggable-item" draggable="true" data-val="next-planned-dates">Next Planned
+                                    Dates</div>
+                            </div><textarea id="skillsRowNoUrl" class="rich-editor"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="panel-skills-wa" style="display:none;">
+                    <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>,
+                        <code>_italic_</code>, <code>~strike~</code>.</div>
+
+                    <div class="checkbox-group"><input type="checkbox" id="waFilterNoUrl"><label
+                            for="waFilterNoUrl">Include only skills with Form URL?</label></div>
+
+                    <div class="palette-container">
+                        <span class="palette-label">Intro Variables:</span>
+                        <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                        <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                    </div>
+
+                    <div class="form-group wa-input-wrapper">
+                        <label>Intro Message</label>
+                        <div class="wa-toolbar">
+                            <button type="button" class="wa-btn" onclick="formatText('waIntro', '*')">B</button>
+                            <button type="button" class="wa-btn" onclick="formatText('waIntro', '_')"
+                                style="font-style:italic;">I</button>
+                            <button type="button" class="wa-btn" onclick="formatText('waIntro', '~')"
+                                style="text-decoration:line-through;">S</button>
+                        </div>
+                        <textarea id="waIntro" class="droppable-input" rows="4"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 30px; flex-direction: column;">
+                        <div style="flex: 1;">
+                            <label style="font-weight:bold; color: #007bff;">Row (With URL)</label>
+                            <div class="palette-container">
+                                <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                                <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                                <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
+                            </div>
+                            <div class="wa-input-wrapper form-group">
+                                <textarea id="waRow" class="droppable-input" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-weight:bold; color: #6c757d;">Row (No URL)</label>
+                            <div class="palette-container">
+                                <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                                <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
+                                <div class="draggable-item" draggable="true" data-val="next-planned-dates"
+                                    style="border-color:#20c997; color:#20c997;">Next Planned</div>
+                            </div>
+                            <div class="wa-input-wrapper form-group">
+                                <textarea id="waRowNoUrl" class="droppable-input" rows="3"></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div id="tab-whatsapp" class="tab-content">
+            <div id="tab-accepted" class="tab-content">
                 <div class="template-actions">
-                    <button type="button" class="btn-sm" onclick="triggerImport('whatsapp')">Import</button>
-                    <button type="button" class="btn-sm" onclick="exportTemplate('whatsapp')">Export</button>
+                    <button type="button" class="btn-sm" onclick="triggerImport('accepted')">Import</button>
+                    <button type="button" class="btn-sm" onclick="exportTemplate('accepted')">Export</button>
                 </div>
 
-                <div class="wa-note">
-                    <strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>, <code>_italic_</code>,
-                    <code>~strikethrough~</code>, or <code>```monospace```</code>. HTML is not supported.
+                <div class="sub-nav-container">
+                    <button type="button" id="btn-accepted-email" class="btn-sub-nav"
+                        onclick="toggleSubTab('accepted', 'email')"
+                        style="background:var(--primary); color:white;">Email Template</button>
+                    <button type="button" id="btn-accepted-wa" class="btn-sub-nav"
+                        onclick="toggleSubTab('accepted', 'wa')"
+                        style="background:transparent; color:var(--text-main);">WhatsApp Template</button>
                 </div>
 
-                <div class="checkbox-group" style="margin-top:20px;">
-                    <input type="checkbox" id="waFilterNoUrl">
-                    <label for="waFilterNoUrl" style="margin:0; display:inline;">Include only skills with Form
-                        URL?</label>
-                </div>
-
-                <div class="palette-container">
-                    <span class="palette-label">Intro Variables:</span>
-                    <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
-                    <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
-                </div>
-
-                <div class="form-group wa-input-wrapper">
-                    <label>Intro Message</label>
-                    <div class="wa-toolbar">
-                        <button type="button" class="wa-btn" onclick="formatText('waIntro', '*')">B</button>
-                        <button type="button" class="wa-btn" onclick="formatText('waIntro', '_')"
-                            style="font-style:italic;">I</button>
-                        <button type="button" class="wa-btn" onclick="formatText('waIntro', '~')"
-                            style="text-decoration:line-through;">S</button>
-                        <button type="button" class="wa-btn" onclick="formatText('waIntro', '```')">&lt;/&gt;</button>
+                <div id="panel-accepted-email">
+                    <div class="palette-container"><span class="palette-label">Drag variables:</span>
+                        <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                        <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                        <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
                     </div>
-                    <textarea id="waIntro" class="droppable-input" rows="4"
-                        placeholder="*Expiring Skills Notification*\n\nHello {{name}},..."></textarea>
+                    <div class="form-group"><label>Sender (From)</label><input type="text" id="acceptedEmailFrom"
+                            class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
+                    <div class="form-group"><label>Subject</label><input type="text" id="acceptedEmailSubject"
+                            class="droppable-input"></div>
+
+                    <div class="form-group"><label>Email Body</label>
+                        <div class="palette-container">
+                            <span class="palette-label">Drag variables:</span>
+                            <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                            <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                            <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                            <div class="draggable-item" draggable="true" data-val="custom_comment"
+                                style="border-color:#17a2b8; color:#17a2b8;">Custom Comment</div>
+                        </div>
+                        <textarea id="acceptedEmailBody" class="rich-editor"></textarea>
+                    </div>
                 </div>
 
-                <hr style="margin: 20px 0; border:0; border-top:1px dashed #ccc;">
-
-                <div style="display: flex; flex-direction: column; gap: 30px;">
-                    <div style="flex: 1; width: 100%;">
-                        <label style="font-weight:bold; color: #007bff;">Repeated Skill Row (With URL)</label>
-                        <div class="palette-container">
-                            <span class="palette-label">Row Variables:</span>
+                <div id="panel-accepted-wa" style="display:none;">
+                    <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>,
+                        <code>_italic_</code>, <code>~strike~</code>.</div>
+                    <div class="form-group wa-input-wrapper">
+                        <label>Message Body</label>
+                        <div class="palette-container" style="margin-bottom:5px;">
+                            <span class="palette-label">Drag variables:</span>
+                            <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                            <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
                             <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
-                            <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
-                            <div class="draggable-item" draggable="true" data-val="critical">Critical Label</div>
-                            <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
+                            <div class="draggable-item" draggable="true" data-val="custom_comment"
+                                style="border-color:#17a2b8; color:#17a2b8;">Custom Comment</div>
                         </div>
-                        <div class="form-group wa-input-wrapper">
-                            <div class="wa-toolbar">
-                                <button type="button" class="wa-btn" onclick="formatText('waRow', '*')">B</button>
-                                <button type="button" class="wa-btn" onclick="formatText('waRow', '_')"
-                                    style="font-style:italic;">I</button>
-                                <button type="button" class="wa-btn" onclick="formatText('waRow', '~')"
-                                    style="text-decoration:line-through;">S</button>
-                                <button type="button" class="wa-btn"
-                                    onclick="formatText('waRow', '```')">&lt;/&gt;</button>
-                            </div>
-                            <textarea id="waRow" class="droppable-input" rows="3"
-                                placeholder="- *{{skill}}*\n  Expires: {{date}}\n  Link: {{url}}"></textarea>
-                        </div>
+                        <textarea id="acceptedWaBody" class="droppable-input" rows="4"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-rejected" class="tab-content">
+                <div class="template-actions">
+                    <button type="button" class="btn-sm" onclick="triggerImport('rejected')">Import</button>
+                    <button type="button" class="btn-sm" onclick="exportTemplate('rejected')">Export</button>
+                </div>
+
+                <div class="sub-nav-container">
+                    <button type="button" id="btn-rejected-email" class="btn-sub-nav"
+                        onclick="toggleSubTab('rejected', 'email')"
+                        style="background:var(--primary); color:white;">Email Template</button>
+                    <button type="button" id="btn-rejected-wa" class="btn-sub-nav"
+                        onclick="toggleSubTab('rejected', 'wa')"
+                        style="background:transparent; color:var(--text-main);">WhatsApp Template</button>
+                </div>
+
+                <div class="wa-note"
+                    style="border-left-color: #dc3545; background-color: #fff5f5; color: #721c24; margin-top:0;">
+                    <strong>Note:</strong> Two variations are available. "With Retry Link" is used when you check
+                    'Generate new form attempt' during rejection. "Simple Rejection" is used otherwise.
+                </div>
+
+                <div id="panel-rejected-email">
+                    <div class="palette-container">
+                        <span class="palette-label">Drag variables:</span>
+                        <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                        <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                        <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                        <div class="draggable-item" draggable="true" data-val="url"
+                            style="border-color:#dc3545; color:#dc3545;">Retry Link</div>
                     </div>
 
-                    <div style="flex: 1; width: 100%;">
-                        <label style="font-weight:bold; color: #6c757d;">Repeated Skill Row (No URL)</label>
-                        <div class="palette-container">
-                            <span class="palette-label">Row Variables:</span>
-                            <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
-                            <div class="draggable-item" draggable="true" data-val="date">Expiry Date</div>
-                            <div class="draggable-item" draggable="true" data-val="critical">Critical Label</div>
-                            <div class="draggable-item" draggable="true" data-val="next-planned-dates"
-                                style="border-color: #20c997; color: #20c997;">Next Planned Dates</div>
-                        </div>
-                        <div class="form-group wa-input-wrapper">
-                            <div class="wa-toolbar">
-                                <button type="button" class="wa-btn" onclick="formatText('waRowNoUrl', '*')">B</button>
-                                <button type="button" class="wa-btn" onclick="formatText('waRowNoUrl', '_')"
-                                    style="font-style:italic;">I</button>
-                                <button type="button" class="wa-btn" onclick="formatText('waRowNoUrl', '~')"
-                                    style="text-decoration:line-through;">S</button>
-                                <button type="button" class="wa-btn"
-                                    onclick="formatText('waRowNoUrl', '```')">&lt;/&gt;</button>
+                    <div class="form-group"><label>Sender (From)</label><input type="text" id="rejectedEmailFrom"
+                            class="droppable-input" placeholder='"{{appname}}" <noreply@example.com>'></div>
+                    <div class="form-group"><label>Subject</label><input type="text" id="rejectedEmailSubject"
+                            class="droppable-input" placeholder="Skill Verification Returned"></div>
+
+                    <div style="display:flex; gap:20px; margin-top:20px;">
+                        <div style="flex:1;">
+                            <label style="font-weight:bold; color:#28a745;">Rejection Body (With Retry Link)</label>
+                            <div class="helper-text">Include <code>{{url}}</code> here.</div>
+                            <div class="palette-container">
+                                <span class="palette-label">Drag variables:</span>
+                                <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                                <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                                <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                                <div class="draggable-item" draggable="true" data-val="url"
+                                    style="border-color:#dc3545; color:#dc3545;">Retry Link</div>
+                                <div class="draggable-item" draggable="true" data-val="custom_comment"
+                                    style="border-color:#17a2b8; color:#17a2b8;">Custom Comment</div>
                             </div>
-                            <textarea id="waRowNoUrl" class="droppable-input" rows="3"
-                                placeholder="- *{{skill}}*\n  Expires: {{date}}"></textarea>
+                            <textarea id="rejectedEmailBodyRetry" class="rich-editor"></textarea>
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-weight:bold; color:#6c757d;">Rejection Body (Simple)</label>
+                            <div class="helper-text">Used for final rejections.</div>
+                            <div class="palette-container">
+                                <span class="palette-label">Drag variables:</span>
+                                <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                                <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                                <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                                <div class="draggable-item" draggable="true" data-val="custom_comment"
+                                    style="border-color:#17a2b8; color:#17a2b8;">Custom Comment</div>
+                            </div>
+                            <textarea id="rejectedEmailBodySimple" class="rich-editor"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="panel-rejected-wa" style="display:none;">
+                    <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>,
+                        <code>_italic_</code>, <code>~strike~</code>.</div>
+
+                    <div class="palette-container" style="margin-bottom:5px;">
+                        <span class="palette-label">Drag variables:</span>
+                        <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                        <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                        <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
+                        <div class="draggable-item" draggable="true" data-val="url"
+                            style="border-color:#dc3545; color:#dc3545;">Retry Link</div>
+                        <div class="draggable-item" draggable="true" data-val="custom_comment"
+                            style="border-color:#17a2b8; color:#17a2b8;">Custom Comment</div>
+                    </div>
+
+                    <div style="display:flex; gap:20px; margin-top:20px;">
+                        <div style="flex:1;">
+                            <label style="font-weight:bold; color:#28a745;">Message Body (With Retry Link)</label>
+                            <div class="wa-input-wrapper form-group">
+                                <textarea id="rejectedWaBodyRetry" class="droppable-input" rows="4"
+                                    placeholder="Your submission for {{skill}} was rejected. Try again: {{url}}"></textarea>
+                            </div>
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-weight:bold; color:#6c757d;">Message Body (Simple)</label>
+                            <div class="wa-input-wrapper form-group">
+                                <textarea id="rejectedWaBodySimple" class="droppable-input" rows="4"
+                                    placeholder="Your submission for {{skill}} was rejected. Contact admin."></textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -491,20 +623,19 @@
                     <button type="button" class="btn-sm" onclick="triggerImport('newuser')">Import</button>
                     <button type="button" class="btn-sm" onclick="exportTemplate('newuser')">Export</button>
                 </div>
+                <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">New User Notification</h3>
                 <div class="palette-container">
                     <span class="palette-label">Variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                     <div class="draggable-item" draggable="true" data-val="name">User Name</div>
-                    <div class="draggable-item" draggable="true" data-val="email">Email</div>
-                    <div class="draggable-item" draggable="true" data-val="password"
-                        style="border-color:#28a745; color:#28a745;">Password</div>
+                    <div class="draggable-item" draggable="true" data-val="email">User Email</div>
+                    <div class="draggable-item" draggable="true" data-val="password">Temp Password</div>
                 </div>
-                <div class="form-group"><label>Sender (From)</label><input type="text" id="newUserFrom"
+                <div class="form-group"><label>Sender</label><input type="text" id="newUserFrom"
                         class="droppable-input"></div>
-                <div class="form-group"><label>Subject</label><input type="text" id="newUserSubject"
-                        class="droppable-input"></div>
-                <div class="form-group"><label>Email Body</label><textarea id="newUserBody"
-                        class="rich-editor"></textarea></div>
+                <div class="form-group"><label>Subject</label><input type="text" id="newUserSubject"></div>
+                <div class="form-group"><label>Body</label><textarea id="newUserBody" class="rich-editor"></textarea>
+                </div>
             </div>
 
             <div id="tab-reset" class="tab-content">
@@ -512,19 +643,19 @@
                     <button type="button" class="btn-sm" onclick="triggerImport('reset')">Import</button>
                     <button type="button" class="btn-sm" onclick="exportTemplate('reset')">Export</button>
                 </div>
+                <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Password Reset Notification
+                </h3>
                 <div class="palette-container">
                     <span class="palette-label">Variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
-                    <div class="draggable-item" draggable="true" data-val="email">Email</div>
-                    <div class="draggable-item" draggable="true" data-val="password"
-                        style="border-color:#28a745; color:#28a745;">New Password</div>
+                    <div class="draggable-item" draggable="true" data-val="email">User Email</div>
+                    <div class="draggable-item" draggable="true" data-val="password">New Password</div>
                 </div>
-                <div class="form-group"><label>Sender (From)</label><input type="text" id="resetFrom"
-                        class="droppable-input"></div>
-                <div class="form-group"><label>Subject</label><input type="text" id="resetSubject"
-                        class="droppable-input"></div>
-                <div class="form-group"><label>Email Body</label><textarea id="resetBody"
-                        class="rich-editor"></textarea></div>
+                <div class="form-group"><label>Sender</label><input type="text" id="resetFrom" class="droppable-input">
+                </div>
+                <div class="form-group"><label>Subject</label><input type="text" id="resetSubject"></div>
+                <div class="form-group"><label>Body</label><textarea id="resetBody" class="rich-editor"></textarea>
+                </div>
             </div>
 
             <div id="tab-delete" class="tab-content">
@@ -532,74 +663,87 @@
                     <button type="button" class="btn-sm" onclick="triggerImport('delete')">Import</button>
                     <button type="button" class="btn-sm" onclick="exportTemplate('delete')">Export</button>
                 </div>
+                <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Account Deleted
+                    Notification</h3>
                 <div class="palette-container">
                     <span class="palette-label">Variables:</span>
                     <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
                     <div class="draggable-item" draggable="true" data-val="name">User Name</div>
-                    <div class="draggable-item" draggable="true" data-val="email">Email</div>
+                    <div class="draggable-item" draggable="true" data-val="email">User Email</div>
                 </div>
-                <div class="form-group"><label>Sender (From)</label><input type="text" id="deleteFrom"
-                        class="droppable-input"></div>
-                <div class="form-group"><label>Subject</label><input type="text" id="deleteSubject"
-                        class="droppable-input"></div>
-                <div class="form-group"><label>Email Body</label><textarea id="deleteBody"
-                        class="rich-editor"></textarea></div>
+                <div class="form-group"><label>Sender</label><input type="text" id="deleteFrom" class="droppable-input">
+                </div>
+                <div class="form-group"><label>Subject</label><input type="text" id="deleteSubject"></div>
+                <div class="form-group"><label>Body</label><textarea id="deleteBody" class="rich-editor"></textarea>
+                </div>
             </div>
 
-            <div class="btn-container">
-                <button type="submit" class="btn-save">Save All Templates</button>
-            </div>
+            <div class="btn-container"><button type="submit" class="btn-save">Save All Templates</button></div>
         </form>
     </div>
-    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top"><svg width="24" height="24" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="19" x2="12" y2="5"></line>
             <polyline points="5 12 12 5 19 12"></polyline>
-        </svg>
-    </button>
+        </svg></button>
+    <script src="help.js"></script>
+    <script src="theme.js"></script>
+    <script src="toast.js"></script>
     <script>
-        let currentImportType = null;
+        // --- VIEW SWITCHING LOGIC ---
+        function toggleSubTab(prefix, type) {
+            const btnEmail = document.getElementById(`btn-${prefix}-email`);
+            const btnWa = document.getElementById(`btn-${prefix}-wa`);
+            const panelEmail = document.getElementById(`panel-${prefix}-email`);
+            const panelWa = document.getElementById(`panel-${prefix}-wa`);
 
-        // Init UI Config
+            if (type === 'email') {
+                btnEmail.style.background = 'var(--primary)';
+                btnEmail.style.color = 'white';
+                btnWa.style.background = 'transparent';
+                btnWa.style.color = 'var(--text-main)';
+                panelEmail.style.display = 'block';
+                panelWa.style.display = 'none';
+            } else {
+                btnWa.style.background = '#25D366'; // WA Active Color
+                btnWa.style.color = 'white';
+                btnEmail.style.background = 'transparent';
+                btnEmail.style.color = 'var(--text-main)';
+                panelWa.style.display = 'block';
+                panelEmail.style.display = 'none';
+            }
+        }
+
+        // --- EXISTING LOGIC ---
+        let currentImportType = null;
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.loginTitle) document.getElementById('pageTitle').innerText = "Templates - " + c.loginTitle;
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-
-            // [NEW] Demo Banner
-            if (c.appMode === 'demo') {
-                document.getElementById('demoBanner').style.display = 'block';
-            }
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-            // Find index to set active tab
-            const tabs = ['skills', 'whatsapp', 'newuser', 'reset', 'delete'];
-            document.querySelectorAll('.tab')[tabs.indexOf(tabId)].classList.add('active');
-            document.getElementById('tab-' + tabId).classList.add('active');
+            // FIX: "whatsapp" removed from array to match DOM indices correctly
+            const tabs = ['skills', 'accepted', 'rejected', 'newuser', 'reset', 'delete'];
+            const idx = tabs.indexOf(tabId);
+            if (idx !== -1) {
+                document.querySelectorAll('.tab')[idx].classList.add('active');
+                document.getElementById('tab-' + tabId).classList.add('active');
+            }
         }
 
-        // --- Custom Text Formatting for WhatsApp ---
         function formatText(elemId, marker) {
             const el = document.getElementById(elemId);
             const start = el.selectionStart;
             const end = el.selectionEnd;
             const text = el.value;
-            const selected = text.substring(start, end);
-
-            // Simple wrap
-            const replacement = marker + selected + marker;
-
-            el.value = text.substring(0, start) + replacement + text.substring(end);
-            el.focus();
-            // Restore selection including markers
-            el.setSelectionRange(start + marker.length, end + marker.length);
+            el.value = text.substring(0, start) + marker + text.substring(start, end) + marker + text.substring(end);
+            el.focus(); el.setSelectionRange(start + marker.length, end + marker.length);
         }
-
-        // --- TinyMCE Setup with Chip Support ---
 
         function textToChips(html) {
             if (!html) return '';
@@ -648,35 +792,17 @@
         }
 
         tinymce.init({
-            selector: '.rich-editor',
-            height: 300,
-            menubar: true,
-            promotion: false,
-            plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
+            selector: '.rich-editor', height: 300, menubar: true, promotion: false,
+            plugins: 'preview searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
             toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | ltr rtl',
-            content_style: `
-                body { font-family:Helvetica,Arial,sans-serif; font-size:14px }
-                .chip { background-color: #e2e6ea; border: 1px solid #ccc; border-radius: 12px; padding: 2px 8px; margin: 0 2px; font-family: monospace; color: #333; cursor: default; }
-            `,
-            setup: function (editor) {
-                editor.on('drop', function (e) {
-                    const content = e.dataTransfer.getData('text/html');
-                    if (content && content.includes('data-val')) {
-                        e.preventDefault();
-                        editor.insertContent(content);
-                    }
-                });
-            }
+            setup: function (editor) { editor.on('drop', function (e) { const content = e.dataTransfer.getData('text/html'); if (content && content.includes('data-val')) { e.preventDefault(); editor.insertContent(content); } }); }
         });
 
-        // --- Drag & Drop Logic ---
         document.querySelectorAll('.draggable-item').forEach(item => {
             item.addEventListener('dragstart', (e) => {
                 const val = item.getAttribute('data-val');
-                const text = `{{${val}}}`;
-                e.dataTransfer.setData('text/plain', text); // For Inputs
-                const html = `<span class="mceNonEditable chip" data-val="${val}">${text}</span>`;
-                e.dataTransfer.setData('text/html', html); // For TinyMCE
+                e.dataTransfer.setData('text/plain', `{{${val}}}`);
+                e.dataTransfer.setData('text/html', `<span class="mceNonEditable chip" data-val="${val}">{{${val}}}</span>`);
             });
         });
 
@@ -694,11 +820,8 @@
             });
         });
 
-        // --- Import / Export Logic ---
-
         function exportTemplate(type) {
             let data = {};
-
             if (type === 'skills') {
                 data = {
                     from: document.getElementById('skillsFrom').value,
@@ -706,15 +829,24 @@
                     intro: chipsToText(tinymce.get('skillsIntro').getContent()),
                     row: chipsToText(tinymce.get('skillsRow').getContent()),
                     rowNoUrl: chipsToText(tinymce.get('skillsRowNoUrl').getContent()),
-                    filterOnlyWithUrl: document.getElementById('skillsFilterNoUrl').checked
-                };
-            } else if (type === 'whatsapp') {
-                data = {
+                    filterOnlyWithUrl: document.getElementById('skillsFilterNoUrl').checked,
+                    // Export WA as well
                     waIntro: document.getElementById('waIntro').value,
                     waRow: document.getElementById('waRow').value,
                     waRowNoUrl: document.getElementById('waRowNoUrl').value,
                     waFilterOnlyWithUrl: document.getElementById('waFilterNoUrl').checked
-                }
+                };
+            }
+            else if (type === 'accepted') {
+                data = {
+                    email: { from: document.getElementById('acceptedEmailFrom').value, subject: document.getElementById('acceptedEmailSubject').value, body: tinymce.get('acceptedEmailBody').getContent() },
+                    whatsapp: { body: document.getElementById('acceptedWaBody').value }
+                };
+            } else if (type === 'rejected') {
+                data = {
+                    email: { from: document.getElementById('rejectedEmailFrom').value, subject: document.getElementById('rejectedEmailSubject').value, bodyRetry: tinymce.get('rejectedEmailBodyRetry').getContent(), bodySimple: tinymce.get('rejectedEmailBodySimple').getContent() },
+                    whatsapp: { bodyRetry: document.getElementById('rejectedWaBodyRetry').value, bodySimple: document.getElementById('rejectedWaBodySimple').value }
+                };
             } else {
                 const prefix = (type === 'newuser') ? 'newUser' : type;
                 data = {
@@ -723,64 +855,67 @@
                     body: chipsToText(tinymce.get(prefix + 'Body').getContent())
                 };
             }
-
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `template_${type}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            const a = document.createElement('a'); a.href = url; a.download = `template_${type}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }
 
-        function triggerImport(type) {
-            currentImportType = type;
-            document.getElementById('importFile').value = '';
-            document.getElementById('importFile').click();
-        }
-
+        function triggerImport(type) { currentImportType = type; document.getElementById('importFile').click(); }
         document.getElementById('importFile').addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            if (!file || !currentImportType) return;
-
+            const file = e.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function (evt) {
-                try {
-                    const data = JSON.parse(evt.target.result);
-
-                    if (currentImportType === 'skills') {
-                        if (data.from) document.getElementById('skillsFrom').value = data.from;
-                        if (data.subject) document.getElementById('skillsSubject').value = data.subject;
-                        if (data.intro) tinymce.get('skillsIntro').setContent(textToChips(data.intro));
-                        if (data.row) tinymce.get('skillsRow').setContent(textToChips(data.row));
-                        if (data.rowNoUrl) tinymce.get('skillsRowNoUrl').setContent(textToChips(data.rowNoUrl));
-                        if (data.filterOnlyWithUrl !== undefined) document.getElementById('skillsFilterNoUrl').checked = data.filterOnlyWithUrl;
-                    } else if (currentImportType === 'whatsapp') {
-                        if (data.waIntro) document.getElementById('waIntro').value = data.waIntro;
-                        if (data.waRow) document.getElementById('waRow').value = data.waRow;
-                        if (data.waRowNoUrl) document.getElementById('waRowNoUrl').value = data.waRowNoUrl;
-                        if (data.waFilterOnlyWithUrl !== undefined) document.getElementById('waFilterNoUrl').checked = data.waFilterOnlyWithUrl;
-                    } else {
-                        const prefix = (currentImportType === 'newuser') ? 'newUser' : currentImportType;
-                        if (data.from) document.getElementById(prefix + 'From').value = data.from;
-                        if (data.subject) document.getElementById(prefix + 'Subject').value = data.subject;
-                        if (data.body) tinymce.get(prefix + 'Body').setContent(textToChips(data.body));
+                const data = JSON.parse(evt.target.result);
+                if (currentImportType === 'rejected') {
+                    if (data.email) {
+                        if (data.email.from) document.getElementById('rejectedEmailFrom').value = data.email.from;
+                        if (data.email.subject) document.getElementById('rejectedEmailSubject').value = data.email.subject;
+                        if (data.email.bodyRetry) tinymce.get('rejectedEmailBodyRetry').setContent(textToChips(data.email.bodyRetry));
+                        if (data.email.bodySimple) tinymce.get('rejectedEmailBodySimple').setContent(textToChips(data.email.bodySimple));
+                        if (data.email.body && !data.email.bodyRetry) tinymce.get('rejectedEmailBodyRetry').setContent(textToChips(data.email.body));
                     }
-                    showToast(`Template for '${currentImportType}' imported successfully!`, 'success');
-                } catch (err) {
-                    showToast('Error parsing JSON: ' + err.message, 'error');
+                    if (data.whatsapp) {
+                        if (data.whatsapp.bodyRetry) document.getElementById('rejectedWaBodyRetry').value = data.whatsapp.bodyRetry;
+                        if (data.whatsapp.bodySimple) document.getElementById('rejectedWaBodySimple').value = data.whatsapp.bodySimple;
+                        if (data.whatsapp.body && !data.whatsapp.bodyRetry) document.getElementById('rejectedWaBodyRetry').value = data.whatsapp.body;
+                    }
+                } else if (currentImportType === 'accepted') {
+                    if (data.email) {
+                        if (data.email.from) document.getElementById('acceptedEmailFrom').value = data.email.from;
+                        if (data.email.subject) document.getElementById('acceptedEmailSubject').value = data.email.subject;
+                        if (data.email.body) tinymce.get('acceptedEmailBody').setContent(textToChips(data.email.body));
+                    }
+                    if (data.whatsapp && data.whatsapp.body) document.getElementById('acceptedWaBody').value = data.whatsapp.body;
+                } else if (currentImportType === 'skills') {
+                    // Import Email
+                    if (data.from) document.getElementById('skillsFrom').value = data.from;
+                    if (data.subject) document.getElementById('skillsSubject').value = data.subject;
+                    if (data.intro) tinymce.get('skillsIntro').setContent(textToChips(data.intro));
+                    if (data.row) tinymce.get('skillsRow').setContent(textToChips(data.row));
+                    if (data.rowNoUrl) tinymce.get('skillsRowNoUrl').setContent(textToChips(data.rowNoUrl));
+                    if (data.filterOnlyWithUrl !== undefined) document.getElementById('skillsFilterNoUrl').checked = data.filterOnlyWithUrl;
+
+                    // Import WA
+                    if (data.waIntro) document.getElementById('waIntro').value = data.waIntro;
+                    if (data.waRow) document.getElementById('waRow').value = data.waRow;
+                    if (data.waRowNoUrl) document.getElementById('waRowNoUrl').value = data.waRowNoUrl;
+                    if (data.waFilterOnlyWithUrl !== undefined) document.getElementById('waFilterNoUrl').checked = data.waFilterOnlyWithUrl;
+
+                } else {
+                    const prefix = (currentImportType === 'newuser') ? 'newUser' : currentImportType;
+                    if (data.from) document.getElementById(prefix + 'From').value = data.from;
+                    if (data.subject) document.getElementById(prefix + 'Subject').value = data.subject;
+                    if (data.body) tinymce.get(prefix + 'Body').setContent(textToChips(data.body));
                 }
             };
             reader.readAsText(file);
         });
 
-        // --- Load & Save ---
         async function loadData() {
             const res = await fetch('/api/preferences');
             const prefs = await res.json();
 
-            // 1. Skills
+            // Load Skills
             document.getElementById('skillsFrom').value = prefs.emailFrom || '';
             document.getElementById('skillsSubject').value = prefs.emailSubject || '';
             if (prefs.emailIntro) tinymce.get('skillsIntro').setContent(textToChips(prefs.emailIntro));
@@ -788,13 +923,42 @@
             if (prefs.emailRowNoUrl) tinymce.get('skillsRowNoUrl').setContent(textToChips(prefs.emailRowNoUrl));
             document.getElementById('skillsFilterNoUrl').checked = prefs.emailOnlyWithUrl || false;
 
-            // 2. WhatsApp
+            // Load WA
             if (prefs.waIntro) document.getElementById('waIntro').value = prefs.waIntro;
             if (prefs.waRow) document.getElementById('waRow').value = prefs.waRow;
             if (prefs.waRowNoUrl) document.getElementById('waRowNoUrl').value = prefs.waRowNoUrl;
             document.getElementById('waFilterNoUrl').checked = prefs.waOnlyWithUrl || false;
 
-            // 3. Helper to load JSON configs
+            // Load Accepted
+            if (prefs.tpl_accepted) {
+                try {
+                    const acc = JSON.parse(prefs.tpl_accepted);
+                    document.getElementById('acceptedEmailFrom').value = acc.email.from || '';
+                    document.getElementById('acceptedEmailSubject').value = acc.email.subject || '';
+                    tinymce.get('acceptedEmailBody').setContent(textToChips(acc.email.body || ''));
+                    document.getElementById('acceptedWaBody').value = acc.whatsapp.body || '';
+                } catch (e) { }
+            }
+            // Load Rejected
+            if (prefs.tpl_rejected) {
+                try {
+                    const rej = JSON.parse(prefs.tpl_rejected);
+                    document.getElementById('rejectedEmailFrom').value = rej.email.from || '';
+                    document.getElementById('rejectedEmailSubject').value = rej.email.subject || '';
+
+                    if (rej.email.bodyRetry) tinymce.get('rejectedEmailBodyRetry').setContent(textToChips(rej.email.bodyRetry));
+                    else if (rej.email.body) tinymce.get('rejectedEmailBodyRetry').setContent(textToChips(rej.email.body));
+
+                    if (rej.email.bodySimple) tinymce.get('rejectedEmailBodySimple').setContent(textToChips(rej.email.bodySimple));
+
+                    if (rej.whatsapp.bodyRetry) document.getElementById('rejectedWaBodyRetry').value = rej.whatsapp.bodyRetry;
+                    else if (rej.whatsapp.body) document.getElementById('rejectedWaBodyRetry').value = rej.whatsapp.body;
+
+                    if (rej.whatsapp.bodySimple) document.getElementById('rejectedWaBodySimple').value = rej.whatsapp.bodySimple;
+                } catch (e) { }
+            }
+
+            // Load others
             const loadTab = (key, prefix) => {
                 if (prefs[key]) {
                     try {
@@ -805,7 +969,6 @@
                     } catch (e) { }
                 }
             };
-
             loadTab('tpl_new_user', 'newUser');
             loadTab('tpl_reset_password', 'reset');
             loadTab('tpl_delete_user', 'delete');
@@ -820,68 +983,58 @@
                 body: chipsToText(tinymce.get(prefix + 'Body').getContent())
             });
 
-            // Skills Email
-            const skillsIntro = chipsToText(tinymce.get('skillsIntro').getContent());
-            const skillsRow = chipsToText(tinymce.get('skillsRow').getContent());
-            const skillsRowNoUrl = chipsToText(tinymce.get('skillsRowNoUrl').getContent());
+            const acceptedData = {
+                email: {
+                    from: document.getElementById('acceptedEmailFrom').value,
+                    subject: document.getElementById('acceptedEmailSubject').value,
+                    body: chipsToText(tinymce.get('acceptedEmailBody').getContent())
+                },
+                whatsapp: { body: document.getElementById('acceptedWaBody').value }
+            };
 
-            // Batch updates
+            const rejectedData = {
+                email: {
+                    from: document.getElementById('rejectedEmailFrom').value,
+                    subject: document.getElementById('rejectedEmailSubject').value,
+                    bodyRetry: chipsToText(tinymce.get('rejectedEmailBodyRetry').getContent()),
+                    bodySimple: chipsToText(tinymce.get('rejectedEmailBodySimple').getContent())
+                },
+                whatsapp: {
+                    bodyRetry: document.getElementById('rejectedWaBodyRetry').value,
+                    bodySimple: document.getElementById('rejectedWaBodySimple').value
+                }
+            };
+
             const updates = [
                 { key: 'emailFrom', value: document.getElementById('skillsFrom').value },
                 { key: 'emailSubject', value: document.getElementById('skillsSubject').value },
-                { key: 'emailIntro', value: skillsIntro },
-                { key: 'emailRow', value: skillsRow },
-                { key: 'emailRowNoUrl', value: skillsRowNoUrl },
+                { key: 'emailIntro', value: chipsToText(tinymce.get('skillsIntro').getContent()) },
+                { key: 'emailRow', value: chipsToText(tinymce.get('skillsRow').getContent()) },
+                { key: 'emailRowNoUrl', value: chipsToText(tinymce.get('skillsRowNoUrl').getContent()) },
                 { key: 'emailOnlyWithUrl', value: document.getElementById('skillsFilterNoUrl').checked },
 
-                // WA Templates
                 { key: 'waIntro', value: document.getElementById('waIntro').value },
                 { key: 'waRow', value: document.getElementById('waRow').value },
                 { key: 'waRowNoUrl', value: document.getElementById('waRowNoUrl').value },
                 { key: 'waOnlyWithUrl', value: document.getElementById('waFilterNoUrl').checked },
+
+                { key: 'tpl_accepted', value: JSON.stringify(acceptedData) },
+                { key: 'tpl_rejected', value: JSON.stringify(rejectedData) },
 
                 { key: 'tpl_new_user', value: JSON.stringify(getTab('newUser')) },
                 { key: 'tpl_reset_password', value: JSON.stringify(getTab('reset')) },
                 { key: 'tpl_delete_user', value: JSON.stringify(getTab('delete')) }
             ];
 
-            for (const u of updates) {
-                await fetch('/api/preferences', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(u)
-                });
-            }
-
-            await fetch('/api/logs', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: 'Templates',
-                    title: 'Updated Templates',
-                    payload: { fields: ['email_skills', 'wa_skills', 'new_user', 'reset', 'delete'] }
-                })
-            });
-
-            showToast("All templates saved successfully.", "success");
+            for (const u of updates) await fetch('/api/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(u) });
+            showToast("Templates saved!", "success");
         });
 
-        setTimeout(loadData, 1000);
-        // Scroll To Top Logic
+        setTimeout(loadData, 1500);
         const scrollTopBtn = document.getElementById("scrollTopBtn");
-
-        window.onscroll = function () {
-            // Show button when scrolled down 200px
-            if (scrollTopBtn) {
-                scrollTopBtn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none";
-            }
-        };
-
-        function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
     </script>
-    <script src="help.js"></script>
-    <script src="theme.js"></script>
-    <script src="toast.js"></script>
 </body>
 
 </html>

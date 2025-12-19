@@ -17,10 +17,10 @@ const helpContent = {
                 <li><strong>Filters:</strong> Use the toggle buttons at the top right of the table:
                     <ul>
                         <li><strong>Hide Empty:</strong> Hides members who have no expiring skills listed.</li>
-                        <li><strong>Has Form Only:</strong> Hides skills that do not have a configured Google Form URL.</li>
+                        <li><strong>Has Form Only:</strong> Hides skills that do not have a configured Online Form URL.</li>
                         <li><strong>Expired Only:</strong> Shows only skills that have already passed their due date.</li>
                     </ul>
-                </li>
+                </li>            
             </ul>
             <p><em>Note:</em> Skills in <strong>bold</strong> are Critical. 
             <span style="display: inline-flex; align-items: center; vertical-align: bottom;">
@@ -67,7 +67,7 @@ const helpContent = {
             <hr>
             <p><strong>Add Skill:</strong> Define a new skill to track. The name must match the OSM Dashboard exactly.</p>
             <p><strong>Import CSV:</strong> Bulk upload skills. <br>Format: <code>name, url, critical_skill, enabled</code>.</p>
-            <p><strong>Form URL:</strong> Paste the Google Form link here.</p>
+            <p><strong>Form URL:</strong> Paste the Online Form link here.</p>
             <p><strong>URL Templating:</strong> You can pre-fill form fields using variables:</p>
             <ul>
                 <li><code>{{member-name}}</code> - Inserts the member's name.</li>
@@ -246,6 +246,76 @@ const helpContent = {
             <p><em>Note:</em> Reports exclude disabled members and skills.</p>
         `
     },
+    // --- Forms Manager ---
+    "forms-manage": {
+        title: "Forms Manager Help",
+        body: `
+            <p><strong>Overview:</strong> Design custom verification forms for your skills. These forms replace external tools (like Google Forms) and integrate directly with the <strong>Live Forms</strong> tracking system.</p>
+            
+            <h3>Building a Form</h3>
+            <ul>
+                <li><strong>Toolbox:</strong> Click buttons like <em>+ Paragraph</em> or <em>+ Yes/No</em> to add fields to the canvas.</li>
+                <li><strong>Drag & Drop:</strong> Use the handle (☰) on any field to reorder it.</li>
+                <li><strong>Rich Text:</strong> Use the editor to add formatting, links, or instructions to questions.</li>
+            </ul>
+
+            <h3>Integration Steps</h3>
+            <ol>
+                <li>Create and <strong>Save</strong> your form.</li>
+                <li>Copy the public link using the <strong>Link Icon (🔗)</strong> in the toolbar.</li>
+                <li>Go to <strong>Manage Skills</strong>.</li>
+                <li>Paste the link into the 'Form URL' field for the relevant skill.</li>
+            </ol>
+            <p><em>When the system sends a notification for this skill, it will automatically generate a unique "Live Form" link for that specific member.</em></p>
+        `
+    },
+
+    // --- Live Forms ---
+    "live-forms": {
+        title: "Live Forms Management Help",
+        body: `
+            <p><strong>Overview:</strong> Track every form sent to members. Unlike generic links, "Live Forms" are unique instances that track the specific member, skill, and submission status.</p>
+            
+            <h3>Status Definitions</h3>
+            <ul>
+                <li><span style="color:#17a2b8; font-weight:bold;">OPEN</span>: The link has been sent, but the member hasn't submitted it yet.</li>
+                <li><span style="color:#28a745; font-weight:bold;">SUBMITTED</span>: The member completed the form. </li>
+                <li><span style="color:#6c757d; font-weight:bold;">DISABLED</span>: The link is no longer accessible (administratively closed).</li>
+            </ul>
+
+            <h3>Toolbar & Actions</h3>
+            <ul>
+                <li><strong>Rows per Page:</strong> Adjust how many records appear in the table (saved to your preferences).</li>
+                <li><strong>Download JSON:</strong> Exports the <em>currently filtered</em> list of forms to a JSON file for external analysis or backup.</li>
+                <li><strong>Purge Filtered:</strong> <span style="color:#dc3545; font-weight:bold;">(Careful!)</span> Permanently deletes ALL records that match your current filters. Useful for cleaning up old data (e.g., "Delete all 'Submitted' forms from 2023").</li>
+            </ul>
+
+            <h3>Reviewing Data</h3>
+            <p>Click the <strong>Review Icon</strong> (eye) on a 'Submitted' row to see exactly what the member entered.</p>
+        `
+    },
+    "statistics": {
+        title: "Statistics Dashboard Help",
+        body: `
+            <p><strong>Overview:</strong> This dashboard provides a visual representation of team readiness and competency distribution based on current OSM data.</p>
+            
+            <h3>Available Views</h3>
+            <ul>
+                <li><strong>Overall Compliance Overview:</strong> A high-level look at how many active members are fully up-to-date versus those with expiring skills.</li>
+            </ul>
+
+            <h3>Understanding the Charts</h3>
+            <ul>
+                <li><strong>Member Compliance:</strong> A doughnut chart showing the split between 'Compliant' members (zero expiring skills) and those requiring action.</li>
+                <li><strong>Expiring Skill Priority:</strong> A pie chart categorizing all current expiring items into <strong>Critical</strong> and <strong>Standard</strong> skills.</li>
+            </ul>
+
+            <h3>Data Context</h3>
+            <p>The charts respect the <strong>Days to Expiry</strong> threshold set on your main Dashboard. For example, if your threshold is 30 days, the statistics reflect members who have skills expiring within that window.</p>
+            
+            <p><em>Note:</em> Click <strong>Refresh Data</strong> to ensure you are viewing the most recent scrape results from the OSM Dashboard.</p>
+        `
+    },
     // --- Default ---
     "default": {
         title: "Help",
@@ -271,7 +341,10 @@ const helpContent = {
     else if (path.includes("login")) key = "login";
     else if (path.includes("third-parties")) key = "third-parties";
     else if (path.includes("training-planner")) key = "training-planner";
+    else if (path.includes("forms-manage")) key = "forms-manage";
     else if (path.includes("reports")) key = "reports";
+    else if (path.includes("live-forms")) key = "live-forms";
+    else if (path.includes("statistics")) key = "statistics";
 
     const content = helpContent[key] || helpContent["default"];
 
@@ -304,7 +377,7 @@ const helpContent = {
     const modal = document.getElementById('globalHelpModal');
     const close = document.querySelector('.help-close-btn');
 
-// Adjust position if on Dashboard 
+    // Adjust position if on Dashboard 
     if (key === "index") {
         // OLD: btn.style.top = "80px";
         // NEW:
