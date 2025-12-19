@@ -36,8 +36,10 @@
             backdrop-filter: blur(5px);
             max-height: 90vh;
             overflow-y: auto;
-            position: relative; /* For ribbon positioning */
-            overflow: hidden; /* Clip ribbon */
+            position: relative;
+            /* For ribbon positioning */
+            overflow: hidden;
+            /* Clip ribbon */
         }
 
         /* [NEW] Demo Banner Style */
@@ -47,9 +49,11 @@
             font-weight: bold;
             text-align: center;
             padding: 10px;
-            margin: -40px -40px 20px -40px; /* Stretch to edges */
+            margin: -40px -40px 20px -40px;
+            /* Stretch to edges */
             border-bottom: 1px solid #e0a800;
-            display: none; /* Hidden by default */
+            display: none;
+            /* Hidden by default */
             font-size: 14px;
         }
 
@@ -61,9 +65,13 @@
             font-size: 12px;
             text-decoration: underline;
             cursor: pointer;
-            display: none; /* Hidden by default */
+            display: none;
+            /* Hidden by default */
         }
-        .demo-link:hover { color: #333; }
+
+        .demo-link:hover {
+            color: #333;
+        }
 
         #loginLogo {
             max-width: 150px;
@@ -114,13 +122,44 @@
             font-size: 14px;
             cursor: pointer;
         }
-        .forgot-link:hover { text-decoration: underline; }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
 
         /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); }
-        .modal-content { background: #fff; margin: 15% auto; padding: 25px; width: 80%; max-width: 400px; border-radius: 8px; position: relative; text-align: left; }
-        .close-btn { position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 24px; font-weight: bold; color: #aaa; }
-        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background: #fff;
+            margin: 15% auto;
+            padding: 25px;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 8px;
+            position: relative;
+            text-align: left;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 24px;
+            font-weight: bold;
+            color: #aaa;
+        }
+
         .cred-box {
             background: #f8f9fa;
             padding: 10px;
@@ -134,10 +173,11 @@
 
 <body>
     <div class="login-container">
-        
+
         <div id="demoBanner" class="demo-banner">
             DEMO VERSION <span style="font-weight:normal;">
-                <br>(<a href="demo/demo_osm_dasboard.html" target="_blank" style="color:inherit; text-decoration:underline;">View Demo OSM data</a>)</span>
+                <br>(<a href="demo/demo_osm_dasboard.html" target="_blank"
+                    style="color:inherit; text-decoration:underline;">View Demo OSM data</a>)</span>
         </div>
 
         <img id="loginLogo" alt="Logo">
@@ -150,7 +190,9 @@
             <button type="submit" id="loginBtn">Sign In</button>
             <div id="errorMsg" class="error">Invalid credentials</div>
         </form>
-        
+        <br><div id="appVersionDisplay" style="font-size: 11px; color: #999; margin-top: -10px; margin-bottom: 20px;">
+            Version: <span id="disp-version">Loading...</span>
+        </div>
         <a class="forgot-link" onclick="openForgotModal()">Forgot Password?</a>
 
         <a id="demoLink" class="demo-link" onclick="showDemoCreds()">Reveal Super-Admin demo credentials</a>
@@ -160,7 +202,8 @@
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('forgotModal')">&times;</span>
             <h2 style="margin-top: 0;">Reset Password</h2>
-            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter your email address. We will generate a new password and send it to you.</p>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter your email address. We will generate a
+                new password and send it to you.</p>
             <form id="forgotForm">
                 <input type="email" id="forgotEmail" placeholder="Enter your email" required style="margin-top: 0;">
                 <div id="forgotMsg" class="error" style="margin-top: 5px; margin-bottom: 5px;"></div>
@@ -174,12 +217,12 @@
             <span class="close-btn" onclick="closeModal('demoCredsModal')">&times;</span>
             <h2 style="margin-top: 0; color: #ffc107;">Demo Credentials</h2>
             <p>Use these credentials to log in as Super Admin:</p>
-            
+
             <div class="cred-box">
                 <strong>Username:</strong> <span id="demoUser">Loading...</span><br>
                 <strong>Password:</strong> <span id="demoPass">Loading...</span>
             </div>
-            
+
             <button onclick="closeModal('demoCredsModal')" style="margin-top:0;">Close</button>
         </div>
     </div>
@@ -192,6 +235,9 @@
                 if (config.loginTitle) {
                     document.getElementById('loginTitle').textContent = config.loginTitle;
                     document.title = config.loginTitle + " - Login";
+                }
+                if (config.version) {
+                    document.getElementById('disp-version').textContent = config.version;
                 }
                 if (config.loginLogo) {
                     const logoImg = document.getElementById('loginLogo');
@@ -273,7 +319,7 @@
             const msg = document.getElementById('forgotMsg');
             const btn = e.target.querySelector('button');
 
-            if(!confirm(`Are you sure you want to reset the password for ${email}?`)) return;
+            if (!confirm(`Are you sure you want to reset the password for ${email}?`)) return;
 
             btn.disabled = true;
             btn.textContent = "Sending...";
@@ -285,10 +331,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })
                 });
-                
+
                 const data = await res.json();
 
-                if(res.ok) {
+                if (res.ok) {
                     showToast('Please check your email for the new password.', 'success');
                     closeModal('forgotModal');
                     document.getElementById('forgotForm').reset();
@@ -296,7 +342,7 @@
                     msg.textContent = data.error || "Failed to reset password.";
                     msg.style.display = 'block';
                 }
-            } catch(err) {
+            } catch (err) {
                 msg.textContent = "Server connection error.";
                 msg.style.display = 'block';
             } finally {
@@ -306,7 +352,7 @@
         });
 
         // Close modal on outside click
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (event.target == document.getElementById('forgotModal')) closeModal('forgotModal');
             if (event.target == document.getElementById('demoCredsModal')) closeModal('demoCredsModal');
         }
