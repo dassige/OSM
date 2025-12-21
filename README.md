@@ -233,6 +233,11 @@ The application includes a self-contained form system designed to replace extern
 5.  **Form Validation:** 
     * Administrators can "Test the Form" in Demo Mode directly from the management table to verify layout and variables before final approval.
 
+### 5\. AI-Assisted Form Generation
+To speed up the creation of new verification questionnaires, you can use AI to analyze technical documents and generate compatible JSON definitions. 
+
+See the [AI Form Generation Guide](AI_FORM_GENERATION.md) for a ready-to-use prompt and detailed instructions.
+
 ## Docker Deployment
 
 1.  **Build and Run:**

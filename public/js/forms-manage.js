@@ -545,7 +545,7 @@ function loadEditor(form) {
   if (btnIcon) {
     btnIcon.style.transform = "rotate(180deg)";
   }
-  
+
   // Setup initial state for dirty checking
   originalFormState = {
     name: form.name || "",
@@ -776,4 +776,20 @@ window.addOptionRow = function (btn) {
   const div = document.createElement("div");
   div.innerHTML = generateOptionRow(type, fieldId, "");
   container.appendChild(div.firstElementChild);
+};
+window.copyAiPrompt = function () {
+  const promptElement = document.querySelector("#aiHelpModal .code-block");
+  if (!promptElement) return;
+
+  const text = promptElement.innerText;
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      if (window.showToast) {
+        showToast("Prompt copied to clipboard!", "success");
+      }
+    })
+    .catch((err) => {
+      console.error("Failed to copy: ", err);
+    });
 };

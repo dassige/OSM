@@ -101,3 +101,31 @@ window.confirmAction = function(title, message) {
         };
     });
 };
+/**
+ * Opens a modal by ID and ensures it is visible.
+ */
+window.openModal = function(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.style.display = 'block';
+    }
+};
+
+/**
+ * Closes a modal by ID.
+ */
+window.closeModal = function(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+/**
+ * Global click-outside listener to close modals
+ */
+window.addEventListener('click', (event) => {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+});

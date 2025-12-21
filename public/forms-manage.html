@@ -417,57 +417,58 @@
         <div class="manager-container">
             <div class="sidebar">
                 <div class="sidebar-header">
-                    <div class="sidebar-title-row">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <h3 style="margin:0;">My Forms</h3>
-                            <button onclick="toggleFormSort()" id="btnSortForms" class="btn-sm"
-                                style="background:transparent; color:var(--text-main); border:1px solid var(--border-color); padding:4px 8px; border-radius:4px; cursor:pointer;"
-                                title="Sort by Name (A-Z)">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M15 18H3M21 6H3M17 12H3" />
-                                </svg>
-                            </button>
-                        </div>
-                        <button onclick="createNewForm()" class="btn-sm"
-                            style="background:var(--success); color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">+
-                            New</button>
+                    <div
+                        style="display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 10px;">
+                        <h3 style="margin:0; font-size: 1.1em; color: var(--text-main);">Forms</h3>
+                        <button onclick="toggleFormSort()" id="btnSortForms" class="btn-sm"
+                            style="position: absolute; right: 0; background:transparent; color:var(--text-main); border:1px solid var(--border-color); padding:4px 8px; border-radius:4px; cursor:pointer;"
+                            title="Sort by Name (A-Z)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M15 18H3M21 6H3M17 12H3" />
+                            </svg>
+                        </button>
                     </div>
 
-                    <div class="sidebar-actions">
+                    <div class="sidebar-actions"
+                        style="display: flex; gap: 4px; padding-top: 8px; border-top: 1px dashed var(--border-color); width: 100%; box-sizing: border-box;">
+                        <button onclick="createNewForm()" class="btn-sm"
+                            style="flex: 0 0 34px; background:var(--success); color:white; border:none; padding:0; height:32px; border-radius:4px; cursor:pointer; font-size: 18px; font-weight: bold;"
+                            title="Add New Form">+</button>
+
                         <button onclick="document.getElementById('importBulkInput').click()" class="btn-sm"
-                            style="flex:1; background:var(--bg-body); border:1px solid var(--border-color); color:var(--text-main); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;"
+                            style="flex: 1 1 auto; min-width: 0; background:var(--bg-body); border:1px solid var(--border-color); color:var(--text-main); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; height:32px; padding: 0 4px; overflow: hidden; white-space: nowrap;"
                             title="Import All (Wipe & Replace)">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="17 8 12 3 7 8"></polyline>
                                 <line x1="12" y1="3" x2="12" y2="15"></line>
-                            </svg>
-                            All
+                            </svg> <span style="font-size: 12px;">All</span>
                         </button>
+
                         <button onclick="exportAllForms()" class="btn-sm"
-                            style="flex:1; background:var(--bg-body); border:1px solid var(--border-color); color:var(--text-main); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;"
+                            style="flex: 1 1 auto; min-width: 0; background:var(--bg-body); border:1px solid var(--border-color); color:var(--text-main); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; height:32px; padding: 0 4px; overflow: hidden; white-space: nowrap;"
                             title="Export All to JSON">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="7 10 12 15 17 10"></polyline>
                                 <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            All
+                            </svg> <span style="font-size: 12px;">All</span>
                         </button>
+
+                        <button onclick="openModal('aiHelpModal')" class="btn-sm"
+                            style="flex: 0 0 34px; background:#6f42c1; color:white; border:none; padding:0; height:32px; border-radius:4px; cursor:pointer; font-weight:bold; font-size: 12px;"
+                            title="AI Form Generation Help">AI</button>
                     </div>
                 </div>
 
-                <div id="formList" class="form-list">
-                    <div class="spinner" style="margin:20px auto; display:block;"></div>
-                </div>
+                <div id="formList" class="form-list">...</div>
             </div>
-
             <div id="builderPanel" class="editor-panel" style="display:none;">
                 <div class="editor-header">
                     <div style="width:100%;">
@@ -505,7 +506,6 @@
                                 <line x1="12" y1="3" x2="12" y2="15"></line>
                             </svg>
                         </button>
-
                         <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 5px;"></div>
 
                         <button id="btnToggleAll" onclick="toggleAllFields()" class="btn-sm"
@@ -567,6 +567,83 @@
             </div>
         </div>
 
+        <div id="aiHelpModal" class="modal">
+            <div class="modal-content" style="max-width: 600px;">
+                <span class="close-btn" onclick="closeModal('aiHelpModal')">&times;</span>
+                <h2 style="margin-top:0; color: #6f42c1; display: flex; align-items: center; gap: 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                        </path>
+                        <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
+                        <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
+                        <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                    AI Form Generation Assistant
+                </h2>
+                <div class="help-body">
+                    <h1 id="generating-forms-with-ai">Generating Forms with AI</h1>
+                    <p>This guide explains how to use an AI (like Gemini) to generate valid JSON form definitions for
+                        the <strong>FENZ OSM Manager</strong> using operational documentation as a source.</p>
+                    <h2 id="workflow-overview">Workflow Overview</h2>
+                    <ol>
+                        <li><strong>Prepare Source Documents:</strong> Gather the technical manuals or operational
+                            instructions (OIs) you want to test members on.</li>
+                        <li><strong>Use the Prompt:</strong> Provide the prompt below to an AI along with your
+                            documents.</li>
+                        <li><strong>Download JSON:</strong> Save the AI&#39;s output as a <code>.json</code> file.</li>
+                        <li><strong>Import to Manager:</strong> Go to <strong>Manage Forms</strong> in the web interface
+                            and use the &quot;Import into Editor&quot; tool.</li>
+                    </ol>
+                    <hr>
+                    <h2 id="technical-specification-prompt">Technical Specification Prompt</h2>
+                    <p>Copy and paste the text below into an AI chat session. Attach your source documents to the same
+                        message.</p>
+                    <div class="code-block"
+                        style="background:#f8f9fa; padding:15px; border-radius:4px; border:1px solid #ddd; font-family:monospace; font-size:12px; white-space:pre-wrap; cursor:pointer; margin: 15px 0;"
+                        onclick="copyAiPrompt()" title="Click to copy">
+**Role:** You are an expert technical analyst for Fire and Emergency New Zealand (FENZ).
+
+**Task:** Analyze the attached document(s) and generate a comprehensive skill verification questionnaire in JSON format.
+
+**JSON Schema Specification:**
+The output must be a single JSON object with these keys:
+- `name`: Concise title for the form (e.g., "OI (IS1) - Operational Safety").
+- `intro`: Brief HTML introduction explaining the purpose.
+- `structure`: An array of question objects, each containing:
+- `id`: Unique string starting with "fld_" (e.g., "fld_j8x1").
+- `type`: One of: `text_multi` (Paragraph), `radio` (Single choice), `checkboxes` (Multiple response), or `boolean` (Yes/No).
+- `description`: The question text (HTML allowed).
+- `required`: Boolean (set to `true`).
+- `options`: Array of strings (for `radio` and `checkboxes` only).
+- `renderAs`: String (`radio` or `dropdown`).
+- `correctAnswer`: String (or Array for checkboxes) representing the accurate response based on the document.
+
+**Constraint:** Provide ONLY the raw JSON object. No conversational text.
+                    </div>
+                    <p style="font-size: 0.85em; color: #666;"><em>Tip: Clicking the box above copies the prompt. Paste
+                            it into an AI chat and upload your source PDF/OI.</em></p>
+                    <hr>
+                    <h2 id="best-practices">Best Practices</h2>
+                    <ul>
+                        <li><strong>Question Variety:</strong> Ensure the documents provide enough detail for at least
+                            5-10 questions.</li>
+                        <li><strong>HTML Formatting:</strong> Use <code>&lt;strong&gt;</code> and
+                            <code>&lt;ul&gt;</code> tags in the <code>intro</code> and <code>description</code> fields
+                            to improve readability.</li>
+                        <li><strong>Validation:</strong> Always preview the form in the <strong>Forms Manager</strong>
+                            after importing to verify formatting and answer keys.</li>
+                    </ul>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button onclick="closeModal('aiHelpModal')" class="btn-primary">Close</button>
+                </div>
+            </div>
+        </div>
+
         <script src="utils.js"></script>
         <script src="toast.js"></script>
         <script src="theme.js"></script>
@@ -584,6 +661,8 @@
             const scrollTopBtn = document.getElementById("scrollTopBtn");
             window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
             function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+
         </script>
 </body>
 
