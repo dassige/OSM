@@ -293,6 +293,11 @@
                 align-items: flex-start;
             }
         }
+
+        .filter-active {
+            border: 3px solid var(--primary) !important;
+            background-color: rgba(0, 123, 255, 0.05) !important;
+        }
     </style>
 </head>
 
@@ -605,9 +610,11 @@
         function resetFilters() {
             document.querySelectorAll('select.filter-select, input.filter-date, input[type="number"]').forEach(el => el.value = '');
             applyFilters(1);
+            updateFilterHighlights();
         }
 
         function applyFilters(page = 1) {
+            updateFilterHighlights();
             currentPage = page;
             loadData();
         }
@@ -819,6 +826,24 @@
             }
         });
 
+        function updateFilterHighlights() {
+            const filterIds = [
+                'filterStatus', 'filterMember', 'filterSkill', 'filterTries',
+                'filterSentStart', 'filterSentEnd', 'filterSubStart', 'filterSubEnd'
+            ];
+
+            filterIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    // Check if value is not empty/null
+                    if (el.value && el.value.trim() !== "") {
+                        el.classList.add('filter-active');
+                    } else {
+                        el.classList.remove('filter-active');
+                    }
+                }
+            });
+        }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; }
         const scrollTopBtn = document.getElementById("scrollTopBtn");
