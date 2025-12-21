@@ -541,7 +541,7 @@
             if (urlParams.has('memberId')) document.getElementById('filterMember').value = urlParams.get('memberId');
             if (urlParams.has('skillId')) document.getElementById('filterSkill').value = urlParams.get('skillId');
             if (urlParams.has('status')) document.getElementById('filterStatus').value = urlParams.get('status');
-
+            updateFilterHighlights();
             // Optional: Auto-expand limits if filtering specific item? 
             // For now, standard loadData() will use these values.           
             loadData();

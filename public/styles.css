@@ -1092,3 +1092,12 @@ textarea {
 * {
     box-sizing: border-box; /* Ensures padding doesn't break layout width */
 }
+.status-circle.accepted {
+    background-color: #e6ffed;
+    border: 1px solid #28a745;
+    color: #28a745;
+}
+
+.status-circle.submitted {
+    background-color: #e8f0fe;
+}

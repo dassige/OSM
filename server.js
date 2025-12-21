@@ -678,17 +678,19 @@ app.post("/api/forms", hasRole("admin"), async (req, res) => {
   try {
     const { name, status, intro, structure } = req.body;
     if (!name) return res.status(400).json({ error: "Form name is required" });
-    
+
     // Create the form and get the internal database ID
     const id = await formsService.createForm(name, status, intro, structure);
-    
+
     // Fetch the newly created form to get the public_id (UUID)
-    const newForm = await formsService.getFormById(id); 
-    
-    await db.logEvent(req.session.user.name, "Forms", `Created form: ${name}`, { id });
-    
+    const newForm = await formsService.getFormById(id);
+
+    await db.logEvent(req.session.user.name, "Forms", `Created form: ${name}`, {
+      id,
+    });
+
     // Return the full form object to the frontend
-    res.json(newForm); 
+    res.json(newForm);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -1372,8 +1374,10 @@ io.on("connection", (socket) => {
       );
       const trainingMap = await getTrainingMap();
 
-      // [NEW] Fetch Live Form Statuses
-      const liveForms = await formsService.getAllActiveStatuses();
+      // Fetch statuses using the environment variable threshold
+      const liveForms = await formsService.getAllActiveStatuses(
+        config.acceptedFormVisibilityDays
+      );
       const liveFormsMap = {};
       liveForms.forEach((r) => {
         liveFormsMap[`${r.member_id}_${r.skill_id}`] = r.form_status;
