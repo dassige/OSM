@@ -9,6 +9,6 @@ import-members.csv
 public/resources/logo_dvfb.png
 # Database
 fenz.db
-demo.db
+demo.db*
 public/custom
 public/FENZ
