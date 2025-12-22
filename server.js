@@ -25,6 +25,7 @@ const formsService = require("./services/forms-service");
 const statisticsService = require("./services/statistics-service");
 
 const puppeteer = require("puppeteer-core");
+const { validateForm, validateBulkData } = require("./middleware/validation");
 
 // =============================================================================
 //  INITIALIZATION & MIDDLEWARE
@@ -640,21 +641,25 @@ app.post(
     try {
       const fileContent = fs.readFileSync(req.file.path, "utf8");
       const data = JSON.parse(fileContent);
-      if (!Array.isArray(data)) {
-        throw new Error("Invalid file format. Expected a JSON array of forms.");
+
+      // [NEW] Validate the parsed data array
+      const { error, value } = validateBulkData(data);
+      if (error) {
+        return res.status(400).json({
+          error: "Import Failed: Schema Mismatch",
+          details: error.details.map((d) => d.message),
+        });
       }
-      if (data.length > 0 && (!data[0].name || !data[0].structure)) {
-        throw new Error("Invalid form data structure in import file.");
-      }
-      await formsService.importBulkForms(data);
+
+      await formsService.importBulkForms(value);
       fs.unlinkSync(req.file.path);
       await db.logEvent(
         req.session.user.name,
         "Forms",
-        `Bulk Imported ${data.length} forms`,
+        `Bulk Imported ${value.length} forms`,
         {}
       );
-      res.json({ success: true, count: data.length });
+      res.json({ success: true, count: value.length });
     } catch (e) {
       if (req.file && fs.existsSync(req.file.path))
         fs.unlinkSync(req.file.path);
@@ -674,29 +679,24 @@ app.get("/api/forms/:id", async (req, res) => {
   }
 });
 
-app.post("/api/forms", hasRole("admin"), async (req, res) => {
+// Update Create Form Route
+app.post("/api/forms", hasRole("admin"), validateForm, async (req, res) => {
   try {
     const { name, status, intro, structure } = req.body;
-    if (!name) return res.status(400).json({ error: "Form name is required" });
-
-    // Create the form and get the internal database ID
     const id = await formsService.createForm(name, status, intro, structure);
-
-    // Fetch the newly created form to get the public_id (UUID)
     const newForm = await formsService.getFormById(id);
 
     await db.logEvent(req.session.user.name, "Forms", `Created form: ${name}`, {
       id,
     });
-
-    // Return the full form object to the frontend
     res.json(newForm);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-app.put("/api/forms/:id", hasRole("admin"), async (req, res) => {
+// Update Update Form Route
+app.put("/api/forms/:id", hasRole("admin"), validateForm, async (req, res) => {
   try {
     await formsService.updateForm(req.params.id, req.body);
     await db.logEvent(
@@ -710,6 +710,7 @@ app.put("/api/forms/:id", hasRole("admin"), async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
 app.delete("/api/forms/:id", hasRole("admin"), async (req, res) => {
   try {
     await formsService.deleteForm(req.params.id);

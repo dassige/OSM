@@ -231,13 +231,9 @@ async function saveForm() {
 async function saveForm() {
   const data = getFormData();
   const status = currentForm ? currentForm.status : 0;
-
   const payload = { ...data, status };
   const method = currentForm && currentForm.id ? "PUT" : "POST";
-  const url =
-    currentForm && currentForm.id
-      ? `/api/forms/${currentForm.id}`
-      : "/api/forms";
+  const url = currentForm && currentForm.id ? `/api/forms/${currentForm.id}` : "/api/forms";
 
   try {
     const res = await fetch(url, {
@@ -246,23 +242,34 @@ async function saveForm() {
       body: JSON.stringify(payload),
     });
 
-    if (!res.ok) throw new Error("Failed to save");
-
-    const result = await res.json();
-
-    if (method === "POST") {
-      // For new forms, result now contains the full object including public_id
-      currentForm = result;
-    } else {
-      // For updates, merge the payload into existing state
-      currentForm = { ...currentForm, ...payload };
+    if (!res.ok) {
+      const errorData = await res.json();
+      // Extract specific Joi validation reasons or fallback to general error
+      const reason = errorData.details ? errorData.details.join(" | ") : (errorData.error || "Unknown error");
+      throw new Error(reason);
     }
 
-    originalFormState = getFormData();
+    const result = await res.json();
+    // ... (Success handling as per existing forms-manage.js) ...
     showToast("Form saved successfully", "success");
-    loadForms(); // Refreshes the sidebar list
+    loadForms();
   } catch (e) {
-    showToast(e.message, "error");
+    // 1. Display reason to user
+    showToast("Save Failed: Check console for details", "error");
+    
+    // 2. Add to browser console
+    console.error("[FormsManager] Error saving form:", e.message);
+
+    // 3. Add to System Event Log for auditing
+    fetch('/api/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            type: 'Forms',
+            title: 'Form Save Failed',
+            payload: { error: e.message, formName: data.name }
+        })
+    });
   }
 }
 

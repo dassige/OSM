@@ -19,10 +19,11 @@ Copy and paste the text below into an AI chat session. Attach your source docume
 >
 > **JSON Schema Specification:**
 > The output must be a single JSON object with these keys:
+> - `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
 > - `name`: Concise title for the form (e.g., "OI (IS1) - Operational Safety").
 > - `intro`: Brief HTML introduction explaining the purpose.
 > - `structure`: An array of question objects, each containing:
->     - `id`: Unique string starting with "fld_" (e.g., "fld_j8x1").
+>     - `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
 >     - `type`: One of: `text_multi` (Paragraph), `radio` (Single choice), `checkboxes` (Multiple response), or `boolean` (Yes/No).
 >     - `description`: The question text (HTML allowed).
 >     - `required`: Boolean (set to `true`).
