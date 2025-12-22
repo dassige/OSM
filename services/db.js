@@ -85,11 +85,31 @@ async function initDB() {
     } catch (e) {}
 
     // Users
-    await db.exec(
-      `CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL, name TEXT, hash TEXT NOT NULL, salt TEXT NOT NULL, role TEXT DEFAULT 'simple');`
+    await db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        email TEXT UNIQUE NOT NULL, 
+        name TEXT, 
+        hash TEXT NOT NULL, 
+        salt TEXT NOT NULL, 
+        role TEXT DEFAULT 'simple',
+        enabled INTEGER DEFAULT 1,
+        blocked INTEGER DEFAULT 0,
+        login_attempts INTEGER DEFAULT 0
     );
+`);
+
+    // Migration for existing users table
     try {
-      await db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'simple';`);
+      await db.exec(`ALTER TABLE users ADD COLUMN enabled INTEGER DEFAULT 1;`);
+    } catch (e) {}
+    try {
+      await db.exec(`ALTER TABLE users ADD COLUMN blocked INTEGER DEFAULT 0;`);
+    } catch (e) {}
+    try {
+      await db.exec(
+        `ALTER TABLE users ADD COLUMN login_attempts INTEGER DEFAULT 0;`
+      );
     } catch (e) {}
 
     // Training Sessions
@@ -233,7 +253,27 @@ async function authenticateUser(email, password) {
   }
   return null;
 }
+async function resetLoginAttempts(userId) {
+  if (!db) await initDB();
+  await db.run(`UPDATE users SET login_attempts = 0 WHERE id = ?`, userId);
+}
 
+async function incrementLoginAttempts(email) {
+  if (!db) await initDB();
+  await db.run(
+    `UPDATE users SET login_attempts = login_attempts + 1 WHERE email = ?`,
+    email
+  );
+  return await db.get(
+    `SELECT id, login_attempts FROM users WHERE email = ?`,
+    email
+  );
+}
+
+async function blockUser(userId) {
+  if (!db) await initDB();
+  await db.run(`UPDATE users SET blocked = 1 WHERE id = ?`, userId);
+}
 async function getUsers() {
   if (!db) await initDB();
   return await db.all(
@@ -259,7 +299,7 @@ async function addUser(email, name, password, role = "simple") {
   const { salt, hash } = hashPassword(password);
   try {
     const result = await db.run(
-      `INSERT INTO users (email, name, hash, salt, role) VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO users (email, name, hash, salt, role, enabled, blocked, login_attempts) VALUES (?, ?, ?, ?, ?, 1, 0, 0)`,
       email,
       name,
       hash,
@@ -273,16 +313,23 @@ async function addUser(email, name, password, role = "simple") {
     throw e;
   }
 }
-async function updateUser(id, name, email, role) {
+async function updateUser(id, name, email, role, enabled, blocked) {
   if (!db) await initDB();
   try {
     await db.run(
-      `UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?`,
+      `UPDATE users SET name = ?, email = ?, role = ?, enabled = ?, blocked = ? WHERE id = ?`,
       name,
       email,
       role,
+      enabled ? 1 : 0,
+      blocked ? 1 : 0,
       id
     );
+
+    // Reset attempts if an admin manually unblocks
+    if (!blocked) {
+      await resetLoginAttempts(id);
+    }
   } catch (e) {
     if (e.message.includes("UNIQUE constraint"))
       throw new Error("Email already exists");
@@ -744,4 +791,7 @@ module.exports = {
   addTrainingSession,
   getAllFutureTrainingSessions,
   deleteTrainingSession,
+  resetLoginAttempts,
+  incrementLoginAttempts,
+  blockUser,
 };

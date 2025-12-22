@@ -196,9 +196,26 @@ async function sendAccountDeletionNotification(email, name, transporter, appName
     console.log(`[SMTP] Deletion notification sent to ${email}`);
 }
 
+// services/mailer.js
+async function sendSecurityAlert(details, transporter, appName, superEmail) {
+    const subject = `SECURITY ALERT: User Blocked on ${appName}`;
+    const body = `
+        <h3>Security Alert: User Account Automatically Blocked</h3>
+        <p>A user has been blocked after exceeding the maximum number of failed login attempts.</p>
+        <ul>
+            <li><strong>User Email:</strong> ${details.email}</li>
+            <li><strong>Date/Time:</strong> ${new Date().toLocaleString()}</li>
+            <li><strong>Failed Attempts:</strong> ${details.attempts}</li>
+            <li><strong>IP Address:</strong> ${details.ip}</li>
+        </ul>
+        <p>Please review the system logs and manually unblock the user if necessary.</p>
+    `;
+    await transporter.sendMail({ from: superEmail, to: superEmail, subject, html: body, text: stripHtml(body) });
+}
 module.exports = {
     sendNotification,
     sendPasswordReset,
     sendNewAccountNotification,
-    sendAccountDeletionNotification
+    sendAccountDeletionNotification,
+    sendSecurityAlert
 };

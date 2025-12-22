@@ -71,16 +71,20 @@ initializeProxy();
 app.use((req, res, next) => {
   const publicPaths = [
     "/login.html",
-    "/login",
+    "/login", // [FIX] Allow the POST /login endpoint
     "/forgot-password",
     "/styles.css",
     "/ui-config",
     "/api/demo-credentials",
     "/forms-view.html",
+    "/theme.js", // [FIX] Allow security-related frontend scripts
+    "/help.js", // [FIX] Allow help script
+    "/toast.js", // [FIX] Allow notification script
     "/public/js/toast.js",
     "/public/theme.js",
   ];
 
+  // If the path is public, let it through
   if (
     publicPaths.includes(req.path) ||
     req.path.startsWith("/socket.io/") ||
@@ -88,15 +92,19 @@ app.use((req, res, next) => {
     req.path.startsWith("/demo/") ||
     req.path.startsWith("/api/live-forms/access/") ||
     req.path.startsWith("/api/live-forms/submit/")
-  )
+  ) {
     return next();
+  }
 
+  // Check if session exists
   if (req.session && req.session.loggedIn) return next();
+
+  // Deny API requests with 401, redirect others to login
   if (req.path.startsWith("/api/"))
     return res.status(401).json({ error: "Unauthorized" });
+
   return res.redirect("/login.html");
 });
-
 app.get("/ui-config", (req, res) =>
   res.json({ ...config.ui, appMode: config.appMode })
 );
@@ -157,6 +165,9 @@ app.get("/statistics.html", hasRole("simple"), (req, res, next) => next());
 
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+
+  // 1. Check Superuser Credentials (from .env) FIRST
   if (username === config.auth.username && password === config.auth.password) {
     req.session.loggedIn = true;
     req.session.user = {
@@ -169,25 +180,62 @@ app.post("/login", async (req, res) => {
     };
     return res.status(200).send({ success: true });
   }
+
+  // 2. Database User Authentication
   try {
+    const userRecord = await db.getUserByEmail(username);
+
+    if (userRecord) {
+      if (userRecord.enabled === 0)
+        return res
+          .status(403)
+          .json({ error: "Account disabled. Contact administrator." });
+      if (userRecord.blocked === 1)
+        return res
+          .status(403)
+          .json({ error: "Account blocked due to multiple failed attempts." });
+    }
+
     const user = await db.authenticateUser(username, password);
     if (user) {
+      await db.resetLoginAttempts(user.id);
       req.session.loggedIn = true;
       req.session.user = {
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
-        isAdmin: user.role === "admin",
+        isAdmin: user.role === "admin" || user.role === "superadmin",
       };
       return res.status(200).send({ success: true });
+    } else if (userRecord) {
+      // Wrong password: increment attempts
+      const stats = await db.incrementLoginAttempts(username);
+      if (stats && stats.login_attempts >= config.auth.maxLoginAttempts) {
+        await db.blockUser(userRecord.id);
+        // Security Alert Email
+        await sendSecurityAlert(
+          {
+            email: username,
+            attempts: stats.login_attempts,
+            ip,
+          },
+          config.transporter,
+          config.ui.loginTitle,
+          config.auth.superuserEmail
+        );
+
+        return res
+          .status(403)
+          .json({ error: "Maximum attempts reached. Account is now blocked." });
+      }
     }
   } catch (e) {
-    console.error("Login DB error:", e);
+    console.error("Login Error:", e);
   }
+
   return res.status(401).send({ error: "Invalid credentials" });
 });
-
 app.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
   if (email === config.auth.username)
@@ -280,14 +328,31 @@ app.post("/api/users", hasRole("admin"), async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+// server.js -> app.put("/api/users/:id", ...)
+
 app.put("/api/users/:id", hasRole("admin"), async (req, res) => {
   try {
+    // [UPDATED] Extract enabled and blocked from the request body
+    const { name, email, role, enabled, blocked } = req.body;
+    
+    // Pass all five fields to the DB service
     await db.updateUser(
       req.params.id,
-      req.body.name,
-      req.body.email,
-      req.body.role
+      name,
+      email,
+      role,
+      enabled,
+      blocked
     );
+    
+    // Log the update for auditing
+    await db.logEvent(
+      req.session.user.name,
+      "User Mgmt",
+      `Updated user security status: ${email}`,
+      { enabled, blocked }
+    );
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1355,9 +1420,11 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("view-expiring-skills", async (days, forceRefresh) => {
-    const protocol = socket.handshake.headers['x-forwarded-proto'] || (socket.request.connection.encrypted ? 'https' : 'http');
-        const host = socket.handshake.headers.host;
-        const dynamicBaseUrl = `${protocol}://${host}`;
+    const protocol =
+      socket.handshake.headers["x-forwarded-proto"] ||
+      (socket.request.connection.encrypted ? "https" : "http");
+    const host = socket.handshake.headers.host;
+    const dynamicBaseUrl = `${protocol}://${host}`;
     try {
       const daysThreshold = parseInt(days) || 30;
       const interval = forceRefresh ? 0 : config.scrapingInterval;
@@ -1432,9 +1499,11 @@ io.on("connection", (socket) => {
 });
 
 async function handleQueueProcessing(socket, targets, days, logger) {
-  const protocol = socket.handshake.headers['x-forwarded-proto'] || (socket.request.connection.encrypted ? 'https' : 'http');
-    const host = socket.handshake.headers.host;
-    const dynamicBaseUrl = `${protocol}://${host}`;
+  const protocol =
+    socket.handshake.headers["x-forwarded-proto"] ||
+    (socket.request.connection.encrypted ? "https" : "http");
+  const host = socket.handshake.headers.host;
+  const dynamicBaseUrl = `${protocol}://${host}`;
   const isDemo = config.appMode === "demo";
   const currentUser = socket.request.session.user.name || "System";
   logger(`\n[DEBUG] --- Notification Process Started by ${currentUser} ---`);
@@ -1460,7 +1529,6 @@ async function handleQueueProcessing(socket, targets, days, logger) {
       trainingMap,
       {}, // empty liveFormsMap for this context
       dynamicBaseUrl
-
     );
     let totalSent = 0;
 

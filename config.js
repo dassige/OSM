@@ -14,6 +14,8 @@ const appMode = process.env.APP_MODE || "production";
 // --- AUTHENTICATION ---
 const auth = {
   sessionSecret: process.env.SESSION_SECRET,
+  maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5,
+  superuserEmail: process.env.SMTP_USER // Alert recipient
 };
 
 if (appMode === "demo") {
