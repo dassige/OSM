@@ -496,12 +496,13 @@
             e.preventDefault();
             const id = document.getElementById('editUserId').value;
 
+            // Construct the payload matching the keys the server now expects
             const payload = {
                 name: document.getElementById('editName').value,
                 email: document.getElementById('editEmail').value,
                 role: document.getElementById('editRole').value,
-                enabled: document.getElementById('editEnabled').checked, // [NEW]
-                blocked: document.getElementById('editBlocked').checked   // [NEW]
+                enabled: document.getElementById('editEnabled').checked,
+                blocked: document.getElementById('editBlocked').checked
             };
 
             try {
@@ -512,15 +513,14 @@
                 });
                 if (res.ok) {
                     closeModal('editUserModal');
-                    loadUsers();
-                    showToast("User updated successfully", "success");
+                    loadUsers(); // Refresh table to show new status badges
+                    showToast("Changes saved successfully", "success");
                 } else {
                     const err = await res.json();
                     showToast('Error: ' + err.error, 'error');
                 }
             } catch (e) { showToast('Network Error', 'error'); }
         });
-
         // --- RESET PASSWORD ---
         function openReset(id, name, email) {
             document.getElementById('resetUserId').value = id;

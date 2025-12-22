@@ -328,14 +328,13 @@ app.post("/api/users", hasRole("admin"), async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-// server.js -> app.put("/api/users/:id", ...)
+
 
 app.put("/api/users/:id", hasRole("admin"), async (req, res) => {
   try {
-    // [UPDATED] Extract enabled and blocked from the request body
+    // Destructure all five fields from the frontend payload
     const { name, email, role, enabled, blocked } = req.body;
     
-    // Pass all five fields to the DB service
     await db.updateUser(
       req.params.id,
       name,
@@ -344,12 +343,11 @@ app.put("/api/users/:id", hasRole("admin"), async (req, res) => {
       enabled,
       blocked
     );
-    
-    // Log the update for auditing
+
     await db.logEvent(
       req.session.user.name,
       "User Mgmt",
-      `Updated user security status: ${email}`,
+      `Updated user status: ${email}`,
       { enabled, blocked }
     );
 
@@ -358,6 +356,7 @@ app.put("/api/users/:id", hasRole("admin"), async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
 app.delete("/api/users/:id", hasRole("admin"), async (req, res) => {
   try {
     const user = await db.getUserById(req.params.id);

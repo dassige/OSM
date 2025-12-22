@@ -87,19 +87,19 @@ async function initDB() {
     // Users
     await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, 
-        email TEXT UNIQUE NOT NULL, 
-        name TEXT, 
-        hash TEXT NOT NULL, 
-        salt TEXT NOT NULL, 
-        role TEXT DEFAULT 'simple',
-        enabled INTEGER DEFAULT 1,
-        blocked INTEGER DEFAULT 0,
-        login_attempts INTEGER DEFAULT 0
+      id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      email TEXT UNIQUE NOT NULL, 
+      name TEXT, 
+      hash TEXT NOT NULL, 
+      salt TEXT NOT NULL, 
+      role TEXT DEFAULT 'simple',
+      enabled INTEGER DEFAULT 1,
+      blocked INTEGER DEFAULT 0,
+      login_attempts INTEGER DEFAULT 0
     );
-`);
+  `);
 
-    // Migration for existing users table
+    // Migrations for existing databases
     try {
       await db.exec(`ALTER TABLE users ADD COLUMN enabled INTEGER DEFAULT 1;`);
     } catch (e) {}
@@ -277,20 +277,20 @@ async function blockUser(userId) {
 async function getUsers() {
   if (!db) await initDB();
   return await db.all(
-    "SELECT id, email, name, role FROM users ORDER BY name ASC"
+    "SELECT id, email, name, role , enabled, blocked, login_attempts FROM users ORDER BY name ASC"
   );
 }
 async function getUserById(id) {
   if (!db) await initDB();
   return await db.get(
-    "SELECT id, email, name, role FROM users WHERE id = ?",
+    "SELECT id, email, name, role , enabled, blocked, login_attempts FROM users WHERE id = ?",
     id
   );
 }
 async function getUserByEmail(email) {
   if (!db) await initDB();
   return await db.get(
-    "SELECT id, email, name, role FROM users WHERE email = ?",
+    "SELECT id, email, name, role , enabled, blocked, login_attemptsFROM users WHERE email = ?",
     email
   );
 }
@@ -317,22 +317,24 @@ async function updateUser(id, name, email, role, enabled, blocked) {
   if (!db) await initDB();
   try {
     await db.run(
-      `UPDATE users SET name = ?, email = ?, role = ?, enabled = ?, blocked = ? WHERE id = ?`,
-      name,
-      email,
-      role,
-      enabled ? 1 : 0,
-      blocked ? 1 : 0,
+      `UPDATE users 
+       SET name = ?, email = ?, role = ?, enabled = ?, blocked = ? 
+       WHERE id = ?`,
+      name, 
+      email, 
+      role, 
+      enabled ? 1 : 0, // Convert booleans to integers for SQLite
+      blocked ? 1 : 0, 
       id
     );
 
-    // Reset attempts if an admin manually unblocks
+    // SECURITY: If manually unblocked, reset their attempt counter
     if (!blocked) {
-      await resetLoginAttempts(id);
+        await resetLoginAttempts(id);
     }
+    return true;
   } catch (e) {
-    if (e.message.includes("UNIQUE constraint"))
-      throw new Error("Email already exists");
+    if (e.message.includes("UNIQUE constraint")) throw new Error("Email already exists");
     throw e;
   }
 }
