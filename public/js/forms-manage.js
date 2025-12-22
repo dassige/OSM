@@ -98,69 +98,40 @@ function initFieldEditor(id) {
 
 function getFormData() {
   const name = document.getElementById("formName").value;
-  const introEditor = tinymce.get("formIntro");
-  // Normalize intro: TinyMCE can sometimes return an empty string or a single break
-  const intro = introEditor ? introEditor.getContent() : "";
+  // Get status from the new editor toggle
+  const status = document.getElementById("formStatusToggle").checked ? 1 : 0;
+  const intro = tinymce.get("formIntro") ? tinymce.get("formIntro").getContent() : "";
 
-  const structure = Array.from(document.querySelectorAll(".field-card")).map(
-    (card) => {
-      const id = card.getAttribute("data-id");
-      const type = card.getAttribute("data-type");
-      const editor = tinymce.get(`editor_${id}`);
-      const description = editor ? editor.getContent() : "";
-      const required = !!card.querySelector(".field-required-check").checked;
+  const structure = Array.from(document.querySelectorAll(".field-card")).map((card) => {
+    const id = card.getAttribute("data-id");
+    const type = card.getAttribute("data-type");
+    const description = tinymce.get(`editor_${id}`) ? tinymce.get(`editor_${id}`).getContent() : "";
+    const required = !!card.querySelector(".field-required-check").checked;
 
-      let options = [];
-      let renderAs = "radio";
-      let correctAnswer = null;
+    let options = [];
+    let renderAs = card.querySelector(".field-render-as")?.value || "radio";
+    let correctAnswer = null;
 
-      if (type === "radio" || type === "checkboxes") {
-        const rows = card.querySelectorAll(".option-row");
-        // Filter out empty labels to match load state
-        options = Array.from(rows)
-          .map((r) => r.querySelector(".option-input").value)
-          .filter((v) => v.trim() !== "");
-
-        const sel = card.querySelector(".field-render-as");
-        if (sel) renderAs = sel.value;
-
-        if (type === "radio") {
-          const selected = Array.from(rows).find(
-            (r) => r.querySelector(".correct-mark-radio")?.checked
-          );
-          correctAnswer = selected
-            ? selected.querySelector(".option-input").value
-            : null;
-        } else {
-          correctAnswer = Array.from(rows)
-            .filter((r) => r.querySelector(".correct-mark-cb")?.checked)
-            .map((r) => r.querySelector(".option-input").value);
-        }
-      } else if (type === "boolean") {
-        const sel = card.querySelector(".field-render-as");
-        if (sel) renderAs = sel.value;
-        const selected = card.querySelector(".bool-correct:checked");
-        correctAnswer = selected ? selected.value : null;
-      } else if (type === "text_multi") {
-        // Normalize empty reference answer to empty string
-        correctAnswer =
-          card.querySelector(".reference-answer-input")?.value || "";
+    if (type === "radio" || type === "checkboxes") {
+      const rows = card.querySelectorAll(".option-row");
+      options = Array.from(rows).map(r => r.querySelector(".option-input").value).filter(v => v.trim() !== "");
+      if (type === "radio") {
+        const selected = Array.from(rows).find(r => r.querySelector(".correct-mark-radio")?.checked);
+        correctAnswer = selected ? selected.querySelector(".option-input").value : null;
+      } else {
+        correctAnswer = Array.from(rows).filter(r => r.querySelector(".correct-mark-cb")?.checked).map(r => r.querySelector(".option-input").value);
       }
-
-      // IMPORTANT: The key order here must match originalFormState in loadEditor exactly
-      return {
-        id,
-        type,
-        description,
-        required,
-        options,
-        renderAs,
-        correctAnswer,
-      };
+    } else if (type === "boolean") {
+      const selected = card.querySelector(".bool-correct:checked");
+      correctAnswer = selected ? selected.value : null;
+    } else if (type === "text_multi") {
+      correctAnswer = card.querySelector(".reference-answer-input")?.value || "";
     }
-  );
 
-  return { name, intro, structure };
+    return { id, type, description, required, options, renderAs, correctAnswer };
+  });
+
+  return { name, status, intro, structure };
 }
 
 function isFormDirty() {
@@ -275,20 +246,32 @@ async function saveForm() {
 
 async function updateStatus(id, enabled) {
   try {
-    await fetch(`/api/forms/${id}`, {
+    const res = await fetch(`/api/forms/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: enabled ? 1 : 0 }),
     });
+
+    if (!res.ok) throw new Error("Server rejected status update");
+
+    // Update Local Cache
     const f = forms.find((x) => x.id === id);
     if (f) f.status = enabled ? 1 : 0;
+
+    // Sync Editor if this is the active form
     if (currentForm && currentForm.id === id) {
       currentForm.status = enabled ? 1 : 0;
+      document.getElementById("formStatusToggle").checked = enabled;
+      // Also update original state status so preview doesn't prompt for save 
+      // just because of a status toggle
+      if (originalFormState) originalFormState.status = enabled ? 1 : 0;
     }
+
+    renderFormList(); // Refresh sidebar visuals
     showToast(`Form ${enabled ? "Enabled" : "Disabled"}`, "success");
   } catch (e) {
-    showToast("Failed to update status", "error");
-    loadForms();
+    showToast("Update Failed: " + e.message, "error");
+    loadForms(); // Revert UI
   }
 }
 
@@ -538,38 +521,20 @@ function loadEditor(form) {
 
   document.getElementById("emptyPanel").style.display = "none";
   document.getElementById("builderPanel").style.display = "flex";
-  renderFormList();
-
-  // Populate UI
-  const nameInput = document.getElementById("formName");
-  nameInput.value = form.name || "";
-  if (tinymce.get("formIntro"))
-    tinymce.get("formIntro").setContent(form.intro || "");
+  
+  // Sync Toggles and Inputs
+  document.getElementById("formName").value = form.name || "";
+  document.getElementById("formStatusToggle").checked = !!form.status;
+  if (tinymce.get("formIntro")) tinymce.get("formIntro").setContent(form.intro || "");
 
   renderFields();
+  renderFormList();
 
-  const btnIcon = document.getElementById("iconToggleAll");
-  if (btnIcon) {
-    btnIcon.style.transform = "rotate(180deg)";
-  }
-
-  // Setup initial state for dirty checking
-  originalFormState = {
-    name: form.name || "",
-    intro: form.intro || "",
-    structure: (form.structure || []).map((f) => ({
-      id: f.id,
-      type: f.type,
-      description: f.description || "",
-      required: !!f.required,
-      options: f.options || [],
-      renderAs: f.renderAs || "radio",
-      // Normalize correctAnswer to null if undefined to match collector
-      correctAnswer: f.correctAnswer !== undefined ? f.correctAnswer : null,
-    })),
-  };
+  // IMPORTANT: Set original state AFTER a delay to ensure TinyMCE/DOM are fully settled
+  setTimeout(() => {
+    originalFormState = getFormData();
+  }, 500);
 }
-
 function addField(type) {
   const newField = {
     id: "fld_" + Date.now().toString(36),

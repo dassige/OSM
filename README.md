@@ -238,6 +238,44 @@ To speed up the creation of new verification questionnaires, you can use AI to a
 
 See the [AI Form Generation Guide](AI_FORM_GENERATION.md) for a ready-to-use prompt and detailed instructions.
 
+## Example Data and Configuration
+
+To facilitate a rapid setup and standardized testing, the application now includes a collection of pre-configured JSON examples located in the `./examples` directory. These files can be imported via the web interface to populate the system with actual FENZ Operational Instructions (OIs) and professionally formatted notification templates.
+
+### 1. Form Examples (`/examples/forms/`)
+
+This directory contains JSON definitions for various skill verification questionnaires. These forms are designed for the **Live Forms** system and represent "online test" verifications.
+
+* **Standard OIs included:**
+* `IS1 - Operational Safety`
+* `G7 - Decontamination`
+* `H7-1 - Clandestine Laboratories`
+* `E3-2 - Respiratory Protection`
+* `IS3 - Working Near Roadways`
+* `...and more`
+
+* **Bulk Import:** You can replace the entire forms database by using the **Import All** tool in the **Forms Manager**.
+* **AI Generation:** A guide and prompt for generating additional form JSONs from FENZ PDFs can be found in `AI_FORM_GENERATION.md`.
+
+### 2. Template Examples (`/examples/templates/`)
+
+These examples provide structured logic for the `mailer.js` and `whatsapp-service.js` modules.
+
+* **Notification Types:**
+* `template_skills.json`: Primary reminders for expiring competencies, including logic for both `row` (with URL) and `rowNoUrl` (for in-person training).
+* `template_accepted.json` / `template_rejected.json`: Automated feedback loops for admin reviews of member submissions, utilizing the `{{custom_comment}}` and `{{url}}` retry variables.
+* `template_newuser.json`: Onboarding credentials for new system administrators.
+
+
+* **Implementation:** These can be imported into the **Templates** editor using the **Import JSON** feature.
+
+### Technical Schema Reference
+
+Both forms and templates utilize a strict JSON schema validated by the backend.
+
+* **Forms:** Managed via the `forms` table in SQLite. Key fields include `structure` (a JSON stringified array of question objects) and `public_id` (a unique UUID for secure public access).
+* **Templates:** Persisted in the `preferences` table as serialized JSON objects.
+
 ## Docker Deployment
 
 1.  **Build and Run:**
