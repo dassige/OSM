@@ -1,6 +1,6 @@
 {
   "name": "fenz-osm",
-  "version": "1.7.12",
+  "version": "1.7.13",
   "description": "FENZ OSM Automation Manager",
   "versionDate": "2025-12-22",
   "author": "Gerardo Dassi",
@@ -22,6 +22,7 @@
     "http": "^0.0.1-security",
     "https": "^1.0.0",
     "https-proxy-agent": "^5.0.1",
+    "joi": "18.0.2",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.4",
     "path": "^0.12.7",
@@ -32,7 +33,6 @@
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "uuid": "^9.0.0",
-    "whatsapp-web.js": "^1.20.3",
-    "joi": "18.0.2"
+    "whatsapp-web.js": "^1.20.3"
   }
 }
