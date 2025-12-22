@@ -1,5 +1,14 @@
 const Joi = require("joi");
+const sanitizeHtml = require("sanitize-html");
 
+// Configuration for allowed HTML in forms and templates
+const sanitizeOptions = {
+  allowedTags: [ 'b', 'i', 'em', 'strong', 'a', 'p', 'ul', 'ol', 'li', 'br', 'h1', 'h2', 'h3' ],
+  allowedAttributes: {
+    'a': [ 'href', 'target', 'rel' ]
+  },
+  allowedSchemes: [ 'http', 'https', 'mailto' ]
+};
 // Schema for a single form object
 const formSchema = Joi.object({
   id: Joi.alternatives()
@@ -36,9 +45,7 @@ const formSchema = Joi.object({
 const bulkFormSchema = Joi.array().items(formSchema).min(1).required();
 
 const validateForm = (req, res, next) => {
-  // For PUT requests, make name and structure optional to allow status-only updates
-  const schema =
-    req.method === "PUT"
+  const schema = req.method === "PUT"
       ? formSchema.fork(["name", "structure"], (s) => s.optional())
       : formSchema;
 
@@ -46,17 +53,26 @@ const validateForm = (req, res, next) => {
     abortEarly: false,
     stripUnknown: true,
   });
-  if (error)
-    return res
-      .status(400)
-      .json({
-        error: "Validation Failed",
-        details: error.details.map((d) => d.message),
-      });
+
+  if (error) return res.status(400).json({ error: "Validation Failed", details: error.details.map((d) => d.message) });
+
+  // --- SANITIZATION STEP ---
+  // Sanitize the main form introduction
+  if (value.intro) {
+    value.intro = sanitizeHtml(value.intro, sanitizeOptions);
+  }
+
+  // Sanitize individual question descriptions
+  if (value.structure) {
+    value.structure = value.structure.map(field => ({
+      ...field,
+      description: sanitizeHtml(field.description, sanitizeOptions)
+    }));
+  }
+
   req.body = value;
   next();
 };
-
 const validateBulkData = (data) => {
   return bulkFormSchema.validate(data, {
     abortEarly: false,

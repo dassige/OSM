@@ -509,7 +509,7 @@
                 currentMembers = await res.json();
                 applySort();
             } catch (err) {
-                document.getElementById('membersTableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Error: ${err.message}</td></tr>`;
+                document.getElementById('membersTableBody').textContent = `<tr><td colspan="7" style="text-align:center; color:red;">Error: ${err.message}</td></tr>`;
             }
         }
 
@@ -534,20 +534,20 @@
             });
             ['name', 'email', 'mobile'].forEach(col => {
                 const icon = document.getElementById(`icon-${col}`);
-                if (icon) { icon.innerHTML = ICON_NONE; icon.classList.remove('active'); }
+                if (icon) { icon.textContent = ICON_NONE; icon.classList.remove('active'); }
             });
             const active = document.getElementById(`icon-${currentSort.column}`);
-            if (active) { active.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC; active.classList.add('active'); }
+            if (active) { active.textContent = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC; active.classList.add('active'); }
             renderTable();
         }
 
         function renderTable() {
             const tbody = document.getElementById('membersTableBody');
-            tbody.innerHTML = '';
+            tbody.textContent = '';
             document.getElementById('selectAllCheckbox').checked = false;
             updateBulkDeleteButton();
             if (currentMembers.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#666;">No members found.</td></tr>`;
+                tbody.textContent = `<tr><td colspan="7" style="text-align:center; color:#666;">No members found.</td></tr>`;
                 return;
             }
             currentMembers.forEach((m, index) => {
@@ -559,7 +559,7 @@
                 const hasEmail = prefs.includes('email') ? 'active' : '';
                 const hasWa = prefs.includes('whatsapp') ? 'active' : '';
 
-                tr.innerHTML = `
+                tr.textContent = `
                     <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()"></td>
                     <td style="text-align: center;">
                         <label class="switch">
@@ -745,7 +745,7 @@
             const listContainer = document.getElementById('osmListContainer');
             const actions = document.getElementById('osmActions');
             const list = document.getElementById('osmMemberList');
-            list.innerHTML = '';
+            list.textContent = '';
             listContainer.style.display = 'none';
             actions.style.display = 'none';
             loading.style.display = 'block';
@@ -757,7 +757,7 @@
                 loading.style.display = 'none';
                 if (discoveredMembers.length === 0) {
                     listContainer.style.display = 'block';
-                    listContainer.innerHTML = '<p style="text-align:center; color:#666; padding-top:20px;">No new unique members found.</p>';
+                    listContainer.textContent = '<p style="text-align:center; color:#666; padding-top:20px;">No new unique members found.</p>';
                     actions.style.display = 'block';
                     actions.querySelector('.btn-success').disabled = true;
                 } else {
@@ -768,7 +768,7 @@
                         const li = document.createElement('li');
                         li.style.padding = "5px 0";
                         li.style.borderBottom = "1px solid #eee";
-                        li.innerHTML = `<span style="color:#333;">${memberName}</span>`;
+                        li.textContent = `<span style="color:#333;">${memberName}</span>`;
                         list.appendChild(li);
                     });
                 }

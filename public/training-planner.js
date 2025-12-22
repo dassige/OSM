@@ -54,7 +54,7 @@ window.switchView = function (view) {
 
 async function loadFutureSessionsList() {
     const container = document.getElementById('listContent');
-    container.innerHTML = '<div class="spinner"></div>';
+    container.textContent = '<div class="spinner"></div>';
     document.getElementById('listPagination').style.display = 'none';
 
     try {
@@ -66,7 +66,7 @@ async function loadFutureSessionsList() {
         renderFutureList();
 
     } catch (e) {
-        container.innerHTML = `<p style="color:red;">Error loading sessions: ${e.message}</p>`;
+        container.textContent = `<p style="color:red;">Error loading sessions: ${e.message}</p>`;
     }
 }
 
@@ -74,7 +74,7 @@ function renderFutureList() {
     const container = document.getElementById('listContent');
 
     if (cachedFutureSessions.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top:20px;">No future training sessions found.</p>';
+        container.textContent = '<p style="text-align:center; color:var(--text-muted); margin-top:20px;">No future training sessions found.</p>';
         document.getElementById('listPagination').style.display = 'none';
         return;
     }
@@ -141,7 +141,7 @@ function renderFutureList() {
         `;
     });
 
-    container.innerHTML = html;
+    container.textContent = html;
 
     // 4. Update Pagination Controls
     const paginationEl = document.getElementById('listPagination');
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const dayRaw = c.trainingDayName.charAt(0).toUpperCase() + c.trainingDayName.slice(1).toLowerCase();
                     const dayPlural = dayRaw.endsWith('s') ? dayRaw : dayRaw + 's';
 
-                    labelEl.innerHTML = `Show only ${dayPlural}<br><span style="font-weight:normal; font-size:0.85em; color:var(--text-muted);">(training day)</span>`;
+                    labelEl.textContent = `Show only ${dayPlural}<br><span style="font-weight:normal; font-size:0.85em; color:var(--text-muted);">(training day)</span>`;
                 }
             }            // Initialize Date Logic using the correct Timezone
             currentStartDate = alignToMonday(getZonedToday());
@@ -335,14 +335,14 @@ function updateExpiryPreference(val) {
 
 function loadExpiringSkills() {
     const list = document.getElementById('skillList');
-    list.innerHTML = '<div class="spinner"></div>';
+    list.textContent = '<div class="spinner"></div>';
     const days = document.getElementById('expiryDays').value;
     socket.emit('view-expiring-skills', days, false);
 }
 
 socket.on('expiring-skills-data', (data) => {
     const list = document.getElementById('skillList');
-    list.innerHTML = '';
+    list.textContent = '';
     skillMembersMap = {};
 
     data.forEach(member => {
@@ -357,7 +357,7 @@ socket.on('expiring-skills-data', (data) => {
     const skillNames = Object.keys(skillMembersMap).sort();
 
     if (skillNames.length === 0) {
-        list.innerHTML = '<p style="color:var(--text-muted); font-style:italic; padding:10px;">No in-person skills expiring in this timeframe.</p>';
+        list.textContent = '<p style="color:var(--text-muted); font-style:italic; padding:10px;">No in-person skills expiring in this timeframe.</p>';
         return;
     }
 
@@ -367,7 +367,7 @@ socket.on('expiring-skills-data', (data) => {
         div.className = 'source-item';
         div.draggable = true;
 
-        div.innerHTML = `
+        div.textContent = `
             <div class="source-name">${name}</div>
             <div class="source-count" title="View ${count} members" 
                   onclick="showMemberPopup('${name.replace(/'/g, "\\'")}')">
@@ -391,10 +391,10 @@ function showMemberPopup(skillName) {
     const modal = document.getElementById('memberModal');
 
     titleEl.textContent = skillName;
-    listEl.innerHTML = '';
+    listEl.textContent = '';
 
     if (members.length === 0) {
-        listEl.innerHTML = '<li style="color:var(--text-muted);">No members found.</li>';
+        listEl.textContent = '<li style="color:var(--text-muted);">No members found.</li>';
     } else {
         members.sort().forEach(member => {
             const li = document.createElement('li');
@@ -410,7 +410,7 @@ function showMemberPopup(skillName) {
 function renderCalendar() {
     if (!currentStartDate) return;
     const grid = document.getElementById('calendarGrid');
-    grid.innerHTML = '';
+    grid.textContent = '';
     const options = { month: 'short', day: 'numeric' };
     const labelStart = new Date(currentStartDate);
     const labelEnd = new Date(currentStartDate);
@@ -495,7 +495,7 @@ async function loadSessions() {
     try {
         const res = await fetch(`/api/training-sessions?start=${startStr}&end=${endStr}`);
         const sessions = await res.json();
-        document.querySelectorAll('.day-content').forEach(el => el.innerHTML = '');
+        document.querySelectorAll('.day-content').forEach(el => el.textContent = '');
         sessions.forEach(sess => {
             const container = document.getElementById(`day-${sess.date}`);
             if (container) {
@@ -503,7 +503,7 @@ async function loadSessions() {
                 card.className = 'session-card';
                 const safeName = sess.skill_name.replace(/'/g, "\\'");
                 // [UPDATED] Pass extra info to deleteSession
-                card.innerHTML = `
+                card.textContent = `
                     <span class="session-delete" onclick="deleteSession(${sess.id}, '${safeName}', '${sess.date}'); event.stopPropagation();" title="Remove Session">&times;</span>
                     <div style="cursor:pointer;" onclick="showMemberPopup('${safeName}')" title="View expiring members">
                         <strong>${sess.skill_name}</strong>

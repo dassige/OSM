@@ -6,6 +6,7 @@ const session = require("express-session");
 const multer = require("multer");
 const fs = require("fs");
 const crypto = require("crypto");
+const helmet = require("helmet");
 
 // --- Services & Config ---
 const config = require("./config.js");
@@ -51,6 +52,26 @@ const sessionMiddleware = session({
 app.use(sessionMiddleware);
 app.use(express.json());
 
+// Enable Security Headers
+// Enable Security Headers with refined CSP
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        "default-src": ["'self'"],
+        "script-src": [
+          "'self'",
+          "'unsafe-inline'", // Temporarily allowed to fix current blockages
+          "https://cdnjs.cloudflare.com",
+          "https://cdn.jsdelivr.net",
+        ],
+        "style-src": ["'self'", "'unsafe-inline'"],
+        "img-src": ["'self'", "data:", "https://storage.googleapis.com"],
+        "connect-src": ["'self'"], // Required for Socket.IO and API calls
+      },
+    },
+  })
+);
 // Initialize DB & Proxy
 db.initDB().catch((err) => console.error("DB Init Error:", err));
 

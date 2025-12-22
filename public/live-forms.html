@@ -527,12 +527,12 @@
                 const mRes = await fetch('/api/members');
                 const members = await mRes.json();
                 const mSel = document.getElementById('filterMember');
-                members.forEach(m => mSel.innerHTML += `<option value="${m.id}">${m.name}</option>`);
+                members.forEach(m => mSel.textContent += `<option value="${m.id}">${m.name}</option>`);
 
                 const sRes = await fetch('/api/skills');
                 const skills = await sRes.json();
                 const sSel = document.getElementById('filterSkill');
-                skills.forEach(s => sSel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+                skills.forEach(s => sSel.textContent += `<option value="${s.id}">${s.name}</option>`);
             } catch (e) { }
 
             // [NEW] Apply URL Parameters
@@ -563,7 +563,7 @@
             params.append('page', currentPage);
             params.append('limit', currentLimit);
 
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading...</td></tr>';
+            document.getElementById('tableBody').textContent = '<tr><td colspan="7" style="text-align:center;">Loading...</td></tr>';
 
             try {
                 const res = await fetch(`/api/live-forms?${params.toString()}`);
@@ -576,7 +576,7 @@
                 applySort();
                 updatePagination();
             } catch (e) {
-                document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Error: ${e.message}</td></tr>`;
+                document.getElementById('tableBody').textContent = `<tr><td colspan="7" style="text-align:center; color:red;">Error: ${e.message}</td></tr>`;
             }
         }
 
@@ -710,19 +710,19 @@
             const columns = ['member_name', 'skill_name', 'tries', 'form_sent_datetime', 'form_submitted_datetime', 'form_status'];
             columns.forEach(col => {
                 const iconSpan = document.getElementById(`icon-${col}`);
-                if (iconSpan) iconSpan.innerHTML = ICON_NONE;
+                if (iconSpan) iconSpan.textContent = ICON_NONE;
             });
             const activeIcon = document.getElementById(`icon-${currentSort.column}`);
-            if (activeIcon) activeIcon.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC;
+            if (activeIcon) activeIcon.textContent = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC;
             renderTable();
         }
 
         function renderTable() {
             const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
+            tbody.textContent = '';
 
             if (currentData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#666;">No records found.</td></tr>';
+                tbody.textContent = '<tr><td colspan="7" style="text-align:center; color:#666;">No records found.</td></tr>';
                 return;
             }
 
@@ -762,7 +762,7 @@
                     `;
                 }
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
+                tr.textContent = `
                         <td>${row.member_name || 'Unknown'}</td>
                         <td>${row.skill_name || 'Unknown'}</td>
                         <td style="text-align:center;">${row.tries || 1}</td>

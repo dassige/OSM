@@ -680,7 +680,7 @@
 
                     // 2. Populate Event Types (Dynamic Badges)
                     const typeContainer = document.getElementById('typeToggles');
-                    typeContainer.innerHTML = '';
+                    typeContainer.textContent = '';
 
                     if (data.types && data.types.length > 0) {
                         data.types.forEach(type => {
@@ -696,7 +696,7 @@
                             typeContainer.appendChild(badge);
                         });
                     } else {
-                        typeContainer.innerHTML = '<span style="font-size:13px; color:var(--text-muted);">No events recorded yet.</span>';
+                        typeContainer.textContent = '<span style="font-size:13px; color:var(--text-muted);">No events recorded yet.</span>';
                     }
                 }
             } catch (e) { console.error(e); }
@@ -720,7 +720,7 @@
         async function applyFilters(page = 1) {
             currentPage = page;
             const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Loading...</td></tr>';
+            tbody.textContent = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Loading...</td></tr>';
 
             const activeTypes = Array.from(document.querySelectorAll('.type-badge.active')).map(b => b.getAttribute('data-type'));
             const user = document.getElementById('userFilter').value;
@@ -741,7 +741,7 @@
                 renderTable(data.logs);
                 updatePagination(data.total, data.page, data.limit);
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error loading events: ${err.message}</td></tr>`;
+                tbody.textContent = `<tr><td colspan="5" style="color:red; text-align:center;">Error loading events: ${err.message}</td></tr>`;
             }
         }
 
@@ -762,10 +762,10 @@
 
         function renderTable(events) {
             const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
+            tbody.textContent = '';
 
             if (!events || events.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-muted);">No events matching criteria.</td></tr>';
+                tbody.textContent = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-muted);">No events matching criteria.</td></tr>';
                 return;
             }
 
@@ -773,10 +773,10 @@
                 const tr = document.createElement('tr');
                 const btn = document.createElement('button');
                 btn.className = 'btn-icon';
-                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+                btn.textContent = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
                 btn.onclick = () => showModal(evt);
 
-                tr.innerHTML = `
+                tr.textContent = `
                     <td data-label="Datetime">${formatDate(evt.timestamp)}</td>
                     <td data-label="User"><strong>${evt.user}</strong></td>
                     <td data-label="Event Type"><span class="badge ${getBadgeClass(evt.event_type)}">${evt.event_type}</span></td>

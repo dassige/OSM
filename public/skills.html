@@ -300,16 +300,16 @@
             const modal = document.getElementById('formSelectionModal');
             const list = document.getElementById('formSelectionList');
             modal.style.display = 'block';
-            list.innerHTML = '<div class="spinner" style="margin:20px auto;"></div>';
+            list.textContent = '<div class="spinner" style="margin:20px auto;"></div>';
             
             try {
                 const res = await fetch('/api/forms');
                 const forms = await res.json();
                 currentForms = forms; // Update cache
                 
-                list.innerHTML = '';
+                list.textContent = '';
                 if(forms.length === 0) {
-                    list.innerHTML = '<div style="padding:15px; text-align:center;">No forms found.</div>';
+                    list.textContent = '<div style="padding:15px; text-align:center;">No forms found.</div>';
                     return;
                 }
                 
@@ -325,7 +325,7 @@
                     const currentId = document.getElementById('selectedFormId').value;
                     if(f.public_id === currentId) row.style.backgroundColor = '#e9f7ef';
 
-                    row.innerHTML = `<strong>${f.name}</strong> <span style="font-size:0.8em; color:#666;">${f.status ? 'Active' : 'Disabled'}</span>`;
+                    row.textContent = `<strong>${f.name}</strong> <span style="font-size:0.8em; color:#666;">${f.status ? 'Active' : 'Disabled'}</span>`;
                     
                     row.onclick = () => {
                         document.getElementById('selectedFormId').value = f.public_id;
@@ -336,7 +336,7 @@
                     };
                     list.appendChild(row);
                 });
-            } catch(e) { list.innerHTML = 'Error loading forms'; }
+            } catch(e) { list.textContent = 'Error loading forms'; }
         }
 
         async function reloadSkills() {
@@ -352,10 +352,10 @@
 
         function renderTable() {
             const tbody = document.getElementById('skillsTableBody');
-            tbody.innerHTML = '';
+            tbody.textContent = '';
             
             if (currentSkills.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No skills found.</td></tr>`;
+                tbody.textContent = `<tr><td colspan="6" style="text-align:center;">No skills found.</td></tr>`;
                 return;
             }
 
@@ -374,7 +374,7 @@
                 const tr = document.createElement('tr');
                 tr.style.opacity = s.enabled ? '1' : '0.6';
                 
-                tr.innerHTML = `
+                tr.textContent = `
                     <td class="cb-col"><input type="checkbox" class="skill-checkbox" value="${s.id}" onchange="updateBulkDeleteButton()"></td>
                     <td style="text-align:center;"><label class="switch"><input type="checkbox" ${s.enabled?'checked':''} onchange="toggleSkillEnabled(${s.id}, this.checked)"><span class="slider"></span></label></td>
                     <td>${s.name}</td>
@@ -521,10 +521,10 @@
             // Update icons
             ['name', 'critical_skill', 'enabled', 'url'].forEach(col => {
                 const icon = document.getElementById(`icon-${col}`);
-                if (icon) { icon.innerHTML = ICON_NONE; icon.classList.remove('active'); }
+                if (icon) { icon.textContent = ICON_NONE; icon.classList.remove('active'); }
             });
             const active = document.getElementById(`icon-${currentSort.column}`);
-            if (active) { active.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC; active.classList.add('active'); }
+            if (active) { active.textContent = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC; active.classList.add('active'); }
             
             renderTable();
         }
@@ -610,7 +610,7 @@
             const listContainer = document.getElementById('osmListContainer');
             const actions = document.getElementById('osmActions');
             const list = document.getElementById('osmSkillList');
-            list.innerHTML = '';
+            list.textContent = '';
             listContainer.style.display = 'none';
             actions.style.display = 'none';
             loading.style.display = 'block';
@@ -622,7 +622,7 @@
                 loading.style.display = 'none';
                 if (discoveredSkills.length === 0) {
                     listContainer.style.display = 'block';
-                    listContainer.innerHTML = '<p style="text-align:center; color:#666; padding-top:20px;">No new unique skills found.</p>';
+                    listContainer.textContent = '<p style="text-align:center; color:#666; padding-top:20px;">No new unique skills found.</p>';
                     actions.style.display = 'block';
                     actions.querySelector('.btn-success').disabled = true;
                 } else {
@@ -633,7 +633,7 @@
                         const li = document.createElement('li');
                         li.style.padding = "5px 0";
                         li.style.borderBottom = "1px solid #eee";
-                        li.innerHTML = `<span style="color:#333;">${skillName}</span>`;
+                        li.textContent = `<span style="color:#333;">${skillName}</span>`;
                         list.appendChild(li);
                     });
                 }
