@@ -290,7 +290,7 @@ async function getUserById(id) {
 async function getUserByEmail(email) {
   if (!db) await initDB();
   return await db.get(
-    "SELECT id, email, name, role , enabled, blocked, login_attemptsFROM users WHERE email = ?",
+    "SELECT id, email, name, role , enabled, blocked, login_attempts FROM users WHERE email = ?",
     email
   );
 }

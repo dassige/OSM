@@ -17,7 +17,8 @@ const {
   sendNotification,
   sendPasswordReset,
   sendNewAccountNotification,
-  sendAccountDeletionNotification,
+  sendAccountDeletionNotification, 
+  sendSecurityAlert
 } = require("./services/mailer");
 const whatsappService = require("./services/whatsapp-service");
 const reportService = require("./services/report-service");

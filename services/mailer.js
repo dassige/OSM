@@ -196,7 +196,7 @@ async function sendAccountDeletionNotification(email, name, transporter, appName
     console.log(`[SMTP] Deletion notification sent to ${email}`);
 }
 
-// services/mailer.js
+
 async function sendSecurityAlert(details, transporter, appName, superEmail) {
     const subject = `SECURITY ALERT: User Blocked on ${appName}`;
     const body = `

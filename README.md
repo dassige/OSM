@@ -100,6 +100,7 @@ Open the `.env` file and configure the following parameters:
   * `APP_USERNAME`: The username for the immutable Super Admin (e.g., `admin`).
   * `APP_PASSWORD`: A strong password for the Super Admin.
   * `SESSION_SECRET`: A long, random string used to encrypt session cookies.
+  * `MAX_LOGIN_ATTEMPTS`: Maximum number of failing login attempt before a user is blocked and a notification is sent to the super user (default 5).
 
 #### **Operation Mode**
 

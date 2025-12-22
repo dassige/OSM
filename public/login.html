@@ -190,7 +190,8 @@
             <button type="submit" id="loginBtn">Sign In</button>
             <div id="errorMsg" class="error">Invalid credentials</div>
         </form>
-        <br><div id="appVersionDisplay" style="font-size: 11px; color: #999; margin-top: -10px; margin-bottom: 20px;">
+        <br>
+        <div id="appVersionDisplay" style="font-size: 11px; color: #999; margin-top: -10px; margin-bottom: 20px;">
             Version: <span id="disp-version">Loading...</span>
         </div>
         <a class="forgot-link" onclick="openForgotModal()">Forgot Password?</a>
@@ -255,7 +256,8 @@
             })
             .catch(err => console.error("Failed to load UI config:", err));
 
-        // Login Logic
+
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -278,7 +280,23 @@
                     window.location.href = '/';
                     sessionStorage.removeItem('hasShownReviewModal');
                 } else {
-                    errorMsg.textContent = "Invalid credentials";
+                    // [NEW] Extract the specific error message from the backend response
+                    const data = await response.json();
+
+                    if (response.status === 403) {
+                        // [NEW] Handle specific security status messages
+                        if (data.error && data.error.includes("disabled")) {
+                            errorMsg.textContent = "User DISABLED";
+                        } else if (data.error && data.error.includes("blocked")) {
+                            errorMsg.textContent = "User BLOCKED. Contact the administrator";
+                        } else {
+                            errorMsg.textContent = data.error || "Access Denied";
+                        }
+                    } else {
+                        // Fallback for 401 and other errors
+                        errorMsg.textContent = "Invalid credentials";
+                    }
+
                     errorMsg.style.display = 'block';
                     btn.disabled = false;
                     btn.textContent = "Sign In";
@@ -291,7 +309,6 @@
                 btn.textContent = "Sign In";
             }
         });
-
         // Forgot Password Logic
         function openForgotModal() { document.getElementById('forgotModal').style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
