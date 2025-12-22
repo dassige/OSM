@@ -522,15 +522,20 @@ function loadEditor(form) {
   document.getElementById("emptyPanel").style.display = "none";
   document.getElementById("builderPanel").style.display = "flex";
   
-  // Sync Toggles and Inputs
-  document.getElementById("formName").value = form.name || "";
+  // 1. Sync Toggles and Inputs
+  const nameInput = document.getElementById("formName");
+  nameInput.value = form.name || "";
+  
+  // [FIX] Manually recalculate height for long names on load
+  nameInput.style.height = ''; 
+  nameInput.style.height = nameInput.scrollHeight + 'px';
+
   document.getElementById("formStatusToggle").checked = !!form.status;
   if (tinymce.get("formIntro")) tinymce.get("formIntro").setContent(form.intro || "");
 
   renderFields();
   renderFormList();
 
-  // IMPORTANT: Set original state AFTER a delay to ensure TinyMCE/DOM are fully settled
   setTimeout(() => {
     originalFormState = getFormData();
   }, 500);

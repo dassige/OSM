@@ -408,7 +408,8 @@
 
                 <div id="panel-skills-wa" style="display:none;">
                     <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>,
-                        <code>_italic_</code>, <code>~strike~</code>.</div>
+                        <code>_italic_</code>, <code>~strike~</code>.
+                    </div>
 
                     <div class="checkbox-group"><input type="checkbox" id="waFilterNoUrl"><label
                             for="waFilterNoUrl">Include only skills with Form URL?</label></div>
@@ -440,6 +441,13 @@
                                 <div class="draggable-item" draggable="true" data-val="url">Form URL</div>
                             </div>
                             <div class="wa-input-wrapper form-group">
+                                <div class="wa-toolbar">
+                                    <button type="button" class="wa-btn" onclick="formatText('waRow', '*')">B</button>
+                                    <button type="button" class="wa-btn" onclick="formatText('waRow', '_')"
+                                        style="font-style:italic;">I</button>
+                                    <button type="button" class="wa-btn" onclick="formatText('waRow', '~')"
+                                        style="text-decoration:line-through;">S</button>
+                                </div>
                                 <textarea id="waRow" class="droppable-input" rows="3"></textarea>
                             </div>
                         </div>
@@ -452,7 +460,14 @@
                                     style="border-color:#20c997; color:#20c997;">Next Planned</div>
                             </div>
                             <div class="wa-input-wrapper form-group">
-                                <textarea id="waRowNoUrl" class="droppable-input" rows="3"></textarea>
+                                <div class="wa-toolbar">
+                                    <button type="button" class="wa-btn"
+                                        onclick="formatText('waRowNoUrl', '*')">B</button>
+                                    <button type="button" class="wa-btn" onclick="formatText('waRowNoUrl', '_')"
+                                        style="font-style:italic;">I</button>
+                                    <button type="button" class="wa-btn" onclick="formatText('waRowNoUrl', '~')"
+                                        style="text-decoration:line-through;">S</button>
+                                </div> <textarea id="waRowNoUrl" class="droppable-input" rows="3"></textarea>
                             </div>
                         </div>
                     </div>
@@ -500,7 +515,8 @@
 
                 <div id="panel-accepted-wa" style="display:none;">
                     <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>,
-                        <code>_italic_</code>, <code>~strike~</code>.</div>
+                        <code>_italic_</code>, <code>~strike~</code>.
+                    </div>
                     <div class="form-group wa-input-wrapper">
                         <label>Message Body</label>
                         <div class="palette-container" style="margin-bottom:5px;">
@@ -510,6 +526,13 @@
                             <div class="draggable-item" draggable="true" data-val="skill">Skill Name</div>
                             <div class="draggable-item" draggable="true" data-val="custom_comment"
                                 style="border-color:#17a2b8; color:#17a2b8;">Custom Comment</div>
+                        </div>
+                        <div class="wa-toolbar">
+                            <button type="button" class="wa-btn" onclick="formatText('acceptedWaBody', '*')">B</button>
+                            <button type="button" class="wa-btn" onclick="formatText('acceptedWaBody', '_')"
+                                style="font-style:italic;">I</button>
+                            <button type="button" class="wa-btn" onclick="formatText('acceptedWaBody', '~')"
+                                style="text-decoration:line-through;">S</button>
                         </div>
                         <textarea id="acceptedWaBody" class="droppable-input" rows="4"></textarea>
                     </div>
@@ -586,7 +609,8 @@
 
                 <div id="panel-rejected-wa" style="display:none;">
                     <div class="wa-note"><strong>WhatsApp Formatting:</strong> Use <code>*bold*</code>,
-                        <code>_italic_</code>, <code>~strike~</code>.</div>
+                        <code>_italic_</code>, <code>~strike~</code>.
+                    </div>
 
                     <div class="palette-container" style="margin-bottom:5px;">
                         <span class="palette-label">Drag variables:</span>
@@ -603,6 +627,16 @@
                         <div style="flex:1;">
                             <label style="font-weight:bold; color:#28a745;">Message Body (With Retry Link)</label>
                             <div class="wa-input-wrapper form-group">
+                                <div class="wa-toolbar">
+                                    <button type="button" class="wa-btn"
+                                        onclick="formatText('rejectedWaBodyRetry', '*')">B</button>
+                                    <button type="button" class="wa-btn"
+                                        onclick="formatText('rejectedWaBodyRetry', '_')"
+                                        style="font-style:italic;">I</button>
+                                    <button type="button" class="wa-btn"
+                                        onclick="formatText('rejectedWaBodyRetry', '~')"
+                                        style="text-decoration:line-through;">S</button>
+                                </div>
                                 <textarea id="rejectedWaBodyRetry" class="droppable-input" rows="4"
                                     placeholder="Your submission for {{skill}} was rejected. Try again: {{url}}"></textarea>
                             </div>
@@ -610,6 +644,16 @@
                         <div style="flex:1;">
                             <label style="font-weight:bold; color:#6c757d;">Message Body (Simple)</label>
                             <div class="wa-input-wrapper form-group">
+                                <div class="wa-toolbar">
+                                    <button type="button" class="wa-btn"
+                                        onclick="formatText('rejectedWaBodySimple', '*')">B</button>
+                                    <button type="button" class="wa-btn"
+                                        onclick="formatText('rejectedWaBodySimple', '_')"
+                                        style="font-style:italic;">I</button>
+                                    <button type="button" class="wa-btn"
+                                        onclick="formatText('rejectedWaBodySimple', '~')"
+                                        style="text-decoration:line-through;">S</button>
+                                </div>
                                 <textarea id="rejectedWaBodySimple" class="droppable-input" rows="4"
                                     placeholder="Your submission for {{skill}} was rejected. Contact admin."></textarea>
                             </div>

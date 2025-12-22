@@ -120,6 +120,11 @@
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
+            /* [FIX] Symmetric padding to align buttons with header text */
+            padding: 10px 20px; 
+            /* Optional: subtle background to differentiate from content area */
+            background: var(--bg-hover);
+            border-bottom: 1px solid var(--border-color);
         }
 
         #formName {
@@ -474,12 +479,12 @@
                     <div
                         style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; width: 100%;">
                         <div style="flex: 1;">
-                            <textarea id="formName" placeholder="Form Name" rows="1" style="font-size: 24px; font-weight: bold; width: 100%; border: none; background: transparent; 
-                       padding: 5px; border-bottom: 1px dashed var(--border-color); color: var(--text-main); 
-                       resize: none; overflow: hidden; font-family: inherit; line-height: 1.4; 
-                       display: block; min-height: 36px; white-space: pre-wrap; word-wrap: break-word;"
-                                oninput="this.style.height='';this.style.height=this.scrollHeight+'px'"></textarea>
-                        </div>
+                            <textarea id="formName" placeholder="Form Name" rows="1" 
+                                style="font-size: 24px; font-weight: bold; width: 100%; border: none; background: transparent; 
+                                    padding: 5px; border-bottom: 1px dashed var(--border-color); color: var(--text-main); 
+                                    resize: none; overflow: hidden; font-family: inherit; line-height: 1.4; 
+                                    display: block; min-height: 36px; height: auto; white-space: pre-wrap; word-wrap: break-word;"
+                                oninput="this.style.height='';this.style.height=this.scrollHeight+'px'"></textarea>                        </div>
                         <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 10px;">
                             <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Active</span>
                             <label class="switch">
@@ -615,28 +620,28 @@
                 <div class="code-block"
                     style="background:#f8f9fa; padding:15px; border-radius:4px; border:1px solid #ddd; font-family:monospace; font-size:12px; white-space:pre-wrap; cursor:pointer; margin: 15px 0;"
                     onclick="copyAiPrompt()" title="Click to copy">
-                    **Role:** You are an expert technical analyst for Fire and Emergency New Zealand (FENZ).
+**Role:** You are an expert technical analyst for Fire and Emergency New Zealand (FENZ).
 
-                    **Task:** Analyze the attached document(s) and generate a comprehensive skill verification
-                    questionnaire in JSON format.
+**Task:** Analyze the attached document(s) and generate a comprehensive skill verification
+questionnaire in JSON format.
 
-                    **JSON Schema Specification:**
-                    The output must be a single JSON object with these keys:
-                    - `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
-                    - `name`: Concise title for the form (e.g., "OI (IS1) - Operational Safety").
-                    - `intro`: Brief HTML introduction explaining the purpose.
-                    - `structure`: An array of question objects, each containing:
-                    - `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
-                    - `type`: One of: `text_multi` (Paragraph), `radio` (Single choice), `checkboxes` (Multiple
-                    response), or `boolean` (Yes/No).
-                    - `description`: The question text (HTML allowed).
-                    - `required`: Boolean (set to `true`).
-                    - `options`: Array of strings (for `radio` and `checkboxes` only).
-                    - `renderAs`: String (`radio` or `dropdown`).
-                    - `correctAnswer`: String (or Array for checkboxes) representing the accurate response based on
-                    the document.
+**JSON Schema Specification:**
+The output must be a single JSON object with these keys:
+- `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
+- `name`: Concise title for the form (e.g., "OI (IS1) - Operational Safety").
+- `intro`: Brief HTML introduction explaining the purpose.
+- `structure`: An array of question objects, each containing:
+    - `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
+    - `type`: One of: `text_multi` (Paragraph), `radio` (Single choice), `checkboxes` (Multiple
+    response), or `boolean` (Yes/No).
+    - `description`: The question text (HTML allowed).
+    - `required`: Boolean (set to `true`).
+    - `options`: Array of strings (for `radio` and `checkboxes` only).
+    - `renderAs`: String (`radio` or `dropdown`).
+    - `correctAnswer`: String (or Array for checkboxes) representing the accurate response based on
+the document.
 
-                    **Constraint:** Provide ONLY the raw JSON object. No conversational text.
+**Constraint:** Provide ONLY the raw JSON object. No conversational text.
                 </div>
                 <p style="font-size: 0.85em; color: #666;"><em>Tip: Clicking the box above copies the prompt. Paste
                         it into an AI chat and upload your source PDF/OI.</em></p>

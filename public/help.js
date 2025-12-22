@@ -3,41 +3,54 @@
  */
 const helpContent = {
     // --- Dashboard (index.html or /) ---
-    "index": {
-        title: "Dashboard Help",
+"index": {
+        title: "Dashboard Management Help",
         body: `
-            <p><strong>Overview:</strong> This dashboard shows all members with skills expiring within the threshold (default 30 days).</p>
-            <ul>
-                <li><strong>Days to Expiry:</strong> Change this number and click 'Reload' to see skills expiring further in the future.</li>
-                <li><strong>Reload Expiring Skills:</strong> Fetches the latest data from the OSM Dashboard.</li>
-                <li><strong>Send Notifications:</strong> Select the <strong>Email</strong> or <strong>WhatsApp</strong> checkboxes for members and click 'Send Notifications' to process them in bulk.
-                    <br><em>Note: The default selection for each member is determined by their configured <strong>Notification Preferences</strong> (set in Manage Members).</em>
-                    <br><em><strong>Demo Mode:</strong> Notification logic is fully simulated. Internal records and logs are created, but no external messages are sent.</em>
-                </li>
-                <li><strong>Quick Actions:</strong> Use the round <span style="background:#007bff; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✉</span> or <span style="background:#25D366; color:white; border-radius:50%; padding:0 5px; font-size:0.8em;">✆</span> buttons to send a single reminder immediately.</li>
-                <li><strong>Filters:</strong> Use the toggle buttons at the top right of the table:
-                    <ul>
-                        <li><strong>Hide Empty:</strong> Hides members who have no expiring skills listed.</li>
-                        <li><strong>Has Form Only:</strong> Hides skills that do not have a configured Online Form URL.</li>
-                        <li><strong>Expired Only:</strong> Shows only skills that have already passed their due date.</li>
-                    </ul>
-                </li>            
-            </ul>
-            <p><em>Note:</em> Skills in <strong>bold</strong> are Critical. 
-            <span style="display: inline-flex; align-items: center; vertical-align: bottom;">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #007bff;">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-            </span> indicates a direct form link is available.
-            Dates highlighted in <span style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red</span> are overdue.</p>
+            <p><strong>Overview:</strong> The dashboard is your primary command center for tracking the Operational Skills Maintenance (OSM) readiness of your brigade. It identifies members with competencies that are either already expired or due to expire within your chosen timeframe.</p>
             
-            <div style="background-color: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; border: 1px solid #ffeeba; color: #856404; font-size: 0.9em;">
-                <strong>Demo Mode Note:</strong><br>
-                If running in Demo Mode, the data shown is static (from a local file). However, the <strong>Due Dates</strong> are automatically adjusted to appear relative to today's date, allowing you to effectively test the expiry logic.
+            <h3>1. Data Synchronization</h3>
+            <ul>
+                <li><strong>Days to Expiry:</strong> Enter a value (e.g., 30 or 60 days) to set the look-ahead window. Members with skills expiring after this window will be hidden.</li>
+                <li><strong>Reload Data:</strong> Fetches fresh data from the OSM Dashboard. By default, the system caches data for 60 minutes to optimize performance, but clicking this button performs a live refresh.</li>
+            </ul>
+
+            <h3>2. Notification Workflow</h3>
+            <ul>
+                <li><strong>Bulk Reminders:</strong> Select the <strong>Email</strong> or <strong>WhatsApp</strong> checkboxes for multiple members. The "Send Notifications" button activates once at least one action is selected.</li>
+                <li><strong>Member Defaults:</strong> Checkboxes are automatically pre-filled based on each member's <em>Notification Preferences</em> (configured in Manage Members). Use the <strong>Reset Icons</strong> (↺) in the header to return all checkboxes to these member-specific defaults.</li>
+                <li><strong>Immediate Send:</strong> Click the small circular icons (<span style="color:#6f42c1;">✉</span> or <span style="color:#25D366;">✆</span>) to bypass the bulk queue and send a reminder to a specific member immediately.</li>
+            </ul>
+
+            <h3>3. Live Form Tracking</h3>
+            <p>The system monitors the status of internal verification forms built in the Manager:</p>
+            <ul style="list-style: none; padding-left: 0;">
+                <li style="margin-bottom: 8px;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" style="color: #007bff; margin-right: 8px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <strong>Form Available:</strong> This skill is linked to an online test.
+                </li>
+                <li style="margin-bottom: 8px;">
+                    <span class="status-circle sent" style="width:18px; height:18px; margin-right:8px; font-size:10px;">✈</span>
+                    <strong>Sent:</strong> A unique, secure link has been generated and delivered to the member.
+                </li>
+                <li style="margin-bottom: 8px;">
+                    <span class="status-circle submitted" style="width:18px; height:18px; margin-right:8px; font-size:10px;">👁</span>
+                    <strong>Submitted:</strong> The member completed the test. <strong>Admin Review</strong> is required in the <a href="live-forms.html" style="color:inherit; text-decoration:underline;">Live Forms</a> panel.
+                </li>
+                <li>
+                    <span class="status-circle accepted" style="width:18px; height:18px; margin-right:8px; font-size:10px;">✓</span>
+                    <strong>Accepted:</strong> Verification is complete and approved.
+                </li>
+            </ul>
+
+            <div style="background-color: #e8f0fe; padding: 15px; border-radius: 6px; border: 1px solid #b8d4fe; margin-top: 20px;">
+                <h3 style="margin-top:0; color: #1a73e8;">🛠️ Demo Mode</h3>
+                <p style="margin-bottom: 0;">When <code>APP_MODE=demo</code> is active, the system runs in a safe, restricted state:</p>
+                <ul style="margin-top: 10px;">
+                    <li><strong>Sandboxed Data:</strong> Uses <code>demo.db</code>. Your production member and skill lists are never touched.</li>
+                    <li><strong>Static Scraping:</strong> Data is read from a local file (<em>Star Wars Volunteers</em>) instead of the real FENZ website.</li>
+                    <li><strong>Dynamic Dates:</strong> The system automatically shifts dates in the demo file to be relative to <strong>Today</strong>, so you can test expiry logic regardless of when the demo was created.</li>
+                    <li><strong>Simulated Comms:</strong> Notification logs are created, but no actual Emails or WhatsApp messages are transmitted.</li>
+                </ul>
             </div>
         `
     },
