@@ -1355,6 +1355,9 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("view-expiring-skills", async (days, forceRefresh) => {
+    const protocol = socket.handshake.headers['x-forwarded-proto'] || (socket.request.connection.encrypted ? 'https' : 'http');
+        const host = socket.handshake.headers.host;
+        const dynamicBaseUrl = `${protocol}://${host}`;
     try {
       const daysThreshold = parseInt(days) || 30;
       const interval = forceRefresh ? 0 : config.scrapingInterval;
@@ -1391,7 +1394,8 @@ io.on("connection", (socket) => {
         dbSkills,
         daysThreshold,
         trainingMap,
-        liveFormsMap
+        liveFormsMap,
+        dynamicBaseUrl
       );
 
       const results = processedMembers.map((m) => ({
@@ -1428,6 +1432,9 @@ io.on("connection", (socket) => {
 });
 
 async function handleQueueProcessing(socket, targets, days, logger) {
+  const protocol = socket.handshake.headers['x-forwarded-proto'] || (socket.request.connection.encrypted ? 'https' : 'http');
+    const host = socket.handshake.headers.host;
+    const dynamicBaseUrl = `${protocol}://${host}`;
   const isDemo = config.appMode === "demo";
   const currentUser = socket.request.session.user.name || "System";
   logger(`\n[DEBUG] --- Notification Process Started by ${currentUser} ---`);
@@ -1450,7 +1457,10 @@ async function handleQueueProcessing(socket, targets, days, logger) {
       rawData,
       dbSkills,
       days,
-      trainingMap
+      trainingMap,
+      {}, // empty liveFormsMap for this context
+      dynamicBaseUrl
+
     );
     let totalSent = 0;
 

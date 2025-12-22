@@ -115,6 +115,9 @@ Open the `.env` file and configure the following parameters:
   * `APP_TIMEZONE`: The timezone used for date calculations (e.g., `Pacific/Auckland`). Defaults to NZ time.
   * `APP_LOCALE`: The locale used for date/time formatting strings (e.g., `en-NZ`, `en-US`). Defaults to `en-NZ`.
   * `TRAINING_DAY_OF_WEEK`: Your brigade's training day (e.g., `Monday`). Used to highlight the day in the Training Planner.   
+  * `APP_BASE_URL`: Public URL of your app (e.g., https://osm.station44.nz). Required for valid form links (default http://localhost:3000).   
+  * `ACCEPTED_FORM_VISIBILITY_DAYS`: Days an 'Accepted' icon stays on the dashboard after review. (default 30)
+
 
 #### **OSM Dashboard Connection**
 
