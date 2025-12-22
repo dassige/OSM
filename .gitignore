@@ -8,7 +8,7 @@ import-members.csv
 .env
 public/resources/logo_dvfb.png
 # Database
-fenz.db
+fenz.db*
 demo.db*
 public/custom
 public/FENZ
