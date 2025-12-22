@@ -1,0 +1,10 @@
+{
+  "email": {
+    "from": "DVFB Training Manager <webmaster@dvfb.org.nz>",
+    "subject": "{{appname}}: '{{skill}}' Test result: ACCEPTED",
+    "body": "<p><strong>Congratulations</strong> <span class=\"mceNonEditable chip\" data-val=\"name\">{{name}}</span>,<br>you passed the test for <em><strong>\"</strong></em><span class=\"mceNonEditable chip\" data-val=\"skill\">{{skill}}</span><em><strong>\"</strong></em>.<br><span class=\"mceNonEditable chip\" data-val=\"custom_comment\">{{custom_comment}}</span></p>"
+  },
+  "whatsapp": {
+    "body": "Congratulations {{name}},\nyou passed the test for {{skill}}.\n{{custom_comment}}"
+  }
+}

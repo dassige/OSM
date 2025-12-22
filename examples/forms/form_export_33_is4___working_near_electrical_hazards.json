@@ -1,0 +1,126 @@
+{
+  "name": "IS4 - Working Near Electrical Hazards",
+  "intro": "<p>This questionnaire verifies your knowledge of the safety procedures for incidents involving electrical hazards as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/is4-working-near-electrical-hazards/\" target=\"_blank\" rel=\"noopener\"><strong>NCI 12</strong></a> and the <a href=\"https://portal.fireandemergency.nz/documents/electrical-safety-for-emergency-services-personnel-eea-may-2015-guide/\" target=\"_blank\" rel=\"noopener\"><strong>EEA Guide to Electrical Network Safety</strong></a>.</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_is4risks",
+      "type": "checkboxes",
+      "description": "<p>Which of these risks may need to be considered when working near electrical hazards?</p>",
+      "required": true,
+      "options": [
+        "Fallen wires",
+        "Rescues in or around live electrical hazards",
+        "Ground level transformers, switch gear and kiosks",
+        "Earthquakes and tsunamis",
+        "Pole fires, substation fires and explosions",
+        "Underground installations",
+        "Polychlorinated biphenyls (PCBs)",
+        "Power stations",
+        "Drowning or trapped beneath water"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Fallen wires",
+        "Rescues in or around live electrical hazards",
+        "Ground level transformers, switch gear and kiosks",
+        "Pole fires, substation fires and explosions",
+        "Underground installations",
+        "Polychlorinated biphenyls (PCBs)",
+        "Power stations"
+      ]
+    },
+    {
+      "id": "fld_is4hazards",
+      "type": "checkboxes",
+      "description": "<p>Which of these hazards are associated with working near electricity?</p>",
+      "required": true,
+      "options": [
+        "Electrocution",
+        "Hydrochloric acid",
+        "Oil",
+        "Gases from fixed installations",
+        "Asphyxiation"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Electrocution",
+        "Oil",
+        "Gases from fixed installations"
+      ]
+    },
+    {
+      "id": "fld_is4training",
+      "type": "boolean",
+      "description": "<p>All personnel should be trained in the risks to be encountered and safe practices when working with electrical hazards and crew(s) briefed on plan of action and safety measures.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": null
+    },
+    {
+      "id": "fld_is4isolation",
+      "type": "boolean",
+      "description": "<p>Electricity supply should NOT be isolated when crew are working nearby.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": null
+    },
+    {
+      "id": "fld_is4treatlive",
+      "type": "boolean",
+      "description": "<p>Treat all equipment/installations as live until certified as not live by power company engineer and only carry out rescues only with full agreement of power company engineer.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": null
+    },
+    {
+      "id": "fld_is4storm",
+      "type": "boolean",
+      "description": "<p>If an electrical storm is imminent, withdraw to a safe distance from transmission structures to avoid lightning strikes.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": null
+    },
+    {
+      "id": "fld_is4ladders",
+      "type": "boolean",
+      "description": "<p>FENZ ladders and other long equipment are safe to use alongside electrical equipment or overhead lines.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": null
+    },
+    {
+      "id": "fld_is4oicmeasures",
+      "type": "checkboxes",
+      "description": "<p>The OIC should carry out which control measures?</p>",
+      "required": true,
+      "options": [
+        "Contact and liaise with power company representatives",
+        "Keep personnel directly involved to a minimum",
+        "Ensure that crews work together within a 4m cordon of the electric equipment.",
+        "Ensure that crews wear full PPE and BA.",
+        "Direct deliveries onto electrical equipment at the earliest opportunity."
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Contact and liaise with power company representatives",
+        "Keep personnel directly involved to a minimum",
+        "Ensure that crews wear full PPE and BA."
+      ]
+    },
+    {
+      "id": "fld_is4manualhandling",
+      "type": "boolean",
+      "description": "<p>All personnel should be trained in safe manual handling techniques.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": null
+    }
+  ]
+}

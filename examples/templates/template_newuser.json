@@ -1,0 +1,5 @@
+{
+  "from": "DVFB Training Manager <webmaster@dvfb.org.nz>",
+  "subject": "Welcome to {{appname}} - Your Account Details",
+  "body": "<p>Hi <strong>{{name}}</strong>,</p>\n<p>Welcome! An administrator has created an account for you on <strong>{{appname}}</strong>.</p>\n<p>Here are your login credentials:</p>\n<ul>\n<li><strong>Username:</strong> {{email}}</li>\n<li><strong>Password:</strong> <span style=\"background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; padding: 2px 6px; font-family: monospace; color: #d63384; font-weight: bold;\">{{password}}</span></li>\n</ul>\n<p style=\"background-color: #fff3cd; padding: 10px; border-radius: 4px; border: 1px solid #ffeeba; color: #856404;\"><strong>Security Notice:</strong> Please log in and change your password immediately via the <em>User Settings</em> menu.</p>\n<p>Regards,<br>The Admin Team</p>"
+}

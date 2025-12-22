@@ -1,0 +1,123 @@
+{
+  "name": "H7-1 - Clandestine Laboratories",
+  "intro": "<p>This questionnaire verifies your knowledge of the safety procedures and liaison requirements for incidents involving clandestine drug laboratories as defined in <a href=\"https://portal.fireandemergency.nz/documents/h7-1-clandestine-laboratories-nci-14/\" target=\"_blank\" rel=\"noopener\">NCI 14</a></p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_h71hazards",
+      "type": "checkboxes",
+      "description": "<p>What are the three significant hazards identified in Clandestine Laboratories?</p>",
+      "required": true,
+      "options": [
+        "Hazardous Chemicals",
+        "Traffic",
+        "Booby Traps",
+        "Hostile Civilians",
+        "Smoke and heat",
+        "Wild animals"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Hazardous Chemicals",
+        "Booby Traps",
+        "Hostile Civilians"
+      ]
+    },
+    {
+      "id": "fld_h71lead",
+      "type": "radio",
+      "description": "<p>Which agency is the lead agency at a clandestine laboratory incident?</p>",
+      "required": true,
+      "options": [
+        "Fire and Emergency New Zealand",
+        "New Zealand Police",
+        "Ambulance Service",
+        "Environmental Agency"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "New Zealand Police"
+    },
+    {
+      "id": "fld_h71control",
+      "type": "checkboxes",
+      "description": "<p>What must the first three control measures be at a suspected clandestine laboratory incident?</p>",
+      "required": true,
+      "options": [
+        "Check that laboratory is currently operational",
+        "Withdraw",
+        "Secure Premises",
+        "Remove apparatus to a safe place",
+        "Notify Comms/Police"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Withdraw",
+        "Secure Premises",
+        "Notify Comms/Police"
+      ]
+    },
+    {
+      "id": "fld_h71outside",
+      "type": "checkboxes",
+      "description": "<p>Which of these signs OUTSIDE a building may indicate a clandestine laboratory is inside the building?</p>",
+      "required": true,
+      "options": [
+        "Chemical odours",
+        "Loud music",
+        "Opaque windows / Bars on windows",
+        "High occupancy of building",
+        "Discarded waste packaging",
+        "Multiple vehicles and vans parked outside",
+        "High security measures - Cameras, barbed wire fence, Guard dogs"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Chemical odours",
+        "Opaque windows / Bars on windows",
+        "Discarded waste packaging",
+        "Multiple vehicles and vans parked outside",
+        "High security measures - Cameras, barbed wire fence, Guard dogs"
+      ]
+    },
+    {
+      "id": "fld_h71inside",
+      "type": "checkboxes",
+      "description": "<p>Which of these signs INSIDE a building might indicate a clandestine laboratory?</p>",
+      "required": true,
+      "options": [
+        "Chemical smell",
+        "Heavy layer of smoke",
+        "Heavy orange staining of the interior",
+        "Laboratory glassware",
+        "Acetylene cylinders",
+        "Bunsen Burners / LPG cylinders",
+        "Hot Plates",
+        "Lithium batteries / Bulk chemical containers.",
+        "Large amounts of food in storage"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Chemical smell",
+        "Heavy orange staining of the interior",
+        "Laboratory glassware",
+        "Bunsen Burners / LPG cylinders",
+        "Hot Plates",
+        "Lithium batteries / Bulk chemical containers."
+      ]
+    },
+    {
+      "id": "fld_h71permission",
+      "type": "radio",
+      "description": "<p>Once firefighters have withdrawn, who gives permission for firefighting to commence?</p>",
+      "required": true,
+      "options": [
+        "The Chief Fire Officer / OIC",
+        "Fire Comms",
+        "New Zealand Police",
+        "Environmental Agency"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "New Zealand Police"
+    }
+  ]
+}

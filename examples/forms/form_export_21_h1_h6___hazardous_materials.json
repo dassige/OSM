@@ -1,0 +1,173 @@
+{
+  "name": "H1-H6 - Hazardous Materials",
+  "intro": "<p>This questionnaire verifies your knowledge of operational procedures for managing hazardous materials incidents as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/h1-h6-hazardous-materials-nci-21/\" target=\"_blank\" rel=\"noopener\"><strong>NCI 21</strong></a>. Refer to the official manual for guidance if needed.</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_h1h6q1",
+      "type": "checkboxes",
+      "description": "<p>Which of these considerations should be taken into account in relation to hazardous material incidents?</p>",
+      "required": true,
+      "options": [
+        "How to proceed to the incident and deploy resouces safely",
+        "PPE and BA",
+        "Correct siting of aerial appliances",
+        "The isolation and identification of hazardous material(s)",
+        "Ensuring crews have enough to eat and drink",
+        "Any evacuation required",
+        "The protection of the environment.",
+        "The closure of FENZ involvement in the incident."
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "How to proceed to the incident and deploy resouces safely",
+        "PPE and BA",
+        "The isolation and identification of hazardous material(s)",
+        "Any evacuation required",
+        "The protection of the environment.",
+        "The closure of FENZ involvement in the incident."
+      ]
+    },
+    {
+      "id": "fld_h1h6q2",
+      "type": "text_multi",
+      "description": "<p>Name the primary source of technical information that the FENZ uses for hazardous materials?</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Chemdata"
+    },
+    {
+      "id": "fld_h1h6q3",
+      "type": "text_multi",
+      "description": "<p>What is the system that Fire Comms uses to transmit hazardous material information to the incident ground?</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "HAZMAT Action Guide (HAG)"
+    },
+    {
+      "id": "fld_h1h6q4",
+      "type": "checkboxes",
+      "description": "<p>Which of these is NOT one of the seven initial actions to be considered when attending a hazardous materials incident?</p>",
+      "required": true,
+      "options": [
+        "Only the first appliance should approach and investigate.",
+        "Approach from upwind when possible",
+        "Park 400m away from incident",
+        "Appliances responding later should park clear of the incident.",
+        "Wear appropriate PPE.",
+        "Appoint a safety officer when a hot zone is identified.",
+        "Always use Chemical Splash Suits and BA for snap rescues",
+        "Consider greater alarm.",
+        "Ensure there are water tankers available for decontamination",
+        "Advise other responding appliances and services of the safe approach route"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Park 400m away from incident",
+        "Always use Chemical Splash Suits and BA for snap rescues",
+        "Ensure there are water tankers available for decontamination"
+      ]
+    },
+    {
+      "id": "fld_h1h6q5",
+      "type": "checkboxes",
+      "description": "<p>Which of the following essential pieces of information could be used to identify hazardous materials?</p>",
+      "required": true,
+      "options": [
+        "Name (trade, common, chemical).",
+        "Manufacturer",
+        "Consignee",
+        "Colour and smell",
+        "UN number",
+        "NFPA 704",
+        "Details from hazardous goods label",
+        "State of material (solid, liquid or gas)",
+        "Approximate amount spilled",
+        "Flammable range"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Name (trade, common, chemical).",
+        "Manufacturer",
+        "Consignee",
+        "UN number",
+        "NFPA 704",
+        "Details from hazardous goods label",
+        "State of material (solid, liquid or gas)",
+        "Approximate amount spilled"
+      ]
+    },
+    {
+      "id": "fld_h1h6q6",
+      "type": "checkboxes",
+      "description": "<p>Which of the following considerations that should be undertaken to ensure an incident is isolated?</p>",
+      "required": true,
+      "options": [
+        "Evacuate upwind or across wind clear of smoke/fumes",
+        "Place Hot Zone tape around the whole incident",
+        "Consider in-place protection.",
+        "Move all personnel and public downwind of the incident"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Evacuate upwind or across wind clear of smoke/fumes",
+        "Consider in-place protection."
+      ]
+    },
+    {
+      "id": "fld_h1h6q7",
+      "type": "checkboxes",
+      "description": "<p>Which methods could you can use to stop further contamination from a spilled/leaked hazardous material?</p>",
+      "required": true,
+      "options": [
+        "Turn off valves",
+        "Right cylinders or turn leak to its highest point",
+        "Channel fluids into nearest drain",
+        "Cover spillage or apply a foam blanket if appropriate",
+        "Sweep up any dry materials and place in a bag",
+        "Contain the spillage by damming",
+        "Use a water jet to dilute the materials"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Turn off valves",
+        "Right cylinders or turn leak to its highest point",
+        "Cover spillage or apply a foam blanket if appropriate",
+        "Contain the spillage by damming"
+      ]
+    },
+    {
+      "id": "fld_h1h6q8",
+      "type": "boolean",
+      "description": "<p>The statutory powers of FENZ cease in relation to a hazardous material incident when the material has been stabilised and made safe</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_h1h6q9",
+      "type": "radio",
+      "description": "<p>What actions should be taken when a hazardous material is involved in fire?</p>",
+      "required": true,
+      "options": [
+        "Contain the fire. Once the hazard level and the hazardous materials are identified, use the appropriate extinguishing medium and PPE",
+        "Fall back to a safe distance and use ground monitors to extinguish the fire",
+        "Ensure crew are wearing Chemical Splash Suits and approach carefully using the Co-ordinated Water Protection Technique"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Contain the fire. Once the hazard level and the hazardous materials are identified, use the appropriate extinguishing medium and PPE"
+    },
+    {
+      "id": "fld_h1h6q10",
+      "type": "boolean",
+      "description": "<p>The OIC Fire determines the level of decontamination to be carried out by consulting with the HSTLC, a suitably qualified person, and/or the enforcement officer if further advice is necessary.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    }
+  ]
+}

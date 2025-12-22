@@ -1,0 +1,12 @@
+{
+  "from": "DVFB Training Manager <webmaster@dvfb.org.nz>",
+  "subject": "{{appname}}: Expiring Skills Notification",
+  "intro": "<p><span style=\"font-size: 12pt;\"><strong>Hello, </strong></span></p>\n<p><strong><span style=\"font-size: 12pt;\">you have expiring Skills due in OSM. Please complete these ASAP.</span></strong></p>",
+  "row": "<ul>\n<li style=\"text-align: left; font-size: 12pt; font-family: helvetica, arial, sans-serif;\"><span style=\"font-size: 12pt; font-family: helvetica, arial, sans-serif;\"><strong>{{skill}}</strong> - Expires on:&nbsp;<span style=\"color: #666;\">{{date}}</span>,&nbsp; <a href=\"{{url}}\" target=\"_blank\" rel=\"noopener\">Complete the form here</a>.</span></li>\n</ul>\n<hr>",
+  "rowNoUrl": "<ul>\n<li style=\"text-align: left; font-size: 12pt; font-family: helvetica, arial, sans-serif;\"><span style=\"font-size: 12pt; font-family: helvetica, arial, sans-serif;\"><strong>{{skill}}</strong> - Expires on:&nbsp;<span style=\"color: #666;\">{{date}}, it will be tested at the following dates: <strong>{{next-planned-dates}}</strong></span></span></li>\n</ul>\n<hr>",
+  "filterOnlyWithUrl": false,
+  "waIntro": "Hello,\nyou have expiring Skills due in OSM. *Please complete these ASAP*.",
+  "waRow": "- {{skill}} - Expires on: {{date}},  Complete the form here: {{url}}",
+  "waRowNoUrl": "- {{skill}} - Expires on: {{date}}, it will be tested at the following dates: {{next-planned-dates}}",
+  "waFilterOnlyWithUrl": false
+}

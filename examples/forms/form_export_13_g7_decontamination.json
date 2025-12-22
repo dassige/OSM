@@ -1,0 +1,154 @@
+{
+  "name": "G7 Decontamination",
+  "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/g7-sop-decontamination-procedures/\" target=\"_blank\" rel=\"noopener\">G7 Decontamination Procedures</a> and <a href=\"https://portal.fireandemergency.nz/documents/g7-pop-decontamination-policy/\" target=\"_blank\" rel=\"noopener\">G7 Decontamination Policy</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_mjckxzw1",
+      "type": "radio",
+      "description": "<p>Which agency is responsible for the decontamination of members of the public?</p>",
+      "required": true,
+      "options": [
+        "Police",
+        "FENZ",
+        "Ambulance Service"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "FENZ"
+    },
+    {
+      "id": "fld_mjcl335m",
+      "type": "checkboxes",
+      "description": "<p>What must be in place before firefighters enter a hot zone?&nbsp;</p>",
+      "required": true,
+      "options": [
+        "Preparations for emergency decontamination are in place",
+        "Firefighters are wearing barrier gloves and a dust mask.",
+        "Consideration has been given to requesting resources for deliberate decontamination",
+        "Gas detector has been set up to identify the hazardous material.",
+        "Hazardous material has been identified"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Preparations for emergency decontamination are in place",
+        "Consideration has been given to requesting resources for deliberate decontamination"
+      ]
+    },
+    {
+      "id": "fld_mjcl4lek",
+      "type": "radio",
+      "description": "<p>What other agency may be required to assist with the decontamination of a person who&nbsp;poses a threat to FENZ personnel?</p>",
+      "required": true,
+      "options": [
+        "Defence Force personnel",
+        "Ambulance Service",
+        "Police"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Defence Force personnel"
+    },
+    {
+      "id": "fld_mjcl5un7",
+      "type": "boolean",
+      "description": "<p>Emergency Decontamination is to be used when there is a need to decontaminate before deliberate decontamination equipment can arrive. eg, medical emergency or life risk.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_mjcl69vk",
+      "type": "checkboxes",
+      "description": "<p>Emergency Decontamination is to be used when there is a need to decontaminate before deliberate decontamination equipment can arrive. eg, medical emergency or life risk.</p>",
+      "required": true,
+      "options": [
+        "The personnel to be decontaminated must be wearing BA with a Splash suit, Gas Suit or other agency equivalent.Option 1",
+        "Members of the public wearing permeable clothing (liquids/gas can pass through) that has been contaminated.",
+        "The personnel to be decontaminated must be wearing a minimum of structure gear and BA ",
+        "The contaminant must be water-miscible and safely diluted and directed into a drain or sewer."
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "The personnel to be decontaminated must be wearing BA with a Splash suit, Gas Suit or other agency equivalent.Option 1",
+        "Members of the public wearing permeable clothing (liquids/gas can pass through) that has been contaminated."
+      ]
+    },
+    {
+      "id": "fld_mjclc0q2",
+      "type": "checkboxes",
+      "description": "<p>What factors determine whether the decontamination corridor should be used?&nbsp;</p>",
+      "required": true,
+      "options": [
+        "People are wearing permeable clothing (liquids/gas can pass through)",
+        "FENZ personnel wearing Structural Firefighting PPE",
+        "Firefighters in Gas Tight suits that have been contaminated.",
+        "There is no Portaflex shower available",
+        "The contaminant is immiscible in water (does not mix or dissolve) or there is a need to contain the run-off"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "There is no Portaflex shower available",
+        "The contaminant is immiscible in water (does not mix or dissolve) or there is a need to contain the run-off"
+      ]
+    },
+    {
+      "id": "fld_mjcldjyj",
+      "type": "radio",
+      "description": "<p>Who decides whether the run-off from a decontamination procedure should be contained?</p>",
+      "required": true,
+      "options": [
+        "Pump operator",
+        "OIC",
+        "HAZCHEM or specialist advice",
+        "Police"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "OIC"
+    },
+    {
+      "id": "fld_mjclehwr",
+      "type": "checkboxes",
+      "description": "<p>Which of these are NOT key responsibilities of the Decontamination Officer</p>",
+      "required": true,
+      "options": [
+        "Managing the decontamination function on the incident ground",
+        "Reporting to the Fire Logistics Commander",
+        "Ensuring crews have adequate rest and refreshment ",
+        "Assigning tasks to personnel to assist with the decontamination process",
+        "Identifying safety issues and hazards on the incident ground",
+        "Ensure all decontamination forms are completed"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Ensuring crews have adequate rest and refreshment ",
+        "Identifying safety issues and hazards on the incident ground"
+      ]
+    },
+    {
+      "id": "fld_mjclgble",
+      "type": "boolean",
+      "description": "<p>The OIC HazMat /Command vehicle is responsible for ensuring the safe and appropriate<br>recommissioning of all decontamination equipment.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_mjclgx41",
+      "type": "checkboxes",
+      "description": "<p>Which of these are the OIC Fire&rsquo;s responsibilities?&nbsp;</p>",
+      "required": true,
+      "options": [
+        "Ensuring that all SHEP forms are completed during the decontamination process",
+        "Ensuring FENZ personnel carrying out decontamination during an incident follow the requirements of the HazMat policy",
+        "Appointing a Decontamination Officer whenever the decontamination corridor is in use or as required",
+        "Ensuring that the hazardous material is removed from the site to a place of safety"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Ensuring FENZ personnel carrying out decontamination during an incident follow the requirements of the HazMat policy",
+        "Appointing a Decontamination Officer whenever the decontamination corridor is in use or as required"
+      ]
+    }
+  ]
+}

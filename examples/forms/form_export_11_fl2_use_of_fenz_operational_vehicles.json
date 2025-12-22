@@ -1,0 +1,160 @@
+{
+  "name": "FL2 Use of FENZ Operational Vehicles",
+  "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/fl2-1-pop-use-of-operational-vehicles-policy/\" target=\"_blank\" rel=\"noopener\">FL2 Use of FENZ Operational Vehicles</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_mjcdh7vo",
+      "type": "radio",
+      "description": "<p>When responding to an emergency incident, when must both siren and beacons be used?</p>",
+      "required": true,
+      "options": [
+        "Whenever the vehicle is moving",
+        "When travelling against the traffic, through red lights or stop signs at intersections",
+        "When parking at an incident on the wrong side of the road",
+        "When requested by FireComms"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "When travelling against the traffic, through red lights or stop signs at intersections"
+    },
+    {
+      "id": "fld_mjcdjunm",
+      "type": "radio",
+      "description": "<p>If a drivers license has been suspended, disqualified or restricted in any way, who must be notified?</p>",
+      "required": true,
+      "options": [
+        "No one, it's personal information",
+        "The Driver and Vehicle Licensing Agency",
+        "Advise your Chief Fire Officer or Manager",
+        "The Police"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Advise your Chief Fire Officer or Manager"
+    },
+    {
+      "id": "fld_mjcdkmvo",
+      "type": "radio",
+      "description": "<p>Under what circumstances can a firefighter drive an ambulance in an emergency situation?</p>",
+      "required": true,
+      "options": [
+        "Never",
+        "When requested by the Ambulance OIC, the driver must have a Class 1 license and have current competency in emergency response driving (ERD).",
+        "When directed by your OIC",
+        "Only if you have been properly inducted and are familiar with the vehicle"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "When requested by the Ambulance OIC, the driver must have a Class 1 license and have current competency in emergency response driving (ERD)."
+    },
+    {
+      "id": "fld_mjcdmb3w",
+      "type": "radio",
+      "description": "<p>What is the maximum permitted speed for a heavy operational vehicle responding under lights and siren on the open road? (Type 1 to 4)</p>",
+      "required": true,
+      "options": [
+        "130km/h",
+        "105km/h",
+        "110km/h",
+        "Speed limits do not apply to FENZ vehicles"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "110km/h"
+    },
+    {
+      "id": "fld_mjcdn95i",
+      "type": "radio",
+      "description": "<p>What is the maximum permitted speed in a 50 km/h zone when responding under lights and siren to an emergency?</p>",
+      "required": true,
+      "options": [
+        "65 km/h",
+        "75 km/h",
+        "85 km/h",
+        "50 km/h"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "65 km/h"
+    },
+    {
+      "id": "fld_mjcdo9sk",
+      "type": "radio",
+      "description": "<p>What is the maximum speed limit through a temporary speed zone?</p>",
+      "required": true,
+      "options": [
+        "15 km/h above the posted speed limit",
+        "Up to 105 km/h if the driver considers it safe",
+        "The posted speed limit",
+        "25 km/h above the posted speed limit"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "The posted speed limit"
+    },
+    {
+      "id": "fld_mjcdoz4y",
+      "type": "radio",
+      "description": "<p>What is the maximum speeds permitted at intersections controlled by lights, stop or give way signs in an emergency response?</p>",
+      "required": true,
+      "options": [
+        "Up to 105 km/h if the driver considers it safe",
+        "As fast as the OIC requests me to go",
+        "Slow to 10 km/h and stop if necessary, proceed if the way is clear, at a speed not exceeding 20 km/h and provided siren and beacons are operating",
+        "Stop at the lights and wait for the green signal"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Slow to 10 km/h and stop if necessary, proceed if the way is clear, at a speed not exceeding 20 km/h and provided siren and beacons are operating"
+    },
+    {
+      "id": "fld_mjcdpuk2",
+      "type": "radio",
+      "description": "<p>When may the driver of a FENZ vehicle use a handheld cellphone?</p>",
+      "required": true,
+      "options": [
+        "When it is necessary to speak with FireComms and the LMR is not working",
+        "When the vehicle has stopped and parked out of the line of traffic or the call is to 111 or *555 and it unsafe or unpractical to stop and park out of the line of traffic",
+        "If trying to find directions to the incident",
+        "Never"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "When the vehicle has stopped and parked out of the line of traffic or the call is to 111 or *555 and it unsafe or unpractical to stop and park out of the line of traffic"
+    },
+    {
+      "id": "fld_mjcdr4ny",
+      "type": "radio",
+      "description": "<p>What is the maximum number of BA cylinders that may be transported in a FENZ vehicle other than a BA Tender?</p>",
+      "required": true,
+      "options": [
+        "12 Cylinders",
+        "18 Cylinders",
+        "24 Cylinders",
+        "28 Cylinders"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "12 Cylinders"
+    },
+    {
+      "id": "fld_mjcdrzmg",
+      "type": "boolean",
+      "description": "<p>The number of persons permitted to be carried in a FENZ vehicle is 1 person per seat belt provided.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_mjcdsd59",
+      "type": "checkboxes",
+      "description": "<p>What are the two points mentioned in Driving Policy that relate to the driving of private vehicles to or from the station or incident? (Click all that apply)</p>",
+      "required": true,
+      "options": [
+        "Personnel must observe the posted road speed limit",
+        "Speed limit can be exceeded in an emergency",
+        "Personnel are not covered by FENZ for damage or loss to a private vehicle",
+        "Seat belts are optional for short distances",
+        "Private vehicles can be left on yellow lines when attending an incident"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Personnel must observe the posted road speed limit",
+        "Personnel are not covered by FENZ for damage or loss to a private vehicle"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,187 @@
+{
+  "name": "IS9 - Working Near Civil Disturbances",
+  "intro": "<p>This questionnaire verifies your knowledge of safe and effective operations at incidents where crowd behaviour places personnel and operations at risk, as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/is9-working-near-civil-disturbances-nci-29/\" target=\"_blank\" rel=\"noopener\"><strong>NCI 29</strong></a>. FENZ personnel must maintain neutrality and prioritize the protection of life and property.</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_is9consult",
+      "type": "radio",
+      "description": "<p>Which other organisation(s) should be consulted when attending an incident involving a civil disturbance?</p>",
+      "required": true,
+      "options": [
+        "Victim Support",
+        "Local District Council",
+        "New Zealand Police",
+        "Fire and Emergency - On Call Executive"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "New Zealand Police"
+    },
+    {
+      "id": "fld_is9local",
+      "type": "checkboxes",
+      "description": "<p>Which of the following should be included in Approved Local Procedures for attending a civil disturbance?</p>",
+      "required": true,
+      "options": [
+        "The pre-determined response",
+        "Liaison with the police and other emergency services",
+        "Water supplies for crowd dispersal",
+        "Hostile crowd behaviour / Riots / Protest marches",
+        "Any disturbance that develops while Fire and Emergency NZ personnel are attending an incident",
+        "Procedures for when working alone",
+        "Rescue and protection of persons and property from fire",
+        "How to restrain a hostile member of public",
+        "Safety of FENZ personnel and the security of fire stations",
+        "Expected weather conditions"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "The pre-determined response",
+        "Liaison with the police and other emergency services",
+        "Hostile crowd behaviour / Riots / Protest marches",
+        "Any disturbance that develops while Fire and Emergency NZ personnel are attending an incident",
+        "Rescue and protection of persons and property from fire",
+        "Safety of FENZ personnel and the security of fire stations"
+      ]
+    },
+    {
+      "id": "fld_is9role",
+      "type": "boolean",
+      "description": "<p>The role of Fire and Emergency NZ at civil disturbance incidents is to protect life and property, NOT to support the police in quelling riots or enforcing order.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_is9ready",
+      "type": "checkboxes",
+      "description": "<p>During the readiness or pre-planning phase, what considerations should FENZ and NZ Police address?</p>",
+      "required": true,
+      "options": [
+        "Containment areas for hostile members of the public",
+        "Foster understanding of each other's roles and methods of operation",
+        "Agree on local procedures",
+        "How many fire crews might be available for crowd dispersal.",
+        "Identify potential points of tension in the community",
+        "Water supplies for use on protesters"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Foster understanding of each other's roles and methods of operation",
+        "Agree on local procedures",
+        "Identify potential points of tension in the community"
+      ]
+    },
+    {
+      "id": "fld_is9response",
+      "type": "checkboxes",
+      "description": "<p>When developing predetermined attendance protocols, what are the four criteria required when responding?</p>",
+      "required": true,
+      "options": [
+        "Use the minimum number of appliances for the initial response",
+        "Determine safe and secure response routes",
+        "Discuss the fastest way to get there under lights and sirens",
+        "Do not use flashing lights and sirens",
+        "What riot gear fire-fighters are to wear when responding",
+        "Liaise with NZ Police to determine whether a police escort is necessary"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Use the minimum number of appliances for the initial response",
+        "Determine safe and secure response routes",
+        "Do not use flashing lights and sirens",
+        "Liaise with NZ Police to determine whether a police escort is necessary"
+      ]
+    },
+    {
+      "id": "fld_is9incident",
+      "type": "checkboxes",
+      "description": "<p>What actions need to be taken when a disturbance develops at an incident that Fire and Emergency NZ personnel are attending?</p>",
+      "required": true,
+      "options": [
+        "Prepare monitor for crowd dispersal",
+        "Establish the whereabouts of all personnel",
+        "Withdraw to a safe place",
+        "Call station for additional crews",
+        "Advise ComCen",
+        "Liaise with NZ Police"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Establish the whereabouts of all personnel",
+        "Withdraw to a safe place",
+        "Advise ComCen",
+        "Liaise with NZ Police"
+      ]
+    },
+    {
+      "id": "fld_is9ppe",
+      "type": "radio",
+      "description": "<p>What PPE should Fire and Emergency NZ personnel wear when in attendance at civil disturbances?</p>",
+      "required": true,
+      "options": [
+        "Chemical Splash Suits and BA",
+        "Level 1s as they allow easier movement",
+        "Structural firefighting uniform at all times, with visors down."
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Structural firefighting uniform at all times, with visors down."
+    },
+    {
+      "id": "fld_is9withdrawal",
+      "type": "checkboxes",
+      "description": "<p>What three considerations should be put in place, in regards to appliances and firefighting, to enable a quick withdrawal from an incident should the situation deteriorate?</p>",
+      "required": true,
+      "options": [
+        "Park appliances with the driver remaining in the driver's seat with the engine running",
+        "Only use appliance Hose Reels",
+        "Use personal lines so that crew don't become separated",
+        "Do not use appliance Hose Reels",
+        "Use delivery hose from hydrants where the water pressure is sufficient."
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Park appliances with the driver remaining in the driver's seat with the engine running",
+        "Do not use appliance Hose Reels",
+        "Use delivery hose from hydrants where the water pressure is sufficient."
+      ]
+    },
+    {
+      "id": "fld_is9support",
+      "type": "radio",
+      "description": "<p>Can operational support staff be used for crowd control duties if requested by OIC Police?</p>",
+      "required": true,
+      "options": [
+        "If they are available and wearing adequate PPE",
+        "If clearance is given by the CFO",
+        "No"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "No"
+    },
+    {
+      "id": "fld_is9hazards",
+      "type": "checkboxes",
+      "description": "<p>Select the significant hazards that may be faced by crews, both responding to and at, civil disturbance incidents.</p>",
+      "required": true,
+      "options": [
+        "Backdraught or flashover",
+        "Missiles thrown at vehicles",
+        "Vehicles hitting barricades",
+        "Clandestine Laboratories (Clan Labs)",
+        "Vehicles being hi-jacked",
+        "Fire bombs",
+        "Physical attack"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Missiles thrown at vehicles",
+        "Vehicles hitting barricades",
+        "Vehicles being hi-jacked",
+        "Fire bombs",
+        "Physical attack"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "name": "H6-1 - Bulk Flammable Gases",
+  "intro": "<p>This questionnaire verifies knowledge of operational procedures and safety measures for incidents involving bulk flammable gases as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/h6-1-bulk-flammable-gases-nci-32/\" target=\"_blank\" rel=\"noopener\"><strong>Operational Instruction NCI 32</strong></a>.</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_h61ops",
+      "type": "checkboxes",
+      "description": "<p>Describe the operational considerations for bulk flammable gases.</p>",
+      "required": true,
+      "options": [
+        "Approach from upwind where possible",
+        "Stabilise and evacuate the inner cordon and other operational areas as required",
+        "Consider the use of chemical splash suits",
+        "Eliminate all sources of ignition in the inner cordon",
+        "Maintain a safe distance of 800m at all times",
+        "Identify the gas and its properties and monitor levels of flammability",
+        "Use dry powder to dilute the gas in the atmosphere",
+        "Notify air traffic control authorities to keep air space clear in vicinity of large leaks",
+        "Media statements"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Approach from upwind where possible",
+        "Stabilise and evacuate the inner cordon and other operational areas as required",
+        "Consider the use of chemical splash suits",
+        "Eliminate all sources of ignition in the inner cordon",
+        "Identify the gas and its properties and monitor levels of flammability",
+        "Notify air traffic control authorities to keep air space clear in vicinity of large leaks",
+        "Media statements"
+      ]
+    },
+    {
+      "id": "fld_h61coolrate",
+      "type": "radio",
+      "description": "<p>What is the water application rate to cool gas tanks or pipe-work that have been subjected to direct flame?</p>",
+      "required": true,
+      "options": [
+        "2 x GForce branches set at 470L/min",
+        "1920 L/m (32 L/s) per m2 in the area of flame impingement.",
+        "A ground monitor supplying 800 L/min",
+        "360 L/min (6 L/s) per m2 in the area of flame impingement."
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "1920 L/m (32 L/s) per m2 in the area of flame impingement."
+    },
+    {
+      "id": "fld_h61firectrl",
+      "type": "checkboxes",
+      "description": "<p>Describe the control measures used when dealing with the hazards of BLEVE and explosions when controlling fires in bulk flammable gas installations.</p>",
+      "required": true,
+      "options": [
+        "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable gases",
+        "Lay down a foam blanket surrounding the bulk flammable gas",
+        "Pre-planning and risk assessment",
+        "FENZ personnel will be briefed on the plan of action and safety measures",
+        "Use only the minimum numbers of FENZ personnel needed to conduct operations",
+        "Chemical splash suits to be worn if exposure to flammable gas is likely",
+        "Establish an inner cordon with a radius of 500m from the fire",
+        "Cool tanks and pipe-work, taking care not to freeze up relief valves.",
+        "Evacuate all unnecessary personnel, other service personnel and members of the public from inner cordon",
+        "Wear structural firefighting uniform and BA"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable gases",
+        "Pre-planning and risk assessment",
+        "FENZ personnel will be briefed on the plan of action and safety measures",
+        "Use only the minimum numbers of FENZ personnel needed to conduct operations",
+        "Establish an inner cordon with a radius of 500m from the fire",
+        "Cool tanks and pipe-work, taking care not to freeze up relief valves.",
+        "Evacuate all unnecessary personnel, other service personnel and members of the public from inner cordon",
+        "Wear structural firefighting uniform and BA"
+      ]
+    },
+    {
+      "id": "fld_h61leakctrl",
+      "type": "checkboxes",
+      "description": "<p>In addition to the above what other control measures should be employed when dealing with the significant hazards of Ignition of gas clouds and cold burns encountered when controlling leaks in bulk flammable gases.</p>",
+      "required": true,
+      "options": [
+        "Use water protection technique to disperse the gas cloud",
+        "Personnel will not enter gas cloud",
+        "Consider Gas Tight Suits for operational personnel",
+        "Establish inner cordon (consider wind direction)",
+        "Awareness of dangers of liquid leaks"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Personnel will not enter gas cloud",
+        "Establish inner cordon (consider wind direction)",
+        "Awareness of dangers of liquid leaks"
+      ]
+    }
+  ]
+}

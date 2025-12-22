@@ -1,0 +1,67 @@
+{
+  "name": "G2-1 Emergency Medical Support",
+  "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/g2-1-pop-emergency-medical-support-policy\" target=\"_blank\" rel=\"noopener\">G2-1 Emergency Medical Support</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_mjcdvizl",
+      "type": "checkboxes",
+      "description": "<p>If a member of Fire and Emergency NZ is injured/unwell when on duty, under the terms of this policy who must be notified by the OIC?&nbsp;</p>",
+      "required": true,
+      "options": [
+        "Chief Fire Officer / Group Manager ",
+        "No one, it is up to the injured person to notify the correct people",
+        "The person's emergency contact",
+        "The Health and Safety Officer"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Chief Fire Officer / Group Manager ",
+        "The Health and Safety Officer"
+      ]
+    },
+    {
+      "id": "fld_mjcdzmau",
+      "type": "checkboxes",
+      "description": "<p>If an on duty member of Fire and Emergency NZ is taken to hospital, what must the OIC ensure takes place?&nbsp;</p>",
+      "required": true,
+      "options": [
+        "That the injured person remains at work until they are replaced by another person",
+        "That they are provided with travel home, including their vehicle",
+        "That they are accompanied by a member of Fire and Emergency NZ until handover occurs to the emergency contact or they are discharged and returned home.",
+        "Nothing, the injured crew member needs to get themselves to hospital"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "That they are provided with travel home, including their vehicle",
+        "That they are accompanied by a member of Fire and Emergency NZ until handover occurs to the emergency contact or they are discharged and returned home."
+      ]
+    },
+    {
+      "id": "fld_mjce2qye",
+      "type": "radio",
+      "description": "<p>At an incident when decontamination is carried out (other than gloves &amp; boots) on people who have no PPE, level 1 or level 2 PPE or compromised level 3 or 4 PPE, what must the OIC ensure is requested?</p>",
+      "required": true,
+      "options": [
+        "ComCen are advised to request an ambulance",
+        "The on-call VSO is to bring replacement clothing, food, and transport the decontaminated people home",
+        "A tent so that people can get changed in privacy"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "ComCen are advised to request an ambulance"
+    },
+    {
+      "id": "fld_mjce3xw6",
+      "type": "radio",
+      "description": "<p>What must the OIC ensure happens at an incident if there is an injury to a firefighter or a member of the public or, the incident is lower that 4th alarm but the OIC considers there is a significant risk of injury?</p>",
+      "required": true,
+      "options": [
+        "Ask the VSO to bring out a first aid kit and a blanket.",
+        "OIC must ensure that Comcen requests ambulance response",
+        "Request a Health and Safety Officer to attend"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "OIC must ensure that Comcen requests ambulance response"
+    }
+  ]
+}

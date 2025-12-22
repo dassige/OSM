@@ -1,0 +1,83 @@
+{
+  "name": "G9 Salvage",
+  "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/g9-salvage-nci-41/\" target=\"_blank\" rel=\"noopener\">G9 Salvage</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_mjclt7vl",
+      "type": "boolean",
+      "description": "<p>The main reason for carrying out salvage operations is to minimise or prevent further loss to property at incidents</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_mjcltvxs",
+      "type": "checkboxes",
+      "description": "<p>When the OIC Fire orders salvage operations to commence, the officer is attempting to reduce damage to property by limiting the damage caused by what factors?</p>",
+      "required": true,
+      "options": [
+        "Firefighting activities.",
+        "Heat and Smoke",
+        "Members of the public",
+        "Police",
+        "Water damage.",
+        "Adverse weather.",
+        "Clandestine laboratory (ClanLab) operations"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Firefighting activities.",
+        "Heat and Smoke",
+        "Water damage.",
+        "Adverse weather."
+      ]
+    },
+    {
+      "id": "fld_mjclvq0q",
+      "type": "checkboxes",
+      "description": "<p>What methods can be used to reduce damage from sprinkler systems?</p>",
+      "required": true,
+      "options": [
+        "Turn off sprinkler on arrival",
+        "“Sprinkler stoppers”",
+        "Floor isolation and main sprinkler valves.",
+        "Collect water in buckets",
+        "Place absorbent material beneath activated sprinkler heads"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Floor isolation and main sprinkler valves.",
+        "Place absorbent material beneath activated sprinkler heads"
+      ]
+    },
+    {
+      "id": "fld_mjclwzuz",
+      "type": "boolean",
+      "description": "<p>Salvage should be commenced as early as possible at a hazardous substance incidents</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_mjclxbrt",
+      "type": "checkboxes",
+      "description": "<p>Which Fire and Emergency Operational Instructions can be used for hazard control during salvage operations?</p>",
+      "required": true,
+      "options": [
+        "Operational Safety",
+        "Breathing Apparatus",
+        "Confined Space",
+        "Ventilation",
+        "Decontamination"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Ventilation",
+        "Decontamination"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "name": "E3-2 Respiratory Protection",
+  "intro": "<p>The learning document for this test is at <a href=\"https://portal.fireandemergency.nz/documents/e3-2-pop-respiratory-protection-equipment-policy/\" target=\"_blank\" rel=\"noopener\">E3-2 Respiratory Protection</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_mjccjuui",
+      "type": "checkboxes",
+      "description": "<p>Firefighters must don BA before entering a structure to investigate a fire, when must firefighters start up their BA?</p>",
+      "required": true,
+      "options": [
+        "As soon as they start to smell any smoke",
+        "Whenever they are operating in conditions that may expose them to a contaminated atmosphere",
+        "Other atmospheres that are irrespirable (e.g. depleted oxygen)",
+        "On the instruction of the Pump Operator",
+        "As soon as they have entered the building"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Whenever they are operating in conditions that may expose them to a contaminated atmosphere",
+        "Other atmospheres that are irrespirable (e.g. depleted oxygen)"
+      ]
+    },
+    {
+      "id": "fld_mjcclr2u",
+      "type": "checkboxes",
+      "description": "<p>What equipment must all appliances that carry BA sets also carry?</p>",
+      "required": true,
+      "options": [
+        "Entry Control Board",
+        "Chemical Splash Suits",
+        "Entry Control Officer Jerkin",
+        "Thermal Image Camera",
+        "At least 1 BA Main Guide Line",
+        "90m High Pressure Hosereel"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Entry Control Board",
+        "Chemical Splash Suits",
+        "At least 1 BA Main Guide Line"
+      ]
+    },
+    {
+      "id": "fld_mjccnfr2",
+      "type": "checkboxes",
+      "description": "<p>Which pieces of equipment must all BA sets have?</p>",
+      "required": true,
+      "options": [
+        "Tally",
+        "Thermal Image Camera",
+        "Torch",
+        "Distress Signal Unit (DSU)",
+        "Gas detector",
+        "Personal Line",
+        "Pocket knife"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Tally",
+        "Torch",
+        "Distress Signal Unit (DSU)",
+        "Personal Line"
+      ]
+    },
+    {
+      "id": "fld_mjccollj",
+      "type": "checkboxes",
+      "description": "<p>The Entry Control Officer (ECO) is responsible for controlling the entry and exit of BA&nbsp;wearers into a hot zone, what other tasks is the ECO responsible for?</p>",
+      "required": true,
+      "options": [
+        "Monitoring the safety of BA wearers",
+        "Tasking and deploying emergency teams as required",
+        "Helping to establish water supplies ",
+        "Ensuring there is a response to any emergency involving BA wearers",
+        "Maintaining resources for BA wearers",
+        "Recommissioning BA sets ready for use"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Monitoring the safety of BA wearers",
+        "Tasking and deploying emergency teams as required",
+        "Maintaining resources for BA wearers"
+      ]
+    },
+    {
+      "id": "fld_mjccr0m8",
+      "type": "checkboxes",
+      "description": "<p>Which of these would be a requirement for Stage 2 BA Control ?</p>",
+      "required": true,
+      "options": [
+        "More than 2 Entry Control Points are set up",
+        "There are 16 personnel or more on the incident ground",
+        "Six or more BA Teams are operating at the same time",
+        "Confined space entry",
+        "The OIC considers it necessary",
+        "There are multiple persons reported missing"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "More than 2 Entry Control Points are set up",
+        "Six or more BA Teams are operating at the same time",
+        "The OIC considers it necessary"
+      ]
+    },
+    {
+      "id": "fld_mjccscq7",
+      "type": "boolean",
+      "description": "<p>In&nbsp;order to avoid leaks around the face mask seal a BA wearer must :<br>&bull; not grow facial hair around the area of the mask seal.<br>&bull; not wear glasses that pass through the mask seal .<br>&bull; comply with manufacturers instructions.<br>&bull; comply with AS/NZS 1715:2009, (Selection, Use and Maintenance of Respiratory&nbsp;Protective Devices).</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_mjcctib0",
+      "type": "radio",
+      "description": "<p>Why might a firefighter have a green rectangle marked on their helmet?</p>",
+      "required": true,
+      "options": [
+        "Aerial appliance operators",
+        "Telemetry Set operators",
+        "Gas Suit qualified",
+        "Medical First Response"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Telemetry Set operators"
+    }
+  ]
+}

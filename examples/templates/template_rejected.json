@@ -1,0 +1,12 @@
+{
+  "email": {
+    "from": "DVFB Training Manager <webmaster@dvfb.org.nz>",
+    "subject": "{{appname}}: '{{skill}}' Test result: REJECTED",
+    "bodyRetry": "<p><span class=\"mceNonEditable chip\" data-val=\"name\">{{name}}</span>, <br>your test on <span class=\"mceNonEditable chip\" data-val=\"skill\">{{skill}}</span> has <span style=\"text-decoration: underline;\"><strong><em>failed</em></strong></span>.</p>\n<p><span class=\"mceNonEditable chip\" data-val=\"custom_comment\">{{custom_comment}}</span></p>\n<hr>\n<p>You can try again&nbsp;<strong><a href=\"{{url}}\">here.</a></strong><br><span class=\"mceNonEditable chip\" data-val=\"custom_comment\">{{custom_comment}}</span><strong><br></strong></p>",
+    "bodySimple": "<p><span class=\"mceNonEditable chip\" data-val=\"name\">{{name}}</span>,<br>your test on <span class=\"mceNonEditable chip\" data-val=\"skill\">{{skill}}</span> has <strong><em><span style=\"text-decoration: underline;\">failed</span></em></strong>.</p>\n<p><span class=\"mceNonEditable chip\" data-val=\"custom_comment\">{{custom_comment}}</span></p>\n<hr>\n<p>We will arrange another test later.</p>"
+  },
+  "whatsapp": {
+    "bodyRetry": "{{name}},\nyour test on {{skill}} has failed.\nYou can try again here: {{url}}.\n{{custom_comment}}",
+    "bodySimple": "{{name}},\nyour test on {{skill}} has failed.\nWe will arrange another test later.\n{{custom_comment}}"
+  }
+}

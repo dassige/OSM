@@ -1,0 +1,119 @@
+{
+  "name": "AI Gemini~ OI (G7) - Decontamination Skills and Policy Verification",
+  "intro": "<h3>Overview of Decontamination Requirements</h3>\n<p>This questionnaire verifies your understanding of the <strong>G7 Decontamination Policy</strong> and <strong>SOP</strong>. It covers operational roles, safety protocols, and the treatment of vulnerable persons during decontamination procedures.</p>",
+  "status": 0,
+  "structure": [
+    {
+      "id": "fld_a7b1",
+      "type": "radio",
+      "description": "<p>According to the policy, who is the agency responsible for the decontamination of the public and personnel at incidents attended by Fire and Emergency New Zealand?</p>",
+      "required": true,
+      "options": [
+        "Health New Zealand",
+        "New Zealand Police",
+        "Fire and Emergency New Zealand",
+        "Local Authorities"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Fire and Emergency New Zealand"
+    },
+    {
+      "id": "fld_c9d2",
+      "type": "checkboxes",
+      "description": "<p>Which of the following are principles of decontamination as defined in the G7 policy? (Select all that apply)</p>",
+      "required": true,
+      "options": [
+        "Timeliness",
+        "Effectiveness",
+        "Prevent or minimise further harm",
+        "Reasonably implementable/achievable",
+        "Compulsory enforcement"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Timeliness",
+        "Effectiveness",
+        "Prevent or minimise further harm",
+        "Reasonably implementable/achievable"
+      ]
+    },
+    {
+      "id": "fld_e3f4",
+      "type": "boolean",
+      "description": "<p>Can Fire and Emergency personnel use force to decontaminate an individual against their will if they believe it is necessary for safety?</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "No"
+    },
+    {
+      "id": "fld_g5h6",
+      "type": "radio",
+      "description": "<p>What is the minimum flow rate required for <strong>emergency decontamination</strong> of a person wearing permeable clothing?</p>",
+      "required": true,
+      "options": [
+        "200 litres/minute",
+        "400 litres/minute",
+        "600 litres/minute",
+        "100 litres/minute"
+      ],
+      "renderAs": "dropdown",
+      "correctAnswer": "400 litres/minute"
+    },
+    {
+      "id": "fld_i7j8",
+      "type": "text_multi",
+      "description": "<p>Describe the specific restriction regarding <strong>Portaflex showers</strong> and their use on infants or members of the public.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Portaflex showers should not be used on members of the public or infants, nor on personnel who are not wearing non-permeable suits and breathing apparatus."
+    },
+    {
+      "id": "fld_k9l0",
+      "type": "radio",
+      "description": "<p>Within what timeframe must a Decontamination Officer record exposure to a hazardous substance in Safe@Work?</p>",
+      "required": true,
+      "options": [
+        "12 hours",
+        "24 hours",
+        "48 hours",
+        "7 days"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "48 hours"
+    },
+    {
+      "id": "fld_m1n2",
+      "type": "checkboxes",
+      "description": "<p>When decontaminating a child, what steps must firefighters take to ensure protection and professionalism? (Select all that apply)</p>",
+      "required": true,
+      "options": [
+        "Only undress or wash a child if a parent/caregiver cannot",
+        "Ensure the firefighter is never alone with the child in an enclosed space while undressing",
+        "Perform decontamination in total isolation to ensure privacy",
+        "Report any suspected child abuse observed during the process"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Only undress or wash a child if a parent/caregiver cannot",
+        "Ensure the firefighter is never alone with the child in an enclosed space while undressing",
+        "Report any suspected child abuse observed during the process"
+      ]
+    },
+    {
+      "id": "fld_o3p4",
+      "type": "radio",
+      "description": "<p>Where should the decontamination facility be located in relation to the incident zones?</p>",
+      "required": true,
+      "options": [
+        "Deep within the Hot Zone",
+        "In the middle of the Cold Zone",
+        "At the transition from the Hot Zone to the Cold Zone",
+        "At the Fire Station"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "At the transition from the Hot Zone to the Cold Zone"
+    }
+  ]
+}

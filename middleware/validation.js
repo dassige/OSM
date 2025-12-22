@@ -2,7 +2,7 @@ const Joi = require('joi');
 
 // Schema for a single form object
 const formSchema = Joi.object({
-    id: Joi.string().pattern(/^fld_[a-z0-9]+$/).required(), // Optional on create, required on structure items
+    id: Joi.string().pattern(/^fld_[a-z0-9]+$/).optional(), // Optional on create, required on structure items
     name: Joi.string().required().trim().max(255),
     intro: Joi.string().allow('').default(''),
     status: Joi.number().valid(0, 1).default(0),

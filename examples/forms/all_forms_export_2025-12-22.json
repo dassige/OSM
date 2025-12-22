@@ -1,0 +1,1955 @@
+[
+  {
+    "id": 15,
+    "name": "AI Gemini~ OI (G7) - Decontamination Skills and Policy Verification",
+    "status": 0,
+    "intro": "<h3>Overview of Decontamination Requirements</h3>\n<p>This questionnaire verifies your understanding of the <strong>G7 Decontamination Policy</strong> and <strong>SOP</strong>. It covers operational roles, safety protocols, and the treatment of vulnerable persons during decontamination procedures.</p>",
+    "structure": [
+      {
+        "id": "fld_a7b1",
+        "type": "radio",
+        "description": "<p>According to the policy, who is the agency responsible for the decontamination of the public and personnel at incidents attended by Fire and Emergency New Zealand?</p>",
+        "required": true,
+        "options": [
+          "Health New Zealand",
+          "New Zealand Police",
+          "Fire and Emergency New Zealand",
+          "Local Authorities"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "Fire and Emergency New Zealand"
+      },
+      {
+        "id": "fld_c9d2",
+        "type": "checkboxes",
+        "description": "<p>Which of the following are principles of decontamination as defined in the G7 policy? (Select all that apply)</p>",
+        "required": true,
+        "options": [
+          "Timeliness",
+          "Effectiveness",
+          "Prevent or minimise further harm",
+          "Reasonably implementable/achievable",
+          "Compulsory enforcement"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Timeliness",
+          "Effectiveness",
+          "Prevent or minimise further harm",
+          "Reasonably implementable/achievable"
+        ]
+      },
+      {
+        "id": "fld_e3f4",
+        "type": "boolean",
+        "description": "<p>Can Fire and Emergency personnel use force to decontaminate an individual against their will if they believe it is necessary for safety?</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "No"
+      },
+      {
+        "id": "fld_g5h6",
+        "type": "radio",
+        "description": "<p>What is the minimum flow rate required for <strong>emergency decontamination</strong> of a person wearing permeable clothing?</p>",
+        "required": true,
+        "options": [
+          "200 litres/minute",
+          "400 litres/minute",
+          "600 litres/minute",
+          "100 litres/minute"
+        ],
+        "renderAs": "dropdown",
+        "correctAnswer": "400 litres/minute"
+      },
+      {
+        "id": "fld_i7j8",
+        "type": "text_multi",
+        "description": "<p>Describe the specific restriction regarding <strong>Portaflex showers</strong> and their use on infants or members of the public.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Portaflex showers should not be used on members of the public or infants, nor on personnel who are not wearing non-permeable suits and breathing apparatus."
+      },
+      {
+        "id": "fld_k9l0",
+        "type": "radio",
+        "description": "<p>Within what timeframe must a Decontamination Officer record exposure to a hazardous substance in Safe@Work?</p>",
+        "required": true,
+        "options": [
+          "12 hours",
+          "24 hours",
+          "48 hours",
+          "7 days"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "48 hours"
+      },
+      {
+        "id": "fld_m1n2",
+        "type": "checkboxes",
+        "description": "<p>When decontaminating a child, what steps must firefighters take to ensure protection and professionalism? (Select all that apply)</p>",
+        "required": true,
+        "options": [
+          "Only undress or wash a child if a parent/caregiver cannot",
+          "Ensure the firefighter is never alone with the child in an enclosed space while undressing",
+          "Perform decontamination in total isolation to ensure privacy",
+          "Report any suspected child abuse observed during the process"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Only undress or wash a child if a parent/caregiver cannot",
+          "Ensure the firefighter is never alone with the child in an enclosed space while undressing",
+          "Report any suspected child abuse observed during the process"
+        ]
+      },
+      {
+        "id": "fld_o3p4",
+        "type": "radio",
+        "description": "<p>Where should the decontamination facility be located in relation to the incident zones?</p>",
+        "required": true,
+        "options": [
+          "Deep within the Hot Zone",
+          "In the middle of the Cold Zone",
+          "At the transition from the Hot Zone to the Cold Zone",
+          "At the Fire Station"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "At the transition from the Hot Zone to the Cold Zone"
+      }
+    ],
+    "created_at": "2025-12-21 21:04:48",
+    "public_id": "fecebceb-f49f-4ef8-9968-793fd2daf730"
+  },
+  {
+    "id": 10,
+    "name": "E3-2 Respiratory Protection",
+    "status": 1,
+    "intro": "<p>The learning document for this test is at <a href=\"https://portal.fireandemergency.nz/documents/e3-2-pop-respiratory-protection-equipment-policy/\" target=\"_blank\" rel=\"noopener\">E3-2 Respiratory Protection</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+    "structure": [
+      {
+        "id": "fld_mjccjuui",
+        "type": "checkboxes",
+        "description": "<p>Firefighters must don BA before entering a structure to investigate a fire, when must firefighters start up their BA?</p>",
+        "required": true,
+        "options": [
+          "As soon as they start to smell any smoke",
+          "Whenever they are operating in conditions that may expose them to a contaminated atmosphere",
+          "Other atmospheres that are irrespirable (e.g. depleted oxygen)",
+          "On the instruction of the Pump Operator",
+          "As soon as they have entered the building"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Whenever they are operating in conditions that may expose them to a contaminated atmosphere",
+          "Other atmospheres that are irrespirable (e.g. depleted oxygen)"
+        ]
+      },
+      {
+        "id": "fld_mjcclr2u",
+        "type": "checkboxes",
+        "description": "<p>What equipment must all appliances that carry BA sets also carry?</p>",
+        "required": true,
+        "options": [
+          "Entry Control Board",
+          "Chemical Splash Suits",
+          "Entry Control Officer Jerkin",
+          "Thermal Image Camera",
+          "At least 1 BA Main Guide Line",
+          "90m High Pressure Hosereel"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Entry Control Board",
+          "Chemical Splash Suits",
+          "At least 1 BA Main Guide Line"
+        ]
+      },
+      {
+        "id": "fld_mjccnfr2",
+        "type": "checkboxes",
+        "description": "<p>Which pieces of equipment must all BA sets have?</p>",
+        "required": true,
+        "options": [
+          "Tally",
+          "Thermal Image Camera",
+          "Torch",
+          "Distress Signal Unit (DSU)",
+          "Gas detector",
+          "Personal Line",
+          "Pocket knife"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Tally",
+          "Torch",
+          "Distress Signal Unit (DSU)",
+          "Personal Line"
+        ]
+      },
+      {
+        "id": "fld_mjccollj",
+        "type": "checkboxes",
+        "description": "<p>The Entry Control Officer (ECO) is responsible for controlling the entry and exit of BA&nbsp;wearers into a hot zone, what other tasks is the ECO responsible for?</p>",
+        "required": true,
+        "options": [
+          "Monitoring the safety of BA wearers",
+          "Tasking and deploying emergency teams as required",
+          "Helping to establish water supplies ",
+          "Ensuring there is a response to any emergency involving BA wearers",
+          "Maintaining resources for BA wearers",
+          "Recommissioning BA sets ready for use"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Monitoring the safety of BA wearers",
+          "Tasking and deploying emergency teams as required",
+          "Maintaining resources for BA wearers"
+        ]
+      },
+      {
+        "id": "fld_mjccr0m8",
+        "type": "checkboxes",
+        "description": "<p>Which of these would be a requirement for Stage 2 BA Control ?</p>",
+        "required": true,
+        "options": [
+          "More than 2 Entry Control Points are set up",
+          "There are 16 personnel or more on the incident ground",
+          "Six or more BA Teams are operating at the same time",
+          "Confined space entry",
+          "The OIC considers it necessary",
+          "There are multiple persons reported missing"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "More than 2 Entry Control Points are set up",
+          "Six or more BA Teams are operating at the same time",
+          "The OIC considers it necessary"
+        ]
+      },
+      {
+        "id": "fld_mjccscq7",
+        "type": "boolean",
+        "description": "<p>In&nbsp;order to avoid leaks around the face mask seal a BA wearer must :<br>&bull; not grow facial hair around the area of the mask seal.<br>&bull; not wear glasses that pass through the mask seal .<br>&bull; comply with manufacturers instructions.<br>&bull; comply with AS/NZS 1715:2009, (Selection, Use and Maintenance of Respiratory&nbsp;Protective Devices).</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_mjcctib0",
+        "type": "radio",
+        "description": "<p>Why might a firefighter have a green rectangle marked on their helmet?</p>",
+        "required": true,
+        "options": [
+          "Aerial appliance operators",
+          "Telemetry Set operators",
+          "Gas Suit qualified",
+          "Medical First Response"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "Telemetry Set operators"
+      }
+    ],
+    "created_at": "2025-12-19 04:08:17",
+    "public_id": "e94c3517-9d7d-4012-b15d-c6a52abfa21b"
+  },
+  {
+    "id": 11,
+    "name": "FL2 Use of FENZ Operational Vehicles",
+    "status": 1,
+    "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/fl2-1-pop-use-of-operational-vehicles-policy/\" target=\"_blank\" rel=\"noopener\">FL2 Use of FENZ Operational Vehicles</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+    "structure": [
+      {
+        "id": "fld_mjcdh7vo",
+        "type": "radio",
+        "description": "<p>When responding to an emergency incident, when must both siren and beacons be used?</p>",
+        "required": true,
+        "options": [
+          "Whenever the vehicle is moving",
+          "When travelling against the traffic, through red lights or stop signs at intersections",
+          "When parking at an incident on the wrong side of the road",
+          "When requested by FireComms"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "When travelling against the traffic, through red lights or stop signs at intersections"
+      },
+      {
+        "id": "fld_mjcdjunm",
+        "type": "radio",
+        "description": "<p>If a drivers license has been suspended, disqualified or restricted in any way, who must be notified?</p>",
+        "required": true,
+        "options": [
+          "No one, it's personal information",
+          "The Driver and Vehicle Licensing Agency",
+          "Advise your Chief Fire Officer or Manager",
+          "The Police"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "Advise your Chief Fire Officer or Manager"
+      },
+      {
+        "id": "fld_mjcdkmvo",
+        "type": "radio",
+        "description": "<p>Under what circumstances can a firefighter drive an ambulance in an emergency situation?</p>",
+        "required": true,
+        "options": [
+          "Never",
+          "When requested by the Ambulance OIC, the driver must have a Class 1 license and have current competency in emergency response driving (ERD).",
+          "When directed by your OIC",
+          "Only if you have been properly inducted and are familiar with the vehicle"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "When requested by the Ambulance OIC, the driver must have a Class 1 license and have current competency in emergency response driving (ERD)."
+      },
+      {
+        "id": "fld_mjcdmb3w",
+        "type": "radio",
+        "description": "<p>What is the maximum permitted speed for a heavy operational vehicle responding under lights and siren on the open road? (Type 1 to 4)</p>",
+        "required": true,
+        "options": [
+          "130km/h",
+          "105km/h",
+          "110km/h",
+          "Speed limits do not apply to FENZ vehicles"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "110km/h"
+      },
+      {
+        "id": "fld_mjcdn95i",
+        "type": "radio",
+        "description": "<p>What is the maximum permitted speed in a 50 km/h zone when responding under lights and siren to an emergency?</p>",
+        "required": true,
+        "options": [
+          "65 km/h",
+          "75 km/h",
+          "85 km/h",
+          "50 km/h"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "65 km/h"
+      },
+      {
+        "id": "fld_mjcdo9sk",
+        "type": "radio",
+        "description": "<p>What is the maximum speed limit through a temporary speed zone?</p>",
+        "required": true,
+        "options": [
+          "15 km/h above the posted speed limit",
+          "Up to 105 km/h if the driver considers it safe",
+          "The posted speed limit",
+          "25 km/h above the posted speed limit"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "The posted speed limit"
+      },
+      {
+        "id": "fld_mjcdoz4y",
+        "type": "radio",
+        "description": "<p>What is the maximum speeds permitted at intersections controlled by lights, stop or give way signs in an emergency response?</p>",
+        "required": true,
+        "options": [
+          "Up to 105 km/h if the driver considers it safe",
+          "As fast as the OIC requests me to go",
+          "Slow to 10 km/h and stop if necessary, proceed if the way is clear, at a speed not exceeding 20 km/h and provided siren and beacons are operating",
+          "Stop at the lights and wait for the green signal"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "Slow to 10 km/h and stop if necessary, proceed if the way is clear, at a speed not exceeding 20 km/h and provided siren and beacons are operating"
+      },
+      {
+        "id": "fld_mjcdpuk2",
+        "type": "radio",
+        "description": "<p>When may the driver of a FENZ vehicle use a handheld cellphone?</p>",
+        "required": true,
+        "options": [
+          "When it is necessary to speak with FireComms and the LMR is not working",
+          "When the vehicle has stopped and parked out of the line of traffic or the call is to 111 or *555 and it unsafe or unpractical to stop and park out of the line of traffic",
+          "If trying to find directions to the incident",
+          "Never"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "When the vehicle has stopped and parked out of the line of traffic or the call is to 111 or *555 and it unsafe or unpractical to stop and park out of the line of traffic"
+      },
+      {
+        "id": "fld_mjcdr4ny",
+        "type": "radio",
+        "description": "<p>What is the maximum number of BA cylinders that may be transported in a FENZ vehicle other than a BA Tender?</p>",
+        "required": true,
+        "options": [
+          "12 Cylinders",
+          "18 Cylinders",
+          "24 Cylinders",
+          "28 Cylinders"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "12 Cylinders"
+      },
+      {
+        "id": "fld_mjcdrzmg",
+        "type": "boolean",
+        "description": "<p>The number of persons permitted to be carried in a FENZ vehicle is 1 person per seat belt provided.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_mjcdsd59",
+        "type": "checkboxes",
+        "description": "<p>What are the two points mentioned in Driving Policy that relate to the driving of private vehicles to or from the station or incident? (Click all that apply)</p>",
+        "required": true,
+        "options": [
+          "Personnel must observe the posted road speed limit",
+          "Speed limit can be exceeded in an emergency",
+          "Personnel are not covered by FENZ for damage or loss to a private vehicle",
+          "Seat belts are optional for short distances",
+          "Private vehicles can be left on yellow lines when attending an incident"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Personnel must observe the posted road speed limit",
+          "Personnel are not covered by FENZ for damage or loss to a private vehicle"
+        ]
+      }
+    ],
+    "created_at": "2025-12-19 04:32:32",
+    "public_id": "f32b85bd-d88a-4e6f-9630-b5af7c8fe000"
+  },
+  {
+    "id": 12,
+    "name": "G2-1 Emergency Medical Support",
+    "status": 1,
+    "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/g2-1-pop-emergency-medical-support-policy\" target=\"_blank\" rel=\"noopener\">G2-1 Emergency Medical Support</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+    "structure": [
+      {
+        "id": "fld_mjcdvizl",
+        "type": "checkboxes",
+        "description": "<p>If a member of Fire and Emergency NZ is injured/unwell when on duty, under the terms of this policy who must be notified by the OIC?&nbsp;</p>",
+        "required": true,
+        "options": [
+          "Chief Fire Officer / Group Manager ",
+          "No one, it is up to the injured person to notify the correct people",
+          "The person's emergency contact",
+          "The Health and Safety Officer"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Chief Fire Officer / Group Manager ",
+          "The Health and Safety Officer"
+        ]
+      },
+      {
+        "id": "fld_mjcdzmau",
+        "type": "checkboxes",
+        "description": "<p>If an on duty member of Fire and Emergency NZ is taken to hospital, what must the OIC ensure takes place?&nbsp;</p>",
+        "required": true,
+        "options": [
+          "That the injured person remains at work until they are replaced by another person",
+          "That they are provided with travel home, including their vehicle",
+          "That they are accompanied by a member of Fire and Emergency NZ until handover occurs to the emergency contact or they are discharged and returned home.",
+          "Nothing, the injured crew member needs to get themselves to hospital"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "That they are provided with travel home, including their vehicle",
+          "That they are accompanied by a member of Fire and Emergency NZ until handover occurs to the emergency contact or they are discharged and returned home."
+        ]
+      },
+      {
+        "id": "fld_mjce2qye",
+        "type": "radio",
+        "description": "<p>At an incident when decontamination is carried out (other than gloves &amp; boots) on people who have no PPE, level 1 or level 2 PPE or compromised level 3 or 4 PPE, what must the OIC ensure is requested?</p>",
+        "required": true,
+        "options": [
+          "ComCen are advised to request an ambulance",
+          "The on-call VSO is to bring replacement clothing, food, and transport the decontaminated people home",
+          "A tent so that people can get changed in privacy"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "ComCen are advised to request an ambulance"
+      },
+      {
+        "id": "fld_mjce3xw6",
+        "type": "radio",
+        "description": "<p>What must the OIC ensure happens at an incident if there is an injury to a firefighter or a member of the public or, the incident is lower that 4th alarm but the OIC considers there is a significant risk of injury?</p>",
+        "required": true,
+        "options": [
+          "Ask the VSO to bring out a first aid kit and a blanket.",
+          "OIC must ensure that Comcen requests ambulance response",
+          "Request a Health and Safety Officer to attend"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "OIC must ensure that Comcen requests ambulance response"
+      }
+    ],
+    "created_at": "2025-12-19 04:41:52",
+    "public_id": "33bfef3c-929f-4c1f-9aee-97b8bc226df1"
+  },
+  {
+    "id": 13,
+    "name": "G7 Decontamination",
+    "status": 1,
+    "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/g7-sop-decontamination-procedures/\" target=\"_blank\" rel=\"noopener\">G7 Decontamination Procedures</a> and <a href=\"https://portal.fireandemergency.nz/documents/g7-pop-decontamination-policy/\" target=\"_blank\" rel=\"noopener\">G7 Decontamination Policy</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+    "structure": [
+      {
+        "id": "fld_mjckxzw1",
+        "type": "radio",
+        "description": "<p>Which agency is responsible for the decontamination of members of the public?</p>",
+        "required": true,
+        "options": [
+          "Police",
+          "FENZ",
+          "Ambulance Service"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "FENZ"
+      },
+      {
+        "id": "fld_mjcl335m",
+        "type": "checkboxes",
+        "description": "<p>What must be in place before firefighters enter a hot zone?&nbsp;</p>",
+        "required": true,
+        "options": [
+          "Preparations for emergency decontamination are in place",
+          "Firefighters are wearing barrier gloves and a dust mask.",
+          "Consideration has been given to requesting resources for deliberate decontamination",
+          "Gas detector has been set up to identify the hazardous material.",
+          "Hazardous material has been identified"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Preparations for emergency decontamination are in place",
+          "Consideration has been given to requesting resources for deliberate decontamination"
+        ]
+      },
+      {
+        "id": "fld_mjcl4lek",
+        "type": "radio",
+        "description": "<p>What other agency may be required to assist with the decontamination of a person who&nbsp;poses a threat to FENZ personnel?</p>",
+        "required": true,
+        "options": [
+          "Defence Force personnel",
+          "Ambulance Service",
+          "Police"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "Defence Force personnel"
+      },
+      {
+        "id": "fld_mjcl5un7",
+        "type": "boolean",
+        "description": "<p>Emergency Decontamination is to be used when there is a need to decontaminate before deliberate decontamination equipment can arrive. eg, medical emergency or life risk.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_mjcl69vk",
+        "type": "checkboxes",
+        "description": "<p>Emergency Decontamination is to be used when there is a need to decontaminate before deliberate decontamination equipment can arrive. eg, medical emergency or life risk.</p>",
+        "required": true,
+        "options": [
+          "The personnel to be decontaminated must be wearing BA with a Splash suit, Gas Suit or other agency equivalent.Option 1",
+          "Members of the public wearing permeable clothing (liquids/gas can pass through) that has been contaminated.",
+          "The personnel to be decontaminated must be wearing a minimum of structure gear and BA ",
+          "The contaminant must be water-miscible and safely diluted and directed into a drain or sewer."
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "The personnel to be decontaminated must be wearing BA with a Splash suit, Gas Suit or other agency equivalent.Option 1",
+          "Members of the public wearing permeable clothing (liquids/gas can pass through) that has been contaminated."
+        ]
+      },
+      {
+        "id": "fld_mjclc0q2",
+        "type": "checkboxes",
+        "description": "<p>What factors determine whether the decontamination corridor should be used?&nbsp;</p>",
+        "required": true,
+        "options": [
+          "People are wearing permeable clothing (liquids/gas can pass through)",
+          "FENZ personnel wearing Structural Firefighting PPE",
+          "Firefighters in Gas Tight suits that have been contaminated.",
+          "There is no Portaflex shower available",
+          "The contaminant is immiscible in water (does not mix or dissolve) or there is a need to contain the run-off"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "There is no Portaflex shower available",
+          "The contaminant is immiscible in water (does not mix or dissolve) or there is a need to contain the run-off"
+        ]
+      },
+      {
+        "id": "fld_mjcldjyj",
+        "type": "radio",
+        "description": "<p>Who decides whether the run-off from a decontamination procedure should be contained?</p>",
+        "required": true,
+        "options": [
+          "Pump operator",
+          "OIC",
+          "HAZCHEM or specialist advice",
+          "Police"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "OIC"
+      },
+      {
+        "id": "fld_mjclehwr",
+        "type": "checkboxes",
+        "description": "<p>Which of these are NOT key responsibilities of the Decontamination Officer</p>",
+        "required": true,
+        "options": [
+          "Managing the decontamination function on the incident ground",
+          "Reporting to the Fire Logistics Commander",
+          "Ensuring crews have adequate rest and refreshment ",
+          "Assigning tasks to personnel to assist with the decontamination process",
+          "Identifying safety issues and hazards on the incident ground",
+          "Ensure all decontamination forms are completed"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Ensuring crews have adequate rest and refreshment ",
+          "Identifying safety issues and hazards on the incident ground"
+        ]
+      },
+      {
+        "id": "fld_mjclgble",
+        "type": "boolean",
+        "description": "<p>The OIC HazMat /Command vehicle is responsible for ensuring the safe and appropriate<br>recommissioning of all decontamination equipment.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_mjclgx41",
+        "type": "checkboxes",
+        "description": "<p>Which of these are the OIC Fire&rsquo;s responsibilities?&nbsp;</p>",
+        "required": true,
+        "options": [
+          "Ensuring that all SHEP forms are completed during the decontamination process",
+          "Ensuring FENZ personnel carrying out decontamination during an incident follow the requirements of the HazMat policy",
+          "Appointing a Decontamination Officer whenever the decontamination corridor is in use or as required",
+          "Ensuring that the hazardous material is removed from the site to a place of safety"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Ensuring FENZ personnel carrying out decontamination during an incident follow the requirements of the HazMat policy",
+          "Appointing a Decontamination Officer whenever the decontamination corridor is in use or as required"
+        ]
+      }
+    ],
+    "created_at": "2025-12-19 07:58:34",
+    "public_id": "b856c354-2af9-4284-bd46-ffc48cfff360"
+  },
+  {
+    "id": 14,
+    "name": "G9 Salvage",
+    "status": 1,
+    "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/g9-salvage-nci-41/\" target=\"_blank\" rel=\"noopener\">G9 Salvage</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+    "structure": [
+      {
+        "id": "fld_mjclt7vl",
+        "type": "boolean",
+        "description": "<p>The main reason for carrying out salvage operations is to minimise or prevent further loss to property at incidents</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_mjcltvxs",
+        "type": "checkboxes",
+        "description": "<p>When the OIC Fire orders salvage operations to commence, the officer is attempting to reduce damage to property by limiting the damage caused by what factors?</p>",
+        "required": true,
+        "options": [
+          "Firefighting activities.",
+          "Heat and Smoke",
+          "Members of the public",
+          "Police",
+          "Water damage.",
+          "Adverse weather.",
+          "Clandestine laboratory (ClanLab) operations"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Firefighting activities.",
+          "Heat and Smoke",
+          "Water damage.",
+          "Adverse weather."
+        ]
+      },
+      {
+        "id": "fld_mjclvq0q",
+        "type": "checkboxes",
+        "description": "<p>What methods can be used to reduce damage from sprinkler systems?</p>",
+        "required": true,
+        "options": [
+          "Turn off sprinkler on arrival",
+          "“Sprinkler stoppers”",
+          "Floor isolation and main sprinkler valves.",
+          "Collect water in buckets",
+          "Place absorbent material beneath activated sprinkler heads"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Floor isolation and main sprinkler valves.",
+          "Place absorbent material beneath activated sprinkler heads"
+        ]
+      },
+      {
+        "id": "fld_mjclwzuz",
+        "type": "boolean",
+        "description": "<p>Salvage should be commenced as early as possible at a hazardous substance incidents</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_mjclxbrt",
+        "type": "checkboxes",
+        "description": "<p>Which Fire and Emergency Operational Instructions can be used for hazard control during salvage operations?</p>",
+        "required": true,
+        "options": [
+          "Operational Safety",
+          "Breathing Apparatus",
+          "Confined Space",
+          "Ventilation",
+          "Decontamination"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Ventilation",
+          "Decontamination"
+        ]
+      }
+    ],
+    "created_at": "2025-12-19 08:24:57",
+    "public_id": "714585cf-9dc4-427e-915d-5746dc8b95ad"
+  },
+  {
+    "id": 21,
+    "name": "H1-H6 - Hazardous Materials",
+    "status": 1,
+    "intro": "<p>This questionnaire verifies your knowledge of operational procedures for managing hazardous materials incidents as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/h1-h6-hazardous-materials-nci-21/\" target=\"_blank\" rel=\"noopener\"><strong>NCI 21</strong></a>. Refer to the official manual for guidance if needed.</p>",
+    "structure": [
+      {
+        "id": "fld_h1h6q1",
+        "type": "checkboxes",
+        "description": "<p>Which of these considerations should be taken into account in relation to hazardous material incidents?</p>",
+        "required": true,
+        "options": [
+          "How to proceed to the incident and deploy resouces safely",
+          "PPE and BA",
+          "Correct siting of aerial appliances",
+          "The isolation and identification of hazardous material(s)",
+          "Ensuring crews have enough to eat and drink",
+          "Any evacuation required",
+          "The protection of the environment.",
+          "The closure of FENZ involvement in the incident."
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "How to proceed to the incident and deploy resouces safely",
+          "PPE and BA",
+          "The isolation and identification of hazardous material(s)",
+          "Any evacuation required",
+          "The protection of the environment.",
+          "The closure of FENZ involvement in the incident."
+        ]
+      },
+      {
+        "id": "fld_h1h6q2",
+        "type": "text_multi",
+        "description": "<p>Name the primary source of technical information that the FENZ uses for hazardous materials?</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Chemdata"
+      },
+      {
+        "id": "fld_h1h6q3",
+        "type": "text_multi",
+        "description": "<p>What is the system that Fire Comms uses to transmit hazardous material information to the incident ground?</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "HAZMAT Action Guide (HAG)"
+      },
+      {
+        "id": "fld_h1h6q4",
+        "type": "checkboxes",
+        "description": "<p>Which of these is NOT one of the seven initial actions to be considered when attending a hazardous materials incident?</p>",
+        "required": true,
+        "options": [
+          "Only the first appliance should approach and investigate.",
+          "Approach from upwind when possible",
+          "Park 400m away from incident",
+          "Appliances responding later should park clear of the incident.",
+          "Wear appropriate PPE.",
+          "Appoint a safety officer when a hot zone is identified.",
+          "Always use Chemical Splash Suits and BA for snap rescues",
+          "Consider greater alarm.",
+          "Ensure there are water tankers available for decontamination",
+          "Advise other responding appliances and services of the safe approach route"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Park 400m away from incident",
+          "Always use Chemical Splash Suits and BA for snap rescues",
+          "Ensure there are water tankers available for decontamination"
+        ]
+      },
+      {
+        "id": "fld_h1h6q5",
+        "type": "checkboxes",
+        "description": "<p>Which of the following essential pieces of information could be used to identify hazardous materials?</p>",
+        "required": true,
+        "options": [
+          "Name (trade, common, chemical).",
+          "Manufacturer",
+          "Consignee",
+          "Colour and smell",
+          "UN number",
+          "NFPA 704",
+          "Details from hazardous goods label",
+          "State of material (solid, liquid or gas)",
+          "Approximate amount spilled",
+          "Flammable range"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Name (trade, common, chemical).",
+          "Manufacturer",
+          "Consignee",
+          "UN number",
+          "NFPA 704",
+          "Details from hazardous goods label",
+          "State of material (solid, liquid or gas)",
+          "Approximate amount spilled"
+        ]
+      },
+      {
+        "id": "fld_h1h6q6",
+        "type": "checkboxes",
+        "description": "<p>Which of the following considerations that should be undertaken to ensure an incident is isolated?</p>",
+        "required": true,
+        "options": [
+          "Evacuate upwind or across wind clear of smoke/fumes",
+          "Place Hot Zone tape around the whole incident",
+          "Consider in-place protection.",
+          "Move all personnel and public downwind of the incident"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Evacuate upwind or across wind clear of smoke/fumes",
+          "Consider in-place protection."
+        ]
+      },
+      {
+        "id": "fld_h1h6q7",
+        "type": "checkboxes",
+        "description": "<p>Which methods could you can use to stop further contamination from a spilled/leaked hazardous material?</p>",
+        "required": true,
+        "options": [
+          "Turn off valves",
+          "Right cylinders or turn leak to its highest point",
+          "Channel fluids into nearest drain",
+          "Cover spillage or apply a foam blanket if appropriate",
+          "Sweep up any dry materials and place in a bag",
+          "Contain the spillage by damming",
+          "Use a water jet to dilute the materials"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Turn off valves",
+          "Right cylinders or turn leak to its highest point",
+          "Cover spillage or apply a foam blanket if appropriate",
+          "Contain the spillage by damming"
+        ]
+      },
+      {
+        "id": "fld_h1h6q8",
+        "type": "boolean",
+        "description": "<p>The statutory powers of FENZ cease in relation to a hazardous material incident when the material has been stabilised and made safe</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_h1h6q9",
+        "type": "radio",
+        "description": "<p>What actions should be taken when a hazardous material is involved in fire?</p>",
+        "required": true,
+        "options": [
+          "Contain the fire. Once the hazard level and the hazardous materials are identified, use the appropriate extinguishing medium and PPE",
+          "Fall back to a safe distance and use ground monitors to extinguish the fire",
+          "Ensure crew are wearing Chemical Splash Suits and approach carefully using the Co-ordinated Water Protection Technique"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "Contain the fire. Once the hazard level and the hazardous materials are identified, use the appropriate extinguishing medium and PPE"
+      },
+      {
+        "id": "fld_h1h6q10",
+        "type": "boolean",
+        "description": "<p>The OIC Fire determines the level of decontamination to be carried out by consulting with the HSTLC, a suitably qualified person, and/or the enforcement officer if further advice is necessary.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      }
+    ],
+    "created_at": "2025-12-21 23:27:23",
+    "public_id": "d37731b0-9b60-4587-a660-18a1b44ade8e"
+  },
+  {
+    "id": 22,
+    "name": "H5 Bulk Flammable Liquids",
+    "status": 1,
+    "intro": "<p>This verification questionnaire is based on&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/h5-bulk-flammable-liquids-nci-31/\" target=\"_blank\" rel=\"noopener\"><strong>Operational Instruction NCI 31</strong></a> for safe and effective operations at incidents involving bulk flammable liquids.&nbsp;</p>",
+    "structure": [
+      {
+        "id": "fld_h5q1",
+        "type": "checkboxes",
+        "description": "<p>Which of these would be operational considerations when dealing with bulk flammable liquids?</p>",
+        "required": true,
+        "options": [
+          "Pre-determined response and automatic upgrading to a greater alarm",
+          "Arresting whoever was responsible for the spillage",
+          "Evacuation",
+          "Liaison with other organizations",
+          "Organising food supplies and refreshments",
+          "Water and Foam concentrate supplies",
+          "Effect on the environment",
+          "Topographical and climatic features",
+          "Fast response wearing chemical splash suits",
+          "Media statements"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Pre-determined response and automatic upgrading to a greater alarm",
+          "Evacuation",
+          "Liaison with other organizations",
+          "Water and Foam concentrate supplies",
+          "Effect on the environment",
+          "Topographical and climatic features",
+          "Media statements"
+        ]
+      },
+      {
+        "id": "fld_h5q2",
+        "type": "checkboxes",
+        "description": "<p>Describe the firefighting considerations for bulk flammable liquids.</p>",
+        "required": true,
+        "options": [
+          "Extinguishing and/or cooling",
+          "Attack fire from upwind",
+          "Protecting exposures",
+          "Chemical splash suits to avoid contamination",
+          "Extinguishing ground fires before attacking the contents of a tank",
+          "Approach fire from a downhill position"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Extinguishing and/or cooling",
+          "Protecting exposures",
+          "Extinguishing ground fires before attacking the contents of a tank"
+        ]
+      },
+      {
+        "id": "fld_h5q3",
+        "type": "checkboxes",
+        "description": "<p>Describe the spillage considerations for bulk flammable liquids.</p>",
+        "required": true,
+        "options": [
+          "Water Jets or Monitors onto the spill",
+          "Isolating ignition sources",
+          "Foam blanket",
+          "Storm water drain location for emergency disposal of run off",
+          "Containment of run-off",
+          "Decontamination and Disposal"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Isolating ignition sources",
+          "Foam blanket",
+          "Containment of run-off",
+          "Decontamination and Disposal"
+        ]
+      },
+      {
+        "id": "fld_h5q4",
+        "type": "checkboxes",
+        "description": "<p>Bunded areas, slop over and boil-over are significant hazards at bulk flammable liquid incidents; which of these control measures could be used to manage these hazards?</p>",
+        "required": true,
+        "options": [
+          "Personnel to only work in bunded area.",
+          "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable liquids",
+          "Pre-planning and risk assessment.",
+          "Appoint a Welfare Officer",
+          "No personnel in the bunded area.",
+          "Aim water jets into the centre of the fuel to cool it below ignition temperature",
+          "FENZ personnel will be briefed on the plan of action and safety measures.",
+          "Appoint a Safety Officer"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable liquids",
+          "Pre-planning and risk assessment.",
+          "No personnel in the bunded area.",
+          "FENZ personnel will be briefed on the plan of action and safety measures.",
+          "Appoint a Safety Officer"
+        ]
+      }
+    ],
+    "created_at": "2025-12-21 23:31:28",
+    "public_id": "4fe610ab-dce4-446a-90c3-fe3717cfe9f2"
+  },
+  {
+    "id": 24,
+    "name": "H6-1 - Bulk Flammable Gases",
+    "status": 1,
+    "intro": "<p>This questionnaire verifies knowledge of operational procedures and safety measures for incidents involving bulk flammable gases as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/h6-1-bulk-flammable-gases-nci-32/\" target=\"_blank\" rel=\"noopener\"><strong>Operational Instruction NCI 32</strong></a>.</p>",
+    "structure": [
+      {
+        "id": "fld_h61ops",
+        "type": "checkboxes",
+        "description": "<p>Describe the operational considerations for bulk flammable gases.</p>",
+        "required": true,
+        "options": [
+          "Approach from upwind where possible",
+          "Stabilise and evacuate the inner cordon and other operational areas as required",
+          "Consider the use of chemical splash suits",
+          "Eliminate all sources of ignition in the inner cordon",
+          "Maintain a safe distance of 800m at all times",
+          "Identify the gas and its properties and monitor levels of flammability",
+          "Use dry powder to dilute the gas in the atmosphere",
+          "Notify air traffic control authorities to keep air space clear in vicinity of large leaks",
+          "Media statements"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Approach from upwind where possible",
+          "Stabilise and evacuate the inner cordon and other operational areas as required",
+          "Consider the use of chemical splash suits",
+          "Eliminate all sources of ignition in the inner cordon",
+          "Identify the gas and its properties and monitor levels of flammability",
+          "Notify air traffic control authorities to keep air space clear in vicinity of large leaks",
+          "Media statements"
+        ]
+      },
+      {
+        "id": "fld_h61coolrate",
+        "type": "radio",
+        "description": "<p>What is the water application rate to cool gas tanks or pipe-work that have been subjected to direct flame?</p>",
+        "required": true,
+        "options": [
+          "2 x GForce branches set at 470L/min",
+          "1920 L/m (32 L/s) per m2 in the area of flame impingement.",
+          "A ground monitor supplying 800 L/min",
+          "360 L/min (6 L/s) per m2 in the area of flame impingement."
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "1920 L/m (32 L/s) per m2 in the area of flame impingement."
+      },
+      {
+        "id": "fld_h61firectrl",
+        "type": "checkboxes",
+        "description": "<p>Describe the control measures used when dealing with the hazards of BLEVE and explosions when controlling fires in bulk flammable gas installations.</p>",
+        "required": true,
+        "options": [
+          "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable gases",
+          "Lay down a foam blanket surrounding the bulk flammable gas",
+          "Pre-planning and risk assessment",
+          "FENZ personnel will be briefed on the plan of action and safety measures",
+          "Use only the minimum numbers of FENZ personnel needed to conduct operations",
+          "Chemical splash suits to be worn if exposure to flammable gas is likely",
+          "Establish an inner cordon with a radius of 500m from the fire",
+          "Cool tanks and pipe-work, taking care not to freeze up relief valves.",
+          "Evacuate all unnecessary personnel, other service personnel and members of the public from inner cordon",
+          "Wear structural firefighting uniform and BA"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable gases",
+          "Pre-planning and risk assessment",
+          "FENZ personnel will be briefed on the plan of action and safety measures",
+          "Use only the minimum numbers of FENZ personnel needed to conduct operations",
+          "Establish an inner cordon with a radius of 500m from the fire",
+          "Cool tanks and pipe-work, taking care not to freeze up relief valves.",
+          "Evacuate all unnecessary personnel, other service personnel and members of the public from inner cordon",
+          "Wear structural firefighting uniform and BA"
+        ]
+      },
+      {
+        "id": "fld_h61leakctrl",
+        "type": "checkboxes",
+        "description": "<p>In addition to the above what other control measures should be employed when dealing with the significant hazards of Ignition of gas clouds and cold burns encountered when controlling leaks in bulk flammable gases.</p>",
+        "required": true,
+        "options": [
+          "Use water protection technique to disperse the gas cloud",
+          "Personnel will not enter gas cloud",
+          "Consider Gas Tight Suits for operational personnel",
+          "Establish inner cordon (consider wind direction)",
+          "Awareness of dangers of liquid leaks"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Personnel will not enter gas cloud",
+          "Establish inner cordon (consider wind direction)",
+          "Awareness of dangers of liquid leaks"
+        ]
+      }
+    ],
+    "created_at": "2025-12-21 23:37:44",
+    "public_id": "0bc31721-e7f9-4d7f-a232-b5c9815ba162"
+  },
+  {
+    "id": 28,
+    "name": "H6-2 - Portable Gas Cylinders",
+    "status": 1,
+    "intro": "<p>This questionnaire verifies your knowledge of safe and effective operations at incidents involving portable gas cylinders and pressurized vessels as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/h6-2-portable-gas-cylinders-and-pressurised-vessels-nci-33/\" target=\"_blank\" rel=\"noopener\"><strong>NCI 33</strong></a>.</p>",
+    "structure": [
+      {
+        "id": "fld_h62powers",
+        "type": "boolean",
+        "description": "<p>FENZ Act 2017 Section 39 provides the OIC with the powers of an Enforcement Officer as defined by the Hazardous Substances and New Organisms Act 1996 when managing incidents involving portable gas cylinders.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": null
+      },
+      {
+        "id": "fld_h62leaking",
+        "type": "checkboxes",
+        "description": "<p>Which steps should you take when attending an incident involving a leaking cylinder (not involved in fire)?</p>",
+        "required": true,
+        "options": [
+          "Approach and park downwind and downhill",
+          "Evacuate and cordon the affected area",
+          "Prevent ignition and monitor the flammability range if possible",
+          "Identify the gas and isolate the leak",
+          "Keep all doors and windows closed",
+          "Liaise with HSTLC or the enforcement officer",
+          "Leave the cylinder in place and do not touch it"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Evacuate and cordon the affected area",
+          "Prevent ignition and monitor the flammability range if possible",
+          "Identify the gas and isolate the leak",
+          "Liaise with HSTLC or the enforcement officer"
+        ]
+      },
+      {
+        "id": "fld_h62fire",
+        "type": "checkboxes",
+        "description": "<p>If a gas cylinder has been involved in fire, what should be done differently to the standard leaking cylinder procedure?</p>",
+        "required": true,
+        "options": [
+          "Park upwind and uphill in a SAFE location",
+          "Cool the cylinder from a safe position",
+          "Remove the cylinder to a safe and secure place",
+          "All of the above"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Park upwind and uphill in a SAFE location",
+          "Cool the cylinder from a safe position"
+        ]
+      },
+      {
+        "id": "fld_h62acetylene",
+        "type": "checkboxes",
+        "description": "<p>Explain the procedure to safely manage an incident involving an acetylene cylinder involved in a fire or exposed to heat.</p>",
+        "required": true,
+        "options": [
+          "If it is possible to view cylinder from behind a solid structure: Do not approach the cylinder: Evacuate the area for a 200 metre radius, leave the cylinder in position and apply copious water after the fire is extinguished, check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it.",
+          "If NOT possible to view cylinder from behind a solid structure: Do not approach the cylinder, Evacuate the area for a 200 metre radius. Leave the cylinder in position and apply copious water after the fire is extinguished. Check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it."
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "If it is possible to view cylinder from behind a solid structure: Do not approach the cylinder: Evacuate the area for a 200 metre radius, leave the cylinder in position and apply copious water after the fire is extinguished, check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it.",
+          "If NOT possible to view cylinder from behind a solid structure: Do not approach the cylinder, Evacuate the area for a 200 metre radius. Leave the cylinder in position and apply copious water after the fire is extinguished. Check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it."
+        ]
+      },
+      {
+        "id": "fld_h62bleve",
+        "type": "checkboxes",
+        "description": "<p>What control measures should be put in place in case of BLEVE (Boiling Liquid Expanding Vapour Explosion)?</p>",
+        "required": true,
+        "options": [
+          "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable gases",
+          "Preplanning and risk assessment with crews briefed on plan of action and safety measures",
+          "Use as many personnel as available",
+          "Wildfire gear must be worn at all times",
+          "Evacuate all unnecessary personnel and public from the area and establish an inner cordon",
+          "Cool cylinders from a protected position",
+          "Approach the cylinders with a protective water spray",
+          "Take care not to freeze up relief valves if cooling water is applied"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable gases",
+          "Preplanning and risk assessment with crews briefed on plan of action and safety measures",
+          "Evacuate all unnecessary personnel and public from the area and establish an inner cordon",
+          "Cool cylinders from a protected position",
+          "Take care not to freeze up relief valves if cooling water is applied"
+        ]
+      },
+      {
+        "id": "fld_h62gascloud",
+        "type": "checkboxes",
+        "description": "<p>In addition to the standard precautions, what control measures should be taken when dealing with gas clouds?</p>",
+        "required": true,
+        "options": [
+          "Use a gas detector in the centre of the cloud to check for possibility of ignition",
+          "No personnel to enter the gas cloud",
+          "Maintain awareness of the dangers of leaking pressurised gas",
+          "Use positive pressure ventilation to blow the cloud away"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "No personnel to enter the gas cloud",
+          "Maintain awareness of the dangers of leaking pressurised gas"
+        ]
+      }
+    ],
+    "created_at": "2025-12-22 00:08:08",
+    "public_id": "bc3c3e33-4717-4af0-a603-9e2498519b36"
+  },
+  {
+    "id": 29,
+    "name": "H7-1 - Clandestine Laboratories",
+    "status": 1,
+    "intro": "<p>This questionnaire verifies your knowledge of the safety procedures and liaison requirements for incidents involving clandestine drug laboratories as defined in <a href=\"https://portal.fireandemergency.nz/documents/h7-1-clandestine-laboratories-nci-14/\" target=\"_blank\" rel=\"noopener\">NCI 14</a></p>",
+    "structure": [
+      {
+        "id": "fld_h71hazards",
+        "type": "checkboxes",
+        "description": "<p>What are the three significant hazards identified in Clandestine Laboratories?</p>",
+        "required": true,
+        "options": [
+          "Hazardous Chemicals",
+          "Traffic",
+          "Booby Traps",
+          "Hostile Civilians",
+          "Smoke and heat",
+          "Wild animals"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Hazardous Chemicals",
+          "Booby Traps",
+          "Hostile Civilians"
+        ]
+      },
+      {
+        "id": "fld_h71lead",
+        "type": "radio",
+        "description": "<p>Which agency is the lead agency at a clandestine laboratory incident?</p>",
+        "required": true,
+        "options": [
+          "Fire and Emergency New Zealand",
+          "New Zealand Police",
+          "Ambulance Service",
+          "Environmental Agency"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "New Zealand Police"
+      },
+      {
+        "id": "fld_h71control",
+        "type": "checkboxes",
+        "description": "<p>What must the first three control measures be at a suspected clandestine laboratory incident?</p>",
+        "required": true,
+        "options": [
+          "Check that laboratory is currently operational",
+          "Withdraw",
+          "Secure Premises",
+          "Remove apparatus to a safe place",
+          "Notify Comms/Police"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Withdraw",
+          "Secure Premises",
+          "Notify Comms/Police"
+        ]
+      },
+      {
+        "id": "fld_h71outside",
+        "type": "checkboxes",
+        "description": "<p>Which of these signs OUTSIDE a building may indicate a clandestine laboratory is inside the building?</p>",
+        "required": true,
+        "options": [
+          "Chemical odours",
+          "Loud music",
+          "Opaque windows / Bars on windows",
+          "High occupancy of building",
+          "Discarded waste packaging",
+          "Multiple vehicles and vans parked outside",
+          "High security measures - Cameras, barbed wire fence, Guard dogs"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Chemical odours",
+          "Opaque windows / Bars on windows",
+          "Discarded waste packaging",
+          "Multiple vehicles and vans parked outside",
+          "High security measures - Cameras, barbed wire fence, Guard dogs"
+        ]
+      },
+      {
+        "id": "fld_h71inside",
+        "type": "checkboxes",
+        "description": "<p>Which of these signs INSIDE a building might indicate a clandestine laboratory?</p>",
+        "required": true,
+        "options": [
+          "Chemical smell",
+          "Heavy layer of smoke",
+          "Heavy orange staining of the interior",
+          "Laboratory glassware",
+          "Acetylene cylinders",
+          "Bunsen Burners / LPG cylinders",
+          "Hot Plates",
+          "Lithium batteries / Bulk chemical containers.",
+          "Large amounts of food in storage"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Chemical smell",
+          "Heavy orange staining of the interior",
+          "Laboratory glassware",
+          "Bunsen Burners / LPG cylinders",
+          "Hot Plates",
+          "Lithium batteries / Bulk chemical containers."
+        ]
+      },
+      {
+        "id": "fld_h71permission",
+        "type": "radio",
+        "description": "<p>Once firefighters have withdrawn, who gives permission for firefighting to commence?</p>",
+        "required": true,
+        "options": [
+          "The Chief Fire Officer / OIC",
+          "Fire Comms",
+          "New Zealand Police",
+          "Environmental Agency"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "New Zealand Police"
+      }
+    ],
+    "created_at": "2025-12-22 00:11:33",
+    "public_id": "307cbf49-334c-4904-866c-de05cf97bec2"
+  },
+  {
+    "id": 30,
+    "name": "IS1 - Operational Safety",
+    "status": 1,
+    "intro": "<p>This form verifies your understanding of the safety and health responsibilities of personnel regarding themselves and others at incidents as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/is1-operational-safety-nci-1/\" target=\"_blank\" rel=\"noopener\"><strong>NCI 1</strong></a>. Completion is required for OSM compliance.</p>",
+    "structure": [
+      {
+        "id": "fld_is1oiccrew",
+        "type": "checkboxes",
+        "description": "<p>Which of these must the OIC Crew do to ensure the safety and effectiveness of the firefighting crew?</p>",
+        "required": true,
+        "options": [
+          "Use the nominal role tally procedure and BA entry control procedures.",
+          "Follow operational procedures",
+          "Assist with operational tasks",
+          "Evaluate priorities, give direction and maintain control.",
+          "Establish an incident management structure",
+          "Populate the Entry Control Board",
+          "Monitor progress as it relates to their area of operations",
+          "Operate the Main Pump"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Use the nominal role tally procedure and BA entry control procedures.",
+          "Follow operational procedures",
+          "Evaluate priorities, give direction and maintain control.",
+          "Establish an incident management structure",
+          "Monitor progress as it relates to their area of operations"
+        ]
+      },
+      {
+        "id": "fld_is1hazardident",
+        "type": "radio",
+        "description": "<p>What must any FENZ personnel do if they identify a hazard?</p>",
+        "required": true,
+        "options": [
+          "Note the hazard for later reference during debrief",
+          "Bring the hazard to the attention of their OIC or the OIC Fire.",
+          "Record the hazard on the Entry Control Board"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "Bring the hazard to the attention of their OIC or the OIC Fire."
+      },
+      {
+        "id": "fld_is1civilians",
+        "type": "boolean",
+        "description": "<p>Civilian and other agency personnel can be used to assist with FENZ operations as long as they have been made aware of all hazards, given clear instructions regarding the management of the hazards and briefed on the role they will be undertaking.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_is1seatbelts",
+        "type": "radio",
+        "description": "<p>Who is responsible for ensuring the crew are wearing seatbelts when their appliance is mobile?</p>",
+        "required": true,
+        "options": [
+          "The driver",
+          "The individual",
+          "The Safety Officer",
+          "The OIC"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "The OIC"
+      },
+      {
+        "id": "fld_is1ppespec",
+        "type": "radio",
+        "description": "<p>Who is responsible for specifying the appropriate type of PPE for the incident being attended?</p>",
+        "required": true,
+        "options": [
+          "The individual",
+          "The driver",
+          "The OIC",
+          "The Safety Officer"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "The OIC"
+      },
+      {
+        "id": "fld_is1baworn",
+        "type": "boolean",
+        "description": "<p>BA will be worn by all personnel working in a contaminated atmosphere or any atmosphere suspected of being contaminated.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_is1socount",
+        "type": "radio",
+        "description": "<p>How many persons must be committed operationally at an incident for a safety officer to be appointed?</p>",
+        "required": true,
+        "options": [
+          "More than 10",
+          "More than 12",
+          "More than 16",
+          "More than 3 crews"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "More than 16"
+      },
+      {
+        "id": "fld_is1sosit",
+        "type": "checkboxes",
+        "description": "<p>Which of these other situations must also have a Safety Officer appointed?</p>",
+        "required": true,
+        "options": [
+          "Hazardous substances are involved and a Hot Zone is established",
+          "More than 2 Entry Control Points have been set up",
+          "Live fire training is being undertaken.",
+          "Operating in unusual or unfamiliar circumstances.",
+          "Whenever FENZ is not the lead agency and a Safety Officer is required for FENZ operations.",
+          "For incidents involving Aerial appliances"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Hazardous substances are involved and a Hot Zone is established",
+          "Live fire training is being undertaken.",
+          "Operating in unusual or unfamiliar circumstances.",
+          "Whenever FENZ is not the lead agency and a Safety Officer is required for FENZ operations."
+        ]
+      },
+      {
+        "id": "fld_is1evacsig",
+        "type": "radio",
+        "description": "<p>What is the emergency evacuation signal?</p>",
+        "required": true,
+        "options": [
+          "Mayday message",
+          "Continuous operation of all vehicle sirens",
+          "Operation of the Distress Signal Unit",
+          "Whistles"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "Continuous operation of all vehicle sirens"
+      },
+      {
+        "id": "fld_is1evacpers",
+        "type": "checkboxes",
+        "description": "<p>What must all personnel do on hearing the emergency evacuation signal?</p>",
+        "required": true,
+        "options": [
+          "Shut down firefighting deliveries at the nozzle.",
+          "Carry out a quick search for personnel or patients",
+          "Withdraw to a place of safety.",
+          "Recover any equipment that might get lost or damaged",
+          "Uplift BA tallies from the Entry Control Officer and return to their appliance."
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Shut down firefighting deliveries at the nozzle.",
+          "Withdraw to a place of safety.",
+          "Uplift BA tallies from the Entry Control Officer and return to their appliance."
+        ]
+      },
+      {
+        "id": "fld_is1evacoic",
+        "type": "checkboxes",
+        "description": "<p>What must the OIC do on hearing the emergency evacuation signal?</p>",
+        "required": true,
+        "options": [
+          "Uplift nominal roll tallies and conduct a head count.",
+          "Send in relief team to continue operations",
+          "Advise the OIC Fire of the result."
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Uplift nominal roll tallies and conduct a head count.",
+          "Advise the OIC Fire of the result."
+        ]
+      },
+      {
+        "id": "fld_is1hco",
+        "type": "boolean",
+        "description": "<p>At hazardous materials incidents the OIC should consider appointing a Hazard Control Officer to assist with the management of the incident.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_is1handback",
+        "type": "boolean",
+        "description": "<p>At the end of the incident the person responsible for the building should be briefed on any remaining hazards before FENZ relinquishes responsibility of the site.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_is1shep",
+        "type": "boolean",
+        "description": "<p>Significant Hazard Exposure Protocols must be followed if a significant health hazard or potentially significant health hazard is identified.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      }
+    ],
+    "created_at": "2025-12-22 00:18:41",
+    "public_id": "a7499b5c-c2b4-444f-951a-d902914c53b6"
+  },
+  {
+    "id": 31,
+    "name": "IS3 - Working Near Roadways",
+    "status": 1,
+    "intro": "<p>This questionnaire verifies your understanding of safe practices when operating on or near roadways as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/is3-pop-working-near-roadways-policy/\" target=\"_blank\" rel=\"noopener\"><strong>IS3 POP</strong></a> and <a href=\"https://portal.fireandemergency.nz/documents/is3-sop-working-near-roadways-procedure/\" target=\"_blank\" rel=\"noopener\"><strong>IS3 SOP</strong></a>. These procedures ensure the safety of personnel and the public during incident-related activities.</p>",
+    "structure": [
+      {
+        "id": "fld_is3driver",
+        "type": "checkboxes",
+        "description": "<p>What factors must the driver of an appliance consider when operating on roadways?</p>",
+        "required": true,
+        "options": [
+          "Park next to the nearest fire hydrant",
+          "Park to create a safe working environment or park off the road.",
+          "Allow space and/or access for other emergency vehicles",
+          "Park in the middle of the road and leave the sirens operating",
+          "Leave the beacons on",
+          "Drive off the roadway at the earliest opportunity to reduce traffic.",
+          "Adjust the headlights to meet the conditions at the scene, considering time of day, light levels, glare hazard for other drivers"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Park to create a safe working environment or park off the road.",
+          "Allow space and/or access for other emergency vehicles",
+          "Leave the beacons on",
+          "Adjust the headlights to meet the conditions at the scene, considering time of day, light levels, glare hazard for other drivers"
+        ]
+      },
+      {
+        "id": "fld_is3crewsafety",
+        "type": "checkboxes",
+        "description": "<p>What must all FENZ personnel do in relation to crew safety when working on roadways?</p>",
+        "required": true,
+        "options": [
+          "Don approved reflective clothing",
+          "Arrange for an alternative route for traffic to avoid the incident",
+          "Exit vehicles from the safe side if possible",
+          "Wear flashing lights on jerkins so that you are always visible to other people"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Don approved reflective clothing",
+          "Exit vehicles from the safe side if possible"
+        ]
+      },
+      {
+        "id": "fld_is3oicfactors",
+        "type": "checkboxes",
+        "description": "<p>What factors does the OIC Fire have to consider when creating and maintaining a safe working environment?</p>",
+        "required": true,
+        "options": [
+          "Close the road if two-way traffic cannot be achieved",
+          "Request police to guide traffic",
+          "Ask members of the public to use their cars to create a barricade"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Close the road if two-way traffic cannot be achieved",
+          "Request police to guide traffic"
+        ]
+      },
+      {
+        "id": "fld_is3departure",
+        "type": "checkboxes",
+        "description": "<p>What safety considerations does the OIC have to ensure before departing the scene?</p>",
+        "required": true,
+        "options": [
+          "Made safe by FENZ personnel",
+          "Left as it was found for police investigation",
+          "Handed over to another agency or authority to be made safe"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Made safe by FENZ personnel",
+          "Handed over to another agency or authority to be made safe"
+        ]
+      }
+    ],
+    "created_at": "2025-12-22 00:23:41",
+    "public_id": "fd57fd0f-c2b9-4fcf-b141-213f1a7fe3e1"
+  },
+  {
+    "id": 33,
+    "name": "IS4 - Working Near Electrical Hazards",
+    "status": 1,
+    "intro": "<p>This questionnaire verifies your knowledge of the safety procedures for incidents involving electrical hazards as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/is4-working-near-electrical-hazards/\" target=\"_blank\" rel=\"noopener\"><strong>NCI 12</strong></a> and the <a href=\"https://portal.fireandemergency.nz/documents/electrical-safety-for-emergency-services-personnel-eea-may-2015-guide/\" target=\"_blank\" rel=\"noopener\"><strong>EEA Guide to Electrical Network Safety</strong></a>.</p>",
+    "structure": [
+      {
+        "id": "fld_is4risks",
+        "type": "checkboxes",
+        "description": "<p>Which of these risks may need to be considered when working near electrical hazards?</p>",
+        "required": true,
+        "options": [
+          "Fallen wires",
+          "Rescues in or around live electrical hazards",
+          "Ground level transformers, switch gear and kiosks",
+          "Earthquakes and tsunamis",
+          "Pole fires, substation fires and explosions",
+          "Underground installations",
+          "Polychlorinated biphenyls (PCBs)",
+          "Power stations",
+          "Drowning or trapped beneath water"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Fallen wires",
+          "Rescues in or around live electrical hazards",
+          "Ground level transformers, switch gear and kiosks",
+          "Pole fires, substation fires and explosions",
+          "Underground installations",
+          "Polychlorinated biphenyls (PCBs)",
+          "Power stations"
+        ]
+      },
+      {
+        "id": "fld_is4hazards",
+        "type": "checkboxes",
+        "description": "<p>Which of these hazards are associated with working near electricity?</p>",
+        "required": true,
+        "options": [
+          "Electrocution",
+          "Hydrochloric acid",
+          "Oil",
+          "Gases from fixed installations",
+          "Asphyxiation"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Electrocution",
+          "Oil",
+          "Gases from fixed installations"
+        ]
+      },
+      {
+        "id": "fld_is4training",
+        "type": "boolean",
+        "description": "<p>All personnel should be trained in the risks to be encountered and safe practices when working with electrical hazards and crew(s) briefed on plan of action and safety measures.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": null
+      },
+      {
+        "id": "fld_is4isolation",
+        "type": "boolean",
+        "description": "<p>Electricity supply should NOT be isolated when crew are working nearby.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": null
+      },
+      {
+        "id": "fld_is4treatlive",
+        "type": "boolean",
+        "description": "<p>Treat all equipment/installations as live until certified as not live by power company engineer and only carry out rescues only with full agreement of power company engineer.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": null
+      },
+      {
+        "id": "fld_is4storm",
+        "type": "boolean",
+        "description": "<p>If an electrical storm is imminent, withdraw to a safe distance from transmission structures to avoid lightning strikes.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": null
+      },
+      {
+        "id": "fld_is4ladders",
+        "type": "boolean",
+        "description": "<p>FENZ ladders and other long equipment are safe to use alongside electrical equipment or overhead lines.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": null
+      },
+      {
+        "id": "fld_is4oicmeasures",
+        "type": "checkboxes",
+        "description": "<p>The OIC should carry out which control measures?</p>",
+        "required": true,
+        "options": [
+          "Contact and liaise with power company representatives",
+          "Keep personnel directly involved to a minimum",
+          "Ensure that crews work together within a 4m cordon of the electric equipment.",
+          "Ensure that crews wear full PPE and BA.",
+          "Direct deliveries onto electrical equipment at the earliest opportunity."
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Contact and liaise with power company representatives",
+          "Keep personnel directly involved to a minimum",
+          "Ensure that crews wear full PPE and BA."
+        ]
+      },
+      {
+        "id": "fld_is4manualhandling",
+        "type": "boolean",
+        "description": "<p>All personnel should be trained in safe manual handling techniques.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": null
+      }
+    ],
+    "created_at": "2025-12-22 00:29:38",
+    "public_id": "6b92cafe-69f5-40f6-92c3-a8843c8c10c1"
+  },
+  {
+    "id": 34,
+    "name": "IS9 - Working Near Civil Disturbances",
+    "status": 1,
+    "intro": "<p>This questionnaire verifies your knowledge of safe and effective operations at incidents where crowd behaviour places personnel and operations at risk, as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/is9-working-near-civil-disturbances-nci-29/\" target=\"_blank\" rel=\"noopener\"><strong>NCI 29</strong></a>. FENZ personnel must maintain neutrality and prioritize the protection of life and property.</p>",
+    "structure": [
+      {
+        "id": "fld_is9consult",
+        "type": "radio",
+        "description": "<p>Which other organisation(s) should be consulted when attending an incident involving a civil disturbance?</p>",
+        "required": true,
+        "options": [
+          "Victim Support",
+          "Local District Council",
+          "New Zealand Police",
+          "Fire and Emergency - On Call Executive"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "New Zealand Police"
+      },
+      {
+        "id": "fld_is9local",
+        "type": "checkboxes",
+        "description": "<p>Which of the following should be included in Approved Local Procedures for attending a civil disturbance?</p>",
+        "required": true,
+        "options": [
+          "The pre-determined response",
+          "Liaison with the police and other emergency services",
+          "Water supplies for crowd dispersal",
+          "Hostile crowd behaviour / Riots / Protest marches",
+          "Any disturbance that develops while Fire and Emergency NZ personnel are attending an incident",
+          "Procedures for when working alone",
+          "Rescue and protection of persons and property from fire",
+          "How to restrain a hostile member of public",
+          "Safety of FENZ personnel and the security of fire stations",
+          "Expected weather conditions"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "The pre-determined response",
+          "Liaison with the police and other emergency services",
+          "Hostile crowd behaviour / Riots / Protest marches",
+          "Any disturbance that develops while Fire and Emergency NZ personnel are attending an incident",
+          "Rescue and protection of persons and property from fire",
+          "Safety of FENZ personnel and the security of fire stations"
+        ]
+      },
+      {
+        "id": "fld_is9role",
+        "type": "boolean",
+        "description": "<p>The role of Fire and Emergency NZ at civil disturbance incidents is to protect life and property, NOT to support the police in quelling riots or enforcing order.</p>",
+        "required": true,
+        "options": [],
+        "renderAs": "radio",
+        "correctAnswer": "Yes"
+      },
+      {
+        "id": "fld_is9ready",
+        "type": "checkboxes",
+        "description": "<p>During the readiness or pre-planning phase, what considerations should FENZ and NZ Police address?</p>",
+        "required": true,
+        "options": [
+          "Containment areas for hostile members of the public",
+          "Foster understanding of each other's roles and methods of operation",
+          "Agree on local procedures",
+          "How many fire crews might be available for crowd dispersal.",
+          "Identify potential points of tension in the community",
+          "Water supplies for use on protesters"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Foster understanding of each other's roles and methods of operation",
+          "Agree on local procedures",
+          "Identify potential points of tension in the community"
+        ]
+      },
+      {
+        "id": "fld_is9response",
+        "type": "checkboxes",
+        "description": "<p>When developing predetermined attendance protocols, what are the four criteria required when responding?</p>",
+        "required": true,
+        "options": [
+          "Use the minimum number of appliances for the initial response",
+          "Determine safe and secure response routes",
+          "Discuss the fastest way to get there under lights and sirens",
+          "Do not use flashing lights and sirens",
+          "What riot gear fire-fighters are to wear when responding",
+          "Liaise with NZ Police to determine whether a police escort is necessary"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Use the minimum number of appliances for the initial response",
+          "Determine safe and secure response routes",
+          "Do not use flashing lights and sirens",
+          "Liaise with NZ Police to determine whether a police escort is necessary"
+        ]
+      },
+      {
+        "id": "fld_is9incident",
+        "type": "checkboxes",
+        "description": "<p>What actions need to be taken when a disturbance develops at an incident that Fire and Emergency NZ personnel are attending?</p>",
+        "required": true,
+        "options": [
+          "Prepare monitor for crowd dispersal",
+          "Establish the whereabouts of all personnel",
+          "Withdraw to a safe place",
+          "Call station for additional crews",
+          "Advise ComCen",
+          "Liaise with NZ Police"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Establish the whereabouts of all personnel",
+          "Withdraw to a safe place",
+          "Advise ComCen",
+          "Liaise with NZ Police"
+        ]
+      },
+      {
+        "id": "fld_is9ppe",
+        "type": "radio",
+        "description": "<p>What PPE should Fire and Emergency NZ personnel wear when in attendance at civil disturbances?</p>",
+        "required": true,
+        "options": [
+          "Chemical Splash Suits and BA",
+          "Level 1s as they allow easier movement",
+          "Structural firefighting uniform at all times, with visors down."
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "Structural firefighting uniform at all times, with visors down."
+      },
+      {
+        "id": "fld_is9withdrawal",
+        "type": "checkboxes",
+        "description": "<p>What three considerations should be put in place, in regards to appliances and firefighting, to enable a quick withdrawal from an incident should the situation deteriorate?</p>",
+        "required": true,
+        "options": [
+          "Park appliances with the driver remaining in the driver's seat with the engine running",
+          "Only use appliance Hose Reels",
+          "Use personal lines so that crew don't become separated",
+          "Do not use appliance Hose Reels",
+          "Use delivery hose from hydrants where the water pressure is sufficient."
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Park appliances with the driver remaining in the driver's seat with the engine running",
+          "Do not use appliance Hose Reels",
+          "Use delivery hose from hydrants where the water pressure is sufficient."
+        ]
+      },
+      {
+        "id": "fld_is9support",
+        "type": "radio",
+        "description": "<p>Can operational support staff be used for crowd control duties if requested by OIC Police?</p>",
+        "required": true,
+        "options": [
+          "If they are available and wearing adequate PPE",
+          "If clearance is given by the CFO",
+          "No"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": "No"
+      },
+      {
+        "id": "fld_is9hazards",
+        "type": "checkboxes",
+        "description": "<p>Select the significant hazards that may be faced by crews, both responding to and at, civil disturbance incidents.</p>",
+        "required": true,
+        "options": [
+          "Backdraught or flashover",
+          "Missiles thrown at vehicles",
+          "Vehicles hitting barricades",
+          "Clandestine Laboratories (Clan Labs)",
+          "Vehicles being hi-jacked",
+          "Fire bombs",
+          "Physical attack"
+        ],
+        "renderAs": "radio",
+        "correctAnswer": [
+          "Missiles thrown at vehicles",
+          "Vehicles hitting barricades",
+          "Vehicles being hi-jacked",
+          "Fire bombs",
+          "Physical attack"
+        ]
+      }
+    ],
+    "created_at": "2025-12-22 00:32:37",
+    "public_id": "4c4b2fe4-df1c-4044-863a-b2806b5f8756"
+  }
+]

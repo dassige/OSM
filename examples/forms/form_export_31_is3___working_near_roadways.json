@@ -1,0 +1,78 @@
+{
+  "name": "IS3 - Working Near Roadways",
+  "intro": "<p>This questionnaire verifies your understanding of safe practices when operating on or near roadways as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/is3-pop-working-near-roadways-policy/\" target=\"_blank\" rel=\"noopener\"><strong>IS3 POP</strong></a> and <a href=\"https://portal.fireandemergency.nz/documents/is3-sop-working-near-roadways-procedure/\" target=\"_blank\" rel=\"noopener\"><strong>IS3 SOP</strong></a>. These procedures ensure the safety of personnel and the public during incident-related activities.</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_is3driver",
+      "type": "checkboxes",
+      "description": "<p>What factors must the driver of an appliance consider when operating on roadways?</p>",
+      "required": true,
+      "options": [
+        "Park next to the nearest fire hydrant",
+        "Park to create a safe working environment or park off the road.",
+        "Allow space and/or access for other emergency vehicles",
+        "Park in the middle of the road and leave the sirens operating",
+        "Leave the beacons on",
+        "Drive off the roadway at the earliest opportunity to reduce traffic.",
+        "Adjust the headlights to meet the conditions at the scene, considering time of day, light levels, glare hazard for other drivers"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Park to create a safe working environment or park off the road.",
+        "Allow space and/or access for other emergency vehicles",
+        "Leave the beacons on",
+        "Adjust the headlights to meet the conditions at the scene, considering time of day, light levels, glare hazard for other drivers"
+      ]
+    },
+    {
+      "id": "fld_is3crewsafety",
+      "type": "checkboxes",
+      "description": "<p>What must all FENZ personnel do in relation to crew safety when working on roadways?</p>",
+      "required": true,
+      "options": [
+        "Don approved reflective clothing",
+        "Arrange for an alternative route for traffic to avoid the incident",
+        "Exit vehicles from the safe side if possible",
+        "Wear flashing lights on jerkins so that you are always visible to other people"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Don approved reflective clothing",
+        "Exit vehicles from the safe side if possible"
+      ]
+    },
+    {
+      "id": "fld_is3oicfactors",
+      "type": "checkboxes",
+      "description": "<p>What factors does the OIC Fire have to consider when creating and maintaining a safe working environment?</p>",
+      "required": true,
+      "options": [
+        "Close the road if two-way traffic cannot be achieved",
+        "Request police to guide traffic",
+        "Ask members of the public to use their cars to create a barricade"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Close the road if two-way traffic cannot be achieved",
+        "Request police to guide traffic"
+      ]
+    },
+    {
+      "id": "fld_is3departure",
+      "type": "checkboxes",
+      "description": "<p>What safety considerations does the OIC have to ensure before departing the scene?</p>",
+      "required": true,
+      "options": [
+        "Made safe by FENZ personnel",
+        "Left as it was found for police investigation",
+        "Handed over to another agency or authority to be made safe"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Made safe by FENZ personnel",
+        "Handed over to another agency or authority to be made safe"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "name": "H5 Bulk Flammable Liquids",
+  "intro": "<p>This verification questionnaire is based on&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/h5-bulk-flammable-liquids-nci-31/\" target=\"_blank\" rel=\"noopener\"><strong>Operational Instruction NCI 31</strong></a> for safe and effective operations at incidents involving bulk flammable liquids.&nbsp;</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_h5q1",
+      "type": "checkboxes",
+      "description": "<p>Which of these would be operational considerations when dealing with bulk flammable liquids?</p>",
+      "required": true,
+      "options": [
+        "Pre-determined response and automatic upgrading to a greater alarm",
+        "Arresting whoever was responsible for the spillage",
+        "Evacuation",
+        "Liaison with other organizations",
+        "Organising food supplies and refreshments",
+        "Water and Foam concentrate supplies",
+        "Effect on the environment",
+        "Topographical and climatic features",
+        "Fast response wearing chemical splash suits",
+        "Media statements"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Pre-determined response and automatic upgrading to a greater alarm",
+        "Evacuation",
+        "Liaison with other organizations",
+        "Water and Foam concentrate supplies",
+        "Effect on the environment",
+        "Topographical and climatic features",
+        "Media statements"
+      ]
+    },
+    {
+      "id": "fld_h5q2",
+      "type": "checkboxes",
+      "description": "<p>Describe the firefighting considerations for bulk flammable liquids.</p>",
+      "required": true,
+      "options": [
+        "Extinguishing and/or cooling",
+        "Attack fire from upwind",
+        "Protecting exposures",
+        "Chemical splash suits to avoid contamination",
+        "Extinguishing ground fires before attacking the contents of a tank",
+        "Approach fire from a downhill position"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Extinguishing and/or cooling",
+        "Protecting exposures",
+        "Extinguishing ground fires before attacking the contents of a tank"
+      ]
+    },
+    {
+      "id": "fld_h5q3",
+      "type": "checkboxes",
+      "description": "<p>Describe the spillage considerations for bulk flammable liquids.</p>",
+      "required": true,
+      "options": [
+        "Water Jets or Monitors onto the spill",
+        "Isolating ignition sources",
+        "Foam blanket",
+        "Storm water drain location for emergency disposal of run off",
+        "Containment of run-off",
+        "Decontamination and Disposal"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Isolating ignition sources",
+        "Foam blanket",
+        "Containment of run-off",
+        "Decontamination and Disposal"
+      ]
+    },
+    {
+      "id": "fld_h5q4",
+      "type": "checkboxes",
+      "description": "<p>Bunded areas, slop over and boil-over are significant hazards at bulk flammable liquid incidents; which of these control measures could be used to manage these hazards?</p>",
+      "required": true,
+      "options": [
+        "Personnel to only work in bunded area.",
+        "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable liquids",
+        "Pre-planning and risk assessment.",
+        "Appoint a Welfare Officer",
+        "No personnel in the bunded area.",
+        "Aim water jets into the centre of the fuel to cool it below ignition temperature",
+        "FENZ personnel will be briefed on the plan of action and safety measures.",
+        "Appoint a Safety Officer"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable liquids",
+        "Pre-planning and risk assessment.",
+        "No personnel in the bunded area.",
+        "FENZ personnel will be briefed on the plan of action and safety measures.",
+        "Appoint a Safety Officer"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "name": "H6-2 - Portable Gas Cylinders",
+  "intro": "<p>This questionnaire verifies your knowledge of safe and effective operations at incidents involving portable gas cylinders and pressurized vessels as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/h6-2-portable-gas-cylinders-and-pressurised-vessels-nci-33/\" target=\"_blank\" rel=\"noopener\"><strong>NCI 33</strong></a>.</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_h62powers",
+      "type": "boolean",
+      "description": "<p>FENZ Act 2017 Section 39 provides the OIC with the powers of an Enforcement Officer as defined by the Hazardous Substances and New Organisms Act 1996 when managing incidents involving portable gas cylinders.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": null
+    },
+    {
+      "id": "fld_h62leaking",
+      "type": "checkboxes",
+      "description": "<p>Which steps should you take when attending an incident involving a leaking cylinder (not involved in fire)?</p>",
+      "required": true,
+      "options": [
+        "Approach and park downwind and downhill",
+        "Evacuate and cordon the affected area",
+        "Prevent ignition and monitor the flammability range if possible",
+        "Identify the gas and isolate the leak",
+        "Keep all doors and windows closed",
+        "Liaise with HSTLC or the enforcement officer",
+        "Leave the cylinder in place and do not touch it"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Evacuate and cordon the affected area",
+        "Prevent ignition and monitor the flammability range if possible",
+        "Identify the gas and isolate the leak",
+        "Liaise with HSTLC or the enforcement officer"
+      ]
+    },
+    {
+      "id": "fld_h62fire",
+      "type": "checkboxes",
+      "description": "<p>If a gas cylinder has been involved in fire, what should be done differently to the standard leaking cylinder procedure?</p>",
+      "required": true,
+      "options": [
+        "Park upwind and uphill in a SAFE location",
+        "Cool the cylinder from a safe position",
+        "Remove the cylinder to a safe and secure place",
+        "All of the above"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Park upwind and uphill in a SAFE location",
+        "Cool the cylinder from a safe position"
+      ]
+    },
+    {
+      "id": "fld_h62acetylene",
+      "type": "checkboxes",
+      "description": "<p>Explain the procedure to safely manage an incident involving an acetylene cylinder involved in a fire or exposed to heat.</p>",
+      "required": true,
+      "options": [
+        "If it is possible to view cylinder from behind a solid structure: Do not approach the cylinder: Evacuate the area for a 200 metre radius, leave the cylinder in position and apply copious water after the fire is extinguished, check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it.",
+        "If NOT possible to view cylinder from behind a solid structure: Do not approach the cylinder, Evacuate the area for a 200 metre radius. Leave the cylinder in position and apply copious water after the fire is extinguished. Check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it."
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "If it is possible to view cylinder from behind a solid structure: Do not approach the cylinder: Evacuate the area for a 200 metre radius, leave the cylinder in position and apply copious water after the fire is extinguished, check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it.",
+        "If NOT possible to view cylinder from behind a solid structure: Do not approach the cylinder, Evacuate the area for a 200 metre radius. Leave the cylinder in position and apply copious water after the fire is extinguished. Check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it."
+      ]
+    },
+    {
+      "id": "fld_h62bleve",
+      "type": "checkboxes",
+      "description": "<p>What control measures should be put in place in case of BLEVE (Boiling Liquid Expanding Vapour Explosion)?</p>",
+      "required": true,
+      "options": [
+        "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable gases",
+        "Preplanning and risk assessment with crews briefed on plan of action and safety measures",
+        "Use as many personnel as available",
+        "Wildfire gear must be worn at all times",
+        "Evacuate all unnecessary personnel and public from the area and establish an inner cordon",
+        "Cool cylinders from a protected position",
+        "Approach the cylinders with a protective water spray",
+        "Take care not to freeze up relief valves if cooling water is applied"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "All personnel will be trained in the conditions to be encountered and the safe practices required when working at incidents involving bulk flammable gases",
+        "Preplanning and risk assessment with crews briefed on plan of action and safety measures",
+        "Evacuate all unnecessary personnel and public from the area and establish an inner cordon",
+        "Cool cylinders from a protected position",
+        "Take care not to freeze up relief valves if cooling water is applied"
+      ]
+    },
+    {
+      "id": "fld_h62gascloud",
+      "type": "checkboxes",
+      "description": "<p>In addition to the standard precautions, what control measures should be taken when dealing with gas clouds?</p>",
+      "required": true,
+      "options": [
+        "Use a gas detector in the centre of the cloud to check for possibility of ignition",
+        "No personnel to enter the gas cloud",
+        "Maintain awareness of the dangers of leaking pressurised gas",
+        "Use positive pressure ventilation to blow the cloud away"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "No personnel to enter the gas cloud",
+        "Maintain awareness of the dangers of leaking pressurised gas"
+      ]
+    }
+  ]
+}

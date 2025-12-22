@@ -1,0 +1,201 @@
+{
+  "name": "IS1 - Operational Safety",
+  "intro": "<p>This form verifies your understanding of the safety and health responsibilities of personnel regarding themselves and others at incidents as defined in&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/is1-operational-safety-nci-1/\" target=\"_blank\" rel=\"noopener\"><strong>NCI 1</strong></a>. Completion is required for OSM compliance.</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_is1oiccrew",
+      "type": "checkboxes",
+      "description": "<p>Which of these must the OIC Crew do to ensure the safety and effectiveness of the firefighting crew?</p>",
+      "required": true,
+      "options": [
+        "Use the nominal role tally procedure and BA entry control procedures.",
+        "Follow operational procedures",
+        "Assist with operational tasks",
+        "Evaluate priorities, give direction and maintain control.",
+        "Establish an incident management structure",
+        "Populate the Entry Control Board",
+        "Monitor progress as it relates to their area of operations",
+        "Operate the Main Pump"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Use the nominal role tally procedure and BA entry control procedures.",
+        "Follow operational procedures",
+        "Evaluate priorities, give direction and maintain control.",
+        "Establish an incident management structure",
+        "Monitor progress as it relates to their area of operations"
+      ]
+    },
+    {
+      "id": "fld_is1hazardident",
+      "type": "radio",
+      "description": "<p>What must any FENZ personnel do if they identify a hazard?</p>",
+      "required": true,
+      "options": [
+        "Note the hazard for later reference during debrief",
+        "Bring the hazard to the attention of their OIC or the OIC Fire.",
+        "Record the hazard on the Entry Control Board"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Bring the hazard to the attention of their OIC or the OIC Fire."
+    },
+    {
+      "id": "fld_is1civilians",
+      "type": "boolean",
+      "description": "<p>Civilian and other agency personnel can be used to assist with FENZ operations as long as they have been made aware of all hazards, given clear instructions regarding the management of the hazards and briefed on the role they will be undertaking.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_is1seatbelts",
+      "type": "radio",
+      "description": "<p>Who is responsible for ensuring the crew are wearing seatbelts when their appliance is mobile?</p>",
+      "required": true,
+      "options": [
+        "The driver",
+        "The individual",
+        "The Safety Officer",
+        "The OIC"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "The OIC"
+    },
+    {
+      "id": "fld_is1ppespec",
+      "type": "radio",
+      "description": "<p>Who is responsible for specifying the appropriate type of PPE for the incident being attended?</p>",
+      "required": true,
+      "options": [
+        "The individual",
+        "The driver",
+        "The OIC",
+        "The Safety Officer"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "The OIC"
+    },
+    {
+      "id": "fld_is1baworn",
+      "type": "boolean",
+      "description": "<p>BA will be worn by all personnel working in a contaminated atmosphere or any atmosphere suspected of being contaminated.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_is1socount",
+      "type": "radio",
+      "description": "<p>How many persons must be committed operationally at an incident for a safety officer to be appointed?</p>",
+      "required": true,
+      "options": [
+        "More than 10",
+        "More than 12",
+        "More than 16",
+        "More than 3 crews"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "More than 16"
+    },
+    {
+      "id": "fld_is1sosit",
+      "type": "checkboxes",
+      "description": "<p>Which of these other situations must also have a Safety Officer appointed?</p>",
+      "required": true,
+      "options": [
+        "Hazardous substances are involved and a Hot Zone is established",
+        "More than 2 Entry Control Points have been set up",
+        "Live fire training is being undertaken.",
+        "Operating in unusual or unfamiliar circumstances.",
+        "Whenever FENZ is not the lead agency and a Safety Officer is required for FENZ operations.",
+        "For incidents involving Aerial appliances"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Hazardous substances are involved and a Hot Zone is established",
+        "Live fire training is being undertaken.",
+        "Operating in unusual or unfamiliar circumstances.",
+        "Whenever FENZ is not the lead agency and a Safety Officer is required for FENZ operations."
+      ]
+    },
+    {
+      "id": "fld_is1evacsig",
+      "type": "radio",
+      "description": "<p>What is the emergency evacuation signal?</p>",
+      "required": true,
+      "options": [
+        "Mayday message",
+        "Continuous operation of all vehicle sirens",
+        "Operation of the Distress Signal Unit",
+        "Whistles"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Continuous operation of all vehicle sirens"
+    },
+    {
+      "id": "fld_is1evacpers",
+      "type": "checkboxes",
+      "description": "<p>What must all personnel do on hearing the emergency evacuation signal?</p>",
+      "required": true,
+      "options": [
+        "Shut down firefighting deliveries at the nozzle.",
+        "Carry out a quick search for personnel or patients",
+        "Withdraw to a place of safety.",
+        "Recover any equipment that might get lost or damaged",
+        "Uplift BA tallies from the Entry Control Officer and return to their appliance."
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Shut down firefighting deliveries at the nozzle.",
+        "Withdraw to a place of safety.",
+        "Uplift BA tallies from the Entry Control Officer and return to their appliance."
+      ]
+    },
+    {
+      "id": "fld_is1evacoic",
+      "type": "checkboxes",
+      "description": "<p>What must the OIC do on hearing the emergency evacuation signal?</p>",
+      "required": true,
+      "options": [
+        "Uplift nominal roll tallies and conduct a head count.",
+        "Send in relief team to continue operations",
+        "Advise the OIC Fire of the result."
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Uplift nominal roll tallies and conduct a head count.",
+        "Advise the OIC Fire of the result."
+      ]
+    },
+    {
+      "id": "fld_is1hco",
+      "type": "boolean",
+      "description": "<p>At hazardous materials incidents the OIC should consider appointing a Hazard Control Officer to assist with the management of the incident.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_is1handback",
+      "type": "boolean",
+      "description": "<p>At the end of the incident the person responsible for the building should be briefed on any remaining hazards before FENZ relinquishes responsibility of the site.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    },
+    {
+      "id": "fld_is1shep",
+      "type": "boolean",
+      "description": "<p>Significant Hazard Exposure Protocols must be followed if a significant health hazard or potentially significant health hazard is identified.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes"
+    }
+  ]
+}
