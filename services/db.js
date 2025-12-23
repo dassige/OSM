@@ -30,62 +30,40 @@ function verifyPassword(password, storedHash, storedSalt) {
 async function initDB() {
   if (db) return db;
   const dbPath = getDbPath();
-  console.log(`[DB] Opening database at: ${dbPath}`);
+  
+  db = await open({
+    filename: dbPath,
+    driver: sqlite3.Database,
+  });
 
-  try {
-    db = await open({
-      filename: dbPath,
-      driver: sqlite3.Database,
-    });
+  await db.exec("PRAGMA foreign_keys = ON;");
 
-    await db.exec("PRAGMA foreign_keys = ON;");
-
-    // --- Core Tables ---
-    await db.exec(
-      `CREATE TABLE IF NOT EXISTS preferences (key TEXT PRIMARY KEY, value TEXT);`
-    );
-    await db.run(
-      `INSERT INTO preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`,
-      "app_version",
-      packageJson.version
-    );
-    await db.exec(
-      `CREATE TABLE IF NOT EXISTS email_history (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT DEFAULT CURRENT_TIMESTAMP, recipient_name TEXT, recipient_email TEXT, status TEXT, details TEXT);`
-    );
-    await db.exec(
-      `CREATE TABLE IF NOT EXISTS event_log (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT DEFAULT CURRENT_TIMESTAMP, user TEXT, event_type TEXT, title TEXT, payload TEXT);`
+  // Consolidated Schema Definition
+  const schema = `
+    CREATE TABLE IF NOT EXISTS preferences (
+      key TEXT PRIMARY KEY, 
+      value TEXT
     );
 
-    // --- Domain Tables ---
-    await db.exec(
-      `CREATE TABLE IF NOT EXISTS members (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, mobile TEXT, messengerId TEXT, enabled INTEGER DEFAULT 1, notificationPreference TEXT DEFAULT 'email');`
+    CREATE TABLE IF NOT EXISTS members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      name TEXT NOT NULL, 
+      email TEXT, 
+      mobile TEXT, 
+      messengerId TEXT, 
+      enabled INTEGER DEFAULT 1, 
+      notificationPreference TEXT DEFAULT 'email'
     );
-    try {
-      await db.exec(
-        `ALTER TABLE members ADD COLUMN enabled INTEGER DEFAULT 1;`
-      );
-    } catch (e) {}
-    try {
-      await db.exec(
-        `ALTER TABLE members ADD COLUMN notificationPreference TEXT DEFAULT 'email';`
-      );
-    } catch (e) {}
 
-    // Skills
-    await db.exec(
-      `CREATE TABLE IF NOT EXISTS skills (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, url TEXT, critical_skill INTEGER DEFAULT 0, enabled INTEGER DEFAULT 1, url_type TEXT DEFAULT 'external');`
+    CREATE TABLE IF NOT EXISTS skills (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      name TEXT NOT NULL, 
+      url TEXT, 
+      critical_skill INTEGER DEFAULT 0, 
+      enabled INTEGER DEFAULT 1, 
+      url_type TEXT DEFAULT 'external'
     );
-    try {
-      await db.exec(`ALTER TABLE skills ADD COLUMN enabled INTEGER DEFAULT 1;`);
-    } catch (e) {}
-    try {
-      await db.exec(
-        `ALTER TABLE skills ADD COLUMN url_type TEXT DEFAULT 'external';`
-      );
-    } catch (e) {}
 
-    // Users
-    await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT, 
       email TEXT UNIQUE NOT NULL, 
@@ -97,94 +75,78 @@ async function initDB() {
       blocked INTEGER DEFAULT 0,
       login_attempts INTEGER DEFAULT 0
     );
-  `);
 
-    // Migrations for existing databases
-    try {
-      await db.exec(`ALTER TABLE users ADD COLUMN enabled INTEGER DEFAULT 1;`);
-    } catch (e) {}
-    try {
-      await db.exec(`ALTER TABLE users ADD COLUMN blocked INTEGER DEFAULT 0;`);
-    } catch (e) {}
-    try {
-      await db.exec(
-        `ALTER TABLE users ADD COLUMN login_attempts INTEGER DEFAULT 0;`
-      );
-    } catch (e) {}
-
-    // Training Sessions
-    await db.exec(
-      `CREATE TABLE IF NOT EXISTS training_sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, skill_name TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP);`
+    CREATE TABLE IF NOT EXISTS forms (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      public_id TEXT UNIQUE, 
+      name TEXT NOT NULL, 
+      status INTEGER DEFAULT 0, 
+      intro TEXT, 
+      structure TEXT, 
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
-    // User Preferences
-    await db.exec(
-      `CREATE TABLE IF NOT EXISTS user_preferences (user_id INTEGER NOT NULL, key TEXT NOT NULL, value TEXT, PRIMARY KEY (user_id, key));`
+    CREATE TABLE IF NOT EXISTS live_forms (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      skill_id INTEGER NOT NULL,
+      skill_expiring_date TEXT,
+      member_id INTEGER NOT NULL,
+      skill_form_public_id TEXT,
+      form_access_code TEXT UNIQUE,
+      form_status TEXT DEFAULT 'sent',  
+      form_sent_datetime TEXT DEFAULT CURRENT_TIMESTAMP,
+      form_submitted_datetime TEXT,
+      form_submitted_data TEXT,
+      form_reviewed_datetime TEXT,
+      tries INTEGER DEFAULT 1,
+      FOREIGN KEY(skill_id) REFERENCES skills(id) ON DELETE CASCADE,
+      FOREIGN KEY(member_id) REFERENCES members(id) ON DELETE CASCADE
     );
 
-    // Forms Management
-    await db.exec(
-      `CREATE TABLE IF NOT EXISTS forms (id INTEGER PRIMARY KEY AUTOINCREMENT, public_id TEXT UNIQUE, name TEXT NOT NULL, status INTEGER DEFAULT 0, intro TEXT, structure TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);`
+    CREATE TABLE IF NOT EXISTS training_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      date TEXT NOT NULL, 
+      skill_name TEXT NOT NULL, 
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
-    try {
-      await db.exec(`ALTER TABLE forms ADD COLUMN public_id TEXT UNIQUE;`);
-    } catch (e) {}
 
-    //  Live Forms Table
-    await db.exec(`
-            CREATE TABLE IF NOT EXISTS live_forms (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                skill_id INTEGER NOT NULL,
-                skill_expiring_date TEXT,
-                member_id INTEGER NOT NULL,
-                skill_form_public_id TEXT,
-                form_access_code TEXT UNIQUE,
-                form_status TEXT DEFAULT 'sent',  
-                form_sent_datetime TEXT DEFAULT CURRENT_TIMESTAMP,
-                form_submitted_datetime TEXT,
-                form_submitted_data TEXT,
-                tries INTEGER DEFAULT 1,
-                FOREIGN KEY(skill_id) REFERENCES skills(id) ON DELETE CASCADE,
-                FOREIGN KEY(member_id) REFERENCES members(id) ON DELETE CASCADE
-            );
-        `);
-
-    // Migration for existing tables
-    try {
-      await db.exec(
-        `ALTER TABLE live_forms ADD COLUMN tries INTEGER DEFAULT 1;`
-      );
-    } catch (e) {}
-    // Backfill UUIDs for forms if missing
-    const formsWithoutId = await db.all(
-      "SELECT id FROM forms WHERE public_id IS NULL"
+    CREATE TABLE IF NOT EXISTS user_preferences (
+      user_id INTEGER NOT NULL, 
+      key TEXT NOT NULL, 
+      value TEXT, 
+      PRIMARY KEY (user_id, key)
     );
-    if (formsWithoutId.length > 0) {
-      console.log(
-        `[DB] Backfilling UUIDs for ${formsWithoutId.length} legacy forms...`
-      );
-      const stmt = await db.prepare(
-        "UPDATE forms SET public_id = ? WHERE id = ?"
-      );
-      for (const f of formsWithoutId) {
-        await stmt.run(crypto.randomUUID(), f.id);
-      }
-      await stmt.finalize();
-    }
-    // Track when a form was reviewed (accepted or rejected)
-    try {
-      await db.exec(
-        `ALTER TABLE live_forms ADD COLUMN form_reviewed_datetime TEXT;`
-      );
-    } catch (e) {}
-    console.log("[DB] Database initialized successfully.");
-    return db;
-  } catch (error) {
-    console.error("[DB] Initialization Failed:", error);
-    throw error;
-  }
+
+    CREATE TABLE IF NOT EXISTS event_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      timestamp TEXT DEFAULT CURRENT_TIMESTAMP, 
+      user TEXT, 
+      event_type TEXT, 
+      title TEXT, 
+      payload TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS email_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      timestamp TEXT DEFAULT CURRENT_TIMESTAMP, 
+      recipient_name TEXT, 
+      recipient_email TEXT, 
+      status TEXT, 
+      details TEXT
+    );
+  `;
+
+  await db.exec(schema);
+
+  // Set initial app version if starting fresh
+  await db.run(
+    "INSERT INTO preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING",
+    "app_version",
+    packageJson.version
+  );
+
+  return db;
 }
-
 async function closeDB() {
   if (db) {
     console.log("[DB] Closing database connection...");
