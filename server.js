@@ -52,8 +52,7 @@ const sessionMiddleware = session({
 app.use(sessionMiddleware);
 app.use(express.json());
 
-// Enable Security Headers
-// Enable Security Headers with refined CSP
+// Apply Helmet with customized CSP
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -61,15 +60,18 @@ app.use(
         "default-src": ["'self'"],
         "script-src": [
           "'self'",
-          "'unsafe-inline'", // Temporarily allowed to fix current blockages
+          "'unsafe-inline'", // Required for legacy inline page logic
           "https://cdnjs.cloudflare.com",
           "https://cdn.jsdelivr.net",
         ],
         "style-src": ["'self'", "'unsafe-inline'"],
         "img-src": ["'self'", "data:", "https://storage.googleapis.com"],
-        "connect-src": ["'self'"], // Required for Socket.IO and API calls
+        "connect-src": ["'self'", "ws://localhost:3000", "http://localhost:3000"],
+        "upgrade-insecure-requests": null, // [FIX] Stops auto-redirect to HTTPS
       },
     },
+    hsts: false, // [FIX] Disables HSTS for local development
+    nosniff: true, // [SECURITY] Prevents MIME type sniffing
   })
 );
 // Initialize DB & Proxy
