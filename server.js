@@ -58,22 +58,20 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         "default-src": ["'self'"],
-        "script-src": [
-          "'self'",
-          "'unsafe-inline'", // Required for legacy inline page logic
-          "https://cdnjs.cloudflare.com",
-          "https://cdn.jsdelivr.net",
-        ],
+        "script-src": ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
+        // [FIX] Explicitly allow inline event handlers (onclick, etc.)
+        "script-src-attr": ["'unsafe-inline'"], 
         "style-src": ["'self'", "'unsafe-inline'"],
         "img-src": ["'self'", "data:", "https://storage.googleapis.com"],
         "connect-src": ["'self'", "ws://localhost:3000", "http://localhost:3000"],
-        "upgrade-insecure-requests": null, // [FIX] Stops auto-redirect to HTTPS
+        "upgrade-insecure-requests": null,
       },
     },
-    hsts: false, // [FIX] Disables HSTS for local development
-    nosniff: true, // [SECURITY] Prevents MIME type sniffing
+    hsts: false,
+    nosniff: true,
   })
 );
+
 // Initialize DB & Proxy
 db.initDB().catch((err) => console.error("DB Init Error:", err));
 
@@ -92,25 +90,25 @@ async function initializeProxy() {
 initializeProxy();
 
 // --- GLOBAL ROUTE GUARD ---
+
 app.use((req, res, next) => {
   const publicPaths = [
     "/login.html",
-    "/login", // [FIX] Allow the POST /login endpoint
+    "/login",
     "/forgot-password",
     "/styles.css",
     "/ui-config",
     "/api/demo-credentials",
     "/forms-view.html",
-    "/theme.js", // [FIX] Allow security-related frontend scripts
-    "/help.js", // [FIX] Allow help script
-    "/toast.js", // [FIX] Allow notification script
-    "/public/js/toast.js",
-    "/public/theme.js",
+    "/theme.js",
+    "/help.js",
+    "/toast.js",
   ];
 
-  // If the path is public, let it through
+  // [FIX] Allow the entire /js/ directory and /resources/ to bypass the redirect
   if (
     publicPaths.includes(req.path) ||
+    req.path.startsWith("/js/") ||     
     req.path.startsWith("/socket.io/") ||
     req.path.startsWith("/resources/") ||
     req.path.startsWith("/demo/") ||
@@ -120,12 +118,8 @@ app.use((req, res, next) => {
     return next();
   }
 
-  // Check if session exists
   if (req.session && req.session.loggedIn) return next();
-
-  // Deny API requests with 401, redirect others to login
-  if (req.path.startsWith("/api/"))
-    return res.status(401).json({ error: "Unauthorized" });
+  if (req.path.startsWith("/api/")) return res.status(401).json({ error: "Unauthorized" });
 
   return res.redirect("/login.html");
 });
