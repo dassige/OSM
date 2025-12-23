@@ -584,8 +584,22 @@
         let currentPage = 1;
         let currentLimit = 50;
         let totalCount = 0;
-
+        let appLocale = 'en-NZ'; // Default
+        let appTimezone = 'Pacific/Auckland'; // Default
         async function init() {
+            try {
+                const configRes = await fetch('/ui-config');
+                const configData = await configRes.json();
+
+                if (configData.locale) appLocale = configData.locale;
+                if (configData.timezone) appTimezone = configData.timezone;
+
+                // Existing UI setup from config
+                if (configData.appBackground) document.body.style.backgroundImage = `url('${configData.appBackground}')`;
+                if (configData.loginTitle) document.getElementById('pageTitle').innerText = "Event Log - " + configData.loginTitle;
+                if (configData.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+
+            } catch (e) { console.error("Failed to load UI config", e); }
             await checkAdmin();
             await loadMetadata();
             await loadUserPrefs();
@@ -788,7 +802,19 @@
             });
         }
 
-        function formatDate(isoStr) { return new Date(isoStr).toLocaleString(); }
+        function formatDate(isoStr) {
+            if (!isoStr) return "-";
+
+            return new Date(isoStr).toLocaleString(appLocale, {
+                timeZone: appTimezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
 
         function getBadgeClass(type) {
             const t = (type || '').toLowerCase();

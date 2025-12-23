@@ -415,18 +415,25 @@
         <div class="table-wrapper">
             <table id="liveFormsTable">
                 <thead>
-                    <tr>
-                        <th onclick="handleSort('member_name')">Member <span id="icon-member_name"></span></th>
-                        <th onclick="handleSort('skill_name')">Skill <span id="icon-skill_name"></span></th>
-                        <th onclick="handleSort('tries')" style="width: 70px; text-align:center;">Tries <span
-                                id="icon-tries"></span></th>
-                        <th onclick="handleSort('form_sent_datetime')">Sent Date <span
-                                id="icon-form_sent_datetime"></span></th>
-                        <th onclick="handleSort('form_submitted_datetime')">Submitted<span
-                                id="icon-form_submitted_datetime"></span></th>
-                        <th onclick="handleSort('form_status')">Status <span id="icon-form_status"></span></th>
-                        <th style="text-align:center;">Actions</th>
-                    </tr>
+<tr>
+    <th onclick="handleSort('member_name')">Member <span id="icon-member_name"></span></th>
+    <th onclick="handleSort('skill_name')">Skill <span id="icon-skill_name"></span></th>
+    <th onclick="handleSort('tries')" style="width: 70px; text-align:center;">Tries <span id="icon-tries"></span></th>
+    
+    <th style="width: 220px; vertical-align: middle;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Dates</span>
+            <div style="font-size: 0.75em; line-height: 1.2; text-align: right; opacity: 0.8; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 8px;">
+                <b>S</b>ent<br>
+                <b>U</b>ploaded<br>
+                <b>R</b>eviewed
+            </div>
+        </div>
+    </th> 
+    
+    <th onclick="handleSort('form_status')">Status <span id="icon-form_status"></span></th>
+    <th style="text-align:center;">Actions</th>
+</tr>
                 </thead>
                 <tbody id="tableBody">
                     <tr>
@@ -717,78 +724,66 @@
             renderTable();
         }
 
+        // Inside renderTable() in public/live-forms.html
         function renderTable() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
             if (currentData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#666;">No records found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#666;">No records found.</td></tr>';
                 return;
             }
 
-            const fmtDate = (dStr) => {
-                if (!dStr) return '<span style="color:#ccc;">-</span>';
-                return new Date(dStr).toLocaleString(appLocale, {
-                    timeZone: appTimezone,
-                    year: 'numeric', month: '2-digit', day: '2-digit',
-                    hour: '2-digit', minute: '2-digit', second: '2-digit'
-                });
-            };
+const fmtDate = (dStr) => {
+    if (!dStr) return '<span style="color:#ccc;">-</span>';
+    return new Date(dStr).toLocaleString(appLocale, {
+        timeZone: appTimezone,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+    });
+};
 
             currentData.forEach(row => {
                 const sentDate = fmtDate(row.form_sent_datetime);
                 const subDate = fmtDate(row.form_submitted_datetime);
+                const revDate = fmtDate(row.form_reviewed_datetime); // Extracted reviewed date
 
                 let reviewBtn = '';
-                // Allow reviewing for submitted, accepted, and rejected
                 if (['submitted', 'accepted', 'rejected'].includes(row.form_status)) {
                     reviewBtn = `
-                        <button class="btn-icon" onclick="openReview('${row.id}')" title="Review Submission" style="color:#17a2b8;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                        </button>
-                    `;
+                <button class="btn-icon" onclick="openReview('${row.id}')" title="Review Submission" style="color:#17a2b8;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+            `;
                 }
-                let testBtn = '';
-                if (appMode === 'demo' && row.form_status === 'sent') {
-                    testBtn = `
-                        <button class="btn-icon" onclick="window.open('forms-view.html?code=${row.form_access_code}', '_blank')" 
-                                title="Test the Form (Demo Mode Only)" style="color:#6f42c1;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                <polyline points="15 3 21 3 21 9"></polyline>
-                                <line x1="10" y1="14" x2="21" y2="3"></line>
-                            </svg>
-                        </button>
-                    `;
-                }
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                        <td>${row.member_name || 'Unknown'}</td>
-                        <td>${row.skill_name || 'Unknown'}</td>
-                        <td style="text-align:center;">${row.tries || 1}</td>
-                        <td style="font-size:0.9em;">${sentDate}</td>
-                        <td style="font-size:0.9em;">${subDate}</td>
-                        <td><span class="status-badge status-${row.form_status}">${row.form_status}</span></td>
-                        <td style="text-align:center; white-space:nowrap;">
-                            ${testBtn}
-                            ${reviewBtn}
-
-                            <button class="btn-icon download" onclick="downloadSingleJson('${row.id}')" title="Download Data">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            </button>
-
-                            <button class="btn-icon" onclick="openEdit('${row.id}', '${row.member_name || ''}', '${row.skill_name || ''}', '${row.form_status}', '${row.form_access_code || ''}')" title="Edit Status">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            </button>
-                            <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            </button>
-                        </td>
-                    `;
+            <td>${row.member_name || 'Unknown'}</td>
+            <td>${row.skill_name || 'Unknown'}</td>
+            <td style="text-align:center;">${row.tries || 1}</td>
+            <td style="font-size:0.8em; line-height:1.4; white-space:nowrap;">
+                <div title="Sent Date"><span style="color:var(--text-muted); font-weight:bold;">S:</span> ${sentDate}</div>
+                <div title="Submitted Date"><span style="color:var(--text-muted); font-weight:bold;">U:</span> ${subDate}</div>
+                <div title="Reviewed Date"><span style="color:var(--text-muted); font-weight:bold;">R:</span> ${revDate}</div>
+            </td>
+            <td><span class="status-badge status-${row.form_status}">${row.form_status}</span></td>
+            <td style="text-align:center; white-space:nowrap;">
+                ${reviewBtn}
+                <button class="btn-icon download" onclick="downloadSingleJson('${row.id}')" title="Download Data">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                </button>
+                <button class="btn-icon" onclick="openEdit('${row.id}', '${row.member_name || ''}', '${row.skill_name || ''}', '${row.form_status}', '${row.form_access_code || ''}')" title="Edit Status">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            </td>
+        `;
                 tbody.appendChild(tr);
             });
         }
-
         function openReview(id) { window.open(`forms-view.html?reviewId=${id}`, '_blank'); }
 
         function openEdit(id, member, skill, status, code) {
