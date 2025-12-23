@@ -17,8 +17,8 @@ const {
   sendNotification,
   sendPasswordReset,
   sendNewAccountNotification,
-  sendAccountDeletionNotification, 
-  sendSecurityAlert
+  sendAccountDeletionNotification,
+  sendSecurityAlert,
 } = require("./services/mailer");
 const whatsappService = require("./services/whatsapp-service");
 const reportService = require("./services/report-service");
@@ -65,6 +65,10 @@ async function initializeProxy() {
   else if (config.proxyMode === "dynamic")
     currentProxy = await findWorkingNZProxy(console.log);
   else currentProxy = null;
+  await db.logEvent("System", "System", "Proxy Initialized", {
+    mode: config.proxyMode,
+    endpoint: currentProxy ? "Configured" : "None/Direct",
+  });
 }
 initializeProxy();
 
@@ -168,7 +172,7 @@ app.post("/login", async (req, res) => {
   const { username, password } = req.body;
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-  // 1. Check Superuser Credentials (from .env) FIRST
+  // 1. Superuser Authentication (via .env)
   if (username === config.auth.username && password === config.auth.password) {
     req.session.loggedIn = true;
     req.session.user = {
@@ -179,6 +183,15 @@ app.post("/login", async (req, res) => {
       isAdmin: true,
       isEnvUser: true,
     };
+
+    // LOG SUCCESS: Superuser
+    await db.logEvent("Super Admin", "Security", "Successful Login", {
+      userEmail: username,
+      authType: "environment",
+      role: "superadmin",
+      sourceIP: ip,
+    });
+
     return res.status(200).send({ success: true });
   }
 
@@ -187,17 +200,41 @@ app.post("/login", async (req, res) => {
     const userRecord = await db.getUserByEmail(username);
 
     if (userRecord) {
-      if (userRecord.enabled === 0)
+      // Check if account is restricted
+      if (userRecord.enabled === 0) {
+        await db.logEvent(
+          "System",
+          "Security",
+          "Login Denied: Disabled Account",
+          {
+            attemptedEmail: username,
+            sourceIP: ip,
+          }
+        );
         return res
           .status(403)
           .json({ error: "Account disabled. Contact administrator." });
-      if (userRecord.blocked === 1)
+      }
+
+      if (userRecord.blocked === 1) {
+        await db.logEvent(
+          "System",
+          "Security",
+          "Login Denied: Blocked Account",
+          {
+            attemptedEmail: username,
+            sourceIP: ip,
+            reason: "Manual or Auto-Block active",
+          }
+        );
         return res
           .status(403)
           .json({ error: "Account blocked due to multiple failed attempts." });
+      }
     }
 
     const user = await db.authenticateUser(username, password);
+
     if (user) {
       await db.resetLoginAttempts(user.id);
       req.session.loggedIn = true;
@@ -208,19 +245,45 @@ app.post("/login", async (req, res) => {
         role: user.role,
         isAdmin: user.role === "admin" || user.role === "superadmin",
       };
+
+      // LOG SUCCESS: Database User
+      await db.logEvent(user.name, "Security", "Successful Login", {
+        userEmail: user.email,
+        authType: "database",
+        role: user.role,
+        sourceIP: ip,
+      });
+
       return res.status(200).send({ success: true });
     } else if (userRecord) {
-      // Wrong password: increment attempts
+      // WRONG PASSWORD: Increment attempts
       const stats = await db.incrementLoginAttempts(username);
+
+      // LOG FAILURE: Invalid Password
+      await db.logEvent(
+        "System",
+        "Security",
+        "Login Failure: Invalid Password",
+        {
+          attemptedEmail: username,
+          attemptNumber: stats.login_attempts,
+          maxAllowed: config.auth.maxLoginAttempts,
+          sourceIP: ip,
+        }
+      );
+
       if (stats && stats.login_attempts >= config.auth.maxLoginAttempts) {
         await db.blockUser(userRecord.id);
-        // Security Alert Email
+
+        // LOG SECURITY: Automatic Block
+        await db.logEvent("System", "Security", "User Account Auto-Blocked", {
+          blockedEmail: username,
+          totalFailures: stats.login_attempts,
+          sourceIP: ip,
+        });
+
         await sendSecurityAlert(
-          {
-            email: username,
-            attempts: stats.login_attempts,
-            ip,
-          },
+          { email: username, attempts: stats.login_attempts, ip },
           config.transporter,
           config.ui.loginTitle,
           config.auth.superuserEmail
@@ -230,6 +293,12 @@ app.post("/login", async (req, res) => {
           .status(403)
           .json({ error: "Maximum attempts reached. Account is now blocked." });
       }
+    } else {
+      // LOG FAILURE: Non-existent User
+      await db.logEvent("System", "Security", "Login Failure: User Not Found", {
+        attemptedEmail: username,
+        sourceIP: ip,
+      });
     }
   } catch (e) {
     console.error("Login Error:", e);
@@ -260,12 +329,11 @@ app.post("/forgot-password", async (req, res) => {
       config.ui.loginTitle,
       tpl
     );
-    await db.logEvent(
-      "System",
-      "Security",
-      `Password reset requested for ${email}`,
-      {}
-    );
+    await db.logEvent("System", "Security", "Password Reset Initiated", {
+      targetAccount: email,
+      requestedByIP: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: "Failed to reset password." });
@@ -321,8 +389,12 @@ app.post("/api/users", hasRole("admin"), async (req, res) => {
     await db.logEvent(
       req.session.user.name,
       "User Mgmt",
-      `Created user: ${req.body.email}`,
-      {}
+      "Created User Account",
+      {
+        newUserEmail: req.body.email,
+        newUserName: req.body.name,
+        assignedRole: req.body.role,
+      }
     );
     res.json({ success: true, id });
   } catch (e) {
@@ -330,28 +402,36 @@ app.post("/api/users", hasRole("admin"), async (req, res) => {
   }
 });
 
-
 app.put("/api/users/:id", hasRole("admin"), async (req, res) => {
   try {
     // Destructure all five fields from the frontend payload
     const { name, email, role, enabled, blocked } = req.body;
-    
-    await db.updateUser(
-      req.params.id,
-      name,
-      email,
-      role,
-      enabled,
-      blocked
-    );
 
-    await db.logEvent(
-      req.session.user.name,
-      "User Mgmt",
-      `Updated user status: ${email}`,
-      { enabled, blocked }
-    );
+    await db.updateUser(req.params.id, name, email, role, enabled, blocked);
 
+    if (userRecord.blocked === 1 && !blocked) {
+      await db.logEvent(
+        req.session.user.name,
+        "Security",
+        "User Account Unblocked",
+        {
+          targetAccount: email,
+          actionTakenBy: req.session.user.email,
+        }
+      );
+    } else {
+      await db.logEvent(
+        req.session.user.name,
+        "User Mgmt",
+        "Updated User Profile/Status",
+        {
+          targetEmail: email,
+          targetName: name,
+          newRole: role,
+          statusChange: { enabled, blocked },
+        }
+      );
+    }
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -377,8 +457,12 @@ app.delete("/api/users/:id", hasRole("admin"), async (req, res) => {
       await db.logEvent(
         req.session.user.name,
         "User Mgmt",
-        `Deleted user: ${user.email}`,
-        {}
+        "Deleted User Account",
+        {
+          deletedUserEmail: user.email,
+          deletedUserName: user.name,
+          deletedUserRole: user.role,
+        }
       );
     }
     res.json({ success: true });
@@ -406,8 +490,11 @@ app.post("/api/users/:id/reset", hasRole("admin"), async (req, res) => {
     await db.logEvent(
       req.session.user.name,
       "User Mgmt",
-      `Reset password for: ${user.email}`,
-      {}
+      "Administrative Password Reset",
+      {
+        targetEmail: user.email,
+        targetName: user.name,
+      }
     );
     res.json({ success: true });
   } catch (e) {
@@ -556,10 +643,18 @@ app.get("/api/events/export", hasRole("admin"), async (req, res) => {
 });
 app.delete("/api/events/all", hasRole("superadmin"), async (req, res) => {
   await db.purgeEventLog();
+  await db.logEvent(req.session.user.name, "System", "Event Log Purged", {
+    action: "Full Wipe",
+    reason: "Administrative reset",
+  });
   res.json({ success: true });
 });
 app.post("/api/events/prune", hasRole("superadmin"), async (req, res) => {
   await db.pruneEventLog(parseInt(req.body.days) || 90);
+  await db.logEvent(req.session.user.name, "System", "Event Log Pruned", {
+    olderThanDays: parseInt(req.body.days) || 90,
+    action: "Partial Deletion",
+  });
   res.json({ success: true });
 });
 app.post("/api/logs", async (req, res) => {
@@ -571,6 +666,11 @@ app.post("/api/logs", async (req, res) => {
 app.get("/api/system/backup", hasRole("superadmin"), (req, res) => {
   const dbPath = db.getDbPath();
   res.download(dbPath, "fenz.db");
+  db.logEvent(req.session.user.name, "System", "Database Backup Downloaded", {
+    backupType: "Manual Snapshot",
+    appVersion: config.ui.version,
+    databaseName: "fenz.db",
+  });
 });
 app.post(
   "/api/system/restore",
@@ -580,12 +680,12 @@ app.post(
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
     try {
       await db.verifyAndReplaceDb(req.file.path);
-      await db.logEvent(
-        req.session.user.name,
-        "System",
-        "Database Restored",
-        {}
-      );
+      await db.logEvent(req.session.user.name, "System", "Database Restored", {
+        sourceFile: req.file.originalname,
+        fileSize: req.file.size,
+        restoreStatus: "Verified & Replaced",
+        appVersion: config.ui.version,
+      });
       res.json({ message: "Database restored successfully." });
     } catch (e) {
       res.status(500).json({ error: e.message });
@@ -721,8 +821,11 @@ app.post(
       await db.logEvent(
         req.session.user.name,
         "Forms",
-        `Bulk Imported ${value.length} forms`,
-        {}
+        "Bulk Import (Wipe & Replace)",
+        {
+          formsImportedCount: value.length,
+          sourceFile: req.file.originalname,
+        }
       );
       res.json({ success: true, count: value.length });
     } catch (e) {
@@ -751,8 +854,11 @@ app.post("/api/forms", hasRole("admin"), validateForm, async (req, res) => {
     const id = await formsService.createForm(name, status, intro, structure);
     const newForm = await formsService.getFormById(id);
 
-    await db.logEvent(req.session.user.name, "Forms", `Created form: ${name}`, {
-      id,
+    await db.logEvent(req.session.user.name, "Forms", "Created Form", {
+      formId: id,
+      formName: name,
+      questionCount: structure.length,
+      status: status ? "Active" : "Draft",
     });
     res.json(newForm);
   } catch (e) {
@@ -764,12 +870,17 @@ app.post("/api/forms", hasRole("admin"), validateForm, async (req, res) => {
 app.put("/api/forms/:id", hasRole("admin"), validateForm, async (req, res) => {
   try {
     await formsService.updateForm(req.params.id, req.body);
-    await db.logEvent(
-      req.session.user.name,
-      "Forms",
-      `Updated form ID: ${req.params.id}`,
-      {}
-    );
+    await db.logEvent(req.session.user.name, "Forms", "Updated Form", {
+      formId: req.params.id,
+      formName: req.body.name || "N/A",
+      updateType: req.body.structure ? "Full Content Edit" : "Status Change",
+      newStatus:
+        req.body.status !== undefined
+          ? req.body.status
+            ? "Enabled"
+            : "Disabled"
+          : "Unchanged",
+    });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -778,13 +889,14 @@ app.put("/api/forms/:id", hasRole("admin"), validateForm, async (req, res) => {
 
 app.delete("/api/forms/:id", hasRole("admin"), async (req, res) => {
   try {
-    await formsService.deleteForm(req.params.id);
-    await db.logEvent(
-      req.session.user.name,
-      "Forms",
-      `Deleted form ID: ${req.params.id}`,
-      {}
-    );
+    const formToDelete = await formsService.getFormById(req.params.id);
+    if (formToDelete) {
+      await formsService.deleteForm(req.params.id);
+      await db.logEvent(req.session.user.name, "Forms", "Deleted Form", {
+        formId: req.params.id,
+        formName: formToDelete.name,
+      });
+    }
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -939,13 +1051,11 @@ app.delete("/api/live-forms/all", hasRole("superadmin"), async (req, res) => {
     };
 
     const count = await formsService.purgeLiveForms(filters);
-    await db.logEvent(
-      req.session.user.name,
-      "Live Forms",
-      `Purged ${count} records`,
-      { filters }
-    );
-
+    await db.logEvent(req.session.user.name, "Live Forms", "Records Purged", {
+      deletedCount: count,
+      filtersApplied: filters,
+      timestamp: new Date().toISOString(),
+    });
     res.json({ success: true, count });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -991,7 +1101,12 @@ app.get("/api/live-forms/access/:code", async (req, res) => {
       // [SECURITY] If code doesn't exist, return 404.
       return res.status(404).json({ error: "Form link invalid or expired." });
     }
-
+    await db.logEvent("System", "Live Forms", "Form Link Accessed", {
+      memberName: result.member_name,
+      skillName: result.skill_name,
+      attemptNumber: result.tries || 1,
+      accessCode: req.params.code,
+    });
     // [SECURITY] Check Status
     if (result.form_status === "submitted") {
       return res.status(403).json({
@@ -1032,16 +1147,12 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
     await formsService.submitLiveForm(req.params.code, req.body);
 
     // 3. Log System Event
-    await db.logEvent(
-      "System",
-      "Live Forms",
-      `Form Submitted by ${form.member_name}`,
-      {
-        skill: form.skill_name,
-        code: req.params.code,
-      }
-    );
-
+    await db.logEvent("System", "Live Forms", "Form Submitted by Member", {
+      memberName: form.member_name,
+      skillName: form.skill_name,
+      attemptNumber: form.tries || 1,
+      submissionTime: new Date().toISOString(),
+    });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1189,12 +1300,14 @@ app.post("/api/live-forms/accept/:id", hasRole("admin"), async (req, res) => {
     await db.logEvent(
       req.session.user.name,
       "Live Forms",
-      isDemo
-        ? `Accepted submission #${id} (SIMULATED)`
-        : `Accepted submission #${id}`,
-      { member: member.name }
+      "Submission Approved",
+      {
+        memberName: form.member_name,
+        skillName: form.skill_name,
+        notifiedVia: { email: notifyEmail, whatsapp: notifyWa },
+        adminComment: customComment || "No comment provided",
+      }
     );
-
     res.json({ success: true, demo: isDemo });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1314,12 +1427,15 @@ app.post("/api/live-forms/reject/:id", hasRole("admin"), async (req, res) => {
     await db.logEvent(
       req.session.user.name,
       "Live Forms",
-      isDemo
-        ? `Rejected submission #${id} (SIMULATED)`
-        : `Rejected submission #${id}`,
-      { member: member.name, retry: generateNew }
+      "Submission Rejected",
+      {
+        memberName: form.member_name,
+        skillName: form.skill_name,
+        retryGenerated: generateNew,
+        notifiedVia: { email: notifyEmail, whatsapp: notifyWa },
+        reasonProvided: customComment || "No reason specified",
+      }
     );
-
     res.json({ success: true, demo: isDemo });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1403,8 +1519,9 @@ io.on("connection", (socket) => {
       logger(`[WhatsApp] Sending test message to ${data.mobile}...`);
       await whatsappService.sendMessage(data.mobile, data.message);
       await db.logEvent(currentUser, "WhatsApp", "Test Message Sent", {
-        mobile: data.mobile,
-        messageSnippet: data.message.substring(0, 20),
+        recipientMobile: data.mobile,
+        messageLength: data.message.length,
+        status: "Sent to Browser",
       });
       socket.emit("wa-test-result", {
         success: true,
