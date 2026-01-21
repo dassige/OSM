@@ -192,47 +192,59 @@
             color: #856404;
         }
 
-/* Updated Floating Action Button Styles */
-.fab-container {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    display: none; /* Controlled by JS logic */
-    flex-direction: column;
-    gap: 15px;
-    z-index: 1000;
-}
+        /* Updated Floating Action Button Styles */
+        .fab-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: none;
+            /* Controlled by JS logic */
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1000;
+        }
 
-.fab-btn {
-    width: 64px;  /* Increased from 56px */
-    height: 64px; /* Increased from 56px */
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    transition: transform 0.2s, background-color 0.2s;
-}
+        .fab-btn {
+            width: 64px;
+            /* Increased from 56px */
+            height: 64px;
+            /* Increased from 56px */
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s, background-color 0.2s;
+        }
 
-/* Ensure the SVG icons inside are larger */
-.fab-btn svg {
-    width: 32px;  /* Increased from 24px */
-    height: 32px; /* Increased from 24px */
-}
+        /* Ensure the SVG icons inside are larger */
+        .fab-btn svg {
+            width: 32px;
+            /* Increased from 24px */
+            height: 32px;
+            /* Increased from 24px */
+        }
 
-.fab-btn:hover {
-    transform: scale(1.1);
-}
+        .fab-btn:hover {
+            transform: scale(1.1);
+        }
 
-.fab-print { background-color: #6c757d; }
-.fab-pdf { background-color: #dc3545; }
+        .fab-print {
+            background-color: #6c757d;
+        }
 
-@media print {
-    .fab-container { display: none !important; }
-}
+        .fab-pdf {
+            background-color: #dc3545;
+        }
+
+        @media print {
+            .fab-container {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 
@@ -246,17 +258,45 @@
 
     <div id="reviewActions"
         style="display:none; background:#343a40; color:white; padding:15px; position:sticky; top:0; z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.2); text-align:center;">
-        <span style="margin-right:15px; font-weight:bold; font-size:1.1em;">Admin Review Action:</span>
-        <button onclick="openReviewModal('accept')"
-            style="background:#28a745; border:none; padding:8px 20px; color:white; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:10px;">Accept</button>
-        <button onclick="openReviewModal('reject')"
-            style="background:#dc3545; border:none; padding:8px 20px; color:white; border-radius:4px; font-weight:bold; cursor:pointer;">Reject</button>
+        <span style="margin-right:15px; font-weight:bold; font-size:1.1em;">Review Automated Result:</span>
+
+        <button id="btnArchive" onclick="archiveSubmission()"
+            style="background:#6c757d; border:none; padding:8px 20px; color:white; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:10px;">Archive</button>
+
+        <button id="btnResend" onclick="openReviewModal('reject')"
+            style="background:#dc3545; border:none; padding:8px 20px; color:white; border-radius:4px; font-weight:bold; cursor:pointer; display:none;">Resend
+            New Attempt</button>
     </div>
 
     <div class="container">
         <div id="loading" class="spinner" style="margin: 50px auto; display:block;"></div>
 
         <div id="formContent" class="form-container" style="display:none;">
+            <div id="retryAlert"
+                style="display:none; background:#fff3cd; border:1px solid #ffeeba; color:#856404; padding:15px; border-radius:6px; margin-bottom:20px; text-align:center; animation: shake 0.5s;">
+                <h3 style="margin:0 0 5px 0;">Try Again!</h3>
+                <p id="retryMsg" style="margin:0; font-weight:bold;"></p>
+                <div id="tryCounter" style="font-size:0.9em; margin-top:5px; opacity:0.8;"></div>
+            </div>
+
+            <style>
+                /* Optional animation for better visibility */
+                @keyframes shake {
+
+                    0%,
+                    100% {
+                        transform: translateX(0);
+                    }
+
+                    25% {
+                        transform: translateX(-5px);
+                    }
+
+                    75% {
+                        transform: translateX(5px);
+                    }
+                }
+            </style>
             <div class="form-header">
                 <h1 id="formName" class="form-title"></h1>
                 <div id="formIntro" class="form-intro"></div>
@@ -434,9 +474,14 @@
                     `;
                     document.querySelector('.form-header').insertBefore(contextDiv, document.getElementById('formName'));
 
-                    if (data.form_status === 'submitted') {
+                    if (['accepted', 'rejected'].includes(data.form_status)) {
                         document.getElementById('reviewActions').style.display = 'block';
                         document.body.style.paddingTop = '0';
+
+                        // Rule: Only 'rejected' shows the Resend button
+                        if (data.form_status === 'rejected') {
+                            document.getElementById('btnResend').style.display = 'inline-block';
+                        }
                     }
 
                     renderForm(data);
@@ -654,12 +699,16 @@
             document.getElementById('errorMsg').innerText = msg;
         }
 
+
         document.getElementById('submissionForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Preview Mode check
             if (submissionCode === null) {
                 if (window.showToast) showToast("Form Validated! (Preview Mode)", "success");
                 return;
             }
+
             const formData = new FormData(e.target);
             const data = {};
             for (let [key, value] of formData.entries()) {
@@ -673,41 +722,65 @@
 
             const btn = e.target.querySelector('.btn-submit');
             const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = "Submitting...";
+            const retryAlert = document.getElementById('retryAlert');
 
-            if (submissionCode) {
-                try {
-                    const res = await fetch(`/api/live-forms/submit/${submissionCode}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-                    if (res.ok) {
-                        document.getElementById('formContent').innerHTML = `
-                            <div style="text-align:center; padding:40px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                <h2 style="color:#28a745; margin-top:20px;">Thank You!</h2>
-                                <p style="color:#555; margin-bottom:20px;">Your skill verification has been submitted successfully.</p>
-                                <button onclick="window.close()" style="padding:10px 20px; border:none; background:#6c757d; color:white; border-radius:4px; cursor:pointer;">Close Window</button>
-                            </div>
-                        `;
-                    } else {
-                        const err = await res.json();
-                        throw new Error(err.error || "Submission failed");
-                    }
-                } catch (err) {
-                    showToast(err.message, "error");
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+            retryAlert.style.display = 'none';
+
+            try {
+                const res = await fetch(`/api/live-forms/submit/${submissionCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+
+                if (res.ok) {
+                    // --- FINAL STATE: ACCEPTED OR REJECTED ---
+                    const isSuccess = result.status === 'accepted';
+                    const icon = isSuccess
+                        ? '<svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#28a745" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+                        : '<svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#dc3545" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+
+                    const title = isSuccess ? "Verification Accepted" : "Verification Failed";
+                    const color = isSuccess ? "#28a745" : "#dc3545";
+                    const msg = isSuccess
+                        ? "Your competency has been automatically verified and updated."
+                        : "You have used all available attempts. Please contact your station administrator for manual verification.";
+
+                    document.getElementById('formContent').innerHTML = `
+                <div style="text-align:center; padding:40px;">
+                    ${icon}
+                    <h2 style="color:${color}; margin-top:20px;">${title}</h2>
+                    <p style="color:#555; margin-bottom:20px;">${msg}</p>
+                    <button onclick="window.close()" style="padding:10px 20px; border:none; background:#6c757d; color:white; border-radius:4px; cursor:pointer;">Close Window</button>
+                </div>
+            `;
+                }
+                else if (res.status === 400 && result.status === 'retry') {
+                    // --- RETRY STATE ---
+                    document.getElementById('retryMsg').textContent = result.message;
+                    document.getElementById('tryCounter').textContent = `Attempt ${result.currentTry} of ${result.maxAllowed} failed.`;
+                    retryAlert.style.display = 'block';
+
+                    // Re-enable UI for the member to correct answers
                     btn.disabled = false;
                     btn.innerText = originalText;
+
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    if (window.showToast) showToast("Passing score not reached. Please try again.", "warning");
                 }
-            } else {
-                if (window.showToast) showToast("Form Validated! (Preview Mode)", "success");
-                setTimeout(() => { window.close(); }, 1500);
+                else {
+                    throw new Error(result.error || "Submission failed");
+                }
+            } catch (err) {
+                if (window.showToast) showToast(err.message, "error");
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
         });
-
-
         // --- REVIEW MODAL LOGIC (OPEN/SUBMIT) ---
         function openReviewModal(action) {
             currentAction = action;
@@ -855,7 +928,28 @@
                 btn.innerHTML = originalContent;
             }
         }
+        /**
+         * Sets form to 'archived' and closes window.
+         */
+        async function archiveSubmission() {
+            if (!confirm("Move this record to archives?")) return;
+            try {
+                const res = await fetch(`/api/live-forms/${reviewData.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'archived' })
+                });
+                if (res.ok) {
+                    showToast("Record archived.", "success");
+                    setTimeout(() => window.close(), 1000);
+                }
+            } catch (e) { showToast("Archive failed", "error"); }
+        }
 
+        /**
+         * Note: 'Resend' button uses existing openReviewModal('reject') 
+         * which triggers the new attempt generation logic built in previous turns.
+         */
     </script>
 </body>
 

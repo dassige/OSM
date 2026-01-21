@@ -5,7 +5,7 @@ const crypto = require("crypto");
 async function getAllForms() {
   const database = await db.initDB();
   return await database.all(
-    "SELECT id, public_id, name, status, created_at FROM forms ORDER BY name ASC"
+    "SELECT id, public_id, name, status, created_at FROM forms ORDER BY name ASC",
   );
 }
 
@@ -28,7 +28,7 @@ async function importBulkForms(formsArray) {
   try {
     await database.run("DELETE FROM forms");
     const stmt = await database.prepare(
-      `INSERT INTO forms (public_id, name, status, intro, structure, created_at) VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO forms (public_id, name, status, intro, structure, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
     );
     for (const f of formsArray) {
       const structureStr =
@@ -44,7 +44,7 @@ async function importBulkForms(formsArray) {
         status,
         f.intro || "",
         structureStr,
-        createdAt
+        createdAt,
       );
     }
     await stmt.finalize();
@@ -60,7 +60,7 @@ async function getFormByPublicId(publicId) {
   const database = await db.initDB();
   const form = await database.get(
     "SELECT * FROM forms WHERE public_id = ?",
-    publicId
+    publicId,
   );
   if (form) {
     try {
@@ -95,7 +95,7 @@ async function createForm(name, status = 0, intro = "", structure = []) {
     name,
     status ? 1 : 0,
     intro,
-    jsonStructure
+    jsonStructure,
   );
   return result.lastID;
 }
@@ -121,11 +121,24 @@ async function updateForm(id, data) {
     updates.push("structure = ?");
     params.push(JSON.stringify(structure));
   }
+  if (min_score !== undefined) {
+    updates.push("min_score = ?");
+    params.push(min_score);
+  }
+  if (min_score_type !== undefined) {
+    updates.push("min_score_type = ?");
+    params.push(min_score_type);
+  }
+  if (max_tries !== undefined) {
+    updates.push("max_tries = ?");
+    params.push(max_tries);
+  }
+
   if (updates.length === 0) return;
   params.push(id);
   await database.run(
     `UPDATE forms SET ${updates.join(", ")} WHERE id = ?`,
-    params
+    params,
   );
 }
 
@@ -135,13 +148,13 @@ async function getFormUsage(id) {
   // First find the public_id associated with this internal ID
   const form = await database.get(
     "SELECT public_id FROM forms WHERE id = ?",
-    id
+    id,
   );
   if (!form) return [];
 
   const skills = await database.all(
     "SELECT name FROM skills WHERE url = ? AND url_type = 'internal'",
-    form.public_id
+    form.public_id,
   );
   return skills.map((s) => s.name);
 }
@@ -153,7 +166,7 @@ async function deleteForm(id) {
   // Fetch public_id to identify references in the skills table
   const form = await database.get(
     "SELECT public_id FROM forms WHERE id = ?",
-    id
+    id,
   );
   if (!form) return;
 
@@ -162,7 +175,7 @@ async function deleteForm(id) {
     // 1. Remove the reference from any skills using this form
     await database.run(
       "UPDATE skills SET url = '', url_type = 'external' WHERE url = ? AND url_type = 'internal'",
-      form.public_id
+      form.public_id,
     );
 
     // 2. Delete the form itself
@@ -178,14 +191,14 @@ async function ensureLiveForm(
   memberId,
   skillId,
   skillExpiringDate,
-  formPublicId
+  formPublicId,
 ) {
   const database = await db.initDB();
   // [UPDATED] Check for 'sent'
   const existing = await database.get(
     `SELECT form_access_code FROM live_forms WHERE member_id = ? AND skill_id = ? AND form_status = 'sent'`,
     memberId,
-    skillId
+    skillId,
   );
   if (existing) {
     return existing.form_access_code;
@@ -199,7 +212,7 @@ async function ensureLiveForm(
     skillExpiringDate,
     memberId,
     formPublicId,
-    accessCode
+    accessCode,
   );
   return accessCode;
 }
@@ -209,7 +222,7 @@ async function createRetryLiveForm(previousId) {
   const database = await db.initDB();
   const prev = await database.get(
     `SELECT * FROM live_forms WHERE id = ?`,
-    previousId
+    previousId,
   );
   if (!prev) throw new Error("Original form not found");
 
@@ -225,7 +238,7 @@ async function createRetryLiveForm(previousId) {
     prev.member_id,
     prev.skill_form_public_id,
     accessCode,
-    newTries
+    newTries,
   );
 
   return accessCode;
@@ -284,7 +297,7 @@ async function getLiveForms(filters = {}, pagination = null) {
   // 1. Get Count
   const countResult = await database.get(
     `SELECT COUNT(*) as total FROM live_forms lf WHERE ${where}`,
-    params
+    params,
   );
   const total = countResult.total;
 
@@ -335,11 +348,17 @@ async function updateLiveFormStatus(id, status) {
       ? new Date().toISOString()
       : null;
 
+  // Persist status, timestamp, and the final score
   await database.run(
-    `UPDATE live_forms SET form_status = ?, form_reviewed_datetime = ? WHERE id = ?`,
+    `UPDATE live_forms 
+         SET form_status = ?, 
+             form_reviewed_datetime = ?, 
+             current_score = ? 
+         WHERE id = ?`,
     status,
     reviewedDate,
-    id
+    score,
+    id,
   );
 }
 //  Delete Live Form
@@ -362,7 +381,7 @@ async function getLiveFormByCode(code) {
         LEFT JOIN skills s ON lf.skill_id = s.id
         WHERE lf.form_access_code = ?
     `,
-    code
+    code,
   );
 
   if (result) {
@@ -395,7 +414,7 @@ async function submitLiveForm(code, formData) {
         WHERE form_access_code = ?
     `,
     JSON.stringify(formData),
-    code
+    code,
   );
 }
 // Admin: Get specific submission details
@@ -412,7 +431,7 @@ async function getLiveFormSubmission(id) {
         LEFT JOIN skills s ON lf.skill_id = s.id
         WHERE lf.id = ?
     `,
-    id
+    id,
   );
 
   if (result) {
@@ -435,7 +454,7 @@ async function checkSubmittedStatus(memberId, skillId) {
   const record = await database.get(
     `SELECT id FROM live_forms WHERE member_id = ? AND skill_id = ? AND form_status = 'submitted'`,
     memberId,
-    skillId
+    skillId,
   );
   return !!record;
 }
@@ -449,10 +468,59 @@ async function getAllActiveStatuses(visibilityDays) {
         WHERE form_status IN ('sent', 'submitted')
         OR (form_status = 'accepted' AND form_reviewed_datetime >= datetime('now', '-' || ? || ' days'))
     `,
-    visibilityDays
+    visibilityDays,
   );
 }
+/**
+ * Core Scoring Engine
+ * @param {Array} structure - The form's question definitions
+ * @param {Object} submittedData - The member's responses
+ * @returns {Object} { achieved: number, maximum: number }
+ */
+function calculateFormScore(structure, submittedData) {
+  let totalAchieved = 0;
+  let totalPossible = 0;
 
+  structure.forEach((field) => {
+    const weight = parseFloat(field.points) || 0;
+    totalPossible += weight;
+
+    // Get the submitted response for this field ID
+    const submitted = submittedData[field.id] || submittedData[`${field.id}[]`];
+
+    if (!submitted) return; // Skip unanswered
+
+    if (field.type === "radio" || field.type === "boolean") {
+      if (submitted === field.correctAnswer) {
+        totalAchieved += weight;
+      }
+    } else if (field.type === "checkboxes") {
+      const correctArr = Array.isArray(field.correctAnswer)
+        ? field.correctAnswer
+        : [];
+      const subArr = Array.isArray(submitted) ? submitted : [submitted];
+
+      if (correctArr.length === 0) return;
+
+      const pointsPerOption = weight / correctArr.length;
+      let questionScore = 0;
+
+      subArr.forEach((val) => {
+        if (correctArr.includes(val)) {
+          questionScore += pointsPerOption; // Correct selection
+        } else {
+          questionScore -= pointsPerOption; // Penalty for incorrect selection
+        }
+      });
+
+      // Ensure individual question score doesn't fall below 0
+      totalAchieved += Math.max(0, questionScore);
+    }
+    // Paragraphs (text_multi) are currently excluded from auto-scoring
+  });
+
+  return { achieved: totalAchieved, maximum: totalPossible };
+}
 module.exports = {
   getAllForms,
   getAllFormsFull,
@@ -474,4 +542,5 @@ module.exports = {
   checkSubmittedStatus,
   getAllActiveStatuses,
   getFormUsage,
+  calculateFormScore,
 };

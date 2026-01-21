@@ -442,7 +442,7 @@ async function sendSingleAction(name, type) {
   if (
     await confirmAction(
       "Send Immediate Reminder",
-      `Send immediate ${label} reminder to ${name}?`
+      `Send immediate ${label} reminder to ${name}?`,
     )
   ) {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -490,7 +490,7 @@ sendEmailsBtn.addEventListener("click", async () => {
   if (
     await confirmAction(
       "Bulk Notification",
-      `Process ${targets.length} members?`
+      `Process ${targets.length} members?`,
     )
   ) {
     showCompletionToast = true;
@@ -504,7 +504,7 @@ daysInput.addEventListener("change", (e) =>
   socket.emit("update-preference", {
     key: "daysToExpiry",
     value: parseInt(e.target.value),
-  })
+  }),
 );
 showConsoleCheckbox.addEventListener("change", (e) => {
   toggleConsole(e.target.checked);
@@ -648,7 +648,7 @@ function isDateInPast(dateStr) {
     const d = new Date(
       parseInt(dmy[3]) < 100 ? parseInt(dmy[3]) + 2000 : parseInt(dmy[3]),
       parseInt(dmy[2]) - 1,
-      parseInt(dmy[1])
+      parseInt(dmy[1]),
     );
     return !isNaN(d.getTime()) && d < today;
   }
@@ -683,23 +683,24 @@ window.resetCheckboxesToDefaults = function () {
   if (window.showToast)
     window.showToast("Reset to default preferences", "success");
 };
+
 async function updateNotificationBadges() {
   try {
-    // 1. Fetch Counts
     const resSent = await fetch("/api/live-forms?status=sent&limit=1");
     const dataSent = await resSent.json();
     const countSent = dataSent.total || 0;
 
-    const resSub = await fetch("/api/live-forms?status=submitted&limit=1");
-    const dataSub = await resSub.json();
-    const countSub = dataSub.total || 0;
+    // NEW: Fetch 'accepted' and 'rejected' counts
+    const resAcc = await fetch("/api/live-forms?status=accepted&limit=1");
+    const resRej = await fetch("/api/live-forms?status=rejected&limit=1");
+    const dataAcc = await resAcc.json();
+    const dataRej = await resRej.json();
+    const countPending = (dataAcc.total || 0) + (dataRej.total || 0);
 
-    // 2. Get Elements
     const badgeSent = document.getElementById("badgeSent");
-    const badgeSub = document.getElementById("badgeSubmitted");
+    const badgeSub = document.getElementById("badgeSubmitted"); // Blue "Eye" Badge
     const btn = document.getElementById("liveFormsNotifBtn");
 
-    // 3. Update Badges Visuals
     if (countSent > 0) {
       badgeSent.textContent = countSent > 99 ? "99+" : countSent;
       badgeSent.style.display = "flex";
@@ -707,33 +708,27 @@ async function updateNotificationBadges() {
       badgeSent.style.display = "none";
     }
 
-    if (countSub > 0) {
-      badgeSub.textContent = countSub > 99 ? "99+" : countSub;
+    if (countPending > 0) {
+      badgeSub.textContent = countPending > 99 ? "99+" : countPending;
       badgeSub.style.display = "flex";
+      badgeSub.title = "Forms waiting for Archive/Resend action";
     } else {
       badgeSub.style.display = "none";
     }
 
-    // 4. Update Tooltip Text (Dynamic & Multi-line)
-    // Logic handles pluralization (e.g., "1 form" vs "2 forms")
     const sentText = `${countSent} form${countSent !== 1 ? "s" : ""} sent`;
-    const subText = `${countSub} form${
-      countSub !== 1 ? "s" : ""
-    } awaiting review`;
-
-    // \n creates the line break in the tooltip
-    btn.title = `${sentText}\n${subText}`;
+    const pendingText = `${countPending} automated result${countPending !== 1 ? "s" : ""} waiting review`;
+    btn.title = `${sentText}\n${pendingText}`;
   } catch (e) {
-    console.error("Failed to update notification badges", e);
+    console.error("Badge update failed", e);
   }
 }
-
 async function checkPendingReviews() {
   if (sessionStorage.getItem("hasShownReviewModal")) return;
 
   try {
     const prefRes = await fetch(
-      "/api/user-preferences/show_pending_reviews_alert"
+      "/api/user-preferences/show_pending_reviews_alert",
     );
     if (prefRes.ok) {
       const prefData = await prefRes.json();
@@ -745,15 +740,15 @@ async function checkPendingReviews() {
   }
 
   try {
-    const res = await fetch("/api/live-forms?status=submitted&limit=1");
-    const data = await res.json();
-    const count = data.total || 0;
+    const resAcc = await fetch("/api/live-forms?status=accepted&limit=1");
+    const resRej = await fetch("/api/live-forms?status=rejected&limit=1");
+    const count = (await resAcc.json()).total + (await resRej.json()).total;
 
     if (count > 0) {
       document.getElementById("pendingCountDisplay").textContent = count;
+      // Update modal text in index.html dynamically if needed,
+      // or ensure index.html labels it as "Automated Results"
       document.getElementById("pendingReviewsModal").style.display = "block";
-
-      // Set flag so it doesn't show again in this session
       sessionStorage.setItem("hasShownReviewModal", "true");
     }
   } catch (e) {

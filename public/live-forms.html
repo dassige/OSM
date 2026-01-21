@@ -415,25 +415,27 @@
         <div class="table-wrapper">
             <table id="liveFormsTable">
                 <thead>
-<tr>
-    <th onclick="handleSort('member_name')">Member <span id="icon-member_name"></span></th>
-    <th onclick="handleSort('skill_name')">Skill <span id="icon-skill_name"></span></th>
-    <th onclick="handleSort('tries')" style="width: 70px; text-align:center;">Tries <span id="icon-tries"></span></th>
-    
-    <th style="width: 220px; vertical-align: middle;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>Dates</span>
-            <div style="font-size: 0.75em; line-height: 1.2; text-align: right; opacity: 0.8; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 8px;">
-                <b>S</b>ent<br>
-                <b>U</b>ploaded<br>
-                <b>R</b>eviewed
-            </div>
-        </div>
-    </th> 
-    
-    <th onclick="handleSort('form_status')">Status <span id="icon-form_status"></span></th>
-    <th style="text-align:center;">Actions</th>
-</tr>
+                    <tr>
+                        <th onclick="handleSort('member_name')">Member <span id="icon-member_name"></span></th>
+                        <th onclick="handleSort('skill_name')">Skill <span id="icon-skill_name"></span></th>
+                        <th onclick="handleSort('tries')" style="width: 70px; text-align:center;">Tries <span
+                                id="icon-tries"></span></th>
+                        <th style="width: 100px; text-align:center;">Score</th>
+                        <th style="width: 220px; vertical-align: middle;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Dates</span>
+                                <div
+                                    style="font-size: 0.75em; line-height: 1.2; text-align: right; opacity: 0.8; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 8px;">
+                                    <b>S</b>ent<br>
+                                    <b>U</b>ploaded<br>
+                                    <b>R</b>eviewed
+                                </div>
+                            </div>
+                        </th>
+
+                        <th onclick="handleSort('form_status')">Status <span id="icon-form_status"></span></th>
+                        <th style="text-align:center;">Actions</th>
+                    </tr>
                 </thead>
                 <tbody id="tableBody">
                     <tr>
@@ -734,14 +736,14 @@
                 return;
             }
 
-const fmtDate = (dStr) => {
-    if (!dStr) return '<span style="color:#ccc;">-</span>';
-    return new Date(dStr).toLocaleString(appLocale, {
-        timeZone: appTimezone,
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit'
-    });
-};
+            const fmtDate = (dStr) => {
+                if (!dStr) return '<span style="color:#ccc;">-</span>';
+                return new Date(dStr).toLocaleString(appLocale, {
+                    timeZone: appTimezone,
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit'
+                });
+            };
 
             currentData.forEach(row => {
                 const sentDate = fmtDate(row.form_sent_datetime);
@@ -762,6 +764,7 @@ const fmtDate = (dStr) => {
             <td>${row.member_name || 'Unknown'}</td>
             <td>${row.skill_name || 'Unknown'}</td>
             <td style="text-align:center;">${row.tries || 1}</td>
+            <td style="text-align:center; vertical-align:middle;">${scoreDisplay}</td>
             <td style="font-size:0.8em; line-height:1.4; white-space:nowrap;">
                 <div title="Sent Date"><span style="color:var(--text-muted); font-weight:bold;">S:</span> ${sentDate}</div>
                 <div title="Submitted Date"><span style="color:var(--text-muted); font-weight:bold;">U:</span> ${subDate}</div>

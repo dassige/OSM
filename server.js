@@ -111,7 +111,7 @@ app.use((req, res, next) => {
   return res.redirect("/login.html");
 });
 app.get("/ui-config", (req, res) =>
-  res.json({ ...config.ui, appMode: config.appMode })
+  res.json({ ...config.ui, appMode: config.appMode }),
 );
 
 // --- PAGE ACCESS CONTROL ---
@@ -209,7 +209,7 @@ app.post("/login", async (req, res) => {
           {
             attemptedEmail: username,
             sourceIP: ip,
-          }
+          },
         );
         return res
           .status(403)
@@ -225,7 +225,7 @@ app.post("/login", async (req, res) => {
             attemptedEmail: username,
             sourceIP: ip,
             reason: "Manual or Auto-Block active",
-          }
+          },
         );
         return res
           .status(403)
@@ -269,7 +269,7 @@ app.post("/login", async (req, res) => {
           attemptNumber: stats.login_attempts,
           maxAllowed: config.auth.maxLoginAttempts,
           sourceIP: ip,
-        }
+        },
       );
 
       if (stats && stats.login_attempts >= config.auth.maxLoginAttempts) {
@@ -286,7 +286,7 @@ app.post("/login", async (req, res) => {
           { email: username, attempts: stats.login_attempts, ip },
           config.transporter,
           config.ui.loginTitle,
-          config.auth.superuserEmail
+          config.auth.superuserEmail,
         );
 
         return res
@@ -327,7 +327,7 @@ app.post("/forgot-password", async (req, res) => {
       tempPassword,
       config.transporter,
       config.ui.loginTitle,
-      tpl
+      tpl,
     );
     await db.logEvent("System", "Security", "Password Reset Initiated", {
       targetAccount: email,
@@ -374,7 +374,7 @@ app.post("/api/users", hasRole("admin"), async (req, res) => {
       req.body.email,
       req.body.name,
       tempPassword,
-      req.body.role
+      req.body.role,
     );
     const prefs = await db.getPreferences();
     const tpl = prefs.tpl_new_user ? JSON.parse(prefs.tpl_new_user) : null;
@@ -384,7 +384,7 @@ app.post("/api/users", hasRole("admin"), async (req, res) => {
       tempPassword,
       config.transporter,
       config.ui.loginTitle,
-      tpl
+      tpl,
     );
     await db.logEvent(
       req.session.user.name,
@@ -394,7 +394,7 @@ app.post("/api/users", hasRole("admin"), async (req, res) => {
         newUserEmail: req.body.email,
         newUserName: req.body.name,
         assignedRole: req.body.role,
-      }
+      },
     );
     res.json({ success: true, id });
   } catch (e) {
@@ -417,7 +417,7 @@ app.put("/api/users/:id", hasRole("admin"), async (req, res) => {
         {
           targetAccount: email,
           actionTakenBy: req.session.user.email,
-        }
+        },
       );
     } else {
       await db.logEvent(
@@ -429,7 +429,7 @@ app.put("/api/users/:id", hasRole("admin"), async (req, res) => {
           targetName: name,
           newRole: role,
           statusChange: { enabled, blocked },
-        }
+        },
       );
     }
     res.json({ success: true });
@@ -452,7 +452,7 @@ app.delete("/api/users/:id", hasRole("admin"), async (req, res) => {
         user.name,
         config.transporter,
         config.ui.loginTitle,
-        tpl
+        tpl,
       );
       await db.logEvent(
         req.session.user.name,
@@ -462,7 +462,7 @@ app.delete("/api/users/:id", hasRole("admin"), async (req, res) => {
           deletedUserEmail: user.email,
           deletedUserName: user.name,
           deletedUserRole: user.role,
-        }
+        },
       );
     }
     res.json({ success: true });
@@ -485,7 +485,7 @@ app.post("/api/users/:id/reset", hasRole("admin"), async (req, res) => {
       tempPassword,
       config.transporter,
       config.ui.loginTitle,
-      tpl
+      tpl,
     );
     await db.logEvent(
       req.session.user.name,
@@ -494,7 +494,7 @@ app.post("/api/users/:id/reset", hasRole("admin"), async (req, res) => {
       {
         targetEmail: user.email,
         targetName: user.name,
-      }
+      },
     );
     res.json({ success: true });
   } catch (e) {
@@ -506,7 +506,7 @@ app.put("/api/profile", async (req, res) => {
     await db.updateUserProfile(
       req.session.user.id,
       req.body.name,
-      req.body.password
+      req.body.password,
     );
     req.session.user.name = req.body.name;
     res.json({ success: true });
@@ -520,7 +520,7 @@ app.put("/api/profile", async (req, res) => {
 // =============================================================================
 
 app.get("/api/members", hasRole("admin"), async (req, res) =>
-  res.json(await db.getMembers())
+  res.json(await db.getMembers()),
 );
 app.put("/api/members/:id", hasRole("admin"), async (req, res) => {
   await db.updateMember(req.params.id, req.body);
@@ -543,7 +543,7 @@ app.get("/api/members/discover", hasRole("admin"), async (req, res) => {
     const existing = await db.getMembers();
     const existingNames = new Set(existing.map((m) => m.name));
     const newMembers = [...new Set(rawData.map((r) => r.name))].filter(
-      (n) => !existingNames.has(n)
+      (n) => !existingNames.has(n),
     );
     res.json(newMembers.sort());
   } catch (e) {
@@ -556,7 +556,7 @@ app.post("/api/members/import", hasRole("admin"), async (req, res) => {
 });
 
 app.get("/api/skills", hasRole("admin"), async (req, res) =>
-  res.json(await db.getSkills())
+  res.json(await db.getSkills()),
 );
 app.put("/api/skills/:id", hasRole("admin"), async (req, res) => {
   await db.updateSkill(req.params.id, req.body);
@@ -579,7 +579,7 @@ app.get("/api/skills/discover", hasRole("admin"), async (req, res) => {
     const existing = await db.getSkills();
     const existingNames = new Set(existing.map((s) => s.name));
     const newSkills = [...new Set(rawData.map((r) => r.skill))].filter(
-      (n) => !existingNames.has(n)
+      (n) => !existingNames.has(n),
     );
     res.json(newSkills.sort());
   } catch (e) {
@@ -617,7 +617,7 @@ app.post("/api/user-preferences", async (req, res) => {
   await db.saveUserPreference(
     req.session.user.id || 0,
     req.body.key,
-    req.body.value
+    req.body.value,
   );
   res.json({ success: true });
 });
@@ -633,7 +633,7 @@ app.get("/api/events/export", hasRole("admin"), async (req, res) => {
     const data = await db.getEventLogsExport(req.query);
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="event_log.json"'
+      'attachment; filename="event_log.json"',
     );
     res.setHeader("Content-Type", "application/json");
     res.send(JSON.stringify(data, null, 2));
@@ -692,7 +692,7 @@ app.post(
     } finally {
       if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     }
-  }
+  },
 );
 app.get("/api/demo-credentials", (req, res) => {
   if (config.appMode !== "demo")
@@ -725,15 +725,15 @@ app.get("/api/reports/data/:type", async (req, res) => {
     const proxyUrl = currentProxy;
     if (type === "by-member")
       res.json(
-        await reportService.getGroupedByMember(req.session.user.id, proxyUrl)
+        await reportService.getGroupedByMember(req.session.user.id, proxyUrl),
       );
     else if (type === "by-skill")
       res.json(
-        await reportService.getGroupedBySkill(req.session.user.id, proxyUrl)
+        await reportService.getGroupedBySkill(req.session.user.id, proxyUrl),
       );
     else if (type === "planned-sessions")
       res.json(
-        await reportService.getPlannedSessions(req.session.user.id, proxyUrl)
+        await reportService.getPlannedSessions(req.session.user.id, proxyUrl),
       );
     else res.status(400).json({ error: "Unknown report type" });
   } catch (e) {
@@ -825,7 +825,7 @@ app.post(
         {
           formsImportedCount: value.length,
           sourceFile: req.file.originalname,
-        }
+        },
       );
       res.json({ success: true, count: value.length });
     } catch (e) {
@@ -833,7 +833,7 @@ app.post(
         fs.unlinkSync(req.file.path);
       res.status(500).json({ error: "Import failed: " + e.message });
     }
-  }
+  },
 );
 app.get("/api/forms/:id", async (req, res) => {
   if (!req.session.loggedIn)
@@ -938,14 +938,14 @@ app.post(
         data.name,
         data.status,
         data.intro,
-        data.structure
+        data.structure,
       );
       fs.unlinkSync(req.file.path);
       await db.logEvent(
         req.session.user.name,
         "Forms",
         `Imported form: ${data.name}`,
-        { id }
+        { id },
       );
       res.json({ success: true, id });
     } catch (e) {
@@ -953,7 +953,7 @@ app.post(
         fs.unlinkSync(req.file.path);
       res.status(500).json({ error: "Import failed: " + e.message });
     }
-  }
+  },
 );
 app.get("/api/forms/public/:publicId", async (req, res) => {
   try {
@@ -1069,7 +1069,7 @@ app.put("/api/live-forms/:id", hasRole("admin"), async (req, res) => {
       req.session.user.name,
       "Live Forms",
       `Updated status ID: ${req.params.id}`,
-      { status: req.body.status }
+      { status: req.body.status },
     );
     res.json({ success: true });
   } catch (e) {
@@ -1084,7 +1084,7 @@ app.delete("/api/live-forms/:id", hasRole("admin"), async (req, res) => {
       req.session.user.name,
       "Live Forms",
       `Deleted record ID: ${req.params.id}`,
-      {}
+      {},
     );
     res.json({ success: true });
   } catch (e) {
@@ -1137,27 +1137,90 @@ app.get("/api/live-forms/access/:code", async (req, res) => {
 
 app.post("/api/live-forms/submit/:code", async (req, res) => {
   try {
-    // 1. Verify status is still open (prevent double submission race condition)
     const form = await formsService.getLiveFormByCode(req.params.code);
-    if (!form) return res.status(404).json({ error: "Invalid form" });
-    if (form.form_status !== "sent")
-      return res.status(403).json({ error: "Form is no longer open" });
+    if (!form || form.form_status !== "sent") {
+      return res.status(403).json({ error: "Form session invalid or closed" });
+    }
 
-    // 2. Submit Data
-    await formsService.submitLiveForm(req.params.code, req.body);
+    // 1. Calculate Score
+    const score = calculateFormScore(form.structure, req.body);
 
-    // 3. Log System Event
-    await db.logEvent("System", "Live Forms", "Form Submitted by Member", {
-      memberName: form.member_name,
-      skillName: form.skill_name,
-      attemptNumber: form.tries || 1,
-      submissionTime: new Date().toISOString(),
-    });
-    res.json({ success: true });
+    // 2. Evaluate Pass/Fail
+    const threshold = parseFloat(form.min_score);
+    let isPass = false;
+
+    if (form.min_score_type === "percentage") {
+      const achievedPct = (score.achieved / score.maximum) * 100;
+      isPass = achievedPct >= threshold;
+    } else {
+      isPass = score.achieved >= threshold;
+    }
+
+    // 3. Handle Lifecycle
+    const currentTry = form.tries || 1;
+    const maxAllowed = parseInt(form.max_tries) || 1;
+    
+    // Log the attempt detail regardless of outcome (helpful for retry tracking)
+
+    const logPayload = {
+      member: form.member_name,
+      skill: form.skill_name,
+      scoreAchieved: score.achieved,
+      scoreMaximum: score.maximum,
+      threshold: threshold,
+      thresholdType: form.min_score_type,
+      attemptNumber: currentTry,
+      maxAllowed: maxAllowed,
+    };
+
+    if (isPass) {
+      // AUTOMATIC APPROVAL LOG
+      await formsService.updateLiveFormStatus(
+        form.id,
+        "accepted",
+        score.achieved,
+      );
+      await db.logEvent("System", "Live Forms", "Form Auto-Approved", {
+        ...logPayload,
+        status: "Passed",
+      });
+      return res.json({ status: "accepted", score: score.achieved });
+    } else if (currentTry < maxAllowed) {
+      // RETRY LOG (Optional but recommended for full audit)
+      await formsService.incrementTries(form.id);
+      await db.logEvent(
+        "System",
+        "Live Forms",
+        "Form Submission: Retry Required",
+        {
+          ...logPayload,
+          status: "Threshold Not Met",
+        },
+      );
+      return res.status(400).json({
+        status: "retry",
+        currentTry,
+        maxAllowed,
+        message: "Minimum score not reached. Please try again.",
+      });
+    } else {
+      // FINAL REJECTION LOG
+      await formsService.updateLiveFormStatus(
+        form.id,
+        "rejected",
+        score.achieved,
+      );
+      await db.logEvent("System", "Live Forms", "Form Auto-Rejected", {
+        ...logPayload,
+        status: "Final Attempt Failed",
+      });
+      return res.json({ status: "rejected", score: score.achieved });
+    }
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
+
 app.get("/api/live-forms/review/:id", hasRole("admin"), async (req, res) => {
   try {
     const result = await formsService.getLiveFormSubmission(req.params.id);
@@ -1306,7 +1369,7 @@ app.post("/api/live-forms/accept/:id", hasRole("admin"), async (req, res) => {
         skillName: form.skill_name,
         notifiedVia: { email: notifyEmail, whatsapp: notifyWa },
         adminComment: customComment || "No comment provided",
-      }
+      },
     );
     res.json({ success: true, demo: isDemo });
   } catch (e) {
@@ -1434,7 +1497,7 @@ app.post("/api/live-forms/reject/:id", hasRole("admin"), async (req, res) => {
         retryGenerated: generateNew,
         notifiedVia: { email: notifyEmail, whatsapp: notifyWa },
         reasonProvided: customComment || "No reason specified",
-      }
+      },
     );
     res.json({ success: true, demo: isDemo });
   } catch (e) {
@@ -1448,7 +1511,7 @@ app.get("/api/statistics/data/:key", hasRole("simple"), async (req, res) => {
   try {
     if (req.params.key === "compliance-overview") {
       const data = await statisticsService.getComplianceOverview(
-        req.session.user.id
+        req.session.user.id,
       );
       res.json(data);
     } else {
@@ -1486,7 +1549,7 @@ io.on("connection", (socket) => {
     try {
       socket.emit(
         "preferences-data",
-        await db.getAllUserPreferences(socket.request.session.user.id || 0)
+        await db.getAllUserPreferences(socket.request.session.user.id || 0),
       );
     } catch (e) {}
   });
@@ -1497,7 +1560,7 @@ io.on("connection", (socket) => {
       await db.saveUserPreference(
         socket.request.session.user.id || 0,
         key,
-        value
+        value,
       );
     } catch (e) {}
   });
@@ -1549,7 +1612,7 @@ io.on("connection", (socket) => {
       logger(
         `> Fetching View Data (Threshold: ${daysThreshold} days${
           forceRefresh ? ", Force Refresh" : ", Cached OK"
-        })...`
+        })...`,
       );
 
       const dbMembers = await db.getMembers();
@@ -1558,13 +1621,13 @@ io.on("connection", (socket) => {
         config.url,
         interval,
         currentProxy,
-        logger
+        logger,
       );
       const trainingMap = await getTrainingMap();
 
       // Fetch statuses using the environment variable threshold
       const liveForms = await formsService.getAllActiveStatuses(
-        config.acceptedFormVisibilityDays
+        config.acceptedFormVisibilityDays,
       );
       const liveFormsMap = {};
       liveForms.forEach((r) => {
@@ -1579,7 +1642,7 @@ io.on("connection", (socket) => {
         daysThreshold,
         trainingMap,
         liveFormsMap,
-        dynamicBaseUrl
+        dynamicBaseUrl,
       );
 
       const results = processedMembers.map((m) => ({
@@ -1631,11 +1694,11 @@ async function handleQueueProcessing(socket, targets, days, logger) {
       config.url,
       config.scrapingInterval,
       null,
-      logger
+      logger,
     );
     const prefs = await db.getPreferences();
     const membersToProcess = dbMembers.filter((m) =>
-      targets.some((t) => t.name === m.name && m.enabled)
+      targets.some((t) => t.name === m.name && m.enabled),
     );
     const trainingMap = await getTrainingMap();
     const processedMembers = processMemberSkills(
@@ -1645,7 +1708,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
       days,
       trainingMap,
       {}, // empty liveFormsMap for this context
-      dynamicBaseUrl
+      dynamicBaseUrl,
     );
     let totalSent = 0;
 
@@ -1668,14 +1731,14 @@ async function handleQueueProcessing(socket, targets, days, logger) {
             // 1. Check if already submitted
             const isSubmitted = await formsService.checkSubmittedStatus(
               member.id,
-              skillConfig.id
+              skillConfig.id,
             );
 
             if (isSubmitted) {
               skill.isSubmitted = true; // Flag for Mailer/WhatsApp
               skill.url = null; // Ensure no link is rendered
               logger(
-                `  - Skipped Live Form for "${skill.skill}" (Status: Submitted/Pending Review)`
+                `  - Skipped Live Form for "${skill.skill}" (Status: Submitted/Pending Review)`,
               );
             } else {
               // 2. Standard Flow: Ensure Open Form
@@ -1683,7 +1746,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
                 member.id,
                 skillConfig.id,
                 skill.dueDate,
-                skillConfig.url
+                skillConfig.url,
               );
               const separator = skill.url.includes("?") ? "&" : "?";
               skill.url = `${skill.url}${separator}code=${accessCode}`;
@@ -1691,7 +1754,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
             }
           } catch (e) {
             logger(
-              `  ! Error creating live form for ${skill.skill}: ${e.message}`
+              `  ! Error creating live form for ${skill.skill}: ${e.message}`,
             );
           }
         }
@@ -1706,12 +1769,12 @@ async function handleQueueProcessing(socket, targets, days, logger) {
             config.transporter,
             isDemo,
             logger,
-            config.ui.loginTitle
+            config.ui.loginTitle,
           );
 
           if (isDemo) {
             logger(
-              `  [DEMO] Email simulated for ${member.name}. Skipping SMTP transmission.`
+              `  [DEMO] Email simulated for ${member.name}. Skipping SMTP transmission.`,
             );
           } else {
             await db.logEmailAction(member, "SENT", "Email notification sent");
@@ -1762,7 +1825,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
           if (hasSkills) {
             if (isDemo) {
               logger(
-                `  [DEMO] WhatsApp simulated for ${member.mobile}. Skipping transmission.`
+                `  [DEMO] WhatsApp simulated for ${member.mobile}. Skipping transmission.`,
               );
             } else {
               await whatsappService.sendMessage(member.mobile, msg);
@@ -1772,7 +1835,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
               currentUser,
               "WhatsApp",
               isDemo ? "Notification Simulated" : "Notification Sent",
-              { member: member.name }
+              { member: member.name },
             );
           }
         } catch (e) {
