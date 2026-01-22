@@ -1101,3 +1101,14 @@ textarea {
 .status-circle.submitted {
     background-color: #e8f0fe;
 }
+.status-circle.rejected {
+    background-color: #fff5f5; /* Very light red */
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+/* Ensure consistent hover behavior */
+.status-circle.rejected:hover {
+    background-color: #ffdada;
+    transform: scale(1.1);
+}

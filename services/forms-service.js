@@ -467,7 +467,7 @@ async function getAllActiveStatuses(visibilityDays) {
         SELECT member_id, skill_id, form_status 
         FROM live_forms 
         WHERE form_status IN ('sent', 'submitted')
-        OR (form_status = 'accepted' AND form_reviewed_datetime >= datetime('now', '-' || ? || ' days'))
+        OR (form_status IN ('accepted', 'rejected') AND form_reviewed_datetime >= datetime('now', '-' || ? || ' days'))
     `,
     visibilityDays,
   );

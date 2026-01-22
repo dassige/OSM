@@ -238,7 +238,6 @@ function renderTable() {
     const dateTd = document.createElement("td");
 
     if (hasVisibleSkills) {
-      // [UPDATED from previous step] Pass member.id
       skillTd.innerHTML = buildSkillHtml(visibleSkills[0], member.id);
       skillTd.className = "skill-cell";
       dateTd.textContent = visibleSkills[0].dueDate;
@@ -631,6 +630,15 @@ function buildSkillHtml(skillObj, memberId) {
 
     if (canLink) {
       html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=sent" target="_self" style="text-decoration:none;">${wrapper}</a>`;
+    } else {
+      html += ` ${wrapper}`;
+    }
+  } else if (skillObj.liveFormStatus === "rejected") {
+    const icon = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+    const wrapper = `<span class="status-circle rejected" title="Verification Rejected">${icon}</span>`;
+
+    if (canLink) {
+      html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=rejected">${wrapper}</a>`;
     } else {
       html += ` ${wrapper}`;
     }
