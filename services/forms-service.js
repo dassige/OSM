@@ -264,9 +264,15 @@ function buildLiveFormsWhere(filters) {
     clauses.push("lf.skill_id = ?");
     params.push(filters.skillId);
   }
-  if (filters.status) {
-    clauses.push("lf.form_status = ?");
-    params.push(filters.status);
+if (filters.status) {
+    if (filters.status === 'submitted') {
+      // Treat 'submitted' as an umbrella for all completed/reviewed states
+      clauses.push("lf.form_status IN ('submitted', 'accepted', 'rejected')");
+    } else {
+      // Maintain specific filtering for 'sent', 'accepted', 'rejected', or 'disabled'
+      clauses.push("lf.form_status = ?");
+      params.push(filters.status);
+    }
   }
 
   // Date Range: Sent
