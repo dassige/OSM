@@ -25,29 +25,45 @@ function parseDate(dateStr) {
   const fallback = new Date(cleanStr);
   return isNaN(fallback.getTime()) ? null : fallback;
 }
-
+// Helper: Get YYYY-MM-DD string for today in the target timezone
+function getTodayInTimezone() {
+  return new Intl.DateTimeFormat(config.locale, {
+    timeZone: config.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(new Date())
+    .split("/")
+    .reverse()
+    .join("-");
+}
 function isExpired(dueDateStr) {
-  const date = parseDate(dueDateStr);
-  if (!date) return false;
-  const nowString = new Date().toLocaleString("en-US", {
-    timeZone: config.timezone,
-  });
-  const today = new Date(nowString);
-  today.setHours(0, 0, 0, 0);
-  return date < today;
-}
+  if (!dueDateStr) return false;
+  const cleanDue = dueDateStr.trim();
+  if (cleanDue.toLowerCase().includes("expired")) return true;
 
+  const todayStr = getTodayInTimezone();
+  // Direct string comparison works for YYYY-MM-DD
+  return cleanDue < todayStr;
+}
 function isExpiring(dueDateStr, daysThreshold) {
-  const skillExpiryDate = parseDate(dueDateStr);
-  if (!skillExpiryDate) return false;
-  const nowString = new Date().toLocaleString("en-US", {
-    timeZone: config.timezone,
-  });
-  const thresholdDate = new Date(nowString);
-  thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
-  return skillExpiryDate <= thresholdDate;
-}
+  const expiryDate = parseDate(dueDateStr);
+  if (!expiryDate) return false;
 
+  // Create a Date object representing today at 00:00 in the target timezone
+  const todayStr = getTodayInTimezone();
+  const todayDate = new Date(todayStr + "T00:00:00Z");
+
+  const thresholdDate = new Date(todayDate);
+  thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
+
+  // Use UTC dates for stable comparison
+  const utcExpiry = new Date(
+    expiryDate.toISOString().split("T")[0] + "T00:00:00Z",
+  );
+  return utcExpiry <= thresholdDate && utcExpiry >= todayDate;
+}
 function processMemberSkills(
   members,
   scrapedData,
@@ -55,13 +71,13 @@ function processMemberSkills(
   daysThreshold,
   trainingMap = {},
   liveFormsMap = {},
-  appBaseUrl
+  appBaseUrl,
 ) {
   const activeMembers = members.filter((m) => m.enabled);
 
   const processedMembers = activeMembers.map((member) => {
     const memberRawSkills = scrapedData.filter(
-      (item) => item.name === member.name
+      (item) => item.name === member.name,
     );
 
     const expiringSkills = memberRawSkills.filter((skill) => {

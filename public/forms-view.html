@@ -348,8 +348,11 @@
                     const data = await res.json();
                     reviewData = data;
 
-                    const formattedDate = new Date(data.submittedAt).toLocaleString(appLocale, { timeZone: appTimezone, year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
+                    const formattedDate = new Date(data.submittedAt).toLocaleString(appLocale, {
+                        timeZone: appTimezone,
+                        year: 'numeric', month: 'long', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
                     // --- COMPREHENSIVE HEADER RENDER ---
                     const headerPanel = document.createElement('div');
                     headerPanel.style.cssText = "background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:20px; margin-bottom:30px; box-shadow: 0 2px 8px var(--shadow);";
@@ -412,9 +415,9 @@
 
                     // --- PUBLIC LIVE MODE HEADER ---
                     const publicHeader = document.createElement('div');
-                            publicHeader.style.cssText = "background:var(--bg-hover); border:1px solid var(--border-color); border-radius:8px; padding:20px; margin-bottom:25px; box-shadow: 0 2px 8px var(--shadow);";
-                            
-                            publicHeader.innerHTML = `
+                    publicHeader.style.cssText = "background:var(--bg-hover); border:1px solid var(--border-color); border-radius:8px; padding:20px; margin-bottom:25px; box-shadow: 0 2px 8px var(--shadow);";
+
+                    publicHeader.innerHTML = `
                                 <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:15px;">
                                     <div>
                                         <p style="margin:0; font-size:0.9em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Member Required</p>

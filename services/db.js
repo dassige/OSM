@@ -560,11 +560,12 @@ async function logEvent(user, type, title, payload) {
   if (!db) await initDB();
   try {
     await db.run(
-      `INSERT INTO event_log (user, event_type, title, payload) VALUES (?, ?, ?, ?)`,
+      `INSERT INTO event_log (user, event_type, title, payload, timestamp) VALUES (?, ?, ?, ?, ?)`,
       user || "System",
       type,
       title,
       JSON.stringify(payload),
+      new Date().toISOString() // Explicitly override DEFAULT CURRENT_TIMESTAMP with ISO+Z
     );
   } catch (e) {
     console.error("Failed to write to event log:", e.message);

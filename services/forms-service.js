@@ -213,14 +213,13 @@ async function ensureLiveForm(
   }
 
   const accessCode = crypto.randomUUID();
-  // [UPDATED] Insert 'sent'
+  // Standardize sent datetime
+  const now = new Date().toISOString(); 
+  
   await database.run(
-    `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status) VALUES (?, ?, ?, ?, ?, 'sent')`,
-    skillId,
-    skillExpiringDate,
-    memberId,
-    formPublicId,
-    accessCode,
+    `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, form_sent_datetime) 
+     VALUES (?, ?, ?, ?, ?, 'sent', ?)`,
+    skillId, skillExpiringDate, memberId, formPublicId, accessCode, now
   );
   return accessCode;
 }
@@ -350,23 +349,18 @@ async function purgeLiveForms(filters) {
 // Update the status and set the reviewed timestamp
 async function updateLiveFormStatus(id, status, score = null) {
   const database = await db.initDB();
-  // Record current time for Accepted/Rejected, or clear it if moving back to Sent/Submitted
-  const reviewedDate =
-    status === "accepted" || status === "rejected"
+  // Ensure ISO format for consistency
+  const reviewedDate = (status === "accepted" || status === "rejected")
       ? new Date().toISOString()
       : null;
 
-  // Persist status, timestamp, and the final score
   await database.run(
     `UPDATE live_forms 
          SET form_status = ?, 
              form_reviewed_datetime = ?, 
              current_score = ? 
          WHERE id = ?`,
-    status,
-    reviewedDate,
-    score,
-    id,
+    status, reviewedDate, score, id
   );
 }
 //  Delete Live Form
@@ -413,16 +407,14 @@ async function getLiveFormByCode(code) {
 //  Submit Live Form
 async function submitLiveForm(code, formData) {
   const database = await db.initDB();
+  const now = new Date().toISOString(); // UTC ISO string
   await database.run(
-    `
-        UPDATE live_forms 
-        SET form_status = 'submitted', 
-            form_submitted_datetime = CURRENT_TIMESTAMP,
-            form_submitted_data = ?
-        WHERE form_access_code = ?
-    `,
-    JSON.stringify(formData),
-    code,
+    `UPDATE live_forms 
+     SET form_status = 'submitted', 
+         form_submitted_datetime = ?, 
+         form_submitted_data = ?
+     WHERE form_access_code = ?`,
+    now, JSON.stringify(formData), code
   );
 }
 // Admin: Get specific submission details

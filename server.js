@@ -1114,10 +1114,10 @@ app.get("/api/live-forms/access/:code", async (req, res) => {
       accessCode: req.params.code,
     });
     // [SECURITY] Check Status
-    if (result.form_status === "submitted") {
+    if (result.form_status === "submitted" || result.form_status === "accepted" || result.form_status === "rejected") {
       return res.status(403).json({
         error: "This form has been already submitted",
-        status: "submitted",
+        status: result.form_status,
       });
     }
     if (result.form_status === "disabled") {
