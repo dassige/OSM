@@ -102,7 +102,15 @@ async function createForm(name, status = 0, intro = "", structure = []) {
 
 async function updateForm(id, data) {
   const database = await db.initDB();
-  const { name, status, intro, structure, min_score, min_score_type, max_tries } = data;
+  const {
+    name,
+    status,
+    intro,
+    structure,
+    min_score,
+    min_score_type,
+    max_tries,
+  } = data;
   const updates = [];
   const params = [];
   if (name !== undefined) {
@@ -367,12 +375,15 @@ async function deleteLiveForm(id) {
   await database.run(`DELETE FROM live_forms WHERE id = ?`, id);
 }
 
-//  Get Live Form Context by Access Code (Public Access)
+// services/forms-service.js
+
 async function getLiveFormByCode(code) {
   const database = await db.initDB();
   const result = await database.get(
     `
-        SELECT lf.*, f.name as form_name, f.intro, f.structure, 
+        SELECT lf.*, 
+               f.name as form_name, f.intro, f.structure, 
+               f.max_tries, f.min_score, f.min_score_type,  -- ADD THESE
                m.name as member_name, m.email as member_email,
                s.name as skill_name
         FROM live_forms lf
@@ -385,14 +396,12 @@ async function getLiveFormByCode(code) {
   );
 
   if (result) {
-    // Parse structure if it exists
     try {
       result.structure = JSON.parse(result.structure);
     } catch (e) {
       result.structure = [];
     }
 
-    // Parse previously submitted data if it exists
     if (result.form_submitted_data) {
       try {
         result.form_submitted_data = JSON.parse(result.form_submitted_data);
@@ -401,7 +410,6 @@ async function getLiveFormByCode(code) {
   }
   return result;
 }
-
 //  Submit Live Form
 async function submitLiveForm(code, formData) {
   const database = await db.initDB();
@@ -422,7 +430,9 @@ async function getLiveFormSubmission(id) {
   const database = await db.initDB();
   const result = await database.get(
     `
-        SELECT lf.*, f.name as form_name, f.intro, f.structure, 
+        SELECT lf.*, 
+               f.name as form_name, f.intro, f.structure, 
+               f.max_tries, f.min_score, f.min_score_type, -- ADD THESE FIELDS
                m.name as member_name, m.email as member_email, m.mobile as member_mobile, m.notificationPreference as member_prefs,
                s.name as skill_name
         FROM live_forms lf
@@ -433,7 +443,6 @@ async function getLiveFormSubmission(id) {
     `,
     id,
   );
-
   if (result) {
     try {
       result.structure = JSON.parse(result.structure);
@@ -521,6 +530,14 @@ function calculateFormScore(structure, submittedData) {
 
   return { achieved: totalAchieved, maximum: totalPossible };
 }
+async function incrementTries(id) {
+  const database = await db.initDB();
+  await database.run(
+    "UPDATE live_forms SET tries = tries + 1 WHERE id = ?",
+    id,
+  );
+}
+
 module.exports = {
   getAllForms,
   getAllFormsFull,
@@ -542,5 +559,6 @@ module.exports = {
   checkSubmittedStatus,
   getAllActiveStatuses,
   getFormUsage,
+  incrementTries,
   calculateFormScore,
 };

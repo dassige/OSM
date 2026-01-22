@@ -1134,12 +1134,14 @@ app.get("/api/live-forms/access/:code", async (req, res) => {
       structure: result.structure,
       member: result.member_name,
       skill: result.skill_name,
-      tries: result.tries || 1, // [NEW] Added attempt count
+      tries: result.tries || 1, 
+      maxTries: result.max_tries,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
+
 
 app.post("/api/live-forms/submit/:code", async (req, res) => {
   try {
@@ -1148,10 +1150,11 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
       return res.status(403).json({ error: "Form session invalid or closed" });
     }
 
-    // 1. Calculate Score
-    const score = formsService.calculateFormScore(form.structure, req.body);
+    // 1. SAVE DATA FIRST: This persists the date and answers in the database
+    await formsService.submitLiveForm(req.params.code, req.body);
 
-    // 2. Evaluate Pass/Fail
+    // 2. Calculate Score
+    const score = formsService.calculateFormScore(form.structure, req.body);
     const threshold = parseFloat(form.min_score);
     let isPass = false;
 
@@ -1162,64 +1165,32 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
       isPass = score.achieved >= threshold;
     }
 
-    // 3. Handle Lifecycle
     const currentTry = form.tries || 1;
     const maxAllowed = parseInt(form.max_tries) || 1;
 
-    // Log the attempt detail regardless of outcome (helpful for retry tracking)
-
-    const logPayload = {
-      member: form.member_name,
-      skill: form.skill_name,
-      scoreAchieved: score.achieved,
-      scoreMaximum: score.maximum,
-      threshold: threshold,
-      thresholdType: form.min_score_type,
-      attemptNumber: currentTry,
-      maxAllowed: maxAllowed,
-    };
-
     if (isPass) {
-      // AUTOMATIC APPROVAL LOG
-      await formsService.updateLiveFormStatus(
-        form.id,
-        "accepted",
-        score.achieved,
-      );
-      await db.logEvent("System", "Live Forms", "Form Auto-Approved", {
-        ...logPayload,
-        status: "Passed",
-      });
+      // SUCCESS: Close the session as accepted
+      await formsService.updateLiveFormStatus(form.id, "accepted", score.achieved);
       return res.json({ status: "accepted", score: score.achieved });
     } else if (currentTry < maxAllowed) {
-      // RETRY LOG (Optional but recommended for full audit)
+      // FAIL BUT RETRY ALLOWED: Reset status back to 'sent' and increment counter
       await formsService.incrementTries(form.id);
-      await db.logEvent(
-        "System",
-        "Live Forms",
-        "Form Submission: Retry Required",
-        {
-          ...logPayload,
-          status: "Threshold Not Met",
-        },
+      
+      const database = await db.initDB();
+      await database.run(
+        "UPDATE live_forms SET form_status = 'sent', current_score = ? WHERE id = ?",
+        score.achieved, form.id
       );
+
       return res.status(400).json({
         status: "retry",
-        currentTry,
+        currentTry: currentTry,
         maxAllowed,
         message: "Minimum score not reached. Please try again.",
       });
     } else {
-      // FINAL REJECTION LOG
-      await formsService.updateLiveFormStatus(
-        form.id,
-        "rejected",
-        score.achieved,
-      );
-      await db.logEvent("System", "Live Forms", "Form Auto-Rejected", {
-        ...logPayload,
-        status: "Final Attempt Failed",
-      });
+      // FINAL FAILURE: No more tries left
+      await formsService.updateLiveFormStatus(form.id, "rejected", score.achieved);
       return res.json({ status: "rejected", score: score.achieved });
     }
   } catch (e) {
@@ -1227,39 +1198,40 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
   }
 });
 
+
 app.get("/api/live-forms/review/:id", hasRole("admin"), async (req, res) => {
   try {
     const result = await formsService.getLiveFormSubmission(req.params.id);
-
     if (!result) return res.status(404).json({ error: "Record not found" });
 
+    // Calculate maximum possible score based on the question point weights
+    const scoreInfo = formsService.calculateFormScore(result.structure, result.form_submitted_data || {});
+
     res.json({
-      // CRITICAL FIX: Pass ID and Status to frontend
       id: result.id,
       form_status: result.form_status,
       tries: result.tries,
-
-      // Form Data
+      max_tries: result.max_tries,
       name: result.form_name,
       intro: result.intro,
       structure: result.structure,
-
-      // Context & Contact Info (for notifications)
       member: result.member_name,
       member_email: result.member_email,
       member_mobile: result.member_mobile,
       member_prefs: result.member_prefs,
       skill: result.skill_name,
-
-      // Submission Data
       submittedData: result.form_submitted_data,
       submittedAt: result.form_submitted_datetime,
+      // Add missing scoring fields
+      achieved_score: result.current_score,
+      max_score: scoreInfo.maximum,
+      min_score: result.min_score,
+      min_score_type: result.min_score_type
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
-
 // Helper to convert HTML to Text with formatting preservation
 function convertHtmlToText(html) {
   if (!html) return "";
