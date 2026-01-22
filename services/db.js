@@ -84,14 +84,10 @@ CREATE TABLE IF NOT EXISTS forms (
       intro TEXT, 
       structure TEXT, 
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      /* NEW AUTOMATION COLUMNS */
-      min_score REAL DEFAULT 0,
-      min_score_type TEXT DEFAULT 'percentage',
-      max_tries INTEGER DEFAULT 1
-    );
-    ALTER TABLE forms ADD COLUMN min_score REAL DEFAULT 0;
-    ALTER TABLE forms ADD COLUMN min_score_type TEXT DEFAULT 'percentage';
-    ALTER TABLE forms ADD COLUMN max_tries INTEGER DEFAULT 1;
+      min_score REAL DEFAULT ${config.defaultMinScore},
+      min_score_type TEXT DEFAULT '${config.defaultMinScoreType}',
+      max_tries INTEGER DEFAULT ${config.defaultMaxTries}    );
+
 
 CREATE TABLE IF NOT EXISTS live_forms (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,12 +102,11 @@ CREATE TABLE IF NOT EXISTS live_forms (
       form_submitted_data TEXT,
       form_reviewed_datetime TEXT,
       tries INTEGER DEFAULT 1,
-      /* NEW SCORING COLUMN */
       current_score REAL DEFAULT 0,
       FOREIGN KEY(skill_id) REFERENCES skills(id) ON DELETE CASCADE,
       FOREIGN KEY(member_id) REFERENCES members(id) ON DELETE CASCADE
     );
-    ALTER TABLE live_forms ADD COLUMN current_score REAL DEFAULT 0;
+  
 
     CREATE TABLE IF NOT EXISTS training_sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT, 

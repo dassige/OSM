@@ -5,6 +5,7 @@ let currentForm = null;
 let currentFields = [];
 let originalFormState = null;
 let formSortMode = "name_asc";
+let uiConfig = null;
 
 function toggleFormSort() {
   const btn = document.getElementById("btnSortForms");
@@ -36,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch("/ui-config")
     .then((r) => r.json())
     .then((c) => {
+      uiConfig = c;
       if (c.loginTitle) {
         document.title = "Forms Manager - " + c.loginTitle;
         document.getElementById("pageHeader").innerText = "Forms Manager";
@@ -166,9 +168,9 @@ function getFormData() {
     status,
     intro,
     structure,
-    min_score,
-    min_score_type,
-    max_tries,
+    min_score: parseFloat(document.getElementById("minScore").value) || 0,
+    min_score_type: document.getElementById("minScoreType").value,
+    max_tries: parseInt(document.getElementById("maxTries").value) || 1,
   };
 }
 
@@ -238,6 +240,9 @@ async function saveForm() {
     const result = await res.json();
     // ... (Success handling as per existing forms-manage.js) ...
     showToast("Form saved successfully", "success");
+    // Reset the baseline so isFormDirty() returns false until further edits
+    originalFormState = getFormData();
+
     loadForms();
   } catch (e) {
     // 1. Display reason to user
@@ -513,7 +518,15 @@ async function createNewForm() {
   if (document.getElementById("builderPanel").style.display === "flex") {
     if (!(await checkDirty())) return;
   }
-  loadEditor({ name: "New Form", status: 0, intro: "", structure: [] });
+  loadEditor({
+    name: "New Form",
+    status: 0,
+    intro: "",
+    structure: [],
+    min_score: uiConfig.defaultMinScore,
+    min_score_type: uiConfig.defaultMinScoreType,
+    max_tries: uiConfig.defaultMaxTries,
+  });
 }
 
 async function selectForm(id) {
@@ -866,92 +879,101 @@ function validateThreshold() {
  * Opens the Scoring Simulator using current (unsaved) editor data.
  */
 function testScoring() {
-    const data = getFormData(); // Capture everything currently in the editor
-    const container = document.getElementById('testFormContainer');
-    const banner = document.getElementById('testResultBanner');
-    
-    banner.style.display = 'none';
-    container.innerHTML = '';
+  const data = getFormData(); // Capture everything currently in the editor
+  const container = document.getElementById("testFormContainer");
+  const banner = document.getElementById("testResultBanner");
 
-    if (data.structure.length === 0) {
-        return showToast("Add some questions first!", "warning");
+  banner.style.display = "none";
+  container.innerHTML = "";
+
+  if (data.structure.length === 0) {
+    return showToast("Add some questions first!", "warning");
+  }
+
+  // Render questions for simulation
+  data.structure.forEach((field, index) => {
+    const div = document.createElement("div");
+    div.style.marginBottom = "20px";
+    div.style.paddingBottom = "15px";
+    div.style.borderBottom = "1px solid #eee";
+
+    let html = `<div style="font-weight:bold; margin-bottom:10px;">${index + 1}. ${field.description} <span style="color:#666; font-size:0.8em;">(${field.points} pts)</span></div>`;
+
+    if (field.type === "radio" || field.type === "boolean") {
+      const options = field.type === "boolean" ? ["Yes", "No"] : field.options;
+      options.forEach((opt) => {
+        html += `<label style="display:block; margin:5px 0; cursor:pointer;"><input type="radio" name="test_${field.id}" value="${opt}"> ${opt}</label>`;
+      });
+    } else if (field.type === "checkboxes") {
+      field.options.forEach((opt) => {
+        html += `<label style="display:block; margin:5px 0; cursor:pointer;"><input type="checkbox" name="test_${field.id}" value="${opt}"> ${opt}</label>`;
+      });
+    } else {
+      html += `<div style="font-style:italic; color:#999;">Text fields are excluded from auto-scoring.</div>`;
     }
 
-    // Render questions for simulation
-    data.structure.forEach((field, index) => {
-        const div = document.createElement('div');
-        div.style.marginBottom = "20px";
-        div.style.paddingBottom = "15px";
-        div.style.borderBottom = "1px solid #eee";
-        
-        let html = `<div style="font-weight:bold; margin-bottom:10px;">${index + 1}. ${field.description} <span style="color:#666; font-size:0.8em;">(${field.points} pts)</span></div>`;
-        
-        if (field.type === 'radio' || field.type === 'boolean') {
-            const options = field.type === 'boolean' ? ['Yes', 'No'] : field.options;
-            options.forEach(opt => {
-                html += `<label style="display:block; margin:5px 0; cursor:pointer;"><input type="radio" name="test_${field.id}" value="${opt}"> ${opt}</label>`;
-            });
-        } else if (field.type === 'checkboxes') {
-            field.options.forEach(opt => {
-                html += `<label style="display:block; margin:5px 0; cursor:pointer;"><input type="checkbox" name="test_${field.id}" value="${opt}"> ${opt}</label>`;
-            });
-        } else {
-            html += `<div style="font-style:italic; color:#999;">Text fields are excluded from auto-scoring.</div>`;
-        }
+    div.innerHTML = html;
+    container.appendChild(div);
+  });
 
-        div.innerHTML = html;
-        container.appendChild(div);
-    });
-
-    openModal('testScoringModal');
+  openModal("testScoringModal");
 }
 
 /**
  * Calculates the score of the simulated attempt and displays result.
  */
 function runScoringSimulation() {
-    const data = getFormData();
-    let achieved = 0;
-    let maximum = 0;
+  const data = getFormData();
+  let achieved = 0;
+  let maximum = 0;
 
-    data.structure.forEach(field => {
-        const weight = parseFloat(field.points) || 0;
-        maximum += weight;
+  data.structure.forEach((field) => {
+    const weight = parseFloat(field.points) || 0;
+    maximum += weight;
 
-        const inputs = document.getElementsByName(`test_${field.id}`);
-        const selected = Array.from(inputs).filter(i => i.checked).map(i => i.value);
+    const inputs = document.getElementsByName(`test_${field.id}`);
+    const selected = Array.from(inputs)
+      .filter((i) => i.checked)
+      .map((i) => i.value);
 
-        if (field.type === 'radio' || field.type === 'boolean') {
-            if (selected[0] === field.correctAnswer) achieved += weight;
-        } 
-        else if (field.type === 'checkboxes') {
-            const correctArr = Array.isArray(field.correctAnswer) ? field.correctAnswer : [];
-            if (correctArr.length === 0) return;
+    if (field.type === "radio" || field.type === "boolean") {
+      if (selected[0] === field.correctAnswer) achieved += weight;
+    } else if (field.type === "checkboxes") {
+      const correctArr = Array.isArray(field.correctAnswer)
+        ? field.correctAnswer
+        : [];
+      if (correctArr.length === 0) return;
 
-            const pointsPerOption = weight / correctArr.length;
-            let qScore = 0;
+      const pointsPerOption = weight / correctArr.length;
+      let qScore = 0;
 
-            selected.forEach(val => {
-                if (correctArr.includes(val)) qScore += pointsPerOption; // Match
-                else qScore -= pointsPerOption; // Penalty
-            });
-            achieved += Math.max(0, qScore);
-        }
-    });
+      selected.forEach((val) => {
+        if (correctArr.includes(val))
+          qScore += pointsPerOption; // Match
+        else qScore -= pointsPerOption; // Penalty
+      });
+      achieved += Math.max(0, qScore);
+    }
+  });
 
-    // Display Result
-    const banner = document.getElementById('testResultBanner');
-    const scoreText = document.getElementById('testScoreText');
-    const statusText = document.getElementById('testStatusText');
-    
-    const pct = maximum > 0 ? (achieved / maximum) * 100 : 0;
-    const threshold = parseFloat(data.min_score);
-    const isPass = data.min_score_type === 'percentage' ? (pct >= threshold) : (achieved >= threshold);
+  // Display Result
+  const banner = document.getElementById("testResultBanner");
+  const scoreText = document.getElementById("testScoreText");
+  const statusText = document.getElementById("testStatusText");
 
-    banner.style.display = 'block';
-    banner.style.background = isPass ? '#d4edda' : '#f8d7da';
-    banner.style.color = isPass ? '#155724' : '#721c24';
-    
-    scoreText.textContent = `Score: ${achieved.toFixed(2)} / ${maximum.toFixed(2)} (${pct.toFixed(1)}%)`;
-    statusText.textContent = isPass ? `✓ Status: PASSED (Threshold: ${threshold}${data.min_score_type === 'percentage' ? '%' : ' pts'})` : `✗ Status: FAILED (Threshold: ${threshold}${data.min_score_type === 'percentage' ? '%' : ' pts'})`;
+  const pct = maximum > 0 ? (achieved / maximum) * 100 : 0;
+  const threshold = parseFloat(data.min_score);
+  const isPass =
+    data.min_score_type === "percentage"
+      ? pct >= threshold
+      : achieved >= threshold;
+
+  banner.style.display = "block";
+  banner.style.background = isPass ? "#d4edda" : "#f8d7da";
+  banner.style.color = isPass ? "#155724" : "#721c24";
+
+  scoreText.textContent = `Score: ${achieved.toFixed(2)} / ${maximum.toFixed(2)} (${pct.toFixed(1)}%)`;
+  statusText.textContent = isPass
+    ? `✓ Status: PASSED (Threshold: ${threshold}${data.min_score_type === "percentage" ? "%" : " pts"})`
+    : `✗ Status: FAILED (Threshold: ${threshold}${data.min_score_type === "percentage" ? "%" : " pts"})`;
 }

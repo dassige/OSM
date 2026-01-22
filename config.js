@@ -93,6 +93,12 @@ function getDayIndex(dayName) {
 const acceptedFormVisibilityDays =
   parseInt(process.env.ACCEPTED_FORM_VISIBILITY_DAYS) || 30;
 
+// Forms scoring defaults
+const defaultMinScore = parseFloat(process.env.DEFAULT_MIN_SCORE) || 80;
+const defaultMinScoreType = process.env.DEFAULT_MIN_SCORE_TYPE || "percentage";
+const defaultMaxTries = parseInt(process.env.DEFAULT_MAX_TRIES) || 1;
+
+
 module.exports = {
   appMode, // Exported for use in other modules
   auth,
@@ -107,4 +113,7 @@ module.exports = {
   dynamicProxySource,
   enableWhatsApp,
   acceptedFormVisibilityDays,
+  defaultMinScore,
+  defaultMinScoreType,
+  defaultMaxTries,
 };

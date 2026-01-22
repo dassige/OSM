@@ -102,7 +102,7 @@ async function createForm(name, status = 0, intro = "", structure = []) {
 
 async function updateForm(id, data) {
   const database = await db.initDB();
-  const { name, status, intro, structure } = data;
+  const { name, status, intro, structure, min_score, min_score_type, max_tries } = data;
   const updates = [];
   const params = [];
   if (name !== undefined) {
@@ -340,7 +340,7 @@ async function purgeLiveForms(filters) {
 }
 
 // Update the status and set the reviewed timestamp
-async function updateLiveFormStatus(id, status) {
+async function updateLiveFormStatus(id, status, score = null) {
   const database = await db.initDB();
   // Record current time for Accepted/Rejected, or clear it if moving back to Sent/Submitted
   const reviewedDate =

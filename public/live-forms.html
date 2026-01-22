@@ -726,7 +726,7 @@
             renderTable();
         }
 
-        // Inside renderTable() in public/live-forms.html
+
         function renderTable() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
@@ -750,6 +750,18 @@
                 const subDate = fmtDate(row.form_submitted_datetime);
                 const revDate = fmtDate(row.form_reviewed_datetime); // Extracted reviewed date
 
+                let scoreDisplay = '<span style="color:#ccc;">-</span>';
+                if (row.current_score !== null && row.current_score !== undefined) {
+                    // Formats score to 1 decimal place if it exists
+                    scoreDisplay = `<strong>${Number(row.current_score).toFixed(1)}</strong>`;
+
+                    // Optional: Add color coding based on status
+                    if (row.form_status === 'accepted') {
+                        scoreDisplay = `<span style="color:var(--success);">${scoreDisplay}</span>`;
+                    } else if (row.form_status === 'rejected') {
+                        scoreDisplay = `<span style="color:var(--danger);">${scoreDisplay}</span>`;
+                    }
+                }
                 let reviewBtn = '';
                 if (['submitted', 'accepted', 'rejected'].includes(row.form_status)) {
                     reviewBtn = `

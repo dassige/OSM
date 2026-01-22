@@ -111,7 +111,13 @@ app.use((req, res, next) => {
   return res.redirect("/login.html");
 });
 app.get("/ui-config", (req, res) =>
-  res.json({ ...config.ui, appMode: config.appMode }),
+  res.json({
+    ...config.ui,
+    appMode: config.appMode,
+    defaultMinScore: config.defaultMinScore,
+    defaultMinScoreType: config.defaultMinScoreType,
+    defaultMaxTries: config.defaultMaxTries,
+  }),
 );
 
 // --- PAGE ACCESS CONTROL ---
@@ -1143,7 +1149,7 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
     }
 
     // 1. Calculate Score
-    const score = calculateFormScore(form.structure, req.body);
+    const score = formsService.calculateFormScore(form.structure, req.body);
 
     // 2. Evaluate Pass/Fail
     const threshold = parseFloat(form.min_score);
@@ -1159,7 +1165,7 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
     // 3. Handle Lifecycle
     const currentTry = form.tries || 1;
     const maxAllowed = parseInt(form.max_tries) || 1;
-    
+
     // Log the attempt detail regardless of outcome (helpful for retry tracking)
 
     const logPayload = {

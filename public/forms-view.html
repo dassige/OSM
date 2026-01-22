@@ -81,15 +81,25 @@
             transform: scale(1.2);
         }
 
-        /* Review Mode Styling */
-        body.review-mode .option-label.checked-answer {
-            background-color: #ffe6e6 !important;
-            /* Light Pink */
-            border-color: #ffb3b3 !important;
-            /* Darker Pink Border */
-            color: #721c24;
-            /* Dark Red Text */
+        /* Update these in public/forms-view.html <style> block */
+        body.review-mode .option-label.review-correct {
+            background-color: #d4edda !important;
+            /* Light Green */
+            border: 2px solid #28a745 !important;
+            color: #155724 !important;
             font-weight: bold;
+        }
+
+        body.review-mode .option-label.review-wrong {
+            background-color: #f8d7da !important;
+            /* Light Red */
+            border: 2px solid #dc3545 !important;
+            color: #721c24 !important;
+        }
+
+        body.review-mode .option-label.expected-border {
+            border: 3px dashed #28a745 !important;
+            box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
         }
 
         .preview-banner {
@@ -593,12 +603,16 @@
             if (!reviewData || !submittedData) return;
 
             reviewData.structure.forEach(field => {
-                const submitted = submittedData[field.id] || submittedData[field.id + '[]'];
-                const correct = field.correctAnswer;
-                const elements = document.querySelectorAll(`[name="${field.id}"], [name="${field.id}[]"]`);
+                // 1. Normalize Submitted data to an Array
+                const rawSub = submittedData[field.id] || submittedData[field.id + '[]'];
+                const subArr = Array.isArray(rawSub) ? rawSub : (rawSub !== undefined && rawSub !== null && rawSub !== "" ? [rawSub] : []);
 
-                // Check if the question was left unanswered
-                const isUnanswered = (submitted === undefined || submitted === null || submitted === "" || (Array.isArray(submitted) && submitted.length === 0));
+                // 2. Normalize Correct Answer data to an Array
+                const correct = field.correctAnswer;
+                const corrArr = Array.isArray(correct) ? correct : (correct ? [correct] : []);
+
+                const elements = document.querySelectorAll(`[name="${field.id}"], [name="${field.id}[]"]`);
+                const isUnanswered = subArr.length === 0;
 
                 if (field.type === 'radio' || field.type === 'boolean') {
                     if (field.renderAs === 'dropdown') {
@@ -607,16 +621,15 @@
                             if (isUnanswered) {
                                 selectEl.classList.add('review-unanswered');
                             } else {
-                                selectEl.value = submitted;
-                                if (submitted === correct) {
-                                    selectEl.style.backgroundColor = "#d4edda";
-                                    selectEl.style.borderColor = "#28a745";
-                                } else {
-                                    selectEl.style.backgroundColor = "#f8d7da";
-                                    selectEl.style.borderColor = "#dc3545";
+                                const val = subArr[0];
+                                selectEl.value = val;
+                                const isCorrect = corrArr.includes(val);
+                                selectEl.style.backgroundColor = isCorrect ? "#d4edda" : "#f8d7da";
+                                selectEl.style.borderColor = isCorrect ? "#28a745" : "#dc3545";
+                                if (!isCorrect) {
                                     const refBox = document.createElement('div');
                                     refBox.className = 'reference-box';
-                                    refBox.innerHTML = `<strong>Correct Answer:</strong><br>${correct}`;
+                                    refBox.innerHTML = `<strong>Correct Answer:</strong><br>${corrArr.join(', ')}`;
                                     selectEl.parentNode.appendChild(refBox);
                                 }
                             }
@@ -628,22 +641,21 @@
 
                             if (isUnanswered) {
                                 label.classList.add('review-unanswered');
-                            } else if (el.value === submitted) {
+                            } else if (subArr.includes(el.value)) {
                                 el.checked = true;
-                                label.classList.add(submitted === correct ? 'review-correct' : 'review-wrong');
+                                // Use array inclusion for the correctness check
+                                const isCorrect = corrArr.includes(el.value);
+                                label.classList.add(isCorrect ? 'review-correct' : 'review-wrong');
                             }
 
-                            // Show expected border even if unanswered
-                            if (el.value === correct && submitted !== correct) {
+                            // Always highlight the expected correct answer with a border
+                            if (corrArr.includes(el.value) && !subArr.includes(el.value)) {
                                 label.classList.add('expected-border');
                             }
                         });
                     }
                 }
                 else if (field.type === 'checkboxes') {
-                    const subArr = Array.isArray(submitted) ? submitted : (submitted ? [submitted] : []);
-                    const corrArr = Array.isArray(correct) ? correct : [];
-
                     elements.forEach(el => {
                         const label = el.closest('.option-label');
                         if (!label) return;
@@ -660,7 +672,6 @@
                             }
                         }
 
-                        // Show expected border for correct answers the member missed
                         if (corrArr.includes(el.value) && !subArr.includes(el.value)) {
                             label.classList.add('expected-border');
                         }
@@ -671,20 +682,17 @@
                     if (ta) {
                         if (isUnanswered) {
                             ta.classList.add('review-unanswered');
-                            ta.placeholder = "(No answer provided)";
                         } else {
-                            ta.value = submitted;
+                            ta.value = subArr.join('\n');
                         }
-
                         const refBox = document.createElement('div');
                         refBox.className = 'reference-box';
-                        refBox.innerHTML = `<strong>Admin Reference Answer:</strong><br>${field.correctAnswer || 'No reference provided.'}`;
+                        refBox.innerHTML = `<strong>Admin Reference Answer:</strong><br>${corrArr.join(', ') || 'No reference provided.'}`;
                         ta.parentNode.appendChild(refBox);
                     }
                 }
             });
         }
-
         function disableForm() {
             const form = document.getElementById('submissionForm');
             const btn = form.querySelector('button[type="submit"]');
