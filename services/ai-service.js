@@ -1,6 +1,6 @@
 // services/ai-service.js
 const { aiConfig } = require("../config");
-const { GoogleGenerativeAI } = require("@google-generative-ai/generative-ai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const axios = require("axios");
 
 async function evaluateWithGemini(prompt) {
