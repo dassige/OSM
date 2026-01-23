@@ -1070,13 +1070,19 @@ app.delete("/api/live-forms/all", hasRole("superadmin"), async (req, res) => {
 
 app.put("/api/live-forms/:id", hasRole("admin"), async (req, res) => {
   try {
-    await formsService.updateLiveFormStatus(req.params.id, req.body.status);
-    await db.logEvent(
-      req.session.user.name,
-      "Live Forms",
-      `Updated status ID: ${req.params.id}`,
-      { status: req.body.status },
-    );
+    const { status, isArchived } = req.body;
+    const id = req.params.id;
+
+    if (isArchived !== undefined) {
+      await formsService.setArchiveStatus(id, isArchived);
+      await db.logEvent(req.session.user.name, "Live Forms", 
+        isArchived ? "Record Archived" : "Record Restored", { recordId: id });
+    }
+
+    if (status !== undefined) {
+      await formsService.updateLiveFormStatus(id, status);
+    }
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });

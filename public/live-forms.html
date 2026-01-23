@@ -320,6 +320,13 @@
 
         <div class="filter-bar">
             <div class="filter-group">
+                <label>View Mode</label>
+                <select id="filterArchive" class="filter-select" onchange="applyFilters(1)">
+                    <option value="false">Active Forms</option>
+                    <option value="true">Archived Library</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <label>Status</label>
                 <select id="filterStatus" class="filter-select">
                     <option value="">All Statuses</option>
@@ -727,15 +734,25 @@
         }
 
 
+        /**
+         * Renders the Live Forms table based on current search results and view mode.
+         */
         function renderTable() {
             const tbody = document.getElementById('tableBody');
+            const filterArchiveSelect = document.getElementById('filterArchive');
+            // Check if we are currently looking at the Archived Library
+            const isArchivedMode = filterArchiveSelect && filterArchiveSelect.value === 'true';
+
             tbody.innerHTML = '';
 
             if (currentData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#666;">No records found.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#666; padding: 20px;">
+            No ${isArchivedMode ? 'archived' : 'active'} records found matching your filters.
+        </td></tr>`;
                 return;
             }
 
+            // Helper for timezone-aware date formatting
             const fmtDate = (dStr) => {
                 if (!dStr) return '<span style="color:#ccc;">-</span>';
                 return new Date(dStr).toLocaleString(appLocale, {
@@ -746,31 +763,58 @@
             };
 
             currentData.forEach(row => {
-                const sentDate = fmtDate(row.form_sent_datetime);
-                const subDate = fmtDate(row.form_submitted_datetime);
-                const revDate = fmtDate(row.form_reviewed_datetime); // Extracted reviewed date
-
+                // 1. Calculate Score Display with color coding
                 let scoreDisplay = '<span style="color:#ccc;">-</span>';
                 if (row.current_score !== null && row.current_score !== undefined) {
-                    // Formats score to 1 decimal place if it exists
-                    scoreDisplay = `<strong>${Number(row.current_score).toFixed(1)}</strong>`;
-
-                    // Optional: Add color coding based on status
+                    const formattedScore = `<strong>${Number(row.current_score).toFixed(1)}</strong>`;
                     if (row.form_status === 'accepted') {
-                        scoreDisplay = `<span style="color:var(--success);">${scoreDisplay}</span>`;
+                        scoreDisplay = `<span style="color:var(--success);">${formattedScore}</span>`;
                     } else if (row.form_status === 'rejected') {
-                        scoreDisplay = `<span style="color:var(--danger);">${scoreDisplay}</span>`;
+                        scoreDisplay = `<span style="color:var(--danger);">${formattedScore}</span>`;
+                    } else {
+                        scoreDisplay = formattedScore;
                     }
                 }
-                let reviewBtn = '';
-                if (['submitted', 'accepted', 'rejected'].includes(row.form_status)) {
-                    reviewBtn = `
+
+                // 2. Define Action Buttons based on Archive state
+                let actionHtml = '';
+                if (isArchivedMode) {
+                    // ARCHIVED ACTIONS: Read-only View, Download, Restore, Delete Permanent
+                    actionHtml = `
+                <button class="btn-icon" onclick="openReview('${row.id}')" title="View (Read Only)" style="color:#6c757d;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+                <button class="btn-icon" onclick="downloadSingleJson('${row.id}')" title="Download JSON">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                </button>
+                <button class="btn-icon" onclick="toggleArchive('${row.id}', false)" title="Restore (Un-archive)" style="color:var(--success);">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                </button>
+                <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete Permanently">
+                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            `;
+                } else {
+                    // ACTIVE ACTIONS: Review (if applicable), Download, Edit Status, Delete
+                    const canReview = ['submitted', 'accepted', 'rejected'].includes(row.form_status);
+                    actionHtml = `
+                ${canReview ? `
                 <button class="btn-icon" onclick="openReview('${row.id}')" title="Review Submission" style="color:#17a2b8;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>` : ''}
+                <button class="btn-icon" onclick="downloadSingleJson('${row.id}')" title="Download JSON">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                </button>
+                <button class="btn-icon" onclick="openEdit('${row.id}', '${row.member_name}', '${row.skill_name}', '${row.form_status}', '${row.form_access_code}')" title="Edit Status">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
             `;
                 }
 
+                // 3. Build Row
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
             <td>${row.member_name || 'Unknown'}</td>
@@ -778,27 +822,41 @@
             <td style="text-align:center;">${row.tries || 1}</td>
             <td style="text-align:center; vertical-align:middle;">${scoreDisplay}</td>
             <td style="font-size:0.8em; line-height:1.4; white-space:nowrap;">
-                <div title="Sent Date"><span style="color:var(--text-muted); font-weight:bold;">S:</span> ${sentDate}</div>
-                <div title="Submitted Date"><span style="color:var(--text-muted); font-weight:bold;">U:</span> ${subDate}</div>
-                <div title="Reviewed Date"><span style="color:var(--text-muted); font-weight:bold;">R:</span> ${revDate}</div>
+                <div title="Sent Date"><span style="color:var(--text-muted); font-weight:bold;">S:</span> ${fmtDate(row.form_sent_datetime)}</div>
+                <div title="Submitted Date"><span style="color:var(--text-muted); font-weight:bold;">U:</span> ${fmtDate(row.form_submitted_datetime)}</div>
+                <div title="Reviewed Date"><span style="color:var(--text-muted); font-weight:bold;">R:</span> ${fmtDate(row.form_reviewed_datetime)}</div>
             </td>
             <td><span class="status-badge status-${row.form_status}">${row.form_status}</span></td>
-            <td style="text-align:center; white-space:nowrap;">
-                ${reviewBtn}
-                <button class="btn-icon download" onclick="downloadSingleJson('${row.id}')" title="Download Data">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                </button>
-                <button class="btn-icon" onclick="openEdit('${row.id}', '${row.member_name || ''}', '${row.skill_name || ''}', '${row.form_status}', '${row.form_access_code || ''}')" title="Edit Status">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                </button>
-                <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>
-            </td>
+            <td style="text-align:center; white-space:nowrap;">${actionHtml}</td>
         `;
                 tbody.appendChild(tr);
             });
         }
+
+        /**
+         * Toggles the archived state of a record.
+         * @param {number} id - Record ID
+         * @param {boolean} newState - Target is_archived value
+         */
+        async function toggleArchive(id, newState) {
+            const label = newState ? 'Archive' : 'Restore';
+            if (!await confirmAction(`${label} Record`, `Are you sure you want to ${label.toLowerCase()} this record?`)) return;
+
+            try {
+                const res = await fetch(`/api/live-forms/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isArchived: newState })
+                });
+                if (res.ok) {
+                    showToast(`Record ${newState ? 'archived' : 'restored'} successfully`, "success");
+                    loadData();
+                } else throw new Error("Update failed");
+            } catch (e) {
+                showToast("Error: " + e.message, "error");
+            }
+        }
+
         function openReview(id) { window.open(`forms-view.html?reviewId=${id}`, '_blank'); }
 
         function openEdit(id, member, skill, status, code) {

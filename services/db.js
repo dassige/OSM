@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS live_forms (
       skill_form_public_id TEXT,
       form_access_code TEXT UNIQUE,
       form_status TEXT DEFAULT 'sent',  
+      is_archived INTEGER DEFAULT 0,
       form_sent_datetime TEXT DEFAULT CURRENT_TIMESTAMP,
       form_submitted_datetime TEXT,
       form_submitted_data TEXT,

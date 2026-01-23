@@ -255,7 +255,10 @@ async function createRetryLiveForm(previousId) {
 function buildLiveFormsWhere(filters) {
   let clauses = ["1=1"];
   let params = [];
-
+// Filter by archive state (Defaults to not archived if not specified)
+  const archVal = (filters.isArchived === 'true' || filters.isArchived === 1) ? 1 : 0;
+  clauses.push("lf.is_archived = ?");
+  params.push(archVal);
   if (filters.memberId) {
     clauses.push("lf.member_id = ?");
     params.push(filters.memberId);
@@ -302,6 +305,14 @@ if (filters.status) {
   return { where: clauses.join(" AND "), params };
 }
 
+async function setArchiveStatus(id, isArchived) {
+  const database = await db.initDB();
+  await database.run(
+    "UPDATE live_forms SET is_archived = ? WHERE id = ?",
+    isArchived ? 1 : 0,
+    id
+  );
+}
 //  Get Live Forms with Filters & Pagination
 async function getLiveForms(filters = {}, pagination = null) {
   const database = await db.initDB();

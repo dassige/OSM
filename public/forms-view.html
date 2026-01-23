@@ -348,6 +348,18 @@
                     const data = await res.json();
                     reviewData = data;
 
+                    if (data.is_archived) {
+                        // Hide the black review actions bar entirely for archived forms
+                        document.getElementById('reviewActions').style.display = 'none';
+                        document.body.style.paddingTop = '40px';
+
+                        // Add a read-only watermark or banner
+                        const roBanner = document.createElement('div');
+                        roBanner.style.cssText = "background:#6c757d; color:white; padding:10px; text-align:center; font-weight:bold; border-radius:6px; margin-bottom:20px;";
+                        roBanner.innerText = "ARCHIVED RECORD (READ-ONLY)";
+                        document.querySelector('.form-header').prepend(roBanner);
+                    }
+
                     const formattedDate = new Date(data.submittedAt).toLocaleString(appLocale, {
                         timeZone: appTimezone,
                         year: 'numeric', month: 'long', day: 'numeric',
@@ -633,8 +645,14 @@
 
         async function archiveSubmission() {
             if (!confirm("Archive this record?")) return;
-            const res = await fetch(`/api/live-forms/${reviewData.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'archived' }) });
-            if (res.ok) window.close();
+            try {
+                const res = await fetch(`/api/live-forms/${reviewData.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isArchived: true })
+                });
+                if (res.ok) window.close();
+            } catch (e) { showToast("Archive failed", "error"); }
         }
     </script>
 </body>
