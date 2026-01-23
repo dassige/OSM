@@ -202,9 +202,8 @@ async function ensureLiveForm(
   formPublicId,
 ) {
   const database = await db.initDB();
-  // [UPDATED] Check for 'sent'
   const existing = await database.get(
-    `SELECT form_access_code FROM live_forms WHERE member_id = ? AND skill_id = ? AND form_status = 'sent'`,
+    `SELECT form_access_code FROM live_forms WHERE is_archived = 0 AND member_id = ? AND skill_id = ? AND form_status = 'sent'`,
     memberId,
     skillId,
   );
@@ -214,12 +213,17 @@ async function ensureLiveForm(
 
   const accessCode = crypto.randomUUID();
   // Standardize sent datetime
-  const now = new Date().toISOString(); 
-  
+  const now = new Date().toISOString();
+
   await database.run(
     `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, form_sent_datetime) 
      VALUES (?, ?, ?, ?, ?, 'sent', ?)`,
-    skillId, skillExpiringDate, memberId, formPublicId, accessCode, now
+    skillId,
+    skillExpiringDate,
+    memberId,
+    formPublicId,
+    accessCode,
+    now,
   );
   return accessCode;
 }
@@ -255,8 +259,9 @@ async function createRetryLiveForm(previousId) {
 function buildLiveFormsWhere(filters) {
   let clauses = ["1=1"];
   let params = [];
-// Filter by archive state (Defaults to not archived if not specified)
-  const archVal = (filters.isArchived === 'true' || filters.isArchived === 1) ? 1 : 0;
+  // Filter by archive state (Defaults to not archived if not specified)
+  const archVal =
+    filters.isArchived === "true" || filters.isArchived === 1 ? 1 : 0;
   clauses.push("lf.is_archived = ?");
   params.push(archVal);
   if (filters.memberId) {
@@ -267,8 +272,8 @@ function buildLiveFormsWhere(filters) {
     clauses.push("lf.skill_id = ?");
     params.push(filters.skillId);
   }
-if (filters.status) {
-    if (filters.status === 'submitted') {
+  if (filters.status) {
+    if (filters.status === "submitted") {
       // Treat 'submitted' as an umbrella for all completed/reviewed states
       clauses.push("lf.form_status IN ('submitted', 'accepted', 'rejected')");
     } else {
@@ -310,7 +315,7 @@ async function setArchiveStatus(id, isArchived) {
   await database.run(
     "UPDATE live_forms SET is_archived = ? WHERE id = ?",
     isArchived ? 1 : 0,
-    id
+    id,
   );
 }
 //  Get Live Forms with Filters & Pagination
@@ -367,7 +372,8 @@ async function purgeLiveForms(filters) {
 async function updateLiveFormStatus(id, status, score = null) {
   const database = await db.initDB();
   // Ensure ISO format for consistency
-  const reviewedDate = (status === "accepted" || status === "rejected")
+  const reviewedDate =
+    status === "accepted" || status === "rejected"
       ? new Date().toISOString()
       : null;
 
@@ -377,7 +383,10 @@ async function updateLiveFormStatus(id, status, score = null) {
              form_reviewed_datetime = ?, 
              current_score = ? 
          WHERE id = ?`,
-    status, reviewedDate, score, id
+    status,
+    reviewedDate,
+    score,
+    id,
   );
 }
 //  Delete Live Form
@@ -431,7 +440,9 @@ async function submitLiveForm(code, formData) {
          form_submitted_datetime = ?, 
          form_submitted_data = ?
      WHERE form_access_code = ?`,
-    now, JSON.stringify(formData), code
+    now,
+    JSON.stringify(formData),
+    code,
   );
 }
 // Admin: Get specific submission details
@@ -470,7 +481,7 @@ async function getLiveFormSubmission(id) {
 async function checkSubmittedStatus(memberId, skillId) {
   const database = await db.initDB();
   const record = await database.get(
-    `SELECT id FROM live_forms WHERE member_id = ? AND skill_id = ? AND form_status = 'submitted'`,
+    `SELECT id FROM live_forms WHERE is_archived = 0 AND member_id = ? AND skill_id = ? AND form_status = 'submitted'`,
     memberId,
     skillId,
   );
@@ -483,8 +494,10 @@ async function getAllActiveStatuses(visibilityDays) {
     `
         SELECT member_id, skill_id, form_status 
         FROM live_forms 
-        WHERE form_status IN ('sent', 'submitted')
-        OR (form_status IN ('accepted', 'rejected') AND form_reviewed_datetime >= datetime('now', '-' || ? || ' days'))
+        WHERE is_archived = 0 AND (
+            form_status IN ('sent', 'submitted')
+            OR (form_status IN ('accepted', 'rejected') AND form_reviewed_datetime >= datetime('now', '-' || ? || ' days'))
+        )
     `,
     visibilityDays,
   );

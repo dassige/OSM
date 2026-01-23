@@ -998,6 +998,7 @@ app.get("/api/live-forms", hasRole("admin"), async (req, res) => {
       subStart: req.query.subStart,
       subEnd: req.query.subEnd,
       tries: req.query.tries,
+      isArchived: req.query.isArchived 
     };
 
     const page = parseInt(req.query.page) || 1;
@@ -1005,8 +1006,6 @@ app.get("/api/live-forms", hasRole("admin"), async (req, res) => {
     const offset = (page - 1) * limit;
 
     const result = await formsService.getLiveForms(filters, { limit, offset });
-
-    // Return { records: [], total: 100, page: 1, limit: 25 }
     res.json({ ...result, page, limit });
   } catch (e) {
     res.status(500).json({ error: e.message });
