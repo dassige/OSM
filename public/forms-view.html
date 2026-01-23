@@ -311,6 +311,7 @@
 
     <script src="toast.js"></script>
     <script src="theme.js"></script>
+    <script src="utils.js"></script>
     <script>
         let submissionCode = null, reviewData = null, currentAction = null;
         let appLocale = 'en-NZ', appTimezone = 'Pacific/Auckland';
@@ -644,15 +645,32 @@
         }
 
         async function archiveSubmission() {
-            if (!confirm("Archive this record?")) return;
+            // --- USE CUSTOM MODAL ---
+            const confirmed = await confirmAction(
+                "Archive Submission",
+                "Are you sure you want to move this record to the Archive Library?"
+            );
+
+            if (!confirmed) return;
+
             try {
                 const res = await fetch(`/api/live-forms/${reviewData.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
+                    // --- PASS isArchived BOOLEAN ---
                     body: JSON.stringify({ isArchived: true })
                 });
-                if (res.ok) window.close();
-            } catch (e) { showToast("Archive failed", "error"); }
+
+                if (res.ok) {
+                    // Use custom toast if available
+                    if (window.showToast) showToast("Record archived", "success");
+                    setTimeout(() => window.close(), 1000);
+                } else {
+                    throw new Error("Server error while archiving");
+                }
+            } catch (e) {
+                if (window.showToast) showToast(e.message, "error");
+            }
         }
     </script>
 </body>

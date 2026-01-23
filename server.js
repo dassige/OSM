@@ -1068,23 +1068,29 @@ app.delete("/api/live-forms/all", hasRole("superadmin"), async (req, res) => {
   }
 });
 
+
 app.put("/api/live-forms/:id", hasRole("admin"), async (req, res) => {
   try {
     const { status, isArchived } = req.body;
     const id = req.params.id;
 
+    // Handle Archiving/Restoring
     if (isArchived !== undefined) {
       await formsService.setArchiveStatus(id, isArchived);
       await db.logEvent(req.session.user.name, "Live Forms", 
         isArchived ? "Record Archived" : "Record Restored", { recordId: id });
     }
 
+    // Handle Status Updates
     if (status !== undefined) {
       await formsService.updateLiveFormStatus(id, status);
+      // Removed the invalid reference to userRecord.blocked here
+      await db.logEvent(req.session.user.name, "Live Forms", "Status Updated", { recordId: id, newStatus: status });
     }
 
     res.json({ success: true });
   } catch (e) {
+    console.error("[LiveForms API Error]", e.message);
     res.status(500).json({ error: e.message });
   }
 });

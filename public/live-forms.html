@@ -566,7 +566,8 @@
         async function loadData() {
             const params = new URLSearchParams();
             const getVal = (id) => document.getElementById(id).value;
-
+            params.append('isArchived', getVal('filterArchive'));
+            
             if (getVal('filterStatus')) params.append('status', getVal('filterStatus'));
             if (getVal('filterMember')) params.append('memberId', getVal('filterMember'));
             if (getVal('filterSkill')) params.append('skillId', getVal('filterSkill'));

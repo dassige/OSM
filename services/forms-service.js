@@ -570,4 +570,5 @@ module.exports = {
   getFormUsage,
   incrementTries,
   calculateFormScore,
+  setArchiveStatus,
 };
