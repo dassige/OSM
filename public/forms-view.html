@@ -409,7 +409,7 @@
                     `;
                     document.querySelector('.form-header').insertBefore(headerPanel, document.getElementById('formName'));
 
-                    if (['accepted', 'rejected'].includes(data.form_status)) {
+                    if (!data.is_archived && ['accepted', 'rejected'].includes(data.form_status)) {
                         document.getElementById('reviewActions').style.display = 'block';
                         document.body.style.paddingTop = '0';
                         if (data.form_status === 'rejected') document.getElementById('btnResend').style.display = 'inline-block';
