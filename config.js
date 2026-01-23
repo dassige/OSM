@@ -98,6 +98,13 @@ const defaultMinScore = parseFloat(process.env.DEFAULT_MIN_SCORE) || 80;
 const defaultMinScoreType = process.env.DEFAULT_MIN_SCORE_TYPE || "percentage";
 const defaultMaxTries = parseInt(process.env.DEFAULT_MAX_TRIES) || 1;
 
+const aiConfig = {
+  enabled: process.env.ENABLE_AI_EVALUATION === "true",
+  provider: process.env.AI_PROVIDER || "gemini",
+  model: process.env.AI_MODEL || "gemini-1.5-pro",
+  geminiKey: process.env.GEMINI_API_KEY,
+  ollamaUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
+};
 
 module.exports = {
   appMode, // Exported for use in other modules
@@ -116,4 +123,5 @@ module.exports = {
   defaultMinScore,
   defaultMinScoreType,
   defaultMaxTries,
+  aiConfig,
 };

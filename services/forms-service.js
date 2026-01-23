@@ -1,6 +1,8 @@
 // services/forms-service.js
 const db = require("./db");
 const crypto = require("crypto");
+const aiService = require("./ai-service");
+const { aiConfig } = require("../config");
 
 async function getAllForms() {
   const database = await db.initDB();
@@ -238,9 +240,8 @@ async function createRetryLiveForm(previousId) {
   if (!prev) throw new Error("Original form not found");
 
   const accessCode = crypto.randomUUID();
-  const newTries =  1;
+  const newTries = 1;
 
- 
   await database.run(
     `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, tries) 
          VALUES (?, ?, ?, ?, ?, 'sent', ?)`,
@@ -508,19 +509,17 @@ async function getAllActiveStatuses(visibilityDays) {
  * @param {Object} submittedData - The member's responses
  * @returns {Object} { achieved: number, maximum: number }
  */
-function calculateFormScore(structure, submittedData) {
+async function calculateFormScore(structure, submittedData) {
   let totalAchieved = 0;
   let totalPossible = 0;
+  const aiFeedback = {};
 
-  structure.forEach((field) => {
+  for (const field of structure) {
     const weight = parseFloat(field.points) || 0;
     totalPossible += weight;
-
-    // Get the submitted response for this field ID
     const submitted = submittedData[field.id] || submittedData[`${field.id}[]`];
 
-    if (!submitted) return; // Skip unanswered
-
+    if (!submitted) continue;
     if (field.type === "radio" || field.type === "boolean") {
       if (submitted === field.correctAnswer) {
         totalAchieved += weight;
@@ -546,9 +545,25 @@ function calculateFormScore(structure, submittedData) {
 
       // Ensure individual question score doesn't fall below 0
       totalAchieved += Math.max(0, questionScore);
+    } else if (field.type === "text_multi") {
+      if (aiConfig.enabled && field.correctAnswer) {
+        const result = await aiService.evaluateTextAnswer(
+          field.description,
+          field.correctAnswer,
+          submitted,
+          weight,
+        );
+        totalAchieved += result.score;
+        aiFeedback[field.id] = {
+          score: result.score,
+          reason: result.justification,
+        };
+      } else {
+        // Fallback: AI disabled or no reference answer provided
+        aiFeedback[field.id] = { score: 0, reason: "Manual review required." };
+      }
     }
-    // Paragraphs (text_multi) are currently excluded from auto-scoring
-  });
+  }
 
   return { achieved: totalAchieved, maximum: totalPossible };
 }
