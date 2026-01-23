@@ -1221,6 +1221,7 @@ app.get("/api/live-forms/review/:id", hasRole("admin"), async (req, res) => {
     res.json({
       id: result.id,
       form_status: result.form_status,
+      is_archived: !!result.is_archived,
       tries: result.tries,
       max_tries: result.max_tries,
       name: result.form_name,

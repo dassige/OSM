@@ -418,6 +418,14 @@
                     renderForm(data);
                     fillForm(data.submittedData);
                     disableForm();
+                    // [REINFORCED GUARD] Only show management bar if NOT archived
+                    if (!data.is_archived && ['accepted', 'rejected'].includes(data.form_status)) {
+                        document.getElementById('reviewActions').style.display = 'block';
+                        document.body.style.paddingTop = '0';
+                        if (data.form_status === 'rejected') document.getElementById('btnResend').style.display = 'inline-block';
+                    }
+
+
                 } catch (e) { showError(e.message); }
             } else if (code) {
                 submissionCode = code;

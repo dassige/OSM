@@ -808,9 +808,10 @@
          */
         function renderTable() {
             const tbody = document.getElementById('tableBody');
+
             const filterArchiveSelect = document.getElementById('filterArchive');
             // Check if we are currently looking at the Archived Library
-            const isArchivedMode = filterArchiveSelect && filterArchiveSelect.value === 'true';
+            const isArchivedMode = document.getElementById('archiveToggle').checked;
 
             tbody.innerHTML = '';
 
