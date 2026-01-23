@@ -998,7 +998,7 @@ app.get("/api/live-forms", hasRole("admin"), async (req, res) => {
       subStart: req.query.subStart,
       subEnd: req.query.subEnd,
       tries: req.query.tries,
-      isArchived: req.query.isArchived 
+      isArchived: req.query.isArchived,
     };
 
     const page = parseInt(req.query.page) || 1;
@@ -1067,7 +1067,6 @@ app.delete("/api/live-forms/all", hasRole("superadmin"), async (req, res) => {
   }
 });
 
-
 app.put("/api/live-forms/:id", hasRole("admin"), async (req, res) => {
   try {
     const { status, isArchived } = req.body;
@@ -1076,15 +1075,22 @@ app.put("/api/live-forms/:id", hasRole("admin"), async (req, res) => {
     // Handle Archiving/Restoring
     if (isArchived !== undefined) {
       await formsService.setArchiveStatus(id, isArchived);
-      await db.logEvent(req.session.user.name, "Live Forms", 
-        isArchived ? "Record Archived" : "Record Restored", { recordId: id });
+      await db.logEvent(
+        req.session.user.name,
+        "Live Forms",
+        isArchived ? "Record Archived" : "Record Restored",
+        { recordId: id },
+      );
     }
 
     // Handle Status Updates
     if (status !== undefined) {
       await formsService.updateLiveFormStatus(id, status);
       // Removed the invalid reference to userRecord.blocked here
-      await db.logEvent(req.session.user.name, "Live Forms", "Status Updated", { recordId: id, newStatus: status });
+      await db.logEvent(req.session.user.name, "Live Forms", "Status Updated", {
+        recordId: id,
+        newStatus: status,
+      });
     }
 
     res.json({ success: true });
@@ -1125,7 +1131,11 @@ app.get("/api/live-forms/access/:code", async (req, res) => {
       accessCode: req.params.code,
     });
     // [SECURITY] Check Status
-    if (result.form_status === "submitted" || result.form_status === "accepted" || result.form_status === "rejected") {
+    if (
+      result.form_status === "submitted" ||
+      result.form_status === "accepted" ||
+      result.form_status === "rejected"
+    ) {
       return res.status(403).json({
         error: "This form has been already submitted",
         status: result.form_status,
@@ -1145,14 +1155,13 @@ app.get("/api/live-forms/access/:code", async (req, res) => {
       structure: result.structure,
       member: result.member_name,
       skill: result.skill_name,
-      tries: result.tries || 1, 
+      tries: result.tries || 1,
       maxTries: result.max_tries,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
-
 
 app.post("/api/live-forms/submit/:code", async (req, res) => {
   try {
@@ -1181,16 +1190,21 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
 
     if (isPass) {
       // SUCCESS: Close the session as accepted
-      await formsService.updateLiveFormStatus(form.id, "accepted", score.achieved);
+      await formsService.updateLiveFormStatus(
+        form.id,
+        "accepted",
+        score.achieved,
+      );
       return res.json({ status: "accepted", score: score.achieved });
     } else if (currentTry < maxAllowed) {
       // FAIL BUT RETRY ALLOWED: Reset status back to 'sent' and increment counter
       await formsService.incrementTries(form.id);
-      
+
       const database = await db.initDB();
       await database.run(
         "UPDATE live_forms SET form_status = 'sent', current_score = ? WHERE id = ?",
-        score.achieved, form.id
+        score.achieved,
+        form.id,
       );
 
       return res.status(400).json({
@@ -1201,7 +1215,11 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
       });
     } else {
       // FINAL FAILURE: No more tries left
-      await formsService.updateLiveFormStatus(form.id, "rejected", score.achieved);
+      await formsService.updateLiveFormStatus(
+        form.id,
+        "rejected",
+        score.achieved,
+      );
       return res.json({ status: "rejected", score: score.achieved });
     }
   } catch (e) {
@@ -1209,14 +1227,16 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
   }
 });
 
-
 app.get("/api/live-forms/review/:id", hasRole("admin"), async (req, res) => {
   try {
     const result = await formsService.getLiveFormSubmission(req.params.id);
     if (!result) return res.status(404).json({ error: "Record not found" });
 
     // Calculate maximum possible score based on the question point weights
-    const scoreInfo = formsService.calculateFormScore(result.structure, result.form_submitted_data || {});
+    const scoreInfo = formsService.calculateFormScore(
+      result.structure,
+      result.form_submitted_data || {},
+    );
 
     res.json({
       id: result.id,
@@ -1238,7 +1258,7 @@ app.get("/api/live-forms/review/:id", hasRole("admin"), async (req, res) => {
       achieved_score: result.current_score,
       max_score: scoreInfo.maximum,
       min_score: result.min_score,
-      min_score_type: result.min_score_type
+      min_score_type: result.min_score_type,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1377,6 +1397,10 @@ app.post("/api/live-forms/reject/:id", hasRole("admin"), async (req, res) => {
     // 1. Update Internal Database State
     await formsService.updateLiveFormStatus(id, "rejected");
 
+    // If generating a new attempt, archive the failed one immediately
+    if (generateNew) {
+      await formsService.setArchiveStatus(id, true);
+    }
     const form = await formsService.getLiveFormSubmission(id);
     const member = {
       name: form.member_name,
@@ -1718,17 +1742,17 @@ async function handleQueueProcessing(socket, targets, days, logger) {
           skillConfig.url
         ) {
           try {
-            // 1. Check if already submitted
+            // 1. Check if an active form exists (Submitted, Accepted, or Rejected)
             const isSubmitted = await formsService.checkSubmittedStatus(
               member.id,
               skillConfig.id,
             );
 
             if (isSubmitted) {
-              skill.isSubmitted = true; // Flag for Mailer/WhatsApp
-              skill.url = null; // Ensure no link is rendered
+              skill.isSubmitted = true; // Flag for Mailer/WhatsApp to show "Under Review" message
+              skill.url = null; // Ensure no new link is rendered
               logger(
-                `  - Skipped Live Form for "${skill.skill}" (Status: Submitted/Pending Review)`,
+                `  - Skipped Live Form for "${skill.skill}" (Active record exists in Accepted/Rejected/Submitted status)`, // [UPDATED LOG]
               );
             } else {
               // 2. Standard Flow: Ensure Open Form

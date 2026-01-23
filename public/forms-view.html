@@ -646,12 +646,46 @@
             document.getElementById('reviewModal').style.display = 'block';
         }
 
-        async function submitReviewAction() {
-            const payload = { notifyEmail: document.getElementById('revEmailCb').checked, notifyWa: document.getElementById('revWaCb').checked, customComment: document.getElementById('revCustomComment').value, generateNew: document.getElementById('revGenerateNew').checked };
-            const res = await fetch(`/api/live-forms/${currentAction}/${reviewData.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if (res.ok) window.close();
-        }
+        // public/forms-view.html
 
+        async function submitReviewAction() {
+            const modal = document.getElementById('reviewModal');
+            const btnConfirm = document.getElementById('btnConfirmReview');
+            const inputs = modal.querySelectorAll('input, textarea, button');
+
+            //  Prevent multiple clicks and field changes during processing
+            inputs.forEach(el => el.disabled = true);
+            btnConfirm.innerText = "Processing...";
+
+            const payload = {
+                notifyEmail: document.getElementById('revEmailCb').checked,
+                notifyWa: document.getElementById('revWaCb').checked,
+                customComment: document.getElementById('revCustomComment').value,
+                generateNew: document.getElementById('revGenerateNew').checked
+            };
+
+            try {
+                const res = await fetch(`/api/live-forms/${currentAction}/${reviewData.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    if (window.showToast) showToast("Submission processed successfully", "success");
+                    // Allow time for the toast to be seen before closing
+                    setTimeout(() => window.close(), 1000);
+                } else {
+                    const err = await res.json();
+                    throw new Error(err.error || "Failed to process review");
+                }
+            } catch (e) {
+                if (window.showToast) showToast(e.message, "error");
+                // Re-enable if there's an error so the admin can try again
+                inputs.forEach(el => el.disabled = false);
+                btnConfirm.innerText = "Confirm";
+            }
+        }
         async function archiveSubmission() {
             // --- USE CUSTOM MODAL ---
             const confirmed = await confirmAction(

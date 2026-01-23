@@ -238,9 +238,9 @@ async function createRetryLiveForm(previousId) {
   if (!prev) throw new Error("Original form not found");
 
   const accessCode = crypto.randomUUID();
-  const newTries = (prev.tries || 1) + 1;
+  const newTries =  1;
 
-  // [UPDATED] Insert 'sent'
+ 
   await database.run(
     `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, tries) 
          VALUES (?, ?, ?, ?, ?, 'sent', ?)`,
@@ -481,7 +481,7 @@ async function getLiveFormSubmission(id) {
 async function checkSubmittedStatus(memberId, skillId) {
   const database = await db.initDB();
   const record = await database.get(
-    `SELECT id FROM live_forms WHERE is_archived = 0 AND member_id = ? AND skill_id = ? AND form_status = 'submitted'`,
+    `SELECT id FROM live_forms WHERE is_archived = 0 AND member_id = ? AND skill_id = ? AND form_status IN ('submitted', 'accepted', 'rejected')`,
     memberId,
     skillId,
   );
