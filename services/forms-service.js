@@ -370,25 +370,26 @@ async function purgeLiveForms(filters) {
 }
 
 // Update the status and set the reviewed timestamp
-async function updateLiveFormStatus(id, status, score = null) {
+async function updateLiveFormStatus(id, status, score = undefined) {
   const database = await db.initDB();
-  // Ensure ISO format for consistency
   const reviewedDate =
     status === "accepted" || status === "rejected"
       ? new Date().toISOString()
       : null;
 
-  await database.run(
-    `UPDATE live_forms 
-         SET form_status = ?, 
-             form_reviewed_datetime = ?, 
-             current_score = ? 
-         WHERE id = ?`,
-    status,
-    reviewedDate,
-    score,
-    id,
-  );
+  let query = `UPDATE live_forms SET form_status = ?, form_reviewed_datetime = ?`;
+  const params = [status, reviewedDate];
+
+  // Only include current_score in the update if it's explicitly provided
+  if (score !== undefined) {
+    query += `, current_score = ?`;
+    params.push(score);
+  }
+
+  query += ` WHERE id = ?`;
+  params.push(id);
+
+  await database.run(query, params);
 }
 //  Delete Live Form
 async function deleteLiveForm(id) {

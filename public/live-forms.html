@@ -705,6 +705,10 @@
         }
 
         async function purgeFiltered() {
+
+            const isArchived = document.getElementById('archiveToggle').checked;
+            const viewLabel = isArchived ? "ARCHIVED" : "ACTIVE";
+
             if (!await confirmAction("Purge Records", `DANGER: This will delete ALL ${totalCount} records matching the current filters.\n\nThis cannot be undone. Are you sure?`)) return;
 
             const params = new URLSearchParams();
@@ -722,7 +726,7 @@
                 const res = await fetch(`/api/live-forms/all?${params.toString()}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
-                    showToast(`Purged ${data.count} records.`, "success");
+                    showToast(`Purged ${data.count} ${viewLabel.toLowerCase()} records.`, "success");
                     loadData();
                 } else {
                     throw new Error(data.error);

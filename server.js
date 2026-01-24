@@ -1046,6 +1046,7 @@ app.delete("/api/live-forms/all", hasRole("superadmin"), async (req, res) => {
     // Allow filters in query or body
     const filters = {
       memberId: req.query.memberId || req.body.memberId,
+      isArchived: req.query.isArchived,
       skillId: req.query.skillId || req.body.skillId,
       status: req.query.status || req.body.status,
       sentStart: req.query.sentStart || req.body.sentStart,
@@ -1056,11 +1057,17 @@ app.delete("/api/live-forms/all", hasRole("superadmin"), async (req, res) => {
     };
 
     const count = await formsService.purgeLiveForms(filters);
-    await db.logEvent(req.session.user.name, "Live Forms", "Records Purged", {
-      deletedCount: count,
-      filtersApplied: filters,
-      timestamp: new Date().toISOString(),
-    });
+    await db.logEvent(
+      req.session.user.name,
+      "Live Forms",
+      "Filtered Purge Executed",
+      {
+        deletedCount: count,
+        targetScope: filters.isArchived === "true" ? "Archived" : "Active",
+        filtersApplied: filters,
+      },
+    );
+
     res.json({ success: true, count });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1174,7 +1181,10 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
     await formsService.submitLiveForm(req.params.code, req.body);
 
     // 2. Calculate Score
-    const score = formsService.calculateFormScore(form.structure, req.body);
+    const score = await formsService.calculateFormScore(
+      form.structure,
+      req.body,
+    );
     const threshold = parseFloat(form.min_score);
     let isPass = false;
 

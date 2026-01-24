@@ -13,5 +13,5 @@ services:
       - ${UI_RESOURCES_PATH:-./public/resources}:/app/public/resources
     env_file:         
       - .env         
-    command: npx nodemon server.js
+    command: npx nodemon -L server.js
     restart: unless-stopped
