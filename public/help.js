@@ -3,10 +3,10 @@
  * Detailed guide for FENZ OSM Manager
  */
 const helpContent = {
-  // --- Dashboard ---
-  index: {
-    title: "Dashboard Overview & Workflow",
-    body: `
+    // --- Dashboard ---
+    "index": {
+        title: "Dashboard Overview & Workflow",
+        body: `
             <p>The <strong>Dashboard</strong> is your command center for monitoring brigade readiness. It aggregates data from the OSM website and your local database to highlight expiring competencies.</p>
             
             <h3>1. Data Synchronization</h3>
@@ -38,13 +38,13 @@ const helpContent = {
                 <li><strong>Send Button:</strong> Activates once at least one action is selected. It processes the queue sequentially.</li>
                 <li><strong>Quick Send:</strong> Click the small circular <span style="color:#6f42c1;">✉</span> (Email) or <span style="color:#25D366;">✆</span> (WhatsApp) buttons in a row to send a single immediate reminder.</li>
             </ul>
-        `,
-  },
+        `
+    },
 
-  // --- Forms Manager (Building) ---
-  "forms-manage": {
-    title: "Forms Manager: Builder & Scoring",
-    body: `
+    // --- Forms Manager (Building) ---
+    "forms-manage": {
+        title: "Forms Manager: Builder & Scoring",
+        body: `
             <p>Create internal verification questionnaires that replace external tools like Google Forms. These forms support <strong>Automatic Scoring</strong> and <strong>AI Generation</strong>.</p>
             
             <h3>1. Form Configuration</h3>
@@ -75,13 +75,13 @@ const helpContent = {
 
             <h3>4. AI Assistance</h3>
             <p>Click the purple <strong>AI</strong> button to generate a form structure from raw text. You can copy a prompt, paste it into ChatGPT/Gemini along with your training PDF, and import the resulting JSON code.</p>
-        `,
-  },
+        `
+    },
 
-  // --- Live Forms (Reviewing) ---
-  "live-forms": {
-    title: "Live Forms: Review & Grading",
-    body: `
+    // --- Live Forms (Reviewing) ---
+    "live-forms": {
+        title: "Live Forms: Review & Grading",
+        body: `
             <p>Monitor real-time submissions and perform quality assurance on member answers.</p>
             
             <h3>1. The Review Interface</h3>
@@ -106,13 +106,13 @@ const helpContent = {
                 </li>
                 <li><strong>Archive:</strong> Moves old or completed records to the "Archived" view to keep your main list clean.</li>
             </ul>
-        `,
-  },
+        `
+    },
 
-  // --- Skills Management ---
-  skills: {
-    title: "Manage Skills Configuration",
-    body: `
+    // --- Skills Management ---
+    "skills": {
+        title: "Manage Skills Configuration",
+        body: `
             <p>Map the skill names from the FENZ Dashboard to your verification methods.</p>
             
             <h3>1. Import & Sync</h3>
@@ -127,26 +127,26 @@ const helpContent = {
 
             <h3>3. Visibility</h3>
             <p>Use the <strong>Enabled</strong> toggle to hide skills you don't want to track (e.g., administrative items) without deleting them from the database.</p>
-        `,
-  },
+        `
+    },
 
-  // --- Members ---
-  members: {
-    title: "Member Management",
-    body: `
+    // --- Members ---
+    "members": {
+        title: "Member Management",
+        body: `
             <p>Manage your brigade roster and their communication preferences.</p>
             <ul>
                 <li><strong>Import from OSM:</strong> Scans the live dashboard for names not yet in your database.</li>
                 <li><strong>Notification Preferences:</strong> For each member, you can define if they should receive <strong>Email</strong>, <strong>WhatsApp</strong>, or both by default. This controls the pre-selected checkboxes on the main Dashboard.</li>
                 <li><strong>Enabled Status:</strong> Disabled members are hidden from the dashboard and reports, preserving their data history without cluttering the view.</li>
             </ul>
-        `,
-  },
+        `
+    },
 
-  // --- Templates ---
-  templates: {
-    title: "Communication Templates",
-    body: `
+    // --- Templates ---
+    "templates": {
+        title: "Communication Templates",
+        body: `
             <p>Customize the messages sent by the system. Templates support <strong>Rich Text</strong> (Email) and <strong>Markdown</strong> (WhatsApp).</p>
             
             <h3>Template Types</h3>
@@ -163,13 +163,13 @@ const helpContent = {
                 <li><code>{{custom_comment}}</code>: Inserts the specific feedback you wrote during the review process.</li>
                 <li><code>{{url}}</code>: In rejection templates, this inserts the <strong>new</strong> link for the retry attempt.</li>
             </ul>
-        `,
-  },
+        `
+    },
 
-  // --- Training Planner ---
-  "training-planner": {
-    title: "Skills Renewal Planner",
-    body: `
+    // --- Training Planner ---
+    "training-planner": {
+        title: "Skills Renewal Planner",
+        body: `
             <p><strong>Overview:</strong> A tool to schedule in-person training for skills that <em>don't</em> have online forms.</p>
             
             <h3>Calendar View</h3>
@@ -181,66 +181,66 @@ const helpContent = {
 
             <h3>Review List View</h3>
             <p>A chronological list of all upcoming sessions. Use the dropdown to control how many days are shown per page.</p>
-        `,
-  },
+        `
+    },
 
-  // --- Statistics ---
-  statistics: {
-    title: "Brigade Statistics",
-    body: `
+    // --- Statistics ---
+    "statistics": {
+        title: "Brigade Statistics",
+        body: `
             <p>High-level visual analytics of your brigade's operational readiness.</p>
             <ul>
                 <li><strong>Member Compliance:</strong> A doughnut chart showing the percentage of members who are fully compliant vs. those with at least one expiring skill.</li>
                 <li><strong>Skill Priority:</strong> A breakdown of expiring skills by "Critical" status to help prioritize training.</li>
                 <li><strong>Export PDF:</strong> Generates a report containing snapshots of these charts for management meetings.</li>
             </ul>
-        `,
-  },
+        `
+    },
 
-  // --- Event Log ---
-  "event-log": {
-    title: "System Audit Log",
-    body: `
+    // --- Event Log ---
+    "event-log": {
+        title: "System Audit Log",
+        body: `
             <p>A comprehensive history of all actions taken within the system.</p>
             <ul>
                 <li><strong>Tracks:</strong> Login attempts (success/fail), emails sent, forms submitted, settings changed, and database backups.</li>
                 <li><strong>Payloads:</strong> Click the <span style="color:#17a2b8;">ℹ</span> icon to view detailed JSON data (e.g., exact scores calculated for a form submission).</li>
                 <li><strong>Maintenance:</strong> Super Admins can <strong>Prune</strong> (delete old logs) or <strong>Purge</strong> (clear all logs) to save space.</li>
             </ul>
-        `,
-  },
+        `
+    },
 
-  // --- System Tools ---
-  "system-tools": {
-    title: "Backup & Restoration",
-    body: `
+    // --- System Tools ---
+    "system-tools": {
+        title: "Backup & Restoration",
+        body: `
             <p><strong>Database Backup:</strong> Downloads a complete snapshot of the <code>fenz.db</code> SQLite file. This includes all members, skills, history, and configuration.</p>
             <p><strong>Restore:</strong> Uploads a <code>.db</code> file to replace the current system state. <strong style="color:red;">Warning:</strong> This completely overwrites the current database and cannot be undone.</p>
             <p><em>Note:</em> In <strong>Demo Mode</strong>, these operations apply only to the sandboxed <code>demo.db</code>.</p>
-        `,
-  },
+        `
+    },
 
-  // --- User Management ---
-  users: {
-    title: "User Roles & Security",
-    body: `
+    // --- User Management ---
+    "users": {
+        title: "User Roles & Security",
+        body: `
             <p>Manage access to the FENZ OSM Manager.</p>
             <h3>Roles</h3>
             <ul>
-                <li><strong>Guest:</strong> Read-only access to the dashboard. Cannot send notifications or view logs.</li>
+                <li><strong>Guest:</strong> Read-only access.</li>
                 <li><strong>Simple:</strong> Can view dashboard and send notifications. Restricted from configuration pages.</li>
                 <li><strong>Admin:</strong> Full access to manage Members, Skills, Forms, and Users.</li>
                 <li><strong>Super Admin:</strong> (Environment User) Has access to everything, including Database Restore and Log Purging.</li>
             </ul>
             <h3>Security</h3>
             <p>Users are automatically <strong>Blocked</strong> after 5 failed login attempts. An admin must manually uncheck "Blocked" in the Edit User modal to restore access.</p>
-        `,
-  },
+        `
+    },
 
-  // --- Third Party Services ---
-  "third-parties": {
-    title: "WhatsApp Integration",
-    body: `
+    // --- Third Party Services ---
+    "third-parties": {
+        title: "WhatsApp Integration",
+        body: `
             <p>Connects the server to a real WhatsApp account to send notifications.</p>
             <h3>Setup</h3>
             <ol>
@@ -250,13 +250,13 @@ const helpContent = {
             </ol>
             <h3>Preferences</h3>
             <p><strong>Auto-disconnect:</strong> If enabled, logging out of the web app will automatically kill the WhatsApp session. This is recommended for shared computers.</p>
-        `,
-  },
+        `
+    },
 
-  // --- Reports ---
-  reports: {
-    title: "Reporting Console",
-    body: `
+    // --- Reports ---
+    "reports": {
+        title: "Reporting Console",
+        body: `
             <p>Generate printable lists of expiring competencies.</p>
             <ul>
                 <li><strong>By Member:</strong> Grouped by person. Useful for individual performance reviews.</li>
@@ -264,33 +264,35 @@ const helpContent = {
                 <li><strong>Planned Sessions:</strong> A timeline of future training scheduled in the Planner.</li>
             </ul>
             <p>Use the <strong>Export PDF</strong> button to generate a high-quality A4 document.</p>
-        `,
-  },
-  "forms-view-live": {
-    title: "Member Verification - Live Mode",
-    body: `
+        `
+    },
+    
+    // --- Dynamic Form Views ---
+    "forms-view-live": {
+        title: "Member Verification - Live Mode",
+        body: `
             <p><strong>Member Action Required:</strong> You are accessing a secure verification form linked to your OSM competency record.</p>
             <ul>
                 <li><strong>Tracking:</strong> Your progress and submission are tracked. Ensure the name displayed matches your own.</li>
                 <li><strong>Required Fields:</strong> Questions marked with a red asterisk (*) must be answered to submit.</li>
                 <li><strong>Attempts:</strong> Note the 'Max Attempts' allowed. If you fail to meet the passing threshold, the attempt is logged, and you may be prompted to try again immediately.</li>
             </ul>
-        `,
-  },
-  "forms-view-preview": {
-    title: "Form Preview Mode",
-    body: `
+        `
+    },
+    "forms-view-preview": {
+        title: "Form Preview Mode",
+        body: `
             <p><strong>Admin View:</strong> You are previewing the form layout and scoring logic.</p>
             <ul>
                 <li><strong>No Data Saved:</strong> Submitting this form will NOT create a record or update any member skills.</li>
                 <li><strong>Validation:</strong> Use this mode to verify that HTML formatting in descriptions and question point weights are correct.</li>
                 <li><strong>Scoring Test:</strong> You can fill out the form to verify that the automatic pass/fail alerts behave as expected.</li>
             </ul>
-        `,
-  },
-  "forms-view-review": {
-    title: "Submission Review - Admin Mode",
-    body: `
+        `
+    },
+    "forms-view-review": {
+        title: "Submission Review - Admin Mode",
+        body: `
             <p><strong>Reviewing Member Results:</strong> This mode allows you to evaluate an automated submission result.</p>
             <ul>
                 <li><strong>Color Coding:</strong> 
@@ -300,55 +302,59 @@ const helpContent = {
                 <li><strong>Reference Answers:</strong> Admins can see the 'Correct' key below member answers to facilitate manual grading of text fields.</li>
                 <li><strong>Management Bar:</strong> Use the black bar at the top to <strong>Accept</strong> (verify skill), <strong>Reject</strong> (optionally generate a fresh retry link), or <strong>Archive</strong> (remove from active list).</li>
             </ul>
-        `,
-  },
-  // --- Default / Fallback ---
-  default: {
-    title: "Help",
-    body: "<p>Welcome to FENZ OSM Manager. Please navigate to a specific page to see context-aware help here.</p>",
-  },
+        `
+    },
+
+    // --- Default / Fallback ---
+    "default": {
+        title: "Help",
+        body: "<p>Welcome to FENZ OSM Manager. Please navigate to a specific page to see context-aware help here.</p>"
+    }
 };
 
 // --- LOGIC: Inject Button and Modal ---
 (function () {
-  const path = window.location.pathname;
-  let key = "default";
+    const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
+    let key = "default";
 
-  // Simple routing to map URL to Help Key
-  if (path === "/" || path.endsWith("index.html")) key = "index";
-  else if (path.includes("members")) key = "members";
-  else if (path.includes("skills")) key = "skills";
-  else if (path.includes("templates")) key = "templates";
-  else if (path.includes("system-tools")) key = "system-tools";
-  else if (path.includes("event-log")) key = "event-log";
-  else if (path.includes("users")) key = "users";
-  else if (path.includes("profile"))
-    key = "profile"; // Usually self-explanatory, but good to have
-  else if (path.includes("third-parties")) key = "third-parties";
-  else if (path.includes("training-planner")) key = "training-planner";
-  else if (path.includes("forms-manage")) key = "forms-manage";
-  else if (path.includes("reports")) key = "reports";
-  else if (path.includes("live-forms")) key = "live-forms";
-  else if (path.includes("statistics")) key = "statistics";
-  // DYNAMIC FORMS-VIEW LOGIC
-  if (path.includes("forms-view")) {
-    if (params.has("reviewId")) {
-      key = "forms-view-review";
-      setTimeout(() => {
-        const btn = document.getElementById("globalHelpBtn");
-        if (btn) btn.style.top = "70px";
-      }, 100);
-    } else if (params.get("preview") === "true") {
-      key = "forms-view-preview";
-    } else if (params.has("code")) {
-      key = "forms-view-live";
+    // Standard routing
+    if (path === "/" || path.endsWith("index.html")) key = "index";
+    else if (path.includes("members")) key = "members";
+    else if (path.includes("skills")) key = "skills";
+    else if (path.includes("templates")) key = "templates";
+    else if (path.includes("system-tools")) key = "system-tools";
+    else if (path.includes("event-log")) key = "event-log";
+    else if (path.includes("users")) key = "users";
+    else if (path.includes("profile")) key = "profile";
+    else if (path.includes("third-parties")) key = "third-parties";
+    else if (path.includes("training-planner")) key = "training-planner";
+    else if (path.includes("forms-manage")) key = "forms-manage";
+    else if (path.includes("reports")) key = "reports";
+    else if (path.includes("live-forms")) key = "live-forms";
+    else if (path.includes("statistics")) key = "statistics";
+
+    // DYNAMIC FORMS-VIEW LOGIC
+    if (path.includes("forms-view")) {
+        if (params.has('reviewId')) {
+            key = "forms-view-review";
+        } else if (params.get('preview') === 'true') {
+            key = "forms-view-preview";
+        } else if (params.has('code')) {
+            key = "forms-view-live";
+        }
     }
-  }
-  const content = helpContent[key] || helpContent["default"];
 
-  // Inject HTML for Floating Button and Modal
-  const helpHtml = `
-        <button id="globalHelpBtn" title="Get Help">
+    const content = helpContent[key] || helpContent["default"];
+
+    // [UPDATED] Force inline styles to guarantee visibility and position
+    const helpHtml = `
+        <button id="globalHelpBtn" title="Get Help" 
+                style="position: fixed; top: 20px; right: 20px; z-index: 9999; 
+                       width: 45px; height: 45px; border-radius: 50%; 
+                       background-color: #17a2b8; color: white; border: none; 
+                       cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+                       display: flex; align-items: center; justify-content: center;">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -365,27 +371,23 @@ const helpContent = {
         </div>
     `;
 
-  const div = document.createElement("div");
-  div.innerHTML = helpHtml;
-  document.body.appendChild(div);
+    const div = document.createElement('div');
+    div.innerHTML = helpHtml;
+    document.body.appendChild(div);
 
-  const btn = document.getElementById("globalHelpBtn");
-  const modal = document.getElementById("globalHelpModal");
-  const close = document.querySelector(".help-close-btn");
+    const btn = document.getElementById('globalHelpBtn');
+    
+    // Shift button down ONLY in Review Mode to clear the black administration bar
+    if (key === "forms-view-review") {
+        btn.style.top = "75px";
+    }
 
-  // Button Positioning
-  btn.style.top = "20px";
-  btn.style.right = "20px";
-  btn.style.zIndex = "2001";
+    const modal = document.getElementById('globalHelpModal');
+    const close = document.querySelector('.help-close-btn');
 
-  // Event Listeners
-  btn.addEventListener("click", () => {
-    modal.classList.add("show");
-  });
-  close.addEventListener("click", () => {
-    modal.classList.remove("show");
-  });
-  window.addEventListener("click", (e) => {
-    if (e.target === modal) modal.classList.remove("show");
-  });
+    btn.addEventListener('click', () => { modal.classList.add('show'); });
+    close.addEventListener('click', () => { modal.classList.remove('show'); });
+    window.addEventListener('click', (e) => { 
+        if (e.target === modal) modal.classList.remove('show'); 
+    });
 })();
