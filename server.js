@@ -1696,10 +1696,10 @@ io.on("connection", (socket) => {
       }));
 
       socket.emit("expiring-skills-data", results);
-      socket.emit("script-complete", 0);
+      //socket.emit("script-complete", 0);
     } catch (e) {
       logger(e.message);
-      socket.emit("script-complete", 1);
+      //socket.emit("script-complete", 1);
     }
   });
   socket.on("run-process-queue", async (targets, days) => {

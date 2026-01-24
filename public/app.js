@@ -100,6 +100,7 @@ function setIdleState(code) {
     if (showCompletionToast && window.showToast) {
       window.showToast("Completed Successfully", "success");
     }
+    fetchData(false);
     terminal.textContent += `\n> Process exited with code ${code}`;
     progressBar.style.width = "100%";
     progressBar.textContent = "Completed";
@@ -585,6 +586,7 @@ socket.on("expiring-skills-data", (data) => {
   currentOsmData = data;
   tableContainer.style.display = "block";
   applySort();
+  updateNotificationBadges();
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
