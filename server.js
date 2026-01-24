@@ -1252,7 +1252,7 @@ app.get("/api/live-forms/review/:id", hasRole("admin"), async (req, res) => {
     if (!result) return res.status(404).json({ error: "Record not found" });
 
     // Calculate maximum possible score based on the question point weights
-    const scoreInfo = formsService.calculateFormScore(
+    const scoreInfo = await formsService.calculateFormScore(
       result.structure,
       result.form_submitted_data || {},
     );

@@ -705,14 +705,20 @@
         }
 
         async function purgeFiltered() {
-
+            // 1. Capture the current toggle state
             const isArchived = document.getElementById('archiveToggle').checked;
             const viewLabel = isArchived ? "ARCHIVED" : "ACTIVE";
 
-            if (!await confirmAction("Purge Records", `DANGER: This will delete ALL ${totalCount} records matching the current filters.\n\nThis cannot be undone. Are you sure?`)) return;
+            // 2. Custom confirmation using our utility
+            if (!await confirmAction("Purge Records",
+                `DANGER: This will delete ALL ${totalCount} ${viewLabel} records matching the current filters.\n\nThis cannot be undone. Are you sure?`)) return;
 
             const params = new URLSearchParams();
             const getVal = (id) => document.getElementById(id).value;
+
+            // 3. [FIX] Append the archive state to the parameters
+            params.append('isArchived', isArchived);
+
             if (getVal('filterStatus')) params.append('status', getVal('filterStatus'));
             if (getVal('filterMember')) params.append('memberId', getVal('filterMember'));
             if (getVal('filterSkill')) params.append('skillId', getVal('filterSkill'));
@@ -721,6 +727,7 @@
             if (getVal('filterSentEnd')) params.append('sentEnd', getVal('filterSentEnd'));
             if (getVal('filterSubStart')) params.append('subStart', getVal('filterSubStart'));
             if (getVal('filterSubEnd')) params.append('subEnd', getVal('filterSubEnd'));
+
 
             try {
                 const res = await fetch(`/api/live-forms/all?${params.toString()}`, { method: 'DELETE' });
@@ -735,7 +742,6 @@
                 showToast("Purge failed: " + e.message, "error");
             }
         }
-
         function exportJson() {
             const params = new URLSearchParams();
             const getVal = (id) => document.getElementById(id).value;

@@ -260,11 +260,18 @@ async function createRetryLiveForm(previousId) {
 function buildLiveFormsWhere(filters) {
   let clauses = ["1=1"];
   let params = [];
-  // Filter by archive state (Defaults to not archived if not specified)
+
+  // Ensure "true", "1", or boolean true all map to 1 (Archived)
   const archVal =
-    filters.isArchived === "true" || filters.isArchived === 1 ? 1 : 0;
+    filters.isArchived === "true" ||
+    filters.isArchived === 1 ||
+    filters.isArchived === true
+      ? 1
+      : 0;
+
   clauses.push("lf.is_archived = ?");
   params.push(archVal);
+  
   if (filters.memberId) {
     clauses.push("lf.member_id = ?");
     params.push(filters.memberId);
