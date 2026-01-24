@@ -1187,7 +1187,15 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
 
     const currentTry = form.tries || 1;
     const maxAllowed = parseInt(form.max_tries) || 1;
-
+    await db.logEvent("System", "Live Forms", "Form Submitted & Scored", {
+      formId: form.id,
+      memberName: form.member_name,
+      skillName: form.skill_name,
+      score: score.achieved,
+      maxScore: score.maximum,
+      outcome: isPass ? "Passed" : currentTry < maxAllowed ? "Retry" : "Failed",
+      aiUsed: config.aiConfig.enabled,
+    });
     if (isPass) {
       // SUCCESS: Close the session as accepted
       await formsService.updateLiveFormStatus(
@@ -1220,6 +1228,7 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
         "rejected",
         score.achieved,
       );
+
       return res.json({ status: "rejected", score: score.achieved });
     }
   } catch (e) {
