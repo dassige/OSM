@@ -1,6 +1,6 @@
 version: '3.8'
-
 services:
+
   app:
     container_name: fenz-osm-manager
     build: .
@@ -12,7 +12,8 @@ services:
       # CHANGED: Allow overriding resources via .env, default to standard folder
       - ${UI_RESOURCES_PATH:-./public/resources}:/app/public/resources
     env_file:         
-      - .env       
+      - .env  
+   
 # CHANGED: Use nodemon with legacy watch for better file change detection to avoid crashing SQLlite on journal refreshing- 
 # USE it in PRODUCTION         
     command: npx nodemon -L server.js

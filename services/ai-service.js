@@ -3,25 +3,11 @@ const { aiConfig } = require("../config");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const axios = require("axios");
 
-async function evaluateWithGemini(prompt) {
-  const genAI = new GoogleGenerativeAI(aiConfig.geminiKey);
-  const model = genAI.getGenerativeModel({ model: aiConfig.model });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
-}
+async function evaluateTextAnswer(question, reference, memberAnswer, maxPoints, configOverride = null) {
+  // Use override if provided, otherwise fallback to global aiConfig
+  const activeConfig = configOverride || aiConfig;
 
-async function evaluateWithOllama(prompt) {
-  const response = await axios.post(`${aiConfig.ollamaUrl}/api/generate`, {
-    model: aiConfig.model,
-    prompt: prompt,
-    stream: false,
-    format: "json", // Ensures Ollama returns valid JSON
-  });
-  return response.data.response;
-}
-
-async function evaluateTextAnswer(question, reference, memberAnswer, maxPoints) {
-  if (!aiConfig.enabled) return { score: 0, justification: "AI disabled." };
+  if (!activeConfig.enabled && !configOverride) return { score: 0, justification: "AI disabled." };
 
   const prompt = `
     Role: Technical Examiner for Fire and Emergency New Zealand.
@@ -34,26 +20,36 @@ async function evaluateTextAnswer(question, reference, memberAnswer, maxPoints) 
 
     Instructions:
     1. Compare the Member's Answer to the Reference.
-    2. Assign a Raw Score (0 to ${maxPoints}) based on technical accuracy.
+    2. Assign a Raw Score (0 to ${maxPoints}) based on technical accuracy, relevance, and completeness. Don't give much relevance to grammar errors or obvious typos.
     3. Provide a concise justification (max 20 words).
     4. Return ONLY a JSON object: {"score": number, "justification": "string"}
   `;
 
+  // Internal helper to call specific providers with the active config
   try {
     let rawResponse;
-    if (aiConfig.provider === "ollama") {
-      rawResponse = await evaluateWithOllama(prompt);
+    if (activeConfig.provider === "ollama") {
+      const response = await axios.post(`${activeConfig.ollamaUrl}/api/generate`, {
+        model: activeConfig.model,
+        prompt: prompt,
+        stream: false,
+        format: "json",
+      });
+      rawResponse = response.data.response;
     } else {
-      rawResponse = await evaluateWithGemini(prompt);
+      const genAI = new GoogleGenerativeAI(activeConfig.geminiKey);
+      const model = genAI.getGenerativeModel({ model: activeConfig.model });
+      const result = await model.generateContent(prompt);
+      rawResponse = result.response.text();
     }
 
-    // Standardize parsing (handling potential markdown blocks from AI)
     const jsonStr = rawResponse.replace(/```json|```/g, "").trim();
-    return JSON.parse(jsonStr);
+    return { 
+        result: JSON.parse(jsonStr), 
+        raw: rawResponse // Return raw response for the debug log
+    };
   } catch (e) {
-    console.error(`[AI Service - ${aiConfig.provider}] Error:`, e.message);
-    return { score: 0, justification: "AI evaluation failed." };
+    throw e; // Let the controller handle the error for logging
   }
 }
-
 module.exports = { evaluateTextAnswer };

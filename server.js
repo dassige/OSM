@@ -27,6 +27,7 @@ const statisticsService = require("./services/statistics-service");
 
 const puppeteer = require("puppeteer-core");
 const { validateForm, validateBulkData } = require("./middleware/validation");
+const aiService = require("./services/ai-service");
 
 // =============================================================================
 //  INITIALIZATION & MIDDLEWARE
@@ -667,6 +668,56 @@ app.post("/api/logs", async (req, res) => {
   const user = req.session?.user?.name || "System";
   await db.logEvent(user, req.body.type, req.body.title, req.body.payload);
   res.json({ success: true });
+});
+// Add this route with the other system APIs
+app.get(
+  "/api/system/ollama-models",
+  hasRole("superadmin"),
+  async (req, res) => {
+    const baseUrl = req.query.baseUrl || config.aiConfig.ollamaUrl;
+    try {
+      const axios = require("axios");
+      const response = await axios.get(`${baseUrl}/api/tags`, {
+        timeout: 5000,
+      });
+      // Ollama returns { models: [{ name: "llama3", ... }] }
+      res.json(response.data.models || []);
+    } catch (e) {
+      res.status(500).json({ error: "Could not reach Ollama: " + e.message });
+    }
+  },
+);
+app.post("/api/system/ai-test", hasRole("superadmin"), async (req, res) => {
+  const { question, reference, answer, maxPoints, configOverride } = req.body;
+
+  // Inject server key to keep it out of the browser
+  if (
+    configOverride.provider === "gemini" &&
+    configOverride.geminiKey === "USE_SERVER_DEFAULT"
+  ) {
+    configOverride.geminiKey = config.aiConfig.geminiKey;
+  }
+
+  try {
+    const start = Date.now();
+    const evaluation = await aiService.evaluateTextAnswer(
+      question,
+      reference,
+      answer,
+      maxPoints,
+      configOverride,
+    );
+    const duration = Date.now() - start;
+
+    res.json({
+      success: true,
+      ...evaluation,
+      metadata: { duration: `${duration}ms` },
+    });
+  } catch (e) {
+    // Return detailed error for the Test Lab's green log
+    res.status(500).json({ success: false, error: e.message, stack: e.stack });
+  }
 });
 
 app.get("/api/system/backup", hasRole("superadmin"), (req, res) => {
