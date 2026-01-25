@@ -1016,6 +1016,7 @@ app.get("/api/live-forms", hasRole("admin"), async (req, res) => {
 app.get("/api/live-forms/export", hasRole("admin"), async (req, res) => {
   try {
     const filters = {
+      isArchived: req.query.isArchived,
       memberId: req.query.memberId,
       skillId: req.query.skillId,
       status: req.query.status,
