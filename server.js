@@ -818,6 +818,7 @@ app.post("/api/reports/pdf", async (req, res) => {
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
+      title: req.body.title,
       margin: { top: "10mm", bottom: "10mm" },
     });
 
@@ -1012,15 +1013,26 @@ app.post(
     }
   },
 );
+
 app.get("/api/forms/public/:publicId", async (req, res) => {
   try {
     const form = await formsService.getFormByPublicId(req.params.publicId);
     if (!form) return res.status(404).json({ error: "Form not found" });
+
+    // Identify if the session belongs to an Administrator
+    const isAdmin = req.session?.user?.role === 'admin' || req.session?.user?.role === 'superadmin';
+
+    // Strip correct answers if the requester is not an admin
+    const structure = (form.structure || []).map(field => {
+      const { correctAnswer, ...publicField } = field;
+      return isAdmin ? field : publicField; 
+    });
+
     res.json({
       name: form.name,
       intro: form.intro,
       status: form.status,
-      structure: form.structure,
+      structure: structure,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });

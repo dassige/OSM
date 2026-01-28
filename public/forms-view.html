@@ -414,7 +414,7 @@
                         document.body.style.paddingTop = '0';
                         if (data.form_status === 'rejected') document.getElementById('btnResend').style.display = 'inline-block';
                     }
-
+                    document.title = `${data.name} - ${data.member}`;
                     renderForm(data);
                     fillForm(data.submittedData);
                     disableForm();
@@ -462,45 +462,70 @@
                     headerContainer.insertBefore(publicHeader, document.getElementById('formName'));
 
                     renderForm(data);
+
                 } catch (e) { showError(e.message); }
             } else if (publicId) {
                 try {
                     const res = await fetch(`/api/forms/public/${publicId}`);
-                    renderForm(await res.json());
+                    const formData = await res.json();
+                    document.title = formData.name;
+                    renderForm(formData, isPreview); // Pass the isPreview flag
                 } catch (e) { showError(e.message); }
             } else showError("No form specified.");
         });
 
-        function renderForm(form) {
+        function renderForm(form, isPreview = false) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('formContent').style.display = 'block';
             document.getElementById('formName').innerText = form.name;
             document.getElementById('formIntro').innerHTML = form.intro;
+
+            // Add review-mode to body to activate the .review-correct CSS rules
+            if (isPreview) document.body.classList.add('review-mode');
+
             const container = document.getElementById('questionsContainer');
             container.innerHTML = '';
+
             (form.structure || []).forEach(field => {
                 const div = document.createElement('div');
                 div.className = 'question-card';
                 let labelHtml = `<div class="question-text">${field.description}</div>`;
                 if (field.required) labelHtml += `<div style="text-align:right;"><span style="color:#dc3545; font-size:11px; font-weight:bold;">* Required</span></div>`;
+
                 let inputHtml = '';
+                const correct = field.correctAnswer;
+                const corrArr = (Array.isArray(correct) ? correct : [correct]).map(v => String(v || '').trim());
+
                 switch (field.type) {
-                    case 'text_multi': inputHtml = `<textarea name="${field.id}" rows="4" style="width:100%; box-sizing: border-box; padding:12px;"></textarea>`; break;
+                    case 'text_multi':
+                        inputHtml = `<textarea name="${field.id}" rows="4" style="width:100%; box-sizing: border-box; padding:12px;"></textarea>`;
+                        if (isPreview && correct) {
+                            inputHtml += `<div class="reference-box" style="background:#e8f0fe; border-left:4px solid #007bff; padding:12px; margin-top:10px;"><strong>Correct Answer (Reference):</strong><br>${correct}</div>`;
+                        }
+                        break;
                     case 'radio':
                     case 'boolean':
                         const opts = field.type === 'boolean' ? ["Yes", "No"] : field.options;
-                        if (field.renderAs === 'dropdown') {
-                            inputHtml = `<select name="${field.id}" style="width:100%; padding:10px;"><option value="">-- Select --</option>`;
-                            opts.forEach(o => inputHtml += `<option value="${o}">${o}</option>`);
-                            inputHtml += `</select>`;
-                        } else { opts.forEach(o => inputHtml += `<label class="option-label"><input type="radio" name="${field.id}" value="${o}"> ${o}</label>`); }
+                        opts.forEach(o => {
+                            const isCorrect = isPreview && corrArr.includes(o);
+                            inputHtml += `<label class="option-label ${isCorrect ? 'review-correct' : ''}">
+                        <input type="radio" name="${field.id}" value="${o}" ${isCorrect ? 'checked' : ''}> ${o}
+                    </label>`;
+                        });
                         break;
-                    case 'checkboxes': field.options.forEach(o => inputHtml += `<label class="option-label"><input type="checkbox" name="${field.id}[]" value="${o}"> ${o}</label>`); break;
+                    case 'checkboxes':
+                        field.options.forEach(o => {
+                            const isCorrect = isPreview && corrArr.includes(o);
+                            inputHtml += `<label class="option-label ${isCorrect ? 'review-correct' : ''}">
+                        <input type="checkbox" name="${field.id}[]" value="${o}" ${isCorrect ? 'checked' : ''}> ${o}
+                    </label>`;
+                        });
+                        break;
                 }
-                div.innerHTML = labelHtml + inputHtml; container.appendChild(div);
+                div.innerHTML = labelHtml + inputHtml;
+                container.appendChild(div);
             });
         }
-
         function fillForm(submittedData) {
             if (!reviewData || !submittedData) return;
             reviewData.structure.forEach(field => {
@@ -713,6 +738,50 @@
             } catch (e) {
                 if (window.showToast) showToast(e.message, "error");
             }
+        }
+        function highlightCorrectAnswers(formData) {
+            // Enable existing CSS rules for correct/wrong answers
+            document.body.classList.add('review-mode');
+
+            formData.structure.forEach(field => {
+                const correct = field.correctAnswer;
+                if (correct === null || correct === undefined) return;
+
+                const corrArr = (Array.isArray(correct) ? correct : [correct])
+                    .map(v => String(v).trim());
+
+                // Select all input elements for this question
+                const elements = document.querySelectorAll(`[name="${field.id}"], [name="${field.id}[]"]`);
+
+                elements.forEach(el => {
+                    const label = el.closest('.option-label');
+                    const val = String(el.value).trim();
+
+                    if (label && corrArr.includes(val)) {
+                        label.classList.add('review-correct'); // Green background
+                        el.checked = true; // Visual selection
+                    }
+
+                    // Handle Select dropdowns
+                    if (el.tagName === 'SELECT' && corrArr.includes(val)) {
+                        el.style.backgroundColor = "#d4edda";
+                        el.value = val;
+                    }
+                });
+
+                // Populate Reference Answers for text areas
+                if (field.type === 'text_multi') {
+                    const ta = document.querySelector(`textarea[name="${field.id}"]`);
+                    if (ta) {
+                        ta.value = corrArr.join('\n');
+                        ta.style.backgroundColor = "#e8f0fe";
+                        const refBox = document.createElement('div');
+                        refBox.className = 'reference-box';
+                        refBox.innerHTML = `<strong>Correct Answer (Reference):</strong><br>${field.correctAnswer}`;
+                        ta.parentNode.appendChild(refBox);
+                    }
+                }
+            });
         }
     </script>
 </body>
