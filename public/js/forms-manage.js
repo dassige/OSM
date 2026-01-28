@@ -5,6 +5,7 @@ let currentForm = null;
 let currentFields = [];
 let originalFormState = null;
 let formSortMode = "name_asc";
+let uiConfig = null;
 
 function toggleFormSort() {
   const btn = document.getElementById("btnSortForms");
@@ -36,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch("/ui-config")
     .then((r) => r.json())
     .then((c) => {
+      uiConfig = c;
       if (c.loginTitle) {
         document.title = "Forms Manager - " + c.loginTitle;
         document.getElementById("pageHeader").innerText = "Forms Manager";
@@ -100,38 +102,76 @@ function getFormData() {
   const name = document.getElementById("formName").value;
   // Get status from the new editor toggle
   const status = document.getElementById("formStatusToggle").checked ? 1 : 0;
-  const intro = tinymce.get("formIntro") ? tinymce.get("formIntro").getContent() : "";
+  // NEW Automation Fields
+  const min_score = document.getElementById("minScore").value;
+  const min_score_type = document.getElementById("minScoreType").value;
+  const max_tries = document.getElementById("maxTries").value;
+  const intro = tinymce.get("formIntro")
+    ? tinymce.get("formIntro").getContent()
+    : "";
 
-  const structure = Array.from(document.querySelectorAll(".field-card")).map((card) => {
-    const id = card.getAttribute("data-id");
-    const type = card.getAttribute("data-type");
-    const description = tinymce.get(`editor_${id}`) ? tinymce.get(`editor_${id}`).getContent() : "";
-    const required = !!card.querySelector(".field-required-check").checked;
+  const structure = Array.from(document.querySelectorAll(".field-card")).map(
+    (card) => {
+      const id = card.getAttribute("data-id");
 
-    let options = [];
-    let renderAs = card.querySelector(".field-render-as")?.value || "radio";
-    let correctAnswer = null;
+      const type = card.getAttribute("data-type");
+      const points = parseFloat(card.querySelector(".field-points").value) || 0; // NEW Points
+      const description = tinymce.get(`editor_${id}`)
+        ? tinymce.get(`editor_${id}`).getContent()
+        : "";
+      const required = !!card.querySelector(".field-required-check").checked;
 
-    if (type === "radio" || type === "checkboxes") {
-      const rows = card.querySelectorAll(".option-row");
-      options = Array.from(rows).map(r => r.querySelector(".option-input").value).filter(v => v.trim() !== "");
-      if (type === "radio") {
-        const selected = Array.from(rows).find(r => r.querySelector(".correct-mark-radio")?.checked);
-        correctAnswer = selected ? selected.querySelector(".option-input").value : null;
-      } else {
-        correctAnswer = Array.from(rows).filter(r => r.querySelector(".correct-mark-cb")?.checked).map(r => r.querySelector(".option-input").value);
+      let options = [];
+      let renderAs = card.querySelector(".field-render-as")?.value || "radio";
+      let correctAnswer = null;
+
+      if (type === "radio" || type === "checkboxes") {
+        const rows = card.querySelectorAll(".option-row");
+        options = Array.from(rows)
+          .map((r) => r.querySelector(".option-input").value)
+          .filter((v) => v.trim() !== "");
+        if (type === "radio") {
+          const selected = Array.from(rows).find(
+            (r) => r.querySelector(".correct-mark-radio")?.checked,
+          );
+          correctAnswer = selected
+            ? selected.querySelector(".option-input").value
+            : null;
+        } else {
+          correctAnswer = Array.from(rows)
+            .filter((r) => r.querySelector(".correct-mark-cb")?.checked)
+            .map((r) => r.querySelector(".option-input").value);
+        }
+      } else if (type === "boolean") {
+        const selected = card.querySelector(".bool-correct:checked");
+        correctAnswer = selected ? selected.value : null;
+      } else if (type === "text_multi") {
+        correctAnswer =
+          card.querySelector(".reference-answer-input")?.value || "";
       }
-    } else if (type === "boolean") {
-      const selected = card.querySelector(".bool-correct:checked");
-      correctAnswer = selected ? selected.value : null;
-    } else if (type === "text_multi") {
-      correctAnswer = card.querySelector(".reference-answer-input")?.value || "";
-    }
 
-    return { id, type, description, required, options, renderAs, correctAnswer };
-  });
+      return {
+        id,
+        type,
+        description,
+        required,
+        options,
+        renderAs,
+        correctAnswer,
+        points,
+      };
+    },
+  );
 
-  return { name, status, intro, structure };
+  return {
+    name,
+    status,
+    intro,
+    structure,
+    min_score: parseFloat(document.getElementById("minScore").value) || 0,
+    min_score_type: document.getElementById("minScoreType").value,
+    max_tries: parseInt(document.getElementById("maxTries").value) || 1,
+  };
 }
 
 function isFormDirty() {
@@ -146,7 +186,7 @@ async function checkDirty(actionName) {
       "Unsaved Changes",
       `You have unsaved changes in "${
         currentForm.name || "New Form"
-      }".\n\nDo you want to discard them?`
+      }".\n\nDo you want to discard them?`,
     );
     return confirm;
   }
@@ -169,43 +209,18 @@ async function loadForms() {
 async function saveForm() {
   const data = getFormData();
   const status = currentForm ? currentForm.status : 0;
-
   const payload = { ...data, status };
   const method = currentForm && currentForm.id ? "PUT" : "POST";
   const url =
     currentForm && currentForm.id
       ? `/api/forms/${currentForm.id}`
       : "/api/forms";
-
-  try {
-    const res = await fetch(url, {
-      method: method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error("Failed to save");
-    const result = await res.json();
-    if (result.id) {
-      // [FIX] Include public_id from server result
-      currentForm = { ...payload, id: result.id, public_id: result.public_id };
-    } else {
-      currentForm = { ...currentForm, ...payload };
-    }
-    originalFormState = getFormData();
-
-    showToast("Form saved successfully", "success");
-    loadForms();
-  } catch (e) {
-    showToast(e.message, "error");
+  // Final validation check
+  const minScoreInput = document.getElementById("minScore");
+  if (minScoreInput.style.borderColor === "var(--danger)") {
+    showToast("Cannot save: Passing threshold is invalid.", "error");
+    return;
   }
-}
-async function saveForm() {
-  const data = getFormData();
-  const status = currentForm ? currentForm.status : 0;
-  const payload = { ...data, status };
-  const method = currentForm && currentForm.id ? "PUT" : "POST";
-  const url = currentForm && currentForm.id ? `/api/forms/${currentForm.id}` : "/api/forms";
-
   try {
     const res = await fetch(url, {
       method: method,
@@ -216,30 +231,35 @@ async function saveForm() {
     if (!res.ok) {
       const errorData = await res.json();
       // Extract specific Joi validation reasons or fallback to general error
-      const reason = errorData.details ? errorData.details.join(" | ") : (errorData.error || "Unknown error");
+      const reason = errorData.details
+        ? errorData.details.join(" | ")
+        : errorData.error || "Unknown error";
       throw new Error(reason);
     }
 
     const result = await res.json();
     // ... (Success handling as per existing forms-manage.js) ...
     showToast("Form saved successfully", "success");
+    // Reset the baseline so isFormDirty() returns false until further edits
+    originalFormState = getFormData();
+
     loadForms();
   } catch (e) {
     // 1. Display reason to user
     showToast("Save Failed: Check console for details", "error");
-    
+
     // 2. Add to browser console
     console.error("[FormsManager] Error saving form:", e.message);
 
     // 3. Add to System Event Log for auditing
-    fetch('/api/logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            type: 'Forms',
-            title: 'Form Save Failed',
-            payload: { error: e.message, formName: data.name }
-        })
+    fetch("/api/logs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "Forms",
+        title: "Form Save Failed",
+        payload: { error: e.message, formName: data.name },
+      }),
     });
   }
 }
@@ -262,7 +282,7 @@ async function updateStatus(id, enabled) {
     if (currentForm && currentForm.id === id) {
       currentForm.status = enabled ? 1 : 0;
       document.getElementById("formStatusToggle").checked = enabled;
-      // Also update original state status so preview doesn't prompt for save 
+      // Also update original state status so preview doesn't prompt for save
       // just because of a status toggle
       if (originalFormState) originalFormState.status = enabled ? 1 : 0;
     }
@@ -318,7 +338,7 @@ async function previewForm() {
   if (isFormDirty()) {
     const doSave = await confirmAction(
       "Unsaved Changes",
-      "You have unsaved changes.\n\nSave now to see them in the preview?"
+      "You have unsaved changes.\n\nSave now to see them in the preview?",
     );
     if (doSave) {
       await saveForm();
@@ -334,7 +354,7 @@ async function previewForm() {
 
   window.open(
     `forms-view.html?id=${currentForm.public_id}&preview=true`,
-    "_blank"
+    "_blank",
   );
 }
 
@@ -407,7 +427,7 @@ async function importAllForms(input) {
   if (
     !(await confirmAction(
       "Bulk Import",
-      "WARNING: This will DELETE ALL existing forms and replace them with the imported file.\n\nAre you sure?"
+      "WARNING: This will DELETE ALL existing forms and replace them with the imported file.\n\nAre you sure?",
     ))
   ) {
     input.value = ""; // Clear input if user cancels
@@ -498,7 +518,15 @@ async function createNewForm() {
   if (document.getElementById("builderPanel").style.display === "flex") {
     if (!(await checkDirty())) return;
   }
-  loadEditor({ name: "New Form", status: 0, intro: "", structure: [] });
+  loadEditor({
+    name: "New Form",
+    status: 0,
+    intro: "",
+    structure: [],
+    min_score: uiConfig.defaultMinScore,
+    min_score_type: uiConfig.defaultMinScoreType,
+    max_tries: uiConfig.defaultMaxTries,
+  });
 }
 
 async function selectForm(id) {
@@ -521,17 +549,27 @@ function loadEditor(form) {
 
   document.getElementById("emptyPanel").style.display = "none";
   document.getElementById("builderPanel").style.display = "flex";
-  
+  document
+    .getElementById("minScore")
+    .addEventListener("input", validateThreshold);
+  document
+    .getElementById("minScoreType")
+    .addEventListener("change", validateThreshold);
   // 1. Sync Toggles and Inputs
   const nameInput = document.getElementById("formName");
   nameInput.value = form.name || "";
-  
+  // NEW Automation Population
+  document.getElementById("minScore").value = form.min_score || 0;
+  document.getElementById("minScoreType").value =
+    form.min_score_type || "percentage";
+  document.getElementById("maxTries").value = form.max_tries || 1;
   // [FIX] Manually recalculate height for long names on load
-  nameInput.style.height = ''; 
-  nameInput.style.height = nameInput.scrollHeight + 'px';
+  nameInput.style.height = "";
+  nameInput.style.height = nameInput.scrollHeight + "px";
 
   document.getElementById("formStatusToggle").checked = !!form.status;
-  if (tinymce.get("formIntro")) tinymce.get("formIntro").setContent(form.intro || "");
+  if (tinymce.get("formIntro"))
+    tinymce.get("formIntro").setContent(form.intro || "");
 
   renderFields();
   renderFormList();
@@ -539,6 +577,10 @@ function loadEditor(form) {
   setTimeout(() => {
     originalFormState = getFormData();
   }, 500);
+  setTimeout(() => {
+    updateMaxScore();
+    validateThreshold();
+  }, 100);
 }
 function addField(type) {
   const newField = {
@@ -555,6 +597,7 @@ function addField(type) {
   setTimeout(() => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   }, 100);
+  updateMaxScore();
 }
 
 function cleanupFieldEditors() {
@@ -585,6 +628,8 @@ function renderFieldItem(field) {
             <div class="header-controls" onclick="event.stopPropagation()">
                 <label class="switch" style="margin-bottom:0 !important;"><input type="checkbox" class="field-required-check" ${isReq}><span class="slider"></span></label>
                 <span style="font-size:12px; font-weight:bold; color:var(--text-muted); margin-left:8px;">Required</span>
+                <span style="margin-left:20px; font-size:12px; font-weight:bold; color:var(--text-muted);">Points:</span>
+                <input type="number" class="field-points" value="${field.points || 1}" min="0" style="width:50px; padding:2px 5px; margin-left:5px;">
             </div>
             <span style="flex:1;"></span>
             <button type="button" class="btn-icon delete" onclick="removeField(event, '${
@@ -594,12 +639,13 @@ function renderFieldItem(field) {
             </button>
             <span class="arrow-icon">▼</span>
         </div>
+       
         <div class="field-body" style="padding: 25px;">
             <div class="form-group">
                 <label>Question Text</label>
                 <textarea id="editor_${field.id}">${
-    field.description || ""
-  }</textarea>
+                  field.description || ""
+                }</textarea>
             </div>`;
 
   if (field.type === "radio" || field.type === "checkboxes") {
@@ -670,8 +716,13 @@ function renderFieldItem(field) {
   }
 
   html += `</div>`;
+
   div.innerHTML = html;
   canvas.appendChild(div);
+
+  const pointsInput = div.querySelector(".field-points");
+  pointsInput.addEventListener("input", updateMaxScore);
+
   setTimeout(() => initFieldEditor(`editor_${field.id}`), 50);
 }
 
@@ -682,7 +733,7 @@ window.toggleAllFields = function () {
   // Logic: If any card is collapsed, expand everything.
   // Otherwise (if all are expanded), collapse everything.
   const anyCollapsed = Array.from(cards).some(
-    (c) => !c.classList.contains("expanded")
+    (c) => !c.classList.contains("expanded"),
   );
 
   cards.forEach((c) => {
@@ -708,13 +759,14 @@ async function handleRemoveField(id) {
   if (
     await confirmAction(
       "Remove Question",
-      "Are you sure you want to delete this question?"
+      "Are you sure you want to delete this question?",
     )
   ) {
     if (tinymce.get(`editor_${id}`)) tinymce.get(`editor_${id}`).remove();
     currentFields = currentFields.filter((f) => f.id !== id);
     const card = document.querySelector(`.field-card[data-id="${id}"]`);
     if (card) card.remove();
+    updateMaxScore();
   }
 }
 window.removeField = function (e, id) {
@@ -770,3 +822,158 @@ window.copyAiPrompt = function () {
       console.error("Failed to copy: ", err);
     });
 };
+/**
+ * Sums all 'field-points' inputs and updates the header display.
+ */
+function updateMaxScore() {
+  let total = 0;
+  document.querySelectorAll(".field-points").forEach((input) => {
+    total += parseFloat(input.value) || 0;
+  });
+
+  const display = document.getElementById("maxScoreDisplay");
+  if (display) {
+    display.textContent = total;
+  }
+  validateThreshold(); // Trigger validation whenever total changes
+}
+/**
+ * Validates if the set passing threshold is mathematically achievable.
+ * Provides visual feedback via red borders and warning text.
+ */
+function validateThreshold() {
+  const minScoreInput = document.getElementById("minScore");
+  const minScore = parseFloat(minScoreInput.value) || 0;
+  const type = document.getElementById("minScoreType").value;
+  const maxPossible =
+    parseFloat(document.getElementById("maxScoreDisplay").textContent) || 0;
+  const warningEl = document.getElementById("thresholdWarning");
+
+  let isInvalid = false;
+
+  if (type === "percentage") {
+    if (minScore > 100) {
+      isInvalid = true;
+      warningEl.textContent = "⚠️ Percentage cannot exceed 100%";
+    }
+  } else {
+    // 'number' mode
+    if (minScore > maxPossible) {
+      isInvalid = true;
+      warningEl.textContent = `⚠️ Score cannot exceed max points (${maxPossible})`;
+    }
+  }
+
+  // UI Feedback
+  if (isInvalid) {
+    minScoreInput.style.borderColor = "var(--danger)";
+    minScoreInput.style.backgroundColor = "#fff5f5";
+    warningEl.style.display = "block";
+  } else {
+    minScoreInput.style.borderColor = ""; // Reset to default
+    minScoreInput.style.backgroundColor = "";
+    warningEl.style.display = "none";
+  }
+}
+/**
+ * Opens the Scoring Simulator using current (unsaved) editor data.
+ */
+function testScoring() {
+  const data = getFormData(); // Capture everything currently in the editor
+  const container = document.getElementById("testFormContainer");
+  const banner = document.getElementById("testResultBanner");
+
+  banner.style.display = "none";
+  container.innerHTML = "";
+
+  if (data.structure.length === 0) {
+    return showToast("Add some questions first!", "warning");
+  }
+
+  // Render questions for simulation
+  data.structure.forEach((field, index) => {
+    const div = document.createElement("div");
+    div.style.marginBottom = "20px";
+    div.style.paddingBottom = "15px";
+    div.style.borderBottom = "1px solid #eee";
+
+    let html = `<div style="font-weight:bold; margin-bottom:10px;">${index + 1}. ${field.description} <span style="color:#666; font-size:0.8em;">(${field.points} pts)</span></div>`;
+
+    if (field.type === "radio" || field.type === "boolean") {
+      const options = field.type === "boolean" ? ["Yes", "No"] : field.options;
+      options.forEach((opt) => {
+        html += `<label style="display:block; margin:5px 0; cursor:pointer;"><input type="radio" name="test_${field.id}" value="${opt}"> ${opt}</label>`;
+      });
+    } else if (field.type === "checkboxes") {
+      field.options.forEach((opt) => {
+        html += `<label style="display:block; margin:5px 0; cursor:pointer;"><input type="checkbox" name="test_${field.id}" value="${opt}"> ${opt}</label>`;
+      });
+    } else {
+      html += `<div style="font-style:italic; color:#999;">Text fields are excluded from auto-scoring.</div>`;
+    }
+
+    div.innerHTML = html;
+    container.appendChild(div);
+  });
+
+  openModal("testScoringModal");
+}
+
+/**
+ * Calculates the score of the simulated attempt and displays result.
+ */
+function runScoringSimulation() {
+  const data = getFormData();
+  let achieved = 0;
+  let maximum = 0;
+
+  data.structure.forEach((field) => {
+    const weight = parseFloat(field.points) || 0;
+    maximum += weight;
+
+    const inputs = document.getElementsByName(`test_${field.id}`);
+    const selected = Array.from(inputs)
+      .filter((i) => i.checked)
+      .map((i) => i.value);
+
+    if (field.type === "radio" || field.type === "boolean") {
+      if (selected[0] === field.correctAnswer) achieved += weight;
+    } else if (field.type === "checkboxes") {
+      const correctArr = Array.isArray(field.correctAnswer)
+        ? field.correctAnswer
+        : [];
+      if (correctArr.length === 0) return;
+
+      const pointsPerOption = weight / correctArr.length;
+      let qScore = 0;
+
+      selected.forEach((val) => {
+        if (correctArr.includes(val))
+          qScore += pointsPerOption; // Match
+        else qScore -= pointsPerOption; // Penalty
+      });
+      achieved += Math.max(0, qScore);
+    }
+  });
+
+  // Display Result
+  const banner = document.getElementById("testResultBanner");
+  const scoreText = document.getElementById("testScoreText");
+  const statusText = document.getElementById("testStatusText");
+
+  const pct = maximum > 0 ? (achieved / maximum) * 100 : 0;
+  const threshold = parseFloat(data.min_score);
+  const isPass =
+    data.min_score_type === "percentage"
+      ? pct >= threshold
+      : achieved >= threshold;
+
+  banner.style.display = "block";
+  banner.style.background = isPass ? "#d4edda" : "#f8d7da";
+  banner.style.color = isPass ? "#155724" : "#721c24";
+
+  scoreText.textContent = `Score: ${achieved.toFixed(2)} / ${maximum.toFixed(2)} (${pct.toFixed(1)}%)`;
+  statusText.textContent = isPass
+    ? `✓ Status: PASSED (Threshold: ${threshold}${data.min_score_type === "percentage" ? "%" : " pts"})`
+    : `✗ Status: FAILED (Threshold: ${threshold}${data.min_score_type === "percentage" ? "%" : " pts"})`;
+}

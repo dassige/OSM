@@ -54,10 +54,6 @@
             font-size: 1.1em;
         }
 
-        .question-text p {
-            margin: 0;
-        }
-
         .option-label {
             display: flex;
             align-items: center;
@@ -75,21 +71,38 @@
             background: #f0f8ff;
         }
 
-        .option-label input {
-            width: auto;
-            margin-right: 12px;
-            transform: scale(1.2);
+        /* --- REVIEW MODE STYLES --- */
+        body.review-mode .option-label.review-correct {
+            background-color: #d4edda !important;
+            border: 2px solid #28a745 !important;
+            color: #155724 !important;
+            font-weight: bold !important;
         }
 
-        /* Review Mode Styling */
-        body.review-mode .option-label.checked-answer {
-            background-color: #ffe6e6 !important;
-            /* Light Pink */
-            border-color: #ffb3b3 !important;
-            /* Darker Pink Border */
-            color: #721c24;
-            /* Dark Red Text */
-            font-weight: bold;
+        body.review-mode .option-label.review-wrong {
+            background-color: #f8d7da !important;
+            border: 2px solid #dc3545 !important;
+            color: #721c24 !important;
+        }
+
+        body.review-mode .option-label.expected-border {
+            border: 3px dashed #28a745 !important;
+            box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+        }
+
+        body.review-mode .review-unanswered {
+            background-color: #fff3cd !important;
+            border-color: #ffeeba !important;
+            color: #856404;
+        }
+
+        .reference-box {
+            background: #e8f0fe;
+            border-left: 4px solid #007bff;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #0d47a1;
         }
 
         .preview-banner {
@@ -119,11 +132,6 @@
             font-weight: bold;
         }
 
-        .btn-submit:hover {
-            background-color: #218838;
-        }
-
-        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -157,117 +165,95 @@
             color: #aaa;
         }
 
-        /* Review highlights */
-        body.review-mode .option-label.review-correct {
-            background-color: #d4edda !important;
-            border-color: #28a745 !important;
-            color: #155724;
-            font-weight: bold;
+        .fab-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1000;
         }
 
-        body.review-mode .option-label.review-wrong {
-            background-color: #f8d7da !important;
-            border-color: #dc3545 !important;
-            color: #721c24;
+        .fab-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s;
         }
 
-        body.review-mode .option-label.expected-border {
-            border: 4px solid #28a745 !important;
-            box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+        .fab-btn svg {
+            width: 32px;
+            height: 32px;
         }
 
-        .reference-box {
-            background: #e8f0fe;
-            border-left: 4px solid #007bff;
-            padding: 12px;
-            margin-top: 10px;
-            font-size: 0.9em;
-            color: #0d47a1;
+        .fab-btn:hover {
+            transform: scale(1.1);
         }
 
-        body.review-mode .review-unanswered {
-            background-color: #fff3cd !important;
-            /* Light Yellow */
-            border-color: #ffeeba !important;
-            color: #856404;
+        .fab-print {
+            background-color: #6c757d;
         }
 
-/* Updated Floating Action Button Styles */
-.fab-container {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    display: none; /* Controlled by JS logic */
-    flex-direction: column;
-    gap: 15px;
-    z-index: 1000;
-}
+        @media print {
 
-.fab-btn {
-    width: 64px;  /* Increased from 56px */
-    height: 64px; /* Increased from 56px */
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    transition: transform 0.2s, background-color 0.2s;
-}
+            .fab-container,
+            .back-btn,
+            #previewBanner,
+            #reviewActions {
+                display: none !important;
+            }
 
-/* Ensure the SVG icons inside are larger */
-.fab-btn svg {
-    width: 32px;  /* Increased from 24px */
-    height: 32px; /* Increased from 24px */
-}
-
-.fab-btn:hover {
-    transform: scale(1.1);
-}
-
-.fab-print { background-color: #6c757d; }
-.fab-pdf { background-color: #dc3545; }
-
-@media print {
-    .fab-container { display: none !important; }
-}
+            .form-container {
+                box-shadow: none;
+                border: 1px solid #000;
+                max-width: none;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <div id="previewBanner" class="preview-banner" style="display:none;">
-        PREVIEW MODE - Responses will not be saved.
+    <div id="previewBanner" class="preview-banner" style="display:none;"> PREVIEW MODE - Responses will not be saved.
         <button onclick="window.close()"
             style="margin-left:15px; padding:4px 10px; background:rgb(104, 5, 5); border:none; cursor:pointer; border-radius:4px; color:white;">Close
             Window</button>
     </div>
-
     <div id="reviewActions"
         style="display:none; background:#343a40; color:white; padding:15px; position:sticky; top:0; z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.2); text-align:center;">
-        <span style="margin-right:15px; font-weight:bold; font-size:1.1em;">Admin Review Action:</span>
-        <button onclick="openReviewModal('accept')"
-            style="background:#28a745; border:none; padding:8px 20px; color:white; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:10px;">Accept</button>
-        <button onclick="openReviewModal('reject')"
-            style="background:#dc3545; border:none; padding:8px 20px; color:white; border-radius:4px; font-weight:bold; cursor:pointer;">Reject</button>
+        <span style="margin-right:15px; font-weight:bold; font-size:1.1em;">Review Automated Result:</span>
+        <button id="btnArchive" onclick="archiveSubmission()"
+            style="background:#6c757d; border:none; padding:8px 20px; color:white; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:10px;">Archive</button>
+        <button id="btnResend" onclick="openReviewModal('reject')"
+            style="background:#dc3545; border:none; padding:8px 20px; color:white; border-radius:4px; font-weight:bold; cursor:pointer; display:none;">Resend
+            New Attempt</button>
     </div>
 
     <div class="container">
         <div id="loading" class="spinner" style="margin: 50px auto; display:block;"></div>
-
         <div id="formContent" class="form-container" style="display:none;">
+            <div id="retryAlert"
+                style="display:none; background:#fff3cd; border:1px solid #ffeeba; color:#856404; padding:15px; border-radius:6px; margin-bottom:20px; text-align:center;">
+                <h3 style="margin:0 0 5px 0;">Try Again!</h3>
+                <p id="retryMsg" style="margin:0; font-weight:bold;"></p>
+                <div id="tryCounter" style="font-size:0.9em; margin-top:5px; opacity:0.8;"></div>
+            </div>
             <div class="form-header">
                 <h1 id="formName" class="form-title"></h1>
                 <div id="formIntro" class="form-intro"></div>
             </div>
-
             <form id="submissionForm">
                 <div id="questionsContainer"></div>
                 <button type="submit" class="btn-submit">Submit Form</button>
             </form>
         </div>
-
         <div id="errorState" style="display:none; text-align:center; margin-top:50px;">
             <h2>Form Not Available</h2>
             <p id="errorMsg" style="color:var(--text-muted);"></p>
@@ -278,7 +264,6 @@
         <div class="modal-content">
             <span class="close-btn" onclick="document.getElementById('reviewModal').style.display='none'">&times;</span>
             <h2 id="reviewModalTitle" style="margin-top:0;">Confirm Action</h2>
-
             <div
                 style="background:var(--bg-hover); padding:15px; border-radius:4px; border:1px solid var(--border-color); margin-bottom:20px;">
                 <p style="margin:5px 0;"><strong>Member:</strong> <span id="revMember"></span></p>
@@ -286,35 +271,25 @@
                 <p style="margin:5px 0;"><strong>Submitted:</strong> <span id="revDate"></span></p>
                 <p style="margin:5px 0;"><strong>Attempt:</strong> <span id="revTries"></span></p>
             </div>
-
             <div id="rejectOptions"
                 style="display:none; margin-bottom:20px; padding:10px; background:#fff3cd; border:1px solid #ffeeba; border-radius:4px;">
                 <label style="display:flex; align-items:center; cursor:pointer; color:#856404; font-weight:bold;">
-                    <input type="checkbox" id="revGenerateNew" checked style="width:auto; margin-right:10px;">
-                    Generate new form attempt?
+                    <input type="checkbox" id="revGenerateNew" checked style="width:auto; margin-right:10px;"> Generate
+                    new form attempt?
                 </label>
-                <div style="font-size:0.85em; margin-top:5px; margin-left:25px; color:#856404;">
-                    If checked, a new link will be created and sent to the member.
-                </div>
             </div>
-
             <h3 style="font-size:1em; border-bottom:1px solid #eee; padding-bottom:5px;">Send Notifications</h3>
             <div style="margin-top:10px;">
-                <label style="display:block; margin-bottom:10px;">
-                    <input type="checkbox" id="revEmailCb" style="width:auto; margin-right:8px;">
-                    Email <span id="revEmailPref" style="font-size:0.8em; color:#28a745; font-weight:bold;"></span>
-                </label>
-                <label style="display:block;">
-                    <input type="checkbox" id="revWaCb" style="width:auto; margin-right:8px;">
-                    WhatsApp <span id="revWaPref" style="font-size:0.8em; color:#28a745; font-weight:bold;"></span>
-                </label>
+                <label style="display:block; margin-bottom:10px;"><input type="checkbox" id="revEmailCb"
+                        style="width:auto; margin-right:8px;"> Email</label>
+                <label style="display:block;"><input type="checkbox" id="revWaCb" style="width:auto; margin-right:8px;">
+                    WhatsApp</label>
             </div>
             <div id="commentSection"
                 style="display:none; margin-top:20px; border-top: 1px solid #eee; padding-top:15px;">
-                <label style="display:block; font-weight:bold; margin-bottom:8px;">Additional Comment (Optional)</label>
+                <label style="display:block; font-weight:bold; margin-bottom:8px;">Additional Comment</label>
                 <textarea id="revCustomComment" rows="3"
-                    style="width:100%; box-sizing:border-box; padding:10px; border-radius:4px; border:1px solid #ccc; font-family:inherit;"
-                    placeholder="This text will replace {{custom_comment}} in your templates..."></textarea>
+                    style="width:100%; box-sizing:border-box; padding:10px; border-radius:4px; border:1px solid #ccc; font-family:inherit;"></textarea>
             </div>
             <div style="text-align:right; margin-top:25px; border-top:1px solid #eee; padding-top:15px;">
                 <button onclick="document.getElementById('reviewModal').style.display='none'"
@@ -324,53 +299,33 @@
             </div>
         </div>
     </div>
+
     <div id="adminFab" class="fab-container">
-        <button onclick="window.print()" class="fab-btn fab-print" title="Print Form">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button onclick="window.print()" class="fab-btn fab-print" title="Print Form"><svg width="24" height="24"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="6 9 6 2 18 2 18 9"></polyline>
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
                 <rect x="6" y="14" width="12" height="8"></rect>
-            </svg>
-        </button>
+            </svg></button>
     </div>
+
     <script src="toast.js"></script>
     <script src="theme.js"></script>
-
+    <script src="utils.js"></script>
     <script>
-        let submissionCode = null;
-        let reviewData = null;
-        let currentAction = null;
-
-        // Defaults
-        let appLocale = 'en-NZ';
-        let appTimezone = 'Pacific/Auckland';
+        let submissionCode = null, reviewData = null, currentAction = null;
+        let appLocale = 'en-NZ', appTimezone = 'Pacific/Auckland';
 
         function updateCommentVisibility() {
             const emailChecked = document.getElementById('revEmailCb').checked;
             const waChecked = document.getElementById('revWaCb').checked;
-            const commentSection = document.getElementById('commentSection');
-            const btn = document.getElementById('btnConfirmReview');
-
-            // Toggle comment box
-            if (commentSection) {
-                commentSection.style.display = (emailChecked || waChecked) ? 'block' : 'none';
-            }
-
-            // [NEW] Update Button Text based on notification status
-            const hasNotification = (emailChecked || waChecked);
-            if (currentAction === 'accept') {
-                btn.textContent = hasNotification ? "Accept & Notify" : "Accept";
-            } else if (currentAction === 'reject') {
-                btn.textContent = hasNotification ? "Reject & Notify" : "Reject";
-            }
+            document.getElementById('commentSection').style.display = (emailChecked || waChecked) ? 'block' : 'none';
         }
 
         document.getElementById('revEmailCb').addEventListener('change', updateCommentVisibility);
         document.getElementById('revWaCb').addEventListener('change', updateCommentVisibility);
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // 1. Fetch Config for Locale/Timezone
             try {
                 const configRes = await fetch('/ui-config');
                 if (configRes.ok) {
@@ -378,288 +333,259 @@
                     if (config.locale) appLocale = config.locale;
                     if (config.timezone) appTimezone = config.timezone;
                 }
-            } catch (e) {
-                console.warn("Failed to load UI config, using defaults:", e);
-            }
+            } catch (e) { }
 
             const params = new URLSearchParams(window.location.search);
-            const code = params.get('code');
-            const publicId = params.get('id');
-            const reviewId = params.get('reviewId');
+            const reviewId = params.get('reviewId'), code = params.get('code'), publicId = params.get('id');
             const isPreview = params.get('preview') === 'true';
-            // [NEW] Show FABs only in admin-adjacent modes
-            if (isPreview || reviewId) {
-                document.getElementById('adminFab').style.display = 'flex';
-            }
+
+            if (isPreview || reviewId) document.getElementById('adminFab').style.display = 'flex';
             if (isPreview) document.getElementById('previewBanner').style.display = 'block';
 
             if (reviewId) {
-                // --- REVIEW MODE (Admin Only) ---
                 document.body.classList.add('review-mode');
                 try {
                     const res = await fetch(`/api/live-forms/review/${reviewId}`);
-                    if (res.status === 403 || res.status === 401) throw new Error("Unauthorized: Admin access required.");
-                    if (!res.ok) throw new Error("Could not load submission.");
-
                     const data = await res.json();
                     reviewData = data;
 
-                    // Format Date
+                    if (data.is_archived) {
+                        // Hide the black review actions bar entirely for archived forms
+                        document.getElementById('reviewActions').style.display = 'none';
+                        document.body.style.paddingTop = '40px';
+
+                        // Add a read-only watermark or banner
+                        const roBanner = document.createElement('div');
+                        roBanner.style.cssText = "background:#6c757d; color:white; padding:10px; text-align:center; font-weight:bold; border-radius:6px; margin-bottom:20px;";
+                        roBanner.innerText = "ARCHIVED RECORD (READ-ONLY)";
+                        document.querySelector('.form-header').prepend(roBanner);
+                    }
+
                     const formattedDate = new Date(data.submittedAt).toLocaleString(appLocale, {
                         timeZone: appTimezone,
                         year: 'numeric', month: 'long', day: 'numeric',
                         hour: '2-digit', minute: '2-digit'
                     });
+                    // --- COMPREHENSIVE HEADER RENDER ---
+                    const headerPanel = document.createElement('div');
+                    headerPanel.style.cssText = "background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:20px; margin-bottom:30px; box-shadow: 0 2px 8px var(--shadow);";
 
-                    // Inject Review UI
-                    const infoDiv = document.createElement('div');
-                    infoDiv.style.cssText = "background:#17a2b8; color:white; padding:15px; border-radius:6px; margin-bottom:20px; font-size:1em; text-align:center; font-weight:bold;";
-                    infoDiv.innerHTML = `REVIEW MODE &bull; Submitted on ${formattedDate}`;
-                    document.querySelector('.form-header').insertBefore(infoDiv, document.getElementById('formName'));
-
-                    const contextDiv = document.createElement('div');
-                    contextDiv.style.cssText = "background:var(--bg-hover); padding:10px; border-radius:4px; margin-bottom:15px; border:1px solid var(--border-color); color:var(--text-main);";
+                    const scorePct = data.max_score > 0 ? (data.achieved_score / data.max_score * 100).toFixed(1) : 0;
+                    let reqPoints, reqPct;
+                    if (data.min_score_type === 'percentage') {
+                        reqPct = data.min_score;
+                        reqPoints = (data.max_score * (data.min_score / 100)).toFixed(1);
+                    } else {
+                        reqPoints = data.min_score;
+                        reqPct = data.max_score > 0 ? (data.min_score / data.max_score * 100).toFixed(1) : 0;
+                    }
 
                     let statusColor = '#6c757d';
                     const st = (data.form_status || '').toLowerCase();
-                    if (st === 'accepted') statusColor = '#28a745';
-                    else if (st === 'rejected') statusColor = '#dc3545';
-                    else if (st === 'submitted') statusColor = '#007bff';
+                    if (st === 'accepted') statusColor = 'var(--success)';
+                    else if (st === 'rejected') statusColor = 'var(--danger)';
+                    else if (st === 'submitted') statusColor = 'var(--primary)';
 
-                    contextDiv.innerHTML = `
-                        <strong>Member:</strong> ${data.member} &nbsp;|&nbsp; 
-                        <strong>Skill:</strong> ${data.skill} &nbsp;|&nbsp; 
-                        <strong>Attempt:</strong> ${data.tries || 1} &nbsp;|&nbsp; 
-                        <strong>Status:</strong> <span style="color:${statusColor}; font-weight:bold;">${st.toUpperCase()}</span>
+                    headerPanel.innerHTML = `
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 14px;">
+                            <div>
+                                <p style="margin:5px 0;"><strong>Member:</strong> ${data.member}</p>
+                                <p style="margin:5px 0;"><strong>Skill:</strong> ${data.skill}</p>
+                                <p style="margin:5px 0;"><strong>Status:</strong> <span style="color:${statusColor}; font-weight:bold; text-transform:uppercase;">${st}</span></p>
+                            </div>
+                            <div style="border-left: 1px solid var(--border-color); padding-left: 20px;">
+                                <p style="margin:5px 0;"><strong>Achieved:</strong> ${data.achieved_score} / ${data.max_score} points (${scorePct}%)</p>
+                                <p style="margin:5px 0;"><strong>Required:</strong> ${reqPoints} pts (${reqPct}%)</p>
+                                <p style="margin:5px 0;"><strong>Attempt:</strong> ${data.tries} of ${data.max_tries}</p>
+                            </div>
+                        </div>
+                        <div style="margin-top:15px; padding-top:10px; border-top:1px dashed var(--border-color); font-size:0.85em; color:var(--text-muted); text-align:center;">
+                            Submission Date: ${formattedDate}
+                        </div>
+                        <div style="margin-top:15px; padding-top:10px; border-top:1px dashed var(--border-color); font-size:0.8em; color:#666; font-style:italic; text-align:center;">
+                           <span style="font-style:normal; font-size:1.8em">⚠️</span>  The answers displayed in this review reflect only the last attempt for the current form submission.
+                        </div>
+
                     `;
-                    document.querySelector('.form-header').insertBefore(contextDiv, document.getElementById('formName'));
+                    document.querySelector('.form-header').insertBefore(headerPanel, document.getElementById('formName'));
 
-                    if (data.form_status === 'submitted') {
+                    if (!data.is_archived && ['accepted', 'rejected'].includes(data.form_status)) {
                         document.getElementById('reviewActions').style.display = 'block';
                         document.body.style.paddingTop = '0';
+                        if (data.form_status === 'rejected') document.getElementById('btnResend').style.display = 'inline-block';
                     }
-
+                    document.title = `${data.name} - ${data.member}`;
                     renderForm(data);
                     fillForm(data.submittedData);
                     disableForm();
+                    // [REINFORCED GUARD] Only show management bar if NOT archived
+                    if (!data.is_archived && ['accepted', 'rejected'].includes(data.form_status)) {
+                        document.getElementById('reviewActions').style.display = 'block';
+                        document.body.style.paddingTop = '0';
+                        if (data.form_status === 'rejected') document.getElementById('btnResend').style.display = 'inline-block';
+                    }
+
 
                 } catch (e) { showError(e.message); }
-
             } else if (code) {
-                // --- LIVE MODE (Public) ---
                 submissionCode = code;
                 try {
                     const res = await fetch(`/api/live-forms/access/${code}`);
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || "Unable to load form.");
+                    if (!res.ok) throw new Error(data.error);
 
-                    // [NEW] Inject Information Box for the Member
-                    const contextDiv = document.createElement('div');
-                    contextDiv.style.cssText = "background:var(--bg-hover); padding:12px 15px; border-radius:6px; margin-bottom:20px; border:1px solid var(--border-color); color:var(--text-main); font-size:0.95em;";
-                    contextDiv.innerHTML = `
-                            <strong>Member:</strong> ${data.member} &nbsp;|&nbsp; 
-                            <strong>Skill:</strong> ${data.skill} &nbsp;|&nbsp; 
-                            <strong>Attempt:</strong> ${data.tries || 1}
-                        `;
-                    // Insert at the top of the form header
-                    document.querySelector('.form-header').insertBefore(contextDiv, document.getElementById('formName'));
+                    // --- PUBLIC LIVE MODE HEADER ---
+                    const publicHeader = document.createElement('div');
+                    publicHeader.style.cssText = "background:var(--bg-hover); border:1px solid var(--border-color); border-radius:8px; padding:20px; margin-bottom:25px; box-shadow: 0 2px 8px var(--shadow);";
+
+                    publicHeader.innerHTML = `
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:15px;">
+                                    <div>
+                                        <p style="margin:0; font-size:0.9em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Member Required</p>
+                                        <p style="margin:2px 0 0 0; font-size:1.2em; font-weight:bold; color:var(--primary);">${data.member}</p>
+                                    </div>
+                                    <div>
+                                        <p style="margin:0; font-size:0.9em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Skill Verification</p>
+                                        <p style="margin:2px 0 0 0; font-size:1.1em; font-weight:600;">${data.skill}</p>
+                                    </div>
+                                    <div style="text-align:right;">
+                                        <p style="margin:0; font-size:0.9em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Max Attempts Allowed</p>
+                                        <p style="margin:2px 0 0 0; font-size:1.1em; font-weight:600;">${data.maxTries || 'N/A'}</p>
+                                    </div>
+                                </div>
+                                <div style="margin-top:15px; padding-top:10px; border-top:1px dashed var(--border-color); font-size:0.8em; color:#666; font-style:italic; text-align:center;">
+                                    <span style="font-style:normal; font-size:1.8em">⚠️</span> Important: Do not submit this form if you are not the member listed above. Submissions are tracked and audited.
+                                </div>
+                            `;
+                    // Insert into form header
+                    const headerContainer = document.querySelector('.form-header');
+                    headerContainer.insertBefore(publicHeader, document.getElementById('formName'));
 
                     renderForm(data);
-                } catch (e) { showError(e.message); }
 
+                } catch (e) { showError(e.message); }
             } else if (publicId) {
-                // --- PREVIEW MODE ---
                 try {
                     const res = await fetch(`/api/forms/public/${publicId}`);
-                    if (!res.ok) throw new Error("Form not found.");
-                    const form = await res.json();
-                    renderForm(form);
+                    const formData = await res.json();
+                    document.title = formData.name;
+                    renderForm(formData, isPreview); // Pass the isPreview flag
                 } catch (e) { showError(e.message); }
-            } else {
-                showError("No form specified.");
-            }
+            } else showError("No form specified.");
         });
 
-        function renderForm(form) {
+        function renderForm(form, isPreview = false) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('formContent').style.display = 'block';
             document.getElementById('formName').innerText = form.name;
             document.getElementById('formIntro').innerHTML = form.intro;
-            document.title = form.name + " - FENZ OSM";
+
+            // Add review-mode to body to activate the .review-correct CSS rules
+            if (isPreview) document.body.classList.add('review-mode');
 
             const container = document.getElementById('questionsContainer');
-            container.innerHTML = ''; // Clear existing
+            container.innerHTML = '';
 
             (form.structure || []).forEach(field => {
                 const div = document.createElement('div');
                 div.className = 'question-card';
                 let labelHtml = `<div class="question-text">${field.description}</div>`;
-                if (field.required) labelHtml += `<div style="text-align:right; margin-bottom:5px;"><span style="color:#dc3545; font-size:11px; font-weight:bold; background:#ffe6e6; padding:2px 6px; border-radius:4px;">* Required</span></div>`;
+                if (field.required) labelHtml += `<div style="text-align:right;"><span style="color:#dc3545; font-size:11px; font-weight:bold;">* Required</span></div>`;
 
                 let inputHtml = '';
-                const fieldName = field.id;
+                const correct = field.correctAnswer;
+                const corrArr = (Array.isArray(correct) ? correct : [correct]).map(v => String(v || '').trim());
 
                 switch (field.type) {
                     case 'text_multi':
-                        // Added 'box-sizing: border-box;' to prevent right-edge clipping
-                        inputHtml = `<textarea name="${fieldName}" rows="4" 
-            style="width:100%; box-sizing: border-box; padding:12px; border-radius:4px; border:1px solid #ccc; font-family:inherit;" 
-            ${field.required ? 'required' : ''} 
-            placeholder="Type your answer here..."></textarea>`;
+                        inputHtml = `<textarea name="${field.id}" rows="4" style="width:100%; box-sizing: border-box; padding:12px;"></textarea>`;
+                        if (isPreview && correct) {
+                            inputHtml += `<div class="reference-box" style="background:#e8f0fe; border-left:4px solid #007bff; padding:12px; margin-top:10px;"><strong>Correct Answer (Reference):</strong><br>${correct}</div>`;
+                        }
                         break;
                     case 'radio':
-                        if (field.renderAs === 'dropdown') {
-                            inputHtml += `<select name="${fieldName}" style="width:100%; padding:10px; border-radius:4px; border:1px solid #ccc; font-size:16px; background:white;" ${field.required ? 'required' : ''}><option value="" disabled selected>-- Select an Option --</option>`;
-                            if (field.options) field.options.forEach(opt => inputHtml += `<option value="${opt}">${opt}</option>`);
-                            inputHtml += `</select>`;
-                        } else {
-                            if (field.options) field.options.forEach(opt => inputHtml += `<label class="option-label"><input type="radio" name="${fieldName}" value="${opt}" ${field.required ? 'required' : ''}> ${opt}</label>`);
-                        }
+                    case 'boolean':
+                        const opts = field.type === 'boolean' ? ["Yes", "No"] : field.options;
+                        opts.forEach(o => {
+                            const isCorrect = isPreview && corrArr.includes(o);
+                            inputHtml += `<label class="option-label ${isCorrect ? 'review-correct' : ''}">
+                        <input type="radio" name="${field.id}" value="${o}" ${isCorrect ? 'checked' : ''}> ${o}
+                    </label>`;
+                        });
                         break;
                     case 'checkboxes':
-                        if (field.options) field.options.forEach(opt => inputHtml += `<label class="option-label"><input type="checkbox" name="${fieldName}[]" value="${opt}"> ${opt}</label>`);
-                        break;
-                    case 'boolean':
-                        if (field.renderAs === 'dropdown') {
-                            // Render as a searchable/standard dropdown menu
-                            inputHtml = `<select name="${fieldName}" style="width:100%; padding:10px; border-radius:4px; border:1px solid #ccc; font-size:16px; background:white;" ${field.required ? 'required' : ''}>
-                <option value="" disabled selected>-- Select an Option --</option>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-            </select>`;
-                        } else {
-                            // Standard Radio Button group logic
-                            inputHtml = `
-                <label class="option-label">
-                    <input type="radio" name="${fieldName}" value="Yes" ${field.required ? 'required' : ''}> Yes
-                </label>
-                <label class="option-label">
-                    <input type="radio" name="${fieldName}" value="No"> No
-                </label>`;
-                        }
+                        field.options.forEach(o => {
+                            const isCorrect = isPreview && corrArr.includes(o);
+                            inputHtml += `<label class="option-label ${isCorrect ? 'review-correct' : ''}">
+                        <input type="checkbox" name="${field.id}[]" value="${o}" ${isCorrect ? 'checked' : ''}> ${o}
+                    </label>`;
+                        });
                         break;
                 }
                 div.innerHTML = labelHtml + inputHtml;
                 container.appendChild(div);
             });
         }
-
         function fillForm(submittedData) {
             if (!reviewData || !submittedData) return;
-
             reviewData.structure.forEach(field => {
-                const submitted = submittedData[field.id] || submittedData[field.id + '[]'];
+                const rawSub = submittedData[field.id] || submittedData[field.id + '[]'];
+                const subArr = (Array.isArray(rawSub) ? rawSub : [rawSub]).filter(v => v !== undefined && v !== null && v !== "").map(v => String(v).trim());
                 const correct = field.correctAnswer;
+                const corrArr = (Array.isArray(correct) ? correct : [correct]).filter(v => v !== undefined && v !== null).map(v => String(v).trim());
                 const elements = document.querySelectorAll(`[name="${field.id}"], [name="${field.id}[]"]`);
+                const isUnanswered = subArr.length === 0;
 
-                // Check if the question was left unanswered
-                const isUnanswered = (submitted === undefined || submitted === null || submitted === "" || (Array.isArray(submitted) && submitted.length === 0));
-
-                if (field.type === 'radio' || field.type === 'boolean') {
-                    if (field.renderAs === 'dropdown') {
-                        const selectEl = elements[0];
-                        if (selectEl) {
-                            if (isUnanswered) {
-                                selectEl.classList.add('review-unanswered');
-                            } else {
-                                selectEl.value = submitted;
-                                if (submitted === correct) {
-                                    selectEl.style.backgroundColor = "#d4edda";
-                                    selectEl.style.borderColor = "#28a745";
-                                } else {
-                                    selectEl.style.backgroundColor = "#f8d7da";
-                                    selectEl.style.borderColor = "#dc3545";
-                                    const refBox = document.createElement('div');
-                                    refBox.className = 'reference-box';
-                                    refBox.innerHTML = `<strong>Correct Answer:</strong><br>${correct}`;
-                                    selectEl.parentNode.appendChild(refBox);
-                                }
+                elements.forEach(el => {
+                    const label = el.closest('.option-label');
+                    if (el.tagName === 'SELECT') {
+                        if (isUnanswered) el.classList.add('review-unanswered');
+                        else {
+                            const val = subArr[0]; el.value = val;
+                            const isCorrect = corrArr.includes(val);
+                            el.style.backgroundColor = isCorrect ? "#d4edda" : "#f8d7da";
+                            if (!isCorrect) {
+                                const refBox = document.createElement('div'); refBox.className = 'reference-box';
+                                refBox.innerHTML = `<strong>Correct Answer:</strong> ${corrArr.join(', ')}`;
+                                el.parentNode.appendChild(refBox);
                             }
                         }
-                    } else {
-                        elements.forEach(el => {
-                            const label = el.closest('.option-label');
-                            if (!label) return;
-
-                            if (isUnanswered) {
-                                label.classList.add('review-unanswered');
-                            } else if (el.value === submitted) {
-                                el.checked = true;
-                                label.classList.add(submitted === correct ? 'review-correct' : 'review-wrong');
-                            }
-
-                            // Show expected border even if unanswered
-                            if (el.value === correct && submitted !== correct) {
-                                label.classList.add('expected-border');
-                            }
-                        });
+                    } else if (label) {
+                        const val = String(el.value).trim();
+                        if (isUnanswered) label.classList.add('review-unanswered');
+                        else if (subArr.includes(val)) {
+                            el.checked = true;
+                            label.classList.add(corrArr.includes(val) ? 'review-correct' : 'review-wrong');
+                        }
+                        if (corrArr.includes(val) && !subArr.includes(val)) label.classList.add('expected-border');
                     }
-                }
-                else if (field.type === 'checkboxes') {
-                    const subArr = Array.isArray(submitted) ? submitted : (submitted ? [submitted] : []);
-                    const corrArr = Array.isArray(correct) ? correct : [];
+                });
 
-                    elements.forEach(el => {
-                        const label = el.closest('.option-label');
-                        if (!label) return;
-
-                        if (isUnanswered) {
-                            label.classList.add('review-unanswered');
-                        } else {
-                            const isSelected = subArr.includes(el.value);
-                            const isCorrect = corrArr.includes(el.value);
-
-                            if (isSelected) {
-                                el.checked = true;
-                                label.classList.add(isCorrect ? 'review-correct' : 'review-wrong');
-                            }
-                        }
-
-                        // Show expected border for correct answers the member missed
-                        if (corrArr.includes(el.value) && !subArr.includes(el.value)) {
-                            label.classList.add('expected-border');
-                        }
-                    });
-                }
-                else if (field.type === 'text_multi') {
+                if (field.type === 'text_multi') {
                     const ta = document.querySelector(`textarea[name="${field.id}"]`);
                     if (ta) {
-                        if (isUnanswered) {
-                            ta.classList.add('review-unanswered');
-                            ta.placeholder = "(No answer provided)";
-                        } else {
-                            ta.value = submitted;
-                        }
-
-                        const refBox = document.createElement('div');
-                        refBox.className = 'reference-box';
-                        refBox.innerHTML = `<strong>Admin Reference Answer:</strong><br>${field.correctAnswer || 'No reference provided.'}`;
+                        if (isUnanswered) ta.classList.add('review-unanswered');
+                        else ta.value = subArr.join('\n');
+                        const refBox = document.createElement('div'); refBox.className = 'reference-box';
+                        refBox.innerHTML = `<strong>Admin Reference Answer:</strong><br>${corrArr.join(', ') || 'No reference provided.'}`;
                         ta.parentNode.appendChild(refBox);
                     }
                 }
             });
         }
-
-        function disableForm() {
-            const form = document.getElementById('submissionForm');
-            const btn = form.querySelector('button[type="submit"]');
-            if (btn) btn.style.display = 'none';
-            form.querySelectorAll('input, textarea, select').forEach(el => el.disabled = true);
-        }
-
-        function showError(msg) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('formContent').style.display = 'none';
-            document.getElementById('errorState').style.display = 'block';
-            document.getElementById('errorMsg').innerText = msg;
-        }
+        // public/forms-view.html - Inside the script block
 
         document.getElementById('submissionForm').addEventListener('submit', async (e) => {
+            // 1. PREVENT DEFAULT GET SUBMISSION
             e.preventDefault();
+
+            // Preview Mode check
             if (submissionCode === null) {
                 if (window.showToast) showToast("Form Validated! (Preview Mode)", "success");
                 return;
             }
+
+            // 2. CAPTURE DATA
             const formData = new FormData(e.target);
             const data = {};
             for (let [key, value] of formData.entries()) {
@@ -673,109 +599,94 @@
 
             const btn = e.target.querySelector('.btn-submit');
             const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = "Submitting...";
+            const retryAlert = document.getElementById('retryAlert');
 
-            if (submissionCode) {
-                try {
-                    const res = await fetch(`/api/live-forms/submit/${submissionCode}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-                    if (res.ok) {
-                        document.getElementById('formContent').innerHTML = `
-                            <div style="text-align:center; padding:40px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                <h2 style="color:#28a745; margin-top:20px;">Thank You!</h2>
-                                <p style="color:#555; margin-bottom:20px;">Your skill verification has been submitted successfully.</p>
-                                <button onclick="window.close()" style="padding:10px 20px; border:none; background:#6c757d; color:white; border-radius:4px; cursor:pointer;">Close Window</button>
-                            </div>
-                        `;
-                    } else {
-                        const err = await res.json();
-                        throw new Error(err.error || "Submission failed");
-                    }
-                } catch (err) {
-                    showToast(err.message, "error");
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+            if (retryAlert) retryAlert.style.display = 'none';
+
+            try {
+                // 3. EXECUTE POST REQUEST
+                const res = await fetch(`/api/live-forms/submit/${submissionCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+
+                if (res.ok) {
+                    // Success logic...
+                    const isSuccess = result.status === 'accepted';
+                    const icon = isSuccess
+                        ? '<svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#28a745" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+                        : '<svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#dc3545" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+
+                    document.getElementById('formContent').innerHTML = `
+                <div style="text-align:center; padding:40px;">
+                    ${icon}
+                    <h2 style="color:${isSuccess ? '#28a745' : '#dc3545'}; margin-top:20px;">
+                        ${isSuccess ? 'Verification Accepted' : 'Verification Failed'}
+                    </h2>
+                    <p style="color:#555; margin-bottom:20px;">
+                        ${isSuccess ? 'Your competency has been automatically verified.' : 'Max attempts used. Your status will be reviewed by the administrator.'}
+                    </p>
+                    <button onclick="window.close()" style="padding:10px 20px; border:none; background:#6c757d; color:white; border-radius:4px; cursor:pointer;">Close Window</button>
+                </div>`;
+                }
+                else if (res.status === 400 && result.status === 'retry') {
+                    // Retry logic...
+                    document.getElementById('retryMsg').textContent = result.message;
+                    document.getElementById('tryCounter').textContent = `Attempt ${result.currentTry} of ${result.maxAllowed} failed.`;
+                    document.getElementById('retryAlert').style.display = 'block';
                     btn.disabled = false;
                     btn.innerText = originalText;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
-            } else {
-                if (window.showToast) showToast("Form Validated! (Preview Mode)", "success");
-                setTimeout(() => { window.close(); }, 1500);
+                else {
+                    throw new Error(result.error || "Submission failed");
+                }
+            } catch (err) {
+                if (window.showToast) showToast(err.message, "error");
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
         });
+        function disableForm() {
+            document.getElementById('submissionForm').querySelectorAll('input, textarea, select, button').forEach(el => el.disabled = true); document.querySelector('.btn-submit').style.display = 'none';
+        }
+        function showError(msg) { document.getElementById('loading').style.display = 'none'; document.getElementById('errorState').style.display = 'block'; document.getElementById('errorMsg').innerText = msg; }
 
-
-        // --- REVIEW MODAL LOGIC (OPEN/SUBMIT) ---
         function openReviewModal(action) {
             currentAction = action;
-            const btn = document.getElementById('btnConfirmReview');
-            const modal = document.getElementById('reviewModal');
-
-            // Populate Member/Skill Info
             document.getElementById('revMember').textContent = reviewData.member;
             document.getElementById('revSkill').textContent = reviewData.skill;
             document.getElementById('revDate').textContent = new Date(reviewData.submittedAt).toLocaleDateString(appLocale);
             document.getElementById('revTries').textContent = reviewData.tries || '1';
-
-            // Clear previous comment
-            document.getElementById('revCustomComment').value = "";
-
-            if (action === 'accept') {
-                document.getElementById('reviewModalTitle').textContent = "Accept Submission";
-                document.getElementById('rejectOptions').style.display = 'none';
-                btn.style.backgroundColor = '#28a745';
-                btn.textContent = "Accept & Notify";
-            } else {
-                document.getElementById('reviewModalTitle').textContent = "Reject Submission";
-                document.getElementById('rejectOptions').style.display = 'block';
-                btn.style.backgroundColor = '#dc3545';
-                btn.textContent = "Reject & Notify";
-            }
-
             const prefs = (reviewData.member_prefs || '').split(',');
-
-            // Set Email state
-            const emailCb = document.getElementById('revEmailCb');
-            if (reviewData.member_email) {
-                emailCb.disabled = false;
-                emailCb.checked = prefs.includes('email');
-            } else {
-                emailCb.disabled = true;
-                emailCb.checked = false;
-            }
-
-            // Set WA state
-            const waCb = document.getElementById('revWaCb');
-            if (reviewData.member_mobile) {
-                waCb.disabled = false;
-                waCb.checked = prefs.includes('whatsapp');
-            } else {
-                waCb.disabled = true;
-                waCb.checked = false;
-            }
-
-            // [CRITICAL FIX] Call the visibility update manually because 
-            // setting .checked via code doesn't fire the 'change' event
+            document.getElementById('revEmailCb').checked = reviewData.member_email && prefs.includes('email');
+            document.getElementById('revWaCb').checked = reviewData.member_mobile && prefs.includes('whatsapp');
+            document.getElementById('rejectOptions').style.display = action === 'reject' ? 'block' : 'none';
             updateCommentVisibility();
-
-            modal.style.display = 'block';
+            document.getElementById('reviewModal').style.display = 'block';
         }
-        async function submitReviewAction() {
-            if (!reviewData.id || !currentAction) return;
 
-            const btn = document.getElementById('btnConfirmReview');
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = "Processing...";
+        // public/forms-view.html
+
+        async function submitReviewAction() {
+            const modal = document.getElementById('reviewModal');
+            const btnConfirm = document.getElementById('btnConfirmReview');
+            const inputs = modal.querySelectorAll('input, textarea, button');
+
+            //  Prevent multiple clicks and field changes during processing
+            inputs.forEach(el => el.disabled = true);
+            btnConfirm.innerText = "Processing...";
 
             const payload = {
                 notifyEmail: document.getElementById('revEmailCb').checked,
                 notifyWa: document.getElementById('revWaCb').checked,
-                customComment: document.getElementById('revCustomComment').value, // [NEW] Added to payload
-                generateNew: currentAction === 'reject' ? document.getElementById('revGenerateNew').checked : false
+                customComment: document.getElementById('revCustomComment').value,
+                generateNew: document.getElementById('revGenerateNew').checked
             };
 
             try {
@@ -786,76 +697,92 @@
                 });
 
                 if (res.ok) {
-                    showToast("Action completed successfully", "success");
-                    document.getElementById('reviewModal').style.display = 'none';
-                    document.getElementById('reviewActions').style.display = 'none';
-                    setTimeout(() => window.close(), 1500);
+                    if (window.showToast) showToast("Submission processed successfully", "success");
+                    // Allow time for the toast to be seen before closing
+                    setTimeout(() => window.close(), 1000);
                 } else {
                     const err = await res.json();
-                    throw new Error(err.error || "Action failed");
+                    throw new Error(err.error || "Failed to process review");
                 }
             } catch (e) {
-                showToast(e.message, "error");
-                btn.disabled = false;
-                btn.textContent = originalText;
+                if (window.showToast) showToast(e.message, "error");
+                // Re-enable if there's an error so the admin can try again
+                inputs.forEach(el => el.disabled = false);
+                btnConfirm.innerText = "Confirm";
             }
         }
+        async function archiveSubmission() {
+            // --- USE CUSTOM MODAL ---
+            const confirmed = await confirmAction(
+                "Archive Submission",
+                "Are you sure you want to move this record to the Archive Library?"
+            );
 
-        async function exportToPdf() {
-            const btn = document.getElementById('btnExportPdf');
-            const originalContent = btn.innerHTML;
-
-            btn.disabled = true;
-            btn.innerHTML = '<div class="spinner" style="width:14px; height:14px; border-width:2px;"></div>';
-
-            // Clone form content to avoid disrupting the live view
-            const content = document.getElementById('formContent').innerHTML;
-            const formTitle = document.getElementById('formName').innerText;
-
-            // Use global CSS variables for PDF consistency
-            const fullHtml = `
-        <html>
-        <head>
-            <style>
-                body { font-family: sans-serif; padding: 20px; }
-                .form-header { border-bottom: 2px solid #333; margin-bottom: 20px; }
-                .question-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; page-break-inside: avoid; }
-                .reference-box { background: #f0f7ff; border-left: 4px solid #007bff; padding: 10px; margin-top: 10px; font-size: 0.9em; }
-                /* Replicate Review Highlighting */
-                .review-correct { background-color: #d4edda; }
-                .review-wrong { background-color: #f8d7da; }
-            </style>
-        </head>
-        <body>${content}</body>
-        </html>
-    `;
+            if (!confirmed) return;
 
             try {
-                const res = await fetch('/api/reports/pdf', {
-                    method: 'POST',
+                const res = await fetch(`/api/live-forms/${reviewData.id}`, {
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ html: fullHtml })
+                    // --- PASS isArchived BOOLEAN ---
+                    body: JSON.stringify({ isArchived: true })
                 });
 
-                if (!res.ok) throw new Error("PDF generation failed");
-
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `OSM-Verification-${formTitle.replace(/\s+/g, '-')}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                if (window.showToast) showToast("PDF generated successfully", "success");
+                if (res.ok) {
+                    // Use custom toast if available
+                    if (window.showToast) showToast("Record archived", "success");
+                    setTimeout(() => window.close(), 1000);
+                } else {
+                    throw new Error("Server error while archiving");
+                }
             } catch (e) {
                 if (window.showToast) showToast(e.message, "error");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalContent;
             }
         }
+        function highlightCorrectAnswers(formData) {
+            // Enable existing CSS rules for correct/wrong answers
+            document.body.classList.add('review-mode');
 
+            formData.structure.forEach(field => {
+                const correct = field.correctAnswer;
+                if (correct === null || correct === undefined) return;
+
+                const corrArr = (Array.isArray(correct) ? correct : [correct])
+                    .map(v => String(v).trim());
+
+                // Select all input elements for this question
+                const elements = document.querySelectorAll(`[name="${field.id}"], [name="${field.id}[]"]`);
+
+                elements.forEach(el => {
+                    const label = el.closest('.option-label');
+                    const val = String(el.value).trim();
+
+                    if (label && corrArr.includes(val)) {
+                        label.classList.add('review-correct'); // Green background
+                        el.checked = true; // Visual selection
+                    }
+
+                    // Handle Select dropdowns
+                    if (el.tagName === 'SELECT' && corrArr.includes(val)) {
+                        el.style.backgroundColor = "#d4edda";
+                        el.value = val;
+                    }
+                });
+
+                // Populate Reference Answers for text areas
+                if (field.type === 'text_multi') {
+                    const ta = document.querySelector(`textarea[name="${field.id}"]`);
+                    if (ta) {
+                        ta.value = corrArr.join('\n');
+                        ta.style.backgroundColor = "#e8f0fe";
+                        const refBox = document.createElement('div');
+                        refBox.className = 'reference-box';
+                        refBox.innerHTML = `<strong>Correct Answer (Reference):</strong><br>${field.correctAnswer}`;
+                        ta.parentNode.appendChild(refBox);
+                    }
+                }
+            });
+        }
     </script>
 </body>
 

@@ -121,7 +121,7 @@
             gap: 10px;
             flex-wrap: wrap;
             /* [FIX] Symmetric padding to align buttons with header text */
-            padding: 10px 20px; 
+            padding: 10px 20px;
             /* Optional: subtle background to differentiate from content area */
             background: var(--bg-hover);
             border-bottom: 1px solid var(--border-color);
@@ -479,12 +479,42 @@
                     <div
                         style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; width: 100%;">
                         <div style="flex: 1;">
-                            <textarea id="formName" placeholder="Form Name" rows="1" 
+                            <textarea id="formName" placeholder="Form Name" rows="1"
                                 style="font-size: 24px; font-weight: bold; width: 100%; border: none; background: transparent; 
                                     padding: 5px; border-bottom: 1px dashed var(--border-color); color: var(--text-main); 
                                     resize: none; overflow: hidden; font-family: inherit; line-height: 1.4; 
                                     display: block; min-height: 36px; height: auto; white-space: pre-wrap; word-wrap: break-word;"
-                                oninput="this.style.height='';this.style.height=this.scrollHeight+'px'"></textarea>                        </div>
+                                oninput="this.style.height='';this.style.height=this.scrollHeight+'px'"></textarea>
+                                <div id="thresholdWarning" style="color: var(--danger); font-size: 11px; font-weight: bold; margin-top: 5px; display: none;">
+                                    ⚠️ Threshold exceeds maximum possible score!
+                                </div> 
+                                <div
+                                    style="display:flex; gap:20px; align-items:center; margin-top:10px; background:var(--bg-body); padding:10px; border-radius:6px; border:1px solid var(--border-color);">
+                                   
+                                    <div class="form-group" style="margin-bottom:0 !important; flex:1; border-left: 1px solid var(--border-color); padding-left: 20px;">
+                                        <label style="margin-bottom:5px !important; color: var(--primary);">Max Score Achievable</label>
+                                        <div style="font-size: 24px; font-weight: bold; color: var(--text-main);">
+                                            <span id="maxScoreDisplay">0</span> <span style="font-size: 14px; color: var(--text-muted);">Points</span>
+                                        </div>
+                                    </div>                            
+                                    <div class="form-group" style="margin-bottom:0 !important; flex:1;">
+                                        <label style="margin-bottom:5px !important;">Passing Threshold</label>
+                                        <div style="display:flex; gap:5px;">
+                                            <input type="number" id="minScore" style="width:80px;" placeholder="e.g. 80"
+                                                required>
+                                            <select id="minScoreType" style="width:120px;">
+                                                <option value="percentage">Percent (%)</option>
+                                                <option value="number">Raw Points</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:0 !important; flex:1;">
+                                        <label style="margin-bottom:5px !important;">Max Attempts</label>
+                                        <input type="number" id="maxTries" style="width:100%;" min="1" value="1" required>
+                                    </div>
+                                </div>
+                            </div>
+
                         <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 10px;">
                             <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Active</span>
                             <label class="switch">
@@ -499,6 +529,10 @@
                 <div class="editor-toolbar">
                     <button onclick="previewForm()" class="btn-sm"
                         style="background:#6f42c1; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer;">Preview</button>
+                    <button onclick="testScoring()" class="btn-sm" 
+                        style="background:var(--info); color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer;">
+                        Test
+                    </button>
                     <button onclick="saveForm()" class="btn-sm"
                         style="background:var(--primary); color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer;">Save</button>
 
@@ -620,28 +654,28 @@
                 <div class="code-block"
                     style="background:#f8f9fa; padding:15px; border-radius:4px; border:1px solid #ddd; font-family:monospace; font-size:12px; white-space:pre-wrap; cursor:pointer; margin: 15px 0;"
                     onclick="copyAiPrompt()" title="Click to copy">
-**Role:** You are an expert technical analyst for Fire and Emergency New Zealand (FENZ).
+                    **Role:** You are an expert technical analyst for Fire and Emergency New Zealand (FENZ).
 
-**Task:** Analyze the attached document(s) and generate a comprehensive skill verification
-questionnaire in JSON format.
+                    **Task:** Analyze the attached document(s) and generate a comprehensive skill verification
+                    questionnaire in JSON format.
 
-**JSON Schema Specification:**
-The output must be a single JSON object with these keys:
-- `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
-- `name`: Concise title for the form (e.g., "OI (IS1) - Operational Safety").
-- `intro`: Brief HTML introduction explaining the purpose.
-- `structure`: An array of question objects, each containing:
-    - `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
-    - `type`: One of: `text_multi` (Paragraph), `radio` (Single choice), `checkboxes` (Multiple
-    response), or `boolean` (Yes/No).
-    - `description`: The question text (HTML allowed).
-    - `required`: Boolean (set to `true`).
-    - `options`: Array of strings (for `radio` and `checkboxes` only).
-    - `renderAs`: String (`radio` or `dropdown`).
-    - `correctAnswer`: String (or Array for checkboxes) representing the accurate response based on
-the document.
+                    **JSON Schema Specification:**
+                    The output must be a single JSON object with these keys:
+                    - `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
+                    - `name`: Concise title for the form (e.g., "OI (IS1) - Operational Safety").
+                    - `intro`: Brief HTML introduction explaining the purpose.
+                    - `structure`: An array of question objects, each containing:
+                    - `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
+                    - `type`: One of: `text_multi` (Paragraph), `radio` (Single choice), `checkboxes` (Multiple
+                    response), or `boolean` (Yes/No).
+                    - `description`: The question text (HTML allowed).
+                    - `required`: Boolean (set to `true`).
+                    - `options`: Array of strings (for `radio` and `checkboxes` only).
+                    - `renderAs`: String (`radio` or `dropdown`).
+                    - `correctAnswer`: String (or Array for checkboxes) representing the accurate response based on
+                    the document.
 
-**Constraint:** Provide ONLY the raw JSON object. No conversational text.
+                    **Constraint:** Provide ONLY the raw JSON object. No conversational text.
                 </div>
                 <p style="font-size: 0.85em; color: #666;"><em>Tip: Clicking the box above copies the prompt. Paste
                         it into an AI chat and upload your source PDF/OI.</em></p>
@@ -663,7 +697,28 @@ the document.
             </div>
         </div>
     </div>
+    <div id="testScoringModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="close-btn" onclick="closeModal('testScoringModal')">&times;</span>
+            <h2 style="margin-top:0; color:var(--info);">Scoring Simulator</h2>
+            <p style="font-size:0.9em; color:#666; margin-bottom:20px;">
+                Fill out the form below to test your point weighting and balanced checkbox penalties.
+            </p>
+            
+            <div id="testResultBanner" style="display:none; padding:15px; border-radius:6px; margin-bottom:20px; text-align:center;">
+                <div id="testScoreText" style="font-size: 20px; font-weight: bold;"></div>
+                <div id="testStatusText" style="font-size: 14px; text-transform: uppercase; margin-top:5px;"></div>
+            </div>
 
+            <div id="testFormContainer" style="max-height: 50vh; overflow-y: auto; border: 1px solid #eee; padding: 15px; border-radius: 4px; background: #fcfcfc;">
+                </div>
+
+            <div style="text-align:right; margin-top:20px;">
+                <button onclick="closeModal('testScoringModal')" class="btn-secondary">Close</button>
+                <button onclick="runScoringSimulation()" class="btn-primary" style="background:var(--success);">Calculate Score</button>
+            </div>
+        </div>
+    </div>
     <script src="utils.js"></script>
     <script src="toast.js"></script>
     <script src="theme.js"></script>

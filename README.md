@@ -119,6 +119,16 @@ Open the `.env` file and configure the following parameters:
   * `APP_BASE_URL`: Public URL of your app (e.g., https://osm.station44.nz). Required for valid form links (default http://localhost:3000).   
   * `ACCEPTED_FORM_VISIBILITY_DAYS`: Days an 'Accepted' icon stays on the dashboard after review. (default 30)
 
+#### **Forms Scoring Defaults**
+  * `DEFAULT_MIN_SCORE`: Minimum score required to accept a form (default: 70).
+  * `DEFAULT_MIN_SCORE_TYPE`: Type of score (`percentage` or `number`).
+  * `DEFAULT_MAX_TRIES`: Max number of attempts allowed per form (default: 3).
+
+#### **AI Evaluation Configuration (Optional)**
+  * `ENABLE_AI_EVALUATION`: Set to `true` to enable AI-based paragraph grading.
+  * `AI_PROVIDER`: `gemini` or `ollama`.
+  * `AI_MODEL`: E.g., `gemini-1.5-pro` or `llama3`.
+  * `GEMINI_API_KEY`: Required if provider is Gemini.
 
 #### **OSM Dashboard Connection**
 
@@ -211,7 +221,7 @@ node server.js
 6.  **Reports**: Navigate to the Reports Console to print or export PDF summaries of expiring competencies to display on station noticeboards.
 7.  **Run Dashboard**: Click **Reload Expiring Skills** to fetch live data, then select members to send reminders.
 
-### 4\. Live Forms Workflow
+### 4\. Live Forms Workflow & Automatic Scoring
 
 The application includes a self-contained form system designed to replace external tools like Google Forms.
 
@@ -236,6 +246,10 @@ The application includes a self-contained form system designed to replace extern
     * **Maintenance:** Use **Purge Filtered** to clean up old records or **Download JSON** for offline archiving.
 5.  **Form Validation:** 
     * Administrators can "Test the Form" in Demo Mode directly from the management table to verify layout and variables before final approval.
+6.  **Scoring Simulator:** Use the **Test** button to simulate submissions and verify point weighting.
+7.  **Auto-Grading:** Upon submission, the system calculates the score. If the member passes, it is marked `Accepted`. If they fail but have tries left, it resets to `Sent` for a retry.
+8.  **AI Review:** If **AI Evaluation** is enabled, paragraph answers show an AI-suggested score and justification for the admin to approve.
+
 
 ### 5\. AI-Assisted Form Generation
 To speed up the creation of new verification questionnaires, you can use AI to analyze technical documents and generate compatible JSON definitions. 

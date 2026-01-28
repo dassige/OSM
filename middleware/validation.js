@@ -8,6 +8,9 @@ const formSchema = Joi.object({
   name: Joi.string().required().trim().max(255),
   intro: Joi.string().allow("").default(""),
   status: Joi.number().valid(0, 1).default(0),
+  min_score: Joi.number().min(0).required(),
+  min_score_type: Joi.string().valid("number", "percentage").required(),
+  max_tries: Joi.number().min(1).default(1),
   structure: Joi.array()
     .items(
       Joi.object({
@@ -28,6 +31,7 @@ const formSchema = Joi.object({
         correctAnswer: Joi.alternatives()
           .try(Joi.string().allow("", null), Joi.array().items(Joi.string()))
           .optional(),
+        points: Joi.number().min(0).default(1), // Weight for this question
       })
     )
     .required(),
@@ -47,12 +51,10 @@ const validateForm = (req, res, next) => {
     stripUnknown: true,
   });
   if (error)
-    return res
-      .status(400)
-      .json({
-        error: "Validation Failed",
-        details: error.details.map((d) => d.message),
-      });
+    return res.status(400).json({
+      error: "Validation Failed",
+      details: error.details.map((d) => d.message),
+    });
   req.body = value;
   next();
 };

@@ -30,7 +30,7 @@ function verifyPassword(password, storedHash, storedSalt) {
 async function initDB() {
   if (db) return db;
   const dbPath = getDbPath();
-  
+
   db = await open({
     filename: dbPath,
     driver: sqlite3.Database,
@@ -76,17 +76,20 @@ async function initDB() {
       login_attempts INTEGER DEFAULT 0
     );
 
-    CREATE TABLE IF NOT EXISTS forms (
+CREATE TABLE IF NOT EXISTS forms (
       id INTEGER PRIMARY KEY AUTOINCREMENT, 
       public_id TEXT UNIQUE, 
       name TEXT NOT NULL, 
       status INTEGER DEFAULT 0, 
       intro TEXT, 
       structure TEXT, 
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      min_score REAL DEFAULT ${config.defaultMinScore},
+      min_score_type TEXT DEFAULT '${config.defaultMinScoreType}',
+      max_tries INTEGER DEFAULT ${config.defaultMaxTries}    );
 
-    CREATE TABLE IF NOT EXISTS live_forms (
+
+CREATE TABLE IF NOT EXISTS live_forms (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       skill_id INTEGER NOT NULL,
       skill_expiring_date TEXT,
@@ -94,14 +97,17 @@ async function initDB() {
       skill_form_public_id TEXT,
       form_access_code TEXT UNIQUE,
       form_status TEXT DEFAULT 'sent',  
+      is_archived INTEGER DEFAULT 0,
       form_sent_datetime TEXT DEFAULT CURRENT_TIMESTAMP,
       form_submitted_datetime TEXT,
       form_submitted_data TEXT,
       form_reviewed_datetime TEXT,
       tries INTEGER DEFAULT 1,
+      current_score REAL DEFAULT 0,
       FOREIGN KEY(skill_id) REFERENCES skills(id) ON DELETE CASCADE,
       FOREIGN KEY(member_id) REFERENCES members(id) ON DELETE CASCADE
     );
+  
 
     CREATE TABLE IF NOT EXISTS training_sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -142,7 +148,7 @@ async function initDB() {
   await db.run(
     "INSERT INTO preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING",
     "app_version",
-    packageJson.version
+    packageJson.version,
   );
 
   return db;
@@ -168,7 +174,7 @@ async function verifyAndReplaceDb(newDbPath) {
     tempDb = await open({ filename: newDbPath, driver: sqlite3.Database });
 
     const tables = await tempDb.all(
-      "SELECT name FROM sqlite_master WHERE type='table'"
+      "SELECT name FROM sqlite_master WHERE type='table'",
     );
     const tableNames = tables.map((t) => t.name);
     const requiredTables = ["members", "skills", "preferences"];
@@ -176,7 +182,7 @@ async function verifyAndReplaceDb(newDbPath) {
     const missing = requiredTables.filter((t) => !tableNames.includes(t));
     if (missing.length > 0)
       throw new Error(
-        `Incompatible Database. Missing tables: ${missing.join(", ")}`
+        `Incompatible Database. Missing tables: ${missing.join(", ")}`,
       );
 
     await tempDb.close();
@@ -224,11 +230,11 @@ async function incrementLoginAttempts(email) {
   if (!db) await initDB();
   await db.run(
     `UPDATE users SET login_attempts = login_attempts + 1 WHERE email = ?`,
-    email
+    email,
   );
   return await db.get(
     `SELECT id, login_attempts FROM users WHERE email = ?`,
-    email
+    email,
   );
 }
 
@@ -239,21 +245,21 @@ async function blockUser(userId) {
 async function getUsers() {
   if (!db) await initDB();
   return await db.all(
-    "SELECT id, email, name, role , enabled, blocked, login_attempts FROM users ORDER BY name ASC"
+    "SELECT id, email, name, role , enabled, blocked, login_attempts FROM users ORDER BY name ASC",
   );
 }
 async function getUserById(id) {
   if (!db) await initDB();
   return await db.get(
     "SELECT id, email, name, role , enabled, blocked, login_attempts FROM users WHERE id = ?",
-    id
+    id,
   );
 }
 async function getUserByEmail(email) {
   if (!db) await initDB();
   return await db.get(
     "SELECT id, email, name, role , enabled, blocked, login_attempts FROM users WHERE email = ?",
-    email
+    email,
   );
 }
 async function addUser(email, name, password, role = "simple") {
@@ -266,7 +272,7 @@ async function addUser(email, name, password, role = "simple") {
       name,
       hash,
       salt,
-      role
+      role,
     );
     return result.lastID;
   } catch (e) {
@@ -282,21 +288,22 @@ async function updateUser(id, name, email, role, enabled, blocked) {
       `UPDATE users 
        SET name = ?, email = ?, role = ?, enabled = ?, blocked = ? 
        WHERE id = ?`,
-      name, 
-      email, 
-      role, 
+      name,
+      email,
+      role,
       enabled ? 1 : 0, // Convert booleans to integers for SQLite
-      blocked ? 1 : 0, 
-      id
+      blocked ? 1 : 0,
+      id,
     );
 
     // SECURITY: If manually unblocked, reset their attempt counter
     if (!blocked) {
-        await resetLoginAttempts(id);
+      await resetLoginAttempts(id);
     }
     return true;
   } catch (e) {
-    if (e.message.includes("UNIQUE constraint")) throw new Error("Email already exists");
+    if (e.message.includes("UNIQUE constraint"))
+      throw new Error("Email already exists");
     throw e;
   }
 }
@@ -309,7 +316,7 @@ async function updateUserProfile(id, name, newPassword = null) {
       name,
       hash,
       salt,
-      id
+      id,
     );
   } else {
     await db.run(`UPDATE users SET name = ? WHERE id = ?`, name, id);
@@ -322,7 +329,7 @@ async function adminResetPassword(id, newPassword) {
     `UPDATE users SET hash = ?, salt = ? WHERE id = ?`,
     hash,
     salt,
-    id
+    id,
   );
 }
 async function deleteUser(id) {
@@ -346,7 +353,7 @@ async function addMember(member) {
       member.mobile,
       member.messengerId,
       member.enabled !== false ? 1 : 0,
-      member.notificationPreference || "email"
+      member.notificationPreference || "email",
     )
   ).lastID;
 }
@@ -355,7 +362,7 @@ async function bulkAddMembers(members) {
   await db.exec("BEGIN TRANSACTION");
   try {
     const stmt = await db.prepare(
-      "INSERT INTO members (name, email, mobile, messengerId, enabled, notificationPreference) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT INTO members (name, email, mobile, messengerId, enabled, notificationPreference) VALUES (?, ?, ?, ?, ?, ?)",
     );
     for (const member of members) {
       await stmt.run(
@@ -364,7 +371,7 @@ async function bulkAddMembers(members) {
         member.mobile,
         member.messengerId,
         member.enabled !== false ? 1 : 0,
-        member.notificationPreference || "email"
+        member.notificationPreference || "email",
       );
     }
     await stmt.finalize();
@@ -384,7 +391,7 @@ async function updateMember(id, member) {
     member.messengerId,
     member.enabled ? 1 : 0,
     member.notificationPreference || "email",
-    id
+    id,
   );
 }
 async function deleteMember(id) {
@@ -428,7 +435,7 @@ async function addSkill(skill) {
       skill.url,
       skill.critical_skill ? 1 : 0,
       skill.enabled !== false ? 1 : 0,
-      skill.url_type || "external"
+      skill.url_type || "external",
     )
   ).lastID;
 }
@@ -437,7 +444,7 @@ async function bulkAddSkills(skills) {
   await db.exec("BEGIN TRANSACTION");
   try {
     const stmt = await db.prepare(
-      "INSERT INTO skills (name, url, critical_skill, enabled, url_type) VALUES (?, ?, ?, ?, ?)"
+      "INSERT INTO skills (name, url, critical_skill, enabled, url_type) VALUES (?, ?, ?, ?, ?)",
     );
     for (const skill of skills) {
       await stmt.run(
@@ -445,7 +452,7 @@ async function bulkAddSkills(skills) {
         skill.url,
         skill.critical_skill ? 1 : 0,
         skill.enabled !== false ? 1 : 0,
-        skill.url_type || "external"
+        skill.url_type || "external",
       );
     }
     await stmt.finalize();
@@ -464,7 +471,7 @@ async function updateSkill(id, skill) {
     skill.critical_skill ? 1 : 0,
     skill.enabled ? 1 : 0,
     skill.url_type || "external",
-    id
+    id,
   );
 }
 async function deleteSkill(id) {
@@ -507,14 +514,14 @@ async function savePreference(key, value) {
   await db.run(
     `INSERT INTO preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`,
     key,
-    JSON.stringify(value)
+    JSON.stringify(value),
   );
 }
 async function getAllUserPreferences(userId) {
   if (!db) await initDB();
   const rows = await db.all(
     "SELECT key, value FROM user_preferences WHERE user_id = ?",
-    userId
+    userId,
   );
   const prefs = {};
   rows.forEach((row) => {
@@ -531,7 +538,7 @@ async function getUserPreference(userId, key) {
   const row = await db.get(
     "SELECT value FROM user_preferences WHERE user_id = ? AND key = ?",
     userId,
-    key
+    key,
   );
   try {
     return row ? JSON.parse(row.value) : null;
@@ -545,7 +552,7 @@ async function saveUserPreference(userId, key, value) {
     `INSERT INTO user_preferences (user_id, key, value) VALUES (?, ?, ?) ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value`,
     userId,
     key,
-    JSON.stringify(value)
+    JSON.stringify(value),
   );
 }
 
@@ -554,11 +561,12 @@ async function logEvent(user, type, title, payload) {
   if (!db) await initDB();
   try {
     await db.run(
-      `INSERT INTO event_log (user, event_type, title, payload) VALUES (?, ?, ?, ?)`,
+      `INSERT INTO event_log (user, event_type, title, payload, timestamp) VALUES (?, ?, ?, ?, ?)`,
       user || "System",
       type,
       title,
-      JSON.stringify(payload)
+      JSON.stringify(payload),
+      new Date().toISOString() // Explicitly override DEFAULT CURRENT_TIMESTAMP with ISO+Z
     );
   } catch (e) {
     console.error("Failed to write to event log:", e.message);
@@ -587,7 +595,7 @@ async function getEventLogs(filters = {}) {
   }
   const countResult = await db.get(
     `SELECT COUNT(*) as total ${baseQuery}`,
-    params
+    params,
   );
   const total = countResult.total;
   let dataQuery = `SELECT * ${baseQuery} ORDER BY id DESC`;
@@ -610,10 +618,10 @@ async function getEventLogs(filters = {}) {
 async function getEventLogMetadata() {
   if (!db) await initDB();
   const users = await db.all(
-    "SELECT DISTINCT user FROM event_log ORDER BY user ASC"
+    "SELECT DISTINCT user FROM event_log ORDER BY user ASC",
   );
   const types = await db.all(
-    "SELECT DISTINCT event_type FROM event_log ORDER BY event_type ASC"
+    "SELECT DISTINCT event_type FROM event_log ORDER BY event_type ASC",
   );
   return {
     users: users.map((u) => u.user),
@@ -661,7 +669,7 @@ async function pruneEventLog(days) {
   cutoff.setDate(cutoff.getDate() - days);
   await db.run(
     "DELETE FROM event_log WHERE timestamp < ?",
-    cutoff.toISOString()
+    cutoff.toISOString(),
   );
 }
 
@@ -671,7 +679,7 @@ async function getTrainingSessions(startDate, endDate) {
   return await db.all(
     "SELECT * FROM training_sessions WHERE date >= ? AND date <= ? ORDER BY date ASC",
     startDate,
-    endDate
+    endDate,
   );
 }
 async function addTrainingSession(date, skillName) {
@@ -680,7 +688,7 @@ async function addTrainingSession(date, skillName) {
     await db.run(
       "INSERT INTO training_sessions (date, skill_name) VALUES (?, ?)",
       date,
-      skillName
+      skillName,
     )
   ).lastID;
 }
@@ -695,7 +703,7 @@ async function logEmailAction(member, status, details = "") {
     member.name,
     member.email,
     status,
-    details
+    details,
   );
 }
 async function getAllFutureTrainingSessions() {
@@ -709,7 +717,7 @@ async function getAllFutureTrainingSessions() {
   const d = String(today.getDate()).padStart(2, "0");
   return await db.all(
     "SELECT * FROM training_sessions WHERE date >= ? ORDER BY date ASC",
-    `${y}-${m}-${d}`
+    `${y}-${m}-${d}`,
   );
 }
 

@@ -1,11 +1,13 @@
 // services/forms-service.js
 const db = require("./db");
 const crypto = require("crypto");
+const aiService = require("./ai-service");
+const { aiConfig } = require("../config");
 
 async function getAllForms() {
   const database = await db.initDB();
   return await database.all(
-    "SELECT id, public_id, name, status, created_at FROM forms ORDER BY name ASC"
+    "SELECT id, public_id, name, status, created_at FROM forms ORDER BY name ASC",
   );
 }
 
@@ -28,7 +30,7 @@ async function importBulkForms(formsArray) {
   try {
     await database.run("DELETE FROM forms");
     const stmt = await database.prepare(
-      `INSERT INTO forms (public_id, name, status, intro, structure, created_at) VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO forms (public_id, name, status, intro, structure, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
     );
     for (const f of formsArray) {
       const structureStr =
@@ -44,7 +46,7 @@ async function importBulkForms(formsArray) {
         status,
         f.intro || "",
         structureStr,
-        createdAt
+        createdAt,
       );
     }
     await stmt.finalize();
@@ -60,7 +62,7 @@ async function getFormByPublicId(publicId) {
   const database = await db.initDB();
   const form = await database.get(
     "SELECT * FROM forms WHERE public_id = ?",
-    publicId
+    publicId,
   );
   if (form) {
     try {
@@ -95,14 +97,22 @@ async function createForm(name, status = 0, intro = "", structure = []) {
     name,
     status ? 1 : 0,
     intro,
-    jsonStructure
+    jsonStructure,
   );
   return result.lastID;
 }
 
 async function updateForm(id, data) {
   const database = await db.initDB();
-  const { name, status, intro, structure } = data;
+  const {
+    name,
+    status,
+    intro,
+    structure,
+    min_score,
+    min_score_type,
+    max_tries,
+  } = data;
   const updates = [];
   const params = [];
   if (name !== undefined) {
@@ -121,11 +131,24 @@ async function updateForm(id, data) {
     updates.push("structure = ?");
     params.push(JSON.stringify(structure));
   }
+  if (min_score !== undefined) {
+    updates.push("min_score = ?");
+    params.push(min_score);
+  }
+  if (min_score_type !== undefined) {
+    updates.push("min_score_type = ?");
+    params.push(min_score_type);
+  }
+  if (max_tries !== undefined) {
+    updates.push("max_tries = ?");
+    params.push(max_tries);
+  }
+
   if (updates.length === 0) return;
   params.push(id);
   await database.run(
     `UPDATE forms SET ${updates.join(", ")} WHERE id = ?`,
-    params
+    params,
   );
 }
 
@@ -135,13 +158,13 @@ async function getFormUsage(id) {
   // First find the public_id associated with this internal ID
   const form = await database.get(
     "SELECT public_id FROM forms WHERE id = ?",
-    id
+    id,
   );
   if (!form) return [];
 
   const skills = await database.all(
     "SELECT name FROM skills WHERE url = ? AND url_type = 'internal'",
-    form.public_id
+    form.public_id,
   );
   return skills.map((s) => s.name);
 }
@@ -153,7 +176,7 @@ async function deleteForm(id) {
   // Fetch public_id to identify references in the skills table
   const form = await database.get(
     "SELECT public_id FROM forms WHERE id = ?",
-    id
+    id,
   );
   if (!form) return;
 
@@ -162,7 +185,7 @@ async function deleteForm(id) {
     // 1. Remove the reference from any skills using this form
     await database.run(
       "UPDATE skills SET url = '', url_type = 'external' WHERE url = ? AND url_type = 'internal'",
-      form.public_id
+      form.public_id,
     );
 
     // 2. Delete the form itself
@@ -178,28 +201,31 @@ async function ensureLiveForm(
   memberId,
   skillId,
   skillExpiringDate,
-  formPublicId
+  formPublicId,
 ) {
   const database = await db.initDB();
-  // [UPDATED] Check for 'sent'
   const existing = await database.get(
-    `SELECT form_access_code FROM live_forms WHERE member_id = ? AND skill_id = ? AND form_status = 'sent'`,
+    `SELECT form_access_code FROM live_forms WHERE is_archived = 0 AND member_id = ? AND skill_id = ? AND form_status = 'sent'`,
     memberId,
-    skillId
+    skillId,
   );
   if (existing) {
     return existing.form_access_code;
   }
 
   const accessCode = crypto.randomUUID();
-  // [UPDATED] Insert 'sent'
+  // Standardize sent datetime
+  const now = new Date().toISOString();
+
   await database.run(
-    `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status) VALUES (?, ?, ?, ?, ?, 'sent')`,
+    `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, form_sent_datetime) 
+     VALUES (?, ?, ?, ?, ?, 'sent', ?)`,
     skillId,
     skillExpiringDate,
     memberId,
     formPublicId,
-    accessCode
+    accessCode,
+    now,
   );
   return accessCode;
 }
@@ -209,14 +235,13 @@ async function createRetryLiveForm(previousId) {
   const database = await db.initDB();
   const prev = await database.get(
     `SELECT * FROM live_forms WHERE id = ?`,
-    previousId
+    previousId,
   );
   if (!prev) throw new Error("Original form not found");
 
   const accessCode = crypto.randomUUID();
-  const newTries = (prev.tries || 1) + 1;
+  const newTries = 1;
 
-  // [UPDATED] Insert 'sent'
   await database.run(
     `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, tries) 
          VALUES (?, ?, ?, ?, ?, 'sent', ?)`,
@@ -225,7 +250,7 @@ async function createRetryLiveForm(previousId) {
     prev.member_id,
     prev.skill_form_public_id,
     accessCode,
-    newTries
+    newTries,
   );
 
   return accessCode;
@@ -236,6 +261,17 @@ function buildLiveFormsWhere(filters) {
   let clauses = ["1=1"];
   let params = [];
 
+  // Ensure "true", "1", or boolean true all map to 1 (Archived)
+  const archVal =
+    filters.isArchived === "true" ||
+    filters.isArchived === 1 ||
+    filters.isArchived === true
+      ? 1
+      : 0;
+
+  clauses.push("lf.is_archived = ?");
+  params.push(archVal);
+  
   if (filters.memberId) {
     clauses.push("lf.member_id = ?");
     params.push(filters.memberId);
@@ -245,8 +281,14 @@ function buildLiveFormsWhere(filters) {
     params.push(filters.skillId);
   }
   if (filters.status) {
-    clauses.push("lf.form_status = ?");
-    params.push(filters.status);
+    if (filters.status === "submitted") {
+      // Treat 'submitted' as an umbrella for all completed/reviewed states
+      clauses.push("lf.form_status IN ('submitted', 'accepted', 'rejected')");
+    } else {
+      // Maintain specific filtering for 'sent', 'accepted', 'rejected', or 'disabled'
+      clauses.push("lf.form_status = ?");
+      params.push(filters.status);
+    }
   }
 
   // Date Range: Sent
@@ -276,6 +318,14 @@ function buildLiveFormsWhere(filters) {
   return { where: clauses.join(" AND "), params };
 }
 
+async function setArchiveStatus(id, isArchived) {
+  const database = await db.initDB();
+  await database.run(
+    "UPDATE live_forms SET is_archived = ? WHERE id = ?",
+    isArchived ? 1 : 0,
+    id,
+  );
+}
 //  Get Live Forms with Filters & Pagination
 async function getLiveForms(filters = {}, pagination = null) {
   const database = await db.initDB();
@@ -284,7 +334,7 @@ async function getLiveForms(filters = {}, pagination = null) {
   // 1. Get Count
   const countResult = await database.get(
     `SELECT COUNT(*) as total FROM live_forms lf WHERE ${where}`,
-    params
+    params,
   );
   const total = countResult.total;
 
@@ -327,20 +377,26 @@ async function purgeLiveForms(filters) {
 }
 
 // Update the status and set the reviewed timestamp
-async function updateLiveFormStatus(id, status) {
+async function updateLiveFormStatus(id, status, score = undefined) {
   const database = await db.initDB();
-  // Record current time for Accepted/Rejected, or clear it if moving back to Sent/Submitted
   const reviewedDate =
     status === "accepted" || status === "rejected"
       ? new Date().toISOString()
       : null;
 
-  await database.run(
-    `UPDATE live_forms SET form_status = ?, form_reviewed_datetime = ? WHERE id = ?`,
-    status,
-    reviewedDate,
-    id
-  );
+  let query = `UPDATE live_forms SET form_status = ?, form_reviewed_datetime = ?`;
+  const params = [status, reviewedDate];
+
+  // Only include current_score in the update if it's explicitly provided
+  if (score !== undefined) {
+    query += `, current_score = ?`;
+    params.push(score);
+  }
+
+  query += ` WHERE id = ?`;
+  params.push(id);
+
+  await database.run(query, params);
 }
 //  Delete Live Form
 async function deleteLiveForm(id) {
@@ -348,12 +404,15 @@ async function deleteLiveForm(id) {
   await database.run(`DELETE FROM live_forms WHERE id = ?`, id);
 }
 
-//  Get Live Form Context by Access Code (Public Access)
+// services/forms-service.js
+
 async function getLiveFormByCode(code) {
   const database = await db.initDB();
   const result = await database.get(
     `
-        SELECT lf.*, f.name as form_name, f.intro, f.structure, 
+        SELECT lf.*, 
+               f.name as form_name, f.intro, f.structure, 
+               f.max_tries, f.min_score, f.min_score_type,  -- ADD THESE
                m.name as member_name, m.email as member_email,
                s.name as skill_name
         FROM live_forms lf
@@ -362,18 +421,16 @@ async function getLiveFormByCode(code) {
         LEFT JOIN skills s ON lf.skill_id = s.id
         WHERE lf.form_access_code = ?
     `,
-    code
+    code,
   );
 
   if (result) {
-    // Parse structure if it exists
     try {
       result.structure = JSON.parse(result.structure);
     } catch (e) {
       result.structure = [];
     }
 
-    // Parse previously submitted data if it exists
     if (result.form_submitted_data) {
       try {
         result.form_submitted_data = JSON.parse(result.form_submitted_data);
@@ -382,20 +439,19 @@ async function getLiveFormByCode(code) {
   }
   return result;
 }
-
 //  Submit Live Form
 async function submitLiveForm(code, formData) {
   const database = await db.initDB();
+  const now = new Date().toISOString(); // UTC ISO string
   await database.run(
-    `
-        UPDATE live_forms 
-        SET form_status = 'submitted', 
-            form_submitted_datetime = CURRENT_TIMESTAMP,
-            form_submitted_data = ?
-        WHERE form_access_code = ?
-    `,
+    `UPDATE live_forms 
+     SET form_status = 'submitted', 
+         form_submitted_datetime = ?, 
+         form_submitted_data = ?
+     WHERE form_access_code = ?`,
+    now,
     JSON.stringify(formData),
-    code
+    code,
   );
 }
 // Admin: Get specific submission details
@@ -403,7 +459,9 @@ async function getLiveFormSubmission(id) {
   const database = await db.initDB();
   const result = await database.get(
     `
-        SELECT lf.*, f.name as form_name, f.intro, f.structure, 
+        SELECT lf.*, 
+               f.name as form_name, f.intro, f.structure, 
+               f.max_tries, f.min_score, f.min_score_type, -- ADD THESE FIELDS
                m.name as member_name, m.email as member_email, m.mobile as member_mobile, m.notificationPreference as member_prefs,
                s.name as skill_name
         FROM live_forms lf
@@ -412,9 +470,8 @@ async function getLiveFormSubmission(id) {
         LEFT JOIN skills s ON lf.skill_id = s.id
         WHERE lf.id = ?
     `,
-    id
+    id,
   );
-
   if (result) {
     try {
       result.structure = JSON.parse(result.structure);
@@ -433,9 +490,9 @@ async function getLiveFormSubmission(id) {
 async function checkSubmittedStatus(memberId, skillId) {
   const database = await db.initDB();
   const record = await database.get(
-    `SELECT id FROM live_forms WHERE member_id = ? AND skill_id = ? AND form_status = 'submitted'`,
+    `SELECT id FROM live_forms WHERE is_archived = 0 AND member_id = ? AND skill_id = ? AND form_status IN ('submitted', 'accepted', 'rejected')`,
     memberId,
-    skillId
+    skillId,
   );
   return !!record;
 }
@@ -446,10 +503,83 @@ async function getAllActiveStatuses(visibilityDays) {
     `
         SELECT member_id, skill_id, form_status 
         FROM live_forms 
-        WHERE form_status IN ('sent', 'submitted')
-        OR (form_status = 'accepted' AND form_reviewed_datetime >= datetime('now', '-' || ? || ' days'))
+        WHERE is_archived = 0 AND (
+            form_status IN ('sent', 'submitted')
+            OR (form_status IN ('accepted', 'rejected') AND form_reviewed_datetime >= datetime('now', '-' || ? || ' days'))
+        )
     `,
-    visibilityDays
+    visibilityDays,
+  );
+}
+/**
+ * Core Scoring Engine
+ * @param {Array} structure - The form's question definitions
+ * @param {Object} submittedData - The member's responses
+ * @returns {Object} { achieved: number, maximum: number }
+ */
+async function calculateFormScore(structure, submittedData) {
+  let totalAchieved = 0;
+  let totalPossible = 0;
+  const aiFeedback = {};
+
+  for (const field of structure) {
+    const weight = parseFloat(field.points) || 0;
+    totalPossible += weight;
+    const submitted = submittedData[field.id] || submittedData[`${field.id}[]`];
+
+    if (!submitted) continue;
+    if (field.type === "radio" || field.type === "boolean") {
+      if (submitted === field.correctAnswer) {
+        totalAchieved += weight;
+      }
+    } else if (field.type === "checkboxes") {
+      const correctArr = Array.isArray(field.correctAnswer)
+        ? field.correctAnswer
+        : [];
+      const subArr = Array.isArray(submitted) ? submitted : [submitted];
+
+      if (correctArr.length === 0) return;
+
+      const pointsPerOption = weight / correctArr.length;
+      let questionScore = 0;
+
+      subArr.forEach((val) => {
+        if (correctArr.includes(val)) {
+          questionScore += pointsPerOption; // Correct selection
+        } else {
+          questionScore -= pointsPerOption; // Penalty for incorrect selection
+        }
+      });
+
+      // Ensure individual question score doesn't fall below 0
+      totalAchieved += Math.max(0, questionScore);
+    } else if (field.type === "text_multi") {
+      if (aiConfig.enabled && field.correctAnswer) {
+        const result = await aiService.evaluateTextAnswer(
+          field.description,
+          field.correctAnswer,
+          submitted,
+          weight,
+        );
+        totalAchieved += result.score;
+        aiFeedback[field.id] = {
+          score: result.score,
+          reason: result.justification,
+        };
+      } else {
+        // Fallback: AI disabled or no reference answer provided
+        aiFeedback[field.id] = { score: 0, reason: "Manual review required." };
+      }
+    }
+  }
+
+  return { achieved: totalAchieved, maximum: totalPossible };
+}
+async function incrementTries(id) {
+  const database = await db.initDB();
+  await database.run(
+    "UPDATE live_forms SET tries = tries + 1 WHERE id = ?",
+    id,
   );
 }
 
@@ -474,4 +604,7 @@ module.exports = {
   checkSubmittedStatus,
   getAllActiveStatuses,
   getFormUsage,
+  incrementTries,
+  calculateFormScore,
+  setArchiveStatus,
 };

@@ -1,322 +1,324 @@
 /**
  * CENTRALIZED HELP CONFIGURATION
+ * Detailed guide for FENZ OSM Manager
  */
 const helpContent = {
-    // --- Dashboard (index.html or /) ---
-"index": {
-        title: "Dashboard Management Help",
+    // --- Dashboard ---
+    "index": {
+        title: "Dashboard Overview & Workflow",
         body: `
-            <p><strong>Overview:</strong> The dashboard is your primary command center for tracking the Operational Skills Maintenance (OSM) readiness of your brigade. It identifies members with competencies that are either already expired or due to expire within your chosen timeframe.</p>
+            <p>The <strong>Dashboard</strong> is your command center for monitoring brigade readiness. It aggregates data from the OSM website and your local database to highlight expiring competencies.</p>
             
             <h3>1. Data Synchronization</h3>
             <ul>
-                <li><strong>Days to Expiry:</strong> Enter a value (e.g., 30 or 60 days) to set the look-ahead window. Members with skills expiring after this window will be hidden.</li>
-                <li><strong>Reload Data:</strong> Fetches fresh data from the OSM Dashboard. By default, the system caches data for 60 minutes to optimize performance, but clicking this button performs a live refresh.</li>
+                <li><strong>Reload Data:</strong> Connects to the OSM Dashboard to fetch the latest expiry dates. By default, data is cached for <strong>60 minutes</strong> to improve speed. Clicking this button forces a live refresh.</li>
+                <li><strong>Days to Expiry:</strong> A look-ahead filter. Only skills expiring within this number of days (e.g., 30, 60, 90) will appear in the list.</li>
             </ul>
 
-            <h3>2. Notification Workflow</h3>
+            <h3>2. Understanding the List</h3>
             <ul>
-                <li><strong>Bulk Reminders:</strong> Select the <strong>Email</strong> or <strong>WhatsApp</strong> checkboxes for multiple members. The "Send Notifications" button activates once at least one action is selected.</li>
-                <li><strong>Member Defaults:</strong> Checkboxes are automatically pre-filled based on each member's <em>Notification Preferences</em> (configured in Manage Members). Use the <strong>Reset Icons</strong> (↺) in the header to return all checkboxes to these member-specific defaults.</li>
-                <li><strong>Immediate Send:</strong> Click the small circular icons (<span style="color:#6f42c1;">✉</span> or <span style="color:#25D366;">✆</span>) to bypass the bulk queue and send a reminder to a specific member immediately.</li>
+                <li><span style="color:#dc3545; font-weight:bold;">Red Date:</span> The skill has already expired.</li>
+                <li><strong>Bold Skill Name:</strong> Marked as 'Critical' in <em>Manage Skills</em>.</li>
+                <li><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" style="color: #007bff; vertical-align:middle;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg> <strong>Blue Document:</strong> An online form (Internal or External) is linked to this skill.</li>
             </ul>
 
-            <h3>3. Live Form Tracking</h3>
-            <p>The system monitors the status of internal verification forms built in the Manager:</p>
-            <ul style="list-style: none; padding-left: 0;">
-                <li style="margin-bottom: 8px;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" style="color: #007bff; margin-right: 8px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                    <strong>Form Available:</strong> This skill is linked to an online test.
-                </li>
-                <li style="margin-bottom: 8px;">
-                    <span class="status-circle sent" style="width:18px; height:18px; margin-right:8px; font-size:10px;">✈</span>
-                    <strong>Sent:</strong> A unique, secure link has been generated and delivered to the member.
-                </li>
-                <li style="margin-bottom: 8px;">
-                    <span class="status-circle submitted" style="width:18px; height:18px; margin-right:8px; font-size:10px;">👁</span>
-                    <strong>Submitted:</strong> The member completed the test. <strong>Admin Review</strong> is required in the <a href="live-forms.html" style="color:inherit; text-decoration:underline;">Live Forms</a> panel.
-                </li>
-                <li>
-                    <span class="status-circle accepted" style="width:18px; height:18px; margin-right:8px; font-size:10px;">✓</span>
-                    <strong>Accepted:</strong> Verification is complete and approved.
-                </li>
+            <h3>3. Live Form Status Icons</h3>
+            <p>If a skill is linked to an internal <strong>Live Form</strong>, you will see its real-time status:</p>
+            <ul style="list-style: none; padding-left: 10px;">
+                <li style="margin-bottom: 6px;"><span class="status-circle sent" style="width:18px; height:18px; font-size:10px;">✈</span> <strong>Sent:</strong> A unique link has been generated and emailed to the member. They have not yet submitted it.</li>
+                <li style="margin-bottom: 6px;"><span class="status-circle submitted" style="width:18px; height:18px; font-size:10px;">👁</span> <strong>Submitted:</strong> The member has completed the form. It requires <strong>Admin Review</strong> in the <em>Live Forms</em> page.</li>
+                <li style="margin-bottom: 6px;"><span class="status-circle accepted" style="width:18px; height:18px; font-size:10px;">✓</span> <strong>Accepted:</strong> The submission passed the score threshold or was manually approved.</li>
+                <li><span class="status-circle rejected" style="width:18px; height:18px; font-size:10px;">✕</span> <strong>Rejected:</strong> The submission failed or was rejected by an admin.</li>
             </ul>
 
-            <div style="background-color: #e8f0fe; padding: 15px; border-radius: 6px; border: 1px solid #b8d4fe; margin-top: 20px;">
-                <h3 style="margin-top:0; color: #1a73e8;">🛠️ Demo Mode</h3>
-                <p style="margin-bottom: 0;">When <code>APP_MODE=demo</code> is active, the system runs in a safe, restricted state:</p>
-                <ul style="margin-top: 10px;">
-                    <li><strong>Sandboxed Data:</strong> Uses <code>demo.db</code>. Your production member and skill lists are never touched.</li>
-                    <li><strong>Static Scraping:</strong> Data is read from a local file (<em>Star Wars Volunteers</em>) instead of the real FENZ website.</li>
-                    <li><strong>Dynamic Dates:</strong> The system automatically shifts dates in the demo file to be relative to <strong>Today</strong>, so you can test expiry logic regardless of when the demo was created.</li>
-                    <li><strong>Simulated Comms:</strong> Notification logs are created, but no actual Emails or WhatsApp messages are transmitted.</li>
-                </ul>
-            </div>
+            <h3>4. Sending Notifications</h3>
+            <ul>
+                <li><strong>Selection:</strong> Check the <strong>Email</strong> or <strong>WhatsApp</strong> boxes for members you want to notify.</li>
+                <li><strong>Defaults:</strong> Use the <strong>Reset Icon (↺)</strong> in the header to revert checkboxes to each member's saved preference (defined in <em>Manage Members</em>).</li>
+                <li><strong>Send Button:</strong> Activates once at least one action is selected. It processes the queue sequentially.</li>
+                <li><strong>Quick Send:</strong> Click the small circular <span style="color:#6f42c1;">✉</span> (Email) or <span style="color:#25D366;">✆</span> (WhatsApp) buttons in a row to send a single immediate reminder.</li>
+            </ul>
         `
     },
-    // --- Member Management ---
-    "members": {
-        title: "Manage Members Help",
+
+    // --- Forms Manager (Building) ---
+    "forms-manage": {
+        title: "Forms Manager: Builder & Scoring",
         body: `
-            <p><strong>Import from OSM:</strong> Scans the live dashboard for any members not yet in your list and allows you to import them.</p>
-            <p><strong>Enabled Toggle:</strong> Use the switch to enable/disable a member. Disabled members are ignored during checks.</p>
-            <hr>
-            <p><strong>Add/Edit Member:</strong> Manually manage member details.</p>
+            <p>Create internal verification questionnaires that replace external tools like Google Forms. These forms support <strong>Automatic Scoring</strong> and <strong>AI Generation</strong>.</p>
+            
+            <h3>1. Form Configuration</h3>
             <ul>
-                <li><strong>Name:</strong> Must match the OSM Dashboard exactly.</li>
-                <li><strong>Notification Preference:</strong> Select which channels (<strong>Email</strong>, <strong>WhatsApp</strong>) this member should receive notifications on by default.</li>
+                <li><strong>Name:</strong> The internal title of the form.</li>
+                <li><strong>Status:</strong> Use the toggle to Enable/Disable the form. Disabled forms cannot be accessed by members.</li>
             </ul>
-            <p><strong>Prefs Column:</strong> Shows icons indicating enabled channels: <span style="color:#6f42c1; font-weight:bold;">✉</span> (Email) and <span style="color:#25D366; font-weight:bold;">✆</span> (WhatsApp).</p>
-            <hr>
-            <p><strong>Import CSV:</strong> Bulk upload members. <br>Format: <code>name, email, mobile, enabled</code>.</p>
-            <p><strong>Export CSV:</strong> Download the current list of members for backup or editing.</p>
+
+            <h3>2. Automatic Scoring Rules</h3>
+            <p>Define how the system grades submissions automatically:</p>
+            <ul>
+                <li><strong>Max Score Achievable:</strong> Auto-calculated sum of all question points.</li>
+                <li><strong>Passing Threshold:</strong> The minimum score required to pass. Can be a <strong>Percentage (%)</strong> (e.g., 80%) or a <strong>Raw Number</strong> (e.g., 15 points).</li>
+                <li><strong>Max Attempts:</strong> How many times a member can try. If they fail but have attempts left, the system automatically resets the form to "Sent" for a retry.</li>
+            </ul>
+
+            <h3>3. Building Questions</h3>
+            <ul>
+                <li><strong>Points:</strong> Assign a point value to every question (default is 1).</li>
+                <li><strong>Correct Answer:</strong> Select the correct option(s) for auto-grading.
+                    <ul>
+                        <li><em>Radio/Boolean:</em> Exact match required.</li>
+                        <li><em>Checkboxes:</em> Points are awarded proportionally for correct selections and deducted for incorrect ones.</li>
+                        <li><em>Paragraph:</em> Requires manual review or <strong>AI Evaluation</strong>.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3>4. AI Assistance</h3>
+            <p>Click the purple <strong>AI</strong> button to generate a form structure from raw text. You can copy a prompt, paste it into ChatGPT/Gemini along with your training PDF, and import the resulting JSON code.</p>
         `
     },
-    // --- Skill Management ---
+
+    // --- Live Forms (Reviewing) ---
+    "live-forms": {
+        title: "Live Forms: Review & Grading",
+        body: `
+            <p>Monitor real-time submissions and perform quality assurance on member answers.</p>
+            
+            <h3>1. The Review Interface</h3>
+            <p>Click the <strong>Eye Icon</strong> <span style="color:#17a2b8;">👁</span> to open a submission. The system visually grades the attempt:</p>
+            <ul>
+                <li><span style="background:#d4edda; border:1px solid #c3e6cb; padding:0 4px; border-radius:3px;">Green</span> <strong>Correct:</strong> Matches the answer key.</li>
+                <li><span style="background:#f8d7da; border:1px solid #f5c6cb; padding:0 4px; border-radius:3px;">Red</span> <strong>Incorrect:</strong> Does not match the key.</li>
+                <li><span style="background:#fff3cd; border:1px solid #ffeeba; padding:0 4px; border-radius:3px;">Yellow</span> <strong>Unanswered:</strong> The member left this field blank.</li>
+            </ul>
+
+            <h3>2. AI Evaluation</h3>
+            <p>If enabled in <code>.env</code>, paragraph answers are analyzed by AI. It compares the member's text against the <strong>Reference Answer</strong> you provided in the builder and suggests a score (e.g., <em>"Score: 4/5. Reasoning: Covers main points but misses safety check."</em>).</p>
+
+            <h3>3. Admin Actions</h3>
+            <ul>
+                <li><strong>Accept:</strong> Overrides any score and marks the competency as verified. Sends the "Accepted" email template.</li>
+                <li><strong>Reject:</strong> Marks the attempt as failed. You can optionally:
+                    <ul>
+                        <li><strong>Generate New Attempt:</strong> Creates a fresh, unique link for the member immediately.</li>
+                        <li><strong>Feedback:</strong> Enter a <em>Custom Comment</em> which is inserted into the rejection email.</li>
+                    </ul>
+                </li>
+                <li><strong>Archive:</strong> Moves old or completed records to the "Archived" view to keep your main list clean.</li>
+            </ul>
+        `
+    },
+
+    // --- Skills Management ---
     "skills": {
-        title: "Manage Skills Help",
+        title: "Manage Skills Configuration",
         body: `
-            <p><strong>Import from OSM:</strong> Scans the live dashboard for new skills not in your table. Auto-detects 'Critical' skills ending in <code>(C)</code>.</p>
-            <p><strong>Enabled Toggle:</strong> Use the switch to enable/disable tracking for a skill without deleting it.</p>
-            <hr>
-            <p><strong>Add Skill:</strong> Define a new skill to track. The name must match the OSM Dashboard exactly.</p>
-            <p><strong>Import CSV:</strong> Bulk upload skills. <br>Format: <code>name, url, critical_skill, enabled</code>.</p>
-            <p><strong>Form URL:</strong> Paste the Online Form link here.</p>
-            <p><strong>URL Templating:</strong> You can pre-fill form fields using variables:</p>
+            <p>Map the skill names from the FENZ Dashboard to your verification methods.</p>
+            
+            <h3>1. Import & Sync</h3>
+            <p>Click <strong>Import from OSM</strong> to scan the dashboard for new skill names. The system auto-detects "Critical" skills (usually marked with <code>(C)</code>) and flags them.</p>
+
+            <h3>2. Linking Forms</h3>
+            <p>Each skill can be linked to a verification method:</p>
             <ul>
-                <li><code>{{member-name}}</code> - Inserts the member's name.</li>
-                <li><code>{{member-email}}</code> - Inserts the member's email.</li>
+                <li><strong>External URL:</strong> A link to Google Forms, SurveyMonkey, etc. Use <code>{{member-name}}</code> and <code>{{member-email}}</code> placeholders to pre-fill data.</li>
+                <li><strong>App Hosted Form:</strong> Select a form created in the <em>Forms Manager</em>. This enables the full tracking, scoring, and review lifecycle.</li>
             </ul>
-            <p><em>Example:</em> <code>https://docs.google.com/forms/d/e/...?entry.123={{member-name}}</code></p>
+
+            <h3>3. Visibility</h3>
+            <p>Use the <strong>Enabled</strong> toggle to hide skills you don't want to track (e.g., administrative items) without deleting them from the database.</p>
         `
     },
+
+    // --- Members ---
+    "members": {
+        title: "Member Management",
+        body: `
+            <p>Manage your brigade roster and their communication preferences.</p>
+            <ul>
+                <li><strong>Import from OSM:</strong> Scans the live dashboard for names not yet in your database.</li>
+                <li><strong>Notification Preferences:</strong> For each member, you can define if they should receive <strong>Email</strong>, <strong>WhatsApp</strong>, or both by default. This controls the pre-selected checkboxes on the main Dashboard.</li>
+                <li><strong>Enabled Status:</strong> Disabled members are hidden from the dashboard and reports, preserving their data history without cluttering the view.</li>
+            </ul>
+        `
+    },
+
     // --- Templates ---
     "templates": {
-        title: "Templates Help",
+        title: "Communication Templates",
         body: `
-            <p><strong>Overview:</strong> Customize the automated messages for Email and WhatsApp across all system triggers.</p>
+            <p>Customize the messages sent by the system. Templates support <strong>Rich Text</strong> (Email) and <strong>Markdown</strong> (WhatsApp).</p>
             
-            <h3>Notification Categories</h3>
+            <h3>Template Types</h3>
             <ul>
-                <li><strong>Expiring Skills:</strong> The primary reminders sent for upcoming competencies.</li>
-                <li><strong>Form Accepted/Rejected:</strong> [NEW] Feedback messages sent to members after an admin reviews their <strong>Live Form</strong> submission.</li>
+                <li><strong>Expiring Skills:</strong> The primary notification listing all due competencies.</li>
+                <li><strong>Form Accepted:</strong> Sent when a Live Form submission is approved.</li>
+                <li><strong>Form Rejected:</strong> Sent when a submission fails. Includes logic for "Retry Links" if a new attempt was generated.</li>
+                <li><strong>System:</strong> New User credentials, Password Reset, etc.</li>
             </ul>
 
-            <h3>Variables & Customization</h3>
+            <h3>Dynamic Variables</h3>
+            <p>Drag and drop chips from the palette into the editor. Key variables include:</p>
             <ul>
-                <li><strong>Custom Comment:</strong> Use the <code>{{custom_comment}}</code> chip in Accepted/Rejected templates. This placeholder is replaced by the specific feedback you type into the review modal.</li>
-                <li><strong>Retry Links:</strong> In Rejected templates, <code>{{url}}</code> automatically inserts the link for a member's new attempt if you chose to generate one.</li>
+                <li><code>{{custom_comment}}</code>: Inserts the specific feedback you wrote during the review process.</li>
+                <li><code>{{url}}</code>: In rejection templates, this inserts the <strong>new</strong> link for the retry attempt.</li>
             </ul>
         `
     },
-    // --- System Tools ---
-    "system-tools": {
-        title: "System Tools Help",
+
+    // --- Training Planner ---
+    "training-planner": {
+        title: "Skills Renewal Planner",
         body: `
-            <p><strong>Backup:</strong> Downloads the entire database file. Keep this safe.</p>
-            <p><strong>Restore:</strong> Upload a <code>.db</code> file to overwrite the current system. <br><strong style="color:red">Warning:</strong> This cannot be undone.</p>
+            <p><strong>Overview:</strong> A tool to schedule in-person training for skills that <em>don't</em> have online forms.</p>
             
-            <div style="background-color: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; border: 1px solid #ffeeba; color: #856404; font-size: 0.9em;">
-                <strong>Demo Mode:</strong> In Demo Mode, backups and restores apply to the sandboxed <code>demo.db</code>, not your production data.
-            </div>
+            <h3>Calendar View</h3>
+            <ul>
+                <li><strong>Left Panel:</strong> Lists all expiring skills requiring in-person verification.</li>
+                <li><strong>Drag & Drop:</strong> Drag a skill card onto a calendar day to schedule a session.</li>
+                <li><strong>Training Day Filter:</strong> Toggle this to hide non-training days (e.g., show only Mondays) for a cleaner view.</li>
+            </ul>
+
+            <h3>Review List View</h3>
+            <p>A chronological list of all upcoming sessions. Use the dropdown to control how many days are shown per page.</p>
         `
     },
+
+    // --- Statistics ---
+    "statistics": {
+        title: "Brigade Statistics",
+        body: `
+            <p>High-level visual analytics of your brigade's operational readiness.</p>
+            <ul>
+                <li><strong>Member Compliance:</strong> A doughnut chart showing the percentage of members who are fully compliant vs. those with at least one expiring skill.</li>
+                <li><strong>Skill Priority:</strong> A breakdown of expiring skills by "Critical" status to help prioritize training.</li>
+                <li><strong>Export PDF:</strong> Generates a report containing snapshots of these charts for management meetings.</li>
+            </ul>
+        `
+    },
+
     // --- Event Log ---
     "event-log": {
-        title: "Event Log Help",
+        title: "System Audit Log",
         body: `
-            <p><strong>Audit Trail:</strong> View a history of system actions (emails sent, members added, backups created, etc.).</p>
+            <p>A comprehensive history of all actions taken within the system.</p>
             <ul>
-                <li><strong>Filtering:</strong> Use the controls at the top to filter by <strong>Event Type</strong>, <strong>User</strong>, or <strong>Date</strong>.</li>
-                <li><strong>Pagination:</strong> Change the number of rows per page via the dropdown.</li>
-            </ul>
-            <p><strong>Super Admin Tools (Yellow Bar):</strong></p>
-            <ul>
-                <li><strong>Prune Old:</strong> Delete events older than the specified number of days to save space.</li>
-                <li><strong>Purge All:</strong> Completely wipe the event log database. <em>Use with caution.</em></li>
-                <li><strong>Export JSON:</strong> Download a full copy of the logs matching your current filters.</li>
+                <li><strong>Tracks:</strong> Login attempts (success/fail), emails sent, forms submitted, settings changed, and database backups.</li>
+                <li><strong>Payloads:</strong> Click the <span style="color:#17a2b8;">ℹ</span> icon to view detailed JSON data (e.g., exact scores calculated for a form submission).</li>
+                <li><strong>Maintenance:</strong> Super Admins can <strong>Prune</strong> (delete old logs) or <strong>Purge</strong> (clear all logs) to save space.</li>
             </ul>
         `
     },
+
+    // --- System Tools ---
+    "system-tools": {
+        title: "Backup & Restoration",
+        body: `
+            <p><strong>Database Backup:</strong> Downloads a complete snapshot of the <code>fenz.db</code> SQLite file. This includes all members, skills, history, and configuration.</p>
+            <p><strong>Restore:</strong> Uploads a <code>.db</code> file to replace the current system state. <strong style="color:red;">Warning:</strong> This completely overwrites the current database and cannot be undone.</p>
+            <p><em>Note:</em> In <strong>Demo Mode</strong>, these operations apply only to the sandboxed <code>demo.db</code>.</p>
+        `
+    },
+
     // --- User Management ---
     "users": {
-        title: "User Management Help",
+        title: "User Roles & Security",
         body: `
-            <p><strong>User Roles:</strong></p>
+            <p>Manage access to the FENZ OSM Manager.</p>
+            <h3>Roles</h3>
             <ul>
-                <li><strong>Guest:</strong> Read-only access. Can view the Dashboard and reload skill data, but cannot send emails or view the console.</li>
-                <li><strong>Simple:</strong> Operational access. Can send emails on the Dashboard but cannot access management pages.</li>
-                <li><strong>Admin:</strong> Management access. Can manage Members, Skills, Templates, and Users. Cannot access System Tools.</li>
-                <li><strong>Super Admin:</strong> Full system access (including Backups/Restore). Defined in environment variables.</li>
+                <li><strong>Guest:</strong> Read-only access.</li>
+                <li><strong>Simple:</strong> Can view dashboard and send notifications. Restricted from configuration pages.</li>
+                <li><strong>Admin:</strong> Full access to manage Members, Skills, Forms, and Users.</li>
+                <li><strong>Super Admin:</strong> (Environment User) Has access to everything, including Database Restore and Log Purging.</li>
             </ul>
-            <hr>
-            <p><strong>Add User:</strong> Create new users. A random password will be generated and emailed to them.</p>
-            <p><strong>Edit User:</strong> Change a user's name, email, or role.</p>
-            <p><strong>Reset Password:</strong> Generate a new random password and email it to the user.</p>
+            <h3>Security</h3>
+            <p>Users are automatically <strong>Blocked</strong> after 5 failed login attempts. An admin must manually uncheck "Blocked" in the Edit User modal to restore access.</p>
         `
     },
-    // --- User Profile ---
-    "profile": {
-        title: "Profile Help",
-        body: `
-            <p>Update your display name or change your password.</p>
-            <p><strong>Note:</strong> Your email address (username) cannot be changed once created.</p>
-        `
-    },
-    // --- Login ---
-    "login": {
-        title: "Login Help",
-        body: `
-            <p>Please sign in with your credentials.</p>
-            <p><strong>Forgot Password?</strong> Click the link below the form to have a temporary password sent to your email.</p>
-            
-            <div style="background-color: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; border: 1px solid #ffeeba; color: #856404; font-size: 0.9em;">
-                <strong>Demo Mode:</strong><br>
-                If the application is running in Demo Mode, you can click the <strong>"Reveal Super-Admin demo credentials"</strong> link at the bottom of the page to view the login details.
-            </div>
-        `
-    },
-    // --- Third Parties ---
+
+    // --- Third Party Services ---
     "third-parties": {
-        title: "Third Party Services Help",
+        title: "WhatsApp Integration",
         body: `
-            <p><strong>WhatsApp Integration:</strong></p>
-            <p>This service enables the system to send automated expiring skill notifications directly to member's WhatsApp accounts.</p>
-            
-            <h3>Connection Steps</h3>
+            <p>Connects the server to a real WhatsApp account to send notifications.</p>
+            <h3>Setup</h3>
             <ol>
-                <li>Click <strong>Start Service</strong> to launch the secure WhatsApp client on the server.</li>
-                <li>Wait for the <strong>QR Code</strong> to appear on the screen.</li>
-                <li>Open WhatsApp on your phone, go to <strong>Linked Devices</strong> > <strong>Link a Device</strong>, and scan the code.</li>
-                <li>Once connected, the status will turn <span style="color:#28a745; font-weight:bold;">Green</span> and display the connected account name and number.</li>
+                <li>Click <strong>Start Service</strong> to launch the headless browser.</li>
+                <li>Scan the <strong>QR Code</strong> using <em>Linked Devices</em> on your mobile WhatsApp app.</li>
+                <li>Once connected, the status turns <strong>Green</strong>.</li>
             </ol>
-
-            <h3>Testing & Configuration</h3>
-            <ul>
-                <li><strong>Test Integration:</strong> Click this button to send a verification message to any mobile number you choose. This confirms the system can successfully send messages.</li>
-                <li><strong>Auto-Disconnect Preference:</strong> If enabled, the WhatsApp session will automatically log out when you sign out of the FENZ OSM Manager. This prevents your session from staying active on the server when you are not using it.</li>
-            </ul>
-
-            <p><strong>Note:</strong> The phone associated with the WhatsApp account must be on and connected to the internet for messages to send.</p>
+            <h3>Preferences</h3>
+            <p><strong>Auto-disconnect:</strong> If enabled, logging out of the web app will automatically kill the WhatsApp session. This is recommended for shared computers.</p>
         `
     },
-    // --- : Skills Renewal Planner ---
-    "training-planner": {
-        title: "Skills Renewal Planner Help",
-        body: `
-            <p><strong>Overview:</strong> Plan in-person training sessions by dragging expiring skills onto a calendar, or review upcoming sessions in a list.</p>
-            
-            <h3>View Modes</h3>
-            <p>Use the buttons in the top toolbar to switch between views:</p>
-            <ul>
-                <li><strong>Calendar:</strong> The standard weekly interface for scheduling sessions via drag-and-drop.</li>
-                <li><strong>Review List:</strong> A chronological list of all future days that have scheduled sessions.</li>
-            </ul>
 
-            <h3>Calendar View</h3>
-            <p><strong>Left Panel: Expiring Skills</strong></p>
-            <ul>
-                <li><strong>Cards:</strong> Shows skills without an online form expiring soon.</li>
-                <li><strong>Drag & Drop:</strong> Drag a skill card to a calendar day to schedule a session. (Past dates are disabled).</li>
-                <li><strong>View Members:</strong> Click the colored number box to see exactly who needs the skill.</li>
-            </ul>
-
-            <p><strong>Right Panel: Calendar</strong></p>
-            <ul>
-                <li><strong>Training Day Filter:</strong> Toggle "Show only [Day]" to hide irrelevant days and expand the view.</li>
-                <li><strong>Manage Sessions:</strong> Click a scheduled skill to view members, or the red <strong>&times;</strong> to delete it.</li>
-                <li><strong>Navigation:</strong> Use the Teal buttons to change weeks, or the Calendar Icon to jump to Today.</li>
-            </ul>
-
-            <h3>Planned Sessions Review (List View)</h3>
-            <p>Displays a summary of all future training days.</p>
-            <ul>
-                <li><strong>Jump to Calendar:</strong> Click on any <strong>Date Header</strong> (e.g., "Monday, 12 Dec") to instantly switch back to the Calendar View focused on that specific week.</li>
-                <li><strong>Pagination:</strong> Use the controls at the bottom to navigate through pages of days.</li>
-                <li><strong>Preferences:</strong> Use the "Days per page" dropdown to control how much data is loaded at once (saved to your profile).</li>
-                <li><strong>Member Counts:</strong> The "View Members" button now displays the exact count of people expiring for that skill (e.g., "View Members: 5").</li>
-            </ul>
-
-            <hr>
-            <p><em>Note:</em> Scheduled trainings are saved immediately and can be included in notifications using the <code>{{next-planned-dates}}</code> variable.</p>
-        `
-    },
-    // ---  Reports Page ---
+    // --- Reports ---
     "reports": {
-        title: "Reports Help",
+        title: "Reporting Console",
         body: `
-            <p><strong>Reports Console:</strong> Generate printable and downloadable reports based on the current expiring skills data.</p>
+            <p>Generate printable lists of expiring competencies.</p>
             <ul>
-                <li><strong>Select Report:</strong> Choose a report type from the dropdown (e.g., grouped by Member or by Skill).</li>
-                <li><strong>Run Report:</strong> Generates the report on-screen using your current "Days to Expiry" preference from the Dashboard.</li>
-                <li><strong>Print:</strong> Opens your browser's print dialog (optimized for A4 paper).</li>
-                <li><strong>Export PDF:</strong> Generates a high-quality PDF file on the server and downloads it to your device.</li>
+                <li><strong>By Member:</strong> Grouped by person. Useful for individual performance reviews.</li>
+                <li><strong>By Skill:</strong> Grouped by competency. Useful for planning training blocks.</li>
+                <li><strong>Planned Sessions:</strong> A timeline of future training scheduled in the Planner.</li>
             </ul>
-            <p><em>Note:</em> Reports exclude disabled members and skills.</p>
+            <p>Use the <strong>Export PDF</strong> button to generate a high-quality A4 document.</p>
         `
     },
-    // --- Forms Manager ---
-    "forms-manage": {
-        title: "Forms Manager Help",
+    
+    // --- Dynamic Form Views ---
+    "forms-view-live": {
+        title: "Member Verification - Live Mode",
         body: `
-            <p><strong>Overview:</strong> Build internal verification questionnaires to replace external tools.</p>
-            
-            <h3>Question Types</h3>
+            <p><strong>Member Action Required:</strong> You are accessing a secure verification form linked to your OSM competency record.</p>
             <ul>
-                <li><strong>Yes/No (Boolean):</strong> You can choose to display these as standard <strong>Radio Buttons</strong> or a compact <strong>Dropdown Menu</strong> to save space.</li>
-                <li><strong>Paragraph:</strong> Multiline text fields for detailed explanations.</li>
+                <li><strong>Tracking:</strong> Your progress and submission are tracked. Ensure the name displayed matches your own.</li>
+                <li><strong>Required Fields:</strong> Questions marked with a red asterisk (*) must be answered to submit.</li>
+                <li><strong>Attempts:</strong> Note the 'Max Attempts' allowed. If you fail to meet the passing threshold, the attempt is logged, and you may be prompted to try again immediately.</li>
+            </ul>
+        `
+    },
+    "forms-view-preview": {
+        title: "Form Preview Mode",
+        body: `
+            <p><strong>Admin View:</strong> You are previewing the form layout and scoring logic.</p>
+            <ul>
+                <li><strong>No Data Saved:</strong> Submitting this form will NOT create a record or update any member skills.</li>
+                <li><strong>Validation:</strong> Use this mode to verify that HTML formatting in descriptions and question point weights are correct.</li>
+                <li><strong>Scoring Test:</strong> You can fill out the form to verify that the automatic pass/fail alerts behave as expected.</li>
+            </ul>
+        `
+    },
+    "forms-view-review": {
+        title: "Submission Review - Admin Mode",
+        body: `
+            <p><strong>Reviewing Member Results:</strong> This mode allows you to evaluate an automated submission result.</p>
+            <ul>
+                <li><strong>Color Coding:</strong> 
+                    <span style="background:#d4edda; padding:0 4px;">Green</span> indicates a correct match; 
+                    <span style="background:#f8d7da; padding:0 4px;">Red</span> indicates an error.
+                </li>
+                <li><strong>Reference Answers:</strong> Admins can see the 'Correct' key below member answers to facilitate manual grading of text fields.</li>
+                <li><strong>Management Bar:</strong> Use the black bar at the top to <strong>Accept</strong> (verify skill), <strong>Reject</strong> (optionally generate a fresh retry link), or <strong>Archive</strong> (remove from active list).</li>
             </ul>
         `
     },
 
-    "live-forms": {
-        title: "Live Forms & Review Help",
-        body: `
-            <p><strong>Overview:</strong> Track and validate member submissions in real-time.</p>
-            
-            <h3>Reviewing Submissions</h3>
-            <p>Click the <strong>Review Icon</strong> (eye) to enter the comparison view:</p>
-            <ul>
-                <li><span style="background:#d4edda; padding:0 4px;">Green:</span> Correct answer submitted.</li>
-                <li><span style="background:#f8d7da; padding:0 4px;">Red:</span> Incorrect answer submitted.</li>
-                <li><span style="background:#fff3cd; padding:0 4px;">Yellow:</span> [NEW] Question was left unanswered (for non-mandatory fields).</li>
-                <li><strong>Reference Boxes:</strong> Admins see the expected answers below member responses for easy grading.</li>
-            </ul>
-
-            <h3>Accept/Reject Workflow</h3>
-            <ul>
-                <li><strong>Accept:</strong> Marks the skill as verified and sends an optional "Success" notification with your custom feedback.</li>
-                <li><strong>Reject:</strong> Marks the submission as invalid. You can optionally generate a <strong>New Attempt</strong>, creating a fresh unique link for the member to try again immediately.</li>
-            </ul>
-        `
-    },
-    "statistics": {
-        title: "Statistics Dashboard Help",
-        body: `
-            <p><strong>Overview:</strong> High-level visual analytics of brigade readiness using Chart.js.</p>
-            
-            <h3>Key Features</h3>
-            <ul>
-                <li><strong>Dynamic Threshold:</strong> Charts automatically respect the "Days to Expiry" setting from your main Dashboard.</li>
-                <li><strong>Audit Info:</strong> The top-right corner displays the exact date and time the data was last refreshed from OSM.</li>
-                <li><strong>Exporting:</strong> Use the <strong>Export PDF</strong> button to generate a high-quality report containing static snapshots of your charts for offline meetings.</li>
-            </ul>
-        `
-    },
-    // --- Default ---
+    // --- Default / Fallback ---
     "default": {
         title: "Help",
-        body: "<p>No specific help content is available for this page.</p>"
+        body: "<p>Welcome to FENZ OSM Manager. Please navigate to a specific page to see context-aware help here.</p>"
     }
 };
 
 // --- LOGIC: Inject Button and Modal ---
-
 (function () {
-    // 1. Determine Current Page Key
     const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
     let key = "default";
 
+    // Standard routing
     if (path === "/" || path.endsWith("index.html")) key = "index";
     else if (path.includes("members")) key = "members";
     else if (path.includes("skills")) key = "skills";
@@ -325,7 +327,6 @@ const helpContent = {
     else if (path.includes("event-log")) key = "event-log";
     else if (path.includes("users")) key = "users";
     else if (path.includes("profile")) key = "profile";
-    else if (path.includes("login")) key = "login";
     else if (path.includes("third-parties")) key = "third-parties";
     else if (path.includes("training-planner")) key = "training-planner";
     else if (path.includes("forms-manage")) key = "forms-manage";
@@ -333,11 +334,27 @@ const helpContent = {
     else if (path.includes("live-forms")) key = "live-forms";
     else if (path.includes("statistics")) key = "statistics";
 
+    // DYNAMIC FORMS-VIEW LOGIC
+    if (path.includes("forms-view")) {
+        if (params.has('reviewId')) {
+            key = "forms-view-review";
+        } else if (params.get('preview') === 'true') {
+            key = "forms-view-preview";
+        } else if (params.has('code')) {
+            key = "forms-view-live";
+        }
+    }
+
     const content = helpContent[key] || helpContent["default"];
 
-    // 2. Inject HTML
+    // [UPDATED] Force inline styles to guarantee visibility and position
     const helpHtml = `
-        <button id="globalHelpBtn" title="Get Help">
+        <button id="globalHelpBtn" title="Get Help" 
+                style="position: fixed; top: 20px; right: 20px; z-index: 9999; 
+                       width: 45px; height: 45px; border-radius: 50%; 
+                       background-color: #17a2b8; color: white; border: none; 
+                       cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+                       display: flex; align-items: center; justify-content: center;">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -348,44 +365,29 @@ const helpContent = {
         <div id="globalHelpModal" class="help-modal-overlay">
             <div class="help-modal-content">
                 <span class="help-close-btn">&times;</span>
-                <h2 style="margin-top:0;">${content.title}</h2>
+                <h2 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px; color:var(--primary);">${content.title}</h2>
                 <div class="help-body">${content.body}</div>
             </div>
         </div>
     `;
 
-    // Append to body
     const div = document.createElement('div');
     div.innerHTML = helpHtml;
     document.body.appendChild(div);
 
-    // 3. Logic
     const btn = document.getElementById('globalHelpBtn');
+    
+    // Shift button down ONLY in Review Mode to clear the black administration bar
+    if (key === "forms-view-review") {
+        btn.style.top = "75px";
+    }
+
     const modal = document.getElementById('globalHelpModal');
     const close = document.querySelector('.help-close-btn');
 
-    // Adjust position if on Dashboard 
-    if (key === "index") {
-        // OLD: btn.style.top = "80px";
-        // NEW:
-        btn.style.top = "20px"; // Consistent with other pages
-        btn.style.right = "20px";
-    } else {
-        btn.style.top = "20px";
-        btn.style.right = "20px";
-    }
-    btn.addEventListener('click', () => {
-        modal.classList.add('show');
+    btn.addEventListener('click', () => { modal.classList.add('show'); });
+    close.addEventListener('click', () => { modal.classList.remove('show'); });
+    window.addEventListener('click', (e) => { 
+        if (e.target === modal) modal.classList.remove('show'); 
     });
-
-    close.addEventListener('click', () => {
-        modal.classList.remove('show');
-    });
-
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.classList.remove('show');
-        }
-    });
-
 })();

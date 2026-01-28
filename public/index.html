@@ -169,7 +169,7 @@
                             <line x1="22" y1="2" x2="11" y2="13"></line>
                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                         </svg>
-                    </span> Form Sent (Waiting for member)
+                    </span> Form Sent (Awaiting member submission)
                 </span>
 
                 <span
@@ -181,7 +181,7 @@
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
-                    </span> Form Submitted (Awaiting review)
+                    </span> Form Submitted (Awaiting admin review)
                 </span>
 
                 <span
@@ -196,9 +196,21 @@
                 </span>
 
                 <span
+                    style="display: inline-flex; align-items: center; vertical-align: text-bottom; margin-right: 15px;">
+                    <span class="status-circle rejected"
+                        style="margin-left:0; margin-right:5px; width:20px; height:20px;">
+                        <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3"
+                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </span> Verification Rejected
+                </span>
+
+                <span
                     style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red
                     Date</span> = Overdue.
-            </em>
+                </span>
         </p>
 
         <table id="skillsTable">
