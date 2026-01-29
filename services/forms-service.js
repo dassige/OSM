@@ -271,7 +271,7 @@ function buildLiveFormsWhere(filters) {
 
   clauses.push("lf.is_archived = ?");
   params.push(archVal);
-  
+
   if (filters.memberId) {
     clauses.push("lf.member_id = ?");
     params.push(filters.memberId);
@@ -376,28 +376,6 @@ async function purgeLiveForms(filters) {
   return result.changes;
 }
 
-// Update the status and set the reviewed timestamp
-async function updateLiveFormStatus(id, status, score = undefined) {
-  const database = await db.initDB();
-  const reviewedDate =
-    status === "accepted" || status === "rejected"
-      ? new Date().toISOString()
-      : null;
-
-  let query = `UPDATE live_forms SET form_status = ?, form_reviewed_datetime = ?`;
-  const params = [status, reviewedDate];
-
-  // Only include current_score in the update if it's explicitly provided
-  if (score !== undefined) {
-    query += `, current_score = ?`;
-    params.push(score);
-  }
-
-  query += ` WHERE id = ?`;
-  params.push(id);
-
-  await database.run(query, params);
-}
 //  Delete Live Form
 async function deleteLiveForm(id) {
   const database = await db.initDB();
@@ -461,7 +439,7 @@ async function getLiveFormSubmission(id) {
     `
         SELECT lf.*, 
                f.name as form_name, f.intro, f.structure, 
-               f.max_tries, f.min_score, f.min_score_type, -- ADD THESE FIELDS
+               f.max_tries, f.min_score, f.min_score_type, lf.ai_feedback,
                m.name as member_name, m.email as member_email, m.mobile as member_mobile, m.notificationPreference as member_prefs,
                s.name as skill_name
         FROM live_forms lf
@@ -482,6 +460,13 @@ async function getLiveFormSubmission(id) {
       try {
         result.form_submitted_data = JSON.parse(result.form_submitted_data);
       } catch (e) {}
+    }
+  }
+  if (result && result.ai_feedback) {
+    try {
+      result.ai_feedback = JSON.parse(result.ai_feedback);
+    } catch (e) {
+      result.ai_feedback = {};
     }
   }
   return result;
@@ -517,63 +502,100 @@ async function getAllActiveStatuses(visibilityDays) {
  * @param {Object} submittedData - The member's responses
  * @returns {Object} { achieved: number, maximum: number }
  */
+//
+
 async function calculateFormScore(structure, submittedData) {
   let totalAchieved = 0;
   let totalPossible = 0;
-  const aiFeedback = {};
+  const aiFeedback = {}; // Container for feedback
 
   for (const field of structure) {
     const weight = parseFloat(field.points) || 0;
     totalPossible += weight;
+    // Handle both array (checkboxes) and string inputs
     const submitted = submittedData[field.id] || submittedData[`${field.id}[]`];
 
     if (!submitted) continue;
-    if (field.type === "radio" || field.type === "boolean") {
+
+    if (field.type === 'radio' || field.type === 'boolean') {
       if (submitted === field.correctAnswer) {
         totalAchieved += weight;
       }
-    } else if (field.type === "checkboxes") {
-      const correctArr = Array.isArray(field.correctAnswer)
-        ? field.correctAnswer
-        : [];
+    } else if (field.type === 'checkboxes') {
+      const correctArr = Array.isArray(field.correctAnswer) ? field.correctAnswer : [];
       const subArr = Array.isArray(submitted) ? submitted : [submitted];
 
-      if (correctArr.length === 0) return;
+      if (correctArr.length === 0) continue;
 
       const pointsPerOption = weight / correctArr.length;
       let questionScore = 0;
 
       subArr.forEach((val) => {
         if (correctArr.includes(val)) {
-          questionScore += pointsPerOption; // Correct selection
+          questionScore += pointsPerOption;
         } else {
-          questionScore -= pointsPerOption; // Penalty for incorrect selection
+          questionScore -= pointsPerOption;
         }
       });
-
-      // Ensure individual question score doesn't fall below 0
       totalAchieved += Math.max(0, questionScore);
-    } else if (field.type === "text_multi") {
+
+    } else if (field.type === 'text_multi') {
       if (aiConfig.enabled && field.correctAnswer) {
-        const result = await aiService.evaluateTextAnswer(
-          field.description,
-          field.correctAnswer,
-          submitted,
-          weight,
-        );
-        totalAchieved += result.score;
-        aiFeedback[field.id] = {
-          score: result.score,
-          reason: result.justification,
-        };
+        try {
+          // 1. Get wrapper response from AI Service
+          const aiResponse = await aiService.evaluateTextAnswer(
+            field.description,
+            field.correctAnswer,
+            submitted,
+            weight
+          );
+
+          // 2. Unwrap result safely
+          const evalResult = aiResponse.result || { score: 0, justification: "AI Error" };
+
+          // 3. Add to total and save feedback
+          totalAchieved += (evalResult.score || 0);
+          aiFeedback[field.id] = {
+            score: evalResult.score || 0,
+            reason: evalResult.justification
+          };
+        } catch (e) {
+          console.error("AI Eval Failed:", e);
+          aiFeedback[field.id] = { score: 0, reason: "AI Service Unavailable" };
+        }
       } else {
-        // Fallback: AI disabled or no reference answer provided
+        // Fallback for manual review
         aiFeedback[field.id] = { score: 0, reason: "Manual review required." };
       }
     }
   }
 
-  return { achieved: totalAchieved, maximum: totalPossible };
+  // RETURN EVERYTHING: Score, Max, and Feedback
+  return { achieved: totalAchieved, maximum: totalPossible, feedback: aiFeedback };
+}
+
+async function updateLiveFormStatus(id, status, score = undefined, feedback = undefined) {
+  const database = await db.initDB();
+  const reviewedDate = (status === 'accepted' || status === 'rejected') ? new Date().toISOString() : null;
+
+  let query = `UPDATE live_forms SET form_status = ?, form_reviewed_datetime = ?`;
+  const params = [status, reviewedDate];
+
+  if (score !== undefined) {
+    query += `, current_score = ?`;
+    params.push(score);
+  }
+  
+  // Save Feedback JSON if provided
+  if (feedback !== undefined) {
+    query += `, ai_feedback = ?`;
+    params.push(JSON.stringify(feedback));
+  }
+
+  query += ` WHERE id = ?`;
+  params.push(id);
+
+  await database.run(query, params);
 }
 async function incrementTries(id) {
   const database = await db.initDB();

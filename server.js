@@ -132,6 +132,7 @@ app.get("/ui-config", (req, res) =>
     defaultMinScore: config.defaultMinScore,
     defaultMinScoreType: config.defaultMinScoreType,
     defaultMaxTries: config.defaultMaxTries,
+    aiEnabled: config.aiConfig.enabled,
   }),
 );
 
@@ -1250,6 +1251,10 @@ app.get("/api/live-forms/access/:code", async (req, res) => {
   }
 });
 
+//
+
+// server.js
+
 app.post("/api/live-forms/submit/:code", async (req, res) => {
   try {
     const form = await formsService.getLiveFormByCode(req.params.code);
@@ -1257,51 +1262,63 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
       return res.status(403).json({ error: "Form session invalid or closed" });
     }
 
-    // 1. SAVE DATA FIRST: This persists the date and answers in the database
+    // 1. Save Form Data
     await formsService.submitLiveForm(req.params.code, req.body);
 
-    // 2. Calculate Score
-    const score = await formsService.calculateFormScore(
-      form.structure,
-      req.body,
-    );
+    // 2. Calculate Score & Get Feedback
+    // [CRITICAL FIX] Destructure 'feedback' here so it is defined for later use
+    const { achieved, maximum, feedback } =
+      await formsService.calculateFormScore(form.structure, req.body);
+
+    // 3. Determine Pass/Fail
     const threshold = parseFloat(form.min_score);
     let isPass = false;
 
     if (form.min_score_type === "percentage") {
-      const achievedPct = (score.achieved / score.maximum) * 100;
-      isPass = achievedPct >= threshold;
+      // Avoid division by zero
+      if (maximum > 0) {
+        isPass = (achieved / maximum) * 100 >= threshold;
+      } else {
+        isPass = true; // No points = pass
+      }
     } else {
-      isPass = score.achieved >= threshold;
+      isPass = achieved >= threshold;
     }
 
     const currentTry = form.tries || 1;
     const maxAllowed = parseInt(form.max_tries) || 1;
+
+    // Log Event
     await db.logEvent("System", "Live Forms", "Form Submitted & Scored", {
       formId: form.id,
       memberName: form.member_name,
       skillName: form.skill_name,
-      score: score.achieved,
-      maxScore: score.maximum,
+      score: achieved,
+      maxScore: maximum,
       outcome: isPass ? "Passed" : currentTry < maxAllowed ? "Retry" : "Failed",
       aiUsed: config.aiConfig.enabled,
     });
+
+    // 4. Update Database based on result
     if (isPass) {
-      // SUCCESS: Close the session as accepted
+      // SUCCESS: Save score AND feedback
       await formsService.updateLiveFormStatus(
         form.id,
         "accepted",
-        score.achieved,
+        achieved,
+        feedback,
       );
-      return res.json({ status: "accepted", score: score.achieved });
+      return res.json({ status: "accepted", score: achieved });
     } else if (currentTry < maxAllowed) {
-      // FAIL BUT RETRY ALLOWED: Reset status back to 'sent' and increment counter
+      // RETRY ALLOWED
       await formsService.incrementTries(form.id);
 
       const database = await db.initDB();
+      // We save the score/feedback even on retry so admins can debug if needed
       await database.run(
-        "UPDATE live_forms SET form_status = 'sent', current_score = ? WHERE id = ?",
-        score.achieved,
+        "UPDATE live_forms SET form_status = 'sent', current_score = ?, ai_feedback = ? WHERE id = ?",
+        achieved,
+        JSON.stringify(feedback || {}), // Ensure not undefined
         form.id,
       );
 
@@ -1312,20 +1329,20 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
         message: "Minimum score not reached. Please try again.",
       });
     } else {
-      // FINAL FAILURE: No more tries left
+      // FINAL FAILURE
       await formsService.updateLiveFormStatus(
         form.id,
         "rejected",
-        score.achieved,
+        achieved,
+        feedback,
       );
-
-      return res.json({ status: "rejected", score: score.achieved });
+      return res.json({ status: "rejected", score: achieved });
     }
   } catch (e) {
+    console.error("Submit Error:", e);
     res.status(500).json({ error: e.message });
   }
 });
-
 app.get("/api/live-forms/review/:id", hasRole("admin"), async (req, res) => {
   try {
     const result = await formsService.getLiveFormSubmission(req.params.id);

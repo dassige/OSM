@@ -1,0 +1,1 @@
+ALTER TABLE live_forms ADD COLUMN ai_feedback TEXT;

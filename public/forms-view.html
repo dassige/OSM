@@ -237,6 +237,14 @@
     </div>
 
     <div class="container">
+        <div id="aiProcessing" class="processing-overlay">
+            <div class="spinner-large"></div>
+            <h2 style="color: var(--primary); margin: 0 0 10px 0;">Analyzing Response...</h2>
+            <p style="font-size: 1.1em; color: #666; max-width: 500px; line-height: 1.5;">
+                The automated AI evaluation is in progress.<br>
+                <strong>Please do not close this window.</strong>
+            </p>
+        </div>
         <div id="loading" class="spinner" style="margin: 50px auto; display:block;"></div>
         <div id="formContent" class="form-container" style="display:none;">
             <div id="retryAlert"
@@ -316,6 +324,7 @@
     <script>
         let submissionCode = null, reviewData = null, currentAction = null;
         let appLocale = 'en-NZ', appTimezone = 'Pacific/Auckland';
+        let isAiEnabled = false;
 
         function updateCommentVisibility() {
             const emailChecked = document.getElementById('revEmailCb').checked;
@@ -333,6 +342,7 @@
                     const config = await configRes.json();
                     if (config.locale) appLocale = config.locale;
                     if (config.timezone) appTimezone = config.timezone;
+                    isAiEnabled = config.aiEnabled;
                 }
             } catch (e) { }
 
@@ -529,6 +539,15 @@
         }
         function fillForm(submittedData) {
             if (!reviewData || !submittedData) return;
+
+            let aiFeedback = {};
+            if (reviewData.ai_feedback) {
+                if (typeof reviewData.ai_feedback === 'string') {
+                    try { aiFeedback = JSON.parse(reviewData.ai_feedback); } catch(e) {}
+                } else {
+                    aiFeedback = reviewData.ai_feedback;
+                }
+            }
             reviewData.structure.forEach(field => {
                 const rawSub = submittedData[field.id] || submittedData[field.id + '[]'];
                 const subArr = (Array.isArray(rawSub) ? rawSub : [rawSub]).filter(v => v !== undefined && v !== null && v !== "").map(v => String(v).trim());
@@ -560,6 +579,10 @@
                         }
                         if (corrArr.includes(val) && !subArr.includes(val)) label.classList.add('expected-border');
                     }
+                    if (el.type !== 'textarea') {
+                        const val = String(el.value).trim();
+                        if (subArr.includes(val)) el.checked = true;
+                     }
                 });
 
                 if (field.type === 'text_multi') {
@@ -567,9 +590,35 @@
                     if (ta) {
                         if (isUnanswered) ta.classList.add('review-unanswered');
                         else ta.value = subArr.join('\n');
-                        const refBox = document.createElement('div'); refBox.className = 'reference-box';
-                        refBox.innerHTML = `<strong>Admin Reference Answer:</strong><br>${corrArr.join(', ') || 'No reference provided.'}`;
+                        // 1. Reference Box
+                        const refBox = document.createElement('div');
+                        refBox.className = 'reference-box';
+                        refBox.innerHTML = `<strong>Reference:</strong><br>${corrArr.join(', ')}`;
                         ta.parentNode.appendChild(refBox);
+
+                        // 2. NEW: AI Feedback Box
+                        if (reviewData.ai_feedback && reviewData.ai_feedback[field.id]) {
+                            const aiData = reviewData.ai_feedback[field.id];
+                            const aiBox = document.createElement('div');
+                            aiBox.style.cssText = "margin-top:10px; padding:10px; border-radius:4px; border:1px solid #cce5ff; background-color:#e8f4fd; color:#004085;";
+
+                            aiBox.innerHTML = `
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                    <strong style="display:flex; align-items:center; gap:5px;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path></svg>
+                                        AI Evaluation
+                                    </strong>
+                                    <span style="background:#007bff; color:white; padding:2px 6px; border-radius:4px; font-size:0.9em; font-weight:bold;">
+                                        ${aiData.score} Pts
+                                    </span>
+                                </div>
+                                <div style="font-style:italic;">"${aiData.reason}"</div>
+                            `;
+                            ta.parentNode.appendChild(aiBox);
+                        }
+
+
+
                     }
                 }
             });
@@ -598,12 +647,23 @@
                 }
             }
 
+            const hasParagraphQuestions = document.querySelector('textarea[name^="fld_"]') !== null;
             const btn = e.target.querySelector('.btn-submit');
             const originalText = btn.innerText;
             const retryAlert = document.getElementById('retryAlert');
 
-            btn.disabled = true;
-            btn.innerText = "Processing...";
+            if (isAiEnabled && hasParagraphQuestions) {
+                // Hide form and show big spinner
+                document.getElementById('formContent').style.display = 'none';
+                document.getElementById('aiProcessing').style.display = 'flex';
+                window.scrollTo(0, 0);
+            } else {
+                // Standard loading state
+                btn.disabled = true;
+                btn.innerText = "Processing...";
+            }
+
+
             if (retryAlert) retryAlert.style.display = 'none';
 
             try {
@@ -615,6 +675,7 @@
                 });
 
                 const result = await res.json();
+                document.getElementById('aiProcessing').style.display = 'none';
 
                 if (res.ok) {
                     // Success logic...
@@ -634,12 +695,14 @@
                     </p>
                     <button onclick="window.close()" style="padding:10px 20px; border:none; background:#6c757d; color:white; border-radius:4px; cursor:pointer;">Close Window</button>
                 </div>`;
+                    document.getElementById('formContent').style.display = 'block';
                 }
                 else if (res.status === 400 && result.status === 'retry') {
                     // Retry logic...
                     document.getElementById('retryMsg').textContent = result.message;
                     document.getElementById('tryCounter').textContent = `Attempt ${result.currentTry} of ${result.maxAllowed} failed.`;
                     document.getElementById('retryAlert').style.display = 'block';
+                    document.getElementById('formContent').style.display = 'block';
                     btn.disabled = false;
                     btn.innerText = originalText;
                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -648,6 +711,9 @@
                     throw new Error(result.error || "Submission failed");
                 }
             } catch (err) {
+                // Restore form on error
+                document.getElementById('aiProcessing').style.display = 'none';
+                document.getElementById('formContent').style.display = 'block';
                 if (window.showToast) showToast(err.message, "error");
                 btn.disabled = false;
                 btn.innerText = originalText;

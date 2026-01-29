@@ -40,25 +40,16 @@ const formSchema = Joi.object({
 const bulkFormSchema = Joi.array().items(formSchema).min(1).required();
 
 const validateForm = (req, res, next) => {
-  // For PUT requests, make name and structure optional to allow status-only updates
-  const schema =
-    req.method === "PUT"
-      ? formSchema.fork(["name", "structure"], (s) => s.optional())
-      : formSchema;
+  // CORRECTED: For PUT requests, allow partial updates (e.g. status toggle)
+  const schema = req.method === 'PUT' 
+    ? formSchema.fork(['name', 'structure', 'min_score', 'min_score_type'], (s) => s.optional())
+    : formSchema;
 
-  const { error, value } = schema.validate(req.body, {
-    abortEarly: false,
-    stripUnknown: true,
-  });
-  if (error)
-    return res.status(400).json({
-      error: "Validation Failed",
-      details: error.details.map((d) => d.message),
-    });
+  const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
+  if (error) return res.status(400).json({ error: 'Validation Failed', details: error.details.map(d => d.message) });
   req.body = value;
   next();
 };
-
 const validateBulkData = (data) => {
   return bulkFormSchema.validate(data, {
     abortEarly: false,
