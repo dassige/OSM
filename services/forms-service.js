@@ -462,13 +462,15 @@ async function getLiveFormSubmission(id) {
       } catch (e) {}
     }
   }
-  if (result && result.ai_feedback) {
+
+  if (result.ai_feedback) {
     try {
       result.ai_feedback = JSON.parse(result.ai_feedback);
     } catch (e) {
       result.ai_feedback = {};
     }
   }
+
   return result;
 }
 // Check if a form is currently in 'submitted' state
@@ -504,7 +506,7 @@ async function getAllActiveStatuses(visibilityDays) {
  */
 //
 
-async function calculateFormScore(structure, submittedData) {
+async function calculateFormScore(structure, submittedData, skipAi = false) {
   let totalAchieved = 0;
   let totalPossible = 0;
   const aiFeedback = {}; // Container for feedback
@@ -517,12 +519,14 @@ async function calculateFormScore(structure, submittedData) {
 
     if (!submitted) continue;
 
-    if (field.type === 'radio' || field.type === 'boolean') {
+    if (field.type === "radio" || field.type === "boolean") {
       if (submitted === field.correctAnswer) {
         totalAchieved += weight;
       }
-    } else if (field.type === 'checkboxes') {
-      const correctArr = Array.isArray(field.correctAnswer) ? field.correctAnswer : [];
+    } else if (field.type === "checkboxes") {
+      const correctArr = Array.isArray(field.correctAnswer)
+        ? field.correctAnswer
+        : [];
       const subArr = Array.isArray(submitted) ? submitted : [submitted];
 
       if (correctArr.length === 0) continue;
@@ -538,26 +542,28 @@ async function calculateFormScore(structure, submittedData) {
         }
       });
       totalAchieved += Math.max(0, questionScore);
-
-    } else if (field.type === 'text_multi') {
-      if (aiConfig.enabled && field.correctAnswer) {
+    } else if (field.type === "text_multi") {
+      if (!skipAi && aiConfig.enabled && field.correctAnswer) {
         try {
           // 1. Get wrapper response from AI Service
           const aiResponse = await aiService.evaluateTextAnswer(
             field.description,
             field.correctAnswer,
             submitted,
-            weight
+            weight,
           );
 
           // 2. Unwrap result safely
-          const evalResult = aiResponse.result || { score: 0, justification: "AI Error" };
+          const evalResult = aiResponse.result || {
+            score: 0,
+            justification: "AI Error",
+          };
 
           // 3. Add to total and save feedback
-          totalAchieved += (evalResult.score || 0);
+          totalAchieved += evalResult.score || 0;
           aiFeedback[field.id] = {
             score: evalResult.score || 0,
-            reason: evalResult.justification
+            reason: evalResult.justification,
           };
         } catch (e) {
           console.error("AI Eval Failed:", e);
@@ -565,18 +571,29 @@ async function calculateFormScore(structure, submittedData) {
         }
       } else {
         // Fallback for manual review
-        aiFeedback[field.id] = { score: 0, reason: "Manual review required." };
-      }
+aiFeedback[field.id] = { score: 0, reason: "Manual review required (or cached)." };      }
     }
   }
 
   // RETURN EVERYTHING: Score, Max, and Feedback
-  return { achieved: totalAchieved, maximum: totalPossible, feedback: aiFeedback };
+  return {
+    achieved: totalAchieved,
+    maximum: totalPossible,
+    feedback: aiFeedback,
+  };
 }
 
-async function updateLiveFormStatus(id, status, score = undefined, feedback = undefined) {
+async function updateLiveFormStatus(
+  id,
+  status,
+  score = undefined,
+  feedback = undefined,
+) {
   const database = await db.initDB();
-  const reviewedDate = (status === 'accepted' || status === 'rejected') ? new Date().toISOString() : null;
+  const reviewedDate =
+    status === "accepted" || status === "rejected"
+      ? new Date().toISOString()
+      : null;
 
   let query = `UPDATE live_forms SET form_status = ?, form_reviewed_datetime = ?`;
   const params = [status, reviewedDate];
@@ -585,7 +602,7 @@ async function updateLiveFormStatus(id, status, score = undefined, feedback = un
     query += `, current_score = ?`;
     params.push(score);
   }
-  
+
   // Save Feedback JSON if provided
   if (feedback !== undefined) {
     query += `, ai_feedback = ?`;
