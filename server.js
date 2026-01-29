@@ -53,25 +53,39 @@ app.use(sessionMiddleware);
 app.use(express.json());
 
 // Initialize DB & Proxy
-db.initDB().catch((err) => console.error("DB Init Error:", err));
-
-whatsappService.init(io, db.logEvent);
-if (config.enableWhatsApp) {
-  whatsappService.startClient();
-}
-
 let currentProxy = null;
+
+// Wrap startup in an async function to prevent race conditions
+(async () => {
+  try {
+    // 1. Wait for DB to be ready before doing anything else
+    await db.initDB();
+
+    // 2. Initialize Services that depend on DB
+    whatsappService.init(io, db.logEvent);
+    if (config.enableWhatsApp) {
+      whatsappService.startClient();
+    }
+
+    // 3. Initialize Proxy (which logs to DB)
+    await initializeProxy();
+  } catch (err) {
+    console.error("Critical Startup Error:", err);
+  }
+})();
+
 async function initializeProxy() {
   if (config.proxyMode === "fixed") currentProxy = config.fixedProxyUrl;
   else if (config.proxyMode === "dynamic")
     currentProxy = await findWorkingNZProxy(console.log);
   else currentProxy = null;
+
+  // This logEvent triggered the crash because it ran before initDB finished
   await db.logEvent("System", "System", "Proxy Initialized", {
     mode: config.proxyMode,
     endpoint: currentProxy ? "Configured" : "None/Direct",
   });
 }
-initializeProxy();
 
 // --- GLOBAL ROUTE GUARD ---
 app.use((req, res, next) => {
@@ -1020,12 +1034,14 @@ app.get("/api/forms/public/:publicId", async (req, res) => {
     if (!form) return res.status(404).json({ error: "Form not found" });
 
     // Identify if the session belongs to an Administrator
-    const isAdmin = req.session?.user?.role === 'admin' || req.session?.user?.role === 'superadmin';
+    const isAdmin =
+      req.session?.user?.role === "admin" ||
+      req.session?.user?.role === "superadmin";
 
     // Strip correct answers if the requester is not an admin
-    const structure = (form.structure || []).map(field => {
+    const structure = (form.structure || []).map((field) => {
       const { correctAnswer, ...publicField } = field;
-      return isAdmin ? field : publicField; 
+      return isAdmin ? field : publicField;
     });
 
     res.json({
