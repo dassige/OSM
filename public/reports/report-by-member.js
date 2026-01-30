@@ -1,18 +1,27 @@
-(function() {
-    window.ReportRegistry = window.ReportRegistry || {};
-    
-    window.ReportRegistry['by-member'] = {
-        title: "Expiring Skills - Grouped by Member",
-        description: "Lists members with skills expiring within your configured threshold, sorted by Name.",
-        
-        render: function(dataWrapper, uiConfig) {
-            const data = dataWrapper.items || [];
-            const meta = dataWrapper.meta || {};
-            
-            const appName = uiConfig.loginTitle || "FENZ OSM Manager";
-            const locale = uiConfig.locale || 'en-NZ'; // Use config locale
-            
-            let html = `
+(function () {
+  window.ReportRegistry = window.ReportRegistry || {};
+
+  window.ReportRegistry["by-member"] = {
+    title: "Expiring Skills - Grouped by Member",
+    description:
+      "Lists members with skills expiring within your configured threshold, sorted by Name.",
+    params: [
+      {
+        key: "days",
+        label: "Days to Expiry",
+        type: "number",
+        default: 30,
+        prefKey: "rpt_mem_days",
+      },
+    ],
+    render: function (dataWrapper, uiConfig) {
+      const data = dataWrapper.items || [];
+      const meta = dataWrapper.meta || {};
+
+      const appName = uiConfig.loginTitle || "FENZ OSM Manager";
+      const locale = uiConfig.locale || "en-NZ"; // Use config locale
+
+      let html = `
                 <div class="rpt-header">
                     <h1 style="margin:0; font-size:24px;">${appName}</h1>
                     <h2 style="margin:5px 0 0 0; font-size:18px;">Expiring Skills Report</h2>
@@ -21,10 +30,16 @@
                     </p>
                 </div>`;
 
-            if(data.length === 0) return html + "<p>No expiring skills found within the " + meta.filterDays + " day threshold.</p>";
+      if (data.length === 0)
+        return (
+          html +
+          "<p>No expiring skills found within the " +
+          meta.filterDays +
+          " day threshold.</p>"
+        );
 
-            data.forEach(member => {
-                html += `
+      data.forEach((member) => {
+        html += `
                     <div style="break-inside: avoid;">
                         <div class="rpt-group-header">${member.name}</div>
                         <table class="rpt-table">
@@ -36,27 +51,29 @@
                             </thead>
                             <tbody>
                 `;
-                
-                member.skills.forEach(skill => {
-                    const criticalClass = skill.isCritical ? 'critical' : '';
-                    const criticalText = skill.isCritical ? ' (CRITICAL)' : '';
-                    
-                    // [UPDATED] Format date based on locale
-                    const dateObj = new Date(skill.dueDate);
-                    const formattedDate = isNaN(dateObj) ? skill.dueDate : dateObj.toLocaleDateString(locale);
 
-                    html += `
+        member.skills.forEach((skill) => {
+          const criticalClass = skill.isCritical ? "critical" : "";
+          const criticalText = skill.isCritical ? " (CRITICAL)" : "";
+
+          // [UPDATED] Format date based on locale
+          const dateObj = new Date(skill.dueDate);
+          const formattedDate = isNaN(dateObj)
+            ? skill.dueDate
+            : dateObj.toLocaleDateString(locale);
+
+          html += `
                         <tr>
                             <td class="${criticalClass}">${skill.skill}${criticalText}</td>
                             <td>${formattedDate}</td>
                         </tr>
                     `;
-                });
+        });
 
-                html += `</tbody></table></div>`;
-            });
+        html += `</tbody></table></div>`;
+      });
 
-            return html;
-        }
-    };
+      return html;
+    },
+  };
 })();

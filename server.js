@@ -50,8 +50,8 @@ const sessionMiddleware = session({
 });
 
 app.use(sessionMiddleware);
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Initialize DB & Proxy
 let currentProxy = null;
@@ -795,41 +795,33 @@ app.delete("/api/training-sessions/:id", hasRole("admin"), async (req, res) => {
 app.get("/api/reports/data/:type", async (req, res) => {
   try {
     const type = req.params.type;
-    const proxyUrl = currentProxy;
+    const proxyUrl = currentProxy; // Assumes currentProxy is global in server.js
+    const userId = req.session.user.id;
+
+    // Extract parameter if present
+    const days = req.query.days ? parseInt(req.query.days) : undefined;
+
     if (type === "by-member")
-      res.json(
-        await reportService.getGroupedByMember(req.session.user.id, proxyUrl),
-      );
+      res.json(await reportService.getGroupedByMember(userId, proxyUrl, days));
     else if (type === "by-skill")
-      res.json(
-        await reportService.getGroupedBySkill(req.session.user.id, proxyUrl),
-      );
+      res.json(await reportService.getGroupedBySkill(userId, proxyUrl, days));
     else if (type === "planned-sessions")
-      res.json(
-        await reportService.getPlannedSessions(req.session.user.id, proxyUrl),
-      );
+      res.json(await reportService.getPlannedSessions(userId, proxyUrl));
     else if (type === "critical-overdue")
-      res.json(
-        await reportService.getCriticalOverdue(req.session.user.id, proxyUrl),
-      );
+      res.json(await reportService.getCriticalOverdue(userId, proxyUrl, days));
     else if (type === "compliance-matrix")
-      res.json(
-        await reportService.getComplianceMatrix(req.session.user.id, proxyUrl),
-      );
+      res.json(await reportService.getComplianceMatrix(userId, proxyUrl, days));
     else if (type === "verification-history")
-      res.json(await reportService.getVerificationHistory());
+      res.json(await reportService.getVerificationHistory(days));
     else if (type === "training-attendance")
-      res.json(
-        await reportService.getTrainingAttendance(
-          req.session.user.id,
-          proxyUrl,
-        ),
-      );
+      res.json(await reportService.getTrainingAttendance(userId, proxyUrl));
     else res.status(400).json({ error: "Unknown report type" });
   } catch (e) {
+    console.error("Report Error:", e);
     res.status(500).json({ error: e.message });
   }
 });
+
 app.post("/api/reports/pdf", async (req, res) => {
   try {
     // [FIXED] Added executablePath to find Chromium in Alpine/Linux environments

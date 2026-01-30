@@ -3,14 +3,16 @@
     
     window.ReportRegistry['by-skill'] = {
         title: "Expiring Skills - Grouped by Skill",
-        description: "Lists skills expiring within your configured threshold, grouped alphabetically.",
-        
+        // [UPDATED] Description reflects new sorting
+        description: "Lists skills expiring within a specific timeframe. Ordered by Skill Name, Member Rank, then Member Name.",
+        params: [
+            { key: 'days', label: 'Days to Expiry', type: 'number', default: 30, prefKey: 'rpt_skill_days' }
+        ],
         render: function(dataWrapper, uiConfig) {
             const data = dataWrapper.items || [];
             const meta = dataWrapper.meta || {};
-
             const appName = uiConfig.loginTitle || "FENZ OSM Manager";
-            const locale = uiConfig.locale || 'en-NZ'; // Use config locale
+            const locale = uiConfig.locale || 'en-NZ';
 
             let html = `
                 <div class="rpt-header">
@@ -38,21 +40,13 @@
                 `;
                 
                 skillGroup.members.forEach(item => {
-                    // [UPDATED] Format date based on locale
                     const dateObj = new Date(item.dueDate);
                     const formattedDate = isNaN(dateObj) ? item.dueDate : dateObj.toLocaleDateString(locale);
-
-                    html += `
-                        <tr>
-                            <td>${item.member}</td>
-                            <td>${formattedDate}</td>
-                        </tr>
-                    `;
+                    html += `<tr><td>${item.member}</td><td>${formattedDate}</td></tr>`;
                 });
 
                 html += `</tbody></table></div>`;
             });
-
             return html;
         }
     };
