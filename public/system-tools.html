@@ -133,6 +133,51 @@
     <div class="container">
         <h1 id="pageHeader">System Tools</h1>
 
+
+        <div class="card">
+            <h2>Backup Database</h2>
+            <p>Download a snapshot of the current system database (<code>fenz.db</code>). This file contains all
+                members, skills configuration, email history, and preferences.</p>
+            <div style="margin-top: 20px;">
+                <a href="/api/system/backup" class="btn-action btn-download" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download Backup
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Restore Database</h2>
+            <p style="color: #dc3545; font-weight: bold;">⚠️ Warning: This will overwrite the current database!</p>
+            <p>Upload a previously backed-up <code>.db</code> file. <br><strong>Note:</strong> The uploaded database
+                MUST match the current application version.</p>
+
+            <form id="restoreForm">
+                <div class="file-input-wrapper">
+                    <input type="file" id="dbFile" name="databaseFile" accept=".db, .sqlite" required>
+                </div>
+
+                <button type="submit" class="btn-action btn-upload" id="restoreBtn">
+                    <span class="spinner" id="restoreSpinner"></span>
+                    <svg id="restoreIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Restore Database
+                </button>
+            </form>
+
+            <div id="statusMsg" class="status-msg"></div>
+        </div>
+
         <div class="card">
             <h2 style="border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;">AI Evaluator
                 Test Lab</h2>
@@ -231,49 +276,6 @@
             <div id="aiTestLog"
                 style="margin-top: 30px; background: #0c0c0c; color: #00ff41; padding: 25px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; display: none; max-height: 500px; overflow-y: auto; border: 1px solid #333; line-height: 1.5; box-shadow: inset 0 0 10px #000;">
             </div>
-        </div>
-        <div class="card">
-            <h2>Backup Database</h2>
-            <p>Download a snapshot of the current system database (<code>fenz.db</code>). This file contains all
-                members, skills configuration, email history, and preferences.</p>
-            <div style="margin-top: 20px;">
-                <a href="/api/system/backup" class="btn-action btn-download" target="_blank">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Download Backup
-                </a>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Restore Database</h2>
-            <p style="color: #dc3545; font-weight: bold;">⚠️ Warning: This will overwrite the current database!</p>
-            <p>Upload a previously backed-up <code>.db</code> file. <br><strong>Note:</strong> The uploaded database
-                MUST match the current application version.</p>
-
-            <form id="restoreForm">
-                <div class="file-input-wrapper">
-                    <input type="file" id="dbFile" name="databaseFile" accept=".db, .sqlite" required>
-                </div>
-
-                <button type="submit" class="btn-action btn-upload" id="restoreBtn">
-                    <span class="spinner" id="restoreSpinner"></span>
-                    <svg id="restoreIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    Restore Database
-                </button>
-            </form>
-
-            <div id="statusMsg" class="status-msg"></div>
         </div>
     </div>
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">

@@ -14,7 +14,7 @@ const ICON_DESC =
 
 const sendEmailsBtn = document.getElementById("sendEmailsBtn");
 const viewBtn = document.getElementById("viewBtn");
-const terminal = document.getElementById("terminal");
+
 const tableContainer = document.getElementById("tableContainer");
 const skillsTableBody = document.querySelector("#skillsTable tbody");
 const daysInput = document.getElementById("daysInput");
@@ -24,10 +24,9 @@ const btnExpiredOnly = document.getElementById("btnExpiredOnly");
 const btnHideWithUrl = document.getElementById("btnHideWithUrl");
 const progressContainer = document.getElementById("progressContainer");
 const progressBar = document.getElementById("progressBar");
-const showConsoleCheckbox = document.getElementById("showConsoleCheckbox");
-const consoleHeader = document.getElementById("consoleHeader");
 
-// ... (Keep existing INITIALIZATION) ...
+
+
 function init() {
   socket.on("connect_error", (err) => {
     if (err.message === "unauthorized") window.location.href = "/login.html";
@@ -78,7 +77,7 @@ function setRunningState() {
   document
     .querySelectorAll(".btn-round")
     .forEach((btn) => (btn.disabled = true));
-  terminal.textContent = "> Starting Notification Process...\n";
+  
   if (window.showToast) window.showToast("Starting process...", "info");
   progressContainer.style.display = "block";
   progressBar.style.width = "0%";
@@ -101,12 +100,10 @@ function setIdleState(code) {
       window.showToast("Completed Successfully", "success");
     }
     fetchData(false);
-    terminal.textContent += `\n> Process exited with code ${code}`;
     progressBar.style.width = "100%";
     progressBar.textContent = "Completed";
   } else {
     if (window.showToast) window.showToast("Process Failed", "error");
-    terminal.textContent += `\n> Process exited with error code ${code}`;
   }
   showCompletionToast = false;
   setTimeout(() => {
@@ -127,14 +124,7 @@ function updateSendButtonState() {
 }
 
 function updateRoleUI(role) {
-  if (role === "guest" || role === "simple") {
-    if (showConsoleCheckbox) {
-      const container = showConsoleCheckbox.closest("div");
-      if (container) container.style.display = "none";
-    }
-    if (terminal) terminal.style.display = "none";
-    if (consoleHeader) consoleHeader.style.display = "none";
-  }
+
   if (role === "guest") {
     if (sendEmailsBtn) sendEmailsBtn.style.display = "none";
     if (viewBtn) {
@@ -144,15 +134,7 @@ function updateRoleUI(role) {
   }
 }
 
-function toggleConsole(isVisible) {
-  const role = document.body.getAttribute("data-user-role");
-  if (role === "guest" || role === "simple") return;
-  const style = isVisible ? "block" : "none";
-  if (terminal) terminal.style.display = style;
-  if (consoleHeader) consoleHeader.style.display = style;
-}
-
-// [UPDATED] Inject skeletons before network request
+// Inject skeletons before network request
 function fetchData(forceRefresh = false) {
   const days = parseInt(daysInput.value) || 30;
   viewBtn.disabled = true;
@@ -162,7 +144,6 @@ function fetchData(forceRefresh = false) {
   renderSkeletons();
 
   const modeText = forceRefresh ? " (Force Refresh)" : "";
-  terminal.textContent += `> Fetching View Data (Threshold: ${days} days)${modeText}... please wait.\n`;
   socket.emit("view-expiring-skills", days, forceRefresh);
 }
 // [NEW] Helper to render skeleton rows
@@ -506,13 +487,6 @@ daysInput.addEventListener("change", (e) =>
     value: parseInt(e.target.value),
   }),
 );
-showConsoleCheckbox.addEventListener("change", (e) => {
-  toggleConsole(e.target.checked);
-  socket.emit("update-preference", {
-    key: "showConsole",
-    value: e.target.checked,
-  });
-});
 
 function setupChipToggle(btnId, prefKey) {
   document.getElementById(btnId).addEventListener("click", function () {
@@ -537,17 +511,6 @@ socket.on("preferences-data", (prefs) => {
   if (prefs.expiredOnly) btnExpiredOnly.classList.add("active");
 
   const role = document.body.getAttribute("data-user-role");
-  if (
-    role !== "guest" &&
-    role !== "simple" &&
-    prefs.showConsole !== undefined
-  ) {
-    showConsoleCheckbox.checked = prefs.showConsole;
-    toggleConsole(prefs.showConsole);
-  } else {
-    showConsoleCheckbox.checked = false;
-    toggleConsole(false);
-  }
 
   if (prefs.sortSkills) currentSort = prefs.sortSkills;
   fetchData(false);
@@ -563,10 +526,7 @@ socket.on("wa-status", (status) => {
   if (currentOsmData.length > 0) renderTable();
 });
 
-socket.on("terminal-output", (data) => {
-  terminal.textContent += data;
-  terminal.scrollTop = terminal.scrollHeight;
-});
+
 socket.on("script-complete", (code) => setIdleState(code));
 socket.on("progress-update", (data) => {
   if (data.type === "progress-start") {
@@ -582,7 +542,6 @@ socket.on("progress-update", (data) => {
 socket.on("expiring-skills-data", (data) => {
   viewBtn.disabled = false;
   viewBtn.textContent = "Reload Expiring Skills";
-  terminal.textContent += "> Data fetched successfully.\n";
   currentOsmData = data;
   tableContainer.style.display = "block";
   applySort();
