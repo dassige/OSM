@@ -2,9 +2,9 @@
   window.ReportRegistry = window.ReportRegistry || {};
 
   window.ReportRegistry["verification-history"] = {
-    title: "Verification History (30 Days)",
+    title: "Verification History",
     description:
-      "Log of online verification forms processed in the last 30 days.",
+      "Log of online verification forms processed in the last defined number of days.",
     params: [
       {
         key: "days",
