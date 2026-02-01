@@ -25,8 +25,6 @@ const btnHideWithUrl = document.getElementById("btnHideWithUrl");
 const progressContainer = document.getElementById("progressContainer");
 const progressBar = document.getElementById("progressBar");
 
-
-
 function init() {
   socket.on("connect_error", (err) => {
     if (err.message === "unauthorized") window.location.href = "/login.html";
@@ -77,7 +75,7 @@ function setRunningState() {
   document
     .querySelectorAll(".btn-round")
     .forEach((btn) => (btn.disabled = true));
-  
+
   if (window.showToast) window.showToast("Starting process...", "info");
   progressContainer.style.display = "block";
   progressBar.style.width = "0%";
@@ -124,7 +122,6 @@ function updateSendButtonState() {
 }
 
 function updateRoleUI(role) {
-
   if (role === "guest") {
     if (sendEmailsBtn) sendEmailsBtn.style.display = "none";
     if (viewBtn) {
@@ -136,17 +133,25 @@ function updateRoleUI(role) {
 
 // Inject skeletons before network request
 function fetchData(forceRefresh = false) {
-  const days = parseInt(daysInput.value) || 30;
-  viewBtn.disabled = true;
-  viewBtn.textContent = "Loading Data...";
+    const days = parseInt(daysInput.value) || 30;
+    
+    // 1. UI State: Loading
+    if (viewBtn) {
+        viewBtn.disabled = true;
+        viewBtn.textContent = "Loading...";
+    }
 
-  // Show Skeletons
-  renderSkeletons();
+    // 2. Toggle Visibility: Hide Table, Show Spinner
+    const tableContainer = document.getElementById("tableContainer");
+    const overlay = document.getElementById("loadingOverlay");
+    
+    if (tableContainer) tableContainer.style.display = "none";
+    if (overlay) overlay.style.display = "block";
 
-  const modeText = forceRefresh ? " (Force Refresh)" : "";
-  socket.emit("view-expiring-skills", days, forceRefresh);
+    // 3. Request Data
+    socket.emit("view-expiring-skills", days, forceRefresh);
 }
-// [NEW] Helper to render skeleton rows
+
 function renderSkeletons() {
   skillsTableBody.innerHTML = "";
   // Generate 5 dummy rows
@@ -526,7 +531,6 @@ socket.on("wa-status", (status) => {
   if (currentOsmData.length > 0) renderTable();
 });
 
-
 socket.on("script-complete", (code) => setIdleState(code));
 socket.on("progress-update", (data) => {
   if (data.type === "progress-start") {
@@ -539,17 +543,32 @@ socket.on("progress-update", (data) => {
     progressBar.textContent = `${pct}% - Processed ${data.member}`;
   }
 });
-socket.on("expiring-skills-data", (data) => {
-  viewBtn.disabled = false;
-  viewBtn.textContent = "Reload Expiring Skills";
-  currentOsmData = data;
-  tableContainer.style.display = "block";
-  applySort();
-  updateNotificationBadges();
-  window.scrollTo({ top: 0, behavior: "smooth" });
-});
 
-// public/app.js
+
+socket.on("expiring-skills-data", (data) => {
+    // 1. Reset UI Buttons
+    if (viewBtn) {
+        viewBtn.disabled = false;
+        viewBtn.textContent = "Reload Expiring Skills";
+    }
+
+    // 2. Toggle Visibility: Hide Spinner, Show Table
+    const tableContainer = document.getElementById("tableContainer");
+    const overlay = document.getElementById("loadingOverlay");
+
+    if (overlay) overlay.style.display = "none";
+    if (tableContainer) tableContainer.style.display = "block";
+
+    // 3. Process Data
+    currentOsmData = data;
+    
+    // 4. Render & Update
+    applySort(); 
+    updateNotificationBadges(); // Important: Keep your badge logic!
+    
+    // 5. Scroll to top (Optional UX improvement)
+    window.scrollTo({ top: 0, behavior: "smooth" });
+});
 
 function buildSkillHtml(skillObj, memberId) {
   let html = skillObj.skill;

@@ -932,6 +932,7 @@ textarea {
 .toast-warning {
     border-left: 5px solid #ffc107;
 }
+
 /* [NEW] Status Circles for Dashboard */
 .status-circle {
     display: inline-flex;
@@ -950,13 +951,15 @@ textarea {
 }
 
 .status-circle.sent {
-    background-color: #e7f5ff; /* Light Blue/Teal bg */
+    background-color: #e7f5ff;
+    /* Light Blue/Teal bg */
     border: 1px solid #17a2b8;
     color: #17a2b8;
 }
 
 .status-circle.submitted {
-    background-color: #e6ffed; /* Light Green bg */
+    background-color: #e6ffed;
+    /* Light Green bg */
     border: 1px solid #28a745;
     color: #28a745;
 }
@@ -965,6 +968,7 @@ textarea {
 a .status-circle {
     text-decoration: none;
 }
+
 /* [NEW] Skeleton Loading Animation */
 .skeleton {
     background: #f0f2f5;
@@ -979,8 +983,13 @@ a .status-circle {
 }
 
 @keyframes shimmer {
-    0% { background-position: -468px 0; }
-    100% { background-position: 468px 0; }
+    0% {
+        background-position: -468px 0;
+    }
+
+    100% {
+        background-position: 468px 0;
+    }
 }
 
 /* [NEW] Empty State Styling */
@@ -1007,23 +1016,28 @@ a .status-circle {
     margin: 0;
     font-size: 0.9em;
 }
+
 .notification-wrapper {
     position: relative;
     display: inline-block;
-    margin-right: 10px; /* Gap between bell and menu */
+    margin-right: 10px;
+    /* Gap between bell and menu */
 }
 
 .notification-btn {
     background-color: #343a40;
     color: white;
-    width: 44px; /* Fixed width for square shape */
-    height: 44px; /* Matches standard button height roughly */
+    width: 44px;
+    /* Fixed width for square shape */
+    height: 44px;
+    /* Matches standard button height roughly */
     border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    position: relative; /* Anchor for badges */
+    position: relative;
+    /* Anchor for badges */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     transition: background-color 0.2s;
 }
@@ -1044,8 +1058,9 @@ a .status-circle {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    border: 1px solid #fff; /* Slight border to separate from button */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border: 1px solid #fff;
+    /* Slight border to separate from button */
 }
 
 /* Bottom-Left: Sent Status */
@@ -1068,14 +1083,17 @@ a .status-circle {
 @media screen and (max-width: 768px) {
     .notification-wrapper {
         margin-right: 0;
-        margin-bottom: 10px; /* Stack on mobile if needed, or keep inline */
+        margin-bottom: 10px;
+        /* Stack on mobile if needed, or keep inline */
     }
 }
+
 .btn-icon svg {
     display: block;
     width: 18px;
     height: 18px;
 }
+
 input[type="text"],
 input[type="password"],
 input[type="email"],
@@ -1086,12 +1104,17 @@ textarea {
     color: var(--text-main);
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    padding: 10px;          /* Ensure consistent internal padding */
-    box-sizing: border-box; /* [FIX] Ensures width:100% includes padding/border */
+    padding: 10px;
+    /* Ensure consistent internal padding */
+    box-sizing: border-box;
+    /* [FIX] Ensures width:100% includes padding/border */
 }
+
 * {
-    box-sizing: border-box; /* Ensures padding doesn't break layout width */
+    box-sizing: border-box;
+    /* Ensures padding doesn't break layout width */
 }
+
 .status-circle.accepted {
     background-color: #e6ffed;
     border: 1px solid #28a745;
@@ -1101,8 +1124,10 @@ textarea {
 .status-circle.submitted {
     background-color: #e8f0fe;
 }
+
 .status-circle.rejected {
-    background-color: #fff5f5; /* Very light red */
+    background-color: #fff5f5;
+    /* Very light red */
     border: 1px solid var(--danger);
     color: var(--danger);
 }
@@ -1112,9 +1137,11 @@ textarea {
     background-color: #ffdada;
     transform: scale(1.1);
 }
+
 /* --- AI & PROCESSING OVERLAYS --- */
 .processing-overlay {
-    display: none; /* Hidden by default */
+    display: none;
+    /* Hidden by default */
     position: fixed;
     z-index: 9999;
     top: 0;
@@ -1128,14 +1155,25 @@ textarea {
     justify-content: center;
 }
 
+/* --- Loading Spinner --- */
 .spinner-large {
-    width: 80px;
-    height: 80px;
-    border: 8px solid rgba(0, 123, 255, 0.2);
-    border-top: 8px solid var(--primary);
+    width: 60px;
+    height: 60px;
+    border: 6px solid rgba(0, 123, 255, 0.1);
+    border-top: 6px solid var(--primary); /* Uses your theme blue */
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 30px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Ensure overlay displays correctly in the flex container */
+#loadingOverlay {
+    display: none;
+    text-align: center;
 }
 
 .ai-feedback-box {
@@ -1156,7 +1194,7 @@ textarea {
     margin-bottom: 8px;
     font-weight: bold;
     color: var(--primary);
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     padding-bottom: 5px;
 }
 
@@ -1166,9 +1204,4 @@ textarea {
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.85em;
-}
-/* Animation Keyframes */
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
 }
