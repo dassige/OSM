@@ -56,7 +56,6 @@
           const criticalClass = skill.isCritical ? "critical" : "";
           const criticalText = skill.isCritical ? " (CRITICAL)" : "";
 
-          // [UPDATED] Format date based on locale
           const dateObj = new Date(skill.dueDate);
           const formattedDate = isNaN(dateObj)
             ? skill.dueDate

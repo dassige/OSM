@@ -1,4 +1,3 @@
-// public/statistics/compliance-overview.js
 (function () {
     window.StatRegistry = window.StatRegistry || {};
     window.StatRegistry['compliance-overview'] = {

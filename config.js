@@ -1,4 +1,3 @@
-// config.js
 require("dotenv").config();
 const packageJson = require("./package.json");
 const nodemailer = require("nodemailer");

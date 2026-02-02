@@ -1,5 +1,3 @@
-// public/reports/report-planned-sessions.js
-
 (function() {
     window.ReportRegistry = window.ReportRegistry || {};
     

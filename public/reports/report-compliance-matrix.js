@@ -1,4 +1,3 @@
-// public/reports/report-compliance-matrix.js
 (function () {
   window.ReportRegistry = window.ReportRegistry || {};
 
@@ -107,7 +106,6 @@
           html += `</tr>`;
         });
 
-        // [UPDATED] Key now uses meta.threshold variable
         html += `</tbody></table>
                     <div style="font-size:10px; color:#666; text-align:right; margin-top:5px;">
                         Key: ✓ = Current, DUE = Expiring < ${meta.threshold} days, EXP = Expired, · = Missing

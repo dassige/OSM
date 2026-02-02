@@ -1,10 +1,8 @@
-// services/report-service.js
 const { getOIData } = require('./scraper');
 const db = require('./db');
 const config = require('../config');
 const { isExpiring, isExpired } = require('./member-manager');
 
-// Helper: Strip rank (e.g. "QFF Skywalker" -> "Skywalker")
 function getNameWithoutRank(fullName) {
     if (!fullName) return "";
     const parts = fullName.split(' ');

@@ -1,5 +1,3 @@
-// public/training-planner.js
-
 const socket = io();
 
 // Global State
@@ -108,8 +106,6 @@ function renderFutureList() {
         const items = grouped[dateStr].map(s => {
             const safeName = s.skill_name.replace(/'/g, "\\'");
 
-            // [NEW] Calculate Member Count
-            // Use the global skillMembersMap to find how many people have this skill expiring
             const count = (skillMembersMap[s.skill_name] || []).length;
 
             return `
@@ -234,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (c.timezone) appTimezone = c.timezone;
             if (c.trainingDayIndex !== undefined) trainingDayIndex = c.trainingDayIndex;
 
-            // [NEW] Update Training Day Label
             if (c.trainingDayName) {
                 const labelEl = document.getElementById('filterDayLabel');
                 if (labelEl) {
@@ -502,7 +497,6 @@ async function loadSessions() {
                 const card = document.createElement('div');
                 card.className = 'session-card';
                 const safeName = sess.skill_name.replace(/'/g, "\\'");
-                // [UPDATED] Pass extra info to deleteSession
                 card.innerHTML = `
                     <span class="session-delete" onclick="deleteSession(${sess.id}, '${safeName}', '${sess.date}'); event.stopPropagation();" title="Remove Session">&times;</span>
                     <div style="cursor:pointer;" onclick="showMemberPopup('${safeName}')" title="View expiring members">
@@ -523,7 +517,6 @@ async function saveSession(date, skillName) {
     } catch (e) { if (window.showToast) window.showToast("Error saving training", "error"); }
 }
 
-// [UPDATED] Delete Session with Context
 async function deleteSession(id, skillName, date) {
     if (!await confirmAction('Remove Session', `Remove '${skillName}' on ${date}?`)) return;
     try {

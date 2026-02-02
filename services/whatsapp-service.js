@@ -1,4 +1,3 @@
-// services/whatsapp-service.js
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 
@@ -36,7 +35,6 @@ function startClient() {
         authStrategy: new LocalAuth({ clientId: "fenz-osm-client" }),
         puppeteer: {
             headless: true,
-            // [FIX] Explicitly tell Puppeteer where Chrome is installed in Alpine Linux
             executablePath: '/usr/bin/chromium-browser', 
             args: [
                 '--no-sandbox',
@@ -53,8 +51,6 @@ function startClient() {
 
     client.on('qr', (qr) => {
         console.log('[WhatsApp] QR Code received');
-        // [CHANGED] Disabled logging for QR Code generation to reduce noise
-        // systemLog('QR Code Generated', {}); 
         
         qrcode.toDataURL(qr, (err, url) => {
             if (!err) {

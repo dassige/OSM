@@ -3,7 +3,6 @@
     
     window.ReportRegistry['by-skill'] = {
         title: "Expiring Skills - Grouped by Skill",
-        // [UPDATED] Description reflects new sorting
         description: "Lists skills expiring within a specific timeframe. Ordered by Skill Name, Member Rank, then Member Name.",
         params: [
             { key: 'days', label: 'Days to Expiry', type: 'number', default: 30, prefKey: 'rpt_skill_days' }
