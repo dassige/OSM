@@ -23,7 +23,8 @@
         "Allow space and/or access for other emergency vehicles",
         "Leave the beacons on",
         "Adjust the headlights to meet the conditions at the scene, considering time of day, light levels, glare hazard for other drivers"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is3crewsafety",
@@ -40,7 +41,8 @@
       "correctAnswer": [
         "Don approved reflective clothing",
         "Exit vehicles from the safe side if possible"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is3oicfactors",
@@ -56,7 +58,8 @@
       "correctAnswer": [
         "Close the road if two-way traffic cannot be achieved",
         "Request police to guide traffic"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is3departure",
@@ -72,7 +75,8 @@
       "correctAnswer": [
         "Made safe by FENZ personnel",
         "Handed over to another agency or authority to be made safe"
-      ]
+      ],
+      "points": 1
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "name": "E3-2 Respiratory Protection",
-  "intro": "<p>The learning document for this test is at <a href=\"https://portal.fireandemergency.nz/documents/e3-2-pop-respiratory-protection-equipment-policy/\" target=\"_blank\" rel=\"noopener\">E3-2 Respiratory Protection</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+  "intro": "",
   "status": 1,
   "structure": [
     {
@@ -19,7 +19,8 @@
       "correctAnswer": [
         "Whenever they are operating in conditions that may expose them to a contaminated atmosphere",
         "Other atmospheres that are irrespirable (e.g. depleted oxygen)"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_mjcclr2u",
@@ -39,7 +40,8 @@
         "Entry Control Board",
         "Chemical Splash Suits",
         "At least 1 BA Main Guide Line"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_mjccnfr2",
@@ -61,7 +63,8 @@
         "Torch",
         "Distress Signal Unit (DSU)",
         "Personal Line"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_mjccollj",
@@ -81,7 +84,8 @@
         "Monitoring the safety of BA wearers",
         "Tasking and deploying emergency teams as required",
         "Maintaining resources for BA wearers"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_mjccr0m8",
@@ -101,7 +105,8 @@
         "More than 2 Entry Control Points are set up",
         "Six or more BA Teams are operating at the same time",
         "The OIC considers it necessary"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_mjccscq7",
@@ -110,7 +115,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     },
     {
       "id": "fld_mjcctib0",
@@ -124,7 +130,8 @@
         "Medical First Response"
       ],
       "renderAs": "radio",
-      "correctAnswer": "Telemetry Set operators"
+      "correctAnswer": "Telemetry Set operators",
+      "points": 1
     }
   ]
 }

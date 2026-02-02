@@ -21,7 +21,8 @@
         "Hazardous Chemicals",
         "Booby Traps",
         "Hostile Civilians"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h71lead",
@@ -35,7 +36,8 @@
         "Environmental Agency"
       ],
       "renderAs": "radio",
-      "correctAnswer": "New Zealand Police"
+      "correctAnswer": "New Zealand Police",
+      "points": 1
     },
     {
       "id": "fld_h71control",
@@ -54,7 +56,8 @@
         "Withdraw",
         "Secure Premises",
         "Notify Comms/Police"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h71outside",
@@ -77,7 +80,8 @@
         "Discarded waste packaging",
         "Multiple vehicles and vans parked outside",
         "High security measures - Cameras, barbed wire fence, Guard dogs"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h71inside",
@@ -103,7 +107,8 @@
         "Bunsen Burners / LPG cylinders",
         "Hot Plates",
         "Lithium batteries / Bulk chemical containers."
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h71permission",
@@ -117,7 +122,8 @@
         "Environmental Agency"
       ],
       "renderAs": "radio",
-      "correctAnswer": "New Zealand Police"
+      "correctAnswer": "New Zealand Police",
+      "points": 1
     }
   ]
 }

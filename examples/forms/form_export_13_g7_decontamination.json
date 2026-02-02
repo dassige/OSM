@@ -1,6 +1,6 @@
 {
   "name": "G7 Decontamination",
-  "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/g7-sop-decontamination-procedures/\" target=\"_blank\" rel=\"noopener\">G7 Decontamination Procedures</a> and <a href=\"https://portal.fireandemergency.nz/documents/g7-pop-decontamination-policy/\" target=\"_blank\" rel=\"noopener\">G7 Decontamination Policy</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+  "intro": "",
   "status": 1,
   "structure": [
     {
@@ -14,7 +14,8 @@
         "Ambulance Service"
       ],
       "renderAs": "radio",
-      "correctAnswer": "FENZ"
+      "correctAnswer": "FENZ",
+      "points": 1
     },
     {
       "id": "fld_mjcl335m",
@@ -32,7 +33,8 @@
       "correctAnswer": [
         "Preparations for emergency decontamination are in place",
         "Consideration has been given to requesting resources for deliberate decontamination"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_mjcl4lek",
@@ -45,7 +47,8 @@
         "Police"
       ],
       "renderAs": "radio",
-      "correctAnswer": "Defence Force personnel"
+      "correctAnswer": "Defence Force personnel",
+      "points": 1
     },
     {
       "id": "fld_mjcl5un7",
@@ -54,7 +57,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     },
     {
       "id": "fld_mjcl69vk",
@@ -71,7 +75,8 @@
       "correctAnswer": [
         "The personnel to be decontaminated must be wearing BA with a Splash suit, Gas Suit or other agency equivalent.Option 1",
         "Members of the public wearing permeable clothing (liquids/gas can pass through) that has been contaminated."
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_mjclc0q2",
@@ -89,7 +94,8 @@
       "correctAnswer": [
         "There is no Portaflex shower available",
         "The contaminant is immiscible in water (does not mix or dissolve) or there is a need to contain the run-off"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_mjcldjyj",
@@ -103,7 +109,8 @@
         "Police"
       ],
       "renderAs": "radio",
-      "correctAnswer": "OIC"
+      "correctAnswer": "OIC",
+      "points": 1
     },
     {
       "id": "fld_mjclehwr",
@@ -122,7 +129,8 @@
       "correctAnswer": [
         "Ensuring crews have adequate rest and refreshment ",
         "Identifying safety issues and hazards on the incident ground"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_mjclgble",
@@ -131,7 +139,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     },
     {
       "id": "fld_mjclgx41",
@@ -148,7 +157,8 @@
       "correctAnswer": [
         "Ensuring FENZ personnel carrying out decontamination during an incident follow the requirements of the HazMat policy",
         "Appointing a Decontamination Officer whenever the decontamination corridor is in use or as required"
-      ]
+      ],
+      "points": 1
     }
   ]
 }

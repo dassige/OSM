@@ -28,7 +28,8 @@
         "Identify the gas and its properties and monitor levels of flammability",
         "Notify air traffic control authorities to keep air space clear in vicinity of large leaks",
         "Media statements"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h61coolrate",
@@ -42,7 +43,8 @@
         "360 L/min (6 L/s) per m2 in the area of flame impingement."
       ],
       "renderAs": "radio",
-      "correctAnswer": "1920 L/m (32 L/s) per m2 in the area of flame impingement."
+      "correctAnswer": "1920 L/m (32 L/s) per m2 in the area of flame impingement.",
+      "points": 1
     },
     {
       "id": "fld_h61firectrl",
@@ -71,7 +73,8 @@
         "Cool tanks and pipe-work, taking care not to freeze up relief valves.",
         "Evacuate all unnecessary personnel, other service personnel and members of the public from inner cordon",
         "Wear structural firefighting uniform and BA"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h61leakctrl",
@@ -90,7 +93,8 @@
         "Personnel will not enter gas cloud",
         "Establish inner cordon (consider wind direction)",
         "Awareness of dangers of liquid leaks"
-      ]
+      ],
+      "points": 1
     }
   ]
 }

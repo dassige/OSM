@@ -28,7 +28,8 @@
         "Underground installations",
         "Polychlorinated biphenyls (PCBs)",
         "Power stations"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is4hazards",
@@ -47,7 +48,8 @@
         "Electrocution",
         "Oil",
         "Gases from fixed installations"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is4training",
@@ -56,7 +58,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": null
+      "correctAnswer": null,
+      "points": 1
     },
     {
       "id": "fld_is4isolation",
@@ -65,7 +68,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": null
+      "correctAnswer": null,
+      "points": 1
     },
     {
       "id": "fld_is4treatlive",
@@ -74,7 +78,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": null
+      "correctAnswer": null,
+      "points": 1
     },
     {
       "id": "fld_is4storm",
@@ -83,7 +88,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": null
+      "correctAnswer": null,
+      "points": 1
     },
     {
       "id": "fld_is4ladders",
@@ -92,7 +98,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": null
+      "correctAnswer": null,
+      "points": 1
     },
     {
       "id": "fld_is4oicmeasures",
@@ -111,7 +118,8 @@
         "Contact and liaise with power company representatives",
         "Keep personnel directly involved to a minimum",
         "Ensure that crews wear full PPE and BA."
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is4manualhandling",
@@ -120,7 +128,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": null
+      "correctAnswer": null,
+      "points": 1
     }
   ]
 }

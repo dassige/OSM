@@ -10,7 +10,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": null
+      "correctAnswer": "Yes",
+      "points": 1
     },
     {
       "id": "fld_h62leaking",
@@ -32,7 +33,8 @@
         "Prevent ignition and monitor the flammability range if possible",
         "Identify the gas and isolate the leak",
         "Liaise with HSTLC or the enforcement officer"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h62fire",
@@ -49,7 +51,8 @@
       "correctAnswer": [
         "Park upwind and uphill in a SAFE location",
         "Cool the cylinder from a safe position"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h62acetylene",
@@ -64,7 +67,8 @@
       "correctAnswer": [
         "If it is possible to view cylinder from behind a solid structure: Do not approach the cylinder: Evacuate the area for a 200 metre radius, leave the cylinder in position and apply copious water after the fire is extinguished, check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it.",
         "If NOT possible to view cylinder from behind a solid structure: Do not approach the cylinder, Evacuate the area for a 200 metre radius. Leave the cylinder in position and apply copious water after the fire is extinguished. Check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it."
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h62bleve",
@@ -88,7 +92,8 @@
         "Evacuate all unnecessary personnel and public from the area and establish an inner cordon",
         "Cool cylinders from a protected position",
         "Take care not to freeze up relief valves if cooling water is applied"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h62gascloud",
@@ -105,7 +110,8 @@
       "correctAnswer": [
         "No personnel to enter the gas cloud",
         "Maintain awareness of the dangers of leaking pressurised gas"
-      ]
+      ],
+      "points": 1
     }
   ]
 }

@@ -29,7 +29,8 @@
         "Effect on the environment",
         "Topographical and climatic features",
         "Media statements"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h5q2",
@@ -49,7 +50,8 @@
         "Extinguishing and/or cooling",
         "Protecting exposures",
         "Extinguishing ground fires before attacking the contents of a tank"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h5q3",
@@ -70,7 +72,8 @@
         "Foam blanket",
         "Containment of run-off",
         "Decontamination and Disposal"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h5q4",
@@ -94,7 +97,8 @@
         "No personnel in the bunded area.",
         "FENZ personnel will be briefed on the plan of action and safety measures.",
         "Appoint a Safety Officer"
-      ]
+      ],
+      "points": 1
     }
   ]
 }

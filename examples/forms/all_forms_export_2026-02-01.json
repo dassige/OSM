@@ -1,131 +1,9 @@
 [
   {
-    "id": 15,
-    "name": "AI Gemini~ OI (G7) - Decontamination Skills and Policy Verification",
-    "status": 0,
-    "intro": "<h3>Overview of Decontamination Requirements</h3>\n<p>This questionnaire verifies your understanding of the <strong>G7 Decontamination Policy</strong> and <strong>SOP</strong>. It covers operational roles, safety protocols, and the treatment of vulnerable persons during decontamination procedures.</p>",
-    "structure": [
-      {
-        "id": "fld_a7b1",
-        "type": "radio",
-        "description": "<p>According to the policy, who is the agency responsible for the decontamination of the public and personnel at incidents attended by Fire and Emergency New Zealand?</p>",
-        "required": true,
-        "options": [
-          "Health New Zealand",
-          "New Zealand Police",
-          "Fire and Emergency New Zealand",
-          "Local Authorities"
-        ],
-        "renderAs": "radio",
-        "correctAnswer": "Fire and Emergency New Zealand"
-      },
-      {
-        "id": "fld_c9d2",
-        "type": "checkboxes",
-        "description": "<p>Which of the following are principles of decontamination as defined in the G7 policy? (Select all that apply)</p>",
-        "required": true,
-        "options": [
-          "Timeliness",
-          "Effectiveness",
-          "Prevent or minimise further harm",
-          "Reasonably implementable/achievable",
-          "Compulsory enforcement"
-        ],
-        "renderAs": "radio",
-        "correctAnswer": [
-          "Timeliness",
-          "Effectiveness",
-          "Prevent or minimise further harm",
-          "Reasonably implementable/achievable"
-        ]
-      },
-      {
-        "id": "fld_e3f4",
-        "type": "boolean",
-        "description": "<p>Can Fire and Emergency personnel use force to decontaminate an individual against their will if they believe it is necessary for safety?</p>",
-        "required": true,
-        "options": [],
-        "renderAs": "radio",
-        "correctAnswer": "No"
-      },
-      {
-        "id": "fld_g5h6",
-        "type": "radio",
-        "description": "<p>What is the minimum flow rate required for <strong>emergency decontamination</strong> of a person wearing permeable clothing?</p>",
-        "required": true,
-        "options": [
-          "200 litres/minute",
-          "400 litres/minute",
-          "600 litres/minute",
-          "100 litres/minute"
-        ],
-        "renderAs": "dropdown",
-        "correctAnswer": "400 litres/minute"
-      },
-      {
-        "id": "fld_i7j8",
-        "type": "text_multi",
-        "description": "<p>Describe the specific restriction regarding <strong>Portaflex showers</strong> and their use on infants or members of the public.</p>",
-        "required": true,
-        "options": [],
-        "renderAs": "radio",
-        "correctAnswer": "Portaflex showers should not be used on members of the public or infants, nor on personnel who are not wearing non-permeable suits and breathing apparatus."
-      },
-      {
-        "id": "fld_k9l0",
-        "type": "radio",
-        "description": "<p>Within what timeframe must a Decontamination Officer record exposure to a hazardous substance in Safe@Work?</p>",
-        "required": true,
-        "options": [
-          "12 hours",
-          "24 hours",
-          "48 hours",
-          "7 days"
-        ],
-        "renderAs": "radio",
-        "correctAnswer": "48 hours"
-      },
-      {
-        "id": "fld_m1n2",
-        "type": "checkboxes",
-        "description": "<p>When decontaminating a child, what steps must firefighters take to ensure protection and professionalism? (Select all that apply)</p>",
-        "required": true,
-        "options": [
-          "Only undress or wash a child if a parent/caregiver cannot",
-          "Ensure the firefighter is never alone with the child in an enclosed space while undressing",
-          "Perform decontamination in total isolation to ensure privacy",
-          "Report any suspected child abuse observed during the process"
-        ],
-        "renderAs": "radio",
-        "correctAnswer": [
-          "Only undress or wash a child if a parent/caregiver cannot",
-          "Ensure the firefighter is never alone with the child in an enclosed space while undressing",
-          "Report any suspected child abuse observed during the process"
-        ]
-      },
-      {
-        "id": "fld_o3p4",
-        "type": "radio",
-        "description": "<p>Where should the decontamination facility be located in relation to the incident zones?</p>",
-        "required": true,
-        "options": [
-          "Deep within the Hot Zone",
-          "In the middle of the Cold Zone",
-          "At the transition from the Hot Zone to the Cold Zone",
-          "At the Fire Station"
-        ],
-        "renderAs": "radio",
-        "correctAnswer": "At the transition from the Hot Zone to the Cold Zone"
-      }
-    ],
-    "created_at": "2025-12-21 21:04:48",
-    "public_id": "fecebceb-f49f-4ef8-9968-793fd2daf730"
-  },
-  {
     "id": 10,
     "name": "E3-2 Respiratory Protection",
     "status": 1,
-    "intro": "<p>The learning document for this test is at <a href=\"https://portal.fireandemergency.nz/documents/e3-2-pop-respiratory-protection-equipment-policy/\" target=\"_blank\" rel=\"noopener\">E3-2 Respiratory Protection</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+    "intro": "",
     "structure": [
       {
         "id": "fld_mjccjuui",
@@ -143,7 +21,8 @@
         "correctAnswer": [
           "Whenever they are operating in conditions that may expose them to a contaminated atmosphere",
           "Other atmospheres that are irrespirable (e.g. depleted oxygen)"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjcclr2u",
@@ -163,7 +42,8 @@
           "Entry Control Board",
           "Chemical Splash Suits",
           "At least 1 BA Main Guide Line"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjccnfr2",
@@ -185,7 +65,8 @@
           "Torch",
           "Distress Signal Unit (DSU)",
           "Personal Line"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjccollj",
@@ -205,7 +86,8 @@
           "Monitoring the safety of BA wearers",
           "Tasking and deploying emergency teams as required",
           "Maintaining resources for BA wearers"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjccr0m8",
@@ -225,7 +107,8 @@
           "More than 2 Entry Control Points are set up",
           "Six or more BA Teams are operating at the same time",
           "The OIC considers it necessary"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjccscq7",
@@ -234,7 +117,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_mjcctib0",
@@ -248,17 +132,21 @@
           "Medical First Response"
         ],
         "renderAs": "radio",
-        "correctAnswer": "Telemetry Set operators"
+        "correctAnswer": "Telemetry Set operators",
+        "points": 1
       }
     ],
     "created_at": "2025-12-19 04:08:17",
-    "public_id": "e94c3517-9d7d-4012-b15d-c6a52abfa21b"
+    "public_id": "e94c3517-9d7d-4012-b15d-c6a52abfa21b",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 11,
     "name": "FL2 Use of FENZ Operational Vehicles",
     "status": 1,
-    "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/fl2-1-pop-use-of-operational-vehicles-policy/\" target=\"_blank\" rel=\"noopener\">FL2 Use of FENZ Operational Vehicles</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+    "intro": "",
     "structure": [
       {
         "id": "fld_mjcdh7vo",
@@ -272,7 +160,8 @@
           "When requested by FireComms"
         ],
         "renderAs": "radio",
-        "correctAnswer": "When travelling against the traffic, through red lights or stop signs at intersections"
+        "correctAnswer": "When travelling against the traffic, through red lights or stop signs at intersections",
+        "points": 1
       },
       {
         "id": "fld_mjcdjunm",
@@ -286,7 +175,8 @@
           "The Police"
         ],
         "renderAs": "radio",
-        "correctAnswer": "Advise your Chief Fire Officer or Manager"
+        "correctAnswer": "Advise your Chief Fire Officer or Manager",
+        "points": 1
       },
       {
         "id": "fld_mjcdkmvo",
@@ -300,7 +190,8 @@
           "Only if you have been properly inducted and are familiar with the vehicle"
         ],
         "renderAs": "radio",
-        "correctAnswer": "When requested by the Ambulance OIC, the driver must have a Class 1 license and have current competency in emergency response driving (ERD)."
+        "correctAnswer": "When requested by the Ambulance OIC, the driver must have a Class 1 license and have current competency in emergency response driving (ERD).",
+        "points": 1
       },
       {
         "id": "fld_mjcdmb3w",
@@ -314,7 +205,8 @@
           "Speed limits do not apply to FENZ vehicles"
         ],
         "renderAs": "radio",
-        "correctAnswer": "110km/h"
+        "correctAnswer": "110km/h",
+        "points": 1
       },
       {
         "id": "fld_mjcdn95i",
@@ -328,7 +220,8 @@
           "50 km/h"
         ],
         "renderAs": "radio",
-        "correctAnswer": "65 km/h"
+        "correctAnswer": "65 km/h",
+        "points": 1
       },
       {
         "id": "fld_mjcdo9sk",
@@ -342,7 +235,8 @@
           "25 km/h above the posted speed limit"
         ],
         "renderAs": "radio",
-        "correctAnswer": "The posted speed limit"
+        "correctAnswer": "The posted speed limit",
+        "points": 1
       },
       {
         "id": "fld_mjcdoz4y",
@@ -356,7 +250,8 @@
           "Stop at the lights and wait for the green signal"
         ],
         "renderAs": "radio",
-        "correctAnswer": "Slow to 10 km/h and stop if necessary, proceed if the way is clear, at a speed not exceeding 20 km/h and provided siren and beacons are operating"
+        "correctAnswer": "Slow to 10 km/h and stop if necessary, proceed if the way is clear, at a speed not exceeding 20 km/h and provided siren and beacons are operating",
+        "points": 1
       },
       {
         "id": "fld_mjcdpuk2",
@@ -370,7 +265,8 @@
           "Never"
         ],
         "renderAs": "radio",
-        "correctAnswer": "When the vehicle has stopped and parked out of the line of traffic or the call is to 111 or *555 and it unsafe or unpractical to stop and park out of the line of traffic"
+        "correctAnswer": "When the vehicle has stopped and parked out of the line of traffic or the call is to 111 or *555 and it unsafe or unpractical to stop and park out of the line of traffic",
+        "points": 1
       },
       {
         "id": "fld_mjcdr4ny",
@@ -384,7 +280,8 @@
           "28 Cylinders"
         ],
         "renderAs": "radio",
-        "correctAnswer": "12 Cylinders"
+        "correctAnswer": "12 Cylinders",
+        "points": 1
       },
       {
         "id": "fld_mjcdrzmg",
@@ -393,7 +290,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_mjcdsd59",
@@ -411,17 +309,21 @@
         "correctAnswer": [
           "Personnel must observe the posted road speed limit",
           "Personnel are not covered by FENZ for damage or loss to a private vehicle"
-        ]
+        ],
+        "points": 1
       }
     ],
     "created_at": "2025-12-19 04:32:32",
-    "public_id": "f32b85bd-d88a-4e6f-9630-b5af7c8fe000"
+    "public_id": "f32b85bd-d88a-4e6f-9630-b5af7c8fe000",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 12,
     "name": "G2-1 Emergency Medical Support",
     "status": 1,
-    "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/g2-1-pop-emergency-medical-support-policy\" target=\"_blank\" rel=\"noopener\">G2-1 Emergency Medical Support</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+    "intro": "",
     "structure": [
       {
         "id": "fld_mjcdvizl",
@@ -438,7 +340,8 @@
         "correctAnswer": [
           "Chief Fire Officer / Group Manager ",
           "The Health and Safety Officer"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjcdzmau",
@@ -455,7 +358,8 @@
         "correctAnswer": [
           "That they are provided with travel home, including their vehicle",
           "That they are accompanied by a member of Fire and Emergency NZ until handover occurs to the emergency contact or they are discharged and returned home."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjce2qye",
@@ -468,7 +372,8 @@
           "A tent so that people can get changed in privacy"
         ],
         "renderAs": "radio",
-        "correctAnswer": "ComCen are advised to request an ambulance"
+        "correctAnswer": "ComCen are advised to request an ambulance",
+        "points": 1
       },
       {
         "id": "fld_mjce3xw6",
@@ -481,17 +386,21 @@
           "Request a Health and Safety Officer to attend"
         ],
         "renderAs": "radio",
-        "correctAnswer": "OIC must ensure that Comcen requests ambulance response"
+        "correctAnswer": "OIC must ensure that Comcen requests ambulance response",
+        "points": 1
       }
     ],
     "created_at": "2025-12-19 04:41:52",
-    "public_id": "33bfef3c-929f-4c1f-9aee-97b8bc226df1"
+    "public_id": "33bfef3c-929f-4c1f-9aee-97b8bc226df1",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 13,
     "name": "G7 Decontamination",
     "status": 1,
-    "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/g7-sop-decontamination-procedures/\" target=\"_blank\" rel=\"noopener\">G7 Decontamination Procedures</a> and <a href=\"https://portal.fireandemergency.nz/documents/g7-pop-decontamination-policy/\" target=\"_blank\" rel=\"noopener\">G7 Decontamination Policy</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+    "intro": "",
     "structure": [
       {
         "id": "fld_mjckxzw1",
@@ -504,7 +413,8 @@
           "Ambulance Service"
         ],
         "renderAs": "radio",
-        "correctAnswer": "FENZ"
+        "correctAnswer": "FENZ",
+        "points": 1
       },
       {
         "id": "fld_mjcl335m",
@@ -522,7 +432,8 @@
         "correctAnswer": [
           "Preparations for emergency decontamination are in place",
           "Consideration has been given to requesting resources for deliberate decontamination"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjcl4lek",
@@ -535,7 +446,8 @@
           "Police"
         ],
         "renderAs": "radio",
-        "correctAnswer": "Defence Force personnel"
+        "correctAnswer": "Defence Force personnel",
+        "points": 1
       },
       {
         "id": "fld_mjcl5un7",
@@ -544,7 +456,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_mjcl69vk",
@@ -561,7 +474,8 @@
         "correctAnswer": [
           "The personnel to be decontaminated must be wearing BA with a Splash suit, Gas Suit or other agency equivalent.Option 1",
           "Members of the public wearing permeable clothing (liquids/gas can pass through) that has been contaminated."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjclc0q2",
@@ -579,7 +493,8 @@
         "correctAnswer": [
           "There is no Portaflex shower available",
           "The contaminant is immiscible in water (does not mix or dissolve) or there is a need to contain the run-off"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjcldjyj",
@@ -593,7 +508,8 @@
           "Police"
         ],
         "renderAs": "radio",
-        "correctAnswer": "OIC"
+        "correctAnswer": "OIC",
+        "points": 1
       },
       {
         "id": "fld_mjclehwr",
@@ -612,7 +528,8 @@
         "correctAnswer": [
           "Ensuring crews have adequate rest and refreshment ",
           "Identifying safety issues and hazards on the incident ground"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjclgble",
@@ -621,7 +538,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_mjclgx41",
@@ -638,11 +556,15 @@
         "correctAnswer": [
           "Ensuring FENZ personnel carrying out decontamination during an incident follow the requirements of the HazMat policy",
           "Appointing a Decontamination Officer whenever the decontamination corridor is in use or as required"
-        ]
+        ],
+        "points": 1
       }
     ],
     "created_at": "2025-12-19 07:58:34",
-    "public_id": "b856c354-2af9-4284-bd46-ffc48cfff360"
+    "public_id": "b856c354-2af9-4284-bd46-ffc48cfff360",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 14,
@@ -657,7 +579,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_mjcltvxs",
@@ -679,7 +602,8 @@
           "Heat and Smoke",
           "Water damage.",
           "Adverse weather."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjclvq0q",
@@ -697,7 +621,8 @@
         "correctAnswer": [
           "Floor isolation and main sprinkler valves.",
           "Place absorbent material beneath activated sprinkler heads"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_mjclwzuz",
@@ -706,7 +631,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_mjclxbrt",
@@ -724,11 +650,15 @@
         "correctAnswer": [
           "Ventilation",
           "Decontamination"
-        ]
+        ],
+        "points": 1
       }
     ],
     "created_at": "2025-12-19 08:24:57",
-    "public_id": "714585cf-9dc4-427e-915d-5746dc8b95ad"
+    "public_id": "714585cf-9dc4-427e-915d-5746dc8b95ad",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 21,
@@ -759,7 +689,8 @@
           "Any evacuation required",
           "The protection of the environment.",
           "The closure of FENZ involvement in the incident."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h1h6q2",
@@ -768,7 +699,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Chemdata"
+        "correctAnswer": "Chemdata",
+        "points": 1
       },
       {
         "id": "fld_h1h6q3",
@@ -777,7 +709,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "HAZMAT Action Guide (HAG)"
+        "correctAnswer": "HAZMAT Action Guide (HAG)",
+        "points": 1
       },
       {
         "id": "fld_h1h6q4",
@@ -801,7 +734,8 @@
           "Park 400m away from incident",
           "Always use Chemical Splash Suits and BA for snap rescues",
           "Ensure there are water tankers available for decontamination"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h1h6q5",
@@ -830,7 +764,8 @@
           "Details from hazardous goods label",
           "State of material (solid, liquid or gas)",
           "Approximate amount spilled"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h1h6q6",
@@ -847,7 +782,8 @@
         "correctAnswer": [
           "Evacuate upwind or across wind clear of smoke/fumes",
           "Consider in-place protection."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h1h6q7",
@@ -869,7 +805,8 @@
           "Right cylinders or turn leak to its highest point",
           "Cover spillage or apply a foam blanket if appropriate",
           "Contain the spillage by damming"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h1h6q8",
@@ -878,7 +815,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_h1h6q9",
@@ -891,7 +829,8 @@
           "Ensure crew are wearing Chemical Splash Suits and approach carefully using the Co-ordinated Water Protection Technique"
         ],
         "renderAs": "radio",
-        "correctAnswer": "Contain the fire. Once the hazard level and the hazardous materials are identified, use the appropriate extinguishing medium and PPE"
+        "correctAnswer": "Contain the fire. Once the hazard level and the hazardous materials are identified, use the appropriate extinguishing medium and PPE",
+        "points": 1
       },
       {
         "id": "fld_h1h6q10",
@@ -900,11 +839,15 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       }
     ],
     "created_at": "2025-12-21 23:27:23",
-    "public_id": "d37731b0-9b60-4587-a660-18a1b44ade8e"
+    "public_id": "d37731b0-9b60-4587-a660-18a1b44ade8e",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 22,
@@ -938,7 +881,8 @@
           "Effect on the environment",
           "Topographical and climatic features",
           "Media statements"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h5q2",
@@ -958,7 +902,8 @@
           "Extinguishing and/or cooling",
           "Protecting exposures",
           "Extinguishing ground fires before attacking the contents of a tank"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h5q3",
@@ -979,7 +924,8 @@
           "Foam blanket",
           "Containment of run-off",
           "Decontamination and Disposal"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h5q4",
@@ -1003,11 +949,15 @@
           "No personnel in the bunded area.",
           "FENZ personnel will be briefed on the plan of action and safety measures.",
           "Appoint a Safety Officer"
-        ]
+        ],
+        "points": 1
       }
     ],
     "created_at": "2025-12-21 23:31:28",
-    "public_id": "4fe610ab-dce4-446a-90c3-fe3717cfe9f2"
+    "public_id": "4fe610ab-dce4-446a-90c3-fe3717cfe9f2",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 24,
@@ -1040,7 +990,8 @@
           "Identify the gas and its properties and monitor levels of flammability",
           "Notify air traffic control authorities to keep air space clear in vicinity of large leaks",
           "Media statements"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h61coolrate",
@@ -1054,7 +1005,8 @@
           "360 L/min (6 L/s) per m2 in the area of flame impingement."
         ],
         "renderAs": "radio",
-        "correctAnswer": "1920 L/m (32 L/s) per m2 in the area of flame impingement."
+        "correctAnswer": "1920 L/m (32 L/s) per m2 in the area of flame impingement.",
+        "points": 1
       },
       {
         "id": "fld_h61firectrl",
@@ -1083,7 +1035,8 @@
           "Cool tanks and pipe-work, taking care not to freeze up relief valves.",
           "Evacuate all unnecessary personnel, other service personnel and members of the public from inner cordon",
           "Wear structural firefighting uniform and BA"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h61leakctrl",
@@ -1102,11 +1055,15 @@
           "Personnel will not enter gas cloud",
           "Establish inner cordon (consider wind direction)",
           "Awareness of dangers of liquid leaks"
-        ]
+        ],
+        "points": 1
       }
     ],
     "created_at": "2025-12-21 23:37:44",
-    "public_id": "0bc31721-e7f9-4d7f-a232-b5c9815ba162"
+    "public_id": "0bc31721-e7f9-4d7f-a232-b5c9815ba162",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 28,
@@ -1121,7 +1078,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": null
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_h62leaking",
@@ -1143,7 +1101,8 @@
           "Prevent ignition and monitor the flammability range if possible",
           "Identify the gas and isolate the leak",
           "Liaise with HSTLC or the enforcement officer"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h62fire",
@@ -1160,7 +1119,8 @@
         "correctAnswer": [
           "Park upwind and uphill in a SAFE location",
           "Cool the cylinder from a safe position"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h62acetylene",
@@ -1175,7 +1135,8 @@
         "correctAnswer": [
           "If it is possible to view cylinder from behind a solid structure: Do not approach the cylinder: Evacuate the area for a 200 metre radius, leave the cylinder in position and apply copious water after the fire is extinguished, check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it.",
           "If NOT possible to view cylinder from behind a solid structure: Do not approach the cylinder, Evacuate the area for a 200 metre radius. Leave the cylinder in position and apply copious water after the fire is extinguished. Check for residual heat after 1 hour. Continue sequence until uniformly cold and remains cold for more than 1 hour. Notify gas supplier to remove; FENZ personnel are not to move it."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h62bleve",
@@ -1199,7 +1160,8 @@
           "Evacuate all unnecessary personnel and public from the area and establish an inner cordon",
           "Cool cylinders from a protected position",
           "Take care not to freeze up relief valves if cooling water is applied"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h62gascloud",
@@ -1216,11 +1178,15 @@
         "correctAnswer": [
           "No personnel to enter the gas cloud",
           "Maintain awareness of the dangers of leaking pressurised gas"
-        ]
+        ],
+        "points": 1
       }
     ],
     "created_at": "2025-12-22 00:08:08",
-    "public_id": "bc3c3e33-4717-4af0-a603-9e2498519b36"
+    "public_id": "bc3c3e33-4717-4af0-a603-9e2498519b36",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 29,
@@ -1246,7 +1212,8 @@
           "Hazardous Chemicals",
           "Booby Traps",
           "Hostile Civilians"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h71lead",
@@ -1260,7 +1227,8 @@
           "Environmental Agency"
         ],
         "renderAs": "radio",
-        "correctAnswer": "New Zealand Police"
+        "correctAnswer": "New Zealand Police",
+        "points": 1
       },
       {
         "id": "fld_h71control",
@@ -1279,7 +1247,8 @@
           "Withdraw",
           "Secure Premises",
           "Notify Comms/Police"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h71outside",
@@ -1302,7 +1271,8 @@
           "Discarded waste packaging",
           "Multiple vehicles and vans parked outside",
           "High security measures - Cameras, barbed wire fence, Guard dogs"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h71inside",
@@ -1328,7 +1298,8 @@
           "Bunsen Burners / LPG cylinders",
           "Hot Plates",
           "Lithium batteries / Bulk chemical containers."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_h71permission",
@@ -1342,11 +1313,15 @@
           "Environmental Agency"
         ],
         "renderAs": "radio",
-        "correctAnswer": "New Zealand Police"
+        "correctAnswer": "New Zealand Police",
+        "points": 1
       }
     ],
     "created_at": "2025-12-22 00:11:33",
-    "public_id": "307cbf49-334c-4904-866c-de05cf97bec2"
+    "public_id": "307cbf49-334c-4904-866c-de05cf97bec2",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 30,
@@ -1376,7 +1351,8 @@
           "Evaluate priorities, give direction and maintain control.",
           "Establish an incident management structure",
           "Monitor progress as it relates to their area of operations"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is1hazardident",
@@ -1389,7 +1365,8 @@
           "Record the hazard on the Entry Control Board"
         ],
         "renderAs": "radio",
-        "correctAnswer": "Bring the hazard to the attention of their OIC or the OIC Fire."
+        "correctAnswer": "Bring the hazard to the attention of their OIC or the OIC Fire.",
+        "points": 1
       },
       {
         "id": "fld_is1civilians",
@@ -1398,7 +1375,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_is1seatbelts",
@@ -1412,7 +1390,8 @@
           "The OIC"
         ],
         "renderAs": "radio",
-        "correctAnswer": "The OIC"
+        "correctAnswer": "The OIC",
+        "points": 1
       },
       {
         "id": "fld_is1ppespec",
@@ -1426,7 +1405,8 @@
           "The Safety Officer"
         ],
         "renderAs": "radio",
-        "correctAnswer": "The OIC"
+        "correctAnswer": "The OIC",
+        "points": 1
       },
       {
         "id": "fld_is1baworn",
@@ -1435,7 +1415,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_is1socount",
@@ -1449,7 +1430,8 @@
           "More than 3 crews"
         ],
         "renderAs": "radio",
-        "correctAnswer": "More than 16"
+        "correctAnswer": "More than 16",
+        "points": 1
       },
       {
         "id": "fld_is1sosit",
@@ -1470,7 +1452,8 @@
           "Live fire training is being undertaken.",
           "Operating in unusual or unfamiliar circumstances.",
           "Whenever FENZ is not the lead agency and a Safety Officer is required for FENZ operations."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is1evacsig",
@@ -1484,7 +1467,8 @@
           "Whistles"
         ],
         "renderAs": "radio",
-        "correctAnswer": "Continuous operation of all vehicle sirens"
+        "correctAnswer": "Continuous operation of all vehicle sirens",
+        "points": 1
       },
       {
         "id": "fld_is1evacpers",
@@ -1503,7 +1487,8 @@
           "Shut down firefighting deliveries at the nozzle.",
           "Withdraw to a place of safety.",
           "Uplift BA tallies from the Entry Control Officer and return to their appliance."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is1evacoic",
@@ -1519,7 +1504,8 @@
         "correctAnswer": [
           "Uplift nominal roll tallies and conduct a head count.",
           "Advise the OIC Fire of the result."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is1hco",
@@ -1528,7 +1514,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_is1handback",
@@ -1537,7 +1524,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_is1shep",
@@ -1546,11 +1534,15 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       }
     ],
     "created_at": "2025-12-22 00:18:41",
-    "public_id": "a7499b5c-c2b4-444f-951a-d902914c53b6"
+    "public_id": "a7499b5c-c2b4-444f-951a-d902914c53b6",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 31,
@@ -1578,7 +1570,8 @@
           "Allow space and/or access for other emergency vehicles",
           "Leave the beacons on",
           "Adjust the headlights to meet the conditions at the scene, considering time of day, light levels, glare hazard for other drivers"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is3crewsafety",
@@ -1595,7 +1588,8 @@
         "correctAnswer": [
           "Don approved reflective clothing",
           "Exit vehicles from the safe side if possible"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is3oicfactors",
@@ -1611,7 +1605,8 @@
         "correctAnswer": [
           "Close the road if two-way traffic cannot be achieved",
           "Request police to guide traffic"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is3departure",
@@ -1627,11 +1622,15 @@
         "correctAnswer": [
           "Made safe by FENZ personnel",
           "Handed over to another agency or authority to be made safe"
-        ]
+        ],
+        "points": 1
       }
     ],
     "created_at": "2025-12-22 00:23:41",
-    "public_id": "fd57fd0f-c2b9-4fcf-b141-213f1a7fe3e1"
+    "public_id": "fd57fd0f-c2b9-4fcf-b141-213f1a7fe3e1",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 33,
@@ -1664,7 +1663,8 @@
           "Underground installations",
           "Polychlorinated biphenyls (PCBs)",
           "Power stations"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is4hazards",
@@ -1683,7 +1683,8 @@
           "Electrocution",
           "Oil",
           "Gases from fixed installations"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is4training",
@@ -1692,7 +1693,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": null
+        "correctAnswer": null,
+        "points": 1
       },
       {
         "id": "fld_is4isolation",
@@ -1701,7 +1703,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": null
+        "correctAnswer": null,
+        "points": 1
       },
       {
         "id": "fld_is4treatlive",
@@ -1710,7 +1713,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": null
+        "correctAnswer": null,
+        "points": 1
       },
       {
         "id": "fld_is4storm",
@@ -1719,7 +1723,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": null
+        "correctAnswer": null,
+        "points": 1
       },
       {
         "id": "fld_is4ladders",
@@ -1728,7 +1733,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": null
+        "correctAnswer": null,
+        "points": 1
       },
       {
         "id": "fld_is4oicmeasures",
@@ -1747,7 +1753,8 @@
           "Contact and liaise with power company representatives",
           "Keep personnel directly involved to a minimum",
           "Ensure that crews wear full PPE and BA."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is4manualhandling",
@@ -1756,11 +1763,15 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": null
+        "correctAnswer": null,
+        "points": 1
       }
     ],
     "created_at": "2025-12-22 00:29:38",
-    "public_id": "6b92cafe-69f5-40f6-92c3-a8843c8c10c1"
+    "public_id": "6b92cafe-69f5-40f6-92c3-a8843c8c10c1",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   },
   {
     "id": 34,
@@ -1780,7 +1791,8 @@
           "Fire and Emergency - On Call Executive"
         ],
         "renderAs": "radio",
-        "correctAnswer": "New Zealand Police"
+        "correctAnswer": "New Zealand Police",
+        "points": 1
       },
       {
         "id": "fld_is9local",
@@ -1807,7 +1819,8 @@
           "Any disturbance that develops while Fire and Emergency NZ personnel are attending an incident",
           "Rescue and protection of persons and property from fire",
           "Safety of FENZ personnel and the security of fire stations"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is9role",
@@ -1816,7 +1829,8 @@
         "required": true,
         "options": [],
         "renderAs": "radio",
-        "correctAnswer": "Yes"
+        "correctAnswer": "Yes",
+        "points": 1
       },
       {
         "id": "fld_is9ready",
@@ -1836,7 +1850,8 @@
           "Foster understanding of each other's roles and methods of operation",
           "Agree on local procedures",
           "Identify potential points of tension in the community"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is9response",
@@ -1857,7 +1872,8 @@
           "Determine safe and secure response routes",
           "Do not use flashing lights and sirens",
           "Liaise with NZ Police to determine whether a police escort is necessary"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is9incident",
@@ -1878,7 +1894,8 @@
           "Withdraw to a safe place",
           "Advise ComCen",
           "Liaise with NZ Police"
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is9ppe",
@@ -1891,7 +1908,8 @@
           "Structural firefighting uniform at all times, with visors down."
         ],
         "renderAs": "radio",
-        "correctAnswer": "Structural firefighting uniform at all times, with visors down."
+        "correctAnswer": "Structural firefighting uniform at all times, with visors down.",
+        "points": 1
       },
       {
         "id": "fld_is9withdrawal",
@@ -1910,7 +1928,8 @@
           "Park appliances with the driver remaining in the driver's seat with the engine running",
           "Do not use appliance Hose Reels",
           "Use delivery hose from hydrants where the water pressure is sufficient."
-        ]
+        ],
+        "points": 1
       },
       {
         "id": "fld_is9support",
@@ -1923,7 +1942,8 @@
           "No"
         ],
         "renderAs": "radio",
-        "correctAnswer": "No"
+        "correctAnswer": "No",
+        "points": 1
       },
       {
         "id": "fld_is9hazards",
@@ -1946,10 +1966,14 @@
           "Vehicles being hi-jacked",
           "Fire bombs",
           "Physical attack"
-        ]
+        ],
+        "points": 1
       }
     ],
     "created_at": "2025-12-22 00:32:37",
-    "public_id": "4c4b2fe4-df1c-4044-863a-b2806b5f8756"
+    "public_id": "4c4b2fe4-df1c-4044-863a-b2806b5f8756",
+    "min_score": 70,
+    "min_score_type": "percentage",
+    "max_tries": 3
   }
 ]

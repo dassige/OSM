@@ -26,7 +26,8 @@
         "Any evacuation required",
         "The protection of the environment.",
         "The closure of FENZ involvement in the incident."
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h1h6q2",
@@ -35,7 +36,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Chemdata"
+      "correctAnswer": "Chemdata",
+      "points": 1
     },
     {
       "id": "fld_h1h6q3",
@@ -44,7 +46,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "HAZMAT Action Guide (HAG)"
+      "correctAnswer": "HAZMAT Action Guide (HAG)",
+      "points": 1
     },
     {
       "id": "fld_h1h6q4",
@@ -68,7 +71,8 @@
         "Park 400m away from incident",
         "Always use Chemical Splash Suits and BA for snap rescues",
         "Ensure there are water tankers available for decontamination"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h1h6q5",
@@ -97,7 +101,8 @@
         "Details from hazardous goods label",
         "State of material (solid, liquid or gas)",
         "Approximate amount spilled"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h1h6q6",
@@ -114,7 +119,8 @@
       "correctAnswer": [
         "Evacuate upwind or across wind clear of smoke/fumes",
         "Consider in-place protection."
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h1h6q7",
@@ -136,7 +142,8 @@
         "Right cylinders or turn leak to its highest point",
         "Cover spillage or apply a foam blanket if appropriate",
         "Contain the spillage by damming"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_h1h6q8",
@@ -145,7 +152,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     },
     {
       "id": "fld_h1h6q9",
@@ -158,7 +166,8 @@
         "Ensure crew are wearing Chemical Splash Suits and approach carefully using the Co-ordinated Water Protection Technique"
       ],
       "renderAs": "radio",
-      "correctAnswer": "Contain the fire. Once the hazard level and the hazardous materials are identified, use the appropriate extinguishing medium and PPE"
+      "correctAnswer": "Contain the fire. Once the hazard level and the hazardous materials are identified, use the appropriate extinguishing medium and PPE",
+      "points": 1
     },
     {
       "id": "fld_h1h6q10",
@@ -167,7 +176,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     }
   ]
 }

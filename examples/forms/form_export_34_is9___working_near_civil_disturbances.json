@@ -15,7 +15,8 @@
         "Fire and Emergency - On Call Executive"
       ],
       "renderAs": "radio",
-      "correctAnswer": "New Zealand Police"
+      "correctAnswer": "New Zealand Police",
+      "points": 1
     },
     {
       "id": "fld_is9local",
@@ -42,7 +43,8 @@
         "Any disturbance that develops while Fire and Emergency NZ personnel are attending an incident",
         "Rescue and protection of persons and property from fire",
         "Safety of FENZ personnel and the security of fire stations"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is9role",
@@ -51,7 +53,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     },
     {
       "id": "fld_is9ready",
@@ -71,7 +74,8 @@
         "Foster understanding of each other's roles and methods of operation",
         "Agree on local procedures",
         "Identify potential points of tension in the community"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is9response",
@@ -92,7 +96,8 @@
         "Determine safe and secure response routes",
         "Do not use flashing lights and sirens",
         "Liaise with NZ Police to determine whether a police escort is necessary"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is9incident",
@@ -113,7 +118,8 @@
         "Withdraw to a safe place",
         "Advise ComCen",
         "Liaise with NZ Police"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is9ppe",
@@ -126,7 +132,8 @@
         "Structural firefighting uniform at all times, with visors down."
       ],
       "renderAs": "radio",
-      "correctAnswer": "Structural firefighting uniform at all times, with visors down."
+      "correctAnswer": "Structural firefighting uniform at all times, with visors down.",
+      "points": 1
     },
     {
       "id": "fld_is9withdrawal",
@@ -145,7 +152,8 @@
         "Park appliances with the driver remaining in the driver's seat with the engine running",
         "Do not use appliance Hose Reels",
         "Use delivery hose from hydrants where the water pressure is sufficient."
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is9support",
@@ -158,7 +166,8 @@
         "No"
       ],
       "renderAs": "radio",
-      "correctAnswer": "No"
+      "correctAnswer": "No",
+      "points": 1
     },
     {
       "id": "fld_is9hazards",
@@ -181,7 +190,8 @@
         "Vehicles being hi-jacked",
         "Fire bombs",
         "Physical attack"
-      ]
+      ],
+      "points": 1
     }
   ]
 }

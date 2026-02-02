@@ -25,7 +25,8 @@
         "Evaluate priorities, give direction and maintain control.",
         "Establish an incident management structure",
         "Monitor progress as it relates to their area of operations"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is1hazardident",
@@ -38,7 +39,8 @@
         "Record the hazard on the Entry Control Board"
       ],
       "renderAs": "radio",
-      "correctAnswer": "Bring the hazard to the attention of their OIC or the OIC Fire."
+      "correctAnswer": "Bring the hazard to the attention of their OIC or the OIC Fire.",
+      "points": 1
     },
     {
       "id": "fld_is1civilians",
@@ -47,7 +49,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     },
     {
       "id": "fld_is1seatbelts",
@@ -61,7 +64,8 @@
         "The OIC"
       ],
       "renderAs": "radio",
-      "correctAnswer": "The OIC"
+      "correctAnswer": "The OIC",
+      "points": 1
     },
     {
       "id": "fld_is1ppespec",
@@ -75,7 +79,8 @@
         "The Safety Officer"
       ],
       "renderAs": "radio",
-      "correctAnswer": "The OIC"
+      "correctAnswer": "The OIC",
+      "points": 1
     },
     {
       "id": "fld_is1baworn",
@@ -84,7 +89,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     },
     {
       "id": "fld_is1socount",
@@ -98,7 +104,8 @@
         "More than 3 crews"
       ],
       "renderAs": "radio",
-      "correctAnswer": "More than 16"
+      "correctAnswer": "More than 16",
+      "points": 1
     },
     {
       "id": "fld_is1sosit",
@@ -119,7 +126,8 @@
         "Live fire training is being undertaken.",
         "Operating in unusual or unfamiliar circumstances.",
         "Whenever FENZ is not the lead agency and a Safety Officer is required for FENZ operations."
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is1evacsig",
@@ -133,7 +141,8 @@
         "Whistles"
       ],
       "renderAs": "radio",
-      "correctAnswer": "Continuous operation of all vehicle sirens"
+      "correctAnswer": "Continuous operation of all vehicle sirens",
+      "points": 1
     },
     {
       "id": "fld_is1evacpers",
@@ -152,7 +161,8 @@
         "Shut down firefighting deliveries at the nozzle.",
         "Withdraw to a place of safety.",
         "Uplift BA tallies from the Entry Control Officer and return to their appliance."
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is1evacoic",
@@ -168,7 +178,8 @@
       "correctAnswer": [
         "Uplift nominal roll tallies and conduct a head count.",
         "Advise the OIC Fire of the result."
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_is1hco",
@@ -177,7 +188,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     },
     {
       "id": "fld_is1handback",
@@ -186,7 +198,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     },
     {
       "id": "fld_is1shep",
@@ -195,7 +208,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     }
   ]
 }

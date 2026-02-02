@@ -1,0 +1,58 @@
+name,url,critical_skill,enabled
+BA - Breathing Apparatus Skills and Emergencies (C),,true,true
+BA - Cylinder Filler  5 yr (recert),,false,true
+BA - Entry Control Procedures (C),,true,true
+BA - Search & Rescue,,false,true
+Chainsaw Operation,,false,true
+Comms - Radio communications (LMR),,false,true
+Driving - ERD Driver Revalidation,,false,true
+Driving - ERD Legislation,,false,true
+Driving - Four-wheel drive,,false,true
+Electricity Module 1- How Electricity Works,,false,true
+Electricity Module 2 Working Safely around Electricity,,false,true
+Extinguishers - CO2 and DP,,false,true
+Fire Ground Management of Carcinogens,,false,true
+Hazmat - Emergency Decontamination  (C),,true,true
+Hazmat - Emergency Response and Hazardous Material Action Guides,,false,true
+Hazmat - Haz Sub and Post Fire Decontamination,,false,true
+IM - Tactical Command Simulation Training (Volunteers),,false,true
+Ladders - Access,,false,true
+Ladders - Rescue - 10.5 Wooden,,false,true
+Landslide Awareness,,false,true
+Line - Working at Heights,,false,true
+Line - Working at Heights Revalidation,,false,true
+Line Rescue - Standard Knots,,false,true
+Medical Co-response - CPR (C),,true,true
+Medical Co-response - Oxygen Therapy (C),http://localhost:3000/forms-view.html?id=1,true,true
+Medical Co-response Recertification,,false,true
+Module 1 Working Safely around Water – Level 1,,false,true
+Module 2 Water Rescue – Level 2,,false,true
+Module 3 Water Safety Kit,,false,true
+OI (E3-2) - Breathing Apparatus (C),e94c3517-9d7d-4012-b15d-c6a52abfa21b,true,true
+OI (FL2-1) - Use of FENZ Operational Vehicles,f32b85bd-d88a-4e6f-9630-b5af7c8fe000,false,true
+OI (G2-1) - Emergency Medical Support,33bfef3c-929f-4c1f-9aee-97b8bc226df1,false,true
+OI (G6) - Ventilation,,false,true
+OI (G7) - Decontamination,b856c354-2af9-4284-bd46-ffc48cfff360,false,true
+OI (G9) - Salvage,714585cf-9dc4-427e-915d-5746dc8b95ad,false,true
+OI (H1-H6) - Hazardous Materials,d37731b0-9b60-4587-a660-18a1b44ade8e,false,true
+OI (H5) - Bulk Flammable Liquids,4fe610ab-dce4-446a-90c3-fe3717cfe9f2,false,true
+OI (H6-1) - Bulk Flammable Gases,0bc31721-e7f9-4d7f-a232-b5c9815ba162,false,true
+OI (H6-2) - Portable gas cylinders and pressurised vessels,bc3c3e33-4717-4af0-a603-9e2498519b36,false,true
+OI (H7-1) - Clandestine Labs,307cbf49-334c-4904-866c-de05cf97bec2,false,true
+OI (IS1) - Operational Safety (C),a7499b5c-c2b4-444f-951a-d902914c53b6,true,true
+OI (IS3) - Working Near Roadways (C),fd57fd0f-c2b9-4fcf-b141-213f1a7fe3e1,true,true
+OI (IS4) - Working Near Electrical Hazards (C),6b92cafe-69f5-40f6-92c3-a8843c8c10c1,true,true
+OI (IS9) - Civil Disturbances,4c4b2fe4-df1c-4044-863a-b2806b5f8756,false,true
+OI (M1) - Command & Control,,false,true
+OI (M1-1) News Media at Incidents,,false,true
+OI (P3) - Fire Investigation & Reporting,,false,true
+OI (S1) - Multi-Storied buildings,,false,true
+OSH - Safe Person Concept (C),,true,true
+Personal protective clothing – Does Your Kit Fit,,false,true
+Pumps - Appliance pump operation from open water supply,,false,true
+Pumps - Appliance Pump Operation from Pressure Fed Supply,,false,true
+Pumps - B Type Ejector Pump (Set Up),,false,true
+Pumps - Portable Pumps Set up and Operation,,false,true
+Pumps - Water Dragon Ejector,,false,true
+WW - Construct Portable Dam,,false,true
+WW - LP Delivery and Waterway,,false,true

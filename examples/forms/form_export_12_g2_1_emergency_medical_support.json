@@ -1,6 +1,6 @@
 {
   "name": "G2-1 Emergency Medical Support",
-  "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/g2-1-pop-emergency-medical-support-policy\" target=\"_blank\" rel=\"noopener\">G2-1 Emergency Medical Support</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+  "intro": "",
   "status": 1,
   "structure": [
     {
@@ -18,7 +18,8 @@
       "correctAnswer": [
         "Chief Fire Officer / Group Manager ",
         "The Health and Safety Officer"
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_mjcdzmau",
@@ -35,7 +36,8 @@
       "correctAnswer": [
         "That they are provided with travel home, including their vehicle",
         "That they are accompanied by a member of Fire and Emergency NZ until handover occurs to the emergency contact or they are discharged and returned home."
-      ]
+      ],
+      "points": 1
     },
     {
       "id": "fld_mjce2qye",
@@ -48,7 +50,8 @@
         "A tent so that people can get changed in privacy"
       ],
       "renderAs": "radio",
-      "correctAnswer": "ComCen are advised to request an ambulance"
+      "correctAnswer": "ComCen are advised to request an ambulance",
+      "points": 1
     },
     {
       "id": "fld_mjce3xw6",
@@ -61,7 +64,8 @@
         "Request a Health and Safety Officer to attend"
       ],
       "renderAs": "radio",
-      "correctAnswer": "OIC must ensure that Comcen requests ambulance response"
+      "correctAnswer": "OIC must ensure that Comcen requests ambulance response",
+      "points": 1
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "name": "FL2 Use of FENZ Operational Vehicles",
-  "intro": "<p>The learning document for this test is at&nbsp;<a href=\"https://portal.fireandemergency.nz/documents/fl2-1-pop-use-of-operational-vehicles-policy/\" target=\"_blank\" rel=\"noopener\">FL2 Use of FENZ Operational Vehicles</a> in the FENZ Portal (requires to login with your FENZ account)</p>",
+  "intro": "",
   "status": 1,
   "structure": [
     {
@@ -15,7 +15,8 @@
         "When requested by FireComms"
       ],
       "renderAs": "radio",
-      "correctAnswer": "When travelling against the traffic, through red lights or stop signs at intersections"
+      "correctAnswer": "When travelling against the traffic, through red lights or stop signs at intersections",
+      "points": 1
     },
     {
       "id": "fld_mjcdjunm",
@@ -29,7 +30,8 @@
         "The Police"
       ],
       "renderAs": "radio",
-      "correctAnswer": "Advise your Chief Fire Officer or Manager"
+      "correctAnswer": "Advise your Chief Fire Officer or Manager",
+      "points": 1
     },
     {
       "id": "fld_mjcdkmvo",
@@ -43,7 +45,8 @@
         "Only if you have been properly inducted and are familiar with the vehicle"
       ],
       "renderAs": "radio",
-      "correctAnswer": "When requested by the Ambulance OIC, the driver must have a Class 1 license and have current competency in emergency response driving (ERD)."
+      "correctAnswer": "When requested by the Ambulance OIC, the driver must have a Class 1 license and have current competency in emergency response driving (ERD).",
+      "points": 1
     },
     {
       "id": "fld_mjcdmb3w",
@@ -57,7 +60,8 @@
         "Speed limits do not apply to FENZ vehicles"
       ],
       "renderAs": "radio",
-      "correctAnswer": "110km/h"
+      "correctAnswer": "110km/h",
+      "points": 1
     },
     {
       "id": "fld_mjcdn95i",
@@ -71,7 +75,8 @@
         "50 km/h"
       ],
       "renderAs": "radio",
-      "correctAnswer": "65 km/h"
+      "correctAnswer": "65 km/h",
+      "points": 1
     },
     {
       "id": "fld_mjcdo9sk",
@@ -85,7 +90,8 @@
         "25 km/h above the posted speed limit"
       ],
       "renderAs": "radio",
-      "correctAnswer": "The posted speed limit"
+      "correctAnswer": "The posted speed limit",
+      "points": 1
     },
     {
       "id": "fld_mjcdoz4y",
@@ -99,7 +105,8 @@
         "Stop at the lights and wait for the green signal"
       ],
       "renderAs": "radio",
-      "correctAnswer": "Slow to 10 km/h and stop if necessary, proceed if the way is clear, at a speed not exceeding 20 km/h and provided siren and beacons are operating"
+      "correctAnswer": "Slow to 10 km/h and stop if necessary, proceed if the way is clear, at a speed not exceeding 20 km/h and provided siren and beacons are operating",
+      "points": 1
     },
     {
       "id": "fld_mjcdpuk2",
@@ -113,7 +120,8 @@
         "Never"
       ],
       "renderAs": "radio",
-      "correctAnswer": "When the vehicle has stopped and parked out of the line of traffic or the call is to 111 or *555 and it unsafe or unpractical to stop and park out of the line of traffic"
+      "correctAnswer": "When the vehicle has stopped and parked out of the line of traffic or the call is to 111 or *555 and it unsafe or unpractical to stop and park out of the line of traffic",
+      "points": 1
     },
     {
       "id": "fld_mjcdr4ny",
@@ -127,7 +135,8 @@
         "28 Cylinders"
       ],
       "renderAs": "radio",
-      "correctAnswer": "12 Cylinders"
+      "correctAnswer": "12 Cylinders",
+      "points": 1
     },
     {
       "id": "fld_mjcdrzmg",
@@ -136,7 +145,8 @@
       "required": true,
       "options": [],
       "renderAs": "radio",
-      "correctAnswer": "Yes"
+      "correctAnswer": "Yes",
+      "points": 1
     },
     {
       "id": "fld_mjcdsd59",
@@ -154,7 +164,8 @@
       "correctAnswer": [
         "Personnel must observe the posted road speed limit",
         "Personnel are not covered by FENZ for damage or loss to a private vehicle"
-      ]
+      ],
+      "points": 1
     }
   ]
 }
