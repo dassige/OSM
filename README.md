@@ -206,6 +206,7 @@ node server.js
   * **Super Admin:** Log in with the credentials defined in `.env`. Access **Manage Users** to create other admins.
   * **Creating Users:** When you add a user, the system generates a secure random password and emails it to them automatically.
   * **Deleting Users:** Deleting a user will also send them a notification email.
+  * **MFA Authentication:** Enhance security using an authenticator app (e.g. Google Authenticator).
 
 ### 3\. Dashboard Workflow
 
