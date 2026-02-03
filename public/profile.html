@@ -260,11 +260,31 @@
 
             // Handle Super Admin (Env User) restrictions
             if (user.isEnvUser) {
+                // 1. Disable Profile Editing
                 document.getElementById('name').disabled = true;
                 document.getElementById('password').disabled = true;
                 document.getElementById('passwordConfirm').disabled = true;
                 document.getElementById('accountActions').style.display = 'none';
                 document.getElementById('envUserMsg').style.display = 'block';
+
+                // 2. Disable 2FA Setup
+                const mfaBtn = document.getElementById('btnEnableMfa');
+                if (mfaBtn) {
+                    mfaBtn.disabled = true;
+                    mfaBtn.style.backgroundColor = '#ccc';
+                    mfaBtn.style.cursor = 'not-allowed';
+                    mfaBtn.innerText = "Unavailable";
+                }
+
+                // 3. Add Explanatory Note
+                const mfaDesc = document.getElementById('mfaStatusDesc');
+                if (mfaDesc) {
+                    mfaDesc.innerHTML += '<br><span style="color:var(--danger); font-size:0.85em; font-weight:bold;">Not available for Super Admin (Environment Account).<br>Please create a Database Admin to use 2FA.</span>';
+                }
+
+                // 4. Load Preferences but SKIP checkMfaStatus()
+                loadPreferences();
+                return;
             }
 
             // Load Preferences (MFA status)
