@@ -238,7 +238,11 @@
     </div>
 
     <script>
-        // Fetch UI Config
+        // Global State
+        let currentAppMode = 'production';
+        let mfaMode = false;
+
+        // 1. Fetch UI Config & Set Mode
         fetch('/ui-config')
             .then(response => response.json())
             .then(config => {
@@ -257,20 +261,21 @@
                 if (config.appBackground) {
                     document.body.style.backgroundImage = `url('${config.appBackground}')`;
                 }
-                // [NEW] Check for Demo Mode
-                if (config.appMode === 'demo') {
+
+                // Store App Mode Globally
+                currentAppMode = config.appMode || 'production';
+
+                // Show Demo Banner if needed
+                if (currentAppMode === 'demo') {
                     document.getElementById('demoBanner').style.display = 'block';
                     document.getElementById('demoLink').style.display = 'block';
                 }
             })
             .catch(err => console.error("Failed to load UI config:", err));
 
-        // Login Form Logic with MFA Support
-        let mfaMode = false; // Track state
-
+        // 2. Login Form Handler
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const btn = document.getElementById('loginBtn');
             const errorMsg = document.getElementById('errorMsg');
 
@@ -279,7 +284,7 @@
 
             try {
                 if (!mfaMode) {
-                    // --- STEP 1: STANDARD LOGIN ---
+                    // --- STEP 1: CREDENTIALS CHECK ---
                     const username = document.getElementById('username').value;
                     const password = document.getElementById('password').value;
                     btn.textContent = "Verifying...";
@@ -294,16 +299,18 @@
 
                     if (res.ok) {
                         if (data.mfaRequired) {
-                            // Switch to MFA Mode
+                            // --- SWITCH TO MFA MODE ---
                             mfaMode = true;
+
+                            // Hide Credentials / Show MFA
                             document.getElementById('credFields').style.display = 'none';
-                            document.getElementById('mfaFields').style.display = 'block';
+                            const mfaContainer = document.getElementById('mfaFields'); // Defined here!
+                            mfaContainer.style.display = 'block';
+
                             document.getElementById('loginTitle').textContent = "Security Check";
-                            // Demo Mode Check
-                            // We can check if the banner is visible
-                            const isDemo = document.getElementById('demoBanner').style.display !== 'none';
-                            if (isDemo) {
-                                // Append a small hint text if not already there
+
+                            // Demo Mode Hint (Only if actually in Demo Mode)
+                            if (currentAppMode === 'demo') {
                                 if (!document.getElementById('demoMfaHint')) {
                                     const hint = document.createElement('p');
                                     hint.id = 'demoMfaHint';
@@ -313,17 +320,33 @@
                                     hint.innerText = "Demo Mode: Enter '000000'";
                                     mfaContainer.appendChild(hint);
                                 }
-                                document.getElementById('mfaToken').value = "000000"; // Auto-fill
+                                document.getElementById('mfaToken').value = "000000";
                             }
+
                             btn.textContent = "Verify Code";
                             btn.disabled = false;
                             document.getElementById('mfaToken').focus();
                         } else {
                             // Success (No MFA)
                             window.location.href = '/';
+                            sessionStorage.removeItem('hasShownReviewModal');
                         }
                     } else {
-                        throw new Error(data.error || "Login failed");
+                        // Handle Auth Errors
+                        if (res.status === 403) {
+                            if (data.error && data.error.includes("disabled")) {
+                                errorMsg.textContent = "User DISABLED";
+                            } else if (data.error && data.error.includes("blocked")) {
+                                errorMsg.textContent = "User BLOCKED. Contact admin.";
+                            } else {
+                                errorMsg.textContent = data.error || "Access Denied";
+                            }
+                        } else {
+                            errorMsg.textContent = "Invalid credentials";
+                        }
+                        errorMsg.style.display = 'block';
+                        btn.disabled = false;
+                        btn.textContent = "Sign In";
                     }
 
                 } else {
@@ -341,6 +364,7 @@
 
                     if (res.ok) {
                         window.location.href = '/';
+                        sessionStorage.removeItem('hasShownReviewModal');
                     } else {
                         throw new Error(data.error || "Invalid Code");
                     }
@@ -357,11 +381,10 @@
             }
         });
 
-        // Forgot Password Logic
+        // --- UTILITIES (Modal/Forgot Password) ---
         function openForgotModal() { document.getElementById('forgotModal').style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // [NEW] Demo Credentials Logic
         async function showDemoCreds() {
             document.getElementById('demoCredsModal').style.display = 'block';
             try {
@@ -400,7 +423,8 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    showToast('Please check your email for the new password.', 'success');
+                    if (window.showToast) window.showToast('Check email for new password.', 'success');
+                    else alert('Check email for new password.');
                     closeModal('forgotModal');
                     document.getElementById('forgotForm').reset();
                 } else {
@@ -416,7 +440,6 @@
             }
         });
 
-        // Close modal on outside click
         window.onclick = function (event) {
             if (event.target == document.getElementById('forgotModal')) closeModal('forgotModal');
             if (event.target == document.getElementById('demoCredsModal')) closeModal('demoCredsModal');

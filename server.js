@@ -98,6 +98,7 @@ app.use((req, res, next) => {
     "/forgot-password",
     "/styles.css",
     "/ui-config",
+    "/login/mfa",
     "/api/demo-credentials",
     "/forms-view.html",
     "/theme.js",
