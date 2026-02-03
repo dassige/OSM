@@ -185,8 +185,17 @@
         <h1 id="loginTitle">Login</h1>
 
         <form id="loginForm">
-            <input type="text" id="username" placeholder="Username / Email" required>
-            <input type="password" id="password" placeholder="Password" required>
+            <div id="credFields">
+                <input type="text" id="username" placeholder="Username / Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+            </div>
+
+            <div id="mfaFields" style="display:none; text-align:center;">
+                <p style="color:#555; font-size:0.9em; margin-bottom:10px;">Enter 2FA Code</p>
+                <input type="text" id="mfaToken" placeholder="000000" maxlength="6" autocomplete="one-time-code"
+                    style="text-align:center; letter-spacing: 5px; font-size: 1.2em; font-weight:bold;">
+            </div>
+
             <button type="submit" id="loginBtn">Sign In</button>
             <div id="errorMsg" class="error">Invalid credentials</div>
         </form>
@@ -256,59 +265,98 @@
             })
             .catch(err => console.error("Failed to load UI config:", err));
 
-
+        // Login Form Logic with MFA Support
+        let mfaMode = false; // Track state
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+
             const btn = document.getElementById('loginBtn');
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
 
             btn.disabled = true;
-            btn.textContent = "Signing In...";
             errorMsg.style.display = 'none';
 
             try {
-                const response = await fetch('/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
+                if (!mfaMode) {
+                    // --- STEP 1: STANDARD LOGIN ---
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    btn.textContent = "Verifying...";
 
-                if (response.ok) {
-                    window.location.href = '/';
-                    sessionStorage.removeItem('hasShownReviewModal');
-                } else {
-                    // [NEW] Extract the specific error message from the backend response
-                    const data = await response.json();
+                    const res = await fetch('/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
 
-                    if (response.status === 403) {
-                        // [NEW] Handle specific security status messages
-                        if (data.error && data.error.includes("disabled")) {
-                            errorMsg.textContent = "User DISABLED";
-                        } else if (data.error && data.error.includes("blocked")) {
-                            errorMsg.textContent = "User BLOCKED. Contact the administrator";
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        if (data.mfaRequired) {
+                            // Switch to MFA Mode
+                            mfaMode = true;
+                            document.getElementById('credFields').style.display = 'none';
+                            document.getElementById('mfaFields').style.display = 'block';
+                            document.getElementById('loginTitle').textContent = "Security Check";
+                            // Demo Mode Check
+                            // We can check if the banner is visible
+                            const isDemo = document.getElementById('demoBanner').style.display !== 'none';
+                            if (isDemo) {
+                                // Append a small hint text if not already there
+                                if (!document.getElementById('demoMfaHint')) {
+                                    const hint = document.createElement('p');
+                                    hint.id = 'demoMfaHint';
+                                    hint.style.color = '#28a745';
+                                    hint.style.fontSize = '0.85em';
+                                    hint.style.marginTop = '5px';
+                                    hint.innerText = "Demo Mode: Enter '000000'";
+                                    mfaContainer.appendChild(hint);
+                                }
+                                document.getElementById('mfaToken').value = "000000"; // Auto-fill
+                            }
+                            btn.textContent = "Verify Code";
+                            btn.disabled = false;
+                            document.getElementById('mfaToken').focus();
                         } else {
-                            errorMsg.textContent = data.error || "Access Denied";
+                            // Success (No MFA)
+                            window.location.href = '/';
                         }
                     } else {
-                        // Fallback for 401 and other errors
-                        errorMsg.textContent = "Invalid credentials";
+                        throw new Error(data.error || "Login failed");
                     }
 
-                    errorMsg.style.display = 'block';
-                    btn.disabled = false;
-                    btn.textContent = "Sign In";
+                } else {
+                    // --- STEP 2: MFA VERIFICATION ---
+                    const token = document.getElementById('mfaToken').value;
+                    btn.textContent = "Checking...";
+
+                    const res = await fetch('/login/mfa', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token })
+                    });
+
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        window.location.href = '/';
+                    } else {
+                        throw new Error(data.error || "Invalid Code");
+                    }
                 }
+
             } catch (err) {
                 console.error(err);
-                errorMsg.textContent = "Connection error";
+                errorMsg.textContent = err.message || "Connection error";
                 errorMsg.style.display = 'block';
                 btn.disabled = false;
-                btn.textContent = "Sign In";
+
+                // Reset button text based on mode
+                btn.textContent = mfaMode ? "Verify Code" : "Sign In";
             }
         });
+
         // Forgot Password Logic
         function openForgotModal() { document.getElementById('forgotModal').style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
