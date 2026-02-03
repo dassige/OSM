@@ -238,13 +238,22 @@
     <script src="toast.js"></script>
     <script src="utils.js"></script>
     <script>
-        // Init UI Config
+        // Global state for App Mode
+        let currentAppMode = 'production';
+
+        // 1. Init UI Config
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+
+            // Store mode globally
+            currentAppMode = c.appMode || 'production';
+
+            if (currentAppMode === 'demo') {
+                document.getElementById('demoBanner').style.display = 'block';
+            }
         });
 
-        // Load User Data
+        // 2. Load User Data
         fetch('/api/user-session').then(r => r.json()).then(user => {
             document.getElementById('email').value = user.email;
             document.getElementById('name').value = user.name;
@@ -258,19 +267,16 @@
                 document.getElementById('envUserMsg').style.display = 'block';
             }
 
-            // Load Preferences
+            // Load Preferences (MFA status)
             loadPreferences();
+            checkMfaStatus();
         });
 
         async function loadPreferences() {
             try {
                 const res = await fetch('/api/user-preferences/show_pending_reviews_alert');
                 const data = await res.json();
-
-                // Default is TRUE if not set (null) or if boolean true
-                // data.value is returned as a boolean or null by the DB service
                 const isEnabled = (data.value === null) ? true : data.value;
-
                 document.getElementById('prefReviewAlert').checked = isEnabled;
             } catch (e) {
                 console.error("Failed to load prefs", e);
@@ -290,7 +296,88 @@
             }
         }
 
-        // Account Form Submit
+        // 3. MFA Logic
+        async function checkMfaStatus() {
+            try {
+                const res = await fetch('/api/profile/mfa/status');
+                const data = await res.json();
+                updateMfaUi(data.enabled);
+            } catch (e) { console.error("MFA Status Check Failed", e); }
+        }
+
+        function updateMfaUi(enabled) {
+            const btnEnable = document.getElementById('btnEnableMfa');
+            const btnDisable = document.getElementById('btnDisableMfa');
+            const desc = document.getElementById('mfaStatusDesc');
+
+            if (enabled) {
+                btnEnable.style.display = 'none';
+                btnDisable.style.display = 'inline-block';
+                desc.innerHTML = '<span style="color:var(--success); font-weight:bold;">✓ Active</span> - Your account is secured.';
+            } else {
+                btnEnable.style.display = 'inline-block';
+                btnDisable.style.display = 'none';
+                desc.textContent = "Enhance security using an authenticator app.";
+            }
+        }
+
+        document.getElementById('btnEnableMfa').addEventListener('click', async () => {
+            try {
+                const res = await fetch('/api/profile/mfa/setup', { method: 'POST' });
+                if (!res.ok) throw new Error("Setup failed");
+
+                const data = await res.json();
+                document.getElementById('mfaQrCode').src = data.qrCode;
+                const tokenInput = document.getElementById('mfaVerifyToken');
+
+                // [FIXED] Correctly check the global variable
+                if (currentAppMode === 'demo') {
+                    tokenInput.placeholder = "Demo: Type '000000'";
+                    tokenInput.value = "000000";
+                    showToast("Demo Mode: 2FA Verification simulated.", "info");
+                } else {
+                    tokenInput.placeholder = "Enter 6-digit code";
+                    tokenInput.value = ""; // Clear any previous values
+                }
+
+                openModal('mfaModal');
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        });
+
+        document.getElementById('btnVerifyMfa').addEventListener('click', async () => {
+            const token = document.getElementById('mfaVerifyToken').value;
+            if (!token || token.length < 6) return showToast("Please enter the code", "warning");
+
+            try {
+                const res = await fetch('/api/profile/mfa/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+
+                if (res.ok) {
+                    closeModal('mfaModal');
+                    showToast("Two-Factor Authentication Enabled!", "success");
+                    updateMfaUi(true);
+                } else {
+                    showToast("Invalid Code. Please try again.", "error");
+                }
+            } catch (e) { showToast("Verification Error", "error"); }
+        });
+
+        document.getElementById('btnDisableMfa').addEventListener('click', async () => {
+            if (await confirmAction("Disable Security?", "Are you sure you want to remove 2FA protection?")) {
+                try {
+                    await fetch('/api/profile/mfa/disable', { method: 'POST' });
+                    updateMfaUi(false);
+                    showToast("MFA Disabled", "success");
+                } catch (e) { showToast("Error disabling MFA", "error"); }
+            }
+        });
+
+        // 4. Account Form Submit
         document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const pw = document.getElementById('password').value;
@@ -317,94 +404,6 @@
                 msgBox.className = 'alert alert-error'; msgBox.innerText = err.message; msgBox.style.display = 'block';
             }
         });
-
-
-        // 1. Check MFA Status on Load
-        async function checkMfaStatus() {
-            try {
-                const res = await fetch('/api/profile/mfa/status');
-                const data = await res.json();
-                updateMfaUi(data.enabled);
-            } catch (e) { console.error("MFA Status Check Failed", e); }
-        }
-
-        function updateMfaUi(enabled) {
-            const btnEnable = document.getElementById('btnEnableMfa');
-            const btnDisable = document.getElementById('btnDisableMfa');
-            const desc = document.getElementById('mfaStatusDesc');
-
-            if (enabled) {
-                btnEnable.style.display = 'none';
-                btnDisable.style.display = 'inline-block';
-                desc.innerHTML = '<span style="color:var(--success); font-weight:bold;">✓ Active</span> - Your account is secured.';
-            } else {
-                btnEnable.style.display = 'inline-block';
-                btnDisable.style.display = 'none';
-                desc.textContent = "Enhance security using an authenticator app.";
-            }
-        }
-
-        // 2. Setup Handler (Open Modal)
-        document.getElementById('btnEnableMfa').addEventListener('click', async () => {
-            try {
-                const res = await fetch('/api/profile/mfa/setup', { method: 'POST' });
-                if (!res.ok) throw new Error("Setup failed");
-
-                const data = await res.json();
-                document.getElementById('mfaQrCode').src = data.qrCode;
-                document.getElementById('mfaVerifyToken').value = '';
-                // Demo Mode Hint
-                // We check the global 'uiConfig' object loaded at page start (assumed from previous steps)
-                // If that variable isn't global, we can check the DOM element
-                const isDemo = document.getElementById('demoBanner').style.display !== 'none';
-
-                if (isDemo) {
-                    document.getElementById('mfaVerifyToken').placeholder = "Demo: Type '000000'";
-                    document.getElementById('mfaVerifyToken').value = "000000"; // Auto-fill for convenience
-                    showToast("Demo Mode: 2FA Verification simulated.", "info");
-                }
-                openModal('mfaModal'); // Uses your existing utils.js helper
-            } catch (e) {
-                showToast(e.message, 'error');
-            }
-        });
-
-        // 3. Verify Handler
-        document.getElementById('btnVerifyMfa').addEventListener('click', async () => {
-            const token = document.getElementById('mfaVerifyToken').value;
-            if (!token || token.length < 6) return showToast("Please enter the code", "warning");
-
-            try {
-                const res = await fetch('/api/profile/mfa/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token })
-                });
-
-                if (res.ok) {
-                    closeModal('mfaModal');
-                    showToast("Two-Factor Authentication Enabled!", "success");
-                    updateMfaUi(true);
-                } else {
-                    showToast("Invalid Code. Please try again.", "error");
-                }
-            } catch (e) { showToast("Verification Error", "error"); }
-        });
-
-        // 4. Disable Handler
-        document.getElementById('btnDisableMfa').addEventListener('click', async () => {
-            // Uses your existing utils.js confirmAction
-            if (await confirmAction("Disable Security?", "Are you sure you want to remove 2FA protection?")) {
-                try {
-                    await fetch('/api/profile/mfa/disable', { method: 'POST' });
-                    updateMfaUi(false);
-                    showToast("MFA Disabled", "success");
-                } catch (e) { showToast("Error disabling MFA", "error"); }
-            }
-        });
-
-        // Initialize
-        checkMfaStatus();
     </script>
 </body>
 
