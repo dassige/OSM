@@ -50,6 +50,7 @@ app.set('trust proxy', 1);
 // 2. HTTP Security Headers (Helmet)
 // Sets various HTTP headers to prevent XSS, clickjacking, and other attacks.
 app.use(helmet({
+  crossOriginOpenerPolicy: false,
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
