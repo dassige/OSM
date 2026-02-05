@@ -5,7 +5,7 @@ services:
     container_name: fenz-osm-manager
     build: .
     ports:
-      - "3000:3000"
+      - "3000"
     volumes:
       - .:/app
       - /app/node_modules
@@ -20,3 +20,15 @@ services:
 # use this in development   
 #    command: npx nodemon  server.js
     restart: unless-stopped
+  proxy-manager:
+      image: 'jc21/nginx-proxy-manager:latest'
+      restart: unless-stopped
+      ports:
+        - '80:80'   # Standard HTTP
+        - '443:443' # Secure HTTPS
+        - '81:81'   # Admin Dashboard (Restricted access)
+      volumes:
+        - ./data:/data
+        - ./letsencrypt:/etc/letsencrypt
+      depends_on:
+        - app
