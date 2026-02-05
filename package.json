@@ -35,6 +35,8 @@
     "sqlite3": "^5.1.7",
     "uuid": "^9.0.0",
     "whatsapp-web.js": "^1.20.3",
-    "speakeasy": "^2.0.0"
+    "speakeasy": "^2.0.0",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.11.0"
   }
 }

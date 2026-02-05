@@ -31,12 +31,59 @@ const aiService = require("./services/ai-service");
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
 
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 // =============================================================================
 //  INITIALIZATION & MIDDLEWARE
 // =============================================================================
 
 const app = express();
 const server = http.createServer(app);
+
+// --- [SECURITY CONFIGURATION] ---
+
+// 1. Trust Proxy (Crucial for Docker/Cloud Run)
+// This ensures the app trusts the 'X-Forwarded-For' header provided by the load balancer,
+// allowing correct IP detection for rate limiting and secure cookies.
+app.set('trust proxy', 1);
+
+// 2. HTTP Security Headers (Helmet)
+// Sets various HTTP headers to prevent XSS, clickjacking, and other attacks.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
+      scriptSrcAttr: ["'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://www.dashboardlive.nz"], // Allow scraping connection
+    },
+  },
+}));
+// 3. Global Rate Limiting
+// Limits repeated requests to public APIs (prevents DoS/Brute Force)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // Limit each IP to 300 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." }
+});
+app.use(limiter);
+
+// 4. Strict Rate Limiting for Login
+// Apply tighter limits specifically to the login route
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 login attempts per window
+  message: { error: "Too many login attempts. Please wait 15 minutes." }
+});
+app.use('/login', loginLimiter);
+app.use('/login/mfa', loginLimiter);
+
+// --- [END SECURITY CONFIGURATION] ---
+
 const upload = multer({ dest: "uploads/" });
 
 // Initialize Socket.IO
