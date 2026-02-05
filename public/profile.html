@@ -179,7 +179,43 @@
                 </div>
             </form>
         </div>
+        <div class="section">
+            <h2 class="section-title">Security</h2>
+            <div class="switch-wrapper">
+                <div>
+                    <div class="switch-label">Two-Factor Authentication (2FA)</div>
+                    <div class="switch-desc" id="mfaStatusDesc">Enhance security using an authenticator app (e.g. Google
+                        Authenticator).</div>
+                </div>
+                <div id="mfaActions">
+                    <button id="btnEnableMfa" type="button" class="btn-save"
+                        style="font-size:14px; padding:8px 16px; background-color: var(--primary);">Setup 2FA</button>
+                    <button id="btnDisableMfa" type="button" class="btn-save"
+                        style="font-size:14px; padding:8px 16px; background-color: var(--danger); display:none;">Disable</button>
+                </div>
+            </div>
+        </div>
 
+        <div id="mfaModal" class="modal">
+            <div class="modal-content" style="text-align:center; max-width: 350px;">
+                <span class="close-btn" onclick="closeModal('mfaModal')">&times;</span>
+                <h2 style="margin-top:0;">Setup 2FA</h2>
+                <p style="font-size:0.9em; color:#666;">Scan this QR code with your authenticator app.</p>
+
+                <div
+                    style="background:#f8f9fa; padding:15px; border:1px solid #ddd; border-radius:4px; display:inline-block; margin-bottom:15px;">
+                    <img id="mfaQrCode" src="" alt="QR Code" style="width: 180px; height: 180px; display:block;">
+                </div>
+
+                <div class="form-group" style="text-align:left;">
+                    <label>Verification Code</label>
+                    <input type="text" id="mfaVerifyToken" placeholder="Enter 6-digit code" maxlength="6"
+                        style="text-align:center; letter-spacing: 4px; font-size: 1.2em;">
+                </div>
+
+                <button id="btnVerifyMfa" class="btn-save" style="width:100%;">Verify & Enable</button>
+            </div>
+        </div>
         <div class="section">
             <h2 class="section-title">Dashboard Preferences</h2>
 
@@ -200,40 +236,67 @@
     <script src="help.js"></script>
     <script src="theme.js"></script>
     <script src="toast.js"></script>
+    <script src="utils.js"></script>
     <script>
-        // Init UI Config
+        // Global state for App Mode
+        let currentAppMode = 'production';
+
+        // 1. Init UI Config
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+
+            // Store mode globally
+            currentAppMode = c.appMode || 'production';
+
+            if (currentAppMode === 'demo') {
+                document.getElementById('demoBanner').style.display = 'block';
+            }
         });
 
-        // Load User Data
+        // 2. Load User Data
         fetch('/api/user-session').then(r => r.json()).then(user => {
             document.getElementById('email').value = user.email;
             document.getElementById('name').value = user.name;
 
             // Handle Super Admin (Env User) restrictions
             if (user.isEnvUser) {
+                // 1. Disable Profile Editing
                 document.getElementById('name').disabled = true;
                 document.getElementById('password').disabled = true;
                 document.getElementById('passwordConfirm').disabled = true;
                 document.getElementById('accountActions').style.display = 'none';
                 document.getElementById('envUserMsg').style.display = 'block';
+
+                // 2. Disable 2FA Setup
+                const mfaBtn = document.getElementById('btnEnableMfa');
+                if (mfaBtn) {
+                    mfaBtn.disabled = true;
+                    mfaBtn.style.backgroundColor = '#ccc';
+                    mfaBtn.style.cursor = 'not-allowed';
+                    mfaBtn.innerText = "Unavailable";
+                }
+
+                // 3. Add Explanatory Note
+                const mfaDesc = document.getElementById('mfaStatusDesc');
+                if (mfaDesc) {
+                    mfaDesc.innerHTML += '<br><span style="color:var(--danger); font-size:0.85em; font-weight:bold;">Not available for Super Admin (Environment Account).<br>Please create a Database Admin to use 2FA.</span>';
+                }
+
+                // 4. Load Preferences but SKIP checkMfaStatus()
+                loadPreferences();
+                return;
             }
 
-            // Load Preferences
+            // Load Preferences (MFA status)
             loadPreferences();
+            checkMfaStatus();
         });
 
         async function loadPreferences() {
             try {
                 const res = await fetch('/api/user-preferences/show_pending_reviews_alert');
                 const data = await res.json();
-
-                // Default is TRUE if not set (null) or if boolean true
-                // data.value is returned as a boolean or null by the DB service
                 const isEnabled = (data.value === null) ? true : data.value;
-
                 document.getElementById('prefReviewAlert').checked = isEnabled;
             } catch (e) {
                 console.error("Failed to load prefs", e);
@@ -253,7 +316,88 @@
             }
         }
 
-        // Account Form Submit
+        // 3. MFA Logic
+        async function checkMfaStatus() {
+            try {
+                const res = await fetch('/api/profile/mfa/status');
+                const data = await res.json();
+                updateMfaUi(data.enabled);
+            } catch (e) { console.error("MFA Status Check Failed", e); }
+        }
+
+        function updateMfaUi(enabled) {
+            const btnEnable = document.getElementById('btnEnableMfa');
+            const btnDisable = document.getElementById('btnDisableMfa');
+            const desc = document.getElementById('mfaStatusDesc');
+
+            if (enabled) {
+                btnEnable.style.display = 'none';
+                btnDisable.style.display = 'inline-block';
+                desc.innerHTML = '<span style="color:var(--success); font-weight:bold;">✓ Active</span> - Your account is secured.';
+            } else {
+                btnEnable.style.display = 'inline-block';
+                btnDisable.style.display = 'none';
+                desc.textContent = "Enhance security using an authenticator app.";
+            }
+        }
+
+        document.getElementById('btnEnableMfa').addEventListener('click', async () => {
+            try {
+                const res = await fetch('/api/profile/mfa/setup', { method: 'POST' });
+                if (!res.ok) throw new Error("Setup failed");
+
+                const data = await res.json();
+                document.getElementById('mfaQrCode').src = data.qrCode;
+                const tokenInput = document.getElementById('mfaVerifyToken');
+
+                // [FIXED] Correctly check the global variable
+                if (currentAppMode === 'demo') {
+                    tokenInput.placeholder = "Demo: Type '000000'";
+                    tokenInput.value = "000000";
+                    showToast("Demo Mode: 2FA Verification simulated.", "info");
+                } else {
+                    tokenInput.placeholder = "Enter 6-digit code";
+                    tokenInput.value = ""; // Clear any previous values
+                }
+
+                openModal('mfaModal');
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        });
+
+        document.getElementById('btnVerifyMfa').addEventListener('click', async () => {
+            const token = document.getElementById('mfaVerifyToken').value;
+            if (!token || token.length < 6) return showToast("Please enter the code", "warning");
+
+            try {
+                const res = await fetch('/api/profile/mfa/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+
+                if (res.ok) {
+                    closeModal('mfaModal');
+                    showToast("Two-Factor Authentication Enabled!", "success");
+                    updateMfaUi(true);
+                } else {
+                    showToast("Invalid Code. Please try again.", "error");
+                }
+            } catch (e) { showToast("Verification Error", "error"); }
+        });
+
+        document.getElementById('btnDisableMfa').addEventListener('click', async () => {
+            if (await confirmAction("Disable Security?", "Are you sure you want to remove 2FA protection?")) {
+                try {
+                    await fetch('/api/profile/mfa/disable', { method: 'POST' });
+                    updateMfaUi(false);
+                    showToast("MFA Disabled", "success");
+                } catch (e) { showToast("Error disabling MFA", "error"); }
+            }
+        });
+
+        // 4. Account Form Submit
         document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const pw = document.getElementById('password').value;

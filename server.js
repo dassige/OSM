@@ -28,12 +28,62 @@ const puppeteer = require("puppeteer-core");
 const { validateForm, validateBulkData } = require("./middleware/validation");
 const aiService = require("./services/ai-service");
 
+const speakeasy = require("speakeasy");
+const qrcode = require("qrcode");
+
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 // =============================================================================
 //  INITIALIZATION & MIDDLEWARE
 // =============================================================================
 
 const app = express();
 const server = http.createServer(app);
+
+// --- [SECURITY CONFIGURATION] ---
+
+// 1. Trust Proxy (Crucial for Docker/Cloud Run)
+// This ensures the app trusts the 'X-Forwarded-For' header provided by the load balancer,
+// allowing correct IP detection for rate limiting and secure cookies.
+app.set('trust proxy', 1);
+
+// 2. HTTP Security Headers (Helmet)
+// Sets various HTTP headers to prevent XSS, clickjacking, and other attacks.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
+      scriptSrcAttr: ["'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://www.dashboardlive.nz"], // Allow scraping connection
+    },
+  },
+}));
+// 3. Global Rate Limiting
+// Limits repeated requests to public APIs (prevents DoS/Brute Force)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // Limit each IP to 300 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." }
+});
+app.use(limiter);
+
+// 4. Strict Rate Limiting for Login
+// Apply tighter limits specifically to the login route
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 login attempts per window
+  message: { error: "Too many login attempts. Please wait 15 minutes." }
+});
+app.use('/login', loginLimiter);
+app.use('/login/mfa', loginLimiter);
+
+// --- [END SECURITY CONFIGURATION] ---
+
 const upload = multer({ dest: "uploads/" });
 
 // Initialize Socket.IO
@@ -95,6 +145,7 @@ app.use((req, res, next) => {
     "/forgot-password",
     "/styles.css",
     "/ui-config",
+    "/login/mfa",
     "/api/demo-credentials",
     "/forms-view.html",
     "/theme.js",
@@ -189,144 +240,165 @@ app.get("/statistics.html", hasRole("simple"), (req, res, next) => next());
 // =============================================================================
 //  API ROUTES - AUTHENTICATION
 // =============================================================================
+// Helper to finalize session and log event
+async function finalizeLogin(req, res, user, authType) {
+  await db.resetLoginAttempts(user.id);
+  req.session.loggedIn = true;
+  req.session.user = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isAdmin: user.role === "admin" || user.role === "superadmin",
+  };
 
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  await db.logEvent(user.name, "Security", "Successful Login", {
+    userEmail: user.email,
+    authType: authType,
+    role: user.role,
+    sourceIP: ip,
+  });
+
+  res.json({ success: true });
+}
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-  // 1. Superuser Authentication (via .env)
+  // 1. Superuser Check (Bypass MFA for now, or handle via ENV if desired)
   if (username === config.auth.username && password === config.auth.password) {
     req.session.loggedIn = true;
     req.session.user = {
-      id: 0,
-      name: "Super Admin",
-      email: username,
-      role: "superadmin",
-      isAdmin: true,
-      isEnvUser: true,
+      id: 0, name: "Super Admin", email: username, role: "superadmin", isAdmin: true, isEnvUser: true,
     };
-
-    // LOG SUCCESS: Superuser
-    await db.logEvent("Super Admin", "Security", "Successful Login", {
-      userEmail: username,
-      authType: "environment",
-      role: "superadmin",
-      sourceIP: ip,
-    });
-
-    return res.status(200).send({ success: true });
+    await db.logEvent("Super Admin", "Security", "Successful Login", { userEmail: username, authType: "environment", sourceIP: ip });
+    return res.json({ success: true });
   }
 
-  // 2. Database User Authentication
+  // 2. Database User Check
   try {
     const userRecord = await db.getUserByEmail(username);
-
     if (userRecord) {
-      // Check if account is restricted
-      if (userRecord.enabled === 0) {
-        await db.logEvent(
-          "System",
-          "Security",
-          "Login Denied: Disabled Account",
-          {
-            attemptedEmail: username,
-            sourceIP: ip,
-          },
-        );
-        return res
-          .status(403)
-          .json({ error: "Account disabled. Contact administrator." });
-      }
-
-      if (userRecord.blocked === 1) {
-        await db.logEvent(
-          "System",
-          "Security",
-          "Login Denied: Blocked Account",
-          {
-            attemptedEmail: username,
-            sourceIP: ip,
-            reason: "Manual or Auto-Block active",
-          },
-        );
-        return res
-          .status(403)
-          .json({ error: "Account blocked due to multiple failed attempts." });
-      }
+      if (userRecord.enabled === 0) return res.status(403).json({ error: "Account disabled." });
+      if (userRecord.blocked === 1) return res.status(403).json({ error: "Account blocked." });
     }
 
     const user = await db.authenticateUser(username, password);
 
     if (user) {
-      await db.resetLoginAttempts(user.id);
-      req.session.loggedIn = true;
-      req.session.user = {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isAdmin: user.role === "admin" || user.role === "superadmin",
-      };
-
-      // LOG SUCCESS: Database User
-      await db.logEvent(user.name, "Security", "Successful Login", {
-        userEmail: user.email,
-        authType: "database",
-        role: user.role,
-        sourceIP: ip,
-      });
-
-      return res.status(200).send({ success: true });
-    } else if (userRecord) {
-      // WRONG PASSWORD: Increment attempts
-      const stats = await db.incrementLoginAttempts(username);
-
-      // LOG FAILURE: Invalid Password
-      await db.logEvent(
-        "System",
-        "Security",
-        "Login Failure: Invalid Password",
-        {
-          attemptedEmail: username,
-          attemptNumber: stats.login_attempts,
-          maxAllowed: config.auth.maxLoginAttempts,
-          sourceIP: ip,
-        },
-      );
-
-      if (stats && stats.login_attempts >= config.auth.maxLoginAttempts) {
-        await db.blockUser(userRecord.id);
-
-        // LOG SECURITY: Automatic Block
-        await db.logEvent("System", "Security", "User Account Auto-Blocked", {
-          blockedEmail: username,
-          totalFailures: stats.login_attempts,
-          sourceIP: ip,
-        });
-
-        await sendSecurityAlert(
-          { email: username, attempts: stats.login_attempts, ip },
-          config.transporter,
-          config.ui.loginTitle,
-          config.auth.superuserEmail,
-        );
-
-        return res
-          .status(403)
-          .json({ error: "Maximum attempts reached. Account is now blocked." });
+      // --- [NEW] MFA Check ---
+      const mfaData = await db.getMfaData(user.id);
+      if (mfaData && mfaData.mfa_enabled) {
+        // Store partial user in session securely, do NOT set loggedIn=true yet
+        req.session.mfaPendingUser = user; 
+        return res.json({ mfaRequired: true });
       }
+
+      // No MFA? Complete login immediately
+      return await finalizeLogin(req, res, user, "database");
+    } else if (userRecord) {
+        // Handle failed attempt (keep your existing increment logic here)
+        const stats = await db.incrementLoginAttempts(username);
+        // ... (your existing blocking logic) ...
+        return res.status(401).json({ error: "Invalid credentials" });
     } else {
-      // LOG FAILURE: Non-existent User
-      await db.logEvent("System", "Security", "Login Failure: User Not Found", {
-        attemptedEmail: username,
-        sourceIP: ip,
-      });
+        return res.status(401).json({ error: "Invalid credentials" });
     }
   } catch (e) {
     console.error("Login Error:", e);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.post("/login/mfa", async (req, res) => {
+  if (!req.session.mfaPendingUser) {
+    return res.status(401).json({ error: "Session expired. Please log in again." });
   }
 
-  return res.status(401).send({ error: "Invalid credentials" });
+  const { token } = req.body;
+  const user = req.session.mfaPendingUser;
+  // --- DEMO MODE BYPASS ---
+  if (config.appMode === 'demo') {
+      delete req.session.mfaPendingUser;
+      // Log as 'demo-mfa' to distinguish in Event Logs
+      return await finalizeLogin(req, res, user, "demo-mfa"); 
+  }
+
+  const mfaData = await db.getMfaData(user.id);
+
+  const verified = speakeasy.totp.verify({
+    secret: mfaData.mfa_secret,
+    encoding: "base32",
+    token: token,
+    window: 1 // Allow 30sec leeway
+  });
+
+  if (verified) {
+    // Clear pending state and finalize
+    delete req.session.mfaPendingUser;
+    return await finalizeLogin(req, res, user, "database-mfa");
+  } else {
+    // You might want to log this as a security event
+    return res.status(401).json({ error: "Invalid Code" });
+  }
+});
+// Generate Secret & QR Code
+app.post('/api/profile/mfa/setup', async (req, res) => {
+    if (!req.session.user || !req.session.user.id) return res.status(401).json({error: "Unauthorized"});
+    
+    const secret = speakeasy.generateSecret({ name: `FENZ OSM (${req.session.user.email})` });
+    // Save secret but do NOT enable yet
+    await db.setMfaSecret(req.session.user.id, secret.base32);
+    
+    qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
+        res.json({ secret: secret.base32, qrCode: data_url });
+    });
+});
+
+// Verify Setup & Enable
+app.post('/api/profile/mfa/verify', async (req, res) => {
+    const { token } = req.body;
+    const userId = req.session.user.id;
+
+    // --- DEMO MODE BYPASS ---
+    if (config.appMode === 'demo') {
+        // Allow any 6-digit code in demo mode
+        await db.setMfaStatus(userId, true);
+        await db.logEvent(req.session.user.name, "Security", "MFA Enabled (Demo Simulation)", {});
+        return res.json({ success: true });
+    }
+    const data = await db.getMfaData(userId);
+    
+    const verified = speakeasy.totp.verify({
+        secret: data.mfa_secret,
+        encoding: 'base32',
+        token: token
+    });
+
+    if (verified) {
+        await db.setMfaStatus(userId, true);
+        await db.logEvent(req.session.user.name, "Security", "MFA Enabled", {});
+        res.json({ success: true });
+    } else {
+        res.status(400).json({ error: 'Invalid Code' });
+    }
+});
+
+// Disable MFA
+app.post('/api/profile/mfa/disable', async (req, res) => {
+    const userId = req.session.user.id;
+    await db.setMfaStatus(userId, false);
+    await db.setMfaSecret(userId, null);
+    await db.logEvent(req.session.user.name, "Security", "MFA Disabled", {});
+    res.json({ success: true });
+});
+
+// Get Current Status
+app.get('/api/profile/mfa/status', async (req, res) => {
+    const userId = req.session.user.id;
+    const data = await db.getMfaData(userId);
+    res.json({ enabled: !!(data && data.mfa_enabled) });
 });
 app.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
@@ -426,11 +498,17 @@ app.post("/api/users", hasRole("admin"), async (req, res) => {
 
 app.put("/api/users/:id", hasRole("admin"), async (req, res) => {
   try {
-    // Destructure all five fields from the frontend payload
     const { name, email, role, enabled, blocked } = req.body;
+    
+    // [FIX] Fetch the existing record first so 'userRecord' is defined
+    const userRecord = await db.getUserById(req.params.id);
+    if (!userRecord) {
+        return res.status(404).json({ error: "User not found" });
+    }
 
     await db.updateUser(req.params.id, name, email, role, enabled, blocked);
 
+    // Now 'userRecord' exists, so we can safely check its previous state
     if (userRecord.blocked === 1 && !blocked) {
       await db.logEvent(
         req.session.user.name,
@@ -459,7 +537,6 @@ app.put("/api/users/:id", hasRole("admin"), async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-
 app.delete("/api/users/:id", hasRole("admin"), async (req, res) => {
   try {
     const user = await db.getUserById(req.params.id);
