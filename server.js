@@ -41,7 +41,7 @@ const app = express();
 const server = http.createServer(app);
 
 // --- [SECURITY CONFIGURATION] ---
-
+/*
 // 1. Trust Proxy (Crucial for Docker/Cloud Run)
 // This ensures the app trusts the 'X-Forwarded-For' header provided by the load balancer,
 // allowing correct IP detection for rate limiting and secure cookies.
@@ -81,8 +81,8 @@ const loginLimiter = rateLimit({
 });
 app.use('/login', loginLimiter);
 app.use('/login/mfa', loginLimiter);
-
-// --- [END SECURITY CONFIGURATION] ---
+*/
+// --- [END SECURITY CONFIGURATION] ---/
 
 const upload = multer({ dest: "uploads/" });
 
