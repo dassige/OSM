@@ -35,10 +35,10 @@ RUN tar -C /usr/local/bin -xzf /tmp/litestream.tar.gz
 COPY package*.json ./
 
 # Install dependencies
-#RUN npm install
+RUN npm install
 # If you prefer using npm ci for a clean install, uncomment the following line and comment out the npm install line above
 # it may fix any package-lock related issues.
-RUN npm ci  
+#RUN npm ci  
 # Copy application code
 COPY . .
 
