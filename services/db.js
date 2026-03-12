@@ -93,8 +93,17 @@ async function verifyAndReplaceDb(newDbPath) {
   await closeDB();
 
   const currentDbPath = getDbPath();
+  const walPath = `${currentDbPath}-wal`;
+  const shmPath = `${currentDbPath}-shm`;
+
   try {
     console.log(`[DB] Replacing ${currentDbPath}...`);
+    // 1. Delete the main DB and the journal files to ensure a clean slate
+    if (fs.existsSync(currentDbPath)) fs.unlinkSync(currentDbPath);
+    if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
+    if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
+
+    // 2. Copy the new backup into place
     fs.copyFileSync(newDbPath, currentDbPath);
 
     if (process.env.GCS_BUCKET_NAME) {
