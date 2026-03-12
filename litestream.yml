@@ -1,5 +1,6 @@
 dbs:
   - path: /app/fenz.db
     replicas:
-      # Litestream will replace ${GCS_BUCKET_NAME} with the actual env var value at runtime
-      - url: gcs://${GCS_BUCKET_NAME}/fenz.db
+      # This will work for S3 by setting REPLICA_URL=s3://your-s3-bucket/fenz.db
+      # Or for GCS by setting REPLICA_URL=gcs://${GCS_BUCKET_NAME}/fenz.db
+      - url: ${REPLICA_URL}
