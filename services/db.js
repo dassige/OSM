@@ -6,8 +6,9 @@ const crypto = require("crypto");
 const fs = require("fs");
 const packageJson = require("../package.json");
 const config = require("../config");
-const { runMigrations } = require('./migration-runner');
-
+const { runMigrations } = require("./migration-runner");
+const { Storage } = require("@google-cloud/storage");
+const storage = new Storage();
 let db;
 
 // =============================================================================
@@ -42,7 +43,7 @@ async function initDB() {
 
   await runMigrations(db);
 
-    // Set initial app version if starting fresh
+  // Set initial app version if starting fresh
   await db.run(
     "INSERT INTO preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING",
     "app_version",
@@ -95,6 +96,18 @@ async function verifyAndReplaceDb(newDbPath) {
   try {
     console.log(`[DB] Replacing ${currentDbPath}...`);
     fs.copyFileSync(newDbPath, currentDbPath);
+
+    if (process.env.GCS_BUCKET_NAME) {
+      console.log(
+        `[DB] Cloud environment detected. Syncing restore to GCS bucket: ${process.env.GCS_BUCKET_NAME}`,
+      );
+      await storage.bucket(process.env.GCS_BUCKET_NAME).upload(currentDbPath, {
+        destination: "fenz.db", // Matches the name expected by litestream.yml
+        metadata: { cacheControl: "no-cache" },
+      });
+      console.log(`[DB] Successfully synced manual restore to cloud storage.`);
+    }
+
     await initDB();
     return true;
   } catch (e) {
@@ -464,7 +477,7 @@ async function logEvent(user, type, title, payload) {
       type,
       title,
       JSON.stringify(payload),
-      new Date().toISOString() // Explicitly override DEFAULT CURRENT_TIMESTAMP with ISO+Z
+      new Date().toISOString(), // Explicitly override DEFAULT CURRENT_TIMESTAMP with ISO+Z
     );
   } catch (e) {
     console.error("Failed to write to event log:", e.message);
@@ -622,17 +635,24 @@ async function getAllFutureTrainingSessions() {
 /* ... (MFA) ... */
 async function setMfaSecret(userId, secret) {
   if (!db) await initDB();
-  await db.run('UPDATE users SET mfa_secret = ? WHERE id = ?', secret, userId);
+  await db.run("UPDATE users SET mfa_secret = ? WHERE id = ?", secret, userId);
 }
 
 async function setMfaStatus(userId, enabled) {
   if (!db) await initDB();
-  await db.run('UPDATE users SET mfa_enabled = ? WHERE id = ?', enabled ? 1 : 0, userId);
+  await db.run(
+    "UPDATE users SET mfa_enabled = ? WHERE id = ?",
+    enabled ? 1 : 0,
+    userId,
+  );
 }
 
 async function getMfaData(userId) {
   if (!db) await initDB();
-  return await db.get('SELECT mfa_secret, mfa_enabled FROM users WHERE id = ?', userId);
+  return await db.get(
+    "SELECT mfa_secret, mfa_enabled FROM users WHERE id = ?",
+    userId,
+  );
 }
 module.exports = {
   initDB,
@@ -681,5 +701,5 @@ module.exports = {
   blockUser,
   setMfaSecret,
   setMfaStatus,
-  getMfaData
+  getMfaData,
 };
