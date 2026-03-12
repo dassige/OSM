@@ -1,3 +1,4 @@
+// server.js
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -91,15 +92,15 @@ async function initializeProxy() {
 app.use((req, res, next) => {
   const publicPaths = [
     "/login.html",
-    "/login",
+    "/login", // [FIX] Allow the POST /login endpoint
     "/forgot-password",
     "/styles.css",
     "/ui-config",
     "/api/demo-credentials",
     "/forms-view.html",
-    "/theme.js",
-    "/help.js",
-    "/toast.js",
+    "/theme.js", // [FIX] Allow security-related frontend scripts
+    "/help.js", // [FIX] Allow help script
+    "/toast.js", // [FIX] Allow notification script
     "/public/js/toast.js",
     "/public/theme.js",
   ];
@@ -823,6 +824,7 @@ app.get("/api/reports/data/:type", async (req, res) => {
 
 app.post("/api/reports/pdf", async (req, res) => {
   try {
+    // [FIXED] Added executablePath to find Chromium in Alpine/Linux environments
     const browser = await puppeteer.launch({
       headless: "new",
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
@@ -888,6 +890,7 @@ app.post(
       const fileContent = fs.readFileSync(req.file.path, "utf8");
       const data = JSON.parse(fileContent);
 
+      // [NEW] Validate the parsed data array
       const { error, value } = validateBulkData(data);
       if (error) {
         return res.status(400).json({
@@ -1099,6 +1102,7 @@ app.get("/api/live-forms", hasRole("admin"), async (req, res) => {
   }
 });
 
+// [NEW] Export JSON endpoint
 app.get("/api/live-forms/export", hasRole("admin"), async (req, res) => {
   try {
     const filters = {
@@ -1127,6 +1131,7 @@ app.get("/api/live-forms/export", hasRole("admin"), async (req, res) => {
   }
 });
 
+// [NEW] Purge endpoint
 app.delete("/api/live-forms/all", hasRole("superadmin"), async (req, res) => {
   try {
     // Allow filters in query or body
@@ -1214,6 +1219,7 @@ app.get("/api/live-forms/access/:code", async (req, res) => {
     const result = await formsService.getLiveFormByCode(req.params.code);
 
     if (!result) {
+      // [SECURITY] If code doesn't exist, return 404.
       return res.status(404).json({ error: "Form link invalid or expired." });
     }
     await db.logEvent("System", "Live Forms", "Form Link Accessed", {
@@ -1222,6 +1228,7 @@ app.get("/api/live-forms/access/:code", async (req, res) => {
       attemptNumber: result.tries || 1,
       accessCode: req.params.code,
     });
+    // [SECURITY] Check Status
     if (
       result.form_status === "submitted" ||
       result.form_status === "accepted" ||
@@ -1254,6 +1261,10 @@ app.get("/api/live-forms/access/:code", async (req, res) => {
   }
 });
 
+//
+
+// server.js
+
 app.post("/api/live-forms/submit/:code", async (req, res) => {
   try {
     const form = await formsService.getLiveFormByCode(req.params.code);
@@ -1265,6 +1276,7 @@ app.post("/api/live-forms/submit/:code", async (req, res) => {
     await formsService.submitLiveForm(req.params.code, req.body);
 
     // 2. Calculate Score & Get Feedback
+    // [CRITICAL FIX] Destructure 'feedback' here so it is defined for later use
     const { achieved, maximum, feedback } =
       await formsService.calculateFormScore(form.structure, req.body);
 
@@ -1395,7 +1407,7 @@ app.post("/api/live-forms/accept/:id", hasRole("admin"), async (req, res) => {
   try {
     const { notifyEmail, notifyWa, customComment } = req.body;
     const id = req.params.id;
-    const isDemo = config.appMode === "demo";
+    const isDemo = config.appMode === "demo"; // [NEW] Demo detection
 
     // 1. Update Internal Database State
     await formsService.updateLiveFormStatus(id, "accepted");
@@ -1457,6 +1469,7 @@ app.post("/api/live-forms/accept/:id", hasRole("admin"), async (req, res) => {
       const textBody = convertHtmlToText(htmlBody);
 
       if (!isDemo) {
+        // [NEW] Skip actual SMTP in Demo
         await config.transporter.sendMail({
           from,
           to: member.email,
@@ -1476,6 +1489,7 @@ app.post("/api/live-forms/accept/:id", hasRole("admin"), async (req, res) => {
         : `Hello ${member.name}, your submission for "${form.skill_name}" has been APPROVED.`;
 
       if (!isDemo) {
+        // [NEW] Skip actual WA in Demo
         await whatsappService.sendMessage(member.mobile, message);
       } else {
         console.log(`[DEMO] Simulated Accept WhatsApp to: ${member.mobile}`);
@@ -1505,7 +1519,7 @@ app.post("/api/live-forms/reject/:id", hasRole("admin"), async (req, res) => {
   try {
     const { notifyEmail, notifyWa, customComment, generateNew } = req.body;
     const id = req.params.id;
-    const isDemo = config.appMode === "demo";
+    const isDemo = config.appMode === "demo"; // [NEW] Demo detection
 
     // 1. Update Internal Database State
     await formsService.updateLiveFormStatus(id, "rejected");
@@ -1585,6 +1599,7 @@ app.post("/api/live-forms/reject/:id", hasRole("admin"), async (req, res) => {
       let textBody = convertHtmlToText(htmlBody);
 
       if (!isDemo) {
+        // [NEW] Skip actual SMTP in Demo
         await config.transporter.sendMail({
           from,
           to: member.email,
@@ -1605,6 +1620,7 @@ app.post("/api/live-forms/reject/:id", hasRole("admin"), async (req, res) => {
         : `Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted.`;
 
       if (!isDemo) {
+        // [NEW] Skip actual WA in Demo
         await whatsappService.sendMessage(member.mobile, message);
       } else {
         console.log(`[DEMO] Simulated Reject WhatsApp to: ${member.mobile}`);
@@ -1759,6 +1775,7 @@ io.on("connection", (socket) => {
         liveFormsMap[`${r.member_id}_${r.skill_id}`] = r.form_status;
       });
 
+      // [UPDATED] Pass liveFormsMap
       const processedMembers = processMemberSkills(
         dbMembers,
         rawData,
@@ -1770,13 +1787,13 @@ io.on("connection", (socket) => {
       );
 
       const results = processedMembers.map((m) => ({
-        id: m.id,
+        id: m.id, // [NEW] Pass Member ID
         name: m.name,
         email: m.email,
         mobile: m.mobile,
         notificationPreference: m.notificationPreference,
         skills: m.expiringSkills.map((s) => ({
-          skillId: s.skillId,
+          skillId: s.skillId, // [NEW] Pass Skill ID
           skill: s.skill,
           dueDate: s.dueDate,
           hasUrl: !!s.url,
@@ -1862,7 +1879,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
               skill.isSubmitted = true; // Flag for Mailer/WhatsApp to show "Under Review" message
               skill.url = null; // Ensure no new link is rendered
               logger(
-                `  - Skipped Live Form for "${skill.skill}" (Active record exists in Accepted/Rejected/Submitted status)`,
+                `  - Skipped Live Form for "${skill.skill}" (Active record exists in Accepted/Rejected/Submitted status)`, // [UPDATED LOG]
               );
             } else {
               // 2. Standard Flow: Ensure Open Form
@@ -1922,6 +1939,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
           let hasSkills = false;
 
           member.expiringSkills.forEach((s) => {
+            // [UPDATED] WhatsApp Logic
             if (waTemplate.filterOnlyWithUrl && !s.url && !s.isSubmitted)
               return;
 

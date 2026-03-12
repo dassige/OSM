@@ -1,3 +1,4 @@
+// services/forms-service.js
 const db = require("./db");
 const crypto = require("crypto");
 const aiService = require("./ai-service");
@@ -151,7 +152,7 @@ async function updateForm(id, data) {
   );
 }
 
-// Get a list of skill names using this form
+// [NEW] Get a list of skill names using this form
 async function getFormUsage(id) {
   const database = await db.initDB();
   // First find the public_id associated with this internal ID
@@ -168,6 +169,7 @@ async function getFormUsage(id) {
   return skills.map((s) => s.name);
 }
 
+// [UPDATED] Delete form and clean up skill references
 async function deleteForm(id) {
   const database = await db.initDB();
 
@@ -379,6 +381,8 @@ async function deleteLiveForm(id) {
   const database = await db.initDB();
   await database.run(`DELETE FROM live_forms WHERE id = ?`, id);
 }
+
+// services/forms-service.js
 
 async function getLiveFormByCode(code) {
   const database = await db.initDB();

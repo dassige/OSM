@@ -1,3 +1,4 @@
+// public/app.js
 const socket = io();
 
 // ... (Keep existing GLOBAL STATE & CONFIG) ...
@@ -357,6 +358,7 @@ function renderTable() {
       emptyNameTd.className = "merged-cell";
       subTr.appendChild(emptyNameTd);
 
+      // [UPDATED from previous step] Pass member.id
       const subSkillTd = document.createElement("td");
       subSkillTd.innerHTML = buildSkillHtml(visibleSkills[i], member.id);
       subSkillTd.className = "skill-cell";
@@ -378,6 +380,7 @@ function renderTable() {
     }
   });
 
+  // [NEW] Enhanced Empty State
   if (visibleCount === 0) {
     skillsTableBody.innerHTML = `
             <tr class="empty-state-row">
@@ -416,6 +419,7 @@ function setupMasterCheckbox(masterId, targetClass) {
   });
 }
 
+// [UPDATED] Single Action Logic using confirmAction
 async function sendSingleAction(name, type) {
   const days = parseInt(daysInput.value) || 30;
   const label = type === "email" ? "Email" : "WhatsApp";
@@ -449,6 +453,7 @@ viewBtn.addEventListener("click", () => {
   fetchData(true);
 });
 
+// [UPDATED] Send Emails Handler
 sendEmailsBtn.addEventListener("click", async () => {
   const targets = [];
   document.querySelectorAll("#skillsTable tbody tr").forEach((row) => {
@@ -574,6 +579,7 @@ function buildSkillHtml(skillObj, memberId) {
     html += ` <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; color: #007bff; margin-left: 4px;" title="Direct Form Link Available"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
   }
 
+  // [UPDATED] Status Icons with Circles
   const canLink = memberId && skillObj.skillId;
 
   if (skillObj.liveFormStatus === "accepted") {

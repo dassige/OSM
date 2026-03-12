@@ -1,3 +1,5 @@
+// public/utils.js
+
 /**
  * Injects the Confirm Modal HTML/CSS into the page if not present.
  */

@@ -1,3 +1,4 @@
+// main.js
 const { getOIData } = require('./services/scraper'); 
 const config = require('./config'); 
 
@@ -7,6 +8,7 @@ const { processMemberSkills, isExpired } = require('./services/member-manager');
 
 // --- 1. GLOBAL FLAG DEFINITIONS ---
 const args = process.argv.slice(2);
+// [REMOVED] Test mode flag
 const isViewMode = args.includes('view');
 const isSendSelectedMode = args.includes('send-selected');
 

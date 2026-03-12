@@ -347,6 +347,7 @@ const helpContent = {
 
     const content = helpContent[key] || helpContent["default"];
 
+    // [UPDATED] Force inline styles to guarantee visibility and position
     const helpHtml = `
         <button id="globalHelpBtn" title="Get Help" 
                 style="position: fixed; top: 20px; right: 20px; z-index: 9999; 

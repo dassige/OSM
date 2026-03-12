@@ -1,3 +1,5 @@
+// public/theme.js
+
 (function() {
     // 1. Apply theme immediately on load to prevent "flash of white"
     // We check LocalStorage (instant) before waiting for the Server (async)

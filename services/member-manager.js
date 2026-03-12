@@ -1,3 +1,4 @@
+// services/member-manager.js
 const config = require("../config");
 
 function parseDate(dateStr) {
@@ -90,6 +91,8 @@ function processMemberSkills(
           if (config.url_type === "internal") {
             skill.url = `${appBaseUrl}/forms-view.html?id=${config.url}`;
 
+            // [NEW] Lookup Live Form Status
+            // Key format matches what we build in server.js
             const key = `${member.id}_${config.id}`;
             skill.liveFormStatus = liveFormsMap[key] || null;
           } else {

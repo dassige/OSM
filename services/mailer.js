@@ -1,3 +1,4 @@
+// services/mailer.js
 const config = require('../config');
 const getTime = () => new Date().toLocaleTimeString(config.locale, { timeZone: config.timezone });
 
@@ -67,6 +68,7 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
     let plainTextList = '';
 
     skillsToProcess.forEach(skill => {
+        // [NEW] Handle Submitted Status
         if (skill.isSubmitted) {
             const criticalLabel = skill.isCritical ? '(CRITICAL)' : '';
             rowsHtml += `<li style="color:#555;"><strong>${skill.skill}</strong> ${criticalLabel} <br> <span style="color:#17a2b8; font-weight:bold; font-size:0.9em;">&#9432; Form submitted and awaiting review</span></li>`;

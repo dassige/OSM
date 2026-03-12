@@ -1,9 +1,11 @@
+// public/js/reports-controller.js
 const registry = window.ReportRegistry || {};
 const reportSelect = document.getElementById('reportSelect');
 const descTitle = document.getElementById('descTitle');
 const descBody = document.getElementById('descBody');
 const reportPanel = document.getElementById('reportPanel');
 
+// [NEW] Container for dynamic inputs (will be injected into descCard)
 let paramContainer = null;
 
 let appConfig = {};
@@ -20,6 +22,7 @@ async function initReports() {
         const user = await (await fetch('/api/user-session')).json();
         if (user.role === 'guest') window.location.href = '/';
 
+        // [NEW] Load User Preferences once
         const prefsRes = await fetch('/api/user-preferences');
         if (prefsRes.ok) userPrefs = await prefsRes.json();
 
@@ -54,6 +57,7 @@ function loadReportDescription() {
         descBody.textContent = "Select a report to view details.";
     }
 }
+// [NEW] Render Parameter Inputs
 function renderParams(params) {
     const card = document.getElementById('descCard');
     
@@ -107,6 +111,7 @@ async function runReport() {
 
     reportPanel.innerHTML = '<div class="spinner" style="margin:50px auto; display:block; border-top-color:#333;"></div><p style="text-align:center">Loading Data...</p>';
 
+    // [NEW] Gather Parameters
     const reportDef = registry[key];
     const queryParams = new URLSearchParams();
     
@@ -131,6 +136,7 @@ async function runReport() {
     }
 
     try {
+        // [UPDATED] Append Query String
         const res = await fetch(`/api/reports/data/${key}?${queryParams.toString()}`);
         if (!res.ok) throw new Error("Failed to load data");
         

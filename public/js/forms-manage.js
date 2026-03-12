@@ -1,3 +1,5 @@
+// public/js/forms-manage.js
+
 let forms = [];
 let currentForm = null;
 let currentFields = [];
@@ -561,6 +563,7 @@ function loadEditor(form) {
   document.getElementById("minScoreType").value =
     form.min_score_type || "percentage";
   document.getElementById("maxTries").value = form.max_tries || 1;
+  // [FIX] Manually recalculate height for long names on load
   nameInput.style.height = "";
   nameInput.style.height = nameInput.scrollHeight + "px";
 

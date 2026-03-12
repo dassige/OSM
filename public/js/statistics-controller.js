@@ -1,3 +1,4 @@
+// public/js/statistics-controller.js
 const registry = window.StatRegistry || {};
 const statSelect = document.getElementById('statSelect');
 const descTitle = document.getElementById('descTitle');
@@ -14,6 +15,7 @@ async function initStats() {
     if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
 }
 
+// [NEW] Scroll Logic
 const scrollTopBtn = document.getElementById("scrollTopBtn");
 window.onscroll = function () {
     if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
@@ -46,6 +48,7 @@ async function runStat() {
     } catch (e) { statPanel.innerHTML = `<p style="color:red;">Error: ${e.message}</p>`; }
 }
 
+// [NEW] PDF Export Logic for Charts
 async function downloadPdf() {
     const contentPanel = document.getElementById('statPanel');
     if (!contentPanel || contentPanel.innerHTML.includes('Refresh Data')) {

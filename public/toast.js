@@ -1,3 +1,5 @@
+// public/toast.js
+
 (function() {
     // 1. Create Container if it doesn't exist
     let container = document.getElementById('toast-container');
