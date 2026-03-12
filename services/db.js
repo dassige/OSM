@@ -619,6 +619,21 @@ async function getAllFutureTrainingSessions() {
   );
 }
 
+/* ... (MFA) ... */
+async function setMfaSecret(userId, secret) {
+  if (!db) await initDB();
+  await db.run('UPDATE users SET mfa_secret = ? WHERE id = ?', secret, userId);
+}
+
+async function setMfaStatus(userId, enabled) {
+  if (!db) await initDB();
+  await db.run('UPDATE users SET mfa_enabled = ? WHERE id = ?', enabled ? 1 : 0, userId);
+}
+
+async function getMfaData(userId) {
+  if (!db) await initDB();
+  return await db.get('SELECT mfa_secret, mfa_enabled FROM users WHERE id = ?', userId);
+}
 module.exports = {
   initDB,
   closeDB,
@@ -664,4 +679,7 @@ module.exports = {
   resetLoginAttempts,
   incrementLoginAttempts,
   blockUser,
+  setMfaSecret,
+  setMfaStatus,
+  getMfaData
 };
