@@ -64,7 +64,19 @@ function getDbPath() {
   const filename = config.appMode === "demo" ? "demo.db" : "fenz.db";
   return path.join(__dirname, "../" + filename);
 }
-
+/**
+ * Creates a clean, single-file backup using VACUUM INTO.
+ * This ensures the backup is valid even if the live DB is in WAL mode.
+ */
+async function createCleanBackup(targetPath) {
+  if (!db) await initDB();
+  
+  // Ensure any previous temp file is gone
+  if (fs.existsSync(targetPath)) fs.unlinkSync(targetPath);
+  
+  // VACUUM INTO creates a new, quiesced database file at the target path
+  await db.run(`VACUUM INTO ?`, targetPath);
+}
 async function verifyAndReplaceDb(newDbPath) {
   let tempDb;
   try {
@@ -637,6 +649,7 @@ async function getMfaData(userId) {
 module.exports = {
   initDB,
   closeDB,
+  createCleanBackup,
   getDbPath,
   verifyAndReplaceDb,
   authenticateUser,

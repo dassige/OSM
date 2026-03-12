@@ -31,7 +31,7 @@ const aiService = require("./services/ai-service");
 
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
-
+const { Storage } = require("@google-cloud/storage");
 // =============================================================================
 //  INITIALIZATION & MIDDLEWARE
 // =============================================================================
@@ -224,9 +224,18 @@ app.post("/login", async (req, res) => {
   if (username === config.auth.username && password === config.auth.password) {
     req.session.loggedIn = true;
     req.session.user = {
-      id: 0, name: "Super Admin", email: username, role: "superadmin", isAdmin: true, isEnvUser: true,
+      id: 0,
+      name: "Super Admin",
+      email: username,
+      role: "superadmin",
+      isAdmin: true,
+      isEnvUser: true,
     };
-    await db.logEvent("Super Admin", "Security", "Successful Login", { userEmail: username, authType: "environment", sourceIP: ip });
+    await db.logEvent("Super Admin", "Security", "Successful Login", {
+      userEmail: username,
+      authType: "environment",
+      sourceIP: ip,
+    });
     return res.json({ success: true });
   }
 
@@ -234,8 +243,10 @@ app.post("/login", async (req, res) => {
   try {
     const userRecord = await db.getUserByEmail(username);
     if (userRecord) {
-      if (userRecord.enabled === 0) return res.status(403).json({ error: "Account disabled." });
-      if (userRecord.blocked === 1) return res.status(403).json({ error: "Account blocked." });
+      if (userRecord.enabled === 0)
+        return res.status(403).json({ error: "Account disabled." });
+      if (userRecord.blocked === 1)
+        return res.status(403).json({ error: "Account blocked." });
     }
 
     const user = await db.authenticateUser(username, password);
@@ -245,19 +256,19 @@ app.post("/login", async (req, res) => {
       const mfaData = await db.getMfaData(user.id);
       if (mfaData && mfaData.mfa_enabled) {
         // Store partial user in session securely, do NOT set loggedIn=true yet
-        req.session.mfaPendingUser = user; 
+        req.session.mfaPendingUser = user;
         return res.json({ mfaRequired: true });
       }
 
       // No MFA? Complete login immediately
       return await finalizeLogin(req, res, user, "database");
     } else if (userRecord) {
-        // Handle failed attempt (keep your existing increment logic here)
-        const stats = await db.incrementLoginAttempts(username);
-        // ... (your existing blocking logic) ...
-        return res.status(401).json({ error: "Invalid credentials" });
+      // Handle failed attempt (keep your existing increment logic here)
+      const stats = await db.incrementLoginAttempts(username);
+      // ... (your existing blocking logic) ...
+      return res.status(401).json({ error: "Invalid credentials" });
     } else {
-        return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
   } catch (e) {
     console.error("Login Error:", e);
@@ -267,16 +278,18 @@ app.post("/login", async (req, res) => {
 
 app.post("/login/mfa", async (req, res) => {
   if (!req.session.mfaPendingUser) {
-    return res.status(401).json({ error: "Session expired. Please log in again." });
+    return res
+      .status(401)
+      .json({ error: "Session expired. Please log in again." });
   }
 
   const { token } = req.body;
   const user = req.session.mfaPendingUser;
   // --- DEMO MODE BYPASS ---
-  if (config.appMode === 'demo') {
-      delete req.session.mfaPendingUser;
-      // Log as 'demo-mfa' to distinguish in Event Logs
-      return await finalizeLogin(req, res, user, "demo-mfa"); 
+  if (config.appMode === "demo") {
+    delete req.session.mfaPendingUser;
+    // Log as 'demo-mfa' to distinguish in Event Logs
+    return await finalizeLogin(req, res, user, "demo-mfa");
   }
 
   const mfaData = await db.getMfaData(user.id);
@@ -285,7 +298,7 @@ app.post("/login/mfa", async (req, res) => {
     secret: mfaData.mfa_secret,
     encoding: "base32",
     token: token,
-    window: 1 // Allow 30sec leeway
+    window: 1, // Allow 30sec leeway
   });
 
   if (verified) {
@@ -298,61 +311,69 @@ app.post("/login/mfa", async (req, res) => {
   }
 });
 // Generate Secret & QR Code
-app.post('/api/profile/mfa/setup', async (req, res) => {
-    if (!req.session.user || !req.session.user.id) return res.status(401).json({error: "Unauthorized"});
-    
-    const secret = speakeasy.generateSecret({ name: `FENZ OSM (${req.session.user.email})` });
-    // Save secret but do NOT enable yet
-    await db.setMfaSecret(req.session.user.id, secret.base32);
-    
-    qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
-        res.json({ secret: secret.base32, qrCode: data_url });
-    });
+app.post("/api/profile/mfa/setup", async (req, res) => {
+  if (!req.session.user || !req.session.user.id)
+    return res.status(401).json({ error: "Unauthorized" });
+
+  const secret = speakeasy.generateSecret({
+    name: `FENZ OSM (${req.session.user.email})`,
+  });
+  // Save secret but do NOT enable yet
+  await db.setMfaSecret(req.session.user.id, secret.base32);
+
+  qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
+    res.json({ secret: secret.base32, qrCode: data_url });
+  });
 });
 
 // Verify Setup & Enable
-app.post('/api/profile/mfa/verify', async (req, res) => {
-    const { token } = req.body;
-    const userId = req.session.user.id;
+app.post("/api/profile/mfa/verify", async (req, res) => {
+  const { token } = req.body;
+  const userId = req.session.user.id;
 
-    // --- DEMO MODE BYPASS ---
-    if (config.appMode === 'demo') {
-        // Allow any 6-digit code in demo mode
-        await db.setMfaStatus(userId, true);
-        await db.logEvent(req.session.user.name, "Security", "MFA Enabled (Demo Simulation)", {});
-        return res.json({ success: true });
-    }
-    const data = await db.getMfaData(userId);
-    
-    const verified = speakeasy.totp.verify({
-        secret: data.mfa_secret,
-        encoding: 'base32',
-        token: token
-    });
+  // --- DEMO MODE BYPASS ---
+  if (config.appMode === "demo") {
+    // Allow any 6-digit code in demo mode
+    await db.setMfaStatus(userId, true);
+    await db.logEvent(
+      req.session.user.name,
+      "Security",
+      "MFA Enabled (Demo Simulation)",
+      {},
+    );
+    return res.json({ success: true });
+  }
+  const data = await db.getMfaData(userId);
 
-    if (verified) {
-        await db.setMfaStatus(userId, true);
-        await db.logEvent(req.session.user.name, "Security", "MFA Enabled", {});
-        res.json({ success: true });
-    } else {
-        res.status(400).json({ error: 'Invalid Code' });
-    }
+  const verified = speakeasy.totp.verify({
+    secret: data.mfa_secret,
+    encoding: "base32",
+    token: token,
+  });
+
+  if (verified) {
+    await db.setMfaStatus(userId, true);
+    await db.logEvent(req.session.user.name, "Security", "MFA Enabled", {});
+    res.json({ success: true });
+  } else {
+    res.status(400).json({ error: "Invalid Code" });
+  }
 });
 
 // Disable MFA
-app.post('/api/profile/mfa/disable', async (req, res) => {
-    const userId = req.session.user.id;
-    await db.setMfaStatus(userId, false);
-    await db.setMfaSecret(userId, null);
-    await db.logEvent(req.session.user.name, "Security", "MFA Disabled", {});
-    res.json({ success: true });
+app.post("/api/profile/mfa/disable", async (req, res) => {
+  const userId = req.session.user.id;
+  await db.setMfaStatus(userId, false);
+  await db.setMfaSecret(userId, null);
+  await db.logEvent(req.session.user.name, "Security", "MFA Disabled", {});
+  res.json({ success: true });
 });
 
 // Get Current Status
-app.get('/api/profile/mfa/status', async (req, res) => {
-    const userId = req.session.user.id;
-    const data = await db.getMfaData(userId);
-    res.json({ enabled: !!(data && data.mfa_enabled) });
+app.get("/api/profile/mfa/status", async (req, res) => {
+  const userId = req.session.user.id;
+  const data = await db.getMfaData(userId);
+  res.json({ enabled: !!(data && data.mfa_enabled) });
 });
 app.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
@@ -453,11 +474,11 @@ app.post("/api/users", hasRole("admin"), async (req, res) => {
 app.put("/api/users/:id", hasRole("admin"), async (req, res) => {
   try {
     const { name, email, role, enabled, blocked } = req.body;
-    
+
     // [FIX] Fetch the existing record first so 'userRecord' is defined
     const userRecord = await db.getUserById(req.params.id);
     if (!userRecord) {
-        return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
     await db.updateUser(req.params.id, name, email, role, enabled, blocked);
@@ -766,14 +787,30 @@ app.post("/api/system/ai-test", hasRole("superadmin"), async (req, res) => {
   }
 });
 
-app.get("/api/system/backup", hasRole("superadmin"), (req, res) => {
-  const dbPath = db.getDbPath();
-  res.download(dbPath, "fenz.db");
-  db.logEvent(req.session.user.name, "System", "Database Backup Downloaded", {
-    backupType: "Manual Snapshot",
-    appVersion: config.ui.version,
-    databaseName: "fenz.db",
-  });
+aapp.get("/api/system/backup", hasRole("superadmin"), async (req, res) => {
+  const tempBackupPath = path.join(__dirname, "temp_backup.db");
+
+  try {
+    await db.createCleanBackup(tempBackupPath);
+
+    res.download(tempBackupPath, "fenz.db", (err) => {
+      // Cleanup temp file after download completes or fails
+      if (fs.existsSync(tempBackupPath)) fs.unlinkSync(tempBackupPath);
+    });
+
+    await db.logEvent(
+      req.session.user.name,
+      "System",
+      "Clean Database Backup Generated",
+      {
+        method: "VACUUM INTO",
+        status: "Success",
+      },
+    );
+  } catch (e) {
+    console.error("Backup failed:", e);
+    res.status(500).json({ error: "Failed to generate clean backup." });
+  }
 });
 app.post(
   "/api/system/restore",
@@ -781,14 +818,34 @@ app.post(
   upload.single("databaseFile"),
   async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
+
     try {
+      // 1. Local Integrity Check (Already implemented in db.js)
       await db.verifyAndReplaceDb(req.file.path);
-      await db.logEvent(req.session.user.name, "System", "Database Restored", {
-        sourceFile: req.file.originalname,
-        fileSize: req.file.size,
-        restoreStatus: "Verified & Replaced",
-        appVersion: config.ui.version,
-      });
+
+      if (process.env.GCS_BUCKET_NAME) {
+        const storage = new Storage();
+        const bucket = storage.bucket(process.env.GCS_BUCKET_NAME);
+
+        await bucket.upload(req.file.path, { destination: "fenz.db" });
+
+        await db.logEvent(
+          req.session.user.name,
+          "System",
+          "Database Restored to GCS",
+          {
+            bucket: process.env.GCS_BUCKET_NAME,
+          },
+        );
+
+        return res.json({
+          success: true,
+          cloudSync: true, // Flag for the frontend
+          message: "Database verified and synced to Cloud Storage.",
+        });
+      }
+
+      // 3. Fallback for standard local/Docker installations
       res.json({ message: "Database restored successfully." });
     } catch (e) {
       res.status(500).json({ error: e.message });
