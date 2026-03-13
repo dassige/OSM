@@ -71,30 +71,32 @@ function getDbPath() {
 // =============================================================================
 
 
+
 /**
  * Verifies and replaces the active database with an uploaded backup.
- * Optimized to handle aggressive Litestream locking on Google Cloud Run.
+ * Optimized for Litestream replication cycles on Google Cloud Run to prevent "malformed" errors.
  */
 async function verifyAndReplaceDb(newDbPath) {
   let tempDb;
   try {
     console.log(`[DB] Verifying integrity of uploaded file: ${newDbPath}`);
     tempDb = await open({ filename: newDbPath, driver: sqlite3.Database });
-
+    
+    // Check for required tables
     const requiredTables = ["members", "skills", "preferences"];
     const tables = await tempDb.all("SELECT name FROM sqlite_master WHERE type='table'");
     const tableNames = tables.map((t) => t.name);
-
     const missing = requiredTables.filter((t) => !tableNames.includes(t));
+    
     if (missing.length > 0) throw new Error(`Incompatible Database structure.`);
-
     await tempDb.close();
   } catch (e) {
     if (tempDb) await tempDb.close();
     throw e;
   }
 
-  // 1. Release all main app handles
+  // 1. FULL DISCONNECT
+  // We must fully close the main app connection before filesystem operations.
   await closeDB();
 
   const currentDbPath = getDbPath();
@@ -102,64 +104,51 @@ async function verifyAndReplaceDb(newDbPath) {
   const shmPath = `${currentDbPath}-shm`;
 
   try {
-    console.log(`[DB] Swapping database file...`);
+    console.log(`[DB] Executing filesystem swap...`);
 
-    // 2. Clear journal files
+    // 2. WIPE JOURNALS & CURRENT DB
+    // Litestream holds handles to these. Deleting them forces Litestream to reset its sync state.
     if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
     if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
+    if (fs.existsSync(currentDbPath)) fs.unlinkSync(currentDbPath);
 
-    // 3. Replace the main database file
+    // 3. COPY NEW DATABASE
     fs.copyFileSync(newDbPath, currentDbPath);
+    console.log(`[DB] New database file placed.`);
 
-    // 4. Force WAL mode via a standalone temporary connection
-    // This satisfies Litestream's requirement for a .db-wal file
-    console.log(`[DB] Initializing WAL mode...`);
-    const initWalDb = new sqlite3.Database(currentDbPath);
+    // 4. TRIGGER WAL MODE
+    // Litestream requires WAL mode to sync.
+    const initConn = new sqlite3.Database(currentDbPath);
     await new Promise((resolve, reject) => {
-        // Set a busy timeout for this temporary connection
-        initWalDb.configure("busyTimeout", 5000); 
-        initWalDb.run("PRAGMA journal_mode=WAL;", (err) => {
+        initConn.run("PRAGMA journal_mode=WAL;", (err) => {
             if (err) reject(err);
             else {
-                initWalDb.close();
+                initConn.close();
                 resolve();
             }
         });
     });
 
-    // 5. EXTENDED WAIT FOR REPLICATION
+    // 5. EXTENDED SYNC WINDOW
     if (process.env.GCS_BUCKET_NAME) {
-      console.log(`[DB] Waiting for Litestream to secure the new generation...`);
-      // We increased this to 12 seconds to ensure the sidecar finishes its 
-      // initial snapshotting before the main app tries to read/write
-      await new Promise(resolve => setTimeout(resolve, 12000));
+      console.log(`[DB] Cloud environment detected. Waiting for Litestream to re-index...`);
+      // We give the sidecar a full 15 seconds to detect the "malformed" old state 
+      // is gone and begin snapshotting the new file.
+      await new Promise(resolve => setTimeout(resolve, 15000));
     }
 
-    // 6. RE-INITIALIZE MAIN CONNECTION WITH BACKOFF RETRY
-    let retries = 5;
-    while (retries > 0) {
-      try {
-        await initDB();
-        console.log(`[DB] Restore complete. App re-attached to database.`);
-        return true;
-      } catch (err) {
-        if (err.message.includes('SQLITE_BUSY') && retries > 1) {
-          console.warn(`[DB] SQLITE_BUSY: Litestream is still syncing. Retrying in 3s...`);
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          retries--;
-        } else {
-          throw err;
-        }
-      }
-    }
-    
+    // 6. RE-INITIALIZE MAIN CONNECTION
+    await initDB();
+    console.log(`[DB] Restore complete and connection re-established.`);
+    return true;
+
   } catch (e) {
     console.error("[DB] Restore failed:", e);
-    // Final attempt to recover the connection so the app doesn't crash
-    await initDB().catch(() => {}); 
+    await initDB().catch(() => {}); // Attempt recovery
     throw e;
   }
 }
+
 // ... (Authentication) ...
 async function authenticateUser(email, password) {
   if (!db) await initDB();
