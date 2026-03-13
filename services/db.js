@@ -71,11 +71,9 @@ function getDbPath() {
 // =============================================================================
 
 
-
-
 /**
  * Verifies and replaces the active database with an uploaded backup.
- * Corrected to call internal functions directly to avoid circular dependency errors.
+ * Optimized for Litestream replication cycles on Google Cloud Run.
  */
 async function verifyAndReplaceDb(newDbPath) {
   let tempDb;
@@ -83,17 +81,12 @@ async function verifyAndReplaceDb(newDbPath) {
     console.log(`[DB] Verifying integrity of uploaded file: ${newDbPath}`);
     tempDb = await open({ filename: newDbPath, driver: sqlite3.Database });
 
-    const tables = await tempDb.all(
-      "SELECT name FROM sqlite_master WHERE type='table'",
-    );
-    const tableNames = tables.map((t) => t.name);
     const requiredTables = ["members", "skills", "preferences"];
+    const tables = await tempDb.all("SELECT name FROM sqlite_master WHERE type='table'");
+    const tableNames = tables.map((t) => t.name);
 
     const missing = requiredTables.filter((t) => !tableNames.includes(t));
-    if (missing.length > 0)
-      throw new Error(
-        `Incompatible Database. Missing tables: ${missing.join(", ")}`,
-      );
+    if (missing.length > 0) throw new Error(`Incompatible Database structure.`);
 
     await tempDb.close();
   } catch (e) {
@@ -101,7 +94,8 @@ async function verifyAndReplaceDb(newDbPath) {
     throw e;
   }
 
-  // 1. Close current connection directly using the local function
+  // 1. COMPLETELY CLOSE THE CURRENT CONNECTION
+  // This is critical to release the OS-level file handle
   await closeDB();
 
   const currentDbPath = getDbPath();
@@ -109,9 +103,10 @@ async function verifyAndReplaceDb(newDbPath) {
   const shmPath = `${currentDbPath}-shm`;
 
   try {
-    console.log(`[DB] Preparing filesystem for restore...`);
+    console.log(`[DB] Clearing journal files and swapping database...`);
 
-    // 2. Remove journal files to ensure a clean slate for Litestream
+    // 2. Remove journal files
+    // Deleting these ensures Litestream sees a "fresh" database start
     if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
     if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
 
@@ -119,23 +114,40 @@ async function verifyAndReplaceDb(newDbPath) {
     fs.copyFileSync(newDbPath, currentDbPath);
     console.log(`[DB] Local file replaced successfully.`);
 
-    // 4. Trigger Litestream sync
+    // 4. WAIT FOR LITESTREAM REPLICATION
     if (process.env.GCS_BUCKET_NAME) {
-      console.log(`[DB] Cloud environment detected. Waiting for Litestream to replicate...`);
-      // Small delay allows the sidecar to detect the file change
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log(`[DB] Waiting for Litestream sidecar to lock/replicate new generation...`);
+      
+      // Increased delay to 5 seconds to ensure Litestream finishes 
+      // its initial checksum and starts pushing the new generation.
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
 
-    // 5. Re-initialize the connection directly
-    await initDB();
-    return true;
+    // 5. RE-INITIALIZE CONNECTION
+    // If Litestream is still busy, we use a small retry loop
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await initDB();
+        console.log(`[DB] Restore complete. Connection re-established.`);
+        return true;
+      } catch (err) {
+        if (err.message.includes('SQLITE_BUSY') && retries > 1) {
+          console.warn(`[DB] Database busy, retrying in 2s... (${retries} left)`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          retries--;
+        } else {
+          throw err;
+        }
+      }
+    }
   } catch (e) {
     console.error("[DB] Restore failed:", e);
-    await initDB();
+    // Attempt one final recovery of the connection
+    await initDB().catch(() => {}); 
     throw e;
   }
 }
-
 
 // ... (Authentication) ...
 async function authenticateUser(email, password) {
