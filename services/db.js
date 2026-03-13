@@ -71,9 +71,11 @@ function getDbPath() {
 // =============================================================================
 
 
+
+
 /**
  * Verifies and replaces the active database with an uploaded backup.
- * Modified to work with Litestream replication on Google Cloud Run.
+ * Corrected to call internal functions directly to avoid circular dependency errors.
  */
 async function verifyAndReplaceDb(newDbPath) {
   let tempDb;
@@ -99,8 +101,8 @@ async function verifyAndReplaceDb(newDbPath) {
     throw e;
   }
 
-  // 1. Close current connection to release file locks
-  await dbService.closeDB();
+  // 1. Close current connection directly using the local function
+  await closeDB();
 
   const currentDbPath = getDbPath();
   const walPath = `${currentDbPath}-wal`;
@@ -109,7 +111,7 @@ async function verifyAndReplaceDb(newDbPath) {
   try {
     console.log(`[DB] Preparing filesystem for restore...`);
 
-    // 2. Remove journal files to avoid corrupting the new DB base
+    // 2. Remove journal files to ensure a clean slate for Litestream
     if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
     if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
 
@@ -117,27 +119,31 @@ async function verifyAndReplaceDb(newDbPath) {
     fs.copyFileSync(newDbPath, currentDbPath);
     console.log(`[DB] Local file replaced successfully.`);
 
-    // 4. LITESTREAM CLOUD SYNC
-    // Instead of a manual GCS upload which Litestream ignores, 
-    // we simply wait a moment. Litestream (the sidecar process) 
-    // will see the file change and push a new generation to GCS.
+    // 4. Trigger Litestream sync
     if (process.env.GCS_BUCKET_NAME) {
       console.log(`[DB] Cloud environment detected. Waiting for Litestream to replicate...`);
-      
-      // We add a small delay to allow the Litestream sidecar 
-      // to "see" the file modification before we re-open the DB.
+      // Small delay allows the sidecar to detect the file change
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
-    // 5. Re-initialize the connection
-    await dbService.initDB();
+    // 5. Re-initialize the connection directly
+    await initDB();
     return true;
   } catch (e) {
     console.error("[DB] Restore failed:", e);
-    await dbService.initDB();
+    await initDB();
     throw e;
   }
 }
+
+// Ensure these are at the bottom of the file
+module.exports = {
+  initDB,
+  closeDB,
+  getDbPath,
+  verifyAndReplaceDb,
+  // ... other exports
+};
 // ... (Authentication) ...
 async function authenticateUser(email, password) {
   if (!db) await initDB();
