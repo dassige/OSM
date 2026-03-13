@@ -66,6 +66,19 @@ function getDbPath() {
   return path.join(__dirname, "../" + filename);
 }
 
+// services/db.js - Modified for Litestream Compatibility
+const sqlite3 = require("sqlite3");
+const { open } = require("sqlite");
+const path = require("path");
+const fs = require("fs");
+const dbService = require("./db"); // Reference to itself for close/init calls
+
+// ... existing crypto and helper functions ...
+
+/**
+ * Verifies and replaces the active database with an uploaded backup.
+ * Modified to work with Litestream replication on Google Cloud Run.
+ */
 async function verifyAndReplaceDb(newDbPath) {
   let tempDb;
   try {
@@ -90,42 +103,45 @@ async function verifyAndReplaceDb(newDbPath) {
     throw e;
   }
 
-  await closeDB();
+  // 1. Close current connection to release file locks
+  await dbService.closeDB();
 
   const currentDbPath = getDbPath();
   const walPath = `${currentDbPath}-wal`;
   const shmPath = `${currentDbPath}-shm`;
 
   try {
-    console.log(`[DB] Replacing ${currentDbPath}...`);
-    // 1. Delete the main DB and the journal files to ensure a clean slate
-    if (fs.existsSync(currentDbPath)) fs.unlinkSync(currentDbPath);
+    console.log(`[DB] Preparing filesystem for restore...`);
+
+    // 2. Remove journal files to avoid corrupting the new DB base
     if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
     if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
 
-    // 2. Copy the new backup into place
+    // 3. Replace the main database file
     fs.copyFileSync(newDbPath, currentDbPath);
+    console.log(`[DB] Local file replaced successfully.`);
 
+    // 4. LITESTREAM CLOUD SYNC
+    // Instead of a manual GCS upload which Litestream ignores, 
+    // we simply wait a moment. Litestream (the sidecar process) 
+    // will see the file change and push a new generation to GCS.
     if (process.env.GCS_BUCKET_NAME) {
-      console.log(
-        `[DB] Cloud environment detected. Syncing restore to GCS bucket: ${process.env.GCS_BUCKET_NAME}`,
-      );
-      await storage.bucket(process.env.GCS_BUCKET_NAME).upload(currentDbPath, {
-        destination: "fenz.db", // Matches the name expected by litestream.yml
-        metadata: { cacheControl: "no-cache" },
-      });
-      console.log(`[DB] Successfully synced manual restore to cloud storage.`);
+      console.log(`[DB] Cloud environment detected. Waiting for Litestream to replicate...`);
+      
+      // We add a small delay to allow the Litestream sidecar 
+      // to "see" the file modification before we re-open the DB.
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
-    await initDB();
+    // 5. Re-initialize the connection
+    await dbService.initDB();
     return true;
   } catch (e) {
     console.error("[DB] Restore failed:", e);
-    await initDB();
+    await dbService.initDB();
     throw e;
   }
 }
-
 // ... (Authentication) ...
 async function authenticateUser(email, password) {
   if (!db) await initDB();
