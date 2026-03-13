@@ -136,14 +136,7 @@ async function verifyAndReplaceDb(newDbPath) {
   }
 }
 
-// Ensure these are at the bottom of the file
-module.exports = {
-  initDB,
-  closeDB,
-  getDbPath,
-  verifyAndReplaceDb,
-  // ... other exports
-};
+
 // ... (Authentication) ...
 async function authenticateUser(email, password) {
   if (!db) await initDB();
