@@ -9,7 +9,7 @@ const config = require("../config");
 const { runMigrations } = require("./migration-runner");
 const { Storage } = require("@google-cloud/storage");
 const storage = new Storage();
-let db;
+const dbService = require("./db"); 
 
 // =============================================================================
 // 1. CRYPTO HELPERS
@@ -66,14 +66,10 @@ function getDbPath() {
   return path.join(__dirname, "../" + filename);
 }
 
-// services/db.js - Modified for Litestream Compatibility
-const sqlite3 = require("sqlite3");
-const { open } = require("sqlite");
-const path = require("path");
-const fs = require("fs");
-const dbService = require("./db"); // Reference to itself for close/init calls
+// =============================================================================
+// 3. DATABASE BACKUP & RESTORE
+// =============================================================================
 
-// ... existing crypto and helper functions ...
 
 /**
  * Verifies and replaces the active database with an uploaded backup.
