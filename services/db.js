@@ -71,9 +71,10 @@ function getDbPath() {
 // =============================================================================
 
 
+
 /**
  * Verifies and replaces the active database with an uploaded backup.
- * Optimized for Litestream replication cycles on Google Cloud Run.
+ * Optimized to prevent Litestream "sync error" by forcing WAL mode initialization.
  */
 async function verifyAndReplaceDb(newDbPath) {
   let tempDb;
@@ -94,8 +95,7 @@ async function verifyAndReplaceDb(newDbPath) {
     throw e;
   }
 
-  // 1. COMPLETELY CLOSE THE CURRENT CONNECTION
-  // This is critical to release the OS-level file handle
+  // 1. Release the current file handles so Litestream can see the swap
   await closeDB();
 
   const currentDbPath = getDbPath();
@@ -103,52 +103,47 @@ async function verifyAndReplaceDb(newDbPath) {
   const shmPath = `${currentDbPath}-shm`;
 
   try {
-    console.log(`[DB] Clearing journal files and swapping database...`);
+    console.log(`[DB] Swapping database file...`);
 
-    // 2. Remove journal files
-    // Deleting these ensures Litestream sees a "fresh" database start
+    // 2. Clear old journal files
     if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
     if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
 
     // 3. Replace the main database file
     fs.copyFileSync(newDbPath, currentDbPath);
-    console.log(`[DB] Local file replaced successfully.`);
 
-    // 4. WAIT FOR LITESTREAM REPLICATION
+    // 4. CRITICAL: Initialize WAL mode for the NEW file
+    // This creates the .db-wal file Litestream needs to verify state.
+    console.log(`[DB] Initializing WAL mode for Litestream compatibility...`);
+    const initWalDb = new sqlite3.Database(currentDbPath);
+    await new Promise((resolve, reject) => {
+        initWalDb.run("PRAGMA journal_mode=WAL;", (err) => {
+            if (err) reject(err);
+            else {
+                initWalDb.close();
+                resolve();
+            }
+        });
+    });
+
+    // 5. WAIT FOR LITESTREAM
     if (process.env.GCS_BUCKET_NAME) {
-      console.log(`[DB] Waiting for Litestream sidecar to lock/replicate new generation...`);
-      
-      // Increased delay to 5 seconds to ensure Litestream finishes 
-      // its initial checksum and starts pushing the new generation.
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      console.log(`[DB] Waiting for Litestream to verify WAL state and replicate...`);
+      // We give the sidecar a moment to see the new .db-wal file
+      await new Promise(resolve => setTimeout(resolve, 8000));
     }
 
-    // 5. RE-INITIALIZE CONNECTION
-    // If Litestream is still busy, we use a small retry loop
-    let retries = 3;
-    while (retries > 0) {
-      try {
-        await initDB();
-        console.log(`[DB] Restore complete. Connection re-established.`);
-        return true;
-      } catch (err) {
-        if (err.message.includes('SQLITE_BUSY') && retries > 1) {
-          console.warn(`[DB] Database busy, retrying in 2s... (${retries} left)`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          retries--;
-        } else {
-          throw err;
-        }
-      }
-    }
+    // 6. RE-INITIALIZE MAIN CONNECTION
+    await initDB();
+    console.log(`[DB] Restore complete and connection re-established.`);
+    return true;
+    
   } catch (e) {
     console.error("[DB] Restore failed:", e);
-    // Attempt one final recovery of the connection
     await initDB().catch(() => {}); 
     throw e;
   }
 }
-
 // ... (Authentication) ...
 async function authenticateUser(email, password) {
   if (!db) await initDB();
