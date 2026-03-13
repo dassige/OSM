@@ -10,7 +10,7 @@ const { runMigrations } = require("./migration-runner");
 const { Storage } = require("@google-cloud/storage");
 const storage = new Storage();
 const dbService = require("./db"); 
-
+let db;
 // =============================================================================
 // 1. CRYPTO HELPERS
 // =============================================================================
