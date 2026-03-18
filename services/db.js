@@ -70,7 +70,61 @@ function getDbPath() {
 // 3. DATABASE BACKUP & RESTORE
 // =============================================================================
 
+// services/db.js
 
+/**
+ * Generates a full SQL dump of the database schema and data.
+ */
+async function generateSqlDump() {
+  if (!db) await initDB();
+  
+  // Get all table names
+  const tables = await db.all("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+  let dump = "PRAGMA foreign_keys=OFF;\nBEGIN TRANSACTION;\n";
+
+  for (const table of tables.map(t => t.name)) {
+    // Get Schema
+    const schema = await db.get(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`, table);
+    dump += `DROP TABLE IF EXISTS ${table};\n${schema.sql};\n`;
+    
+    // Get Data
+    const rows = await db.all(`SELECT * FROM ${table}`);
+    for (const row of rows) {
+      const keys = Object.keys(row);
+      const values = keys.map(k => {
+          if (row[k] === null) return 'NULL';
+          if (typeof row[k] === 'string') return `'${row[k].replace(/'/g, "''")}'`;
+          return row[k];
+      });
+      dump += `INSERT INTO ${table} (${keys.join(',')}) VALUES (${values.join(',')});\n`;
+    }
+  }
+  
+  dump += "COMMIT;\nPRAGMA foreign_keys=ON;";
+  return dump;
+}
+
+/**
+ * Restores the database by executing a SQL script.
+ */
+async function restoreFromSqlDump(sqlContent) {
+  if (!db) await initDB();
+
+  try {
+    console.log("[DB] Executing logical SQL restore...");
+    // Execute the entire dump as a single script
+    await db.exec(sqlContent);
+    
+    // Force Litestream to see the massive change
+    await db.run("PRAGMA wal_checkpoint(TRUNCATE);");
+    
+    console.log("[DB] Logical restore complete.");
+    return true;
+  } catch (e) {
+    console.error("[DB] SQL Restore failed:", e);
+    throw new Error(`SQL Restore Failed: ${e.message}`);
+  }
+}
 
 /**
  * Verifies and replaces the active database with an uploaded backup.
@@ -691,6 +745,8 @@ module.exports = {
   closeDB,
   getDbPath,
   verifyAndReplaceDb,
+  generateSqlDump,
+  restoreFromSqlDump,
   authenticateUser,
   getUsers,
   getUserById,

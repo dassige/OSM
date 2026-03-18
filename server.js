@@ -766,37 +766,41 @@ app.post("/api/system/ai-test", hasRole("superadmin"), async (req, res) => {
   }
 });
 
-app.get("/api/system/backup", hasRole("superadmin"), (req, res) => {
-  const dbPath = db.getDbPath();
-  res.download(dbPath, "fenz.db");
-  db.logEvent(req.session.user.name, "System", "Database Backup Downloaded", {
-    backupType: "Manual Snapshot",
-    appVersion: config.ui.version,
-    databaseName: "fenz.db",
-  });
+app.get("/api/system/backup", hasRole("superadmin"), async (req, res) => {
+  try {
+    const dump = await db.generateSqlDump();
+    const filename = `fenz_backup_${new Date().toISOString().split('T')[0]}.sql`;
+    
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Type", "text/plain");
+    res.send(dump);
+
+    db.logEvent(req.session.user.name, "System", "SQL Dump Exported", { filename });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
-app.post(
-  "/api/system/restore",
-  hasRole("superadmin"),
-  upload.single("databaseFile"),
-  async (req, res) => {
+
+app.post("/api/system/restore", hasRole("superadmin"), upload.single("databaseFile"), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
+    
     try {
-      await db.verifyAndReplaceDb(req.file.path);
-      await db.logEvent(req.session.user.name, "System", "Database Restored", {
-        sourceFile: req.file.originalname,
-        fileSize: req.file.size,
-        restoreStatus: "Verified & Replaced",
-        appVersion: config.ui.version,
+      const sqlContent = fs.readFileSync(req.file.path, "utf8");
+      await db.restoreFromSqlDump(sqlContent);
+      
+      await db.logEvent(req.session.user.name, "System", "Database Restored via SQL", {
+        sourceFile: req.file.originalname
       });
-      res.json({ message: "Database restored successfully." });
+      
+      res.json({ message: "Database reconstructed successfully from SQL script." });
     } catch (e) {
       res.status(500).json({ error: e.message });
     } finally {
       if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     }
-  },
+  }
 );
+
 app.get("/api/demo-credentials", (req, res) => {
   if (config.appMode !== "demo")
     return res.status(403).json({ error: "Not in demo mode" });

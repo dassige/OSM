@@ -21,9 +21,11 @@ fi
 if [ ! -z "$GCS_BUCKET_NAME" ]; then
     echo "GCS_BUCKET_NAME found. Starting in PRODUCTION mode (Litestream enabled)..."
     
-    # 1. Restore the database from the bucket (if it exists)
-    litestream restore -if-replica-exists /app/fenz.db
-
+# Attempt restore, but don't exit the script if it fails (using || true)
+    if ! litestream restore -if-replica-exists /app/fenz.db; then
+        echo "WARNING: Litestream restore failed (possibly malformed replica). Starting with a fresh DB."
+        rm -f /app/fenz.db /app/fenz.db-wal /app/fenz.db-shm
+    fi
     # 2. Execute Litestream, which wraps the node process
     exec litestream replicate -exec "node server.js"
 else
