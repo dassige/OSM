@@ -572,8 +572,10 @@
         // Init UI
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-            if (c.loginTitle) document.getElementById('pageTitle').innerText = "Event Log - " + c.loginTitle;
-
+            if (c.loginTitle) {
+                document.title = "Event Log - " + c.loginTitle;
+                document.getElementById('pageHeader').innerText = "System Event Log - " + c.loginTitle;
+            }
             // [NEW] Demo Banner
             if (c.appMode === 'demo') {
                 document.getElementById('demoBanner').style.display = 'block';

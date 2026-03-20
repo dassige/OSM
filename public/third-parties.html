@@ -381,7 +381,10 @@
         const waAutoDisconnect = document.getElementById('waAutoDisconnect');
 
         fetch('/ui-config').then(r => r.json()).then(c => {
-            if (c.loginTitle) document.getElementById('pageHeader').innerText = "Services - " + c.loginTitle;
+            if (c.loginTitle) {
+                document.title = "Third Party Services - " + c.loginTitle;
+                document.getElementById('pageHeader').innerText = "Third Party Services - " + c.loginTitle;
+            }
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });

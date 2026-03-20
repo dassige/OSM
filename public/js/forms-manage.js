@@ -40,7 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
       uiConfig = c;
       if (c.loginTitle) {
         document.title = "Forms Manager - " + c.loginTitle;
-        document.getElementById("pageHeader").innerText = "Forms Manager";
+        document.getElementById("pageHeader").innerText =
+          "Forms Manager - " + c.loginTitle;
       }
       if (c.appBackground)
         document.body.style.backgroundImage = `url('${c.appBackground}')`;

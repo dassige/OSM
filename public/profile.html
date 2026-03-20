@@ -245,6 +245,13 @@
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
 
+            // Apply custom title from .env
+            if (c.loginTitle) {
+                document.title = "My Profile - " + c.loginTitle;
+                // Optionally update the h1 header to match other pages:
+                document.getElementById('pageHeader').innerText = "User Settings - " + c.loginTitle;
+            }
+
             // Store mode globally
             currentAppMode = c.appMode || 'production';
 
@@ -252,7 +259,6 @@
                 document.getElementById('demoBanner').style.display = 'block';
             }
         });
-
         // 2. Load User Data
         fetch('/api/user-session').then(r => r.json()).then(user => {
             document.getElementById('email').value = user.email;

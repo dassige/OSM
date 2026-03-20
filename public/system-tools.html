@@ -399,8 +399,8 @@
             .then(c => {
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
                 if (c.loginTitle) {
-                    document.getElementById('pageTitle').innerText = "System Tools - " + c.loginTitle;
-                    document.getElementById('pageHeader').innerText = "System Tools";
+                    document.title = "System Tools - " + c.loginTitle;
+                    document.getElementById('pageHeader').innerText = "System Tools - " + c.loginTitle;
                 }
                 // [NEW] Demo Banner
                 if (c.appMode === 'demo') {

@@ -119,23 +119,26 @@
 
         /* Navigation Buttons */
         .btn-nav {
-            background-color: #7c8085; /* Dark Grey */
+            background-color: #7c8085;
+            /* Dark Grey */
             color: white;
             border: 1px solid #343a40;
             padding: 8px 16px;
-            border-radius: 30px; /* Rounded pill shape */
+            border-radius: 30px;
+            /* Rounded pill shape */
             font-weight: bold;
             font-size: 14px;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .btn-nav:hover {
-            background-color: #23272b; /* Darker on hover */
+            background-color: #23272b;
+            /* Darker on hover */
             border-color: #1d2124;
             transform: translateY(-1px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
 
         .btn-nav:active {
@@ -148,7 +151,8 @@
             display: flex;
             flex-direction: row;
             height: 100%;
-            overflow: hidden; /* Desktop: Clip overflow */
+            overflow: hidden;
+            /* Desktop: Clip overflow */
         }
 
         .day-column {
@@ -158,14 +162,17 @@
             display: flex;
             flex-direction: column;
             min-height: 400px;
-            flex: 1; /* Distribute space evenly by default */
-            margin: 0 4px; /* Slight gap between cols */
-            transition: flex-grow 0.3s ease; /* Smooth animation when days are hidden */
+            flex: 1;
+            /* Distribute space evenly by default */
+            margin: 0 4px;
+            /* Slight gap between cols */
+            transition: flex-grow 0.3s ease;
+            /* Smooth animation when days are hidden */
         }
 
         /* [NEW] Training Day Highlight (Light Pink) */
         .training-day {
-            background-color: #ffe6e6 !important; 
+            background-color: #ffe6e6 !important;
             border-color: #ffcccc;
         }
 
@@ -174,7 +181,8 @@
         }
 
         .has-sessions {
-            flex: 1.5; /* Give slightly more width to busy days */
+            flex: 1.5;
+            /* Give slightly more width to busy days */
         }
 
         /* [UPDATED] Day Header - Dark Grey Background */
@@ -190,7 +198,8 @@
 
         /* Highlight for 'Today' in the header */
         .day-header.today {
-            background-color: var(--primary); /* Blue for current day */
+            background-color: var(--primary);
+            /* Blue for current day */
         }
 
         .day-content {
@@ -255,7 +264,8 @@
         @media screen and (max-width: 768px) {
             .planner-container {
                 flex-direction: column;
-                height: auto; /* Allow full page scroll */
+                height: auto;
+                /* Allow full page scroll */
                 overflow: visible;
             }
 
@@ -263,7 +273,8 @@
             .skill-source-panel {
                 width: 100%;
                 min-width: 0;
-                max-height: 250px; /* Scrollable area for skills */
+                max-height: 250px;
+                /* Scrollable area for skills */
                 margin-bottom: 15px;
             }
 
@@ -275,17 +286,19 @@
             }
 
             .week-grid {
-                flex-direction: column; /* Stack days vertically */
+                flex-direction: column;
+                /* Stack days vertically */
                 height: auto;
             }
 
             .day-column {
-                min-height: 150px; /* Smaller height per day */
+                min-height: 150px;
+                /* Smaller height per day */
                 margin-bottom: 10px;
                 margin-left: 0;
                 margin-right: 0;
             }
-            
+
             /* 3. Adjust Header for Vertical View */
             .day-header {
                 text-align: left;
@@ -437,10 +450,11 @@
     <div id="mobileScheduleModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('mobileScheduleModal')">&times;</span>
-            <h2 id="schedModalTitle" style="margin-top:0; border-bottom:1px solid #ddd; padding-bottom:10px;">Schedule Training</h2>
+            <h2 id="schedModalTitle" style="margin-top:0; border-bottom:1px solid #ddd; padding-bottom:10px;">Schedule
+                Training</h2>
             <p>Select a day for: <strong id="schedSkillName"></strong></p>
             <div id="schedDayButtons" style="display:flex; flex-direction:column; gap:8px; margin-top:15px;">
-                </div>
+            </div>
         </div>
     </div>
 
@@ -472,6 +486,11 @@
             .catch(() => window.location.href = '/login.html');
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+            if (c.loginTitle) {
+                document.title = "Skills Renewal Planner - " + c.loginTitle;
+                const header = document.getElementById('pageHeader');
+                if (header) header.innerText = "Skills Renewal Planner - " + c.loginTitle;
+            }
         });
     </script>
 </body>

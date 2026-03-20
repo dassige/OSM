@@ -587,7 +587,10 @@
             try {
                 const c = await (await fetch('/ui-config')).json();
                 appMode = c.appMode || 'production';
-                if (c.loginTitle) document.getElementById('pageTitle').innerText = "Live Forms - " + c.loginTitle;
+                if (c.loginTitle) {
+                    document.title = "Live Forms - " + c.loginTitle;
+                    document.getElementById('pageHeader').innerText = "Live Forms Management - " + c.loginTitle;
+                }
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
                 if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
 
