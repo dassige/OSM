@@ -1,57 +1,75 @@
+# Google Cloud Run Deployment Guide
 
-## Google Cloud Run Deployment
+Deploying the **FENZ OSM Manager** to Google Cloud Run requires specific configurations to handle both database persistence and geoblocked data retrieval.
 
-### ⚠️ The Persistence Challenge
+## 1. The Persistence Challenge (Litestream)
 
-Google Cloud Run is a **stateless** environment. This means the containers are ephemeral—they can be shut down or restarted by Google at any time. When a container stops, **any files written to its local filesystem are deleted**.
+Google Cloud Run is a **stateless** environment. Containers are ephemeral, meaning any local file changes (like our SQLite database `fenz.db`) are destroyed when the container restarts or scales down.
 
-Since this application uses **SQLite** (which stores data in a local file, `fenz.db`), a standard Cloud Run deployment would wipe your database every time the app updates or restarts.
+**The Solution:** We utilize **Litestream** as a sidecar process within the Docker container.
 
-### ✅ The Solution: Litestream
+* As the Node.js application writes to`fenz.db`, Litestream asynchronously replicates the WAL (Write-Ahead Log) to a Google Cloud Storage (GCS) bucket.
+* When a new container boots, Litestream intercepts the startup script (`start.sh`), downloads the latest snapshot from GCS, reconstructs the database, and*then* starts the Node.js server.
 
-To fix this without rewriting the application code, we use a tool called **Litestream**.
+## 2. Architecture: Handling Geoblocking (The AWS Lambda Pattern)
 
-1.  **Backup:** As your app writes to `fenz.db`, Litestream continuously replicates those changes to a **Google Cloud Storage (GCS)** bucket in the background.
-2.  **Restore:** When a new Cloud Run container starts, Litestream automatically downloads the latest database from GCS *before* your Node.js application starts.
+The live OSM Dashboard is geoblocked to New Zealand IP addresses. If your Cloud Run service is deployed in a region outside of NZ, live scraping will fail.
 
-### Deployment Guide
+To bypass this without complex proxy routing, the application supports a **Cloud Storage Payload Architecture**:
 
-Follow these steps to deploy securely with persistence.
+1. The Lambda function uploads this raw HTML file to your GCS Bucket.
+2. An external worker (e.g., an AWS Lambda function running in the`ap-southeast-6` Auckland region) scrapes the live OSM Dashboard HTML.
+3. The FENZ OSM Manager is configured with`APP_MODE=gcs`. Instead of making outbound HTTP requests to the live dashboard, the internal scraper service securely downloads and parses the HTML payload directly from the GCS bucket.
+   More info at [AWS Lambda scraper Readme](AWS-Lambda-scraper\readme.md).
 
-#### 1\. Create a Storage Bucket (Database)
+## 3. Preparation
 
-Create a private Google Cloud Storage bucket to hold your database backups.
+### A. Create a Storage Bucket
 
-  * **Example Name:** `osm-fenz-backups`
-  * **Region:** Best to keep it in the same region as your Cloud Run service.
+Create a private Google Cloud Storage bucket (e.g., `fenz-osm-production-data`). This bucket will serve a dual purpose:
 
-#### 2\. Configure Permissions
+1. Storing the Litestream SQLite database backups.
+2. Storing the`osm_dashboard_export.html` payload dropped by your AWS Lambda function.
 
-The Service Account your Cloud Run service uses needs permission to read and write to that bucket.
+### B. Configure IAM Permissions
 
-  * Go to **IAM & Admin**.
-  * Find your service account (e.g., `12345-compute@developer.gserviceaccount.com`).
-  * Grant it the role: **Storage Object Admin**.
+Ensure the default Compute Service Account used by Cloud Run (or your custom service account) has the **Storage Object Admin** role for the bucket created above. This allows the application to read the HTML payload and Litestream to write database backups.
 
-#### 3\. Prepare Custom Branding (Optional)
+## 4. Environment Variables Reference
 
-If you want to customize the **Logo** or **Background** for this specific deployment:
+When deploying, you must configure the following environment variables:
 
-1.  Upload your `logo.png` and `background.png` to a storage location (e.g., a public folder in your GCS bucket).
-2.  Get the public URLs for these files (e.g., `https://storage.googleapis.com/my-bucket/logo.png`).
-3.  You will pass these URLs as environment variables in the next step. The container will automatically download them on startup.
+### Core System & Security
 
-#### 4\. Deploy
+* `DB_PATH`: Must be set to`/app/fenz.db` for Litestream to function correctly.
+* `GCS_BUCKET_NAME`: The name of your storage bucket (e.g.,`fenz-osm-production-data`).
+* `APP_USERNAME`: The master Super Admin username.
+* `APP_PASSWORD`: A secure password for the Super Admin.
+* `SESSION_SECRET`: A long, random cryptographic string for cookie signing.
 
-You must set specific environment variables to link the app, Litestream, and your customization options.
+### Operation Mode (GCS Payload via AWS Lambda)
 
-  * `DB_PATH`: Must be set to `/app/fenz.db`.
-  * `GCS_BUCKET_NAME`: The name of the bucket created in Step 1.
-  * `UI_LOGIN_TITLE`: (Optional) The title text for the login screen.
-  * `UI_LOGO_URL`: (Optional) URL to your custom logo.
-  * `UI_BACKGROUND_URL`: (Optional) URL to your custom background.
+* `APP_MODE`: Set to`gcs`.
+* `GCS_DATA_FILENAME`: The name of the HTML file dropped by your Lambda function (e.g.,`osm_dashboard_export.html`).
 
-**Example `gcloud` Command:**
+### Operations Mode (Alternative: Live Scraping)
+
+*If deploying in an NZ region or using a proxy:*
+
+* `APP_MODE`: Set to`production`.
+* `OSM_BU_ID`: Your unique Business Unit GUID for the dashboard.
+
+### UI Customization (Optional)
+
+* `UI_LOGIN_TITLE`: Custom text for the login screen (e.g., "Station 44 OSM").
+* `UI_LOGO_URL`: Public URL to a custom logo image.
+* `UI_BACKGROUND_URL`: Public URL to a custom background image.
+
+## 5. Deployment Command
+
+Use the Google Cloud CLI to build and deploy the container. Execute this from the root of the project directory.
+
+**Example `gcloud` Command (GCS Payload Architecture):**
 
 ```bash
 gcloud run deploy fenz-osm-manager \
@@ -59,25 +77,20 @@ gcloud run deploy fenz-osm-manager \
   --region australia-southeast1 \
   --allow-unauthenticated \
   --set-env-vars DB_PATH=/app/fenz.db \
-  --set-env-vars GCS_BUCKET_NAME=osm-fenz-backups \
+  --set-env-vars GCS_BUCKET_NAME=fenz-osm-production-data \
+  --set-env-vars APP_MODE=gcs \
+  --set-env-vars GCS_DATA_FILENAME=osm_dashboard_export.html \
   --set-env-vars APP_USERNAME=admin \
-  --set-env-vars APP_PASSWORD=your_secure_password \
-  --set-env-vars SESSION_SECRET=change_this_to_something_random \
-  --set-env-vars DASHBOARD_URL="[https://www.dashboardlive.nz/index.php?user=YOUR_CODE](https://www.dashboardlive.nz/index.php?user=YOUR_CODE)" \
-  --set-env-vars UI_LOGIN_TITLE="Station 44 OSM Manager" \
-  --set-env-vars UI_LOGO_URL="[https://storage.googleapis.com/my-bucket/station44-logo.png](https://storage.googleapis.com/my-bucket/station44-logo.png)"
+  --set-env-vars APP_PASSWORD=your_secure_password_here \
+  --set-env-vars SESSION_SECRET=your_random_secret_string \
+  --set-env-vars UI_LOGIN_TITLE="Station 44 OSM Manager"
 ```
-#### 5. Critical Resource Configuration (WhatsApp Support)
 
-If you enable the WhatsApp integration (`ENABLE_WHATSAPP=true`), the application launches a headless Chrome instance. **The default Cloud Run settings (512MB RAM) are insufficient and will cause the application to crash immediately.**
+## 6. Critical Resource Configuration (WhatsApp Support)
 
-You **MUST** update your service with the following minimum resources:
+If you intend to enable the WhatsApp integration (ENABLE_WHATSAPP=true), the application launches a headless Chromium instance (via Puppeteer). **The default Cloud Run configuration (512MB RAM) will cause the application to crash immediately with out-of-memory errors.**
 
-* **Memory:** At least **1GiB** (2GiB is highly recommended for stability).
-* **CPU:** At least **1 CPU**.
-* **Execution Environment:** Use **Second Generation** (gen2) for better file system compatibility.
-
-**Update Command:**
+You **MUST** allocate sufficient resources to the container. We recommend updating your service with the following specifications:
 
 ```bash
 gcloud run services update fenz-osm-manager \
@@ -85,3 +98,6 @@ gcloud run services update fenz-osm-manager \
   --cpu 1 \
   --execution-environment gen2 \
   --region australia-southeast1
+```
+
+Note: The **Second Generation (gen2)** execution environment is required to provide full file system compatibility for the headless browser.

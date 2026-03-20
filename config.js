@@ -74,6 +74,13 @@ const dynamicProxySource = process.env.DYNAMIC_PROXY_SOURCE || null;
 // --- WHATSAPP CONFIG ---
 const enableWhatsApp = process.env.ENABLE_WHATSAPP === "true";
 
+
+// GCloud Configuration for optional GCS scraping source
+const gcsConfig = {
+  bucketName: process.env.GCS_BUCKET_NAME || null,
+  dataFilename: process.env.GCS_DATA_FILENAME || "osm_dashboard_export.html",
+};
+
 // Helper to convert day name to index (0=Sun, 1=Mon, etc.)
 function getDayIndex(dayName) {
   const days = [
@@ -124,4 +131,5 @@ module.exports = {
   defaultMinScoreType,
   defaultMaxTries,
   aiConfig,
+  gcsConfig
 };
