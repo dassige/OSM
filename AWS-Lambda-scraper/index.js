@@ -23,6 +23,13 @@ exports.handler = async (event) => {
         await bucket.file(fileName).save(response.data, {
             contentType: 'text/html',
         });
+        // GCP bucket for UAT environment (optional)
+        if (process.env.GCP_BUCKET_NAME_UAT) {
+            const bucket_uat = storage.bucket(process.env.GCP_BUCKET_NAME_UAT);
+            await bucket_uat.file(fileName).save(response.data, {
+                contentType: 'text/html',
+            });
+        }
 
         console.log(`Successfully saved ${fileName} to GCP.`);
         return { statusCode: 200, body: 'Snapshot archived successfully.' };

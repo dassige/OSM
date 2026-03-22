@@ -46,6 +46,13 @@ Because we require external dependencies (axios for scraping and @google-cloud/s
       await bucket.file(fileName).save(response.data, {
           contentType: 'text/html',
       });
+        // GCP bucket for UAT environment (optional)
+        if (process.env.GCP_BUCKET_NAME_UAT) {
+            const bucket_uat = storage.bucket(process.env.GCP_BUCKET_NAME_UAT);
+            await bucket_uat.file(fileName).save(response.data, {
+                contentType: 'text/html',
+            });
+        }
 
       console.log(`Successfully saved ${fileName} to GCP.`);
       return { statusCode: 200, body: 'Snapshot archived successfully.' };
@@ -64,6 +71,7 @@ Because we require external dependencies (axios for scraping and @google-cloud/s
 * GCP_CLIENT_EMAIL (From your GCP JSON key)
 * GCP_PRIVATE_KEY (From your GCP JSON key - paste the exact string including \ns)
 * GCP_BUCKET_NAME
+* GCP_BUCKET_NAME_UAT // GCP bucket for UAT environment (optional)
 * GCP_FILE_NAME
 
 ## 3. Amazon EventBridge Configuration (Scheduling)
