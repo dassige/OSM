@@ -1,42 +1,76 @@
-// config.js
-require("dotenv").config();
+
 const packageJson = require("./package.json");
 const nodemailer = require("nodemailer");
 const path = require("path");
+const fs = require("fs");
+const isElectron = !!(process.versions && process.versions.electron);
+
+// Helper for persistent storage paths
+const getPersistentPath = (filename) => {
+  if (isElectron) {
+    const { app } = require('electron');
+    // Store in %APPDATA%/fenz-osm-manager/
+    return path.join(app.getPath('userData'), filename);
+  }
+  // Standard Web/Docker behavior
+  return path.join(__dirname, filename);
+};
+let desktopSettings = {};
+if (isElectron) {
+    const settingsPath = getPersistentPath('settings.json');
+    if (fs.existsSync(settingsPath)) {
+        try {
+            desktopSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+        } catch (e) {
+            console.error("Failed to parse settings.json", e);
+        }
+    }
+} else {
+    // Standard web mode still uses .env
+    try { require("dotenv").config(); } catch (e) {}
+}
+// Helper to get config (Checks: Local File -> Environment -> Fallback)
+const getConf = (key, fallback) => {
+    if (desktopSettings[key] !== undefined) return desktopSettings[key];
+    return process.env[key] || fallback;
+};
 
 // --- APP SETTINGS ---
-const timezone = process.env.APP_TIMEZONE || "Pacific/Auckland";
-const locale = process.env.APP_LOCALE || "en-NZ";
+const timezone = getConf("APP_TIMEZONE" ,"Pacific/Auckland");
+const locale = getConf("APP_LOCALE", "en-NZ");
 
 // --- APP MODE ---
-const appMode = process.env.APP_MODE || "production";
+const appMode = getConf("APP_MODE", "production");
 
 // --- AUTHENTICATION ---
 const auth = {
-  sessionSecret: process.env.SESSION_SECRET,
-  maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5,
-  superuserEmail: process.env.SMTP_USER // Alert recipient
+  sessionSecret: getConf("SESSION_SECRET"),
+  maxLoginAttempts: parseInt(getConf("MAX_LOGIN_ATTEMPTS","5")) ,
+  superuserEmail: getConf("SMTP_USER") // Alert recipient
 };
 
 if (appMode === "demo") {
   // Demo Mode: Use specific demo credentials (defaulting if not set)
-  auth.username = process.env.DEMO_SUPERADMIN_USERNAME || "demo";
-  auth.password = process.env.DEMO_SUPERADMIN_PASSWORD || "demo";
+  auth.username = getConf("DEMO_SUPERADMIN_USERNAME", "demo");
+  auth.password = getConf("DEMO_SUPERADMIN_PASSWORD", "demo");
 } else {
   // Production Mode: Use standard credentials
-  auth.username = process.env.APP_USERNAME;
-  auth.password = process.env.APP_PASSWORD;
+  auth.username = getConf("APP_USERNAME");
+  auth.password = getConf("APP_PASSWORD");
 }
+
+
+
 
 // --- UI CUSTOMIZATION ---
 const ui = {
-  appBackground: process.env.UI_BACKGROUND_URL || "resources/background.png",
-  loginLogo: process.env.UI_LOGO_URL || "resources/logo.png",
-  loginTitle: process.env.UI_LOGIN_TITLE || "FENZ OSM Automation Manager",
+  appBackground: getConf("UI_BACKGROUND_URL", "resources/background.png"),
+  loginLogo: getConf("UI_LOGO_URL", "resources/logo.png"),
+  loginTitle: getConf("UI_LOGIN_TITLE", "FENZ OSM Automation Manager"),
   version: packageJson.version,
   deployDate: packageJson.versionDate,
-  trainingDayIndex: getDayIndex(process.env.TRAINING_DAY_OF_WEEK),
-  trainingDayName: process.env.TRAINING_DAY_OF_WEEK || "Monday",
+  trainingDayIndex: getDayIndex(getConf("TRAINING_DAY_OF_WEEK")),
+  trainingDayName: getConf("TRAINING_DAY_OF_WEEK", "Monday"),
   timezone: timezone,
   locale: locale,
 };
@@ -49,36 +83,35 @@ if (appMode === "demo") {
 } else {
   // In Production, build the live URL
   const defaultBuId = "87FF646A-FCBC-49A1-9BAC-XXXXXXXXX";
-  const buId = process.env.OSM_BU_ID || defaultBuId;
+  const buId = getConf("OSM_BU_ID", defaultBuId);
   url =
-    process.env.DASHBOARD_URL ||
-    `https://www.dashboardlive.nz/osm.php?bu={${buId.replace(/[{}]/g, "")}}`;
+    getConf("DASHBOARD_URL", `https://www.dashboardlive.nz/osm.php?bu={${buId.replace(/[{}]/g, "")}}`);
 }
 
-const scrapingInterval = parseInt(process.env.SCRAPING_INTERVAL) || 60;
+const scrapingInterval = parseInt(getConf("SCRAPING_INTERVAL", "60")) ;
 
 // --- EMAIL CONFIGURATION ---
 const transporter = nodemailer.createTransport({
-  service: process.env.SMTP_SERVICE || "gmail",
+  service: getConf("SMTP_SERVICE", "gmail"),
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: getConf("SMTP_USER"),
+    pass: getConf("SMTP_PASS"),
   },
 });
 
 // --- PROXY CONFIGURATION ---
-const proxyMode = process.env.PROXY_MODE || "none";
-const fixedProxyUrl = process.env.PROXY_URL || null;
-const dynamicProxySource = process.env.DYNAMIC_PROXY_SOURCE || null;
+const proxyMode = getConf("PROXY_MODE", "none");
+const fixedProxyUrl = getConf("PROXY_URL", null);
+const dynamicProxySource = getConf("DYNAMIC_PROXY_SOURCE", null);
 
 // --- WHATSAPP CONFIG ---
-const enableWhatsApp = process.env.ENABLE_WHATSAPP === "true";
+const enableWhatsApp = getConf("ENABLE_WHATSAPP", "false") === "true";
 
 
 // GCloud Configuration for optional GCS scraping source
 const gcsConfig = {
-  bucketName: process.env.GCS_BUCKET_NAME || null,
-  dataFilename: process.env.GCS_DATA_FILENAME || "osm_dashboard_export.html",
+  bucketName: getConf("GCS_BUCKET_NAME", null),
+  dataFilename: getConf("GCS_DATA_FILENAME", "osm_dashboard_export.html"),
 };
 
 // Helper to convert day name to index (0=Sun, 1=Mon, etc.)
@@ -98,21 +131,24 @@ function getDayIndex(dayName) {
 
 // Add to the exported configuration object
 const acceptedFormVisibilityDays =
-  parseInt(process.env.ACCEPTED_FORM_VISIBILITY_DAYS) || 30;
+  parseInt(getConf("ACCEPTED_FORM_VISIBILITY_DAYS", "30")) ;
 
 // Forms scoring defaults
-const defaultMinScore = parseFloat(process.env.DEFAULT_MIN_SCORE) || 80;
-const defaultMinScoreType = process.env.DEFAULT_MIN_SCORE_TYPE || "percentage";
-const defaultMaxTries = parseInt(process.env.DEFAULT_MAX_TRIES) || 1;
+const defaultMinScore = parseFloat(getConf("DEFAULT_MIN_SCORE", "80"));
+const defaultMinScoreType = getConf("DEFAULT_MIN_SCORE_TYPE", "percentage");
+const defaultMaxTries = parseInt(getConf("DEFAULT_MAX_TRIES", "1"));
 
 const aiConfig = {
-  enabled: process.env.ENABLE_AI_EVALUATION === "true",
-  provider: process.env.AI_PROVIDER || "gemini",
-  model: process.env.AI_MODEL || "gemini-1.5-pro",
-  geminiKey: process.env.GEMINI_API_KEY,
-  ollamaUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
+  enabled: getConf("ENABLE_AI_EVALUATION", "false") === "true",
+  provider: getConf("AI_PROVIDER", "gemini"),
+  model: getConf("AI_MODEL", "gemini-1.5-pro"),
+  geminiKey: getConf("GEMINI_API_KEY"),
+  ollamaUrl: getConf("OLLAMA_BASE_URL", "http://localhost:11434"),
 };
 
+const dbPath = getConf("DB_PATH") || getPersistentPath(appMode === "demo" ? "demo.db" : "fenz.db");
+const authPath = getPersistentPath('.wwebjs_auth'); 
+const uploadsPath = getPersistentPath('uploads');
 module.exports = {
   appMode, // Exported for use in other modules
   auth,
@@ -131,5 +167,8 @@ module.exports = {
   defaultMinScoreType,
   defaultMaxTries,
   aiConfig,
-  gcsConfig
+  gcsConfig,
+  dbPath,
+  authPath,
+  uploadsPath
 };

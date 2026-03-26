@@ -1,0 +1,22 @@
+{
+  "name": "fenz-osm-configurator",
+  "version": "1.0.0",
+  "description": "FENZ OSM Desktop Configuration Utility",
+  "main": "main.js",
+  "author": "Gerardo Dassi",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.fenz.osm.manager",
+    "productName": "FENZ OSM Configurator",
+    "win": {
+      "icon": "../build-res/FENZ.ico"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  }
+}

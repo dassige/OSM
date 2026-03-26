@@ -1,8 +1,8 @@
 {
   "name": "fenz-osm",
-  "version": "1.10.1",
+  "version": "2.0.0",
   "description": "FENZ OSM Automation Manager",
-  "versionDate": "2026/03/23 10:04",
+  "versionDate": "2026/03/26 16:00",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -10,10 +10,52 @@
   "license": "MIT",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "electron:dev": "electron electron-main.js",
+    "electron:build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.fenz.osm.manager",
+    "productName": "FENZ OSM Manager",
+    "copyright": "Copyright © 2026 Gerardo Dassi",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "build-res/FENZ.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "installerIcon": "build-res/FENZ.ico",
+      "uninstallerIcon": "build-res/FENZ.ico",
+      "uninstallDisplayName": "FENZ OSM Manager"
+    },
+    "extraMetadata": {
+      "main": "electron-main.js"
+    },
+    "files": [
+      "**/*",
+      "!dist-electron",
+      "!Dockerfile",
+      "!docker-compose.yml",
+      "!litestream.yml",
+      "!start.sh",
+      "!.github",
+      "!.git"
+    ]
   },
   "dependencies": {
-    "@google-cloud/storage": "^7.7.0",
+    "@google-cloud/storage": "^5.18.3",
     "@google/generative-ai": "^0.21.0",
     "axios": "^1.12.2",
     "cheerio": "^1.1.2",
@@ -26,16 +68,20 @@
     "https-proxy-agent": "^5.0.1",
     "joi": "18.0.2",
     "multer": "^1.4.5-lts.1",
-    "nodemailer": "^6.9.4",
+    "nodemailer": "^8.0.4",
     "path": "^0.12.7",
-    "puppeteer-core": "^20.8.1",
+    "puppeteer-core": "^24.40.0",
     "qrcode": "^1.5.1",
     "socket.io": "^4.7.2",
     "socket.io-client": "^4.7.2",
     "speakeasy": "^2.0.0",
     "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7",
+    "sqlite3": "^6.0.1",
     "uuid": "^9.0.0",
     "whatsapp-web.js": "^1.20.3"
+  },
+  "devDependencies": {
+    "electron": "^41.0.4",
+    "electron-builder": "^26.8.1"
   }
 }

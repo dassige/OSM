@@ -6,6 +6,7 @@ const session = require("express-session");
 const multer = require("multer");
 const fs = require("fs");
 const crypto = require("crypto");
+const path = require("path");
 
 // --- Services & Config ---
 const config = require("./config.js");
@@ -38,7 +39,7 @@ const qrcode = require("qrcode");
 
 const app = express();
 const server = http.createServer(app);
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ dest: config.uploadsPath });
 
 // Initialize Socket.IO
 const io = new Server(server, {
@@ -1698,7 +1699,7 @@ app.get("/api/statistics/data/:key", hasRole("simple"), async (req, res) => {
 });
 //==============================================================================
 //  SERVE STATIC FILES
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public")));
 
 // =============================================================================
 //  SOCKET.IO EVENTS

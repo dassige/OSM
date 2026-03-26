@@ -35,6 +35,7 @@ function init() {
     socket.emit("wa-get-status");
   });
 
+
   updateNotificationBadges();
   checkPendingReviews();
 
@@ -710,6 +711,26 @@ async function updateNotificationBadges() {
   } catch (e) {
     console.error("Badge update failed", e);
   }
+
+
+   /* 
+// Check if running in Electron
+if (window.electronAPI) {
+    // Use native notification instead of just the UI badge
+    socket.on("expiring-skills-data", (data) => {
+        const criticalCount = data.reduce((acc, m) => 
+            acc + m.skills.filter(s => s.isCritical).length, 0
+        );
+
+        if (criticalCount > 0) {
+            window.electronAPI.sendNotification(
+                "Action Required", 
+                `There are ${criticalCount} critical skills expiring soon.`
+            );
+        }
+    });
+}
+    */
 }
 async function checkPendingReviews() {
   if (sessionStorage.getItem("hasShownReviewModal")) return;

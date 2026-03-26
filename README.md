@@ -53,6 +53,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * [Usage](#usage)
   * [Demo Mode](#demo-mode)
   * [Docker Deployment](#docker-deployment)
+  * [Windows 11 Desktop App](#windows-11-desktop-app)
   * [Google Cloud Run Deployment](#google-cloud-run-deployment)
   * [Project Structure](#project-structure)
   * [Troubleshooting](#troubleshooting)
@@ -302,6 +303,28 @@ Both forms and templates utilize a strict JSON schema validated by the backend.
     docker compose up -d --build
     ```
 2.  **Persistence:** The `docker-compose.yml` mounts the local directory to `/app`, ensuring your `fenz.db` persists restarts.
+
+## Windows 11 Desktop App
+
+The **FENZ OSM Manager** can be built as a native Windows 11 application for dedicated workstation use. This version includes desktop notifications for critical skills and persistent storage in the user's `AppData` directory.
+
+### Build Instructions
+1. **Install Electron dependencies**:
+   ```bash
+   npm install
+   ```
+
+2.  **Generate the installer**:
+    ```bash
+    npm run electron:build
+    ```
+
+The installer will be created in the `dist-electron` folder. See [Windows Build Guide](WINDOWS_BUILD_GUIDE.md) for detailed configuration and features.
+
+### Implementation Rules Check
+* **Persistence**: Verified; paths are branched between root (Web) and `%APPDATA%` (Windows).
+* **Role Access**: Verified; the Electron shell still requires login via the `users` table.
+* **UI Consistency**: Verified; the desktop app loads the existing `public/` assets, preserving dark mode and floating icons.
 
 ## Google Cloud Run Deployment
 

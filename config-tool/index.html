@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FENZ OSM Configurator</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        h2 { margin-top: 0; color: #007bff; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        h3 { font-size: 14px; text-transform: uppercase; color: #888; margin-top: 25px; border-bottom: 1px dashed #ddd; padding-bottom: 5px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group.full { grid-column: span 2; }
+        label { display: block; font-weight: bold; font-size: 12px; color: #444; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
+        .btn-save { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 15px; }
+        .btn-save:hover { background: #218838; }
+        .status { text-align: center; font-size: 14px; margin-top: 15px; display: none; font-weight: bold; color: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>System Configuration</h2>
+        <form id="configForm">
+            
+            <h3>Application Access</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Operation Mode</label>
+                    <select name="APP_MODE">
+                        <option value="production">Production (Live)</option>
+                        <option value="demo">Demo Mode (Sandboxed)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Login Screen Title</label>
+                    <input type="text" name="UI_LOGIN_TITLE" placeholder="Station 12 OSM Manager">
+                </div>
+                <div class="form-group">
+                    <label>Admin Username</label>
+                    <input type="text" name="APP_USERNAME" value="admin">
+                </div>
+                <div class="form-group">
+                    <label>Admin Password</label>
+                    <input type="password" name="APP_PASSWORD">
+                </div>
+                <div class="form-group">
+                    <label>Demo Admin Username</label>
+                    <input type="text" name="DEMO_SUPERADMIN_USERNAME" value="demo_admin">
+                </div>
+                <div class="form-group">
+                    <label>Demo Admin Password</label>
+                    <input type="password" name="DEMO_SUPERADMIN_PASSWORD">
+                </div>
+            </div>
+
+            <h3>OSM & Scraping</h3>
+            <div class="form-grid">
+                <div class="form-group full">
+                    <label>Business Unit ID (GUID)</label>
+                    <input type="text" name="OSM_BU_ID" placeholder="87FF646A-FCBC-49A1-9BAC-XXXXXXXXXXX">
+                </div>
+                <div class="form-group">
+                    <label>Scraping Interval (Minutes)</label>
+                    <input type="number" name="SCRAPING_INTERVAL" value="60" min="5">
+                </div>
+                <div class="form-group">
+                    <label>Training Day of Week</label>
+                    <select name="TRAINING_DAY_OF_WEEK">
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                    </select>
+                </div>
+            </div>
+
+            <h3>Communication Channels</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>SMTP User (Email)</label>
+                    <input type="email" name="SMTP_USER" placeholder="sender@yourdomain.com">
+                </div>
+                <div class="form-group">
+                    <label>SMTP Password / App Pass</label>
+                    <input type="password" name="SMTP_PASS">
+                </div>
+                <div class="form-group full">
+                    <label>Enable WhatsApp Integration</label>
+                    <select name="ENABLE_WHATSAPP">
+                        <option value="false">Disabled</option>
+                        <option value="true">Enabled (Launches Headless Chrome)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-save">Save Desktop Settings</button>
+        </form>
+        <div id="status" class="status">✅ Configuration Written to settings.json</div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const form = document.getElementById('configForm');
+
+        window.onload = async () => {
+            const settings = await ipcRenderer.invoke('get-settings');
+            Object.keys(settings).forEach(key => {
+                const input = form.elements[key];
+                if (input) {
+                    if (input.type === 'checkbox') input.checked = (settings[key] === 'true' || settings[key] === true);
+                    else input.value = settings[key];
+                }
+            });
+        };
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {};
+            new FormData(form).forEach((value, key) => data[key] = value);
+            await ipcRenderer.invoke('save-settings', data);
+            
+            const status = document.getElementById('status');
+            status.style.display = 'block';
+            setTimeout(() => status.style.display = 'none', 3000);
+        };
+    </script>
+</body>
+</html>

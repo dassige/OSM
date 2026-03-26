@@ -61,9 +61,8 @@ async function closeDB() {
 }
 
 function getDbPath() {
-  if (process.env.DB_PATH) return process.env.DB_PATH;
-  const filename = config.appMode === "demo" ? "demo.db" : "fenz.db";
-  return path.join(__dirname, "../" + filename);
+// Use the pre-calculated path from our universal config
+  return config.dbPath;
 }
 
 // =============================================================================

@@ -6,6 +6,7 @@ npm-debug.log
 import-skills.csv
 import-members.csv
 .env
+dist
 public/resources/logo_dvfb.png
 # Database
 fenz.db*

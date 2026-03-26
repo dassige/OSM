@@ -1,156 +1,166 @@
 // services/whatsapp-service.js
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode');
+const { Client, LocalAuth } = require("whatsapp-web.js");
+const qrcode = require("qrcode");
 
 let client;
 let io;
-let logEvent = null; 
+let logEvent = null;
 let qrCodeUrl = null;
-let status = 'DISCONNECTED'; 
+let status = "DISCONNECTED";
 let isClientReady = false;
 let clientInfo = null;
 
 function init(socketIo, logEventCallback) {
-    io = socketIo;
-    logEvent = logEventCallback;
+  io = socketIo;
+  logEvent = logEventCallback;
 }
 
 async function systemLog(title, payload = {}) {
-    if (logEvent) {
-        try {
-            await logEvent('System', 'WhatsApp', title, payload);
-        } catch (e) {
-            console.error("[WhatsApp] Logging failed:", e.message);
-        }
+  if (logEvent) {
+    try {
+      await logEvent("System", "WhatsApp", title, payload);
+    } catch (e) {
+      console.error("[WhatsApp] Logging failed:", e.message);
     }
+  }
 }
 
 function startClient() {
-    if (status !== 'DISCONNECTED') return;
+  if (status !== "DISCONNECTED") return;
 
-    console.log('[WhatsApp] Starting client...');
-    systemLog('Client Starting', {});
-    updateStatus('INITIALIZING');
+  console.log("[WhatsApp] Starting client...");
+  systemLog("Client Starting", {});
+  updateStatus("INITIALIZING");
 
-    client = new Client({
-        authStrategy: new LocalAuth({ clientId: "fenz-osm-client" }),
-        puppeteer: {
-            headless: true,
-            // [FIX] Explicitly tell Puppeteer where Chrome is installed in Alpine Linux
-            executablePath: '/usr/bin/chromium-browser', 
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
-                '--no-first-run',
-                '--no-zygote',
-                '--disable-gpu'
-            ],
-            timeout: 60000 
-        }
+  client = new Client({
+    authStrategy: new LocalAuth({
+      clientId: "fenz-osm-client",
+      dataPath: config.authPath, // Points to AppData in Electron
+    }),
+    puppeteer: {
+      headless: true,
+      // [FIX] Explicitly tell Puppeteer where Chrome is installed in Alpine Linux
+      executablePath: "/usr/bin/chromium-browser",
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--no-first-run",
+        "--no-zygote",
+        "--disable-gpu",
+      ],
+      timeout: 60000,
+    },
+  });
+
+  client.on("qr", (qr) => {
+    console.log("[WhatsApp] QR Code received");
+    // [CHANGED] Disabled logging for QR Code generation to reduce noise
+    // systemLog('QR Code Generated', {});
+
+    qrcode.toDataURL(qr, (err, url) => {
+      if (!err) {
+        qrCodeUrl = url;
+        updateStatus("QR_READY");
+        io.emit("wa-qr", url);
+      }
     });
+  });
 
-    client.on('qr', (qr) => {
-        console.log('[WhatsApp] QR Code received');
-        // [CHANGED] Disabled logging for QR Code generation to reduce noise
-        // systemLog('QR Code Generated', {}); 
-        
-        qrcode.toDataURL(qr, (err, url) => {
-            if (!err) {
-                qrCodeUrl = url;
-                updateStatus('QR_READY');
-                io.emit('wa-qr', url);
-            }
-        });
-    });
+  client.on("ready", () => {
+    console.log("[WhatsApp] Client is ready!");
+    isClientReady = true;
+    qrCodeUrl = null;
 
-    client.on('ready', () => {
-        console.log('[WhatsApp] Client is ready!');
-        isClientReady = true;
-        qrCodeUrl = null;
-        
-        if (client && client.info) {
-            clientInfo = {
-                number: client.info.wid.user,
-                name: client.info.pushname
-            };
-        }
-        
-        systemLog('Client Connected', clientInfo || {}); 
-        
-        updateStatus('READY');
-        if (io) io.emit('wa-status-data', getStatus());
-    });
+    if (client && client.info) {
+      clientInfo = {
+        number: client.info.wid.user,
+        name: client.info.pushname,
+      };
+    }
 
-    client.on('auth_failure', msg => {
-        console.error('[WhatsApp] Auth Failure', msg);
-        systemLog('Auth Failure', { error: msg });
-        updateStatus('DISCONNECTED');
-    });
+    systemLog("Client Connected", clientInfo || {});
 
-    client.on('disconnected', (reason) => {
-        console.log('[WhatsApp] Client was logged out', reason);
-        systemLog('Client Disconnected', { reason }); 
-        resetState();
-    });
+    updateStatus("READY");
+    if (io) io.emit("wa-status-data", getStatus());
+  });
 
-    client.initialize();
+  client.on("auth_failure", (msg) => {
+    console.error("[WhatsApp] Auth Failure", msg);
+    systemLog("Auth Failure", { error: msg });
+    updateStatus("DISCONNECTED");
+  });
+
+  client.on("disconnected", (reason) => {
+    console.log("[WhatsApp] Client was logged out", reason);
+    systemLog("Client Disconnected", { reason });
+    resetState();
+  });
+
+  client.initialize();
 }
 
 async function logout() {
-    if (client) {
-        try {
-            await client.logout();
-            systemLog('Client Logged Out (Manual)', {});
-        } catch (e) {
-            console.log('[WhatsApp] Logout error:', e.message);
-        }
-        try {
-            await client.destroy();
-        } catch (e) {}
+  if (client) {
+    try {
+      await client.logout();
+      systemLog("Client Logged Out (Manual)", {});
+    } catch (e) {
+      console.log("[WhatsApp] Logout error:", e.message);
     }
-    resetState();
+    try {
+      await client.destroy();
+    } catch (e) {}
+  }
+  resetState();
 }
 
 function resetState() {
-    client = null;
-    isClientReady = false;
-    qrCodeUrl = null;
-    clientInfo = null;
-    updateStatus('DISCONNECTED');
+  client = null;
+  isClientReady = false;
+  qrCodeUrl = null;
+  clientInfo = null;
+  updateStatus("DISCONNECTED");
 }
 
 function updateStatus(newStatus) {
-    status = newStatus;
-    if (io) io.emit('wa-status', status);
+  status = newStatus;
+  if (io) io.emit("wa-status", status);
 }
 
 function getStatus() {
-    return { 
-        status, 
-        qr: qrCodeUrl,
-        info: clientInfo
-    };
+  return {
+    status,
+    qr: qrCodeUrl,
+    info: clientInfo,
+  };
 }
 
 function formatPhone(mobile) {
-    if (!mobile) return null;
-    let cleaned = mobile.replace(/\D/g, '');
-    
-    if (cleaned.startsWith('0')) {
-        cleaned = '64' + cleaned.substring(1);
-    } else if (!cleaned.startsWith('64')) {
-        cleaned = '64' + cleaned;
-    }
-    return `${cleaned}@c.us`;
+  if (!mobile) return null;
+  let cleaned = mobile.replace(/\D/g, "");
+
+  if (cleaned.startsWith("0")) {
+    cleaned = "64" + cleaned.substring(1);
+  } else if (!cleaned.startsWith("64")) {
+    cleaned = "64" + cleaned;
+  }
+  return `${cleaned}@c.us`;
 }
 
 async function sendMessage(mobile, text) {
-    if (!isClientReady) throw new Error("WhatsApp client not ready.");
-    const chatId = formatPhone(mobile);
-    await client.sendMessage(chatId, text);
-    return true;
+  if (!isClientReady) throw new Error("WhatsApp client not ready.");
+  const chatId = formatPhone(mobile);
+  await client.sendMessage(chatId, text);
+  return true;
 }
 
-module.exports = { init, startClient, logout, getStatus, sendMessage, isReady: () => isClientReady };
+module.exports = {
+  init,
+  startClient,
+  logout,
+  getStatus,
+  sendMessage,
+  isReady: () => isClientReady,
+};
