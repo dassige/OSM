@@ -1,7 +1,6 @@
 // public/app.js
 const socket = io();
 
-// ... (Keep existing GLOBAL STATE & CONFIG) ...
 let currentOsmData = [];
 let currentSort = { column: "name", order: "asc" };
 let isWaReady = false;
@@ -65,7 +64,6 @@ function init() {
     });
 }
 
-// ... (Keep existing UI HELPERS) ...
 function setRunningState() {
   sendEmailsBtn.disabled = true;
   viewBtn.disabled = true;
@@ -131,30 +129,24 @@ function updateRoleUI(role) {
   }
 }
 
-// Inject skeletons before network request
 function fetchData(forceRefresh = false) {
     const days = parseInt(daysInput.value) || 30;
     
-    // 1. UI State: Loading
     if (viewBtn) {
         viewBtn.disabled = true;
         viewBtn.textContent = "Loading...";
     }
 
-    // 2. Toggle Visibility: Hide Table, Show Spinner
-    const tableContainer = document.getElementById("tableContainer");
     const overlay = document.getElementById("loadingOverlay");
     
     if (tableContainer) tableContainer.style.display = "none";
     if (overlay) overlay.style.display = "block";
 
-    // 3. Request Data
     socket.emit("view-expiring-skills", days, forceRefresh);
 }
 
 function renderSkeletons() {
   skillsTableBody.innerHTML = "";
-  // Generate 5 dummy rows
   for (let i = 0; i < 5; i++) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -210,7 +202,6 @@ function renderTable() {
 
     visibleCount++;
 
-    // ... (Existing row generation logic remains the same) ...
     const rowClass = index % 2 === 0 ? "row-even" : "row-odd";
     const tr = document.createElement("tr");
     tr.className = rowClass;
@@ -230,9 +221,7 @@ function renderTable() {
       dateTd.textContent = visibleSkills[0].dueDate;
       dateTd.className = "date-cell";
       if (isDateInPast(visibleSkills[0].dueDate)) {
-        dateTd.style.backgroundColor = "#dc3545";
-        dateTd.style.color = "white";
-        dateTd.style.fontWeight = "bold";
+        dateTd.classList.add("date-expired");
       }
     } else {
       let msg = "NO expiring skills";
@@ -249,7 +238,6 @@ function renderTable() {
     tr.appendChild(skillTd);
     tr.appendChild(dateTd);
 
-    // ... (Actions Column Logic - Email/WA buttons) ...
     const prefs = (member.notificationPreference || "email").split(",");
     const defaultEmail = prefs.includes("email");
     const defaultWa = prefs.includes("whatsapp");
@@ -259,55 +247,40 @@ function renderTable() {
 
     if (member.emailEligible && hasVisibleSkills) {
       const wrapper = document.createElement("div");
-      wrapper.style.display = "flex";
-      wrapper.style.flexDirection = "column";
-      wrapper.style.gap = "8px";
+      wrapper.className = "action-wrapper";
 
       // Email Row
       const emailRow = document.createElement("div");
-      emailRow.style.display = "flex";
-      emailRow.style.alignItems = "center";
-      emailRow.style.justifyContent = "space-between";
-      emailRow.style.gap = "10px";
+      emailRow.className = "action-row";
 
       const hasEmail = member.email && member.email.includes("@");
       const emailLabel = document.createElement("label");
-      emailLabel.className = "email-label";
-      emailLabel.style.marginBottom = "0";
+      emailLabel.className = "email-label action-label";
       emailLabel.innerHTML = `<input type="checkbox" class="send-email-cb" data-name="${
         member.name
       }" ${hasEmail ? (defaultEmail ? "checked" : "") : "disabled"}> Email`;
       if (!hasEmail) emailLabel.style.opacity = "0.5";
 
       const btnEmail = document.createElement("button");
-      btnEmail.className = "btn-round";
-      btnEmail.style.backgroundColor = "#6f42c1";
-      btnEmail.style.flexShrink = "0";
+      btnEmail.className = "btn-round email";
       btnEmail.title = hasEmail ? "Send Email Immediately" : "No Email Address";
       btnEmail.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
       btnEmail.onclick = () => sendSingleAction(member.name, "email");
 
       if (!hasEmail) {
         btnEmail.disabled = true;
-        btnEmail.style.backgroundColor = "#ccc";
-        btnEmail.style.opacity = "0.5";
-        btnEmail.style.cursor = "not-allowed";
       }
       emailRow.appendChild(emailLabel);
       emailRow.appendChild(btnEmail);
 
       // WA Row
       const waRow = document.createElement("div");
-      waRow.style.display = "flex";
-      waRow.style.alignItems = "center";
-      waRow.style.justifyContent = "space-between";
-      waRow.style.gap = "10px";
+      waRow.className = "action-row";
 
       const hasMobile = member.mobile && member.mobile.length > 5;
       const isWaDisabled = !hasMobile || !isWaReady;
       const waLabel = document.createElement("label");
-      waLabel.className = "email-label";
-      waLabel.style.marginBottom = "0";
+      waLabel.className = "email-label action-label";
       const shouldCheckWa = defaultWa && !isWaDisabled;
       waLabel.innerHTML = `<input type="checkbox" class="send-wa-cb" data-name="${
         member.name
@@ -318,24 +291,18 @@ function renderTable() {
 
       const btnWa = document.createElement("button");
       btnWa.className = "btn-round";
-      btnWa.style.flexShrink = "0";
       btnWa.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>`;
       btnWa.onclick = () => sendSingleAction(member.name, "whatsapp");
 
       if (!hasMobile) {
         btnWa.disabled = true;
-        btnWa.style.backgroundColor = "#ccc";
-        btnWa.style.opacity = "0.5";
-        btnWa.style.cursor = "not-allowed";
         btnWa.title = "No Mobile Number";
       } else if (!isWaReady) {
         btnWa.disabled = true;
-        btnWa.style.backgroundColor = "#fd7e14";
-        btnWa.style.opacity = "0.8";
-        btnWa.style.cursor = "not-allowed";
+        btnWa.classList.add("wa-not-ready");
         btnWa.title = "Whatsapp service not started";
       } else {
-        btnWa.style.backgroundColor = "#25D366";
+        btnWa.classList.add("wa-ready");
         btnWa.title = `Send WhatsApp to ${member.mobile}`;
         btnWa.disabled = false;
       }
@@ -358,7 +325,6 @@ function renderTable() {
       emptyNameTd.className = "merged-cell";
       subTr.appendChild(emptyNameTd);
 
-      // [UPDATED from previous step] Pass member.id
       const subSkillTd = document.createElement("td");
       subSkillTd.innerHTML = buildSkillHtml(visibleSkills[i], member.id);
       subSkillTd.className = "skill-cell";
@@ -367,9 +333,7 @@ function renderTable() {
       subDateTd.textContent = visibleSkills[i].dueDate;
       subDateTd.className = "date-cell";
       if (isDateInPast(visibleSkills[i].dueDate)) {
-        subDateTd.style.backgroundColor = "#dc3545";
-        subDateTd.style.color = "white";
-        subDateTd.style.fontWeight = "bold";
+        subDateTd.classList.add("date-expired");
       }
       subTr.appendChild(subSkillTd);
       subTr.appendChild(subDateTd);
@@ -380,17 +344,16 @@ function renderTable() {
     }
   });
 
-  // [NEW] Enhanced Empty State
   if (visibleCount === 0) {
     skillsTableBody.innerHTML = `
             <tr class="empty-state-row">
                 <td colspan="4">
                     <div class="empty-state-content">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color:#d1d5db;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                             <polyline points="22 4 12 14.01 9 11.01"></polyline>
                         </svg>
-                        <h3>All Caught Up!</h3>
+                        <h3 style="color: var(--text-main);">All Caught Up!</h3>
                         <p>No expiring skills found matching your filters.</p>
                     </div>
                 </td>
@@ -398,7 +361,6 @@ function renderTable() {
         `;
   }
 
-  // ... (Checkbox listeners logic) ...
   document
     .querySelectorAll('input[type="checkbox"]')
     .forEach((cb) => cb.addEventListener("change", updateSendButtonState));
@@ -406,6 +368,7 @@ function renderTable() {
   setupMasterCheckbox("selectAllWhatsapp", ".send-wa-cb");
   updateSendButtonState();
 }
+
 function setupMasterCheckbox(masterId, targetClass) {
   const master = document.getElementById(masterId);
   if (!master) return;
@@ -419,12 +382,10 @@ function setupMasterCheckbox(masterId, targetClass) {
   });
 }
 
-// [UPDATED] Single Action Logic using confirmAction
 async function sendSingleAction(name, type) {
   const days = parseInt(daysInput.value) || 30;
   const label = type === "email" ? "Email" : "WhatsApp";
 
-  // ASYNC CONFIRMATION
   if (
     await confirmAction(
       "Send Immediate Reminder",
@@ -444,16 +405,11 @@ async function sendSingleAction(name, type) {
   }
 }
 
-// =============================================================================
-// 5. EVENT LISTENERS & ACTIONS
-// =============================================================================
-
 viewBtn.addEventListener("click", () => {
   showCompletionToast = true;
   fetchData(true);
 });
 
-// [UPDATED] Send Emails Handler
 sendEmailsBtn.addEventListener("click", async () => {
   const targets = [];
   document.querySelectorAll("#skillsTable tbody tr").forEach((row) => {
@@ -472,7 +428,6 @@ sendEmailsBtn.addEventListener("click", async () => {
 
   if (targets.length === 0) return showToast("No actions selected", "error");
 
-  // ASYNC CONFIRMATION
   if (
     await confirmAction(
       "Bulk Notification",
@@ -544,29 +499,23 @@ socket.on("progress-update", (data) => {
   }
 });
 
-
 socket.on("expiring-skills-data", (data) => {
-    // 1. Reset UI Buttons
     if (viewBtn) {
         viewBtn.disabled = false;
         viewBtn.textContent = "Reload Expiring Skills";
     }
 
-    // 2. Toggle Visibility: Hide Spinner, Show Table
     const tableContainer = document.getElementById("tableContainer");
     const overlay = document.getElementById("loadingOverlay");
 
     if (overlay) overlay.style.display = "none";
     if (tableContainer) tableContainer.style.display = "block";
 
-    // 3. Process Data
     currentOsmData = data;
     
-    // 4. Render & Update
     applySort(); 
-    updateNotificationBadges(); // Important: Keep your badge logic!
+    updateNotificationBadges(); 
     
-    // 5. Scroll to top (Optional UX improvement)
     window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
@@ -574,38 +523,32 @@ function buildSkillHtml(skillObj, memberId) {
   let html = skillObj.skill;
   if (skillObj.isCritical) html = `<b>${html}</b>`;
 
-  // Form Link Icon (Unchanged)
   if (skillObj.hasUrl) {
-    html += ` <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; color: #007bff; margin-left: 4px;" title="Direct Form Link Available"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+    html += ` <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-form-link" title="Direct Form Link Available"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
   }
 
-  // [UPDATED] Status Icons with Circles
   const canLink = memberId && skillObj.skillId;
 
   if (skillObj.liveFormStatus === "accepted") {
     const icon = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
     const wrapper = `<span class="status-circle accepted" title="Verification Accepted">${icon}</span>`;
 
-    // Wrap in link to Live Forms with filters
     if (canLink) {
       html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=accepted">${wrapper}</a>`;
     } else {
       html += ` ${wrapper}`;
     }
   } else if (skillObj.liveFormStatus === "submitted") {
-    // BLUE EYE icon for Awaiting Review
     const icon = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
     const wrapper = `<span class="status-circle submitted" title="Form Submitted - Awaiting Review">${icon}</span>`;
     html += canLink
       ? ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=submitted">${wrapper}</a>`
       : ` ${wrapper}`;
   } else if (skillObj.liveFormStatus === "sent") {
-    // Teal Plane/Send Icon inside Circle
     const icon = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"></line>
             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
         </svg>`;
-
     const wrapper = `<span class="status-circle sent" title="Form Sent - Waiting for Member">${icon}</span>`;
 
     if (canLink) {
@@ -626,6 +569,7 @@ function buildSkillHtml(skillObj, memberId) {
 
   return html;
 }
+
 function isDateInPast(dateStr) {
   if (!dateStr) return false;
   if (dateStr.toLowerCase().includes("expired")) return true;
@@ -678,7 +622,6 @@ async function updateNotificationBadges() {
     const dataSent = await resSent.json();
     const countSent = dataSent.total || 0;
 
-    // NEW: Fetch 'accepted' and 'rejected' counts
     const resAcc = await fetch("/api/live-forms?status=accepted&limit=1");
     const resRej = await fetch("/api/live-forms?status=rejected&limit=1");
     const dataAcc = await resAcc.json();
@@ -686,7 +629,7 @@ async function updateNotificationBadges() {
     const countPending = (dataAcc.total || 0) + (dataRej.total || 0);
 
     const badgeSent = document.getElementById("badgeSent");
-    const badgeSub = document.getElementById("badgeSubmitted"); // Blue "Eye" Badge
+    const badgeSub = document.getElementById("badgeSubmitted"); 
     const btn = document.getElementById("liveFormsNotifBtn");
 
     if (countSent > 0) {
@@ -711,6 +654,7 @@ async function updateNotificationBadges() {
     console.error("Badge update failed", e);
   }
 }
+
 async function checkPendingReviews() {
   if (sessionStorage.getItem("hasShownReviewModal")) return;
 
@@ -720,7 +664,6 @@ async function checkPendingReviews() {
     );
     if (prefRes.ok) {
       const prefData = await prefRes.json();
-      // Check against boolean false
       if (prefData.value === false) return;
     }
   } catch (e) {
@@ -734,8 +677,6 @@ async function checkPendingReviews() {
 
     if (count > 0) {
       document.getElementById("pendingCountDisplay").textContent = count;
-      // Update modal text in index.html dynamically if needed,
-      // or ensure index.html labels it as "Automated Results"
       document.getElementById("pendingReviewsModal").style.display = "block";
       sessionStorage.setItem("hasShownReviewModal", "true");
     }
@@ -744,7 +685,4 @@ async function checkPendingReviews() {
   }
 }
 
-// =============================================================================
-//  INITIALIZATION
-// =============================================================================
 init();
