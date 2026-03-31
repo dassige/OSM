@@ -407,7 +407,8 @@
             const msg = document.getElementById('forgotMsg');
             const btn = e.target.querySelector('button');
 
-            if (!confirm(`Are you sure you want to reset the password for ${email}?`)) return;
+            // Use the custom async confirm modal
+            if (!await confirmAction('Reset Password', `Are you sure you want to reset the password for ${email}?`)) return;
 
             btn.disabled = true;
             btn.textContent = "Sending...";
@@ -423,8 +424,8 @@
                 const data = await res.json();
 
                 if (res.ok) {
+                    // Remove the native alert fallback
                     if (window.showToast) window.showToast('Check email for new password.', 'success');
-                    else alert('Check email for new password.');
                     closeModal('forgotModal');
                     document.getElementById('forgotForm').reset();
                 } else {
@@ -448,6 +449,7 @@
     <script src="help.js"></script>
     <script src="theme.js"></script>
     <script src="toast.js"></script>
+    <script src="utils.js"></script>
 </body>
 
 </html>

@@ -54,8 +54,10 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((user) => {
       const role = user.role || "guest";
       if (role !== "admin" && role !== "superadmin") {
-        alert("Access Denied.");
-        window.location.href = "/";
+        if (window.showToast) showToast("Access Denied.", "error");
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1500);
       } else {
         loadForms();
       }

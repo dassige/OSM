@@ -31,7 +31,8 @@
             <p>Download a snapshot of the current system database (<code>fenz.db</code>). This file contains all
                 the data and structure of the database.</p>
             <div style="margin-top: 20px;">
-                <a href="/api/system/backup" class="btn-primary" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 12px 24px; font-size: 16px;">
+                <a href="/api/system/backup" class="btn-primary" target="_blank"
+                    style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 12px 24px; font-size: 16px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -45,16 +46,19 @@
 
         <div class="system-card">
             <h2>Restore Database</h2>
-            <p style="color: var(--danger); font-weight: bold;">⚠️ Warning: This will overwrite the current database!</p>
+            <p style="color: var(--danger); font-weight: bold;">⚠️ Warning: This will overwrite the current database!
+            </p>
             <p>Upload a previously backed-up <code>.sql</code> file. <br><strong>Note:</strong> The uploaded database
                 MUST match the current application version.</p>
 
             <form id="restoreForm">
                 <div class="file-input-wrapper">
-                    <input type="file" id="dbFile" name="databaseFile" accept=".sql" required style="background: transparent; border: none; color: var(--text-main);">
+                    <input type="file" id="dbFile" name="databaseFile" accept=".sql" required
+                        style="background: transparent; border: none; color: var(--text-main);">
                 </div>
 
-                <button type="submit" class="btn-danger" id="restoreBtn" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; font-size: 16px;">
+                <button type="submit" class="btn-danger" id="restoreBtn"
+                    style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; font-size: 16px;">
                     <span class="spinner" id="restoreSpinner"></span>
                     <svg id="restoreIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -272,14 +276,14 @@
         }
 
         async function savePreference(key, value) {
-            currentAiPrefs[key] = value; 
+            currentAiPrefs[key] = value;
             await fetch('/api/user-preferences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key, value })
             });
         }
-        
+
         initAiLab();
 
         // Init UI Config
@@ -295,7 +299,7 @@
                     document.getElementById('demoBanner').style.display = 'block';
                 }
             });
-            
+
         fetch('/api/user-session')
             .then(r => r.json())
             .then(user => {
@@ -305,12 +309,12 @@
                 }
             })
             .catch(() => window.location.href = "/login.html");
-            
+
         // Restore Logic
         document.getElementById('restoreForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (!confirm("Are you sure you want to restore the database? Current data will be lost.")) return;
+            if (!await confirmAction("Restore Database", "Are you sure you want to restore the database? Current data will be lost.")) return;
 
             const btn = document.getElementById('restoreBtn');
             const spinner = document.getElementById('restoreSpinner');
@@ -392,7 +396,7 @@
                     provider: provider,
                     model: model,
                     ollamaUrl: document.getElementById('testOllamaUrl').value,
-                    geminiKey: "USE_SERVER_DEFAULT" 
+                    geminiKey: "USE_SERVER_DEFAULT"
                 }
             };
 
@@ -445,6 +449,7 @@
     <script src="help.js"></script>
     <script src="theme.js"></script>
     <script src="toast.js"></script>
+    <script src="utils.js"></script>
 </body>
 
 </html>

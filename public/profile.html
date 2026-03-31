@@ -22,9 +22,10 @@
     </a>
 
     <div class="container" style="max-width: 800px;">
-        <div style="background: var(--bg-card); padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px var(--shadow); border: 1px solid var(--border-color);">
+        <div
+            style="background: var(--bg-card); padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px var(--shadow); border: 1px solid var(--border-color);">
             <h1 id="pageHeader" style="margin-top: 0; margin-bottom: 30px; text-align: center;">User Settings</h1>
-            
+
             <div id="msgBox" class="alert-box"></div>
 
             <div class="settings-section">
@@ -44,19 +45,23 @@
 
                     <div class="form-group">
                         <label>New Password</label>
-                        <input type="password" id="password" placeholder="Leave blank to keep current" autocomplete="new-password">
+                        <input type="password" id="password" placeholder="Leave blank to keep current"
+                            autocomplete="new-password">
                     </div>
 
                     <div class="form-group">
                         <label>Repeat New Password</label>
-                        <input type="password" id="passwordConfirm" placeholder="Repeat to confirm" autocomplete="new-password">
+                        <input type="password" id="passwordConfirm" placeholder="Repeat to confirm"
+                            autocomplete="new-password">
                     </div>
 
                     <div id="accountActions" style="margin-top: 20px;">
                         <button type="submit" class="btn-primary">Update Account</button>
                     </div>
-                    <div id="envUserMsg" style="display:none; color:var(--danger); font-size:0.9em; margin-top:15px; padding: 10px; background: rgba(220, 53, 69, 0.1); border-radius: 4px; border: 1px solid var(--danger);">
-                        <strong>Notice:</strong> This is a Super Admin account defined in environment variables. Account details cannot be changed here.
+                    <div id="envUserMsg"
+                        style="display:none; color:var(--danger); font-size:0.9em; margin-top:15px; padding: 10px; background: rgba(220, 53, 69, 0.1); border-radius: 4px; border: 1px solid var(--danger);">
+                        <strong>Notice:</strong> This is a Super Admin account defined in environment variables. Account
+                        details cannot be changed here.
                     </div>
                 </form>
             </div>
@@ -66,11 +71,14 @@
                 <div class="switch-wrapper">
                     <div>
                         <div class="switch-label">Two-Factor Authentication (2FA)</div>
-                        <div class="switch-desc" id="mfaStatusDesc">Enhance security using an authenticator app (e.g. Google Authenticator).</div>
+                        <div class="switch-desc" id="mfaStatusDesc">Enhance security using an authenticator app (e.g.
+                            Google Authenticator).</div>
                     </div>
                     <div id="mfaActions">
-                        <button id="btnEnableMfa" type="button" class="btn-primary" style="margin: 0;">Setup 2FA</button>
-                        <button id="btnDisableMfa" type="button" class="btn-danger" style="margin: 0; display:none;">Disable</button>
+                        <button id="btnEnableMfa" type="button" class="btn-primary" style="margin: 0;">Setup
+                            2FA</button>
+                        <button id="btnDisableMfa" type="button" class="btn-danger"
+                            style="margin: 0; display:none;">Disable</button>
                     </div>
                 </div>
             </div>
@@ -83,7 +91,8 @@
                         <div class="switch-desc">Show a popup on login if Live Forms are waiting for review.</div>
                     </div>
                     <label class="switch" style="margin: 0;">
-                        <input type="checkbox" id="prefReviewAlert" onchange="savePreference('show_pending_reviews_alert', this.checked)">
+                        <input type="checkbox" id="prefReviewAlert"
+                            onchange="savePreference('show_pending_reviews_alert', this.checked)">
                         <span class="slider"></span>
                     </label>
                 </div>
@@ -97,13 +106,15 @@
             <h2 style="margin-top:0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Setup 2FA</h2>
             <p style="font-size:0.9em; color:var(--text-muted);">Scan this QR code with your authenticator app.</p>
 
-            <div style="background:white; padding:15px; border:1px solid var(--border-color); border-radius:4px; display:inline-block; margin-bottom:20px;">
+            <div
+                style="background:white; padding:15px; border:1px solid var(--border-color); border-radius:4px; display:inline-block; margin-bottom:20px;">
                 <img id="mfaQrCode" src="" alt="QR Code" style="width: 180px; height: 180px; display:block;">
             </div>
 
             <div class="form-group" style="text-align:left;">
                 <label>Verification Code</label>
-                <input type="text" id="mfaVerifyToken" placeholder="Enter 6-digit code" maxlength="6" autocomplete="one-time-code"
+                <input type="text" id="mfaVerifyToken" placeholder="Enter 6-digit code" maxlength="6"
+                    autocomplete="one-time-code"
                     style="text-align:center; letter-spacing: 4px; font-size: 1.2em; font-weight: bold;">
             </div>
 
@@ -190,9 +201,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ key, value })
                 });
-                if(window.showToast) showToast("Preference saved", "success");
+                if (window.showToast) showToast("Preference saved", "success");
             } catch (e) {
-                if(window.showToast) showToast("Failed to save preference", "error");
+                if (window.showToast) showToast("Failed to save preference", "error");
             }
         }
 
@@ -233,22 +244,21 @@
                 if (currentAppMode === 'demo') {
                     tokenInput.placeholder = "Demo: Type '000000'";
                     tokenInput.value = "000000";
-                    if(window.showToast) showToast("Demo Mode: 2FA Verification simulated.", "info");
+                    if (window.showToast) showToast("Demo Mode: 2FA Verification simulated.", "info");
                 } else {
                     tokenInput.placeholder = "Enter 6-digit code";
-                    tokenInput.value = ""; 
+                    tokenInput.value = "";
                 }
 
                 openModal('mfaModal');
             } catch (e) {
-                if(window.showToast) showToast(e.message, 'error');
+                if (window.showToast) showToast(e.message, 'error');
             }
         });
 
         document.getElementById('btnVerifyMfa').addEventListener('click', async () => {
             const token = document.getElementById('mfaVerifyToken').value;
-            if (!token || token.length < 6) return showToast ? showToast("Please enter the code", "warning") : alert("Please enter the code");
-
+            if (!token || token.length < 6) return showToast("Please enter the code", "warning");
             try {
                 const res = await fetch('/api/profile/mfa/verify', {
                     method: 'POST',
@@ -258,13 +268,13 @@
 
                 if (res.ok) {
                     closeModal('mfaModal');
-                    if(window.showToast) showToast("Two-Factor Authentication Enabled!", "success");
+                    if (window.showToast) showToast("Two-Factor Authentication Enabled!", "success");
                     updateMfaUi(true);
                 } else {
-                    if(window.showToast) showToast("Invalid Code. Please try again.", "error");
+                    if (window.showToast) showToast("Invalid Code. Please try again.", "error");
                 }
-            } catch (e) { 
-                if(window.showToast) showToast("Verification Error", "error"); 
+            } catch (e) {
+                if (window.showToast) showToast("Verification Error", "error");
             }
         });
 
@@ -273,9 +283,9 @@
                 try {
                     await fetch('/api/profile/mfa/disable', { method: 'POST' });
                     updateMfaUi(false);
-                    if(window.showToast) showToast("MFA Disabled", "success");
-                } catch (e) { 
-                    if(window.showToast) showToast("Error disabling MFA", "error"); 
+                    if (window.showToast) showToast("MFA Disabled", "success");
+                } catch (e) {
+                    if (window.showToast) showToast("Error disabling MFA", "error");
                 }
             }
         });
@@ -299,15 +309,15 @@
             try {
                 const res = await fetch('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 if (res.ok) {
-                    msgBox.className = 'alert-box status-success'; 
-                    msgBox.innerText = 'Profile updated successfully.'; 
+                    msgBox.className = 'alert-box status-success';
+                    msgBox.innerText = 'Profile updated successfully.';
                     msgBox.style.display = 'block';
                     document.getElementById('password').value = '';
                     document.getElementById('passwordConfirm').value = '';
                 } else { throw new Error('Update failed'); }
             } catch (err) {
-                msgBox.className = 'alert-box status-error'; 
-                msgBox.innerText = err.message; 
+                msgBox.className = 'alert-box status-error';
+                msgBox.innerText = err.message;
                 msgBox.style.display = 'block';
             }
         });
