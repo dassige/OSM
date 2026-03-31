@@ -41,222 +41,202 @@
                 style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
-    <div class="header-row">
-        <img src="resources/logo.png" id="headerLogo" alt="Station Logo">
+<div class="container">
+        <div class="header-row">
+            <div class="header-spacer"></div>
 
-        <h1 id="mainHeader">FENZ OSM Automation</h1>
-        <div class="notification-wrapper">
-            <a href="live-forms.html" id="liveFormsNotifBtn" class="notification-btn" title="Loading status...">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
+            <div class="header-title-group">
+                <img src="resources/logo.png" id="headerLogo" alt="Station Logo">
+                <h1 id="mainHeader">FENZ OSM Automation</h1>
+            </div>
 
-                <span id="badgeSent" class="notif-badge badge-sent" style="display:none">0</span>
-                <span id="badgeSubmitted" class="notif-badge badge-submitted" style="display:none">0</span>
-            </a>
-        </div>
-        <div class="header-menu">
-            <button onclick="toggleMenu()" class="menu-btn">
-                Menu
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-            </button>
-            <div id="myDropdown" class="dropdown-content">
+            <div class="header-actions-group">
+                <div class="notification-wrapper">
+                    <a href="live-forms.html" id="liveFormsNotifBtn" class="notification-btn" title="Loading status...">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
 
-                <div class="dropdown-submenu" id="groupOperations" style="display:none;">
-                    <a href="#">Operations</a>
-                    <div class="submenu-content">
-
-                        <div class="dropdown-submenu">
-                            <a href="#">Maintenance</a>
+                        <span id="badgeSent" class="notif-badge badge-sent" style="display:none">0</span>
+                        <span id="badgeSubmitted" class="notif-badge badge-submitted" style="display:none">0</span>
+                    </a>
+                </div>
+                <div class="header-menu">
+                    <button onclick="toggleMenu()" class="menu-btn">
+                        Menu
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div id="myDropdown" class="dropdown-content">
+                        <div class="dropdown-submenu" id="groupOperations" style="display:none;">
+                            <a href="#">Operations</a>
                             <div class="submenu-content">
-                                <a href="members.html" id="navManageMembers">Manage Members</a>
-                                <a href="skills.html" id="navManageSkills">Manage Skills</a>
-                                <a href="forms-manage.html" id="navManageForms">Manage Forms</a>
+                                <div class="dropdown-submenu">
+                                    <a href="#">Maintenance</a>
+                                    <div class="submenu-content">
+                                        <a href="members.html" id="navManageMembers">Manage Members</a>
+                                        <a href="skills.html" id="navManageSkills">Manage Skills</a>
+                                        <a href="forms-manage.html" id="navManageForms">Manage Forms</a>
+                                    </div>
+                                </div>
+                                <a href="training-planner.html" id="navTrainingPlanner">Renewal Planner</a>
+                                <a href="live-forms.html" id="navLiveForms">Live Forms</a>
                             </div>
                         </div>
-
-                        <a href="training-planner.html" id="navTrainingPlanner">Renewal Planner</a>
-                        <a href="live-forms.html" id="navLiveForms">Live Forms</a>
+                        <div class="dropdown-submenu" id="groupComms" style="display:none;">
+                            <a href="#">Communication</a>
+                            <div class="submenu-content">
+                                <a href="templates.html" id="navEmailTemplates">Templates</a>
+                                <a href="third-parties.html" id="navThirdParties">Third Party (WhatsApp)</a>
+                            </div>
+                        </div>
+                        <div class="dropdown-submenu" id="groupReports" style="display:none;">
+                            <a href="#">Reports & Logs</a>
+                            <div class="submenu-content">
+                                <a href="reports.html" id="navReports">Reports</a>
+                                <a href="statistics.html" id="navStats">Statistics</a>
+                                <a href="event-log.html" id="navEventLog">Event Log</a>
+                            </div>
+                        </div>
+                        <div class="dropdown-submenu" id="groupSystem" style="display:none;">
+                            <a href="#">System Admin</a>
+                            <div class="submenu-content">
+                                <a href="users.html" id="navManageUsers">Manage Users</a>
+                                <a href="system-tools.html" id="navSystemTools">System Tools</a>
+                            </div>
+                        </div>
+                        <a href="#" onclick="openModal('aboutModal')">About</a>
                     </div>
                 </div>
-                <div class="dropdown-submenu" id="groupComms" style="display:none;">
-                    <a href="#">Communication</a>
-                    <div class="submenu-content">
-                        <a href="templates.html" id="navEmailTemplates">Templates</a>
-                        <a href="third-parties.html" id="navThirdParties">Third Party (WhatsApp)</a>
-                    </div>
-                </div>
-
-                <div class="dropdown-submenu" id="groupReports" style="display:none;">
-                    <a href="#">Reports & Logs</a>
-                    <div class="submenu-content">
-                        <a href="reports.html" id="navReports">Reports</a>
-                        <a href="statistics.html" id="navStats">Statistics</a>
-                        <a href="event-log.html" id="navEventLog">Event Log</a>
-                    </div>
-                </div>
-
-                <div class="dropdown-submenu" id="groupSystem" style="display:none;">
-                    <a href="#">System Admin</a>
-                    <div class="submenu-content">
-                        <a href="users.html" id="navManageUsers">Manage Users</a>
-                        <a href="system-tools.html" id="navSystemTools">System Tools</a>
-                    </div>
-                </div>
-
-                <a href="#" onclick="openModal('aboutModal')">About</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="action-bar" id="controls">
-        <div class="days-wrapper">
-            <label for="daysInput">Days to Expiry:</label>
-            <input type="number" id="daysInput" value="30" min="1">
-        </div>
-
-        <div class="action-group" style="flex-grow: 1; justify-content: flex-end;">
-            <button id="viewBtn" style="margin:0;">Reload Expiring Skills</button>
-            <button id="sendEmailsBtn" disabled style="margin:0;">Send Notifications</button>
-        </div>
-    </div>
-
-    <div id="progressContainer">
-        <div id="progressBar">0%</div>
-    </div>
-    <div id="loadingOverlay" style="display:none; text-align:center; padding: 40px;">
-        <div class="spinner-large" style="margin: 0 auto;"></div>
-        <h3 style="color: #666; margin-top: 20px;">Fetching Latest Data...</h3>
-        <p style="color: #999; font-size: 0.9em;">Connecting to OSM Dashboard</p>
-    </div>
-    <div id="tableContainer">
-        <div
-            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-            <h2 style="margin: 0;">Expiring Skills List</h2>
-            <div class="type-toggles" style="display: flex; gap: 8px; align-items: center;">
-                <span style="font-size:13px; font-weight:bold; color:#666;">Filters:</span>
-                <div id="btnHideNoSkills" class="type-badge" title="Hide members with 'NO expiring skills'">Hide Empty
-                </div>
-                <div id="btnHideNoUrl" class="type-badge" title="Hide Skills without Online form">Has Form Only</div>
-                <div id="btnHideWithUrl" class="type-badge" title="Hide Skills with Online form">No Form Only</div>
-                <div id="btnExpiredOnly" class="type-badge expired-filter" title="Display only expired skills">Expired
-                    Only</div>
             </div>
         </div>
 
-        <p style="margin-top: -5px; margin-bottom: 15px; color: #666; font-size: 14px; line-height: 1.8;">
-            <em>
-                Skills displayed in <b>bold</b> are configured as 'Critical'. <br>
+        <div class="action-bar" id="controls">
+            <div class="days-wrapper">
+                <label for="daysInput">Days to Expiry:</label>
+                <input type="number" id="daysInput" value="30" min="1">
+            </div>
 
-                <span
-                    style="display: inline-flex; align-items: center; vertical-align: text-bottom; margin-right: 15px;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
-                        stroke-linecap="round" stroke-linejoin="round" style="color: #007bff; margin-right: 5px;">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg> Online form link available
-                </span>
+            <div class="action-group" style="flex-grow: 1; justify-content: flex-end;">
+                <button id="viewBtn" style="margin:0;">Reload Expiring Skills</button>
+                <button id="sendEmailsBtn" disabled style="margin:0;">Send Notifications</button>
+            </div>
+        </div>
 
-                <span
-                    style="display: inline-flex; align-items: center; vertical-align: text-bottom; margin-right: 15px;">
-                    <span class="status-circle sent" style="margin-left:0; margin-right:5px; width:20px; height:20px;">
-                        <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2"
-                            fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="22" y1="2" x2="11" y2="13"></line>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                        </svg>
-                    </span> Form Sent (Awaiting member submission)
-                </span>
+        <div id="progressContainer">
+            <div id="progressBar">0%</div>
+        </div>
+        <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+            <div class="spinner-large" style="margin: 0 auto;"></div>
+            <h3 class="loading-text">Fetching Latest Data...</h3>
+            <p style="color: var(--text-muted); font-size: 0.9em;">Connecting to OSM Dashboard</p>
+        </div>
+        <div id="tableContainer">
+            <div class="section-header-flex">
+                <h2 style="margin: 0;">Expiring Skills List</h2>
+                <div class="type-toggles" style="display: flex; gap: 8px; align-items: center;">
+                    <span class="filter-label">Filters:</span>
+                    <div id="btnHideNoSkills" class="type-badge" title="Hide members with 'NO expiring skills'">Hide Empty</div>
+                    <div id="btnHideNoUrl" class="type-badge" title="Hide Skills without Online form">Has Form Only</div>
+                    <div id="btnHideWithUrl" class="type-badge" title="Hide Skills with Online form">No Form Only</div>
+                    <div id="btnExpiredOnly" class="type-badge expired-filter" title="Display only expired skills">Expired Only</div>
+                </div>
+            </div>
 
-                <span
-                    style="display: inline-flex; align-items: center; vertical-align: text-bottom; margin-right: 15px;">
-                    <span class="status-circle submitted"
-                        style="margin-left:0; margin-right:5px; width:20px; height:20px;">
-                        <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2"
-                            fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                    </span> Form Submitted (Awaiting admin review)
-                </span>
+            <p class="skills-legend">
+                <em>
+                    Skills displayed in <b>bold</b> are configured as 'Critical'. <br>
+                    <span class="legend-item">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round" class="icon-form-link" style="margin-right: 5px;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg> Online form link available
+                    </span>
 
-                <span
-                    style="display: inline-flex; align-items: center; vertical-align: text-bottom; margin-right: 15px;">
-                    <span class="status-circle accepted"
-                        style="margin-left:0; margin-right:5px; width:20px; height:20px;">
-                        <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3"
-                            fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </span> Verification Accepted
-                </span>
+                    <span class="legend-item">
+                        <span class="status-circle sent" style="margin-left:0; margin-right:5px; width:20px; height:20px;">
+                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2"
+                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </span> Form Sent (Awaiting member submission)
+                    </span>
 
-                <span
-                    style="display: inline-flex; align-items: center; vertical-align: text-bottom; margin-right: 15px;">
-                    <span class="status-circle rejected"
-                        style="margin-left:0; margin-right:5px; width:20px; height:20px;">
-                        <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3"
-                            fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </span> Verification Rejected
-                </span>
+                    <span class="legend-item">
+                        <span class="status-circle submitted" style="margin-left:0; margin-right:5px; width:20px; height:20px;">
+                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2"
+                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </span> Form Submitted (Awaiting admin review)
+                    </span>
 
-                <span
-                    style="background-color:#dc3545; color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red
-                    Date</span> = Overdue.
-                </span>
-        </p>
+                    <span class="legend-item">
+                        <span class="status-circle accepted" style="margin-left:0; margin-right:5px; width:20px; height:20px;">
+                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3"
+                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span> Verification Accepted
+                    </span>
 
-        <table id="skillsTable">
-            <thead>
-                <tr>
-                    <th style="width: 25%" class="sortable" onclick="handleSort('name')">
-                        <div class="th-content">Member Name <span id="icon-name" class="sort-icon"></span></div>
-                    </th>
-                    <th style="width: 35%">Expiring Skill</th>
-                    <th style="width: 15%">Expiring Date</th>
-                    <th style="width: 25%">
-                        <div
-                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 4px;">
-                            <span>Notification</span>
-                            <button id="btnResetDefaults" class="btn-icon" title="Reset to Member Defaults"
-                                onclick="resetCheckboxesToDefaults()"
-                                style="color:white; padding: 4px; background-color: rgba(0, 0, 0, 0); border-radius: 4px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                                    <path d="M3 3v5h5"></path>
-                                </svg>
-                            </button>
-                        </div>
-                        <div style="display:flex; flex-direction:column; gap:5px;">
-                            <label class="header-checkbox-label"><input type="checkbox" id="selectAllEmail" checked>
-                                Email</label>
-                            <label class="header-checkbox-label"><input type="checkbox" id="selectAllWhatsapp">
-                                WhatsApp</label>
-                        </div>
-                    </th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
+                    <span class="legend-item">
+                        <span class="status-circle rejected" style="margin-left:0; margin-right:5px; width:20px; height:20px;">
+                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3"
+                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </span> Verification Rejected
+                    </span>
 
+                    <span style="background-color:var(--danger); color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red Date</span> = Overdue.
+                </em>
+            </p>
 
+            <table id="skillsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 25%" class="sortable" onclick="handleSort('name')">
+                            <div class="th-content">Member Name <span id="icon-name" class="sort-icon"></span></div>
+                        </th>
+                        <th style="width: 35%">Expiring Skill</th>
+                        <th style="width: 15%">Expiring Date</th>
+                        <th style="width: 25%">
+                            <div class="notification-th-header">
+                                <span>Notification</span>
+                                <button id="btnResetDefaults" class="btn-icon-transparent" title="Reset to Member Defaults"
+                                    onclick="resetCheckboxesToDefaults()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                        <path d="M3 3v5h5"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:5px;">
+                                <label class="header-checkbox-label"><input type="checkbox" id="selectAllEmail" checked> Email</label>
+                                <label class="header-checkbox-label"><input type="checkbox" id="selectAllWhatsapp"> WhatsApp</label>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
 
-
-    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+    </div> <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="19" x2="12" y2="5"></line>
@@ -265,44 +245,36 @@
     </button>
 
     <div id="aboutModal" class="modal">
-        <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <div class="modal-content modal-centered-content">
             <span class="close-btn" onclick="closeModal('aboutModal')">&times;</span>
-            <div id="aboutDemoBanner" class="demo-banner" style="display:none; margin: -20px -20px 20px -20px;">
-                DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
-                        style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
-            </div>
-            <img id="aboutLogo" alt="App Logo"
-                style="max-width: 100px; margin-bottom: 15px; display: none; margin-left: auto; margin-right: auto;">
+            <img id="aboutLogo" alt="App Logo" class="modal-about-logo">
             <h2 style="margin-top: 0;">About</h2>
-            <p style="font-size: 1.1em; color: #666;">FENZ OSM Automation Manager</p>
+            <p style="font-size: 1.1em; color: var(--text-muted);">FENZ OSM Automation Manager</p>
             <div style="margin: 20px 0; font-size: 0.9em;">
                 <p style="margin: 10px 0;"><strong>Version:</strong> <span id="disp-version">...</span></p>
                 <p style="margin: 10px 0;"><strong>Date:</strong> <span id="disp-date">...</span></p>
             </div>
-            <div
-                style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; font-size: 0.85em; text-align: left; color: #555;">
+            <div class="modal-credits">
                 <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">Credits</p>
                 <ul style="padding-left: 20px; margin: 0; line-height: 1.6;">
-                    <li><strong>Developer:</strong> Gerardo Dassi (<a href="https://github.com/dassige/OSM"
-                            target="_blank">Github</a>)</li>
+                    <li><strong>Developer:</strong> Gerardo Dassi (<a href="https://github.com/dassige/OSM" target="_blank">Github</a>)</li>
                     <li><strong>Persistence:</strong> Litestream</li>
                     <li><strong>Icons:</strong> Feather Icons</li>
                 </ul>
             </div>
-
-            <div style="margin-top: 20px; text-align: center;">
+            <div class="modal-actions-center">
                 <button onclick="closeModal('aboutModal')"
-                    style="background-color: #6c757d; border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer;">Close</button>
+                    style="background-color: var(--text-muted); border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer;">Close</button>
             </div>
-
         </div>
     </div>
+    
     <div id="pendingReviewsModal" class="modal">
-        <div class="modal-content" style="max-width: 450px; text-align: center;">
+        <div class="modal-content modal-centered-content">
             <span class="close-btn" onclick="closeModal('pendingReviewsModal')">&times;</span>
             <div style="margin-bottom: 15px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none"
-                    stroke="#007bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14 2 14 8 20 8"></polyline>
                     <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -310,22 +282,21 @@
                     <polyline points="10 9 9 9 8 9"></polyline>
                 </svg>
             </div>
-            <h2 style="margin-top: 0; color: #333;">Pending Reviews</h2>
-            <p style="font-size: 1.1em; color: #666; margin-bottom: 25px;">
-                You have <strong id="pendingCountDisplay" style="color: #007bff;">0</strong> live form(s) submitted and
+            <h2 style="margin-top: 0; color: var(--text-main);">Pending Reviews</h2>
+            <p style="font-size: 1.1em; color: var(--text-muted); margin-bottom: 25px;">
+                You have <strong id="pendingCountDisplay" style="color: var(--primary);">0</strong> live form(s) submitted and
                 awaiting review.
             </p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
+            <div class="modal-actions-center">
                 <button onclick="closeModal('pendingReviewsModal')"
-                    style="background-color: #6c757d; border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer;">Later</button>
+                    style="background-color: var(--text-muted); border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer;">Later</button>
                 <button onclick="window.location.href='live-forms.html?status=submitted'"
-                    style="background-color: #007bff; border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">Review
+                    style="background-color: var(--primary); border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">Review
                     Now</button>
             </div>
-
-            <p style="margin-top: 20px; font-size: 0.85em; color: #999; border-top: 1px solid #eee; padding-top: 10px;">
+            <p style="margin-top: 20px; font-size: 0.85em; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 10px;">
                 You can disable this alert in your <a href="profile.html"
-                    style="color: #666; text-decoration: underline;">User Profile</a>.
+                    style="color: var(--text-muted); text-decoration: underline;">User Profile</a>.
             </p>
         </div>
     </div>
@@ -378,7 +349,7 @@
             .catch(() => window.location.href = '/login.html');
         document.getElementById('logoutLinkLeft').addEventListener('click', () => window.location.href = '/logout');
 
-        // Close dropdowns on click outside (Improved to support submenus)
+        // Close dropdowns on click outside
         window.onclick = function (event) {
             if (!event.target.closest('.menu-btn') &&
                 !event.target.closest('.profile-btn') &&
@@ -392,7 +363,7 @@
             if (event.target == document.getElementById('pendingReviewsModal')) closeModal('pendingReviewsModal');
         }
 
-        // --- EXISTING UTILS ---
+        // Scroll To Top
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {
             if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
@@ -403,8 +374,7 @@
         };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-
-        //  Load UI Config (Logo & Demo Mode)
+        //  Load UI Config (Logo)
         fetch('/ui-config')
             .then(r => r.json())
             .then(config => {
@@ -415,13 +385,7 @@
                         logo.style.display = 'block';
                     }
                 }
-                if (config.appMode === 'demo') {
-                    const banner = document.getElementById('aboutDemoBanner');
-                    if (banner) banner.style.display = 'block';
-                }
             });
     </script>
-
 </body>
-
 </html>

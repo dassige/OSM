@@ -3,162 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Reports</title>
+    <title>Reports - FENZ OSM</title>
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <link rel="stylesheet" href="styles.css">
-    <style>
-        .controls-area {
-            flex: 0 0 300px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .desc-card {
-            flex: 1;
-            background: var(--bg-hover);
-            border-left: 4px solid var(--primary);
-            padding: 10px 15px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: var(--text-main);
-        }
-
-        .report-container {
-            max-width: 210mm;
-            /* A4 width */
-            margin: 0 auto;
-            background: white;
-            /* Always white for paper simulation */
-            color: black;
-            min-height: 297mm;
-            /* A4 height */
-            padding: 20mm;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Print Overrides */
-        @media print {
-            body {
-                background: white;
-                margin: 0;
-                padding: 0;
-            }
-
-            .back-btn,
-            .action-bar,
-            #demoBanner,
-            #scrollTopBtn {
-                display: none !important;
-            }
-
-            .report-container {
-                box-shadow: none;
-                margin: 0;
-                padding: 0;
-                width: 100%;
-                max-width: none;
-                min-height: 0;
-            }
-        }
-
-        /* Generic Report Table Styles */
-        .rpt-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            page-break-inside: avoid;
-        }
-
-        .rpt-table th,
-        .rpt-table td {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            text-align: left;
-            font-size: 12px;
-            color: #000;
-        }
-
-        .rpt-table th {
-            background-color: #eee;
-            font-weight: bold;
-        }
-
-        .rpt-header {
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        .rpt-group-header {
-            background-color: #343a40;
-            color: white;
-            padding: 5px 10px;
-            font-weight: bold;
-            margin-top: 15px;
-            font-size: 14px;
-            page-break-after: avoid;
-        }
-
-        .critical {
-            color: #dc3545;
-            font-weight: bold;
-        }
-
-        /* Scroll To Top Button */
-        #scrollTopBtn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-            font-size: 18px;
-            border: none;
-            outline: none;
-            background-color: #343a40;
-            color: white;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            display: none;
-            /* Hidden by default */
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s;
-        }
-
-        #scrollTopBtn:hover {
-            background-color: #23272b;
-            transform: translateY(-3px);
-        }
-
-        @media screen and (max-width: 768px) {
-            .action-bar {
-                flex-direction: column;
-                /* Stack controls on top of description */
-            }
-
-            .controls-area {
-                flex: 1;
-                width: 100%;
-                /* Full width */
-            }
-
-            .desc-card {
-                width: 100%;
-                /* Full width */
-                margin-top: 10px;
-            }
-
-            /* Allow report container to scroll horizontally if content is too wide */
-            .report-container {
-                padding: 10mm;
-                overflow-x: auto;
-            }
-        }
-    </style>
 </head>
 
 <body>
@@ -176,13 +23,12 @@
     </a>
 
     <div class="container" style="max-width: 1100px;">
-        <h1 id="pageHeader" style="text-align: center; margin-top: 40px;">Reports Console</h1>
+        <h1 id="pageHeader" class="text-center" style="margin-top: 40px; margin-bottom: 30px;">Reports Console</h1>
 
-        <div class="action-bar">
+        <div class="action-bar" style="align-items: stretch;">
             <div class="controls-area">
                 <label style="font-weight:bold; color:var(--text-main);">Select Report:</label>
-                <select id="reportSelect" onchange="loadReportDescription()"
-                    style="background-color:var(--input-bg); color:var(--text-main); border:1px solid var(--border-color);">
+                <select id="reportSelect" class="filter-select" onchange="loadReportDescription()" style="width: 100%;">
                     <option value="" disabled selected>-- Choose a Report --</option>
                     <option value="by-member">Expiring Skills (By Member)</option>
                     <option value="by-skill">Expiring Skills (By Skill)</option>
@@ -192,24 +38,18 @@
                     <option value="planned-sessions">Planned Sessions (Overview)</option>
                     <option value="planned-sessions">Planned Sessions (By Date)</option>
                     <option value="training-attendance">Training Attendance Sheet</option>
-
                 </select>
 
                 <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button onclick="window.print()" class="btn-sm"
-                        style="background:#6c757d; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; color:white;">Print</button>
-                    <button onclick="downloadPdf()" class="btn-sm"
-                        style="background:#dc3545; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; color:white;">Export
-                        PDF</button>
-                    <button onclick="runReport()" class="btn-sm"
-                        style="background:#28a745; flex-grow:1; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; color:white;">Run
-                        Report</button>
+                    <button onclick="window.print()" class="btn-sm btn-secondary" style="margin:0;">Print</button>
+                    <button onclick="downloadPdf()" class="btn-sm btn-danger" style="margin:0;">Export PDF</button>
+                    <button onclick="runReport()" class="btn-sm btn-success" style="flex-grow:1; margin:0;">Run Report</button>
                 </div>
             </div>
 
             <div id="descCard" class="desc-card">
                 <strong id="descTitle">No Report Selected</strong>
-                <p id="descBody" style="margin:5px 0 0 0;">Select a report to view details.</p>
+                <p id="descBody">Select a report to view details.</p>
             </div>
         </div>
 

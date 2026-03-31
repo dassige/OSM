@@ -577,10 +577,16 @@ async function getEventLogs(filters = {}) {
     baseQuery += ` AND user = ?`;
     params.push(filters.user);
   }
-  if (filters.types && filters.types.length > 0) {
-    const placeholders = filters.types.map(() => "?").join(",");
-    baseQuery += ` AND event_type IN (${placeholders})`;
-    params.push(...filters.types);
+
+if (filters.types && filters.types.length > 0) {
+    // Safely ensure types is an array (splits comma-separated strings from the URL)
+    const typesArray = Array.isArray(filters.types) ? filters.types : filters.types.split(',');
+    
+    if (typesArray.length > 0 && typesArray[0] !== '') {
+        const placeholders = typesArray.map(() => "?").join(",");
+        baseQuery += ` AND event_type IN (${placeholders})`;
+        params.push(...typesArray);
+    }
   }
   if (filters.startDate) {
     baseQuery += ` AND timestamp >= ?`;
@@ -633,10 +639,15 @@ async function getEventLogsExport(filters = {}) {
     baseQuery += ` AND user = ?`;
     params.push(filters.user);
   }
-  if (filters.types && filters.types.length > 0) {
-    const placeholders = filters.types.map(() => "?").join(",");
-    baseQuery += ` AND event_type IN (${placeholders})`;
-    params.push(...filters.types);
+if (filters.types && filters.types.length > 0) {
+    // Safely ensure types is an array (splits comma-separated strings from the URL)
+    const typesArray = Array.isArray(filters.types) ? filters.types : filters.types.split(',');
+    
+    if (typesArray.length > 0 && typesArray[0] !== '') {
+        const placeholders = typesArray.map(() => "?").join(",");
+        baseQuery += ` AND event_type IN (${placeholders})`;
+        params.push(...typesArray);
+    }
   }
   if (filters.startDate) {
     baseQuery += ` AND timestamp >= ?`;

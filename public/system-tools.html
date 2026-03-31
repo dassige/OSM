@@ -7,113 +7,6 @@
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <title id="pageTitle">System Tools - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding-top: 40px;
-        }
-
-
-        .card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            margin-bottom: 30px;
-        }
-
-        .card h2 {
-            margin-top: 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .card p {
-            color: #666;
-            line-height: 1.5;
-        }
-
-        .btn-action {
-            padding: 12px 24px;
-            font-size: 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: white;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-        }
-
-        .btn-download {
-            background-color: #007bff;
-        }
-
-        .btn-download:hover {
-            background-color: #0056b3;
-        }
-
-        .btn-upload {
-            background-color: #dc3545;
-        }
-
-        .btn-upload:hover {
-            background-color: #c82333;
-        }
-
-        .file-input-wrapper {
-            margin: 20px 0;
-            border: 2px dashed #ccc;
-            padding: 20px;
-            text-align: center;
-            border-radius: 6px;
-            transition: border-color 0.2s;
-        }
-
-        .file-input-wrapper:hover {
-            border-color: #999;
-        }
-
-        .status-msg {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 4px;
-            display: none;
-        }
-
-        .status-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            display: none;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
 </head>
 
 <body>
@@ -130,16 +23,16 @@
         </svg>
     </a>
 
-    <div class="container">
-        <h1 id="pageHeader">System Tools</h1>
+    <div class="container" style="max-width: 1000px;">
+        <h1 id="pageHeader" class="text-center" style="margin-bottom: 30px;">System Tools</h1>
 
-
-        <div class="card">
+        <div class="system-card">
             <h2>Backup Database</h2>
             <p>Download a snapshot of the current system database (<code>fenz.db</code>). This file contains all
                 the data and structure of the database.</p>
             <div style="margin-top: 20px;">
-                <a href="/api/system/backup" class="btn-action btn-download" target="_blank">
+                <a href="/api/system/backup" class="btn-primary" target="_blank"
+                    style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 12px 24px; font-size: 16px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -151,18 +44,21 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="system-card">
             <h2>Restore Database</h2>
-            <p style="color: #dc3545; font-weight: bold;">⚠️ Warning: This will overwrite the current database!</p>
-            <p>Upload a previously backed-up <code>.db</code> file. <br><strong>Note:</strong> The uploaded database
+            <p style="color: var(--danger); font-weight: bold;">⚠️ Warning: This will overwrite the current database!
+            </p>
+            <p>Upload a previously backed-up <code>.sql</code> file. <br><strong>Note:</strong> The uploaded database
                 MUST match the current application version.</p>
 
             <form id="restoreForm">
                 <div class="file-input-wrapper">
-                    <input type="file" id="dbFile" name="databaseFile" accept=".sql" required>
+                    <input type="file" id="dbFile" name="databaseFile" accept=".sql" required
+                        style="background: transparent; border: none; color: var(--text-main);">
                 </div>
 
-                <button type="submit" class="btn-action btn-upload" id="restoreBtn">
+                <button type="submit" class="btn-danger" id="restoreBtn"
+                    style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; font-size: 16px;">
                     <span class="spinner" id="restoreSpinner"></span>
                     <svg id="restoreIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -178,10 +74,10 @@
             <div id="statusMsg" class="status-msg"></div>
         </div>
 
-        <div class="card">
+        <div class="system-card">
             <h2 style="border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;">AI Evaluator
                 Test Lab</h2>
-            <p class="helper-text" style="margin-bottom: 20px;">Ad-hoc testing for AI grading logic. Fields auto-save to
+            <p style="margin-bottom: 20px; font-style: italic;">Ad-hoc testing for AI grading logic. Fields auto-save to
                 your user profile.</p>
 
             <div
@@ -211,8 +107,8 @@
                     <div style="display:flex; gap:5px;">
                         <input type="text" id="testOllamaUrl" class="save-pref" data-key="ai_test_ollama_url"
                             placeholder="http://localhost:11434" style="flex:1;">
-                        <button type="button" onclick="refreshOllamaModels()" class="btn-sm"
-                            style="padding:0 10px; background:var(--primary);" title="Refresh Local Models">
+                        <button type="button" onclick="refreshOllamaModels()" class="btn-primary"
+                            style="padding:0 10px; margin: 0;" title="Refresh Local Models">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2">
                                 <path
@@ -230,7 +126,7 @@
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 20px;">
-                <div class="form-group">
+                <div class="form-group" style="margin:0;">
                     <label style="color: var(--primary); font-size: 0.9em; text-transform: uppercase;">Question
                         Description</label>
                     <textarea id="testQuestion" class="save-pref" data-key="ai_test_question" rows="4"
@@ -238,7 +134,7 @@
                         placeholder="The question text shown to the member..."></textarea>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" style="margin:0;">
                     <label style="color: var(--primary); font-size: 0.9em; text-transform: uppercase;">Reference Text
                         (The Rubric)</label>
                     <textarea id="testReference" class="save-pref" data-key="ai_test_reference" rows="6"
@@ -246,7 +142,7 @@
                         placeholder="Technical source or ideal answer..."></textarea>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" style="margin:0;">
                     <label style="color: var(--primary); font-size: 0.9em; text-transform: uppercase;">Member's
                         Answer</label>
                     <textarea id="testAnswer" class="save-pref" data-key="ai_test_answer" rows="6"
@@ -257,10 +153,10 @@
 
             <div
                 style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
-                <button onclick="runAiTest()" class="btn-action btn-download" id="btnRunAiTest"
-                    style="min-width: 280px; justify-content: center; height: 50px; font-size: 1.1em;">
+                <button onclick="runAiTest()" class="btn-primary" id="btnRunAiTest"
+                    style="min-width: 280px; display: inline-flex; align-items: center; justify-content: center; height: 50px; font-size: 1.1em; margin: 0;">
                     <div class="spinner" id="aiTestSpinner"
-                        style="display:none; border-top-color: #fff; margin-right: 12px; width: 18px; height: 18px;">
+                        style="border-top-color: #fff; margin-right: 12px; width: 18px; height: 18px;">
                     </div>
 
                     <svg id="aiTestIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -273,11 +169,11 @@
                 </button>
             </div>
 
-            <div id="aiTestLog"
-                style="margin-top: 30px; background: #0c0c0c; color: #00ff41; padding: 25px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; display: none; max-height: 500px; overflow-y: auto; border: 1px solid #333; line-height: 1.5; box-shadow: inset 0 0 10px #000;">
+            <div id="aiTestLog" class="terminal-log">
             </div>
         </div>
     </div>
+
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -285,8 +181,8 @@
             <polyline points="5 12 12 5 19 12"></polyline>
         </svg>
     </button>
-    <script>
 
+    <script>
         // Global to hold preferences for the session
         let currentAiPrefs = {};
 
@@ -365,12 +261,10 @@
                     models.forEach(m => {
                         const opt = document.createElement('option');
                         opt.value = m.name;
-                        // Display name and size in GB
                         opt.textContent = `${m.name} (${(m.size / 1073741824).toFixed(1)}GB)`;
                         select.appendChild(opt);
                     });
 
-                    // [FIX] Restore the saved preference after the list is populated
                     if (currentAiPrefs[savedModelKey]) {
                         select.value = currentAiPrefs[savedModelKey];
                     }
@@ -382,16 +276,15 @@
         }
 
         async function savePreference(key, value) {
-            currentAiPrefs[key] = value; // Update local cache
+            currentAiPrefs[key] = value;
             await fetch('/api/user-preferences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key, value })
             });
         }
-        // Re-run the init after config fetch in system-tools.html
-        initAiLab();
 
+        initAiLab();
 
         // Init UI Config
         fetch('/ui-config')
@@ -402,26 +295,26 @@
                     document.title = "System Tools - " + c.loginTitle;
                     document.getElementById('pageHeader').innerText = "System Tools - " + c.loginTitle;
                 }
-                // [NEW] Demo Banner
                 if (c.appMode === 'demo') {
                     document.getElementById('demoBanner').style.display = 'block';
                 }
             });
+
         fetch('/api/user-session')
             .then(r => r.json())
             .then(user => {
-                // Check if user is Admin (isEnvUser is true for Super Admin)
                 if (!user.isAdmin && !user.isEnvUser) {
                     showToast("Access Denied: Super Admin privileges required.", "error");
                     window.location.href = "/";
                 }
             })
             .catch(() => window.location.href = "/login.html");
+
         // Restore Logic
         document.getElementById('restoreForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (!confirm("Are you sure you want to restore the database? Current data will be lost.")) return;
+            if (!await confirmAction("Restore Database", "Are you sure you want to restore the database? Current data will be lost.")) return;
 
             const btn = document.getElementById('restoreBtn');
             const spinner = document.getElementById('restoreSpinner');
@@ -429,7 +322,6 @@
             const statusBox = document.getElementById('statusMsg');
             const fileInput = document.getElementById('dbFile');
 
-            // UI Loading State
             btn.disabled = true;
             spinner.style.display = 'inline-block';
             icon.style.display = 'none';
@@ -450,7 +342,6 @@
                 if (res.ok) {
                     statusBox.className = 'status-msg status-success';
                     statusBox.textContent = result.message;
-                    // Reset form
                     fileInput.value = '';
                 } else {
                     throw new Error(result.error || 'Unknown error occurred');
@@ -467,10 +358,6 @@
             }
         });
 
-        /**
-         * Executes an ad-hoc AI evaluation test using values from the Test Lab UI.
-         * Handles UI state (spinners/logging), configuration overrides, and error reporting.
-         */
         async function runAiTest() {
             const log = document.getElementById('aiTestLog');
             const btn = document.getElementById('btnRunAiTest');
@@ -478,7 +365,6 @@
             const icon = document.getElementById('aiTestIcon');
             const btnText = document.getElementById('aiTestBtnText');
 
-            // 1. Capture current configuration from UI
             const provider = document.getElementById('testAiProvider').value;
             const model = (provider === 'ollama')
                 ? document.getElementById('testOllamaModelSelect').value
@@ -490,7 +376,6 @@
                 return;
             }
 
-            // 2. Set UI to Loading State
             log.style.display = 'block';
             log.innerHTML = `> [${new Date().toLocaleTimeString()}] Initializing Evaluation Sequence...<br>`;
             log.innerHTML += `> CONFIG: [Provider: ${provider.toUpperCase()}] [Model: ${model}] [Max Points: ${maxPoints}]<br>`;
@@ -501,7 +386,6 @@
             if (icon) icon.style.display = 'none';
             if (btnText) btnText.textContent = "AI is thinking...";
 
-            // 3. Construct payload with config overrides
             const payload = {
                 question: document.getElementById('testQuestion').value,
                 reference: document.getElementById('testReference').value,
@@ -512,12 +396,11 @@
                     provider: provider,
                     model: model,
                     ollamaUrl: document.getElementById('testOllamaUrl').value,
-                    geminiKey: "USE_SERVER_DEFAULT" // Handled by backend for security
+                    geminiKey: "USE_SERVER_DEFAULT"
                 }
             };
 
             try {
-                // 4. Execute request to the specialized system test endpoint
                 const res = await fetch('/api/system/ai-test', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -527,7 +410,6 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    // 5. Render detailed results in the terminal log
                     log.innerHTML += `<span style="color:white; font-weight:bold;">> SCORE ACHIEVED: ${data.result.score}/${payload.maxPoints}</span><br>`;
                     log.innerHTML += `> JUSTIFICATION: ${data.result.justification}<br>`;
                     log.innerHTML += `> LATENCY: ${data.metadata.duration}<br>`;
@@ -539,14 +421,12 @@
                     throw new Error(data.error || "Unknown server error");
                 }
             } catch (e) {
-                // 6. Handle and log failures
                 log.innerHTML += `<span style="color:#ff4444; font-weight:bold;">> ERROR: ${e.message}</span><br>`;
                 if (e.stack) {
                     log.innerHTML += `<span style="color:#666; font-size:11px;">${e.stack}</span><br>`;
                 }
                 if (window.showToast) showToast("Test failed: " + e.message, "error");
             } finally {
-                // 7. Restore UI state
                 btn.disabled = false;
                 if (spinner) spinner.style.display = 'none';
                 if (icon) icon.style.display = 'inline-block';
@@ -569,6 +449,7 @@
     <script src="help.js"></script>
     <script src="theme.js"></script>
     <script src="toast.js"></script>
+    <script src="utils.js"></script>
 </body>
 
 </html>

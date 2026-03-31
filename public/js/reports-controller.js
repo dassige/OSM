@@ -204,7 +204,7 @@ async function downloadPdf() {
     window.URL.revokeObjectURL(url);
     if (window.showToast) showToast("PDF Downloaded successfully", "success");
   } catch (e) {
-    alert("Error: " + e.message);
+    if (window.showToast) showToast("Error: " + e.message, "error");
   } finally {
     btn.textContent = origText;
     btn.disabled = false;

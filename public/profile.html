@@ -6,121 +6,6 @@
     <title>My Profile - FENZ OSM</title>
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <link rel="stylesheet" href="styles.css">
-    <style>
-        .container {
-            max-width: 700px;
-            margin: 40px auto;
-            padding: 30px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .section {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .section-title {
-            margin-top: 0;
-            font-size: 1.2em;
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #555;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        .form-group input:disabled {
-            background: #f9f9f9;
-            color: #888;
-            cursor: not-allowed;
-        }
-
-        .btn-save {
-            background: #007bff;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.2s;
-        }
-
-        .btn-save:hover {
-            background: #0056b3;
-        }
-
-        .btn-save:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .alert {
-            display: none;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        /* Switch Style */
-        .switch-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #eee;
-        }
-
-        .switch-label {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .switch-desc {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 4px;
-        }
-    </style>
 </head>
 
 <body>
@@ -129,136 +14,140 @@
                 style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
-    <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
+    <a href="/" class="back-btn" title="Back to Dashboard">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
-        </svg></a>
+        </svg>
+    </a>
 
-    <div class="container">
-        <h1 id="pageHeader">User Settings</h1>
-        <div id="msgBox" class="alert"></div>
+    <div class="container" style="max-width: 800px;">
+        <div
+            style="background: var(--bg-card); padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px var(--shadow); border: 1px solid var(--border-color);">
+            <h1 id="pageHeader" style="margin-top: 0; margin-bottom: 30px; text-align: center;">User Settings</h1>
 
-        <div class="section">
-            <h2 class="section-title">Account Details</h2>
-            <form id="profileForm" autocomplete="off">
-                <input type="text" style="display:none">
-                <input type="password" style="display:none">
+            <div id="msgBox" class="alert-box"></div>
 
-                <div class="form-group">
-                    <label>Email (Username)</label>
-                    <input type="text" id="email" disabled>
-                </div>
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="name" required autocomplete="off">
-                </div>
+            <div class="settings-section">
+                <h2 class="settings-section-title">Account Details</h2>
+                <form id="profileForm" autocomplete="off">
+                    <input type="text" style="display:none">
+                    <input type="password" style="display:none">
 
-                <div class="form-group">
-                    <label>New Password</label>
-                    <div class="password-wrapper">
+                    <div class="form-group">
+                        <label>Email (Username)</label>
+                        <input type="text" id="email" disabled style="opacity: 0.7; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="name" required autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label>New Password</label>
                         <input type="password" id="password" placeholder="Leave blank to keep current"
                             autocomplete="new-password">
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label>Repeat New Password</label>
-                    <div class="password-wrapper">
+                    <div class="form-group">
+                        <label>Repeat New Password</label>
                         <input type="password" id="passwordConfirm" placeholder="Repeat to confirm"
                             autocomplete="new-password">
                     </div>
-                </div>
 
-                <div id="accountActions">
-                    <button type="submit" class="btn-save">Update Account</button>
-                </div>
-                <div id="envUserMsg" style="display:none; color:#dc3545; font-size:0.9em; margin-top:10px;">
-                    This is a Super Admin account defined in environment variables. Account details cannot be changed
-                    here.
-                </div>
-            </form>
-        </div>
-        <div class="section">
-            <h2 class="section-title">Security</h2>
-            <div class="switch-wrapper">
-                <div>
-                    <div class="switch-label">Two-Factor Authentication (2FA)</div>
-                    <div class="switch-desc" id="mfaStatusDesc">Enhance security using an authenticator app (e.g. Google
-                        Authenticator).</div>
-                </div>
-                <div id="mfaActions">
-                    <button id="btnEnableMfa" type="button" class="btn-save"
-                        style="font-size:14px; padding:8px 16px; background-color: var(--primary);">Setup 2FA</button>
-                    <button id="btnDisableMfa" type="button" class="btn-save"
-                        style="font-size:14px; padding:8px 16px; background-color: var(--danger); display:none;">Disable</button>
+                    <div id="accountActions" style="margin-top: 20px;">
+                        <button type="submit" class="btn-primary">Update Account</button>
+                    </div>
+                    <div id="envUserMsg"
+                        style="display:none; color:var(--danger); font-size:0.9em; margin-top:15px; padding: 10px; background: rgba(220, 53, 69, 0.1); border-radius: 4px; border: 1px solid var(--danger);">
+                        <strong>Notice:</strong> This is a Super Admin account defined in environment variables. Account
+                        details cannot be changed here.
+                    </div>
+                </form>
+            </div>
+
+            <div class="settings-section">
+                <h2 class="settings-section-title">Security</h2>
+                <div class="switch-wrapper">
+                    <div>
+                        <div class="switch-label">Two-Factor Authentication (2FA)</div>
+                        <div class="switch-desc" id="mfaStatusDesc">Enhance security using an authenticator app (e.g.
+                            Google Authenticator).</div>
+                    </div>
+                    <div id="mfaActions">
+                        <button id="btnEnableMfa" type="button" class="btn-primary" style="margin: 0;">Setup
+                            2FA</button>
+                        <button id="btnDisableMfa" type="button" class="btn-danger"
+                            style="margin: 0; display:none;">Disable</button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div id="mfaModal" class="modal">
-            <div class="modal-content" style="text-align:center; max-width: 350px;">
-                <span class="close-btn" onclick="closeModal('mfaModal')">&times;</span>
-                <h2 style="margin-top:0;">Setup 2FA</h2>
-                <p style="font-size:0.9em; color:#666;">Scan this QR code with your authenticator app.</p>
-
-                <div
-                    style="background:#f8f9fa; padding:15px; border:1px solid #ddd; border-radius:4px; display:inline-block; margin-bottom:15px;">
-                    <img id="mfaQrCode" src="" alt="QR Code" style="width: 180px; height: 180px; display:block;">
+            <div class="settings-section">
+                <h2 class="settings-section-title">Dashboard Preferences</h2>
+                <div class="switch-wrapper">
+                    <div>
+                        <div class="switch-label">Pending Review Alert</div>
+                        <div class="switch-desc">Show a popup on login if Live Forms are waiting for review.</div>
+                    </div>
+                    <label class="switch" style="margin: 0;">
+                        <input type="checkbox" id="prefReviewAlert"
+                            onchange="savePreference('show_pending_reviews_alert', this.checked)">
+                        <span class="slider"></span>
+                    </label>
                 </div>
-
-                <div class="form-group" style="text-align:left;">
-                    <label>Verification Code</label>
-                    <input type="text" id="mfaVerifyToken" placeholder="Enter 6-digit code" maxlength="6"
-                        style="text-align:center; letter-spacing: 4px; font-size: 1.2em;">
-                </div>
-
-                <button id="btnVerifyMfa" class="btn-save" style="width:100%;">Verify & Enable</button>
-            </div>
-        </div>
-        <div class="section">
-            <h2 class="section-title">Dashboard Preferences</h2>
-
-            <div class="switch-wrapper">
-                <div>
-                    <div class="switch-label">Pending Review Alert</div>
-                    <div class="switch-desc">Show a popup on login if Live Forms are waiting for review.</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="prefReviewAlert"
-                        onchange="savePreference('show_pending_reviews_alert', this.checked)">
-                    <span class="slider"></span>
-                </label>
             </div>
         </div>
     </div>
+
+    <div id="mfaModal" class="modal">
+        <div class="modal-content" style="text-align:center; max-width: 400px;">
+            <span class="close-btn" onclick="closeModal('mfaModal')">&times;</span>
+            <h2 style="margin-top:0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Setup 2FA</h2>
+            <p style="font-size:0.9em; color:var(--text-muted);">Scan this QR code with your authenticator app.</p>
+
+            <div
+                style="background:white; padding:15px; border:1px solid var(--border-color); border-radius:4px; display:inline-block; margin-bottom:20px;">
+                <img id="mfaQrCode" src="" alt="QR Code" style="width: 180px; height: 180px; display:block;">
+            </div>
+
+            <div class="form-group" style="text-align:left;">
+                <label>Verification Code</label>
+                <input type="text" id="mfaVerifyToken" placeholder="Enter 6-digit code" maxlength="6"
+                    autocomplete="one-time-code"
+                    style="text-align:center; letter-spacing: 4px; font-size: 1.2em; font-weight: bold;">
+            </div>
+
+            <button id="btnVerifyMfa" class="btn-primary w-100" style="margin: 0;">Verify & Enable</button>
+        </div>
+    </div>
+
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
 
     <script src="help.js"></script>
     <script src="theme.js"></script>
     <script src="toast.js"></script>
     <script src="utils.js"></script>
     <script>
-        // Global state for App Mode
         let currentAppMode = 'production';
 
         // 1. Init UI Config
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-
-            // Apply custom title from .env
             if (c.loginTitle) {
                 document.title = "My Profile - " + c.loginTitle;
-                // Optionally update the h1 header to match other pages:
                 document.getElementById('pageHeader').innerText = "User Settings - " + c.loginTitle;
             }
-
-            // Store mode globally
             currentAppMode = c.appMode || 'production';
-
-            if (currentAppMode === 'demo') {
-                document.getElementById('demoBanner').style.display = 'block';
-            }
+            if (currentAppMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });
+
         // 2. Load User Data
         fetch('/api/user-session').then(r => r.json()).then(user => {
             document.getElementById('email').value = user.email;
@@ -266,34 +155,30 @@
 
             // Handle Super Admin (Env User) restrictions
             if (user.isEnvUser) {
-                // 1. Disable Profile Editing
                 document.getElementById('name').disabled = true;
                 document.getElementById('password').disabled = true;
                 document.getElementById('passwordConfirm').disabled = true;
                 document.getElementById('accountActions').style.display = 'none';
                 document.getElementById('envUserMsg').style.display = 'block';
 
-                // 2. Disable 2FA Setup
                 const mfaBtn = document.getElementById('btnEnableMfa');
                 if (mfaBtn) {
                     mfaBtn.disabled = true;
-                    mfaBtn.style.backgroundColor = '#ccc';
+                    mfaBtn.style.backgroundColor = 'var(--border-color)';
+                    mfaBtn.style.color = 'var(--text-muted)';
                     mfaBtn.style.cursor = 'not-allowed';
                     mfaBtn.innerText = "Unavailable";
                 }
 
-                // 3. Add Explanatory Note
                 const mfaDesc = document.getElementById('mfaStatusDesc');
                 if (mfaDesc) {
                     mfaDesc.innerHTML += '<br><span style="color:var(--danger); font-size:0.85em; font-weight:bold;">Not available for Super Admin (Environment Account).<br>Please create a Database Admin to use 2FA.</span>';
                 }
 
-                // 4. Load Preferences but SKIP checkMfaStatus()
                 loadPreferences();
                 return;
             }
 
-            // Load Preferences (MFA status)
             loadPreferences();
             checkMfaStatus();
         });
@@ -316,9 +201,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ key, value })
                 });
-                showToast("Preference saved", "success");
+                if (window.showToast) showToast("Preference saved", "success");
             } catch (e) {
-                showToast("Failed to save preference", "error");
+                if (window.showToast) showToast("Failed to save preference", "error");
             }
         }
 
@@ -356,26 +241,24 @@
                 document.getElementById('mfaQrCode').src = data.qrCode;
                 const tokenInput = document.getElementById('mfaVerifyToken');
 
-                // [FIXED] Correctly check the global variable
                 if (currentAppMode === 'demo') {
                     tokenInput.placeholder = "Demo: Type '000000'";
                     tokenInput.value = "000000";
-                    showToast("Demo Mode: 2FA Verification simulated.", "info");
+                    if (window.showToast) showToast("Demo Mode: 2FA Verification simulated.", "info");
                 } else {
                     tokenInput.placeholder = "Enter 6-digit code";
-                    tokenInput.value = ""; // Clear any previous values
+                    tokenInput.value = "";
                 }
 
                 openModal('mfaModal');
             } catch (e) {
-                showToast(e.message, 'error');
+                if (window.showToast) showToast(e.message, 'error');
             }
         });
 
         document.getElementById('btnVerifyMfa').addEventListener('click', async () => {
             const token = document.getElementById('mfaVerifyToken').value;
             if (!token || token.length < 6) return showToast("Please enter the code", "warning");
-
             try {
                 const res = await fetch('/api/profile/mfa/verify', {
                     method: 'POST',
@@ -385,12 +268,14 @@
 
                 if (res.ok) {
                     closeModal('mfaModal');
-                    showToast("Two-Factor Authentication Enabled!", "success");
+                    if (window.showToast) showToast("Two-Factor Authentication Enabled!", "success");
                     updateMfaUi(true);
                 } else {
-                    showToast("Invalid Code. Please try again.", "error");
+                    if (window.showToast) showToast("Invalid Code. Please try again.", "error");
                 }
-            } catch (e) { showToast("Verification Error", "error"); }
+            } catch (e) {
+                if (window.showToast) showToast("Verification Error", "error");
+            }
         });
 
         document.getElementById('btnDisableMfa').addEventListener('click', async () => {
@@ -398,8 +283,10 @@
                 try {
                     await fetch('/api/profile/mfa/disable', { method: 'POST' });
                     updateMfaUi(false);
-                    showToast("MFA Disabled", "success");
-                } catch (e) { showToast("Error disabling MFA", "error"); }
+                    if (window.showToast) showToast("MFA Disabled", "success");
+                } catch (e) {
+                    if (window.showToast) showToast("Error disabling MFA", "error");
+                }
             }
         });
 
@@ -411,7 +298,7 @@
             const msgBox = document.getElementById('msgBox');
 
             if (pw && pw !== pwConf) {
-                msgBox.className = 'alert alert-error';
+                msgBox.className = 'alert-box status-error';
                 msgBox.innerText = 'New passwords do not match!';
                 msgBox.style.display = 'block';
                 return;
@@ -422,14 +309,30 @@
             try {
                 const res = await fetch('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 if (res.ok) {
-                    msgBox.className = 'alert alert-success'; msgBox.innerText = 'Profile updated successfully.'; msgBox.style.display = 'block';
+                    msgBox.className = 'alert-box status-success';
+                    msgBox.innerText = 'Profile updated successfully.';
+                    msgBox.style.display = 'block';
                     document.getElementById('password').value = '';
                     document.getElementById('passwordConfirm').value = '';
                 } else { throw new Error('Update failed'); }
             } catch (err) {
-                msgBox.className = 'alert alert-error'; msgBox.innerText = err.message; msgBox.style.display = 'block';
+                msgBox.className = 'alert-box status-error';
+                msgBox.innerText = err.message;
+                msgBox.style.display = 'block';
             }
         });
+
+        // Scroll Logic
+        const scrollTopBtn = document.getElementById("scrollTopBtn");
+        window.onscroll = function () {
+            if (scrollTopBtn) {
+                scrollTopBtn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none";
+            }
+        };
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     </script>
 </body>
 

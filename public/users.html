@@ -3,260 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Manage Users - FENZ OSM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Manage Users - FENZ OSM</title>
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <link rel="stylesheet" href="styles.css">
-    <style>
-        /* ... (Keep styles) ... */
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-            color: #333;
-        }
-
-        th,
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            text-align: left;
-        }
-
-        th {
-            background: #f8f9fa;
-            font-weight: bold;
-            color: black;
-        }
-
-        .btn-add {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            float: right;
-        }
-
-        .btn-icon {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 4px;
-            transition: background-color 0.2s, color 0.2s;
-            vertical-align: middle;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-icon:hover {
-            background-color: rgba(0, 0, 0, 0.08);
-        }
-
-        .btn-icon.edit {
-            color: #007bff;
-        }
-
-        .btn-icon.edit:hover {
-            color: #0056b3;
-        }
-
-        .btn-icon.reset {
-            color: #ffc107;
-        }
-
-        .btn-icon.reset:hover {
-            color: #d39e00;
-        }
-
-        .btn-icon.delete {
-            color: #dc3545;
-        }
-
-        .btn-icon.delete:hover {
-            color: #bd2130;
-        }
-
-        .btn-del {
-            background: #dc3545;
-        }
-
-        .btn-reset {
-            background: #ffc107;
-            color: #333;
-        }
-
-        .btn-edit {
-            background: #007bff;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 100;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-        }
-
-        .modal-content {
-            background: #fff;
-            margin: 10% auto;
-            padding: 20px;
-            width: 400px;
-            border-radius: 8px;
-            position: relative;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            cursor: pointer;
-            font-size: 20px;
-        }
-
-        .spinner {
-            display: none;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .btn-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .badge {
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: white;
-        }
-
-        .badge-admin {
-            background: #6f42c1;
-        }
-
-        .badge-simple {
-            background: #17a2b8;
-        }
-
-        .badge-guest {
-            background: #6c757d;
-        }
-
-        .badge-superadmin {
-            background: #d63384;
-        }
-
-        .modal-content {
-            background: #fff;
-            margin: 10% auto;
-            padding: 20px;
-            width: 90%;
-            /* Changed from 400px */
-            max-width: 400px;
-            /* Added cap */
-            border-radius: 8px;
-            position: relative;
-        }
-
-        /* New Status Badge Colors */
-        .badge-enabled {
-            background: #28a745;
-        }
-
-        .badge-disabled {
-            background: #6c757d;
-        }
-
-        .badge-blocked {
-            background: #dc3545;
-            animation: pulse-red 2s infinite;
-        }
-
-        @keyframes pulse-red {
-            0% {
-                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
-            }
-
-            70% {
-                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
-            }
-        }
-
-        /* Modal Checkbox Alignment */
-        .checkbox-group {
-            display: flex;
-            gap: 20px;
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            margin-bottom: 15px;
-        }
-
-        .checkbox-group label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 0;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: auto;
-        }
-    </style>
 </head>
 
 <body>
@@ -265,39 +15,44 @@
                 style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
-    <a href="/" class="back-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <a href="/" class="back-btn" title="Back to Dashboard"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
         </svg></a>
 
     <div class="container">
-        <button class="btn-add" onclick="openAddModal()">Add User</button>
-        <h1 id="pageHeader">System Users</h1>
-        <p>Manage additional users for the web application.</p>
+        <h1 id="pageHeader" class="text-center" style="margin-bottom: 10px;">System Users</h1>
+        <p class="text-center" style="color: var(--text-muted); margin-bottom: 30px;">Manage additional users for the web application.</p>
 
-        <table id="userTable">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Email (Username)</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th style="text-align: right;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan="4">Loading...</td>
-                </tr>
-            </tbody>
-        </table>
+        <div id="tableContainer" style="display: block;">
+            <div class="table-toolbar">
+                <button class="btn-primary" onclick="openAddModal()">Add User</button>
+            </div>
+
+            <table id="userTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email (Username)</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="5" class="text-center">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div id="userModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('userModal')">&times;</span>
-            <h2>Add New User</h2>
+            <h2 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Add New User</h2>
             <form id="addUserForm" autocomplete="off">
                 <input type="text" style="display:none">
                 <input type="password" style="display:none">
@@ -313,11 +68,10 @@
                         <option value="admin">Admin (Full Access)</option>
                     </select>
                 </div>
-                <div
-                    style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: #555;">
+                <div style="background-color: var(--bg-hover); padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: var(--text-muted); border: 1px solid var(--border-color);">
                     <p style="margin: 0;">A random password will be generated automatically and emailed to the user.</p>
                 </div>
-                <button type="submit" class="btn-add" id="createBtn" style="width:100%">
+                <button type="submit" class="btn-primary w-100" id="createBtn">
                     <div class="btn-content">
                         <div class="spinner" id="createSpinner"></div><span id="btnText">Create User & Send Email</span>
                     </div>
@@ -329,7 +83,7 @@
     <div id="editUserModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('editUserModal')">&times;</span>
-            <h2>Edit User</h2>
+            <h2 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Edit User</h2>
             <form id="editUserForm" autocomplete="off">
                 <input type="hidden" id="editUserId">
                 <div class="form-group"><label>Name</label><input type="text" id="editName" required></div>
@@ -353,7 +107,10 @@
                         </label>
                     </div>
                 </div>
-                <button type="submit" class="btn-add" style="background-color:#007bff; width:100%">Save Changes</button>
+                <div class="modal-actions-right">
+                    <button type="button" onclick="closeModal('editUserModal')" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                </div>
             </form>
         </div>
     </div>
@@ -361,25 +118,27 @@
     <div id="resetModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('resetModal')">&times;</span>
-            <h2>Reset Password</h2>
+            <h2 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Reset Password</h2>
             <p>Reset password for <b id="resetUserName"></b>?</p>
             <form id="resetForm" autocomplete="off">
                 <input type="hidden" id="resetUserId">
                 <input type="hidden" id="resetUserEmail">
-                <div
-                    style="background-color: #e9ecef; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: #555;">
+                <div style="background-color: var(--bg-hover); padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: var(--text-muted); border: 1px solid var(--border-color);">
                     <p style="margin: 0;">A new random password will be generated and sent to the user's email address.
                     </p>
                 </div>
-                <button type="submit" class="btn-reset" id="resetBtn" style="width:100%; border:none; padding:10px;">
-                    <div class="btn-content">
-                        <div class="spinner" id="resetSpinner"></div><span id="resetBtnText">Reset & Email
-                            Password</span>
-                    </div>
-                </button>
+                <div class="modal-actions-right">
+                    <button type="button" onclick="closeModal('resetModal')" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-warning" id="resetBtn" style="border:none;">
+                        <div class="btn-content">
+                            <div class="spinner" id="resetSpinner"></div><span id="resetBtnText">Reset & Email Password</span>
+                        </div>
+                    </button>
+                </div>
             </form>
         </div>
     </div>
+    
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -387,6 +146,7 @@
             <polyline points="5 12 12 5 19 12"></polyline>
         </svg>
     </button>
+    
     <script src="help.js"></script>
     <script src="theme.js"></script>
     <script src="toast.js"></script>
@@ -416,11 +176,10 @@
                 tbody.innerHTML = '';
 
                 if (users.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No database users found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No database users found.</td></tr>';
                     return;
                 }
 
-                // The loop starts here - 'u' is only defined inside these brackets
                 users.forEach(u => {
                     const tr = document.createElement('tr');
 
@@ -444,7 +203,7 @@
                 <td data-label="Email (Username)">${u.email}</td>
                 <td data-label="Role"><span class="badge badge-${u.role || 'simple'}">${u.role || 'simple'}</span></td>
                 <td data-label="Status">${statusBadges.join(' ')}</td>
-                <td data-label="Actions" style="text-align: right; white-space: nowrap;">
+                <td data-label="Actions" class="text-right ws-nowrap">
                     <button class="btn-icon edit" onclick="openEditModal(${userObj})" title="Edit User">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                     </button>
@@ -462,6 +221,7 @@
                 console.error("Error loading users:", e);
             }
         }
+        
         // --- ADD USER ---
         document.getElementById('addUserForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -500,7 +260,6 @@
             e.preventDefault();
             const id = document.getElementById('editUserId').value;
 
-            // Construct the payload matching the keys the server now expects
             const payload = {
                 name: document.getElementById('editName').value,
                 email: document.getElementById('editEmail').value,
@@ -517,7 +276,7 @@
                 });
                 if (res.ok) {
                     closeModal('editUserModal');
-                    loadUsers(); // Refresh table to show new status badges
+                    loadUsers();
                     showToast("Changes saved successfully", "success");
                 } else {
                     const err = await res.json();
@@ -525,6 +284,7 @@
                 }
             } catch (e) { showToast('Network Error', 'error'); }
         });
+        
         // --- RESET PASSWORD ---
         function openReset(id, name, email) {
             document.getElementById('resetUserId').value = id;
@@ -546,7 +306,7 @@
             try {
                 const res = await fetch(`/api/users/${id}/reset`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
                 if (res.ok) { closeModal('resetModal'); showToast('Success! Password emailed.', 'success'); }
-                else { const err = await res.json(); showToast('Error: ' + (err.error || 'Failed', 'error')); }
+                else { const err = await res.json(); showToast('Error: ' + (err.error || 'Failed'), 'error'); }
             } catch (err) { showToast('Network error', 'error'); }
             finally { btn.disabled = false; spinner.style.display = 'none'; btnText.innerText = 'Reset & Email Password'; }
         });
@@ -563,7 +323,8 @@
         function openAddModal() { document.getElementById('userModal').style.display = 'block'; }
 
         loadUsers();
-        // Scroll To Top Logic
+        
+        // Scroll To Top
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {
             if (scrollTopBtn) {
@@ -575,5 +336,4 @@
         }
     </script>
 </body>
-
 </html>
