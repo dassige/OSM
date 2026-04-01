@@ -159,10 +159,10 @@
     <script src="toast.js"></script>
     <script src="theme.js"></script>
     <script src="help.js"></script>
+    <script src="js/table-controller.js"></script>
+
     <script>
-        let currentPage = 1;
-        let currentLimit = 50;
-        let totalCount = 0;
+        let eventTableCtrl;
         let appLocale = 'en-NZ';
         let appTimezone = 'Pacific/Auckland';
 
@@ -182,7 +182,60 @@
 
             await checkAdmin();
             await loadMetadata();
-            await loadUserPrefs();
+
+            // 1. Load limit preference BEFORE initializing the controller
+            let initialLimit = 50;
+            try {
+                const res = await fetch('/api/user-preferences/eventLogLimit');
+                const data = await res.json();
+                if (data.value) {
+                    initialLimit = parseInt(data.value);
+                }
+            } catch (e) { console.warn("Failed to load limit pref", e); }
+
+            // Update UI Dropdown
+            const limitSelect = document.getElementById('rowsPerPage');
+            if (limitSelect) limitSelect.value = initialLimit;
+
+            // 2. Initialize Controller
+            eventTableCtrl = new TableController({
+                tbodyId: 'tableBody',
+                emptyMessage: 'No events matching criteria.',
+                initialLimit: initialLimit, // Pass the fetched limit here
+                pagination: {
+                    containerId: 'paginationControls',
+                    infoId: 'pageInfo',
+                    prevId: 'btnPrev',
+                    nextId: 'btnNext',
+                    onPageChange: (newPage, newLimit) => applyFilters(newPage)
+                },
+                renderRow: (evt, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = index % 2 === 0 ? 'row-even' : 'row-odd';
+                    tr.style.borderBottom = '1px solid var(--border-color)';
+
+                    let detailsBtn = '<span style="color:var(--text-muted); font-size:12px;">None</span>';
+                    if (evt.payload && evt.payload !== '{}' && evt.payload !== 'null') {
+                        const safePayload = JSON.stringify(evt.payload).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                        detailsBtn = `
+                            <button class="btn-icon" onclick="showModal('${safePayload}', '${evt.timestamp}', '${evt.user}', '${evt.event_type}', '${evt.title.replace(/'/g, "\\'")}')" title="View Details" style="color:var(--info);">
+                                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            </button>
+                        `;
+                    }
+
+                    tr.innerHTML = `
+                        <td data-label="Datetime" style="padding: 12px 15px; font-size: 0.9em;">${formatDate(evt.timestamp)}</td>
+                        <td data-label="User" style="padding: 12px 15px;"><strong>${evt.user}</strong></td>
+                        <td data-label="Event Type" style="padding: 12px 15px;"><span class="log-type-badge ${getBadgeClass(evt.event_type)}">${evt.event_type}</span></td>
+                        <td data-label="Title" style="padding: 12px 15px;">${evt.title}</td>
+                        <td data-label="Info" style="padding: 12px 15px; text-align:center;">${detailsBtn}</td>
+                    `;
+                    return tr;
+                }
+            });
+
+            // 3. Fetch logs
             await applyFilters(1);
         }
 
@@ -234,25 +287,13 @@
             window.location.href = `/api/events/export?${params.toString()}`;
         }
 
-        async function loadUserPrefs() {
-            try {
-                const res = await fetch('/api/user-preferences/eventLogLimit');
-                const data = await res.json();
-                if (data.value) {
-                    currentLimit = parseInt(data.value);
-                    document.getElementById('rowsPerPage').value = currentLimit;
-                }
-            } catch (e) { }
-        }
-
         async function changeLimit(newLimit) {
-            currentLimit = parseInt(newLimit);
+            eventTableCtrl.setLimit(newLimit);
             fetch('/api/user-preferences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: 'eventLogLimit', value: currentLimit })
+                body: JSON.stringify({ key: 'eventLogLimit', value: newLimit })
             });
-            applyFilters(1);
         }
 
         async function loadMetadata() {
@@ -276,14 +317,11 @@
                     if (data.types && data.types.length > 0) {
                         data.types.forEach(type => {
                             const badge = document.createElement('div');
-
-                            // FIX: Just use the clean CSS class!
                             badge.className = 'type-badge';
                             badge.setAttribute('data-type', type);
                             badge.textContent = type;
 
                             badge.addEventListener('click', () => {
-                                // FIX: Only toggle the active state, CSS handles the rest
                                 badge.classList.toggle('active');
                             });
 
@@ -295,24 +333,20 @@
                 }
             } catch (e) { }
         }
+
         function resetFilters() {
             document.querySelectorAll('.type-badge').forEach(b => {
-                b.classList.remove('active'); // FIX: Clean reset
+                b.classList.remove('active');
             });
             document.getElementById('userFilter').value = "";
             document.getElementById('startDate').value = "";
             document.getElementById('endDate').value = "";
             applyFilters(1);
         }
-        function changePage(delta) {
-            const newPage = currentPage + delta;
-            if (newPage > 0 && newPage <= Math.ceil(totalCount / currentLimit)) {
-                applyFilters(newPage);
-            }
-        }
 
         async function applyFilters(page = 1) {
-            currentPage = page;
+            eventTableCtrl.page = page;
+
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Loading...</td></tr>';
 
@@ -322,8 +356,8 @@
             const end = document.getElementById('endDate').value;
 
             const params = new URLSearchParams();
-            params.append('page', currentPage);
-            params.append('limit', currentLimit);
+            params.append('page', eventTableCtrl.page);
+            params.append('limit', eventTableCtrl.limit);
             if (activeTypes.length > 0) params.append('types', activeTypes.join(','));
             if (user) params.append('user', user);
             if (start) params.append('startDate', start);
@@ -332,59 +366,11 @@
             try {
                 const res = await fetch(`/api/events?${params.toString()}`);
                 const data = await res.json();
-                renderTable(data.logs);
-                updatePagination(data.total, data.page, data.limit);
+
+                eventTableCtrl.setData(data.logs, data.total);
             } catch (err) {
                 tbody.innerHTML = `<tr><td colspan="5" style="color:var(--danger); text-align:center;">Error loading events: ${err.message}</td></tr>`;
             }
-        }
-
-        function updatePagination(total, page, limit) {
-            totalCount = total;
-            const totalPages = Math.ceil(total / limit);
-            const start = total === 0 ? 0 : (page - 1) * limit + 1;
-            const end = Math.min(page * limit, total);
-
-            document.getElementById('paginationControls').style.display = total > 0 ? 'flex' : 'none';
-            document.getElementById('pageInfo').textContent = `Showing ${start}-${end} of ${total}`;
-            document.getElementById('btnPrev').disabled = page <= 1;
-            document.getElementById('btnNext').disabled = page >= totalPages;
-        }
-
-        function renderTable(events) {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
-
-            if (!events || events.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-muted);">No events matching criteria.</td></tr>';
-                return;
-            }
-
-            events.forEach((evt, index) => {
-                const tr = document.createElement('tr');
-                tr.className = index % 2 === 0 ? 'row-even' : 'row-odd';
-
-                tr.style.borderBottom = '1px solid var(--border-color)';
-
-                let detailsBtn = '<span style="color:var(--text-muted); font-size:12px;">None</span>';
-                if (evt.payload && evt.payload !== '{}' && evt.payload !== 'null') {
-                    const safePayload = JSON.stringify(evt.payload).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-                    detailsBtn = `
-                        <button class="btn-icon" onclick="showModal('${safePayload}', '${evt.timestamp}', '${evt.user}', '${evt.event_type}', '${evt.title.replace(/'/g, "\\'")}')" title="View Details" style="color:var(--info);">
-                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        </button>
-                    `;
-                }
-
-                tr.innerHTML = `
-                    <td data-label="Datetime" style="padding: 12px 15px; font-size: 0.9em;">${formatDate(evt.timestamp)}</td>
-                    <td data-label="User" style="padding: 12px 15px;"><strong>${evt.user}</strong></td>
-                    <td data-label="Event Type" style="padding: 12px 15px;"><span class="log-type-badge ${getBadgeClass(evt.event_type)}">${evt.event_type}</span></td>
-                    <td data-label="Title" style="padding: 12px 15px;">${evt.title}</td>
-                    <td data-label="Info" style="padding: 12px 15px; text-align:center;">${detailsBtn}</td>
-                `;
-                tbody.appendChild(tr);
-            });
         }
 
         function formatDate(isoStr) {
@@ -421,6 +407,11 @@
             }
             document.getElementById('payloadModal').style.display = 'block';
         };
+
+        // Bridge to capture inline HTML button clicks for "Previous" and "Next"
+        window.changePage = function (delta) {
+            eventTableCtrl.changePage(delta);
+        }
 
         init();
 

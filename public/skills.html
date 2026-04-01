@@ -68,7 +68,8 @@
                         </th>
 
                         <th class="sortable text-center" onclick="handleSort('critical_skill')">
-                            <div class="th-content" style="justify-content:center;">Critical <span id="icon-critical_skill" class="sort-icon"></span>
+                            <div class="th-content" style="justify-content:center;">Critical <span
+                                    id="icon-critical_skill" class="sort-icon"></span>
                             </div>
                         </th>
 
@@ -197,14 +198,11 @@
     <script src="theme.js"></script>
     <script src="toast.js"></script>
     <script src="utils.js"></script>
+    <script src="utils.js"></script>
+    <script src="js/table-controller.js"></script>
     <script>
-        let currentSkills = [];
-        let currentForms = []; 
-        let currentSort = { column: 'name', order: 'asc' };
-
-        const ICON_ASC = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 15l-6-6-6 6"/></svg>';
-        const ICON_DESC = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>';
-        const ICON_NONE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.3;"><path d="M7 15l5 5 5-5"/><path d="M7 9l5-5 5 5"/></svg>';
+        let skillTable;
+        let currentForms = [];
 
         async function initPage() {
             try {
@@ -218,15 +216,163 @@
                 if (uiConfig.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
             } catch (e) { }
 
-            await reloadSkills();
+            let initialSort = { column: 'name', order: 'asc' };
             try {
-                const res = await fetch('/api/forms');
-                if (res.ok) currentForms = await res.json();
+                const prefRes = await fetch('/api/user-preferences');
+                if (prefRes.ok) {
+                    const prefs = await prefRes.json();
+                    if (prefs.sortSkills) initialSort = prefs.sortSkills;
+                }
             } catch (e) { }
 
+            // Initialize Table Controller
+            skillTable = new TableController({
+                tbodyId: 'skillsTableBody',
+                emptyMessage: 'No skills found.',
+                initialSort: initialSort,
+                onSortChange: (newSort) => {
+                    fetch('/api/user-preferences', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key: 'sortSkills', value: newSort })
+                    });
+                },
+                sortFunction: (a, b, sortState) => {
+                    let valA, valB;
+                    if (sortState.column === 'enabled') {
+                        valA = a.enabled ? 1 : 0;
+                        valB = b.enabled ? 1 : 0;
+                    } else if (sortState.column === 'url') {
+                        valA = (a.url || '').toLowerCase();
+                        valB = (b.url || '').toLowerCase();
+                    } else if (sortState.column === 'critical_skill') {
+                        valA = a.critical_skill ? 1 : 0;
+                        valB = b.critical_skill ? 1 : 0;
+                    } else {
+                        valA = (a.name || '').toLowerCase();
+                        valB = (b.name || '').toLowerCase();
+                    }
+
+                    if (valA < valB) return sortState.order === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortState.order === 'asc' ? 1 : -1;
+                    return 0;
+                },
+                onRenderComplete: () => {
+                    document.getElementById('selectAllCheckbox').checked = false;
+                    updateBulkDeleteButton();
+                },
+                renderRow: (s, index) => {
+                    let urlDisplay = '<span style="color:var(--text-muted); font-style:italic;">No Link</span>';
+
+                    if (s.url) {
+                        if (s.url_type === 'internal') {
+                            const previewLink = `forms-view.html?id=${s.url}&preview=true`;
+                            urlDisplay = `<a href="${previewLink}" target="_blank" style="color:var(--success); font-weight:bold;">App Hosted Form</a>`;
+                        } else {
+                            urlDisplay = `<a href="${s.url}" target="_blank" style="color:var(--primary);">External Online Form</a>`;
+                        }
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.className = s.enabled ? 'row-even' : 'row-disabled';
+
+                    tr.innerHTML = `
+                        <td class="cb-col"><input type="checkbox" class="skill-checkbox" value="${s.id}" onchange="updateBulkDeleteButton()"></td>
+                        <td class="text-center"><label class="switch"><input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSkillEnabled(${s.id}, this.checked)"><span class="slider"></span></label></td>
+                        <td>${s.name}</td>
+                        <td class="text-center">${s.critical_skill ? '<b style="color:var(--danger);">Yes</b>' : 'No'}</td>
+                        <td>${urlDisplay}</td>
+                        <td class="text-center ws-nowrap">
+                            <button class="btn-icon edit" onclick="editSkillByIndex(${index})" title="Edit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
+                            <button class="btn-icon delete" onclick="deleteSkill(${s.id})" title="Delete"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                        </td>
+                    `;
+                    return tr;
+                }
+            });
+
+            await reloadSkills();
             setupDragAndDrop();
         }
 
+        async function reloadSkills() {
+            try {
+                const res = await fetch('/api/skills');
+                if (!res.ok) throw new Error("Failed");
+                skillTable.setData(await res.json());
+
+                const formRes = await fetch('/api/forms');
+                if (formRes.ok) currentForms = await formRes.json();
+            } catch (err) { }
+        }
+
+        function handleSort(column) {
+            skillTable.handleSort(column);
+        }
+
+        async function toggleSkillEnabled(id, newState) {
+            const skill = skillTable.data.find(s => s.id == id);
+            skill.enabled = newState;
+            try {
+                await fetch(`/api/skills/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(skill) });
+                skillTable.render(); // Just re-render visuals locally
+            } catch (e) {
+                showToast("Failed to update", "error");
+                skill.enabled = !newState;
+                skillTable.render();
+            }
+        }
+
+        window.editSkillByIndex = function (index) {
+            const s = skillTable.data[index];
+            document.getElementById('modalTitle').textContent = "Edit Skill";
+            document.getElementById('skillId').value = s.id;
+            document.getElementById('name').value = s.name;
+            document.getElementById('critical_skill').checked = s.critical_skill;
+            document.getElementById('enabled').checked = s.enabled;
+
+            const type = s.url_type || 'external';
+            switchModalTab(type, false);
+
+            if (type === 'internal') {
+                document.getElementById('selectedFormId').value = s.url;
+                const formName = currentForms.find(f => f.public_id === s.url)?.name || "Unknown Form";
+                const display = document.getElementById('selectedFormName');
+                display.textContent = s.url ? formName : "No form selected";
+                if (s.url) display.classList.add('active');
+            } else {
+                document.getElementById('url').value = s.url || "";
+            }
+
+            document.getElementById('skillModal').style.display = 'block';
+        }
+
+        async function deleteSkill(id) {
+            const skill = skillTable.data.find(s => s.id == id);
+            const name = skill ? skill.name : 'this skill';
+            if (await confirmAction('Delete Skill', `Delete skill '${name}'?`)) {
+                await fetch(`/api/skills/${id}`, { method: 'DELETE' });
+                reloadSkills();
+            }
+        }
+
+        function exportToCSV() {
+            const skills = skillTable.data;
+            if (!skills || skills.length === 0) { showToast("No skills to export.", "warning"); return; }
+            const headers = ['name', 'url', 'critical_skill', 'enabled'];
+            const rows = skills.map(skill => {
+                return `${skill.name},${skill.url || ''},${skill.critical_skill},${skill.enabled}`;
+            });
+            const csvContent = [headers.join(',')].concat(rows).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "skills_export.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
         function setupDragAndDrop() {
             document.querySelectorAll('.draggable-item').forEach(item => {
                 item.addEventListener('dragstart', (e) => {
@@ -275,7 +421,7 @@
             try {
                 const res = await fetch('/api/forms');
                 const forms = await res.json();
-                currentForms = forms; 
+                currentForms = forms;
 
                 list.innerHTML = '';
                 if (forms.length === 0) {
@@ -308,55 +454,6 @@
             } catch (e) { list.innerHTML = 'Error loading forms'; }
         }
 
-        async function reloadSkills() {
-            try {
-                const res = await fetch('/api/skills');
-                if (!res.ok) throw new Error("Failed");
-                currentSkills = await res.json();
-                const formRes = await fetch('/api/forms');
-                if (formRes.ok) currentForms = await formRes.json();
-                applySort();
-            } catch (err) { }
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('skillsTableBody');
-            tbody.innerHTML = '';
-
-            if (currentSkills.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center">No skills found.</td></tr>`;
-                return;
-            }
-
-            currentSkills.forEach((s, index) => {
-                let urlDisplay = '<span style="color:var(--text-muted); font-style:italic;">No Link</span>';
-
-                if (s.url) {
-                    if (s.url_type === 'internal') {
-                        const previewLink = `forms-view.html?id=${s.url}&preview=true`;
-                        urlDisplay = `<a href="${previewLink}" target="_blank" style="color:var(--success); font-weight:bold;">App Hosted Form</a>`;
-                    } else {
-                        urlDisplay = `<a href="${s.url}" target="_blank" style="color:var(--primary);">External Online Form</a>`;
-                    }
-                }
-
-                const tr = document.createElement('tr');
-                tr.className = s.enabled ? 'row-even' : 'row-disabled';
-
-                tr.innerHTML = `
-                    <td class="cb-col"><input type="checkbox" class="skill-checkbox" value="${s.id}" onchange="updateBulkDeleteButton()"></td>
-                    <td class="text-center"><label class="switch"><input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSkillEnabled(${s.id}, this.checked)"><span class="slider"></span></label></td>
-                    <td>${s.name}</td>
-                    <td class="text-center">${s.critical_skill ? '<b style="color:var(--danger);">Yes</b>' : 'No'}</td>
-                    <td>${urlDisplay}</td>
-                    <td class="text-center ws-nowrap">
-                        <button class="btn-icon edit" onclick="editSkillByIndex(${index})" title="Edit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
-                        <button class="btn-icon delete" onclick="deleteSkill(${s.id})" title="Delete"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
 
         async function toggleSkillEnabled(id, newState) {
             const skill = currentSkills.find(s => s.id == id);
@@ -445,48 +542,6 @@
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = (e) => { if (e.target.className === 'modal') e.target.style.display = 'none'; }
 
-        function handleSort(column) {
-            if (currentSort.column === column) {
-                currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort.column = column;
-                currentSort.order = 'asc';
-            }
-            applySort();
-        }
-
-        function applySort() {
-            currentSkills.sort((a, b) => {
-                let valA, valB;
-
-                if (currentSort.column === 'enabled') {
-                    valA = a.enabled ? 1 : 0;
-                    valB = b.enabled ? 1 : 0;
-                } else if (currentSort.column === 'url') {
-                    valA = (a.url || '').toLowerCase();
-                    valB = (b.url || '').toLowerCase();
-                } else if (currentSort.column === 'critical_skill') {
-                    valA = a.critical_skill ? 1 : 0;
-                    valB = b.critical_skill ? 1 : 0;
-                } else {
-                    valA = (a.name || '').toLowerCase();
-                    valB = (b.name || '').toLowerCase();
-                }
-
-                if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
-                if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            ['name', 'critical_skill', 'enabled', 'url'].forEach(col => {
-                const icon = document.getElementById(`icon-${col}`);
-                if (icon) { icon.innerHTML = ICON_NONE; icon.classList.remove('active'); }
-            });
-            const active = document.getElementById(`icon-${currentSort.column}`);
-            if (active) { active.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC; active.classList.add('active'); }
-
-            renderTable();
-        }
 
         function toggleSelectAll() {
             const checked = document.getElementById('selectAllCheckbox').checked;
@@ -629,4 +684,5 @@
         initPage();
     </script>
 </body>
+
 </html>

@@ -205,11 +205,16 @@
             </p>
 
             <table id="skillsTable">
-                <thead>
+ <thead>
                     <tr>
-                        <th style="width: 25%" class="sortable" onclick="handleSort('name')">
-                            <div class="th-content">Member Name <span id="icon-name" class="sort-icon"></span></div>
+                        <th style="width: 10%" class="sortable text-center" onclick="handleSort('rank')">
+                            <div class="th-content" style="justify-content:center;">Rank <span id="icon-rank" class="sort-icon"></span></div>
                         </th>
+                        
+                        <th style="width: 15%" class="sortable" onclick="handleSort('name')">
+                            <div class="th-content">Name <span id="icon-name" class="sort-icon"></span></div>
+                        </th>
+
                         <th style="width: 35%">Expiring Skill</th>
                         <th style="width: 15%">Expiring Date</th>
                         <th style="width: 25%">

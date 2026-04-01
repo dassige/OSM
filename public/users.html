@@ -15,15 +15,16 @@
                 style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
-    <a href="/" class="back-btn" title="Back to Dashboard"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
+    <a href="/" class="back-btn" title="Back to Dashboard"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
         </svg></a>
 
     <div class="container">
         <h1 id="pageHeader" class="text-center" style="margin-bottom: 10px;">System Users</h1>
-        <p class="text-center" style="color: var(--text-muted); margin-bottom: 30px;">Manage additional users for the web application.</p>
+        <p class="text-center" style="color: var(--text-muted); margin-bottom: 30px;">Manage additional users for the
+            web application.</p>
 
         <div id="tableContainer" style="display: block;">
             <div class="table-toolbar">
@@ -33,10 +34,20 @@
             <table id="userTable">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Email (Username)</th>
-                        <th>Role</th>
-                        <th>Status</th>
+                        <th class="sortable" onclick="handleSort('name')">
+                            <div class="th-content">Name <span id="icon-name" class="sort-icon"></span></div>
+                        </th>
+                        <th class="sortable" onclick="handleSort('email')">
+                            <div class="th-content">Email (Username) <span id="icon-email" class="sort-icon"></span>
+                            </div>
+                        </th>
+                        <th class="sortable" onclick="handleSort('role')">
+                            <div class="th-content">Role <span id="icon-role" class="sort-icon"></span></div>
+                        </th>
+                        <th class="sortable text-center" onclick="handleSort('status')">
+                            <div class="th-content" style="justify-content:center;">Status <span id="icon-status"
+                                    class="sort-icon"></span></div>
+                        </th>
                         <th class="text-right">Actions</th>
                     </tr>
                 </thead>
@@ -52,7 +63,8 @@
     <div id="userModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('userModal')">&times;</span>
-            <h2 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Add New User</h2>
+            <h2 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Add New User
+            </h2>
             <form id="addUserForm" autocomplete="off">
                 <input type="text" style="display:none">
                 <input type="password" style="display:none">
@@ -68,7 +80,8 @@
                         <option value="admin">Admin (Full Access)</option>
                     </select>
                 </div>
-                <div style="background-color: var(--bg-hover); padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: var(--text-muted); border: 1px solid var(--border-color);">
+                <div
+                    style="background-color: var(--bg-hover); padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: var(--text-muted); border: 1px solid var(--border-color);">
                     <p style="margin: 0;">A random password will be generated automatically and emailed to the user.</p>
                 </div>
                 <button type="submit" class="btn-primary w-100" id="createBtn">
@@ -83,7 +96,8 @@
     <div id="editUserModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('editUserModal')">&times;</span>
-            <h2 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Edit User</h2>
+            <h2 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Edit User
+            </h2>
             <form id="editUserForm" autocomplete="off">
                 <input type="hidden" id="editUserId">
                 <div class="form-group"><label>Name</label><input type="text" id="editName" required></div>
@@ -118,12 +132,14 @@
     <div id="resetModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('resetModal')">&times;</span>
-            <h2 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Reset Password</h2>
+            <h2 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Reset
+                Password</h2>
             <p>Reset password for <b id="resetUserName"></b>?</p>
             <form id="resetForm" autocomplete="off">
                 <input type="hidden" id="resetUserId">
                 <input type="hidden" id="resetUserEmail">
-                <div style="background-color: var(--bg-hover); padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: var(--text-muted); border: 1px solid var(--border-color);">
+                <div
+                    style="background-color: var(--bg-hover); padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: var(--text-muted); border: 1px solid var(--border-color);">
                     <p style="margin: 0;">A new random password will be generated and sent to the user's email address.
                     </p>
                 </div>
@@ -131,14 +147,15 @@
                     <button type="button" onclick="closeModal('resetModal')" class="btn-secondary">Cancel</button>
                     <button type="submit" class="btn-warning" id="resetBtn" style="border:none;">
                         <div class="btn-content">
-                            <div class="spinner" id="resetSpinner"></div><span id="resetBtnText">Reset & Email Password</span>
+                            <div class="spinner" id="resetSpinner"></div><span id="resetBtnText">Reset & Email
+                                Password</span>
                         </div>
                     </button>
                 </div>
             </form>
         </div>
     </div>
-    
+
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -146,12 +163,95 @@
             <polyline points="5 12 12 5 19 12"></polyline>
         </svg>
     </button>
-    
+
     <script src="help.js"></script>
     <script src="theme.js"></script>
     <script src="toast.js"></script>
     <script src="utils.js"></script>
+    <script src="js/table-controller.js"></script>
     <script>
+        let userTable;
+
+        // Initialize Table Controller for Users
+        window.addEventListener('DOMContentLoaded', () => {
+            userTable = new TableController({
+                tbodyId: 'userTable',
+                emptyMessage: 'No database users found.',
+                initialSort: { column: 'name', order: 'asc' },
+                sortFunction: (a, b, sortState) => {
+                    let valA, valB;
+
+                    if (sortState.column === 'status') {
+                        // Derive a string for sorting status
+                        valA = a.blocked ? 'blocked' : (a.enabled ? 'active' : 'disabled');
+                        valB = b.blocked ? 'blocked' : (b.enabled ? 'active' : 'disabled');
+                    } else {
+                        valA = (a[sortState.column] || '').toString().toLowerCase();
+                        valB = (b[sortState.column] || '').toString().toLowerCase();
+                    }
+
+                    if (valA < valB) return sortState.order === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortState.order === 'asc' ? 1 : -1;
+                    return 0;
+                },
+                renderRow: (u) => {
+                    const tr = document.createElement('tr');
+
+                    const statusBadges = [];
+                    if (u.blocked === 1) {
+                        statusBadges.push('<span class="badge badge-blocked">BLOCKED</span>');
+                    } else if (u.enabled === 0) {
+                        statusBadges.push('<span class="badge badge-disabled">DISABLED</span>');
+                    } else {
+                        statusBadges.push('<span class="badge badge-enabled">ACTIVE</span>');
+                    }
+
+                    const userObj = JSON.stringify(u).replace(/"/g, '&quot;');
+                    const nameEscaped = u.name.replace(/'/g, "\\'");
+
+                    tr.innerHTML = `
+                        <td data-label="Name">${u.name}</td>
+                        <td data-label="Email">${u.email}</td>
+                        <td data-label="Role"><span class="badge badge-${u.role || 'simple'}">${u.role || 'simple'}</span></td>
+                        <td data-label="Status" class="text-center">${statusBadges.join(' ')}</td>
+                        <td data-label="Actions" class="text-right ws-nowrap">
+                            <button class="btn-icon edit" onclick="openEditModal(${userObj})" title="Edit User">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            </button>
+                            <button class="btn-icon reset" onclick="openReset('${u.id}', '${nameEscaped}', '${u.email}')" title="Reset Password">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                            </button>
+                            <button class="btn-icon delete" onclick="deleteUser('${u.id}', '${nameEscaped}')" title="Delete User">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </td>`;
+                    return tr;
+                }
+            });
+            // Overwrite tbodyId targeting specific tbody (fixes TableController quirk if using just table id)
+            userTable.tbodyId = document.querySelector('#userTable tbody').id = 'userTableBody';
+        });
+
+        // Global wrapper for column clicks
+        function handleSort(column) {
+            userTable.handleSort(column);
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/users');
+                if (res.status === 403) {
+                    showToast('Access Denied', 'error');
+                    window.location.href = '/';
+                    return;
+                }
+                const users = await res.json();
+                userTable.setData(users);
+            } catch (e) {
+                console.error("Error loading users:", e);
+            }
+        }
+
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.loginTitle) {
                 document.title = "Manage Users - " + c.loginTitle;
@@ -162,66 +262,7 @@
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });
 
-        async function loadUsers() {
-            try {
-                const res = await fetch('/api/users');
-                if (res.status === 403) {
-                    showToast('Access Denied', 'error');
-                    window.location.href = '/';
-                    return;
-                }
 
-                const users = await res.json();
-                const tbody = document.querySelector('#userTable tbody');
-                tbody.innerHTML = '';
-
-                if (users.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No database users found.</td></tr>';
-                    return;
-                }
-
-                users.forEach(u => {
-                    const tr = document.createElement('tr');
-
-                    // 1. Determine Security Status Badges
-                    const statusBadges = [];
-                    if (u.blocked === 1) {
-                        statusBadges.push('<span class="badge badge-blocked">BLOCKED</span>');
-                    } else if (u.enabled === 0) {
-                        statusBadges.push('<span class="badge badge-disabled">DISABLED</span>');
-                    } else {
-                        statusBadges.push('<span class="badge badge-enabled">ACTIVE</span>');
-                    }
-
-                    // 2. Prepare strings for Modal Actions
-                    const userObj = JSON.stringify(u).replace(/"/g, '&quot;');
-                    const nameEscaped = u.name.replace(/'/g, "\\'");
-
-                    // 3. Build Row HTML
-                    tr.innerHTML = `
-                <td data-label="Name">${u.name}</td>
-                <td data-label="Email (Username)">${u.email}</td>
-                <td data-label="Role"><span class="badge badge-${u.role || 'simple'}">${u.role || 'simple'}</span></td>
-                <td data-label="Status">${statusBadges.join(' ')}</td>
-                <td data-label="Actions" class="text-right ws-nowrap">
-                    <button class="btn-icon edit" onclick="openEditModal(${userObj})" title="Edit User">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                    </button>
-                    <button class="btn-icon reset" onclick="openReset('${u.id}', '${nameEscaped}', '${u.email}')" title="Reset Password">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
-                    </button>
-                    <button class="btn-icon delete" onclick="deleteUser('${u.id}', '${nameEscaped}')" title="Delete User">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                    </button>
-                </td>`;
-
-                    tbody.appendChild(tr);
-                });
-            } catch (e) {
-                console.error("Error loading users:", e);
-            }
-        }
-        
         // --- ADD USER ---
         document.getElementById('addUserForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -284,7 +325,7 @@
                 }
             } catch (e) { showToast('Network Error', 'error'); }
         });
-        
+
         // --- RESET PASSWORD ---
         function openReset(id, name, email) {
             document.getElementById('resetUserId').value = id;
@@ -323,7 +364,7 @@
         function openAddModal() { document.getElementById('userModal').style.display = 'block'; }
 
         loadUsers();
-        
+
         // Scroll To Top
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {
@@ -336,4 +377,5 @@
         }
     </script>
 </body>
+
 </html>

@@ -10,6 +10,8 @@ const ICON_ASC =
   '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
 const ICON_DESC =
   '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+const ICON_NONE =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3;"><path d="M7 15l5 5 5-5"/><path d="M7 9l5-5 5 5"/></svg>';
 
 const sendEmailsBtn = document.getElementById("sendEmailsBtn");
 const viewBtn = document.getElementById("viewBtn");
@@ -63,7 +65,14 @@ function init() {
       updateRoleUI(user.role || "guest");
     });
 }
-
+// Helper to parse "Rank" and "Display Name"
+function parseRankAndName(fullName) {
+  const parts = (fullName || "").trim().split(" ");
+  if (parts.length > 1 && /^[A-Za-z]{2,4}$/.test(parts[0])) {
+    return { rank: parts[0], displayName: parts.slice(1).join(" ") };
+  }
+  return { rank: "-", displayName: fullName || "" };
+}
 function setRunningState() {
   sendEmailsBtn.disabled = true;
   viewBtn.disabled = true;
@@ -130,19 +139,19 @@ function updateRoleUI(role) {
 }
 
 function fetchData(forceRefresh = false) {
-    const days = parseInt(daysInput.value) || 30;
-    
-    if (viewBtn) {
-        viewBtn.disabled = true;
-        viewBtn.textContent = "Loading...";
-    }
+  const days = parseInt(daysInput.value) || 30;
 
-    const overlay = document.getElementById("loadingOverlay");
-    
-    if (tableContainer) tableContainer.style.display = "none";
-    if (overlay) overlay.style.display = "block";
+  if (viewBtn) {
+    viewBtn.disabled = true;
+    viewBtn.textContent = "Loading...";
+  }
 
-    socket.emit("view-expiring-skills", days, forceRefresh);
+  const overlay = document.getElementById("loadingOverlay");
+
+  if (tableContainer) tableContainer.style.display = "none";
+  if (overlay) overlay.style.display = "block";
+
+  socket.emit("view-expiring-skills", days, forceRefresh);
 }
 
 function renderSkeletons() {
@@ -160,25 +169,52 @@ function renderSkeletons() {
 }
 
 function handleSort(column) {
-  if (column !== "name") return;
-  currentSort.order = currentSort.order === "asc" ? "desc" : "asc";
+  if (column !== "name" && column !== "rank") return; // Dashboard only sorts by rank/name locally
+  if (currentSort.column === column) {
+    currentSort.order = currentSort.order === "asc" ? "desc" : "asc";
+  } else {
+    currentSort.column = column;
+    currentSort.order = "asc";
+  }
   socket.emit("update-preference", { key: "sortSkills", value: currentSort });
   applySort();
 }
 
 function applySort() {
   currentOsmData.sort((a, b) => {
-    const valA = (a.name || "").toLowerCase();
-    const valB = (b.name || "").toLowerCase();
+    const parsedA = parseRankAndName(a.name);
+    const parsedB = parseRankAndName(b.name);
+
+    let valA, valB;
+    if (currentSort.column === "rank") {
+      valA = parsedA.rank.toLowerCase();
+      valB = parsedB.rank.toLowerCase();
+    } else {
+      valA = parsedA.displayName.toLowerCase();
+      valB = parsedB.displayName.toLowerCase();
+    }
+
     if (valA < valB) return currentSort.order === "asc" ? -1 : 1;
     if (valA > valB) return currentSort.order === "asc" ? 1 : -1;
     return 0;
   });
-  const iconSpan = document.getElementById("icon-name");
-  if (iconSpan) {
-    iconSpan.innerHTML = currentSort.order === "asc" ? ICON_ASC : ICON_DESC;
-    iconSpan.classList.add("active");
+
+  // Reset and apply sort icons
+  ["rank", "name"].forEach((col) => {
+    const iconSpan = document.getElementById(`icon-${col}`);
+    if (iconSpan) {
+      iconSpan.innerHTML = ICON_NONE;
+      iconSpan.classList.remove("active");
+    }
+  });
+
+  const activeIconSpan = document.getElementById(`icon-${currentSort.column}`);
+  if (activeIconSpan) {
+    activeIconSpan.innerHTML =
+      currentSort.order === "asc" ? ICON_ASC : ICON_DESC;
+    activeIconSpan.classList.add("active");
   }
+
   renderTable();
 }
 
@@ -197,6 +233,7 @@ function renderTable() {
     if (expiredOnly)
       visibleSkills = visibleSkills.filter((s) => isDateInPast(s.dueDate));
     if (hideWithUrl) visibleSkills = visibleSkills.filter((s) => !s.hasUrl);
+
     const hasVisibleSkills = visibleSkills.length > 0;
     if (hideNoSkills && !hasVisibleSkills) return;
 
@@ -207,10 +244,22 @@ function renderTable() {
     tr.className = rowClass;
     if (!hasVisibleSkills) tr.classList.add("no-skills-row");
 
+    // --- NEW: Split Rank and Name ---
+    const { rank, displayName } = parseRankAndName(member.name);
+
+    const rankTd = document.createElement("td");
+    rankTd.className = "member-cell text-center";
+    rankTd.innerHTML =
+      rank !== "-"
+        ? `<span class="badge" style="background:var(--border-color); color:var(--text-main);">${rank}</span>`
+        : "-";
+    tr.appendChild(rankTd);
+
     const nameTd = document.createElement("td");
-    nameTd.textContent = member.name;
+    nameTd.textContent = displayName;
     nameTd.className = "member-cell";
     tr.appendChild(nameTd);
+    // --------------------------------
 
     const skillTd = document.createElement("td");
     const dateTd = document.createElement("td");
@@ -256,9 +305,7 @@ function renderTable() {
       const hasEmail = member.email && member.email.includes("@");
       const emailLabel = document.createElement("label");
       emailLabel.className = "email-label action-label";
-      emailLabel.innerHTML = `<input type="checkbox" class="send-email-cb" data-name="${
-        member.name
-      }" ${hasEmail ? (defaultEmail ? "checked" : "") : "disabled"}> Email`;
+      emailLabel.innerHTML = `<input type="checkbox" class="send-email-cb" data-name="${member.name}" ${hasEmail ? (defaultEmail ? "checked" : "") : "disabled"}> Email`;
       if (!hasEmail) emailLabel.style.opacity = "0.5";
 
       const btnEmail = document.createElement("button");
@@ -267,9 +314,7 @@ function renderTable() {
       btnEmail.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`;
       btnEmail.onclick = () => sendSingleAction(member.name, "email");
 
-      if (!hasEmail) {
-        btnEmail.disabled = true;
-      }
+      if (!hasEmail) btnEmail.disabled = true;
       emailRow.appendChild(emailLabel);
       emailRow.appendChild(btnEmail);
 
@@ -282,11 +327,7 @@ function renderTable() {
       const waLabel = document.createElement("label");
       waLabel.className = "email-label action-label";
       const shouldCheckWa = defaultWa && !isWaDisabled;
-      waLabel.innerHTML = `<input type="checkbox" class="send-wa-cb" data-name="${
-        member.name
-      }" ${
-        isWaDisabled ? "disabled" : shouldCheckWa ? "checked" : ""
-      }> WhatsApp`;
+      waLabel.innerHTML = `<input type="checkbox" class="send-wa-cb" data-name="${member.name}" ${isWaDisabled ? "disabled" : shouldCheckWa ? "checked" : ""}> WhatsApp`;
       if (isWaDisabled) waLabel.style.opacity = "0.5";
 
       const btnWa = document.createElement("button");
@@ -317,13 +358,16 @@ function renderTable() {
     tr.appendChild(actionTd);
     skillsTableBody.appendChild(tr);
 
-    // Sub-rows
+    // --- Sub-rows for multiple skills ---
     for (let i = 1; i < visibleSkills.length; i++) {
       const subTr = document.createElement("tr");
       subTr.className = rowClass;
-      const emptyNameTd = document.createElement("td");
-      emptyNameTd.className = "merged-cell";
-      subTr.appendChild(emptyNameTd);
+
+      // NEW: Create one single cell spanning both Rank and Name
+      const mergedNameTd = document.createElement("td");
+      mergedNameTd.className = "merged-cell";
+      mergedNameTd.colSpan = 2;
+      subTr.appendChild(mergedNameTd);
 
       const subSkillTd = document.createElement("td");
       subSkillTd.innerHTML = buildSkillHtml(visibleSkills[i], member.id);
@@ -337,18 +381,20 @@ function renderTable() {
       }
       subTr.appendChild(subSkillTd);
       subTr.appendChild(subDateTd);
-      const emptyEmailTd = document.createElement("td");
-      emptyEmailTd.className = "merged-cell";
-      subTr.appendChild(emptyEmailTd);
+
+      const emptyActionTd = document.createElement("td");
+      emptyActionTd.className = "merged-cell";
+      subTr.appendChild(emptyActionTd);
+
       skillsTableBody.appendChild(subTr);
     }
   });
 
+  // Empty state handling
   if (visibleCount === 0) {
     skillsTableBody.innerHTML = `
             <tr class="empty-state-row">
-                <td colspan="4">
-                    <div class="empty-state-content">
+                <td colspan="5"> <div class="empty-state-content">
                         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                             <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -368,7 +414,6 @@ function renderTable() {
   setupMasterCheckbox("selectAllWhatsapp", ".send-wa-cb");
   updateSendButtonState();
 }
-
 function setupMasterCheckbox(masterId, targetClass) {
   const master = document.getElementById(masterId);
   if (!master) return;
@@ -500,23 +545,23 @@ socket.on("progress-update", (data) => {
 });
 
 socket.on("expiring-skills-data", (data) => {
-    if (viewBtn) {
-        viewBtn.disabled = false;
-        viewBtn.textContent = "Reload Expiring Skills";
-    }
+  if (viewBtn) {
+    viewBtn.disabled = false;
+    viewBtn.textContent = "Reload Expiring Skills";
+  }
 
-    const tableContainer = document.getElementById("tableContainer");
-    const overlay = document.getElementById("loadingOverlay");
+  const tableContainer = document.getElementById("tableContainer");
+  const overlay = document.getElementById("loadingOverlay");
 
-    if (overlay) overlay.style.display = "none";
-    if (tableContainer) tableContainer.style.display = "block";
+  if (overlay) overlay.style.display = "none";
+  if (tableContainer) tableContainer.style.display = "block";
 
-    currentOsmData = data;
-    
-    applySort(); 
-    updateNotificationBadges(); 
-    
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  currentOsmData = data;
+
+  applySort();
+  updateNotificationBadges();
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 function buildSkillHtml(skillObj, memberId) {
@@ -629,7 +674,7 @@ async function updateNotificationBadges() {
     const countPending = (dataAcc.total || 0) + (dataRej.total || 0);
 
     const badgeSent = document.getElementById("badgeSent");
-    const badgeSub = document.getElementById("badgeSubmitted"); 
+    const badgeSub = document.getElementById("badgeSubmitted");
     const btn = document.getElementById("liveFormsNotifBtn");
 
     if (countSent > 0) {
