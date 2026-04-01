@@ -1,9 +1,17 @@
 const axios = require('axios');
-//
 const { HttpsProxyAgent } = require('https-proxy-agent');
-
 const DEFAULT_SOURCE = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=NZ&ssl=all&anonymity=all";
 
+let activeProxy = null; // Store state here
+
+// Add getters and setters
+function getActiveProxy() {
+    return activeProxy;
+}
+
+function setActiveProxy(proxyUrl) {
+    activeProxy = proxyUrl;
+}
 async function findWorkingNZProxy(logger = console.log, customSource = null) {
     // ... (This function remains mostly the same, ensuring it passes the URL to verifyProxy)
     const sourceUrl = customSource || DEFAULT_SOURCE;
@@ -63,4 +71,8 @@ async function verifyProxy(proxyUrl) {
     }
 }
 
-module.exports = { findWorkingNZProxy };
+module.exports = { 
+    findWorkingNZProxy, 
+    getActiveProxy, 
+    setActiveProxy 
+};
