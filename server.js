@@ -4,13 +4,13 @@ const { Server } = require("socket.io");
 const session = require("express-session");
 const config = require("./config.js");
 const db = require("./services/db");
-const { findWorkingNZProxy } = require("./services/proxy-manager");
 const { getOIData } = require("./services/scraper");
 const { processMemberSkills } = require("./services/member-manager");
 const whatsappService = require("./services/whatsapp-service");
 const formsService = require("./services/forms-service");
-const { findWorkingNZProxy, setActiveProxy } = require("./services/proxy-manager");
+const { findWorkingNZProxy, setActiveProxy, getActiveProxy } = require("./services/proxy-manager");
 const { globalAuthGuard } = require("./middleware/auth");
+const { ROLES } = require("./middleware/auth");
 // --- API Routers
 const memberRoutes = require("./routes/api/members");
 const skillRoutes = require("./routes/api/skills");
@@ -199,7 +199,7 @@ io.on("connection", (socket) => {
       const rawData = await getOIData(
         config.url,
         interval,
-        currentProxy,
+        getActiveProxy(),
         logger,
       );
       const trainingMap = await getTrainingMap();
