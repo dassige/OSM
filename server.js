@@ -32,11 +32,16 @@ const viewRoutes = require("./routes/views");
 
 const app = express();
 const server = http.createServer(app);
+//==============================================================================
+//  SERVE STATIC FILES
+//==============================================================================
+app.use(express.static("public"));
 
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"], credentials: true },
 });
+
 
 const sessionMiddleware = session({
   secret: config.auth?.sessionSecret || "fallback_secret_key",
@@ -83,10 +88,7 @@ app.use("/api", systemRoutes);
 app.use("/api/training-sessions", trainingRoutes);
 app.use("/api/statistics", statisticsRoutes);
 
-//==============================================================================
-//  SERVE STATIC FILES
-//==============================================================================
-app.use(express.static("public"));
+
 
 // =============================================================================
 //  SOCKET.IO EVENTS

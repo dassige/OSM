@@ -7,6 +7,8 @@
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <title id="pageTitle">FENZ OSM Console</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/sidebar.css">
+    <script src="/js/sidebar.js"></script>
 </head>
 
 <body>
@@ -63,55 +65,7 @@
                         <span id="badgeSubmitted" class="notif-badge badge-submitted" style="display:none">0</span>
                     </a>
                 </div>
-                <div class="header-menu">
-                    <button onclick="toggleMenu()" class="menu-btn">
-                        Menu
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </button>
-                    <div id="myDropdown" class="dropdown-content">
-                        <div class="dropdown-submenu" id="groupOperations" style="display:none;">
-                            <a href="#">Operations</a>
-                            <div class="submenu-content">
-                                <div class="dropdown-submenu">
-                                    <a href="#">Maintenance</a>
-                                    <div class="submenu-content">
-                                        <a href="members.html" id="navManageMembers">Manage Members</a>
-                                        <a href="skills.html" id="navManageSkills">Manage Skills</a>
-                                        <a href="forms-manage.html" id="navManageForms">Manage Forms</a>
-                                    </div>
-                                </div>
-                                <a href="training-planner.html" id="navTrainingPlanner">Renewal Planner</a>
-                                <a href="live-forms.html" id="navLiveForms">Live Forms</a>
-                            </div>
-                        </div>
-                        <div class="dropdown-submenu" id="groupComms" style="display:none;">
-                            <a href="#">Communication</a>
-                            <div class="submenu-content">
-                                <a href="templates.html" id="navEmailTemplates">Templates</a>
-                                <a href="third-parties.html" id="navThirdParties">Third Party (WhatsApp)</a>
-                            </div>
-                        </div>
-                        <div class="dropdown-submenu" id="groupReports" style="display:none;">
-                            <a href="#">Reports & Logs</a>
-                            <div class="submenu-content">
-                                <a href="reports.html" id="navReports">Reports</a>
-                                <a href="statistics.html" id="navStats">Statistics</a>
-                                <a href="event-log.html" id="navEventLog">Event Log</a>
-                            </div>
-                        </div>
-                        <div class="dropdown-submenu" id="groupSystem" style="display:none;">
-                            <a href="#">System Admin</a>
-                            <div class="submenu-content">
-                                <a href="users.html" id="navManageUsers">Manage Users</a>
-                                <a href="system-tools.html" id="navSystemTools">System Tools</a>
-                            </div>
-                        </div>
-                        <a href="#" onclick="openModal('aboutModal')">About</a>
-                    </div>
-                </div>
+
             </div>
         </div>
 
