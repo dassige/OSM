@@ -11,6 +11,7 @@ const formsService = require("./services/forms-service");
 const { findWorkingNZProxy, setActiveProxy, getActiveProxy } = require("./services/proxy-manager");
 const { globalAuthGuard } = require("./middleware/auth");
 const { ROLES } = require("./middleware/auth");
+
 // --- API Routers
 const memberRoutes = require("./routes/api/members");
 const skillRoutes = require("./routes/api/skills");
@@ -47,27 +48,9 @@ const sessionMiddleware = session({
 app.use(sessionMiddleware);
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
 // MOUNT THE GLOBAL GUARD BEFORE ALL ROUTES
 app.use(globalAuthGuard);
-
-// Wrap startup in an async function to prevent race conditions
-(async () => {
-  try {
-    // 1. Wait for DB to be ready before doing anything else
-    await db.initDB();
-
-    // 2. Initialize Services that depend on DB
-    whatsappService.init(io, db.logEvent);
-    if (config.enableWhatsApp) {
-      whatsappService.startClient();
-    }
-
-    // 3. Initialize Proxy (which logs to DB)
-    await initializeProxy();
-  } catch (err) {
-    console.error("Critical Startup Error:", err);
-  }
-})();
 
 async function initializeProxy() {
   let proxyToUse = null;
@@ -75,7 +58,7 @@ async function initializeProxy() {
   else if (config.proxyMode === "dynamic")
     proxyToUse = await findWorkingNZProxy(console.log);
   
-  setActiveProxy(proxyToUse); // Save to the manager
+  setActiveProxy(proxyToUse); 
 
   await db.logEvent("System", "System", "Proxy Initialized", {
     mode: config.proxyMode,
@@ -87,7 +70,7 @@ async function initializeProxy() {
 //  AUTHENTICATION & API ROUTES 
 // =============================================================================
 app.use("/", authRoutes);
-app.use("/", viewRoutes); // <-- Mounts the HTML page guards
+app.use("/", viewRoutes); 
 
 app.use("/api/members", memberRoutes);
 app.use("/api/skills", skillRoutes);
@@ -126,112 +109,71 @@ io.on("connection", (socket) => {
 
   socket.on("get-preferences", async () => {
     try {
-      socket.emit(
-        "preferences-data",
-        await db.getAllUserPreferences(socket.request.session.user.id || 0),
-      );
+      socket.emit("preferences-data", await db.getAllUserPreferences(socket.request.session.user.id || 0));
     } catch (e) {}
   });
+  
   socket.on("update-preference", async ({ key, value }) => {
-    if (userLevel < ROLES.simple)
-      return logger("Unauthorized: Guest cannot save preferences.");
-    try {
-      await db.saveUserPreference(
-        socket.request.session.user.id || 0,
-        key,
-        value,
-      );
-    } catch (e) {}
+    if (userLevel < ROLES.simple) return logger("Unauthorized: Guest cannot save preferences.");
+    try { await db.saveUserPreference(socket.request.session.user.id || 0, key, value); } catch (e) {}
   });
+
   socket.on("wa-get-status", () => {
-    if (userLevel >= ROLES.simple) {
-      socket.emit("wa-status-data", whatsappService.getStatus());
-    }
+    if (userLevel >= ROLES.simple) socket.emit("wa-status-data", whatsappService.getStatus());
   });
+
   socket.on("wa-control", (action) => {
     if (userLevel < ROLES.admin) return;
     if (action === "start") whatsappService.startClient();
     if (action === "stop") whatsappService.logout();
   });
+
   socket.on("wa-send-test", async (data) => {
     if (userLevel < ROLES.admin) return;
-    const currentUser =
-      socket.request.session.user.name || socket.request.session.user;
+    const currentUser = socket.request.session.user.name || socket.request.session.user;
     try {
       logger(`[WhatsApp] Sending test message to ${data.mobile}...`);
       await whatsappService.sendMessage(data.mobile, data.message);
       await db.logEvent(currentUser, "WhatsApp", "Test Message Sent", {
-        recipientMobile: data.mobile,
-        messageLength: data.message.length,
-        status: "Sent to Browser",
+        recipientMobile: data.mobile, messageLength: data.message.length, status: "Sent to Browser",
       });
-      socket.emit("wa-test-result", {
-        success: true,
-        message: "Test message sent successfully.",
-      });
+      socket.emit("wa-test-result", { success: true, message: "Test message sent successfully." });
     } catch (err) {
       logger(`[WhatsApp] Test failed: ${err.message}`);
-      await db.logEvent(currentUser, "WhatsApp", "Test Message Failed", {
-        mobile: data.mobile,
-        error: err.message,
-      });
+      await db.logEvent(currentUser, "WhatsApp", "Test Message Failed", { mobile: data.mobile, error: err.message });
       socket.emit("wa-test-result", { success: false, error: err.message });
     }
   });
+
   socket.on("view-expiring-skills", async (days, forceRefresh) => {
-    const protocol =
-      socket.handshake.headers["x-forwarded-proto"] ||
-      (socket.request.connection.encrypted ? "https" : "http");
+    const protocol = socket.handshake.headers["x-forwarded-proto"] || (socket.request.connection.encrypted ? "https" : "http");
     const host = socket.handshake.headers.host;
     const dynamicBaseUrl = `${protocol}://${host}`;
     try {
       const daysThreshold = parseInt(days) || 30;
       const interval = forceRefresh ? 0 : config.scrapingInterval;
 
-      logger(
-        `> Fetching View Data (Threshold: ${daysThreshold} days${
-          forceRefresh ? ", Force Refresh" : ", Cached OK"
-        })...`,
-      );
+      logger(`> Fetching View Data (Threshold: ${daysThreshold} days${forceRefresh ? ", Force Refresh" : ", Cached OK"})...`);
 
       const dbMembers = await db.getMembers();
       const dbSkills = await db.getSkills();
-      const rawData = await getOIData(
-        config.url,
-        interval,
-        getActiveProxy(),
-        logger,
-      );
+      const rawData = await getOIData(config.url, interval, getActiveProxy(), logger);
       const trainingMap = await getTrainingMap();
-
-      // Fetch statuses using the environment variable threshold
-      const liveForms = await formsService.getAllActiveStatuses(
-        config.acceptedFormVisibilityDays,
-      );
+      const liveForms = await formsService.getAllActiveStatuses(config.acceptedFormVisibilityDays);
       const liveFormsMap = {};
-      liveForms.forEach((r) => {
-        liveFormsMap[`${r.member_id}_${r.skill_id}`] = r.form_status;
-      });
+      
+      liveForms.forEach((r) => { liveFormsMap[`${r.member_id}_${r.skill_id}`] = r.form_status; });
 
-      // [UPDATED] Pass liveFormsMap
-      const processedMembers = processMemberSkills(
-        dbMembers,
-        rawData,
-        dbSkills,
-        daysThreshold,
-        trainingMap,
-        liveFormsMap,
-        dynamicBaseUrl,
-      );
+      const processedMembers = processMemberSkills(dbMembers, rawData, dbSkills, daysThreshold, trainingMap, liveFormsMap, dynamicBaseUrl);
 
       const results = processedMembers.map((m) => ({
-        id: m.id, // [NEW] Pass Member ID
+        id: m.id,
         name: m.name,
         email: m.email,
         mobile: m.mobile,
         notificationPreference: m.notificationPreference,
         skills: m.expiringSkills.map((s) => ({
-          skillId: s.skillId, // [NEW] Pass Skill ID
+          skillId: s.skillId,
           skill: s.skill,
           dueDate: s.dueDate,
           hasUrl: !!s.url,
@@ -242,193 +184,104 @@ io.on("connection", (socket) => {
       }));
 
       socket.emit("expiring-skills-data", results);
-      //socket.emit("script-complete", 0);
-    } catch (e) {
-      logger(e.message);
-      //socket.emit("script-complete", 1);
-    }
+    } catch (e) { logger(e.message); }
   });
+
   socket.on("run-process-queue", async (targets, days) => {
-    if (userLevel < ROLES.simple) {
-      socket.emit("terminal-output", "Error: Unauthorized.\n");
-      return;
-    }
+    if (userLevel < ROLES.simple) { socket.emit("terminal-output", "Error: Unauthorized.\n"); return; }
     await handleQueueProcessing(socket, targets, parseInt(days) || 30, logger);
   });
 });
 
 async function handleQueueProcessing(socket, targets, days, logger) {
-  const protocol =
-    socket.handshake.headers["x-forwarded-proto"] ||
-    (socket.request.connection.encrypted ? "https" : "http");
+  const protocol = socket.handshake.headers["x-forwarded-proto"] || (socket.request.connection.encrypted ? "https" : "http");
   const host = socket.handshake.headers.host;
   const dynamicBaseUrl = `${protocol}://${host}`;
   const isDemo = config.appMode === "demo";
   const currentUser = socket.request.session.user.name || "System";
+  
   logger(`\n[DEBUG] --- Notification Process Started by ${currentUser} ---`);
+  
   try {
     const dbMembers = await db.getMembers();
     const dbSkills = await db.getSkills();
-    const rawData = await getOIData(
-      config.url,
-      config.scrapingInterval,
-      null,
-      logger,
-    );
+    const rawData = await getOIData(config.url, config.scrapingInterval, null, logger);
     const prefs = await db.getPreferences();
-    const membersToProcess = dbMembers.filter((m) =>
-      targets.some((t) => t.name === m.name && m.enabled),
-    );
+    const membersToProcess = dbMembers.filter((m) => targets.some((t) => t.name === m.name && m.enabled));
     const trainingMap = await getTrainingMap();
-    const processedMembers = processMemberSkills(
-      membersToProcess,
-      rawData,
-      dbSkills,
-      days,
-      trainingMap,
-      {}, // empty liveFormsMap for this context
-      dynamicBaseUrl,
-    );
+    const processedMembers = processMemberSkills(membersToProcess, rawData, dbSkills, days, trainingMap, {}, dynamicBaseUrl);
+    
     let totalSent = 0;
 
     for (const member of processedMembers) {
       const targetInfo = targets.find((t) => t.name === member.name);
-      if (!targetInfo || (!targetInfo.sendEmail && !targetInfo.sendWa))
-        continue;
-      if (!member.expiringSkills || member.expiringSkills.length === 0)
-        continue;
+      if (!targetInfo || (!targetInfo.sendEmail && !targetInfo.sendWa)) continue;
+      if (!member.expiringSkills || member.expiringSkills.length === 0) continue;
+      
       logger(`> Processing: ${member.name}`);
 
       for (const skill of member.expiringSkills) {
         const skillConfig = dbSkills.find((s) => s.name === skill.skill);
-        if (
-          skillConfig &&
-          skillConfig.url_type === "internal" &&
-          skillConfig.url
-        ) {
+        if (skillConfig && skillConfig.url_type === "internal" && skillConfig.url) {
           try {
-            // 1. Check if an active form exists (Submitted, Accepted, or Rejected)
-            const isSubmitted = await formsService.checkSubmittedStatus(
-              member.id,
-              skillConfig.id,
-            );
-
+            const isSubmitted = await formsService.checkSubmittedStatus(member.id, skillConfig.id);
             if (isSubmitted) {
-              skill.isSubmitted = true; // Flag for Mailer/WhatsApp to show "Under Review" message
-              skill.url = null; // Ensure no new link is rendered
-              logger(
-                `  - Skipped Live Form for "${skill.skill}" (Active record exists in Accepted/Rejected/Submitted status)`, // [UPDATED LOG]
-              );
+              skill.isSubmitted = true; 
+              skill.url = null; 
+              logger(`  - Skipped Live Form for "${skill.skill}" (Active record exists)`);
             } else {
-              // 2. Standard Flow: Ensure Open Form
-              const accessCode = await formsService.ensureLiveForm(
-                member.id,
-                skillConfig.id,
-                skill.dueDate,
-                skillConfig.url,
-              );
+              const accessCode = await formsService.ensureLiveForm(member.id, skillConfig.id, skill.dueDate, skillConfig.url);
               const separator = skill.url.includes("?") ? "&" : "?";
               skill.url = `${skill.url}${separator}code=${accessCode}`;
               logger(`  - Live Form ready for "${skill.skill}"`);
             }
-          } catch (e) {
-            logger(
-              `  ! Error creating live form for ${skill.skill}: ${e.message}`,
-            );
-          }
+          } catch (e) { logger(`  ! Error creating live form for ${skill.skill}: ${e.message}`); }
         }
       }
 
       if (targetInfo.sendEmail && member.email) {
         try {
-          // Mailer service already handles simulation if 4th param is true
-          await sendNotification(
-            member,
-            prefs,
-            config.transporter,
-            isDemo,
-            logger,
-            config.ui.loginTitle,
-          );
-
-          if (isDemo) {
-            logger(
-              `  [DEMO] Email simulated for ${member.name}. Skipping SMTP transmission.`,
-            );
-          } else {
-            await db.logEmailAction(member, "SENT", "Email notification sent");
-          }
+          await sendNotification(member, prefs, config.transporter, isDemo, logger, config.ui.loginTitle);
+          if (isDemo) logger(`  [DEMO] Email simulated for ${member.name}. Skipping SMTP transmission.`);
+          else await db.logEmailAction(member, "SENT", "Email notification sent");
         } catch (e) {
           logger(`  X Email Failed: ${e.message}`);
           await db.logEmailAction(member, "FAILED", e.message);
         }
       }
+
       if (targetInfo.sendWa && member.mobile && config.enableWhatsApp) {
         try {
-          const waTemplate = {
-            intro: prefs.waIntro,
-            row: prefs.waRow,
-            rowNoUrl: prefs.waRowNoUrl,
-            filterOnlyWithUrl: prefs.waOnlyWithUrl,
-          };
-          let msg = (waTemplate.intro || "")
-            .replace("{{name}}", member.name)
-            .replace("{{appname}}", config.ui.loginTitle);
+          const waTemplate = { intro: prefs.waIntro, row: prefs.waRow, rowNoUrl: prefs.waRowNoUrl, filterOnlyWithUrl: prefs.waOnlyWithUrl };
+          let msg = (waTemplate.intro || "").replace("{{name}}", member.name).replace("{{appname}}", config.ui.loginTitle);
           let hasSkills = false;
 
           member.expiringSkills.forEach((s) => {
-            // [UPDATED] WhatsApp Logic
-            if (waTemplate.filterOnlyWithUrl && !s.url && !s.isSubmitted)
-              return;
-
+            if (waTemplate.filterOnlyWithUrl && !s.url && !s.isSubmitted) return;
             hasSkills = true;
             let row = "";
 
             if (s.isSubmitted) {
-              // Custom text for submitted status
               row = `- *${s.skill}*: Form submitted and awaiting review.`;
             } else {
-              // Standard Templates
-              const tpl = s.url
-                ? waTemplate.row || "- {{skill}} {{url}}"
-                : waTemplate.rowNoUrl || "- {{skill}}";
-              row = tpl
-                .replace("{{skill}}", s.skill)
-                .replace("{{date}}", s.dueDate)
-                .replace("{{url}}", s.url || "")
-                .replace("{{critical}}", s.isCritical ? "!" : "");
+              const tpl = s.url ? waTemplate.row || "- {{skill}} {{url}}" : waTemplate.rowNoUrl || "- {{skill}}";
+              row = tpl.replace("{{skill}}", s.skill).replace("{{date}}", s.dueDate).replace("{{url}}", s.url || "").replace("{{critical}}", s.isCritical ? "!" : "");
             }
-
             msg += `\n${row}`;
           });
+
           if (hasSkills) {
-            if (isDemo) {
-              logger(
-                `  [DEMO] WhatsApp simulated for ${member.mobile}. Skipping transmission.`,
-              );
-            } else {
+            if (isDemo) logger(`  [DEMO] WhatsApp simulated for ${member.mobile}.`);
+            else {
               await whatsappService.sendMessage(member.mobile, msg);
               logger(`  - WhatsApp sent to ${member.mobile}`);
             }
-            await db.logEvent(
-              currentUser,
-              "WhatsApp",
-              isDemo ? "Notification Simulated" : "Notification Sent",
-              { member: member.name },
-            );
+            await db.logEvent(currentUser, "WhatsApp", isDemo ? "Notification Simulated" : "Notification Sent", { member: member.name });
           }
-        } catch (e) {
-          logger(`  X WhatsApp Failed: ${e.message}`);
-        }
+        } catch (e) { logger(`  X WhatsApp Failed: ${e.message}`); }
       }
       totalSent++;
-      if (socket.connected)
-        socket.emit("progress-update", {
-          type: "progress-tick",
-          current: totalSent,
-          total: targets.length,
-          member: member.name,
-        });
+      if (socket.connected) socket.emit("progress-update", { type: "progress-tick", current: totalSent, total: targets.length, member: member.name });
     }
     logger(`\n> Finished. Processed ${totalSent} members.`);
     socket.emit("script-complete", 0);
@@ -448,8 +301,36 @@ async function getTrainingMap() {
   return map;
 }
 
-const PORT = 3000;
-server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-  console.log(`> App Mode: ${(config.appMode || "PRODUCTION").toUpperCase()}`);
-});
+// =============================================================================
+//  SERVER INITIALIZATION & BOOTSTRAP
+// =============================================================================
+
+if (require.main === module) {
+  (async () => {
+    try {
+      // 1. Wait for DB to be ready before doing anything else
+      await db.initDB();
+
+      // 2. Initialize Services that depend on DB
+      whatsappService.init(io, db.logEvent);
+      if (config.enableWhatsApp) {
+        whatsappService.startClient();
+      }
+
+      // 3. Initialize Proxy (which logs to DB)
+      await initializeProxy();
+
+      // 4. Start the Server
+      const PORT = process.env.PORT || config.port || 3000;
+      server.listen(PORT, '0.0.0.0', () => {
+        console.log(`[System] 🚀 Server listening on port ${PORT}`);
+        console.log(`> App Mode: ${(config.appMode || "PRODUCTION").toUpperCase()}`);
+      });
+    } catch (err) {
+      console.error("Critical Startup Error:", err);
+    }
+  })();
+}
+
+// THE FIX: Export 'app' instead of 'server' so Supertest bypasses Socket.io!
+module.exports = app;
