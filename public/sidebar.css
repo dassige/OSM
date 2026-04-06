@@ -1,5 +1,5 @@
 /* sidebar.css 
-   Updated with Teal Buttons & White Icons
+   Updated with Teal Buttons, White Icons & Expandable Submenus
 */
 
 :root {
@@ -96,7 +96,7 @@ body.osm-no-margin {
 }
 
 /* =========================================
-   4. NAVIGATION & NESTED MENUS
+   4. NAVIGATION & NESTED MENUS (Animated)
    ========================================= */
 #osm-sidebar-nav {
     overflow-y: auto !important;
@@ -126,24 +126,33 @@ body.osm-no-margin {
     font-weight: bold !important;
 }
 
+/* Chevron indicator for dropdowns */
 .has-children > .menu-label::after {
     content: '\25B8' !important; 
     position: absolute !important;
     right: 20px !important;
     font-size: 12px !important;
+    transition: transform 0.3s ease-in-out !important;
 }
 
-.has-children.active > .menu-label::after {
-    content: '\25BE' !important; 
+/* Rotate chevron smoothly when expanded */
+.has-children.expanded > .menu-label::after {
+    transform: rotate(90deg) !important; /* 90deg from right-pointing to down-pointing */
 }
 
+/* Submenu container animation */
 .submenu {
-    display: none !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
     background: #fafafa !important;
+    transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out !important;
 }
 
-.has-children.active > .submenu {
-    display: block !important;
+/* Expand state */
+.has-children.expanded > .submenu {
+    max-height: 500px !important; /* Arbitrary value larger than expected content */
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
 }
 
 .osm-menu ul .menu-label, 
