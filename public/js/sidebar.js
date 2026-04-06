@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
     // Sidebar HTML Structure with memory IDs and role attributes
     const sidebarHTML = `
-          <button id="osm-open-btn" class="osm-icon-btn">${iconMenu}</button>
+          <button id="osm-open-btn" class="osm-icon-btn" title="Open Menu">${iconMenu}</button>
           <div id="osm-sidebar-container">
               <div class="sidebar-header">
                   <button id="osm-close-btn" class="osm-icon-btn">${iconClose}</button>

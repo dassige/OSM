@@ -95,8 +95,9 @@ body.osm-no-margin {
     z-index: 99999 !important;
 }
 
+
 /* =========================================
-   4. NAVIGATION & NESTED MENUS (Animated)
+   4. NAVIGATION & NESTED MENUS (Animated & Styled)
    ========================================= */
 #osm-sidebar-nav {
     overflow-y: auto !important;
@@ -110,20 +111,29 @@ body.osm-no-margin {
     display: block !important;
 }
 
+/* Base styling for all menu items */
 .osm-menu a, .menu-label {
     display: block !important;
     padding: 12px 20px !important;
-    color: var(--primary-purple) !important;
-    text-decoration: underline !important;
+    color: #333333 !important; /* Modern dark grey */
+    text-decoration: none !important; /* Removed the underline */
     cursor: pointer !important;
     font-size: 15px !important;
-    border-bottom: 1px solid #f9f9f9 !important;
+    border-bottom: 1px solid #f1f1f1 !important; /* Softer separator */
     position: relative !important;
+    transition: background-color 0.2s ease, color 0.2s ease !important;
 }
 
+/* Group header labels */
 .menu-label {
-    text-decoration: none !important;
-    font-weight: bold !important;
+    font-weight: 600 !important;
+    color: var(--primary-purple) !important; /* Keep top-level groups distinct */
+}
+
+/* Smooth hover effect */
+.osm-menu a:hover, .menu-label:hover {
+    background-color: rgba(23, 162, 184, 0.08) !important; /* 8% opacity FENZ Teal */
+    color: var(--fenz-teal-hover) !important;
 }
 
 /* Chevron indicator for dropdowns */
@@ -137,7 +147,7 @@ body.osm-no-margin {
 
 /* Rotate chevron smoothly when expanded */
 .has-children.expanded > .menu-label::after {
-    transform: rotate(90deg) !important; /* 90deg from right-pointing to down-pointing */
+    transform: rotate(90deg) !important;
 }
 
 /* Submenu container animation */
@@ -150,16 +160,18 @@ body.osm-no-margin {
 
 /* Expand state */
 .has-children.expanded > .submenu {
-    max-height: 500px !important; /* Arbitrary value larger than expected content */
+    max-height: 500px !important; 
     padding-top: 5px !important;
     padding-bottom: 5px !important;
 }
 
+/* Indentations for nested levels */
 .osm-menu ul .menu-label, 
 .osm-menu ul a { padding-left: 40px !important; }
 
 .osm-menu ul ul .menu-label, 
 .osm-menu ul ul a { padding-left: 60px !important; }
+
 
 /* =========================================
    5. BACK BUTTON POSITION
