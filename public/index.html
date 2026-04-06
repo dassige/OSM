@@ -22,19 +22,20 @@
             </svg>
             <span id="userNameDisplay">User</span>
         </button>
-        <div id="profileDropdown" class="dropdown-content profile-dropdown">
-            <a href="profile.html" id="navUserSettings">User Settings</a>
-            <div style="padding: 12px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border-top:1px solid var(--border-color);"
-                onclick="document.getElementById('darkModeToggle').click()">
-                <span style="color: var(--text-main); font-size: 16px;">Dark Mode</span>
-                <label class="switch" style="margin:0; pointer-events:none;">
-                    <input type="checkbox" id="darkModeToggle"
-                        onchange="toggleDarkMode(this.checked); event.stopPropagation();" style="pointer-events:auto;">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <a href="#" id="logoutLinkLeft" class="logout">Logout</a>
-        </div>
+                       <div id="profileDropdown" class="dropdown-content profile-dropdown">
+                            <a href="profile.html" id="navUserSettings">User Settings</a>
+                            <div style="padding: 12px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border-top:1px solid var(--border-color);"
+                                onclick="document.getElementById('darkModeToggle').click()">
+                                <span style="color: var(--text-main); font-size: 16px;">Dark Mode</span>
+                                <label class="switch" style="margin:0; pointer-events:none;">
+                                    <input type="checkbox" id="darkModeToggle"
+                                        onchange="toggleDarkMode(this.checked); event.stopPropagation();"
+                                        style="pointer-events:auto;">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <a href="#" id="logoutLinkLeft" class="logout">Logout</a>
+                        </div> 
     </div>
 
 
@@ -43,7 +44,7 @@
                 style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
-<div class="container">
+    <div class="container">
         <div class="header-row">
             <div class="header-spacer"></div>
 
@@ -91,13 +92,19 @@
         </div>
         <div id="tableContainer">
             <div class="section-header-flex">
+                <div style="display:flex; align-items:center; gap:15px;">
+ 
+                </div>
                 <h2 style="margin: 0;">Expiring Skills List</h2>
                 <div class="type-toggles" style="display: flex; gap: 8px; align-items: center;">
                     <span class="filter-label">Filters:</span>
-                    <div id="btnHideNoSkills" class="type-badge" title="Hide members with 'NO expiring skills'">Hide Empty</div>
-                    <div id="btnHideNoUrl" class="type-badge" title="Hide Skills without Online form">Has Form Only</div>
+                    <div id="btnHideNoSkills" class="type-badge" title="Hide members with 'NO expiring skills'">Hide
+                        Empty</div>
+                    <div id="btnHideNoUrl" class="type-badge" title="Hide Skills without Online form">Has Form Only
+                    </div>
                     <div id="btnHideWithUrl" class="type-badge" title="Hide Skills with Online form">No Form Only</div>
-                    <div id="btnExpiredOnly" class="type-badge expired-filter" title="Display only expired skills">Expired Only</div>
+                    <div id="btnExpiredOnly" class="type-badge expired-filter" title="Display only expired skills">
+                        Expired Only</div>
                 </div>
             </div>
 
@@ -105,8 +112,9 @@
                 <em>
                     Skills displayed in <b>bold</b> are configured as 'Critical'. <br>
                     <span class="legend-item">
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
-                            stroke-linecap="round" stroke-linejoin="round" class="icon-form-link" style="margin-right: 5px;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2"
+                            fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-form-link"
+                            style="margin-right: 5px;">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                             <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -116,7 +124,8 @@
                     </span>
 
                     <span class="legend-item">
-                        <span class="status-circle sent" style="margin-left:0; margin-right:5px; width:20px; height:20px;">
+                        <span class="status-circle sent"
+                            style="margin-left:0; margin-right:5px; width:20px; height:20px;">
                             <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2"
                                 fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -126,7 +135,8 @@
                     </span>
 
                     <span class="legend-item">
-                        <span class="status-circle submitted" style="margin-left:0; margin-right:5px; width:20px; height:20px;">
+                        <span class="status-circle submitted"
+                            style="margin-left:0; margin-right:5px; width:20px; height:20px;">
                             <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2"
                                 fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -136,7 +146,8 @@
                     </span>
 
                     <span class="legend-item">
-                        <span class="status-circle accepted" style="margin-left:0; margin-right:5px; width:20px; height:20px;">
+                        <span class="status-circle accepted"
+                            style="margin-left:0; margin-right:5px; width:20px; height:20px;">
                             <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3"
                                 fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="20 6 9 17 4 12"></polyline>
@@ -145,7 +156,8 @@
                     </span>
 
                     <span class="legend-item">
-                        <span class="status-circle rejected" style="margin-left:0; margin-right:5px; width:20px; height:20px;">
+                        <span class="status-circle rejected"
+                            style="margin-left:0; margin-right:5px; width:20px; height:20px;">
                             <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3"
                                 fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -154,17 +166,20 @@
                         </span> Verification Rejected
                     </span>
 
-                    <span style="background-color:var(--danger); color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red Date</span> = Overdue.
+                    <span
+                        style="background-color:var(--danger); color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red
+                        Date</span> = Overdue.
                 </em>
             </p>
 
             <table id="skillsTable">
- <thead>
+                <thead>
                     <tr>
                         <th style="width: 10%" class="sortable text-center" onclick="handleSort('rank')">
-                            <div class="th-content" style="justify-content:center;">Rank <span id="icon-rank" class="sort-icon"></span></div>
+                            <div class="th-content" style="justify-content:center;">Rank <span id="icon-rank"
+                                    class="sort-icon"></span></div>
                         </th>
-                        
+
                         <th style="width: 15%" class="sortable" onclick="handleSort('name')">
                             <div class="th-content">Name <span id="icon-name" class="sort-icon"></span></div>
                         </th>
@@ -174,8 +189,8 @@
                         <th style="width: 25%">
                             <div class="notification-th-header">
                                 <span>Notification</span>
-                                <button id="btnResetDefaults" class="btn-icon-transparent" title="Reset to Member Defaults"
-                                    onclick="resetCheckboxesToDefaults()">
+                                <button id="btnResetDefaults" class="btn-icon-transparent"
+                                    title="Reset to Member Defaults" onclick="resetCheckboxesToDefaults()">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                         stroke-linejoin="round">
@@ -185,8 +200,10 @@
                                 </button>
                             </div>
                             <div style="display:flex; flex-direction:column; gap:5px;">
-                                <label class="header-checkbox-label"><input type="checkbox" id="selectAllEmail" checked> Email</label>
-                                <label class="header-checkbox-label"><input type="checkbox" id="selectAllWhatsapp"> WhatsApp</label>
+                                <label class="header-checkbox-label"><input type="checkbox" id="selectAllEmail" checked>
+                                    Email</label>
+                                <label class="header-checkbox-label"><input type="checkbox" id="selectAllWhatsapp">
+                                    WhatsApp</label>
                             </div>
                         </th>
                     </tr>
@@ -216,7 +233,8 @@
             <div class="modal-credits">
                 <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">Credits</p>
                 <ul style="padding-left: 20px; margin: 0; line-height: 1.6;">
-                    <li><strong>Developer:</strong> Gerardo Dassi (<a href="https://github.com/dassige/OSM" target="_blank">Github</a>)</li>
+                    <li><strong>Developer:</strong> Gerardo Dassi (<a href="https://github.com/dassige/OSM"
+                            target="_blank">Github</a>)</li>
                     <li><strong>Persistence:</strong> Litestream</li>
                     <li><strong>Icons:</strong> Feather Icons</li>
                 </ul>
@@ -227,7 +245,7 @@
             </div>
         </div>
     </div>
-    
+
     <div id="pendingReviewsModal" class="modal">
         <div class="modal-content modal-centered-content">
             <span class="close-btn" onclick="closeModal('pendingReviewsModal')">&times;</span>
@@ -243,7 +261,8 @@
             </div>
             <h2 style="margin-top: 0; color: var(--text-main);">Pending Reviews</h2>
             <p style="font-size: 1.1em; color: var(--text-muted); margin-bottom: 25px;">
-                You have <strong id="pendingCountDisplay" style="color: var(--primary);">0</strong> live form(s) submitted and
+                You have <strong id="pendingCountDisplay" style="color: var(--primary);">0</strong> live form(s)
+                submitted and
                 awaiting review.
             </p>
             <div class="modal-actions-center">
@@ -253,7 +272,8 @@
                     style="background-color: var(--primary); border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">Review
                     Now</button>
             </div>
-            <p style="margin-top: 20px; font-size: 0.85em; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 10px;">
+            <p
+                style="margin-top: 20px; font-size: 0.85em; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 10px;">
                 You can disable this alert in your <a href="profile.html"
                     style="color: var(--text-muted); text-decoration: underline;">User Profile</a>.
             </p>
@@ -347,4 +367,5 @@
             });
     </script>
 </body>
+
 </html>

@@ -129,3 +129,54 @@ window.addEventListener('click', (event) => {
         event.target.style.display = 'none';
     }
 });
+// public/utils.js - Add the following logic
+
+/**
+ * Injects and opens a centralized About Modal
+ */
+window.showAboutModal = async function() {
+    let modal = document.getElementById('globalAboutModal');
+    
+    // Create modal if it doesn't exist in DOM
+    if (!modal) {
+        const config = await (await fetch('/ui-config')).json();
+        
+        const style = document.createElement('style');
+        style.innerHTML = `
+            #globalAboutModal .modal-about-logo { max-width: 100px; margin: 0 auto 15px; display: block; }
+            .modal-centered-content { text-align: center; max-width: 450px; }
+            .modal-credits { margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px; font-size: 0.85em; text-align: left; }
+        `;
+        document.head.appendChild(style);
+
+        modal = document.createElement('div');
+        modal.id = 'globalAboutModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content modal-centered-content">
+                <span class="close-btn" onclick="closeModal('globalAboutModal')">&times;</span>
+                <img src="${config.loginLogo || 'resources/logo.png'}" alt="App Logo" class="modal-about-logo">
+                <h2 style="margin-top: 0;">About</h2>
+                <p style="font-size: 1.1em; color: var(--text-muted);">${config.loginTitle}</p>
+                <div style="margin: 20px 0; font-size: 0.9em;">
+                    <p><strong>Version:</strong> ${config.version}</p>
+                    <p><strong>Deploy Date:</strong> ${config.deployDate}</p>
+                </div>
+                <div class="modal-credits">
+                    <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">Credits</p>
+                    <ul style="padding-left: 20px; line-height: 1.6;">
+                        <li><strong>Developer:</strong> Gerardo Dassi</li>
+                        <li><strong>Stack:</strong> Node.js, SQLite, Litestream</li>
+                        <li><strong>Icons:</strong> Feather Icons</li>
+                    </ul>
+                </div>
+                <div class="modal-actions-center">
+                    <button onclick="closeModal('globalAboutModal')" class="btn-secondary">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    modal.style.display = 'block';
+};

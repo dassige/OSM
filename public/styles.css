@@ -523,27 +523,39 @@ textarea {
     padding: 8px;
 }
 
-/* Profile Menu */
+/* Profile Menu - Updated for Flow Positioning */
 .profile-menu {
-    position: absolute;
-    top: 20px;
-    left: 20px;
+    position: relative; /* Anchor for the dropdown */
+    display: inline-block;
     z-index: 100;
+    /* Remove top/left absolute values */
 }
 
 .profile-btn {
     background-color: var(--bg-card);
     color: var(--text-main);
-    padding: 10px 16px;
-    font-size: 16px;
+    padding: 8px 14px; /* More compact for the table header */
+    font-size: 14px;
     border: 1px solid var(--border-color);
     cursor: pointer;
-    border-radius: 20px;
+    border-radius: 6px; /* Match standard button radius */
     display: flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 2px 5px var(--shadow);
+    box-shadow: 0 2px 4px var(--shadow);
     transition: all 0.2s;
+    margin-bottom: 0 !important; /* Ensure no margin pushes dropdown away */
+}
+
+/* Fix for the "Detached" Dropdown */
+.profile-dropdown {
+    left: 0;
+    right: auto;
+    top: 100%; /* Positions exactly at the bottom of the button */
+    margin-top: 5px; /* Small, consistent gap */
+    min-width: 180px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-card); /* Support dark mode */
 }
 
 .profile-btn:hover {
@@ -770,7 +782,7 @@ textarea {
     justify-content: space-between;
     margin-bottom: 20px;
     margin-top: 10px;
-    padding-left: 60px; /* Space for Profile Button */
+    padding-left: 0; /* Remove the 60px padding */
     position: relative;
     gap: 15px;
 }
@@ -1207,10 +1219,8 @@ a .status-circle {
 .notification-wrapper {
     position: relative;
     display: inline-block;
-    margin-right: 10px;
-    /* Gap between bell and menu */
+    margin-right: 60px; /* INCREASED from 10px to shift bell left */
 }
-
 .notification-btn {
     background-color: #343a40;
     color: white;
