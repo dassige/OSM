@@ -8,6 +8,7 @@ const { getOIData } = require("./services/scraper");
 const { processMemberSkills } = require("./services/member-manager");
 const whatsappService = require("./services/whatsapp-service");
 const formsService = require("./services/forms-service");
+const { sendNotification } = require("./services/mailer");
 const { findWorkingNZProxy, setActiveProxy, getActiveProxy } = require("./services/proxy-manager");
 const { globalAuthGuard } = require("./middleware/auth");
 const { ROLES } = require("./middleware/auth");
