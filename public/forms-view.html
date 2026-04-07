@@ -507,9 +507,11 @@
                 const correct = field.correctAnswer;
                 const corrArr = (Array.isArray(correct) ? correct : [correct]).map(v => String(v || '').trim());
 
+                const reqAttr = field.required ? 'required' : '';
+
                 switch (field.type) {
                     case 'text_multi':
-                        inputHtml = `<textarea name="${field.id}" rows="4" style="width:100%; box-sizing: border-box; padding:12px;"></textarea>`;
+                        inputHtml = `<textarea name="${field.id}" rows="4" style="width:100%; box-sizing: border-box; padding:12px;" ${reqAttr}></textarea>`;
                         if (isPreview && correct) {
                             inputHtml += `<div class="reference-box" style="background:#e8f0fe; border-left:4px solid #007bff; padding:12px; margin-top:10px;"><strong>Correct Answer (Reference):</strong><br>${correct}</div>`;
                         }
@@ -520,7 +522,7 @@
                         opts.forEach(o => {
                             const isCorrect = isPreview && corrArr.includes(o);
                             inputHtml += `<label class="option-label ${isCorrect ? 'review-correct' : ''}">
-                        <input type="radio" name="${field.id}" value="${o}" ${isCorrect ? 'checked' : ''}> ${o}
+                        <input type="radio" name="${field.id}" value="${o}" ${reqAttr} ${isCorrect ? 'checked' : ''}> ${o}
                     </label>`;
                         });
                         break;
