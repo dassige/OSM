@@ -180,3 +180,36 @@ window.showAboutModal = async function() {
     
     modal.style.display = 'block';
 };
+
+
+const RANK_ICONS = {
+    'FF': '/assets/ff.png',
+    'RFF': '/assets/rff.png',
+    'QFF': '/assets/qff.png',
+    'SFF': '/assets/sff.png',
+    'SO': '/assets/so.png',
+    'SSO': '/assets/sso.png'
+};
+/**
+ * Formats a rank string into an HTML layout containing the helmet icon and text.
+ * @param {string} rank - The rank string (e.g., 'QFF', 'SO')
+ * @returns {string} - HTML string to be injected into the table cell
+ */
+window.formatRankCell = function(rank) {
+    if (!rank || rank === '-') return '-';
+    
+    const normalizedRank = rank.trim().toUpperCase();
+    const iconPath = RANK_ICONS[normalizedRank];
+    
+    if (iconPath) {
+        return `
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <img src="${iconPath}" alt="${normalizedRank}" style="width: 26px; height: auto; object-fit: contain;">
+                <span style="font-weight: 600; color: var(--primary-purple, #4b0082);">${rank}</span>
+            </div>
+        `;
+    }
+    
+    // Fallback if the rank doesn't match a known helmet
+    return `<span class="badge" style="background:var(--border-color); color:var(--text-main);">${rank}</span>`;
+};

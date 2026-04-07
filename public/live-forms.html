@@ -398,7 +398,7 @@
                     tr.className = rowClass;
                     tr.innerHTML = `
                         <td data-label="Rank" class="text-center">
-                            ${rank !== '-' ? `<span class="badge" style="background:var(--border-color); color:var(--text-main);">${rank}</span>` : '-'}
+                           ${formatRankCell(rank)}
                         </td>
                         <td data-label="Name" style="font-weight:bold;">${displayName || 'Unknown'}</td>
                         <td data-label="Skill">${row.skill_name || 'Unknown'}</td>

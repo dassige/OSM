@@ -249,10 +249,7 @@ function renderTable() {
 
     const rankTd = document.createElement("td");
     rankTd.className = "member-cell text-center";
-    rankTd.innerHTML =
-      rank !== "-"
-        ? `<span class="badge" style="background:var(--border-color); color:var(--text-main);">${rank}</span>`
-        : "-";
+    rankTd.innerHTML = formatRankCell(rank);
     tr.appendChild(rankTd);
 
     const nameTd = document.createElement("td");

@@ -258,7 +258,7 @@
                         </label>
                     </td>
                     <td data-label="Rank" class="text-center">
-                        ${rank !== '-' ? `<span class="badge" style="background:var(--border-color); color:var(--text-main);">${rank}</span>` : '-'}
+                        ${formatRankCell(rank)}
                     </td>
                     <td data-label="Name" style="font-weight:bold;">${displayName}</td>
                     <td data-label="Email">${m.email}</td>
@@ -349,7 +349,8 @@
                 const prefs = (m.notificationPreference || '').split(',');
                 const hasEmail = prefs.includes('email') ? 'active' : '';
                 const hasWa = prefs.includes('whatsapp') ? 'active' : '';
-
+                // Extract rank and name for formatting
+                const { rank, displayName } = parseRankAndName(m.name);
                 tr.innerHTML = `
                     <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()"></td>
                     <td class="text-center">
@@ -358,6 +359,7 @@
                             <span class="slider"></span>
                         </label>
                     </td>
+                    <td data-label="Rank" class="text-center">${formatRankCell(rank)}</td>
                     <td data-label="Name">${m.name}</td><td data-label="Email">${m.email}</td><td data-label="Mobile">${m.mobile || ''}</td>
                     <td data-label="Prefs" class="text-center ws-nowrap">
                         <span class="pref-icon bg-email ${hasEmail}" title="Email">
