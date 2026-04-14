@@ -26,7 +26,10 @@ const globalAuthGuard = (req, res, next) => {
     "/toast.js", 
     "/public/js/toast.js",
     "/public/theme.js",
-    "/surveys-manage.html"
+    "/surveys-manage.html",
+    "/surveys-view.html",
+    "/live-surveys.html"
+
   ];
 
   if (

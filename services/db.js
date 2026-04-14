@@ -752,153 +752,113 @@ async function getMfaData(userId) {
   );
 }
 
-// --- Survey Management ---
-
-// Create a new survey draft
-exports.createSurvey = (name, introText, structureJson, createdBy) => {
-    const publicId = crypto.randomUUID();
-    const stmt = db.prepare(`
-        INSERT INTO surveys (public_id, name, intro_text, structure, created_by)
-        VALUES (?, ?, ?, ?, ?)
-    `);
-    const info = stmt.run(publicId, name, introText, structureJson, createdBy);
-    return { id: info.lastInsertRowid, publicId };
-};
-
-// Get all surveys for the management dashboard
-exports.getAllSurveys = () => {
-    return db.prepare(`
-        SELECT id, public_id, name, status, created_at 
-        FROM surveys 
-        ORDER BY created_at DESC
-    `).all();
-};
-
-// Get a specific survey by its public GUID (for the respondent view)
-exports.getSurveyByPublicId = (publicId) => {
-    return db.prepare(`
-        SELECT id, name, intro_text, structure, status 
-        FROM surveys 
-        WHERE public_id = ? AND status = 'published'
-    `).get(publicId);
-};
-
-// --- Survey Distribution & Tracking ---
-
-// Generate access links for all members for a specific survey
-exports.publishSurvey = (surveyId, memberIds) => {
-    // 1. Update survey status
-    db.prepare(`UPDATE surveys SET status = 'published' WHERE id = ?`).run(surveyId);
-
-    // 2. Create tracking entries using a transaction for performance and safety
-    const insertTracking = db.prepare(`
-        INSERT INTO survey_tracking (survey_id, member_id, access_code)
-        VALUES (?, ?, ?)
-    `);
-
-    const transaction = db.transaction((members) => {
-        for (const memberId of members) {
-            const accessCode = crypto.randomUUID();
-            insertTracking.run(surveyId, memberId, accessCode);
-        }
-    });
-
-    transaction(memberIds);
-};
-
-// --- Survey Submission (The Anonymous Boundary) ---
-
-exports.submitSurveyResponse = (surveyId, accessCode, submittedDataJson) => {
-    // Use a transaction to ensure both the tracking update and response insertion succeed together
-    const submitTransaction = db.transaction(() => {
-        // 1. Verify the access code and check if already submitted
-        const trackingRecord = db.prepare(`
-            SELECT id, status FROM survey_tracking 
-            WHERE survey_id = ? AND access_code = ?
-        `).get(surveyId, accessCode);
-
-        if (!trackingRecord) {
-            throw new Error('Invalid access code.');
-        }
-        if (trackingRecord.status === 'submitted') {
-            throw new Error('Survey already submitted.');
-        }
-
-        // 2. Mark as submitted
-        db.prepare(`
-            UPDATE survey_tracking 
-            SET status = 'submitted', completed_at = CURRENT_TIMESTAMP 
-            WHERE id = ?
-        `).run(trackingRecord.id);
-
-        // 3. Insert the anonymous response (NO link back to member_id or tracking id)
-        db.prepare(`
-            INSERT INTO survey_responses (survey_id, submitted_data)
-            VALUES (?, ?)
-        `).run(surveyId, submittedDataJson);
-    });
-
-    submitTransaction();
-};
-
 // =============================================================================
 // SURVEYS & ANONYMOUS RESPONSES
 // =============================================================================
 
-async function createSurvey(name, introText, structureJson, createdBy) {
+async function createSurvey(name, introText, status, structureJson, createdBy) {
   if (!db) await initDB();
   const publicId = crypto.randomUUID();
   const result = await db.run(
-    `INSERT INTO surveys (public_id, name, intro_text, structure, created_by) VALUES (?, ?, ?, ?, ?)`,
+    `INSERT INTO surveys (public_id, name, intro_text, status, structure, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
     publicId,
     name,
     introText,
+    status || 0, // Fallback to 0 (disabled) if not provided
     structureJson,
     createdBy
   );
   return { id: result.lastID, publicId };
 }
 
+async function updateSurvey(id, name, introText, status, structureJson) {
+  if (!db) await initDB();
+  await db.run(
+    `UPDATE surveys SET name = ?, intro_text = ?, status = ?, structure = ? WHERE id = ?`,
+    name,
+    introText,
+    status || 0,
+    structureJson,
+    id
+  );
+  return true;
+}
+
+async function deleteSurvey(id) {
+  if (!db) await initDB();
+  // Depending on your schema, you might want to also delete from survey_tracking and survey_responses,
+  // or rely on ON DELETE CASCADE in your SQLite table definition.
+  await db.run(`DELETE FROM surveys WHERE id = ?`, id);
+}
+
 async function getAllSurveys() {
   if (!db) await initDB();
+  // Fetch everything needed for the UI, including structure for editing
   return await db.all(
-    `SELECT id, public_id, name, status, created_at FROM surveys ORDER BY created_at DESC`
+    `SELECT id, public_id, name, intro_text as intro, status, structure, created_at FROM surveys ORDER BY created_at DESC`
+  );
+}
+
+async function getSurveyById(id) {
+  if (!db) await initDB();
+  return await db.get(
+    `SELECT id, public_id, name, intro_text as intro, status, structure FROM surveys WHERE id = ?`,
+    id
   );
 }
 
 async function getSurveyByPublicId(publicId) {
   if (!db) await initDB();
   return await db.get(
-    `SELECT id, name, intro_text, structure, status FROM surveys WHERE public_id = ? AND status = 'published'`,
+    `SELECT id, name, intro_text, structure, status FROM surveys WHERE public_id = ? AND status = 1`,
     publicId
   );
 }
 
-async function publishSurvey(surveyId, memberIds) {
+async function publishSurvey(templateId, memberIds, publishedByUserId) {
   if (!db) await initDB();
   await db.exec("BEGIN TRANSACTION");
+  
   try {
-    // 1. Update survey status
-    await db.run(`UPDATE surveys SET status = 'published' WHERE id = ?`, surveyId);
+    // 1. Fetch the survey template to snapshot it
+    const template = await db.get(`SELECT * FROM surveys WHERE id = ?`, templateId);
+    if (!template) throw new Error("Survey template not found.");
 
-    // 2. Create tracking entries for each member
+    // 2. Create the live instance snapshot
+    // We can append the current date to the name to differentiate instances in reports later
+    const instanceName = `${template.name} - ${new Date().toISOString().split('T')[0]}`;
+    
+    const instanceResult = await db.run(
+      `INSERT INTO survey_live (template_id, name, intro_text, structure, published_by) 
+       VALUES (?, ?, ?, ?, ?)`,
+      template.id,
+      instanceName,
+      template.intro_text,
+      template.structure,
+      publishedByUserId
+    );
+    
+    const liveInstanceId = instanceResult.lastID;
+
+    // 3. Generate unique tracking links for the selected members
     const stmt = await db.prepare(
-      `INSERT INTO survey_tracking (survey_id, member_id, access_code) VALUES (?, ?, ?)`
+      `INSERT INTO survey_tracking (survey_live_id, member_id, access_code) VALUES (?, ?, ?)`
     );
     
     for (const memberId of memberIds) {
       const accessCode = crypto.randomUUID();
-      await stmt.run(surveyId, memberId, accessCode);
+      await stmt.run(liveInstanceId, memberId, accessCode);
     }
     
     await stmt.finalize();
     await db.exec("COMMIT");
+    
+    return liveInstanceId;
   } catch (error) {
     await db.exec("ROLLBACK");
     throw error;
   }
 }
-
 async function submitSurveyResponse(surveyId, accessCode, submittedDataJson) {
   if (!db) await initDB();
   await db.exec("BEGIN TRANSACTION");
@@ -936,6 +896,71 @@ async function submitSurveyResponse(surveyId, accessCode, submittedDataJson) {
     throw error;
   }
 }
+async function getSurveyInstanceResults(liveSurveyId) {
+  if (!db) await initDB();
+
+  // 1. Get the instance details and structure
+  const instance = await db.get(`SELECT * FROM survey_live WHERE id = ?`, liveSurveyId);
+  if (!instance) return null;
+
+  // 2. Get high-level completion stats
+  const trackingStats = await db.get(`
+    SELECT 
+      COUNT(*) as totalInvited,
+      SUM(CASE WHEN status = 'submitted' THEN 1 ELSE 0 END) as totalSubmitted
+    FROM survey_tracking 
+    WHERE survey_live_id = ?
+  `, liveSurveyId);
+
+  // 3. Get all raw anonymous responses
+  const responses = await db.all(`
+    SELECT submitted_data, submitted_at 
+    FROM survey_responses 
+    WHERE survey_live_id = ?
+  `, liveSurveyId);
+
+  return { instance, trackingStats, responses };
+}
+
+// Fetch all instances with calculated participation stats
+async function getLiveSurveyInstances() {
+    if (!db) await initDB();
+    return await db.all(`
+        SELECT 
+            sl.id, sl.name, sl.published_at, sl.is_archived,
+            COUNT(st.id) as total_sent,
+            SUM(CASE WHEN st.status = 'submitted' THEN 1 ELSE 0 END) as total_submitted
+        FROM survey_live sl
+        LEFT JOIN survey_tracking st ON sl.id = st.survey_live_id
+        GROUP BY sl.id
+        ORDER BY sl.published_at DESC
+    `);
+}
+
+// Toggle the archive flag
+async function updateSurveyArchiveStatus(id, isArchived) {
+    if (!db) await initDB();
+    await db.run(`UPDATE survey_live SET is_archived = ? WHERE id = ?`, isArchived ? 1 : 0, id);
+    return true;
+}
+
+// Transactional deletion of the instance and all related data
+async function deleteSurveyInstance(id) {
+    if (!db) await initDB();
+    await db.exec("BEGIN TRANSACTION");
+    try {
+        await db.run(`DELETE FROM survey_responses WHERE survey_live_id = ?`, id);
+        await db.run(`DELETE FROM survey_tracking WHERE survey_live_id = ?`, id);
+        await db.run(`DELETE FROM survey_live WHERE id = ?`, id);
+        await db.exec("COMMIT");
+        return true;
+    } catch (error) {
+        await db.exec("ROLLBACK");
+        throw error;
+    }
+}
+
+
 
 module.exports = {
   initDB,
@@ -988,8 +1013,15 @@ module.exports = {
   setMfaStatus,
   getMfaData,
   createSurvey,
+  updateSurvey,
+  deleteSurvey,
   getAllSurveys,
+  getSurveyById,
   getSurveyByPublicId,
   publishSurvey,
-  submitSurveyResponse
-};
+  submitSurveyResponse,
+  getSurveyInstanceResults,
+  getLiveSurveyInstances,
+  updateSurveyArchiveStatus,
+  deleteSurveyInstance};
+

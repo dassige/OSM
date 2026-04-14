@@ -1,49 +1,106 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../../services/db');
+const db = require('../../services/db'); 
+const { hasRole } = require('../../middleware/auth');
 
-// GET /api/live-surveys/:publicId - Fetch the survey UI structure for a respondent
-router.get('/:publicId', (req, res) => {
+// GET /api/live-surveys/preview/:publicId
+// PREVIEW MODE: Fetches the template directly. Protected by admin auth.
+router.get('/preview/:publicId', hasRole('admin'), async (req, res) => {
     try {
-        const survey = db.getSurveyByPublicId(req.params.publicId);
-        
-        if (!survey) {
-            return res.status(404).json({ error: 'Survey not found or is closed.' });
+        const publicId = req.params.publicId;
+        const surveyTemplate = await db.getSurveyByPublicId(publicId);
+
+        if (!surveyTemplate) {
+            return res.status(404).json({ error: 'Survey template not found or is disabled.' });
         }
-        
-        // Parse the JSON string back into an object for the frontend builder to consume
-        survey.structure = JSON.parse(survey.structure);
-        res.json(survey);
+
+        // Return in the format the frontend expects
+        res.json({
+            status: 'preview',
+            survey: {
+                name: surveyTemplate.name,
+                intro: surveyTemplate.intro_text,
+                structure: surveyTemplate.structure
+            }
+        });
     } catch (error) {
-        console.error('[API] Error fetching live survey data:', error);
-        res.status(500).json({ error: 'Failed to load survey.' });
+        console.error('[API] Error fetching preview:', error);
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
-// POST /api/live-surveys/:surveyId/submit - Handle the anonymous submission payload
-router.post('/:surveyId/submit', (req, res) => {
+// GET /api/live-surveys/:accessCode
+// LIVE MODE: Fetches the published instance using a member's unique tracking code
+router.get('/:accessCode', async (req, res) => {
     try {
-        const { accessCode, submittedData } = req.body;
+        const accessCode = req.params.accessCode;
         
-        if (!accessCode || !submittedData) {
-            return res.status(400).json({ error: 'Missing access code or payload.' });
+        // 1. Verify the code in tracking table and get the live_survey_id
+        const trackingRecord = await db.get(
+            `SELECT id, survey_live_id, status FROM survey_tracking WHERE access_code = ?`, 
+            accessCode
+        );
+
+        if (!trackingRecord) {
+            return res.status(404).json({ error: 'Invalid or unrecognized access code.' });
         }
 
-        db.submitSurveyResponse(
-            req.params.surveyId, 
-            accessCode, 
-            JSON.stringify(submittedData)
-        );
-        
-        res.json({ message: 'Survey submitted successfully.' });
-    } catch (error) {
-        console.error('[API] Error during survey submission:', error);
-        
-        // Handle specific transactional errors thrown by the DB service
-        if (error.message === 'Invalid access code.' || error.message === 'Survey already submitted.') {
-            return res.status(403).json({ error: error.message });
+        if (trackingRecord.status === 'submitted') {
+            return res.json({ status: 'submitted' }); // Frontend will show "Thank you" screen
         }
-        res.status(500).json({ error: 'Internal server error during submission.' });
+
+        // 2. Fetch the snapshot instance from survey_live
+        const liveInstance = await db.get(
+            `SELECT name, intro_text, structure FROM survey_live WHERE id = ?`,
+            trackingRecord.survey_live_id
+        );
+
+        if (!liveInstance) {
+            return res.status(404).json({ error: 'Survey instance not found.' });
+        }
+
+        res.json({
+            status: 'pending',
+            survey: {
+                name: liveInstance.name,
+                intro: liveInstance.intro_text,
+                structure: liveInstance.structure
+            }
+        });
+
+    } catch (error) {
+        console.error('[API] Error fetching live survey:', error);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// POST /api/live-surveys/:accessCode/submit
+// LIVE MODE: Processes the anonymous response and marks the code as consumed
+router.post('/:accessCode/submit', async (req, res) => {
+    try {
+        const accessCode = req.params.accessCode;
+        const { answers } = req.body;
+
+        if (!answers || typeof answers !== 'object') {
+            return res.status(400).json({ error: 'Invalid submission data.' });
+        }
+
+        // Find the tracking record to get the live instance ID
+        const trackingRecord = await db.get(
+            `SELECT id, survey_live_id, status FROM survey_tracking WHERE access_code = ?`, 
+            accessCode
+        );
+
+        if (!trackingRecord) return res.status(404).json({ error: 'Invalid access code.' });
+        if (trackingRecord.status === 'submitted') return res.status(400).json({ error: 'Already submitted.' });
+
+        // submitSurveyResponse handles the transaction (marks tracked as submitted, inserts anon response)
+        await db.submitSurveyResponse(trackingRecord.survey_live_id, accessCode, JSON.stringify(answers));
+
+        res.json({ success: true, message: 'Response recorded securely.' });
+    } catch (error) {
+        console.error('[API] Error submitting survey:', error);
+        res.status(500).json({ error: 'Failed to submit response.' });
     }
 });
 

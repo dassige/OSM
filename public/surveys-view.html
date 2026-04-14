@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <title>Survey - FENZ OSM</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .view-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+        .preview-banner {
+            background-color: #ffc107;
+            color: #000;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .survey-header { margin-bottom: 30px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
+        .survey-title { font-size: 24px; font-weight: bold; color: var(--text-main); margin-bottom: 10px; }
+        .survey-intro { font-size: 15px; color: var(--text-muted); }
+        .question-card {
+            background: var(--bg-body);
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        .question-text { font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 15px; }
+        .required-asterisk { color: var(--danger); margin-left: 4px; }
+        .option-label { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; color: var(--text-main); }
+        .text-response { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); min-height: 100px; resize: vertical; }
+        .submit-btn { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; }
+        .error-message { color: var(--danger); font-size: 13px; margin-top: 5px; display: none; }
+        .completed-state { text-align: center; padding: 40px 20px; display: none; }
+        .completed-state svg { color: var(--success); width: 64px; height: 64px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div id="demoBanner" class="demo-banner" style="display:none;">DEMO VERSION</div>
+
+    <div class="view-container">
+        <div id="previewBanner" class="preview-banner">
+            PREVIEW MODE - Submissions are disabled
+        </div>
+
+        <div id="completedState" class="completed-state">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <h2>Thank You!</h2>
+            <p style="color: var(--text-muted); margin-top: 10px;" id="completedMessage">Your response has been securely recorded.</p>
+        </div>
+
+        <div id="surveyContent">
+            <div class="survey-header">
+                <h1 class="survey-title" id="surveyTitle">Loading Survey...</h1>
+                <div class="survey-intro" id="surveyIntro"></div>
+            </div>
+
+            <form id="surveyForm" onsubmit="handleSubmission(event)">
+                <div id="questionsContainer"></div>
+                <button type="submit" class="btn-primary submit-btn" id="btnSubmit">Submit Response</button>
+            </form>
+        </div>
+    </div>
+
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top" style="bottom: 80px; right: 20px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+    </button>
+
+    <script src="utils.js"></script>
+    <script src="toast.js"></script>
+    <script src="theme.js"></script>
+    
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const isPreview = urlParams.get('preview') === 'true';
+        const publicId = urlParams.get('id'); 
+        const accessCode = urlParams.get('code'); 
+
+        let surveyData = null;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            if (isPreview) {
+                document.getElementById('previewBanner').style.display = 'block';
+                if (!publicId) return showError("Preview requires a valid survey ID.");
+                await fetchSurveyData(`/api/live-surveys/preview/${publicId}`);
+            } else {
+                if (!accessCode) return showError("Invalid or missing survey access code.");
+                await fetchSurveyData(`/api/live-surveys/${accessCode}`);
+            }
+        });
+
+        async function fetchSurveyData(endpoint) {
+            try {
+                const res = await fetch(endpoint);
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.error || "Failed to load survey.");
+                
+                // If the backend indicates it's already submitted
+                if (data.status === 'submitted') {
+                    showCompleted("You have already submitted this survey.");
+                    return;
+                }
+
+                surveyData = data.survey;
+                renderSurvey();
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        function renderSurvey() {
+            document.title = `${surveyData.name} - FENZ OSM`;
+            document.getElementById('surveyTitle').innerText = surveyData.name;
+            document.getElementById('surveyIntro').innerHTML = surveyData.intro || "";
+
+            const container = document.getElementById('questionsContainer');
+            let structure = surveyData.structure;
+            if (typeof structure === 'string') structure = JSON.parse(structure);
+
+            structure.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                card.setAttribute('data-id', q.id);
+                card.setAttribute('data-required', q.required);
+
+                const reqHtml = q.required ? `<span class="required-asterisk">*</span>` : '';
+                let html = `<div class="question-text">${index + 1}. ${q.description}${reqHtml}</div>`;
+                
+                // Construct inputs based on type
+                if (q.type === 'text_multi') {
+                    html += `<textarea name="${q.id}" class="text-response" placeholder="Enter your answer here..."></textarea>`;
+                } else if (q.type === 'boolean') {
+                    html += `
+                        <label class="option-label"><input type="radio" name="${q.id}" value="Yes"> Yes</label>
+                        <label class="option-label"><input type="radio" name="${q.id}" value="No"> No</label>
+                    `;
+                } else if (q.type === 'radio') {
+                    if (q.renderAs === 'dropdown') {
+                        html += `<select name="${q.id}" style="width:100%; padding:10px; border-radius:4px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main);">
+                                    <option value="" disabled selected>Select an option...</option>`;
+                        q.options.forEach(opt => html += `<option value="${opt}">${opt}</option>`);
+                        html += `</select>`;
+                    } else {
+                        q.options.forEach(opt => {
+                            html += `<label class="option-label"><input type="radio" name="${q.id}" value="${opt}"> ${opt}</label>`;
+                        });
+                    }
+                } else if (q.type === 'checkboxes') {
+                    q.options.forEach(opt => {
+                        html += `<label class="option-label"><input type="checkbox" name="${q.id}" value="${opt}"> ${opt}</label>`;
+                    });
+                }
+
+                html += `<div class="error-message" id="err_${q.id}">This field is required.</div>`;
+                card.innerHTML = html;
+                container.appendChild(card);
+            });
+        }
+
+        async function handleSubmission(e) {
+            e.preventDefault();
+            
+            if (isPreview) {
+                showToast("Submission bypassed in Preview Mode.", "warning");
+                return;
+            }
+
+            // Gather and Validate Data
+            let isValid = true;
+            const answers = {};
+            const cards = document.querySelectorAll('.question-card');
+
+            cards.forEach(card => {
+                const id = card.getAttribute('data-id');
+                const isReq = card.getAttribute('data-required') === 'true';
+                const errDiv = document.getElementById(`err_${id}`);
+                errDiv.style.display = 'none';
+
+                let val = null;
+                const inputs = card.querySelectorAll(`input[name="${id}"], textarea[name="${id}"], select[name="${id}"]`);
+                
+                if (inputs[0].type === 'checkbox') {
+                    val = Array.from(inputs).filter(i => i.checked).map(i => i.value);
+                    if (val.length === 0) val = null;
+                } else if (inputs[0].type === 'radio') {
+                    const checked = Array.from(inputs).find(i => i.checked);
+                    if (checked) val = checked.value;
+                } else {
+                    val = inputs[0].value.trim();
+                    if (val === "") val = null;
+                }
+
+                if (isReq && !val) {
+                    isValid = false;
+                    errDiv.style.display = 'block';
+                }
+
+                answers[id] = val;
+            });
+
+            if (!isValid) {
+                showToast("Please complete all required fields.", "error");
+                // Scroll to first error
+                document.querySelector('.error-message[style*="display: block"]').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // Submit Payload
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = true;
+            btn.innerText = "Submitting...";
+
+            try {
+                const res = await fetch(`/api/live-surveys/${accessCode}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answers })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Submission failed.");
+
+                showCompleted("Your response has been securely recorded.");
+            } catch (err) {
+                showToast(err.message, "error");
+                btn.disabled = false;
+                btn.innerText = "Submit Response";
+            }
+        }
+
+        function showCompleted(msg) {
+            document.getElementById('surveyContent').style.display = 'none';
+            document.getElementById('completedState').style.display = 'block';
+            document.getElementById('completedMessage').innerText = msg;
+        }
+
+        function showError(msg) {
+            document.getElementById('surveyContent').innerHTML = `
+                <div style="text-align:center; padding: 40px 20px;">
+                    <svg style="color:var(--danger); width:64px; height:64px; margin-bottom:20px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <h2>Survey Unavailable</h2>
+                    <p style="color:var(--text-muted);">${msg}</p>
+                </div>
+            `;
+        }
+
+        const scrollTopBtn = document.getElementById("scrollTopBtn");
+        window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    </script>
+</body>
+</html>

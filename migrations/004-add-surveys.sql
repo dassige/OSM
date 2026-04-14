@@ -1,48 +1,47 @@
--- Migration: 004-add-surveys.sql
--- Description: Creates tables for the anonymous survey feature.
-
--- 1. Core Surveys Table
--- Stores the survey configuration and the JSON structure of the form.
+-- Templates Table
 CREATE TABLE IF NOT EXISTS surveys (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    public_id TEXT UNIQUE NOT NULL, -- Unique GUID for the public survey URL
+    public_id TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     intro_text TEXT,
-    structure TEXT NOT NULL, -- JSON string defining the survey fields (reused from form builder)
-    status TEXT DEFAULT 'draft', -- 'draft', 'published', 'closed'
-    created_by INTEGER, -- Optional: track which admin created it
+    status INTEGER DEFAULT 0,
+    structure TEXT NOT NULL,
+    created_by INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY(created_by) REFERENCES users(id)
 );
 
--- 2. Survey Tracking Table
--- Tracks WHICH members have been sent the survey and their submission status.
--- Critically, this table does NOT link to the actual answers.
+-- Live Instances Table (Snapshot of the template at publish time)
+CREATE TABLE IF NOT EXISTS survey_live (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    template_id INTEGER,
+    name TEXT NOT NULL,
+    intro_text TEXT,
+    structure TEXT NOT NULL,
+    published_by INTEGER,
+    is_archived INTEGER DEFAULT 0,
+    published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(template_id) REFERENCES surveys(id),
+    FOREIGN KEY(published_by) REFERENCES users(id)
+);
+
+-- Tracking Table (Linked to the Live Instance)
 CREATE TABLE IF NOT EXISTS survey_tracking (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    survey_id INTEGER NOT NULL,
+    survey_live_id INTEGER NOT NULL,
     member_id INTEGER NOT NULL,
-    access_code TEXT UNIQUE NOT NULL, -- Unique GUID appended to the URL for a specific member
-    status TEXT DEFAULT 'pending', -- 'pending', 'submitted'
+    access_code TEXT UNIQUE NOT NULL,
+    status TEXT DEFAULT 'pending',
     completed_at DATETIME,
-    FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE,
-    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
-    UNIQUE(survey_id, member_id) -- Prevent duplicate entries for the same member per survey
+    FOREIGN KEY(survey_live_id) REFERENCES survey_live(id),
+    FOREIGN KEY(member_id) REFERENCES members(id)
 );
 
--- 3. Survey Responses Table
--- Stores the actual submitted JSON data. 
--- By design, there is NO foreign key mapping back to `survey_tracking` or `members`.
+-- Responses Table (Linked to the Live Instance, Anonymous)
 CREATE TABLE IF NOT EXISTS survey_responses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    survey_id INTEGER NOT NULL,
-    submitted_data TEXT NOT NULL, -- JSON string of the anonymous answers
+    survey_live_id INTEGER NOT NULL,
+    submitted_data TEXT NOT NULL,
     submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE
+    FOREIGN KEY(survey_live_id) REFERENCES survey_live(id)
 );
-
--- Create indices to optimize query performance for the management dashboard
-CREATE INDEX IF NOT EXISTS idx_surveys_status ON surveys(status);
-CREATE INDEX IF NOT EXISTS idx_survey_tracking_status ON survey_tracking(survey_id, status);
-CREATE INDEX IF NOT EXISTS idx_survey_tracking_access_code ON survey_tracking(access_code);
