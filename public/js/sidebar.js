@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                       <li><a href="members.html" id="navManageMembers">Manage Members</a></li>
                                       <li><a href="skills.html" id="navManageSkills">Manage Skills</a></li>
                                       <li><a href="forms-manage.html" id="navManageForms">Manage Forms</a></li>
+                                      <li><a href="surveys-manage.html" id="navManageSurveys">Manage Surveys</a></li>
                                   </ul>
                               </li>
                               <li><a href="training-planner.html" id="navTrainingPlanner">Renewal Planner</a></li>

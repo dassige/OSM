@@ -751,6 +751,192 @@ async function getMfaData(userId) {
     userId,
   );
 }
+
+// --- Survey Management ---
+
+// Create a new survey draft
+exports.createSurvey = (name, introText, structureJson, createdBy) => {
+    const publicId = crypto.randomUUID();
+    const stmt = db.prepare(`
+        INSERT INTO surveys (public_id, name, intro_text, structure, created_by)
+        VALUES (?, ?, ?, ?, ?)
+    `);
+    const info = stmt.run(publicId, name, introText, structureJson, createdBy);
+    return { id: info.lastInsertRowid, publicId };
+};
+
+// Get all surveys for the management dashboard
+exports.getAllSurveys = () => {
+    return db.prepare(`
+        SELECT id, public_id, name, status, created_at 
+        FROM surveys 
+        ORDER BY created_at DESC
+    `).all();
+};
+
+// Get a specific survey by its public GUID (for the respondent view)
+exports.getSurveyByPublicId = (publicId) => {
+    return db.prepare(`
+        SELECT id, name, intro_text, structure, status 
+        FROM surveys 
+        WHERE public_id = ? AND status = 'published'
+    `).get(publicId);
+};
+
+// --- Survey Distribution & Tracking ---
+
+// Generate access links for all members for a specific survey
+exports.publishSurvey = (surveyId, memberIds) => {
+    // 1. Update survey status
+    db.prepare(`UPDATE surveys SET status = 'published' WHERE id = ?`).run(surveyId);
+
+    // 2. Create tracking entries using a transaction for performance and safety
+    const insertTracking = db.prepare(`
+        INSERT INTO survey_tracking (survey_id, member_id, access_code)
+        VALUES (?, ?, ?)
+    `);
+
+    const transaction = db.transaction((members) => {
+        for (const memberId of members) {
+            const accessCode = crypto.randomUUID();
+            insertTracking.run(surveyId, memberId, accessCode);
+        }
+    });
+
+    transaction(memberIds);
+};
+
+// --- Survey Submission (The Anonymous Boundary) ---
+
+exports.submitSurveyResponse = (surveyId, accessCode, submittedDataJson) => {
+    // Use a transaction to ensure both the tracking update and response insertion succeed together
+    const submitTransaction = db.transaction(() => {
+        // 1. Verify the access code and check if already submitted
+        const trackingRecord = db.prepare(`
+            SELECT id, status FROM survey_tracking 
+            WHERE survey_id = ? AND access_code = ?
+        `).get(surveyId, accessCode);
+
+        if (!trackingRecord) {
+            throw new Error('Invalid access code.');
+        }
+        if (trackingRecord.status === 'submitted') {
+            throw new Error('Survey already submitted.');
+        }
+
+        // 2. Mark as submitted
+        db.prepare(`
+            UPDATE survey_tracking 
+            SET status = 'submitted', completed_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+        `).run(trackingRecord.id);
+
+        // 3. Insert the anonymous response (NO link back to member_id or tracking id)
+        db.prepare(`
+            INSERT INTO survey_responses (survey_id, submitted_data)
+            VALUES (?, ?)
+        `).run(surveyId, submittedDataJson);
+    });
+
+    submitTransaction();
+};
+
+// =============================================================================
+// SURVEYS & ANONYMOUS RESPONSES
+// =============================================================================
+
+async function createSurvey(name, introText, structureJson, createdBy) {
+  if (!db) await initDB();
+  const publicId = crypto.randomUUID();
+  const result = await db.run(
+    `INSERT INTO surveys (public_id, name, intro_text, structure, created_by) VALUES (?, ?, ?, ?, ?)`,
+    publicId,
+    name,
+    introText,
+    structureJson,
+    createdBy
+  );
+  return { id: result.lastID, publicId };
+}
+
+async function getAllSurveys() {
+  if (!db) await initDB();
+  return await db.all(
+    `SELECT id, public_id, name, status, created_at FROM surveys ORDER BY created_at DESC`
+  );
+}
+
+async function getSurveyByPublicId(publicId) {
+  if (!db) await initDB();
+  return await db.get(
+    `SELECT id, name, intro_text, structure, status FROM surveys WHERE public_id = ? AND status = 'published'`,
+    publicId
+  );
+}
+
+async function publishSurvey(surveyId, memberIds) {
+  if (!db) await initDB();
+  await db.exec("BEGIN TRANSACTION");
+  try {
+    // 1. Update survey status
+    await db.run(`UPDATE surveys SET status = 'published' WHERE id = ?`, surveyId);
+
+    // 2. Create tracking entries for each member
+    const stmt = await db.prepare(
+      `INSERT INTO survey_tracking (survey_id, member_id, access_code) VALUES (?, ?, ?)`
+    );
+    
+    for (const memberId of memberIds) {
+      const accessCode = crypto.randomUUID();
+      await stmt.run(surveyId, memberId, accessCode);
+    }
+    
+    await stmt.finalize();
+    await db.exec("COMMIT");
+  } catch (error) {
+    await db.exec("ROLLBACK");
+    throw error;
+  }
+}
+
+async function submitSurveyResponse(surveyId, accessCode, submittedDataJson) {
+  if (!db) await initDB();
+  await db.exec("BEGIN TRANSACTION");
+  try {
+    // 1. Verify the access code and check if already submitted
+    const trackingRecord = await db.get(
+      `SELECT id, status FROM survey_tracking WHERE survey_id = ? AND access_code = ?`,
+      surveyId,
+      accessCode
+    );
+
+    if (!trackingRecord) {
+      throw new Error('Invalid access code.');
+    }
+    if (trackingRecord.status === 'submitted') {
+      throw new Error('Survey already submitted.');
+    }
+
+    // 2. Mark as submitted
+    await db.run(
+      `UPDATE survey_tracking SET status = 'submitted', completed_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      trackingRecord.id
+    );
+
+    // 3. Insert the anonymous response (no link back to the tracking record)
+    await db.run(
+      `INSERT INTO survey_responses (survey_id, submitted_data) VALUES (?, ?)`,
+      surveyId,
+      submittedDataJson
+    );
+
+    await db.exec("COMMIT");
+  } catch (error) {
+    await db.exec("ROLLBACK");
+    throw error;
+  }
+}
+
 module.exports = {
   initDB,
   closeDB,
@@ -801,4 +987,9 @@ module.exports = {
   setMfaSecret,
   setMfaStatus,
   getMfaData,
+  createSurvey,
+  getAllSurveys,
+  getSurveyByPublicId,
+  publishSurvey,
+  submitSurveyResponse
 };
