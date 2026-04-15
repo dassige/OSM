@@ -27,6 +27,8 @@ router.get("/ui-config", (req, res) => {
   res.json({
     ...config.ui,
     appMode: config.appMode,
+    locale: config.locale, // <-- Ensure this is explicitly passed too!
+    timezone: config.timezone, // <-- Add this line!
     defaultMinScore: config.defaultMinScore,
     defaultMinScoreType: config.defaultMinScoreType,
     defaultMaxTries: config.defaultMaxTries,
@@ -41,6 +43,7 @@ router.get("/event-log.html", requirePageAccess(adminAndSuper));
 router.get("/third-parties.html", requirePageAccess(adminAndSuper));
 router.get("/templates.html", requirePageAccess(adminAndSuper));
 router.get("/live-forms.html", requirePageAccess(adminAndSuper));
+router.get("/live-surveys.html", requirePageAccess(adminAndSuper));
 router.get("/statistics.html", requirePageAccess(allAuthenticated));
 
 // Note: You can easily add protections for /members.html, /skills.html, and /forms-manage.html here if needed.
