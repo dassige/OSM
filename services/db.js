@@ -1023,7 +1023,15 @@ async function importAllSurveys(surveysData, createdByUserId) {
         throw error;
     }
 }
-
+// Fetch all submitted responses for a live survey instance
+async function getSurveyResponses(liveSurveyId) {
+    if (!db) await initDB();
+    // FIXED: Changed created_at to submitted_at
+    return await db.all(
+        `SELECT id, submitted_data, submitted_at FROM survey_responses WHERE survey_live_id = ? ORDER BY submitted_at DESC`, 
+        liveSurveyId
+    );
+}
 module.exports = {
   initDB,
   closeDB,
@@ -1090,6 +1098,6 @@ module.exports = {
   getLiveSurveyInstanceById,
   getTrackingRecordByAccessCode,
   importAllSurveys,
-
+  getSurveyResponses
 };
 

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <title id="pageTitle">Survey Results - FENZ OSM</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/sidebar.css">
+    <style>
+        /* Card & Layout */
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--text-main);
+        }
+
+        /* Bar Chart Styles */
+        .bar-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .bar-label {
+            width: 40%;
+            font-size: 14px;
+            color: var(--text-muted);
+            padding-right: 15px;
+            text-align: right;
+        }
+
+        .bar-track {
+            width: 50%;
+            background: var(--input-bg);
+            border-radius: 4px;
+            height: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            background: var(--success);
+            height: 100%;
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+
+        .bar-percent {
+            width: 10%;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: left;
+            padding-left: 10px;
+            color: var(--text-main);
+        }
+
+        /* Text Response Styles */
+        .text-response {
+            background: var(--input-bg);
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            border-left: 3px solid var(--success);
+            color: var(--text-main);
+        }
+
+        /* Banner */
+        .summary-banner {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .summary-banner h2 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="demoBanner" class="demo-banner" style="display:none;">DEMO VERSION</div>
+
+    <a href="live-surveys.html" class="back-btn back-dashboard-btn" title="Back to Live Surveys">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+    </a>
+
+    <div class="container">
+        <h1 id="pageHeader" class="text-center" style="margin-top:0;">Survey Results</h1>
+
+        <div class="summary-banner">
+            <h2 id="surveyTitle">Loading Results...</h2>
+            <div style="font-size: 16px; font-weight: bold;">
+                Total Submissions: <span id="totalSubmissions">0</span>
+            </div>
+        </div>
+
+        <div id="resultsContainer">
+        </div>
+    </div>
+
+    <div id="helpModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close-btn" onclick="closeModal('helpModal')">&times;</span>
+            <h2 style="margin-top:0;">Survey Results Help</h2>
+            <p>This dashboard displays the anonymous aggregated results for this survey instance.</p>
+            <ul style="color:var(--text-main); margin-left:20px; line-height:1.6;">
+                <li><b>Charts:</b> Multiple-choice questions are aggregated into bar charts displaying percentages.</li>
+                <li><b>Text:</b> Free-text responses are listed out sequentially.</li>
+                <li>All submissions are anonymous to protect member privacy.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
+    <button onclick="openModal('helpModal')" class="help-floating-btn" title="Help">?</button>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="utils.js"></script>
+    <script src="app.js"></script>
+    <script src="toast.js"></script>
+    <script src="theme.js"></script>
+    <script src="help.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script src="js/surveys-results.js"></script>
+</body>
+
+</html>
