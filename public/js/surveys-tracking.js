@@ -167,10 +167,17 @@ function renderTable() {
       uiConfig?.appTimezone ||
       Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+    // Safely parse SQLite's raw UTC string
+    let safeDateStr = item.completed_at;
+    if (safeDateStr && !safeDateStr.includes("Z")) {
+      safeDateStr = safeDateStr.replace(" ", "T") + "Z";
+    }
+
     // Apply timezone to toLocaleString so hours/minutes match the organization
-    const dateStr = item.completed_at
-      ? new Date(item.completed_at).toLocaleString(locale, { timeZone: tz })
+    const dateStr = safeDateStr
+      ? new Date(safeDateStr).toLocaleString(locale, { timeZone: tz })
       : "-";
+
     const statusBadge =
       item.status === "submitted"
         ? `<span class="status-badge status-submitted">Submitted</span>`

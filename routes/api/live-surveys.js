@@ -34,7 +34,6 @@ router.get('/:accessCode', async (req, res) => {
     try {
         const accessCode = req.params.accessCode;
         
-        // FIXED: Using the new repository function
         const trackingRecord = await db.getTrackingRecordByAccessCode(accessCode);
 
         if (!trackingRecord) {
@@ -45,11 +44,15 @@ router.get('/:accessCode', async (req, res) => {
             return res.json({ status: 'submitted' }); 
         }
 
-        // FIXED: Using the repository function we created in the last step
         const liveInstance = await db.getLiveSurveyInstanceById(trackingRecord.survey_live_id);
 
         if (!liveInstance) {
             return res.status(404).json({ error: 'Survey instance not found.' });
+        }
+
+        // NEW: Block loading if the survey is archived
+        if (liveInstance.is_archived === 1 || liveInstance.is_archived === true) {
+            return res.status(403).json({ error: 'This survey is archived and no longer accepting responses.' });
         }
 
         res.json({
@@ -78,11 +81,16 @@ router.post('/:accessCode/submit', async (req, res) => {
             return res.status(400).json({ error: 'Invalid submission data.' });
         }
 
-        // FIXED: Using the new repository function
         const trackingRecord = await db.getTrackingRecordByAccessCode(accessCode);
 
         if (!trackingRecord) return res.status(404).json({ error: 'Invalid access code.' });
         if (trackingRecord.status === 'submitted') return res.status(400).json({ error: 'Already submitted.' });
+
+        // NEW: Double-check the archive status at the moment of submission
+        const liveInstance = await db.getLiveSurveyInstanceById(trackingRecord.survey_live_id);
+        if (liveInstance && (liveInstance.is_archived === 1 || liveInstance.is_archived === true)) {
+            return res.status(403).json({ error: 'This survey was recently archived and can no longer accept submissions.' });
+        }
 
         await db.submitSurveyResponse(trackingRecord.survey_live_id, accessCode, JSON.stringify(answers));
 

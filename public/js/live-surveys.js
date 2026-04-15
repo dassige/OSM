@@ -204,8 +204,14 @@ function renderTable() {
       uiConfig?.appTimezone ||
       Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+    // Safely parse SQLite's raw UTC string by converting " " to "T" and appending "Z"
+    let safeDateStr = item.published_at;
+    if (safeDateStr && !safeDateStr.includes("Z")) {
+      safeDateStr = safeDateStr.replace(" ", "T") + "Z";
+    }
+
     // Pass the timeZone parameter into the formatter options
-    const dateStr = new Date(item.published_at).toLocaleDateString(locale, {
+    const dateStr = new Date(safeDateStr).toLocaleDateString(locale, {
       timeZone: tz,
     });
 

@@ -1,13 +1,57 @@
 // routes/api/surveys.js
 const express = require('express');
 const router = express.Router();
+const multer = require('multer'); 
+const upload = multer({ storage: multer.memoryStorage() }); 
 const db = require('../../services/db'); 
 const { hasRole } = require('../../middleware/auth');
 
 // ============================================================================
 // 1. SPECIFIC ROUTES (Must come before wildcard /:id routes)
 // ============================================================================
+// GET /api/surveys/export/all - Export all survey templates
+router.get('/export/all', hasRole('admin'), async (req, res) => {
+    try {
+        const surveys = await db.getAllSurveys();
+        
+        // Strip out DB-specific IDs to make the payload clean
+        surveys.forEach(s => {
+            if (typeof s.structure === 'string') s.structure = JSON.parse(s.structure);
+            delete s.id;
+            delete s.public_id;
+            delete s.created_at;
+            delete s.updated_at;
+        });
+        
+        const filename = `all_surveys_export_${new Date().toISOString().split('T')[0]}.json`;
+        res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+        res.setHeader('Content-type', 'application/json');
+        res.send(JSON.stringify(surveys, null, 2));
+    } catch (error) {
+        console.error('[API] Error exporting all surveys:', error);
+        res.status(500).json({ error: 'Failed to export surveys.' });
+    }
+});
 
+// POST /api/surveys/import/all - Bulk import survey templates
+router.post('/import/all', hasRole('admin'), upload.single('surveysFile'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+        
+        const importedSurveys = JSON.parse(req.file.buffer.toString());
+        if (!Array.isArray(importedSurveys)) {
+            return res.status(400).json({ error: 'Invalid format. Expected an array of surveys.' });
+        }
+        
+        const authorId = req.user?.id || req.session?.user?.id || 1;
+        
+        await db.importAllSurveys(importedSurveys, authorId);
+        res.json({ success: true, count: importedSurveys.length });
+    } catch (error) {
+        console.error('[API] Error importing surveys:', error);
+        res.status(500).json({ error: 'Failed to import surveys.' });
+    }
+});
 // GET /api/surveys/instances/:liveId/tracking - Get tracking data for a specific instance
 router.get('/instances/:liveId/tracking', hasRole('admin'), async (req, res) => {
     try {
@@ -160,6 +204,29 @@ router.delete('/instances/:id', hasRole('admin'), async (req, res) => {
 // 2. WILDCARD ROUTES (Must come last)
 // ============================================================================
 
+// GET /api/surveys/:id/export - Export a single survey template
+router.get('/:id/export', hasRole('admin'), async (req, res) => {
+    try {
+        const survey = await db.getSurveyById(req.params.id);
+        if (!survey) return res.status(404).json({ error: 'Survey not found.' });
+        
+        if (typeof survey.structure === 'string') survey.structure = JSON.parse(survey.structure);
+        
+        // Strip DB-specific markers
+        delete survey.id;
+        delete survey.public_id;
+        delete survey.created_at;
+        delete survey.updated_at;
+        
+        const filename = `survey_export_${survey.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+        res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+        res.setHeader('Content-type', 'application/json');
+        res.send(JSON.stringify(survey, null, 2));
+    } catch (error) {
+        console.error('[API] Error exporting survey:', error);
+        res.status(500).json({ error: 'Failed to export survey.' });
+    }
+});
 // GET /api/surveys/:id - Get a specific survey by ID
 router.get('/:id', async (req, res) => {
     try {

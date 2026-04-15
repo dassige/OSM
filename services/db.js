@@ -993,6 +993,37 @@ async function getTrackingRecordByAccessCode(accessCode) {
         accessCode
     );
 }
+
+// Bulk import surveys (wipes existing templates)
+async function importAllSurveys(surveysData, createdByUserId) {
+    if (!db) await initDB();
+    await db.exec("BEGIN TRANSACTION");
+    try {
+        
+        // FIXED: Added created_by to the column list and values
+        const stmt = await db.prepare(`
+            INSERT INTO surveys (public_id, name, intro_text, status, structure, created_by) 
+            VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        
+        for (const s of surveysData) {
+             const structure = typeof s.structure === 'object' ? JSON.stringify(s.structure) : s.structure;
+             
+             // Generate a fresh, unique GUID for every imported template
+             const newPublicId = crypto.randomUUID(); 
+             
+             // FIXED: Pass the createdByUserId as the final parameter
+             await stmt.run(newPublicId, s.name, s.intro_text || s.intro || '', s.status || 0, structure, createdByUserId);
+        }
+        
+        await stmt.finalize();
+        await db.exec("COMMIT");
+    } catch (error) {
+        await db.exec("ROLLBACK");
+        throw error;
+    }
+}
+
 module.exports = {
   initDB,
   closeDB,
@@ -1058,5 +1089,7 @@ module.exports = {
   getSurveyTracking,
   getLiveSurveyInstanceById,
   getTrackingRecordByAccessCode,
+  importAllSurveys,
+
 };
 
