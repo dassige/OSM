@@ -8,7 +8,8 @@
     <title id="pageTitle">Surveys Manager - FENZ OSM</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js"
+        referrerpolicy="no-referrer"></script>
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
 </head>
@@ -56,13 +57,25 @@
                         <button onclick="document.getElementById('importBulkInput').click()" class="btn-sm"
                             style="flex: 1 1 auto; background:var(--bg-body); border:1px solid var(--border-color); color:var(--text-main);"
                             title="Import All (Wipe & Replace)">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> <span>All</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg> <span>All</span>
                         </button>
 
                         <button onclick="exportAllSurveys()" class="btn-sm"
                             style="flex: 1 1 auto; background:var(--bg-body); border:1px solid var(--border-color); color:var(--text-main);"
                             title="Export All to JSON">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> <span>All</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg> <span>All</span>
                         </button>
 
                         <button onclick="openModal('aiHelpModal')" class="btn-sm"
@@ -73,10 +86,11 @@
 
                 <div id="surveyList" class="form-list">...</div>
             </div>
-            
+
             <div id="builderPanel" class="editor-panel" style="display:none;">
                 <div class="editor-header">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; width: 100%;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; width: 100%;">
                         <div style="flex: 1;">
                             <textarea id="surveyName" class="editor-title-input" placeholder="Survey Name" rows="1"
                                 oninput="this.style.height='';this.style.height=this.scrollHeight+'px'"></textarea>
@@ -93,38 +107,68 @@
                     </div>
                 </div>
                 <div class="editor-toolbar">
-                    <button onclick="previewSurvey()" class="btn-sm" style="background:#6f42c1; color:white;">Preview</button>
+                    <button id="btnPublish" onclick="openPublishModal()" class="btn-sm"
+                        style="background:var(--success); color:white;" disabled>Publish</button>
+                    <button onclick="previewSurvey()" class="btn-sm"
+                        style="background:#6f42c1; color:white;">Preview</button>
                     <button onclick="saveSurvey()" class="btn-sm btn-primary">Save</button>
 
                     <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 5px;"></div>
 
-                    <button onclick="exportSingleSurvey()" class="btn-sm" style="background:transparent; border:1px solid var(--border-color); color:var(--text-main);" title="Export this Survey">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <button onclick="exportSingleSurvey()" class="btn-sm"
+                        style="background:transparent; border:1px solid var(--border-color); color:var(--text-main);"
+                        title="Export this Survey">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
                     </button>
-                    <button onclick="document.getElementById('importSingleInput').click()" class="btn-sm" style="background:transparent; border:1px solid var(--border-color); color:var(--text-main);" title="Import into Editor">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <button onclick="document.getElementById('importSingleInput').click()" class="btn-sm"
+                        style="background:transparent; border:1px solid var(--border-color); color:var(--text-main);"
+                        title="Import into Editor">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
                     </button>
-                    
+
                     <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 5px;"></div>
 
-                    <button id="btnToggleAll" onclick="toggleAllFields()" class="btn-sm btn-secondary" title="Expand/Collapse All">
-                        <svg id="iconToggleAll" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    <button id="btnToggleAll" onclick="toggleAllFields()" class="btn-sm btn-secondary"
+                        title="Expand/Collapse All">
+                        <svg id="iconToggleAll" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
                     </button>
 
                     <div style="flex:1;"></div>
-                    <button onclick="deleteSurvey()" class="btn-sm btn-danger" style="width:36px; height:36px; padding:0;" title="Delete Survey">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <button onclick="deleteSurvey()" class="btn-sm btn-danger"
+                        style="width:36px; height:36px; padding:0;" title="Delete Survey">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                            </path>
+                        </svg>
                     </button>
                 </div>
 
                 <div class="editor-content">
-                    <div style="background:var(--bg-card); padding:15px; border-radius:6px; border:1px solid var(--border-color); margin-bottom:20px;">
+                    <div
+                        style="background:var(--bg-card); padding:15px; border-radius:6px; border:1px solid var(--border-color); margin-bottom:20px;">
                         <label style="font-weight:bold; margin-bottom:5px; display:block;">Survey Intro / Header</label>
                         <textarea id="surveyIntro" class="rich-editor"></textarea>
                     </div>
 
                     <div style="border-bottom: 2px dashed var(--border-color); margin-bottom:20px; text-align:center;">
-                        <span style="background:var(--bg-body); padding:0 10px; color:var(--text-muted); font-size:12px; position:relative; top:10px;">Questions</span>
+                        <span
+                            style="background:var(--bg-body); padding:0 10px; color:var(--text-muted); font-size:12px; position:relative; top:10px;">Questions</span>
                     </div>
 
                     <div id="fieldsCanvas"></div>
@@ -137,7 +181,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div id="emptyPanel" class="editor-panel" style="align-items:center; justify-content:center;">
                 <div class="empty-state">
                     <h3>Select a survey to edit</h3>
@@ -151,33 +195,46 @@
         <div class="modal-content" style="max-width: 600px;">
             <span class="close-btn" onclick="closeModal('aiHelpModal')">&times;</span>
             <h2 style="margin-top:0; color: #6f42c1; display: flex; align-items: center; gap: 10px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline><polyline points="7.5 19.79 7.5 14.6 3 12"></polyline><polyline points="21 12 16.5 14.6 16.5 19.79"></polyline><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                    </path>
+                    <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
+                    <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
+                    <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
                 AI Survey Generation Assistant
             </h2>
             <div class="help-body">
                 <h1 id="generating-surveys-with-ai">Generating Surveys with AI</h1>
                 <p>This guide explains how to use an AI (like Gemini) to generate valid JSON survey definitions.</p>
                 <h2 id="technical-specification-prompt">Technical Specification Prompt</h2>
-                <p>Copy and paste the text below into an AI chat session. Attach your source documents if applicable.</p>
-                <div class="code-block" style="cursor:pointer; margin: 15px 0;" onclick="copyAiPrompt()" title="Click to copy">
-**Role:** You are an expert data analyst for Fire and Emergency New Zealand (FENZ).
+                <p>Copy and paste the text below into an AI chat session. Attach your source documents if applicable.
+                </p>
+                <div class="code-block" style="cursor:pointer; margin: 15px 0;" onclick="copyAiPrompt()"
+                    title="Click to copy">
+                    **Role:** You are an expert data analyst for Fire and Emergency New Zealand (FENZ).
 
-**Task:** Generate a comprehensive survey structure in JSON format based on the user's requirements.
+                    **Task:** Generate a comprehensive survey structure in JSON format based on the user's requirements.
 
-**JSON Schema Specification:**
-The output must be a single JSON object with these keys:
-- `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
-- `name`: Concise title for the survey.
-- `intro`: Brief HTML introduction explaining the purpose.
-- `structure`: An array of question objects, each containing:
-  - `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
-  - `type`: One of: `text_multi` (Paragraph), `radio` (Single choice), `checkboxes` (Multiple response), or `boolean` (Yes/No).
-  - `description`: The question text (HTML allowed).
-  - `required`: Boolean (set to `true` or `false`).
-  - `options`: Array of strings (for `radio` and `checkboxes` only).
-  - `renderAs`: String (`radio` or `dropdown`).
+                    **JSON Schema Specification:**
+                    The output must be a single JSON object with these keys:
+                    - `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
+                    - `name`: Concise title for the survey.
+                    - `intro`: Brief HTML introduction explaining the purpose.
+                    - `structure`: An array of question objects, each containing:
+                    - `id`: Unique string following the regexp `(^fld_[a-z0-9]+$)`.
+                    - `type`: One of: `text_multi` (Paragraph), `radio` (Single choice), `checkboxes` (Multiple
+                    response), or `boolean` (Yes/No).
+                    - `description`: The question text (HTML allowed).
+                    - `required`: Boolean (set to `true` or `false`).
+                    - `options`: Array of strings (for `radio` and `checkboxes` only).
+                    - `renderAs`: String (`radio` or `dropdown`).
 
-**Constraint:** Provide ONLY the raw JSON object. No conversational text.
+                    **Constraint:** Provide ONLY the raw JSON object. No conversational text.
                 </div>
             </div>
             <div class="modal-actions-right">
@@ -185,7 +242,7 @@ The output must be a single JSON object with these keys:
             </div>
         </div>
     </div>
-    
+
     <script src="utils.js"></script>
     <script src="toast.js"></script>
     <script src="theme.js"></script>
@@ -193,12 +250,53 @@ The output must be a single JSON object with these keys:
     <script src="js/surveys-manage.js"></script>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
     </button>
     <script>
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
     </script>
+
+<div id="publishModal" class="modal">
+    <div class="modal-content" style="max-width: 500px; margin-top: 5vh; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;">
+        
+        <div style="flex-shrink: 0;">
+            <span class="close-btn" onclick="closeModal('publishModal')">&times;</span>
+            <h2 style="margin-top:0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;" id="publishModalTitle">Publish Survey</h2>
+            
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+                Publishing creates a survey from this template and generates and sends secure tracking links for your members.
+            </p>
+            
+            <div style="margin-bottom: 20px; background: var(--bg-body); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
+                <label style="display:flex; align-items:center; gap:10px; margin-bottom:15px; font-weight:bold; cursor:pointer;">
+                    <input type="radio" name="publishTarget" value="all" checked onchange="togglePublishSelection()">
+                    Send to All Active Members
+                </label>
+                <label style="display:flex; align-items:center; gap:10px; font-weight:bold; cursor:pointer;">
+                    <input type="radio" name="publishTarget" value="selection" onchange="togglePublishSelection()">
+                    Send to Specific Selection
+                </label>
+            </div>
+        </div>
+
+        <div id="publishSelectionContainer" style="display:none; flex-grow: 1; min-height: 0; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; border-radius: 4px; background: var(--bg-body);">
+            <div style="text-align:center; padding:10px;">Loading members...</div>
+        </div>
+
+        <div class="modal-actions-right" style="flex-shrink: 0; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1);">
+            <button onclick="closeModal('publishModal')" class="btn-secondary">Cancel</button>
+            <button onclick="confirmPublish()" class="btn-primary" id="btnConfirmPublish" style="background:var(--success);">Confirm & Send</button>
+        </div>
+        
+    </div>
+</div>
+
 </body>
+
 </html>

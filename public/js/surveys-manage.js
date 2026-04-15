@@ -174,15 +174,25 @@ async function saveSurvey() {
             body: JSON.stringify(payload),
         });
 
+        // Parse the response to get the newly created IDs
+        const responseData = await res.json();
+
         if (!res.ok) {
-            const errorData = await res.json();
-            const reason = errorData.details ? errorData.details.join(" | ") : errorData.error || "Unknown error";
+            const reason = responseData.details ? responseData.details.join(" | ") : responseData.error || "Unknown error";
             throw new Error(reason);
+        }
+
+        // --- THE FIX ---
+        // If it was a new creation, update our local state with the backend IDs
+        // so subsequent saves trigger a PUT instead of a POST
+        if (method === "POST" && responseData.id) {
+            currentSurvey.id = responseData.id;
+            if (responseData.publicId) currentSurvey.public_id = responseData.publicId;
         }
 
         showToast("Survey saved successfully", "success");
         originalSurveyState = getSurveyData();
-        loadSurveys();
+        loadSurveys(); // Because currentSurvey.id is now set, it will highlight correctly in the list!
     } catch (e) {
         showToast("Save Failed: Check console for details", "error");
         console.error("[SurveysManager] Error saving survey:", e.message);
@@ -194,7 +204,8 @@ async function updateStatus(id, enabled) {
         document.getElementById("surveyStatusToggle").checked = !enabled; // revert
         return showToast("Status changes disabled in Demo Mode", "warning");
     }
-
+    const btnPublish = document.getElementById("btnPublish");
+    if (btnPublish) btnPublish.disabled = !enabled;
     try {
         const res = await fetch(`/api/surveys/${id}`, {
             method: "PUT",
@@ -427,6 +438,12 @@ function loadEditor(survey) {
     document.getElementById("surveyStatusToggle").checked = !!survey.status;
     if (tinymce.get("surveyIntro")) tinymce.get("surveyIntro").setContent(survey.intro || "");
 
+// Enable Publish button only if survey is saved and Active (status === 1)
+    const btnPublish = document.getElementById("btnPublish");
+    if (btnPublish) {
+        btnPublish.disabled = !survey.id || !survey.status;
+    }
+
     renderFields();
     renderSurveyList();
 
@@ -580,3 +597,99 @@ window.copyAiPrompt = function () {
         .then(() => { if (window.showToast) showToast("Prompt copied to clipboard!", "success"); })
         .catch((err) => console.error("Failed to copy: ", err));
 };
+
+let allActiveMembers = [];
+
+async function openPublishModal() {
+    if (isSurveyDirty()) {
+        return showToast("Please save your changes before publishing.", "warning");
+    }
+    if (!currentSurvey || !currentSurvey.status) {
+        return showToast("Survey template must be Active to publish.", "warning");
+    }
+
+    document.getElementById("publishModalTitle").innerText = `Publish: ${currentSurvey.name}`;
+    document.getElementById("btnConfirmPublish").disabled = false;
+    document.getElementById("btnConfirmPublish").innerText = "Confirm & Send";
+    
+    document.querySelector('input[name="publishTarget"][value="all"]').checked = true;
+    togglePublishSelection();
+
+    openModal("publishModal");
+
+    // Fetch and cache active members
+    if (allActiveMembers.length === 0) {
+        try {
+            const res = await fetch("/api/members");
+            const members = await res.json();
+            
+            // FIXED: Using the correct 'enabled' boolean property from your database
+            allActiveMembers = members.filter(m => m.enabled === true); 
+            
+            // Sort alphabetically by their name string
+            allActiveMembers.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        } catch (e) {
+            console.error("Failed to load members", e);
+        }
+    }
+
+    // Populate checkboxes
+    const container = document.getElementById("publishSelectionContainer");
+    container.innerHTML = "";
+    
+    // FIXED: Simplified the display name to match your database schema
+    allActiveMembers.forEach(m => {
+        container.innerHTML += `
+            <label style="display: flex; align-items: center; gap: 10px; padding: 6px; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                <input type="checkbox" class="member-checkbox" value="${m.id}" checked>
+                <span style="font-weight:500;">${m.name}</span>
+            </label>
+        `;
+    });
+}
+function togglePublishSelection() {
+    const isSelection = document.querySelector('input[name="publishTarget"][value="selection"]').checked;
+    const container = document.getElementById("publishSelectionContainer");
+    container.style.display = isSelection ? "block" : "none";
+    
+    // Automatically manage checkbox states based on radio toggle
+    const checkboxes = document.querySelectorAll('.member-checkbox');
+    checkboxes.forEach(cb => cb.checked = !isSelection);
+}
+
+async function confirmPublish() {
+    if(uiConfig?.appMode === 'demo') return showToast("Publishing disabled in Demo Mode", "warning");
+
+    const isSelection = document.querySelector('input[name="publishTarget"][value="selection"]').checked;
+    const checkboxes = document.querySelectorAll('.member-checkbox');
+    const memberIds = [];
+
+    if (isSelection) {
+        checkboxes.forEach(cb => { if (cb.checked) memberIds.push(parseInt(cb.value, 10)); });
+        if (memberIds.length === 0) return showToast("Please select at least one member.", "warning");
+    } else {
+        allActiveMembers.forEach(m => memberIds.push(m.id));
+    }
+
+    const btn = document.getElementById("btnConfirmPublish");
+    btn.disabled = true;
+    btn.innerText = "Publishing...";
+
+    try {
+        const res = await fetch(`/api/surveys/${currentSurvey.id}/publish`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ memberIds })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to publish survey.");
+
+        showToast(data.message, "success");
+        closeModal("publishModal");
+    } catch (e) {
+        showToast(e.message, "error");
+        btn.disabled = false;
+        btn.innerText = "Confirm & Send";
+    }
+}

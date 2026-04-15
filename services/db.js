@@ -820,12 +820,9 @@ async function publishSurvey(templateId, memberIds, publishedByUserId) {
   await db.exec("BEGIN TRANSACTION");
   
   try {
-    // 1. Fetch the survey template to snapshot it
     const template = await db.get(`SELECT * FROM surveys WHERE id = ?`, templateId);
     if (!template) throw new Error("Survey template not found.");
 
-    // 2. Create the live instance snapshot
-    // We can append the current date to the name to differentiate instances in reports later
     const instanceName = `${template.name} - ${new Date().toISOString().split('T')[0]}`;
     
     const instanceResult = await db.run(
@@ -839,8 +836,8 @@ async function publishSurvey(templateId, memberIds, publishedByUserId) {
     );
     
     const liveInstanceId = instanceResult.lastID;
+    const trackingData = [];
 
-    // 3. Generate unique tracking links for the selected members
     const stmt = await db.prepare(
       `INSERT INTO survey_tracking (survey_live_id, member_id, access_code) VALUES (?, ?, ?)`
     );
@@ -848,17 +845,21 @@ async function publishSurvey(templateId, memberIds, publishedByUserId) {
     for (const memberId of memberIds) {
       const accessCode = crypto.randomUUID();
       await stmt.run(liveInstanceId, memberId, accessCode);
+      
+      // Store the mapping so the API route can send the emails
+      trackingData.push({ memberId, accessCode });
     }
     
     await stmt.finalize();
     await db.exec("COMMIT");
     
-    return liveInstanceId;
+    return { liveInstanceId, trackingData };
   } catch (error) {
     await db.exec("ROLLBACK");
     throw error;
   }
 }
+
 async function submitSurveyResponse(surveyId, accessCode, submittedDataJson) {
   if (!db) await initDB();
   await db.exec("BEGIN TRANSACTION");
@@ -959,8 +960,29 @@ async function deleteSurveyInstance(id) {
         throw error;
     }
 }
-
-
+// Fetch tracking details for a specific live instance
+async function getSurveyTracking(liveId) {
+    if (!db) await initDB();
+    // Joins the tracking table with the members table to get names and emails
+    return await db.all(`
+        SELECT 
+            st.id as tracking_id, 
+            st.access_code, 
+            st.status, 
+            st.completed_at,
+            m.name as member_name, 
+            m.email
+        FROM survey_tracking st
+        JOIN members m ON st.member_id = m.id
+        WHERE st.survey_live_id = ?
+        ORDER BY m.name ASC
+    `, liveId);
+}
+// Fetch a specific live survey instance by its ID
+async function getLiveSurveyInstanceById(id) {
+    if (!db) await initDB();
+    return await db.get(`SELECT * FROM survey_live WHERE id = ?`, id);
+}
 
 module.exports = {
   initDB,
@@ -1023,5 +1045,8 @@ module.exports = {
   getSurveyInstanceResults,
   getLiveSurveyInstances,
   updateSurveyArchiveStatus,
-  deleteSurveyInstance};
+  deleteSurveyInstance,
+  getSurveyTracking,
+  getLiveSurveyInstanceById
+};
 

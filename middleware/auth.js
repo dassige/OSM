@@ -28,7 +28,8 @@ const globalAuthGuard = (req, res, next) => {
     "/public/theme.js",
     "/surveys-manage.html",
     "/surveys-view.html",
-    "/live-surveys.html"
+    "/live-surveys.html",
+    "/surveys-tracking.html"
 
   ];
 

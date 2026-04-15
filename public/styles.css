@@ -1454,6 +1454,9 @@ textarea {
 .btn-secondary { background-color: #6c757d; color: white; }
 .btn-secondary:hover { background-color: #5a6268; }
 
+.btn-informative { background-color: #49b89a; color: white; }
+.btn-informative:hover { background-color: #3a8c7a; }
+
 .btn-danger { background-color: var(--danger); color: white; }
 .btn-danger:hover { background-color: #bd2130; }
 
