@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +17,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
         }
+
         .preview-banner {
             background-color: #ffc107;
             color: #000;
@@ -26,9 +28,25 @@
             margin-bottom: 20px;
             display: none;
         }
-        .survey-header { margin-bottom: 30px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
-        .survey-title { font-size: 24px; font-weight: bold; color: var(--text-main); margin-bottom: 10px; }
-        .survey-intro { font-size: 15px; color: var(--text-muted); }
+
+        .survey-header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .survey-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+
+        .survey-intro {
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
         .question-card {
             background: var(--bg-body);
             padding: 20px;
@@ -36,16 +54,68 @@
             border: 1px solid var(--border-color);
             margin-bottom: 20px;
         }
-        .question-text { font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 15px; }
-        .required-asterisk { color: var(--danger); margin-left: 4px; }
-        .option-label { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; color: var(--text-main); }
-        .text-response { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); min-height: 100px; resize: vertical; }
-        .submit-btn { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; }
-        .error-message { color: var(--danger); font-size: 13px; margin-top: 5px; display: none; }
-        .completed-state { text-align: center; padding: 40px 20px; display: none; }
-        .completed-state svg { color: var(--success); width: 64px; height: 64px; margin-bottom: 20px; }
+
+        .question-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 15px;
+        }
+
+        .required-asterisk {
+            color: var(--danger);
+            margin-left: 4px;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+
+        .text-response {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-main);
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .completed-state {
+            text-align: center;
+            padding: 40px 20px;
+            display: none;
+        }
+
+        .completed-state svg {
+            color: var(--success);
+            width: 64px;
+            height: 64px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
+
 <body>
     <div id="demoBanner" class="demo-banner" style="display:none;">DEMO VERSION</div>
 
@@ -55,9 +125,14 @@
         </div>
 
         <div id="completedState" class="completed-state">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
             <h2>Thank You!</h2>
-            <p style="color: var(--text-muted); margin-top: 10px;" id="completedMessage">Your response has been securely recorded.</p>
+            <p style="color: var(--text-muted); margin-top: 10px;" id="completedMessage">Your response has been securely
+                recorded.</p>
         </div>
 
         <div id="surveyContent">
@@ -65,7 +140,19 @@
                 <h1 class="survey-title" id="surveyTitle">Loading Survey...</h1>
                 <div class="survey-intro" id="surveyIntro"></div>
             </div>
-
+            <div
+                style="background-color: rgba(23, 162, 184, 0.1); border-left: 4px solid #17a2b8; color: var(--text-main); padding: 15px; margin-bottom: 25px; border-radius: 4px; display: flex; align-items: flex-start; gap: 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="#17a2b8" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <div style="font-size: 14px; line-height: 1.5;">
+                    <strong style="color: #17a2b8; font-size: 15px;">Anonymous Survey</strong><br>
+                    Your responses are strictly confidential and fully anonymous. Your identity, email, and secure
+                    tracking link are permanently separated from your answers upon submission.
+                </div>
+            </div>
             <form id="surveyForm" onsubmit="handleSubmission(event)">
                 <div id="questionsContainer"></div>
                 <button type="submit" class="btn-primary submit-btn" id="btnSubmit">Submit Response</button>
@@ -74,18 +161,22 @@
     </div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top" style="bottom: 80px; right: 20px;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
     </button>
 
     <script src="utils.js"></script>
     <script src="toast.js"></script>
     <script src="theme.js"></script>
-    
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const isPreview = urlParams.get('preview') === 'true';
-        const publicId = urlParams.get('id'); 
-        const accessCode = urlParams.get('code'); 
+        const publicId = urlParams.get('id');
+        const accessCode = urlParams.get('code');
 
         let surveyData = null;
 
@@ -106,7 +197,7 @@
                 const data = await res.json();
 
                 if (!res.ok) throw new Error(data.error || "Failed to load survey.");
-                
+
                 // If the backend indicates it's already submitted
                 if (data.status === 'submitted') {
                     showCompleted("You have already submitted this survey.");
@@ -137,7 +228,7 @@
 
                 const reqHtml = q.required ? `<span class="required-asterisk">*</span>` : '';
                 let html = `<div class="question-text">${index + 1}. ${q.description}${reqHtml}</div>`;
-                
+
                 // Construct inputs based on type
                 if (q.type === 'text_multi') {
                     html += `<textarea name="${q.id}" class="text-response" placeholder="Enter your answer here..."></textarea>`;
@@ -171,7 +262,7 @@
 
         async function handleSubmission(e) {
             e.preventDefault();
-            
+
             if (isPreview) {
                 showToast("Submission bypassed in Preview Mode.", "warning");
                 return;
@@ -190,7 +281,7 @@
 
                 let val = null;
                 const inputs = card.querySelectorAll(`input[name="${id}"], textarea[name="${id}"], select[name="${id}"]`);
-                
+
                 if (inputs[0].type === 'checkbox') {
                     val = Array.from(inputs).filter(i => i.checked).map(i => i.value);
                     if (val.length === 0) val = null;
@@ -261,4 +352,5 @@
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
     </script>
 </body>
+
 </html>

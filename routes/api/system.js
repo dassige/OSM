@@ -12,6 +12,8 @@ const { hasRole } = require("../../middleware/auth");
 
 const upload = multer({ dest: "uploads/" });
 
+
+
 // --- PREFERENCES ---
 router.get("/preferences", async (req, res) => {
   res.json(await db.getPreferences());

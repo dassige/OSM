@@ -14,7 +14,6 @@ router.get('/preview/:publicId', hasRole('admin'), async (req, res) => {
             return res.status(404).json({ error: 'Survey template not found or is disabled.' });
         }
 
-        // Return in the format the frontend expects
         res.json({
             status: 'preview',
             survey: {
@@ -35,25 +34,19 @@ router.get('/:accessCode', async (req, res) => {
     try {
         const accessCode = req.params.accessCode;
         
-        // 1. Verify the code in tracking table and get the live_survey_id
-        const trackingRecord = await db.get(
-            `SELECT id, survey_live_id, status FROM survey_tracking WHERE access_code = ?`, 
-            accessCode
-        );
+        // FIXED: Using the new repository function
+        const trackingRecord = await db.getTrackingRecordByAccessCode(accessCode);
 
         if (!trackingRecord) {
             return res.status(404).json({ error: 'Invalid or unrecognized access code.' });
         }
 
         if (trackingRecord.status === 'submitted') {
-            return res.json({ status: 'submitted' }); // Frontend will show "Thank you" screen
+            return res.json({ status: 'submitted' }); 
         }
 
-        // 2. Fetch the snapshot instance from survey_live
-        const liveInstance = await db.get(
-            `SELECT name, intro_text, structure FROM survey_live WHERE id = ?`,
-            trackingRecord.survey_live_id
-        );
+        // FIXED: Using the repository function we created in the last step
+        const liveInstance = await db.getLiveSurveyInstanceById(trackingRecord.survey_live_id);
 
         if (!liveInstance) {
             return res.status(404).json({ error: 'Survey instance not found.' });
@@ -85,16 +78,12 @@ router.post('/:accessCode/submit', async (req, res) => {
             return res.status(400).json({ error: 'Invalid submission data.' });
         }
 
-        // Find the tracking record to get the live instance ID
-        const trackingRecord = await db.get(
-            `SELECT id, survey_live_id, status FROM survey_tracking WHERE access_code = ?`, 
-            accessCode
-        );
+        // FIXED: Using the new repository function
+        const trackingRecord = await db.getTrackingRecordByAccessCode(accessCode);
 
         if (!trackingRecord) return res.status(404).json({ error: 'Invalid access code.' });
         if (trackingRecord.status === 'submitted') return res.status(400).json({ error: 'Already submitted.' });
 
-        // submitSurveyResponse handles the transaction (marks tracked as submitted, inserts anon response)
         await db.submitSurveyResponse(trackingRecord.survey_live_id, accessCode, JSON.stringify(answers));
 
         res.json({ success: true, message: 'Response recorded securely.' });

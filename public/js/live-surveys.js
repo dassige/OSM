@@ -53,6 +53,18 @@ document.addEventListener("DOMContentLoaded", () => {
       scrollTopBtn.style.display = window.scrollY > 200 ? "flex" : "none";
   };
   window.scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // Automatically refresh the table data when the browser tab regains focus
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      // Only reload if we aren't currently viewing a modal,
+      // to prevent jarring background refreshes while reading help text
+      const helpModal = document.getElementById("helpModal");
+      if (!helpModal || helpModal.style.display !== "block") {
+        loadData();
+      }
+    }
+  });
 });
 
 async function loadData() {
@@ -184,10 +196,19 @@ function renderTable() {
     const sent = item.total_sent || 0;
     const submitted = item.total_submitted || 0;
     const pct = sent > 0 ? Math.round((submitted / sent) * 100) : 0;
-    // Use the locale from the .env config, or fallback to the user's browser default
+    // Grab locale and timezone, falling back to browser defaults if missing
     const locale =
       uiConfig?.locale || uiConfig?.appLocale || navigator.language || "en-NZ";
-    const dateStr = new Date(item.published_at).toLocaleDateString(locale);
+    const tz =
+      uiConfig?.timezone ||
+      uiConfig?.appTimezone ||
+      Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // Pass the timeZone parameter into the formatter options
+    const dateStr = new Date(item.published_at).toLocaleDateString(locale, {
+      timeZone: tz,
+    });
+
     const statusBadge = item.is_archived
       ? `<span class="status-badge status-archived">Archived</span>`
       : `<span class="status-badge status-active">Active</span>`;

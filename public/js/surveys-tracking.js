@@ -162,8 +162,14 @@ function renderTable() {
   filteredData.forEach((item) => {
     const locale =
       uiConfig?.locale || uiConfig?.appLocale || navigator.language || "en-NZ";
+    const tz =
+      uiConfig?.timezone ||
+      uiConfig?.appTimezone ||
+      Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // Apply timezone to toLocaleString so hours/minutes match the organization
     const dateStr = item.completed_at
-      ? new Date(item.completed_at).toLocaleString(locale)
+      ? new Date(item.completed_at).toLocaleString(locale, { timeZone: tz })
       : "-";
     const statusBadge =
       item.status === "submitted"
@@ -190,8 +196,8 @@ function renderTable() {
             <td>${statusBadge}</td>
             <td>${dateStr}</td>
             <td style="text-align:right; display:flex; justify-content:flex-end; gap:8px; align-items:center;">
-                <button onclick="copyToClipboard('${url}')" class="btn-sm btn-secondary" title="Copy survey link">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy Link
+                <button onclick="copyToClipboard('${url}')" class="btn-sm" style="border-radius: 50%; width: 30px; height: 30px; padding: 0; display: inline-flex; justify-content: center; align-items: center; border: 1px solid var(--border-color); background: var(--bg-body); color: var(--text-main);" title="Copy survey link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
                 ${remindBtnHtml}
             </td>

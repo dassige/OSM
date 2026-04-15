@@ -860,14 +860,15 @@ async function publishSurvey(templateId, memberIds, publishedByUserId) {
   }
 }
 
-async function submitSurveyResponse(surveyId, accessCode, submittedDataJson) {
+async function submitSurveyResponse(liveSurveyId, accessCode, submittedDataJson) {
   if (!db) await initDB();
   await db.exec("BEGIN TRANSACTION");
   try {
     // 1. Verify the access code and check if already submitted
+    // FIXED: Changed survey_id to survey_live_id
     const trackingRecord = await db.get(
-      `SELECT id, status FROM survey_tracking WHERE survey_id = ? AND access_code = ?`,
-      surveyId,
+      `SELECT id, status FROM survey_tracking WHERE survey_live_id = ? AND access_code = ?`,
+      liveSurveyId,
       accessCode
     );
 
@@ -884,10 +885,11 @@ async function submitSurveyResponse(surveyId, accessCode, submittedDataJson) {
       trackingRecord.id
     );
 
-    // 3. Insert the anonymous response (no link back to the tracking record)
+    // 3. Insert the anonymous response 
+    // FIXED: Changed survey_id to survey_live_id
     await db.run(
-      `INSERT INTO survey_responses (survey_id, submitted_data) VALUES (?, ?)`,
-      surveyId,
+      `INSERT INTO survey_responses (survey_live_id, submitted_data) VALUES (?, ?)`,
+      liveSurveyId,
       submittedDataJson
     );
 
@@ -983,7 +985,14 @@ async function getLiveSurveyInstanceById(id) {
     if (!db) await initDB();
     return await db.get(`SELECT * FROM survey_live WHERE id = ?`, id);
 }
-
+// Fetch a specific tracking record by its access code
+async function getTrackingRecordByAccessCode(accessCode) {
+    if (!db) await initDB();
+    return await db.get(
+        `SELECT id, survey_live_id, status FROM survey_tracking WHERE access_code = ?`, 
+        accessCode
+    );
+}
 module.exports = {
   initDB,
   closeDB,
@@ -1047,6 +1056,7 @@ module.exports = {
   updateSurveyArchiveStatus,
   deleteSurveyInstance,
   getSurveyTracking,
-  getLiveSurveyInstanceById
+  getLiveSurveyInstanceById,
+  getTrackingRecordByAccessCode,
 };
 
