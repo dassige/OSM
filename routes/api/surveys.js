@@ -96,6 +96,13 @@ router.post(
       const authorId = req.user?.id || req.session?.user?.id || 1;
 
       await db.importAllSurveys(importedSurveys, authorId);
+      const adminName = req.session?.user?.name || "Admin";
+      await db.logEvent(
+        adminName,
+        "Surveys",
+        "Bulk Imported Survey Templates",
+        { count: importedSurveys.length },
+      );
       res.json({ success: true, count: importedSurveys.length });
     } catch (error) {
       console.error("[API] Error importing surveys:", error);
@@ -168,6 +175,10 @@ router.post("/", hasRole("admin"), async (req, res) => {
       JSON.stringify(structure),
       authorId,
     );
+    const adminName = req.session?.user?.name || "Admin";
+    await db.logEvent(adminName, "Surveys", "Created Survey Template", {
+      surveyName: name,
+    });
     res.status(201).json(result);
   } catch (error) {
     console.error("[API] Error creating survey:", error);
@@ -190,6 +201,13 @@ router.get("/instances", hasRole("admin"), async (req, res) => {
 router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {
   try {
     await db.updateSurveyArchiveStatus(req.params.id, req.body.is_archived);
+    const adminName = req.session?.user?.name || "Admin";
+    const action = req.body.is_archived
+      ? "Archived Survey Instance"
+      : "Unarchived Survey Instance";
+    await db.logEvent(adminName, "Surveys", action, {
+      instanceId: req.params.id,
+    });
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to update archive status." });
@@ -200,6 +218,10 @@ router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {
 router.delete("/instances/:id", hasRole("admin"), async (req, res) => {
   try {
     await db.deleteSurveyInstance(req.params.id);
+    const adminName = req.session?.user?.name || "Admin";
+    await db.logEvent(adminName, "Surveys", "Deleted Survey Instance", {
+      instanceId: req.params.id,
+    });
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to delete survey instance." });
@@ -266,6 +288,11 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
         status,
         existing.structure,
       );
+      const adminName = req.session?.user?.name || "Admin";
+      await db.logEvent(adminName, "Surveys", "Updated Survey Status", {
+        surveyId,
+        status,
+      });
       return res.json({ success: true, message: "Status updated" });
     }
 
@@ -281,6 +308,11 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
       status || 0,
       JSON.stringify(structure),
     );
+    const adminName = req.session?.user?.name || "Admin";
+    await db.logEvent(adminName, "Surveys", "Updated Survey Template", {
+      surveyId,
+      surveyName: name,
+    });
     res.json({ success: true, message: "Survey updated successfully." });
   } catch (error) {
     console.error("[API] Error updating survey:", error);
@@ -293,6 +325,10 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
   try {
     const surveyId = req.params.id;
     await db.deleteSurvey(surveyId);
+    const adminName = req.session?.user?.name || "Admin";
+    await db.logEvent(adminName, "Surveys", "Deleted Survey Template", {
+      surveyId,
+    });
     res.json({ success: true, message: "Survey deleted successfully." });
   } catch (error) {
     console.error("[API] Error deleting survey:", error);
@@ -327,17 +363,17 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
     const prefs = await db.getPreferences();
     const tpl = prefs.tpl_surveys ? JSON.parse(prefs.tpl_surveys) : null;
     const allTracking = await db.getSurveyTracking(liveInstanceId);
-    const pending = allTracking.filter((t) => t.status === "pending"); 
-
+    const pending = allTracking.filter((t) => t.status === "pending");
+    const instance = await db.getLiveSurveyInstanceById(liveInstanceId);
     for (const data of pending) {
-       if (data.email) {
+      if (data.email) {
         const surveyUrl = `${req.protocol}://${req.get("host")}/surveys-view.html?code=${data.accessCode}&id=${survey.public_id}`;
 
         try {
           await mailer.sendSurveyInvitation(
             data.email,
             data.member_name,
-            survey.name,
+            instance.name,
             surveyUrl,
             config.transporter,
             config.ui.loginTitle,
@@ -351,7 +387,11 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
         }
       }
     }
-
+    const adminName = req.session?.user?.name || "Admin";
+    await db.logEvent(adminName, "Surveys", "Published Survey", {
+      surveyName: instance.name,
+      membersInvited: trackingData.length,
+    });
     res.json({
       message: `Survey published successfully! Links generated for ${trackingData.length} members.`,
     });
@@ -380,7 +420,7 @@ router.post(
       const prefs = await db.getPreferences();
       const tpl = prefs.tpl_surveys ? JSON.parse(prefs.tpl_surveys) : null;
       const template = await db.getSurveyById(instance.template_id);
-       let sentCount = 0;
+      let sentCount = 0;
       for (const item of pending) {
         if (item.email) {
           // Using properties defined in your tracking schema
@@ -404,7 +444,11 @@ router.post(
           }
         }
       }
-
+      const adminName = req.session?.user?.name || "Admin";
+      await db.logEvent(adminName, "Surveys", "Sent Bulk Reminders", {
+        surveyName: instance.name,
+        remindersSent: pending.length,
+      });
       res.json({
         message: `Reminder emails triggered for ${sentCount} out of ${pending.length} pending members.`,
       });
