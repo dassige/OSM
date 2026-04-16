@@ -109,6 +109,82 @@ const helpContent = {
         `
     },
 
+    // --- Surveys Manager (Building) ---
+    "surveys-manage": {
+        title: "Surveys Manager: Builder & Publishing",
+        body: `
+            <p>Create and distribute <strong>Anonymous Surveys</strong> for feedback, elections, or general polling.</p>
+            
+            <h3>1. Building the Survey</h3>
+            <ul>
+                <li><strong>Anonymous by Design:</strong> Unlike Live Forms, surveys do not calculate scores and do not link the member's identity to their answers.</li>
+                <li><strong>Question Types:</strong> Add Multiple Choice, Checkboxes, Yes/No, or Free Text questions. Use the dropdown to choose display styles (Radio buttons vs Dropdown menus).</li>
+                <li><strong>Sorting:</strong> Click the sort icon to toggle between Alphabetical, Active first, or Disabled first.</li>
+            </ul>
+
+            <h3>2. Publishing</h3>
+            <ul>
+                <li>Click <strong>Publish</strong> to distribute the survey.</li>
+                <li>You can select specific members or send to all active members.</li>
+                <li>Publishing generates a unique tracking link for each member and emails them an invitation (configured in <em>Templates</em>).</li>
+            </ul>
+        `
+    },
+
+    // --- Live Surveys ---
+    "live-surveys": {
+        title: "Live Surveys: Monitoring & Archiving",
+        body: `
+            <p>Monitor the status of your published surveys.</p>
+            
+            <h3>1. Tracking Progress</h3>
+            <ul>
+                <li><strong>Progress Bar:</strong> Shows the ratio of members who have submitted the survey versus how many invitations were sent.</li>
+                <li><strong>Results:</strong> Click to view the aggregated, anonymous answers.</li>
+                <li><strong>Tracking:</strong> Click to see who has (or hasn't) completed the survey so you can send reminders.</li>
+            </ul>
+
+            <h3>2. Management</h3>
+            <ul>
+                <li><strong>Archive:</strong> Moves the survey to the Archived tab so it doesn't clutter your active list. Archiving also blocks any further submissions from members.</li>
+                <li><strong>Delete:</strong> Permanently destroys the survey instance, all tracking codes, and all submitted answers.</li>
+            </ul>
+        `
+    },
+
+    // --- Surveys Tracking ---
+    "surveys-tracking": {
+        title: "Survey Tracking: Reminders",
+        body: `
+            <p>Track which members have completed the survey without compromising their anonymity.</p>
+            
+            <h3>1. Status & Anonymity</h3>
+            <ul>
+                <li><strong>Pending / Submitted:</strong> The system tracks <em>if</em> a unique link was used, but it never links the tracking code to the actual answers in the database.</li>
+            </ul>
+
+            <h3>2. Sending Reminders</h3>
+            <ul>
+                <li><strong>Single Reminder:</strong> Click the mail icon next to a pending member to resend their unique link.</li>
+                <li><strong>Remind All:</strong> Use the bulk action button to send reminders to everyone who is still "Pending".</li>
+                <li><strong>Copy Link:</strong> Manually copy a member's unique link to send it via a different channel.</li>
+            </ul>
+        `
+    },
+
+    // --- Surveys Results ---
+    "surveys-results": {
+        title: "Survey Results: Analytics",
+        body: `
+            <p>View the aggregated, anonymous data from your survey.</p>
+            <ul>
+                <li><strong>Charts:</strong> Multiple choice and Yes/No questions are automatically tallied and displayed as percentage bar charts.</li>
+                <li><strong>Free Text:</strong> Paragraph answers are listed anonymously one after another.</li>
+                <li><strong>Participation:</strong> The top counter shows how many people submitted answers out of the total invited.</li>
+            </ul>
+        `
+    },
+
     // --- Skills Management ---
     "skills": {
         title: "Manage Skills Configuration",
@@ -154,6 +230,7 @@ const helpContent = {
                 <li><strong>Expiring Skills:</strong> The primary notification listing all due competencies.</li>
                 <li><strong>Form Accepted:</strong> Sent when a Live Form submission is approved.</li>
                 <li><strong>Form Rejected:</strong> Sent when a submission fails. Includes logic for "Retry Links" if a new attempt was generated.</li>
+                <li><strong>Survey Invitations:</strong> Sent when an anonymous survey is published or a reminder is triggered.</li>
                 <li><strong>System:</strong> New User credentials, Password Reset, etc.</li>
             </ul>
 
@@ -162,6 +239,7 @@ const helpContent = {
             <ul>
                 <li><code>{{custom_comment}}</code>: Inserts the specific feedback you wrote during the review process.</li>
                 <li><code>{{url}}</code>: In rejection templates, this inserts the <strong>new</strong> link for the retry attempt.</li>
+                <li><code>{{surveyLink}}</code>: In survey templates, this inserts the unique, anonymous access URL.</li>
             </ul>
         `
     },
@@ -305,6 +383,28 @@ const helpContent = {
         `
     },
 
+    // --- Dynamic Survey Views ---
+    "surveys-view-live": {
+        title: "Anonymous Survey - Live Mode",
+        body: `
+            <p><strong>Member Action Required:</strong> You are accessing a secure survey.</p>
+            <ul>
+                <li><strong>Anonymity Guarantee:</strong> Your responses are completely anonymous. Your tracking code is used only to mark that you have completed the survey and is immediately discarded before your answers are saved.</li>
+                <li><strong>Required Fields:</strong> Questions marked with "(required)" must be answered to submit.</li>
+            </ul>
+        `
+    },
+    "surveys-view-preview": {
+        title: "Survey Preview Mode",
+        body: `
+            <p><strong>Admin View:</strong> You are previewing the survey layout.</p>
+            <ul>
+                <li><strong>No Data Saved:</strong> Submitting this form will NOT record any answers.</li>
+                <li><strong>Validation:</strong> Use this mode to verify your question wording, required flags, and layout before publishing to the brigade.</li>
+            </ul>
+        `
+    },
+
     // --- Default / Fallback ---
     "default": {
         title: "Help",
@@ -333,6 +433,10 @@ const helpContent = {
     else if (path.includes("reports")) key = "reports";
     else if (path.includes("live-forms")) key = "live-forms";
     else if (path.includes("statistics")) key = "statistics";
+    else if (path.includes("surveys-manage")) key = "surveys-manage";
+    else if (path.includes("live-surveys")) key = "live-surveys";
+    else if (path.includes("surveys-tracking")) key = "surveys-tracking";
+    else if (path.includes("surveys-results")) key = "surveys-results";
 
     // DYNAMIC FORMS-VIEW LOGIC
     if (path.includes("forms-view")) {
@@ -345,9 +449,18 @@ const helpContent = {
         }
     }
 
+    // DYNAMIC SURVEYS-VIEW LOGIC
+    if (path.includes("surveys-view")) {
+        if (params.get('preview') === 'true') {
+            key = "surveys-view-preview";
+        } else if (params.has('code')) {
+            key = "surveys-view-live";
+        }
+    }
+
     const content = helpContent[key] || helpContent["default"];
 
-    // [UPDATED] Force inline styles to guarantee visibility and position
+    // Force inline styles to guarantee visibility and position
     const helpHtml = `
         <button id="globalHelpBtn" title="Get Help" 
                 style="position: fixed; top: 20px; right: 20px; z-index: 9999; 
