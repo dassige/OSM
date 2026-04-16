@@ -348,40 +348,35 @@ function downloadFilteredJson() {
   a.click();
   document.body.removeChild(a);
 }
-
 async function purgeFiltered() {
-  if (uiConfig?.appMode === "demo")
-    return showToast("Purge disabled in Demo Mode", "warning");
-  if (filteredData.length === 0)
-    return showToast("No surveys match the current filter.", "warning");
+  if (uiConfig?.appMode === "demo") return showToast("Purge disabled in Demo Mode", "warning");
+  if (filteredData.length === 0) return showToast("No surveys match the current filter.", "warning");
 
-  const msg = `WARNING: You are about to PERMANENTLY DELETE ${filteredData.length} survey instances and ALL associated tracking/response data.\n\nType 'PURGE' to confirm.`;
-  const confirmation = prompt(msg);
+  const msg = `WARNING: You are about to PERMANENTLY DELETE ${filteredData.length} survey instances and ALL associated tracking/response data.<br><br>Type <strong>PURGE</strong> below to confirm.`;
+  
+  // Use the new custom promptAction modal instead of window.prompt
+  const isConfirmed = await promptAction("Purge Surveys", msg, "PURGE");
+  
+  if (!isConfirmed) return showToast("Purge cancelled.", "info");
 
-  if (confirmation !== "PURGE") return showToast("Purge cancelled.", "info");
-
-  let successCount = 0;
-  let failCount = 0;
+  let successCount = 0; let failCount = 0;
+  
+  // Optional: Add the spinner while it loops through deletions
+  if (typeof window.showGlobalSpinner === 'function') {
+      showGlobalSpinner(`Purging ${filteredData.length} surveys...`);
+  }
 
   for (const item of filteredData) {
     try {
-      const res = await fetch(`/api/surveys/instances/${item.id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) successCount++;
-      else failCount++;
-    } catch (e) {
-      failCount++;
-    }
+      const res = await fetch(`/api/surveys/instances/${item.id}`, { method: "DELETE" });
+      if (res.ok) successCount++; else failCount++;
+    } catch (e) { failCount++; }
   }
 
-  if (failCount === 0)
-    showToast(`Successfully purged ${successCount} surveys.`, "success");
-  else
-    showToast(
-      `Purged ${successCount} surveys, but ${failCount} failed.`,
-      "warning",
-    );
+  if (typeof window.hideGlobalSpinner === 'function') hideGlobalSpinner();
 
+  if (failCount === 0) showToast(`Successfully purged ${successCount} surveys.`, "success");
+  else showToast(`Purged ${successCount} surveys, but ${failCount} failed.`, "warning");
+  
   loadData();
 }

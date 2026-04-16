@@ -58,6 +58,107 @@
     document.body.appendChild(div);
 })();
 
+// --- CUSTOM PROMPT MODAL LOGIC ---
+(function setupPromptModal() {
+    if (document.getElementById('customPromptModal')) return;
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #customPromptModal {
+            display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+        }
+        #customPromptModal .modal-content {
+            background-color: var(--bg-card, #fff); color: var(--text-main, #333);
+            margin: 15% auto; padding: 25px; border: 1px solid var(--border-color, #ddd); width: 90%; max-width: 400px;
+            border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease-out;
+        }
+        .prompt-input {
+            width: 100%; padding: 10px; margin-top: 15px; border: 1px solid var(--border-color); border-radius: 4px;
+            background: var(--input-bg); color: var(--text-main); box-sizing: border-box; font-size: 16px;
+        }
+    `;
+    document.head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.id = 'customPromptModal';
+    div.innerHTML = `
+        <div class="modal-content">
+            <h3 id="promptTitle" style="margin-top:0; font-size:1.25rem;">Action Required</h3>
+            <p id="promptMessage" style="color: var(--text-muted, #666); line-height: 1.5; margin: 15px 0;"></p>
+            <input type="text" id="promptInput" class="prompt-input" autocomplete="off">
+            <div class="confirm-btn-group">
+                <button id="btnPromptCancel" class="confirm-btn confirm-btn-cancel">Cancel</button>
+                <button id="btnPromptYes" class="confirm-btn confirm-btn-ok">Confirm</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(div);
+})();
+
+/**
+ * Asynchronous replacement for native prompt() requiring specific text matching
+ * @param {string} title - The header of the modal
+ * @param {string} message - The body text (supports HTML)
+ * @param {string} requiredText - The exact text the user must type to enable the confirm button
+ * @returns {Promise<boolean>}
+ */
+window.promptAction = function(title, message, requiredText) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('customPromptModal');
+        const titleEl = document.getElementById('promptTitle');
+        const msgEl = document.getElementById('promptMessage');
+        const inputEl = document.getElementById('promptInput');
+        const btnYes = document.getElementById('btnPromptYes');
+        const btnCancel = document.getElementById('btnPromptCancel');
+
+        titleEl.textContent = title || 'Confirm Action';
+        msgEl.innerHTML = message || `Please type <strong>${requiredText}</strong> to proceed.`;
+        inputEl.value = '';
+        inputEl.placeholder = `Type '${requiredText}'`;
+        
+        // Disable submit button initially
+        btnYes.disabled = true;
+        btnYes.style.opacity = '0.5';
+
+        modal.style.display = 'block';
+        inputEl.focus();
+
+        const validateInput = () => {
+            if (inputEl.value === requiredText) {
+                btnYes.disabled = false;
+                btnYes.style.opacity = '1';
+                btnYes.classList.add('btn-danger'); // Add danger styling for high-risk prompts
+            } else {
+                btnYes.disabled = true;
+                btnYes.style.opacity = '0.5';
+                btnYes.classList.remove('btn-danger');
+            }
+        };
+
+        inputEl.addEventListener('input', validateInput);
+
+        const cleanup = () => {
+            modal.style.display = 'none';
+            btnYes.onclick = null;
+            btnCancel.onclick = null;
+            inputEl.removeEventListener('input', validateInput);
+            window.removeEventListener('keydown', handleKey);
+        };
+
+        const handleKey = (e) => { 
+            if (e.key === 'Escape') { cleanup(); resolve(false); } 
+            if (e.key === 'Enter' && !btnYes.disabled) { cleanup(); resolve(true); }
+        };
+
+        window.addEventListener('keydown', handleKey);
+
+        btnYes.onclick = () => { cleanup(); resolve(true); };
+        btnCancel.onclick = () => { cleanup(); resolve(false); };
+        
+        modal.onclick = (e) => { if (e.target === modal) { cleanup(); resolve(false); } };
+    });
+};
 /**
  * Asynchronous replacement for native confirm()
  * @param {string} title - The header of the modal
