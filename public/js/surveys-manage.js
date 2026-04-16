@@ -110,6 +110,7 @@ function initFieldEditor(id) {
   });
 }
 
+// Refactor the getSurveyData function in public/js/surveys-manage.js
 function getSurveyData() {
   const name = document.getElementById("surveyName").value;
   const status = document.getElementById("surveyStatusToggle").checked ? 1 : 0;
@@ -121,28 +122,41 @@ function getSurveyData() {
     (card) => {
       const id = card.getAttribute("data-id");
       const type = card.getAttribute("data-type");
-      const description = tinymce.get(`editor_${id}`)
-        ? tinymce.get(`editor_${id}`).getContent()
-        : "";
+      
+      const editor = tinymce.get(`editor_${id}`);
+      const description = editor ? editor.getContent() : "";
+      
+      // Extract plain text for the 'label' used in results view
+      const label = editor ? editor.getContent({ format: 'text' }).trim() : "Untitled Question";
+      
       const required = !!card.querySelector(".field-required-check").checked;
 
       let options = [];
       let renderAs = card.querySelector(".field-render-as")?.value || "radio";
 
-      if (type === "radio" || type === "checkboxes") {
+      if (type === "radio" || type === "checkboxes" || type === "dropdown") {
         const rows = card.querySelectorAll(".option-row");
         options = Array.from(rows)
           .map((r) => r.querySelector(".option-input").value)
           .filter((v) => v.trim() !== "");
       }
 
-      return { id, type, description, required, options, renderAs };
+      // Ensure 'name' matches 'id' to maintain consistency with submission keys
+      return { 
+        id, 
+        name: id, 
+        label: label.substring(0, 200), // Plain text for charts
+        type, 
+        description, // HTML for the form view
+        required, 
+        options, 
+        renderAs 
+      };
     },
   );
 
   return { name, status, intro, structure };
 }
-
 function isSurveyDirty() {
   if (!originalSurveyState) return false;
   const current = getSurveyData();

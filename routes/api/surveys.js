@@ -10,37 +10,34 @@ const { hasRole } = require("../../middleware/auth");
 // 1. SPECIFIC ROUTES (Must come before wildcard /:id routes)
 // ============================================================================
 
-// GET /api/surveys/instances/:liveId/results - Get aggregated survey results
+// routes/api/surveys.js - Consistently provide structure and response count
 router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
   try {
     const liveId = req.params.liveId;
 
-    // 1. Get the instance to know the questions (structure)
     const instance = await db.getLiveSurveyInstanceById(liveId);
-    if (!instance)
-      return res.status(404).json({ error: "Survey instance not found." });
+    if (!instance) return res.status(404).json({ error: "Survey instance not found." });
 
-    // 2. Get the raw responses and parse the JSON answers
     const rawResponses = await db.getSurveyResponses(liveId);
     const parsedResponses = rawResponses.map((r) => ({
       id: r.id,
-      date: r.submitted_at, // <-- FIXED THIS LINE
+      submittedAt: r.submitted_at,
       answers: JSON.parse(r.submitted_data),
     }));
-    // 3. Get tracking info just for the top-level stats (completion rate)
+
     const tracking = await db.getSurveyTracking(liveId);
 
     res.json({
       instanceName: instance.name,
-      structure:
-        typeof instance.structure === "string"
-          ? JSON.parse(instance.structure)
-          : instance.structure,
+      structure: typeof instance.structure === "string" 
+        ? JSON.parse(instance.structure) 
+        : instance.structure,
       responses: parsedResponses,
+      responseCount: parsedResponses.length, // Required by public/js/surveys-results.js
       stats: {
         totalInvited: tracking.length,
-        submitted: tracking.filter((t) => t.status === "submitted").length,
-        pending: tracking.filter((t) => t.status === "pending").length,
+        submitted: parsedResponses.length,
+        pending: tracking.length - parsedResponses.length,
       },
     });
   } catch (error) {
@@ -48,6 +45,7 @@ router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve survey results." });
   }
 });
+
 // GET /api/surveys/export/all - Export all survey templates
 router.get("/export/all", hasRole("admin"), async (req, res) => {
   try {
@@ -183,79 +181,6 @@ router.get("/instances", hasRole("admin"), async (req, res) => {
   }
 });
 
-// GET /api/surveys/instances/:liveId/results - Aggregate survey results
-router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
-  try {
-    const liveId = req.params.liveId;
-    const rawData = await db.getSurveyInstanceResults(liveId);
-
-    if (!rawData || !rawData.instance)
-      return res.status(404).json({ error: "Survey instance not found." });
-
-    const structure = JSON.parse(rawData.instance.structure);
-    const parsedResponses = rawData.responses.map((r) =>
-      JSON.parse(r.submitted_data),
-    );
-
-    const aggregatedData = structure.map((question) => {
-      const result = {
-        id: question.id,
-        description: question.description,
-        type: question.type,
-        totalAnswers: 0,
-        data: question.type === "text_multi" ? [] : {},
-      };
-
-      if (question.type === "radio" || question.type === "checkboxes") {
-        question.options.forEach((opt) => (result.data[opt] = 0));
-      } else if (question.type === "boolean") {
-        result.data["Yes"] = 0;
-        result.data["No"] = 0;
-      }
-
-      parsedResponses.forEach((ans) => {
-        const val = ans[question.id];
-        if (val === null || val === undefined || val === "") return;
-        result.totalAnswers++;
-
-        if (question.type === "text_multi") {
-          result.data.push(val);
-        } else if (question.type === "checkboxes" && Array.isArray(val)) {
-          val.forEach((v) => {
-            if (result.data[v] !== undefined) result.data[v]++;
-          });
-        } else {
-          if (result.data[val] !== undefined) result.data[val]++;
-        }
-      });
-      return result;
-    });
-
-    res.json({
-      survey: {
-        id: rawData.instance.id,
-        name: rawData.instance.name,
-        publishedAt: rawData.instance.published_at,
-      },
-      stats: {
-        totalInvited: rawData.trackingStats.totalInvited || 0,
-        totalSubmitted: rawData.trackingStats.totalSubmitted || 0,
-        completionRate:
-          rawData.trackingStats.totalInvited > 0
-            ? Math.round(
-                (rawData.trackingStats.totalSubmitted /
-                  rawData.trackingStats.totalInvited) *
-                  100,
-              )
-            : 0,
-      },
-      results: aggregatedData,
-    });
-  } catch (error) {
-    console.error("[API] Error aggregating survey results:", error);
-    res.status(500).json({ error: "Failed to aggregate results." });
-  }
-});
 
 // PUT /api/surveys/instances/:id/archive - Toggle archive status
 router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {

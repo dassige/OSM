@@ -121,18 +121,6 @@
         </div>
     </div>
 
-    <div id="helpModal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <span class="close-btn" onclick="closeModal('helpModal')">&times;</span>
-            <h2 style="margin-top:0;">Survey Results Help</h2>
-            <p>This dashboard displays the anonymous aggregated results for this survey instance.</p>
-            <ul style="color:var(--text-main); margin-left:20px; line-height:1.6;">
-                <li><b>Charts:</b> Multiple-choice questions are aggregated into bar charts displaying percentages.</li>
-                <li><b>Text:</b> Free-text responses are listed out sequentially.</li>
-                <li>All submissions are anonymous to protect member privacy.</li>
-            </ul>
-        </div>
-    </div>
 
     <div id="toastContainer" class="toast-container"></div>
 
@@ -146,7 +134,7 @@
     <button onclick="openModal('helpModal')" class="help-floating-btn" title="Help">?</button>
     <script src="/socket.io/socket.io.js"></script>
     <script src="utils.js"></script>
-    <script src="app.js"></script>
+
     <script src="toast.js"></script>
     <script src="theme.js"></script>
     <script src="help.js"></script>

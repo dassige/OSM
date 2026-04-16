@@ -36,7 +36,7 @@ async function loadResults() {
         
         surveyData = result;
         document.getElementById("surveyTitle").innerText = result.instanceName;
-        document.getElementById("totalSubmissions").innerText = result.responseCount;
+        document.getElementById("totalSubmissions").innerText = surveyData.responseCount + "/" + surveyData.stats.totalInvited;
         
         
         renderResults();
@@ -58,12 +58,12 @@ function renderResults() {
         const card = document.createElement("div");
         card.className = "result-card";
         
-        let html = `<div class="result-title">${index + 1}. ${question.label || question.name}</div>`;
+        let html = `<div class="result-title">${index + 1}. ${question.description}</div>`;
 
         // TEXT / TEXTAREA
-        if (question.type === 'text' || question.type === 'textarea') {
+        if (question.type === 'text_multi' ) {
             const answers = surveyData.responses
-                .map(r => r.answers[question.name])
+                .map(r => r.answers[question.id])
                 .filter(a => a && a.trim() !== "");
             
             if (answers.length === 0) {
@@ -74,17 +74,20 @@ function renderResults() {
                 });
             }
         } 
-        // RADIO / DROPDOWN / CHECKBOX (Multi-option)
-        else if (question.type === 'radio' || question.type === 'dropdown' || question.type === 'checkbox') {
+        // RADIO / Boolean / CHECKBOX (Multi-option)
+        else if (question.type === 'radio' || question.type === 'checkboxes' || question.type === 'boolean') {
             const counts = {};
-            const options = question.options || [];
-            
+            let options = question.options || [];
+            if ( question.type === 'boolean') {
+                options = ['Yes', 'No'];
+            }
+
             // Initialize counters
             options.forEach(opt => counts[opt] = 0);
             
             // Tally up the votes
             surveyData.responses.forEach(r => {
-                const answer = r.answers[question.name];
+                const answer = r.answers[question.id];
                 if (!answer) return;
                 
                 if (Array.isArray(answer)) {
@@ -111,7 +114,7 @@ function renderResults() {
                     </div>
                 `;
             });
-        }
+        } 
         
         card.innerHTML = html;
         container.appendChild(card);
