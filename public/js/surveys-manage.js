@@ -32,13 +32,15 @@ function toggleSurveySort() {
       break;
   }
 
-  // Attempt to persist the sort preference (assuming a preferences API exists)
-  fetch("/api/profile/preferences", {
-    method: "PUT",
+// Attempt to persist the sort preference
+  fetch("/api/user-preferences", {
+    method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ surveySortMode }),
+    body: JSON.stringify({ 
+        key: "surveySortMode", 
+        value: surveySortMode 
+    }),
   }).catch((e) => console.log("Preference save bypassed", e));
-
   renderSurveyList();
 }
 

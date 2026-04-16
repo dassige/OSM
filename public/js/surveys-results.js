@@ -9,6 +9,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         showToast("No Survey ID provided.", "error");
         return;
     }
+      fetch("/ui-config")
+    .then((r) => r.json())
+    .then((c) => {
+      uiConfig = c;
+      if (c.loginTitle) {
+        document.title = "Survey Results - " + c.loginTitle;
+        document.getElementById("pageHeader").innerText =
+          "Survey Results - " + c.loginTitle;
+      }
+      if (c.appBackground)
+        document.body.style.backgroundImage = `url('${c.appBackground}')`;
+      if (c.appMode === "demo")
+        document.getElementById("demoBanner").style.display = "block";
+    });
+
     await loadResults();
 });
 
@@ -23,10 +38,6 @@ async function loadResults() {
         document.getElementById("surveyTitle").innerText = result.instanceName;
         document.getElementById("totalSubmissions").innerText = result.responseCount;
         
-        // FIXED: Apply the custom webapp name from the config to the browser tab
-        if (typeof uiConfig !== 'undefined' && uiConfig.loginTitle) {
-            document.title = `Survey Results - ${uiConfig.loginTitle}`;
-        }
         
         renderResults();
     } catch (e) {

@@ -18,6 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("pageHeader").innerText =
           "Published Surveys - " + c.loginTitle;
       }
+      if (c.appBackground)
+        document.body.style.backgroundImage = `url('${c.appBackground}')`;
       if (c.appMode === "demo")
         document.getElementById("demoBanner").style.display = "block";
     });
@@ -30,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showToast("Access Denied.", "error");
         setTimeout(() => (window.location.href = "/"), 1500);
       } else {
-        fetch("/api/profile/preferences")
+        fetch("/api/user-preferences")
           .then((r) => r.json())
           .then((prefs) => {
             if (prefs.liveSurveySortMode) {
@@ -121,10 +123,13 @@ function setSort(col) {
     sortDir = "asc";
   }
 
-  fetch("/api/profile/preferences", {
-    method: "PUT",
+  fetch("/api/user-preferences", {
+    method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ liveSurveySortMode: `${sortCol}_dir_${sortDir}` }),
+    body: JSON.stringify({
+      key: "liveSurveySortMode",
+      value: `${sortCol}_dir_${sortDir}`,
+    }),
   }).catch(() => {});
 
   sortFilteredData();

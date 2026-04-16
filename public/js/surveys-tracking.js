@@ -20,6 +20,13 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((r) => r.json())
     .then((c) => {
       uiConfig = c;
+      if (c.loginTitle) {
+        document.title = "Surveys Tracker - " + c.loginTitle;
+        document.getElementById("pageHeader").innerText =
+          "Surveys Tracker - " + c.loginTitle;
+      }
+      if (c.appBackground)
+        document.body.style.backgroundImage = `url('${c.appBackground}')`;
       if (c.appMode === "demo")
         document.getElementById("demoBanner").style.display = "block";
     });
@@ -32,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showToast("Access Denied.", "error");
         setTimeout(() => (window.location.href = "/"), 1500);
       } else {
-        fetch("/api/profile/preferences")
+        fetch("/api/user-preferences")
           .then((r) => r.json())
           .then((prefs) => {
             if (prefs.surveyTrackingSortMode) {
@@ -113,11 +120,12 @@ function setSort(col) {
     sortDir = "asc";
   }
 
-  fetch("/api/profile/preferences", {
-    method: "PUT",
+  fetch("/api/user-preferences", {
+    method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      surveyTrackingSortMode: `${sortCol}_dir_${sortDir}`,
+      key: "surveyTrackingSortMode",
+      value: `${sortCol}_dir_${sortDir}`,
     }),
   }).catch(() => {});
 
