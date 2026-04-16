@@ -5,6 +5,9 @@ const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 const db = require("../../services/db");
 const { hasRole } = require("../../middleware/auth");
+const nodemailer = require("nodemailer");
+const mailer = require("../../services/mailer");
+const config = require("../../config");
 
 // ============================================================================
 // 1. SPECIFIC ROUTES (Must come before wildcard /:id routes)
@@ -16,7 +19,8 @@ router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
     const liveId = req.params.liveId;
 
     const instance = await db.getLiveSurveyInstanceById(liveId);
-    if (!instance) return res.status(404).json({ error: "Survey instance not found." });
+    if (!instance)
+      return res.status(404).json({ error: "Survey instance not found." });
 
     const rawResponses = await db.getSurveyResponses(liveId);
     const parsedResponses = rawResponses.map((r) => ({
@@ -29,9 +33,10 @@ router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
 
     res.json({
       instanceName: instance.name,
-      structure: typeof instance.structure === "string" 
-        ? JSON.parse(instance.structure) 
-        : instance.structure,
+      structure:
+        typeof instance.structure === "string"
+          ? JSON.parse(instance.structure)
+          : instance.structure,
       responses: parsedResponses,
       responseCount: parsedResponses.length, // Required by public/js/surveys-results.js
       stats: {
@@ -181,7 +186,6 @@ router.get("/instances", hasRole("admin"), async (req, res) => {
   }
 });
 
-
 // PUT /api/surveys/instances/:id/archive - Toggle archive status
 router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {
   try {
@@ -318,15 +322,34 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
     );
 
     // --- EMAIL DISPATCH LOOP ---
-    // We will finalize the mailer integration and templates later, but this
-    // is the exact architecture of where it hooks in.
 
-    for (const data of trackingData) {
-      // const member = await db.getMemberById(data.memberId);
-      // if (member && member.email) {
-      //     const surveyUrl = `${req.protocol}://${req.get('host')}/surveys-view.html?code=${data.accessCode}`;
-      //     await mailer.sendSurveyEmail(member.email, surveyUrl);
-      // }
+    const survey = await db.getSurveyById(surveyId); // Fetch to get the actual survey name
+    const prefs = await db.getPreferences();
+    const tpl = prefs.tpl_surveys ? JSON.parse(prefs.tpl_surveys) : null;
+    const allTracking = await db.getSurveyTracking(liveInstanceId);
+    const pending = allTracking.filter((t) => t.status === "pending"); 
+
+    for (const data of pending) {
+       if (data.email) {
+        const surveyUrl = `${req.protocol}://${req.get("host")}/surveys-view.html?code=${data.accessCode}&id=${survey.public_id}`;
+
+        try {
+          await mailer.sendSurveyInvitation(
+            data.email,
+            data.member_name,
+            survey.name,
+            surveyUrl,
+            config.transporter,
+            config.ui.loginTitle,
+            tpl,
+          );
+        } catch (err) {
+          console.error(
+            `[SMTP ERROR] Failed to send survey link to ${data.email}:`,
+            err,
+          );
+        }
+      }
     }
 
     res.json({
@@ -352,14 +375,38 @@ router.post(
         return res.status(400).json({ error: "No pending members found." });
       }
 
-      // --- EMAIL DISPATCH LOOP (Placeholder) ---
+      // --- EMAIL DISPATCH LOOP ---
+      const instance = await db.getLiveSurveyInstanceById(liveId);
+      const prefs = await db.getPreferences();
+      const tpl = prefs.tpl_surveys ? JSON.parse(prefs.tpl_surveys) : null;
+      const template = await db.getSurveyById(instance.template_id);
+       let sentCount = 0;
       for (const item of pending) {
-        // Example hook:
-        // await mailer.sendSurveyReminderEmail(item.email, item.access_code);
+        if (item.email) {
+          // Using properties defined in your tracking schema
+          const surveyUrl = `${req.protocol}://${req.get("host")}/surveys-view.html?code=${item.access_code}&id=${template.public_id}`;
+          try {
+            await mailer.sendSurveyInvitation(
+              item.email,
+              item.member_name,
+              instance.name,
+              surveyUrl,
+              config.transporter,
+              config.ui.loginTitle,
+              tpl,
+            );
+            sentCount++;
+          } catch (err) {
+            console.error(
+              `[SMTP ERROR] Remind-All failed for ${item.email}:`,
+              err,
+            );
+          }
+        }
       }
 
       res.json({
-        message: `Reminder emails triggered for ${pending.length} pending members.`,
+        message: `Reminder emails triggered for ${sentCount} out of ${pending.length} pending members.`,
       });
     } catch (error) {
       console.error("[API] Error sending bulk reminders:", error);
@@ -385,12 +432,31 @@ router.post(
           .status(400)
           .json({ error: "Member has already submitted the survey." });
 
-      // --- EMAIL DISPATCH (Placeholder) ---
-      // Example hook:
-      // await mailer.sendSurveyReminderEmail(record.email, record.access_code);
+      // --- EMAIL DISPATCH ---
+      const instance = await db.getLiveSurveyInstanceById(liveId);
+
+      if (!record.email) {
+        return res.status(400).json({
+          error:
+            "Cannot send reminder: Member has no registered email address.",
+        });
+      }
+      const template = await db.getSurveyById(instance.template_id);
+      const surveyUrl = `${req.protocol}://${req.get("host")}/surveys-view.html?code=${record.access_code}&id=${template.public_id}`;
+      const prefs = await db.getPreferences();
+      const tpl = prefs.tpl_surveys ? JSON.parse(prefs.tpl_surveys) : null;
+      await mailer.sendSurveyInvitation(
+        record.email,
+        record.member_name,
+        instance.name,
+        surveyUrl,
+        config.transporter,
+        config.ui.loginTitle,
+        tpl,
+      );
 
       res.json({
-        message: `Reminder email triggered for ${record.member_name}.`,
+        message: `Reminder email successfully sent to ${record.member_name}.`,
       });
     } catch (error) {
       console.error("[API] Error sending reminder:", error);

@@ -32,13 +32,13 @@ function toggleSurveySort() {
       break;
   }
 
-// Attempt to persist the sort preference
+  // Attempt to persist the sort preference
   fetch("/api/user-preferences", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ 
-        key: "surveySortMode", 
-        value: surveySortMode 
+    body: JSON.stringify({
+      key: "surveySortMode",
+      value: surveySortMode,
     }),
   }).catch((e) => console.log("Preference save bypassed", e));
   renderSurveyList();
@@ -68,7 +68,26 @@ document.addEventListener("DOMContentLoaded", () => {
         if (window.showToast) showToast("Access Denied.", "error");
         setTimeout(() => (window.location.href = "/"), 1500);
       } else {
-        loadSurveys();
+        // NEW: Fetch preferences before loading surveys
+        fetch("/api/user-preferences")
+          .then((r) => r.json())
+          .then((prefs) => {
+            if (prefs.surveySortMode) {
+              surveySortMode = prefs.surveySortMode;
+              // Update the toggle button icon to match the loaded state
+              const btn = document.getElementById("btnSortSurveys");
+              if (btn) {
+                // Trigger a dummy toggle to set the correct icon based on the loaded state,
+                // then revert the state so it is accurate for renderSurveyList
+                const current = surveySortMode;
+                surveySortMode = "trigger_refresh";
+                toggleSurveySort(); // This cycles it back and sets the UI
+                surveySortMode = current;
+              }
+            }
+            loadSurveys();
+          })
+          .catch(() => loadSurveys());
       }
     })
     .catch(() => (window.location.href = "/login.html"));
@@ -122,13 +141,15 @@ function getSurveyData() {
     (card) => {
       const id = card.getAttribute("data-id");
       const type = card.getAttribute("data-type");
-      
+
       const editor = tinymce.get(`editor_${id}`);
       const description = editor ? editor.getContent() : "";
-      
+
       // Extract plain text for the 'label' used in results view
-      const label = editor ? editor.getContent({ format: 'text' }).trim() : "Untitled Question";
-      
+      const label = editor
+        ? editor.getContent({ format: "text" }).trim()
+        : "Untitled Question";
+
       const required = !!card.querySelector(".field-required-check").checked;
 
       let options = [];
@@ -142,15 +163,15 @@ function getSurveyData() {
       }
 
       // Ensure 'name' matches 'id' to maintain consistency with submission keys
-      return { 
-        id, 
-        name: id, 
+      return {
+        id,
+        name: id,
         label: label.substring(0, 200), // Plain text for charts
-        type, 
+        type,
         description, // HTML for the form view
-        required, 
-        options, 
-        renderAs 
+        required,
+        options,
+        renderAs,
       };
     },
   );
@@ -790,6 +811,7 @@ async function confirmPublish() {
   btn.innerText = "Publishing...";
 
   try {
+    showGlobalSpinner("Publishing survey and sending invitations...");
     const res = await fetch(`/api/surveys/${currentSurvey.id}/publish`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -805,5 +827,8 @@ async function confirmPublish() {
     showToast(e.message, "error");
     btn.disabled = false;
     btn.innerText = "Confirm & Send";
+  } finally {
+    // --- REMOVE SPINNER ---
+    hideGlobalSpinner();
   }
 }

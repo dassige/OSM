@@ -196,6 +196,34 @@ async function sendAccountDeletionNotification(email, name, transporter, appName
     console.log(`[SMTP] Deletion notification sent to ${email}`);
 }
 
+// 5. Survey Invitations & Reminders
+async function sendSurveyInvitation(email, name, surveyName, surveyLink, transporter, appName, templatePref) {
+    const variables = {
+        appname: appName || "FENZ OSM Manager",
+        name: name || "Member",
+        surveyName: surveyName,
+        surveyLink: surveyLink
+    };
+
+    // Define reliable fallbacks in case the database template is empty
+    const defaults = {
+        email: {
+            from: `"${variables.appname}" <noreply@fenz.osm>`,
+            subject: `Action Required: FENZ OSM Survey - ${variables.surveyName}`,
+            body: `<p>Kia ora {{name}},</p><p>Please complete your online verification survey for <strong>{{surveyName}}</strong>.</p><p>Click the link below to access your secure form:</p><p><a href="{{surveyLink}}">{{surveyLink}}</a></p>`
+        }
+    };
+
+    // Safely extract the email configuration from the parsed preference JSON
+    const config = (templatePref && templatePref.email) ? templatePref.email : defaults.email;
+
+    const from = replaceVariables(config.from || defaults.email.from, variables);
+    const subject = replaceVariables(config.subject || defaults.email.subject, variables);
+    const body = replaceVariables(config.body || defaults.email.body, variables);
+
+    await transporter.sendMail({ from, to: email, subject, html: body, text: stripHtml(body) });
+    console.log(`[SMTP] Survey invitation/reminder sent to ${email}`);
+}
 
 async function sendSecurityAlert(details, transporter, appName, superEmail) {
     const subject = `SECURITY ALERT: User Blocked on ${appName}`;
@@ -217,5 +245,6 @@ module.exports = {
     sendPasswordReset,
     sendNewAccountNotification,
     sendAccountDeletionNotification,
+    sendSurveyInvitation,
     sendSecurityAlert
 };

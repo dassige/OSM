@@ -213,3 +213,52 @@ window.formatRankCell = function(rank) {
     // Fallback if the rank doesn't match a known helmet
     return `<span class="badge" style="background:var(--border-color); color:var(--text-main);">${rank}</span>`;
 };
+/**
+ * Injects and manages a global loading spinner overlay
+ * @param {string} message - The text to display below the spinner
+ */
+window.showGlobalSpinner = function(message = "Processing...") {
+    let spinnerOverlay = document.getElementById('globalSpinnerOverlay');
+    
+    // Create the overlay if it doesn't exist in the DOM
+    if (!spinnerOverlay) {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            #globalSpinnerOverlay {
+                display: none; position: fixed; z-index: 10005; left: 0; top: 0;
+                width: 100%; height: 100%; background-color: rgba(0,0,0,0.6);
+                backdrop-filter: blur(3px); align-items: center; justify-content: center;
+                flex-direction: column; color: white; font-family: sans-serif;
+            }
+            .custom-spinner {
+                width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3);
+                border-radius: 50%; border-top-color: #fff;
+                animation: spin 1s ease-in-out infinite; margin-bottom: 15px;
+            }
+            @keyframes spin { to { transform: rotate(360deg); } }
+        `;
+        document.head.appendChild(style);
+
+        spinnerOverlay = document.createElement('div');
+        spinnerOverlay.id = 'globalSpinnerOverlay';
+        spinnerOverlay.innerHTML = `
+            <div class="custom-spinner"></div>
+            <div id="globalSpinnerText" style="font-size: 1.2rem; font-weight: 500;"></div>
+        `;
+        document.body.appendChild(spinnerOverlay);
+    }
+    
+    // Set message and display
+    document.getElementById('globalSpinnerText').innerText = message;
+    spinnerOverlay.style.display = 'flex';
+};
+
+/**
+ * Hides the global loading spinner
+ */
+window.hideGlobalSpinner = function() {
+    const spinnerOverlay = document.getElementById('globalSpinnerOverlay');
+    if (spinnerOverlay) {
+        spinnerOverlay.style.display = 'none';
+    }
+};

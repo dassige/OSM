@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
         fetch("/api/user-preferences")
           .then((r) => r.json())
           .then((prefs) => {
+            // Load Sort Mode
             if (prefs.liveSurveySortMode) {
               const parts = prefs.liveSurveySortMode.split("_dir_");
               if (parts.length === 2) {
@@ -42,6 +43,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 sortDir = parts[1];
               }
             }
+
+            // NEW: Load Rows Per Page
+            if (prefs.liveSurveyItemsPerPage) {
+              const savedLimit = prefs.liveSurveyItemsPerPage;
+              const selectEl = document.getElementById("rowsPerPage");
+              if (selectEl) selectEl.value = savedLimit;
+
+              if (savedLimit !== "all") {
+                itemsPerPage = parseInt(savedLimit, 10);
+              }
+              // If it is "all", we let changeRowsPerPage or renderTable handle the dynamic length
+            }
+
             loadData();
           })
           .catch(() => loadData());
@@ -165,6 +179,16 @@ function changeRowsPerPage() {
   } else {
     itemsPerPage = parseInt(val, 10);
   }
+
+  // NEW: Persist the preference to the backend
+  fetch("/api/user-preferences", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      key: "liveSurveyItemsPerPage",
+      value: val,
+    }),
+  }).catch((e) => console.log("Preference save bypassed", e));
 
   currentPage = 1; // Reset to the first page when changing page sizes
   renderTable();

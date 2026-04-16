@@ -237,6 +237,7 @@ async function remindMember(trackingId) {
   if (uiConfig?.appMode === "demo")
     return showToast("Emails disabled in Demo Mode", "warning");
   try {
+    showGlobalSpinner("Sending reminder email...");
     const res = await fetch(
       `/api/surveys/instances/${liveSurveyId}/remind/${trackingId}`,
       { method: "POST" },
@@ -246,6 +247,9 @@ async function remindMember(trackingId) {
     showToast(data.message, "success");
   } catch (e) {
     showToast(e.message, "error");
+  } finally {
+    // --- REMOVE SPINNER ---
+    hideGlobalSpinner();
   }
 }
 
@@ -267,6 +271,7 @@ async function remindAllPending() {
     return;
 
   try {
+    showGlobalSpinner("Sending reminder email...");
     const res = await fetch(
       `/api/surveys/instances/${liveSurveyId}/remind-all`,
       { method: "POST" },
@@ -276,5 +281,8 @@ async function remindAllPending() {
     showToast(data.message, "success");
   } catch (e) {
     showToast(e.message, "error");
+  } finally {
+    // --- REMOVE SPINNER ---
+    hideGlobalSpinner();
   }
 }

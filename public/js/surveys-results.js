@@ -58,7 +58,7 @@ function renderResults() {
         const card = document.createElement("div");
         card.className = "result-card";
         
-        let html = `<div class="result-title">${index + 1}. ${question.description}</div>`;
+        let html = `<div class="result-title">${question.description}</div>`;
 
         // TEXT / TEXTAREA
         if (question.type === 'text_multi' ) {
