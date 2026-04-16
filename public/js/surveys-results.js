@@ -57,15 +57,43 @@ function renderResults() {
   surveyData.structure.forEach((question, index) => {
     const card = document.createElement("div");
     card.className = "result-card";
+
     let desc = (question.description || "").trim();
 
-    if (question.description.endsWith("</p>")) {
-      desc = (index + 1) + ". " + desc.substring(0, desc.length - 4) +  "</p>";
-    } else {
-      desc = (index + 1) + ". " + desc;
+    // Nullify the top margin of the first paragraph so it aligns perfectly with the flex index number
+    desc = desc.replace(/^<p>/i, '<p style="margin-top: 0;">');
+
+    // Map internal DB types to user-friendly labels
+    let typeLabel = "Unknown";
+    switch (question.type) {
+      case "radio":
+        typeLabel = "Exclusive Choice";
+        break;
+      case "checkboxes":
+        typeLabel = "Multiple Choice";
+        break;
+      case "boolean":
+        typeLabel = "Yes/No";
+        break;
+      case "text_multi":
+        typeLabel = "Free Text";
+        break;
+      default:
+        typeLabel = question.type;
     }
 
-    let html = `<div class="result-title">${desc}</div>`;
+    // Inject the mapped label right below the question description using a flexbox layout
+    let html = `
+        <div class="result-title" style="margin-bottom: 5px;">
+            <div style="display:flex; align-items: flex-start; gap: 8px;">
+                <span style="min-width: 20px; margin-top: 1px;">${index + 1}.</span>
+                <div style="flex: 1;">${desc}</div>
+            </div>
+        </div>
+        <div style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 15px;">
+            Type: ${typeLabel}
+        </div>
+    `;
 
     // TEXT / TEXTAREA
     if (question.type === "text_multi") {
@@ -136,7 +164,6 @@ function renderResults() {
     container.appendChild(card);
   });
 }
-
 function escapeHTML(str) {
   if (typeof str !== "string") return str;
   return str.replace(
