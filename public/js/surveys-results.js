@@ -178,3 +178,109 @@ function escapeHTML(str) {
       })[tag] || tag,
   );
 }
+// --- EXPORT FUNCTIONALITY ---
+
+function exportCSV() {
+  if (!surveyData || !surveyData.responses || surveyData.responses.length === 0) {
+      return showToast("No responses available to export.", "warning");
+  }
+
+  let csvContent = "data:text/csv;charset=utf-8,";
+
+  // 1. Build Headers
+  const headers = ["Submission ID", "Submitted Date"];
+  surveyData.structure.forEach(q => {
+      // Strip HTML tags from the Rich Text descriptions to make clean CSV column headers
+      let cleanDesc = (q.description || "").replace(/<[^>]*>?/gm, '').trim();
+      headers.push(`"${cleanDesc.replace(/"/g, '""')}"`);
+  });
+  csvContent += headers.join(",") + "\n";
+
+  // 2. Build Rows
+  surveyData.responses.forEach(r => {
+      let row = [`"${r.id}"`, `"${new Date(r.submittedAt).toLocaleString()}"`];
+      
+      surveyData.structure.forEach(q => {
+          let ans = r.answers[q.id];
+          
+          if (Array.isArray(ans)) {
+              ans = ans.join("; "); // Flatten checkbox arrays
+          } else if (ans === null || ans === undefined) {
+              ans = "";
+          }
+          
+          // Escape quotes for CSV compatibility
+          ans = String(ans).replace(/"/g, '""');
+          row.push(`"${ans}"`);
+      });
+      csvContent += row.join(",") + "\n";
+  });
+
+  // 3. Trigger Download
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `Survey_Results_${surveyData.instanceName.replace(/[^a-z0-9]/gi, '_')}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function exportPDF() {
+  if (!surveyData) return;
+
+  if (typeof window.showGlobalSpinner === 'function') {
+      showGlobalSpinner("Generating PDF...");
+  }
+
+  // Dynamically load html2pdf if not already present in the DOM
+  if (typeof html2pdf === 'undefined') {
+      const script = document.createElement('script');
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      script.onload = () => { generatePDF(); };
+      document.head.appendChild(script);
+  } else {
+      generatePDF();
+  }
+}
+
+function generatePDF() {
+  const element = document.querySelector('.container');
+  
+  // Hide the action buttons and back button temporarily so they don't appear in the PDF
+  const actionButtons = document.getElementById('exportActionButtons');
+  const backBtn = document.querySelector('.back-dashboard-btn');
+  if (actionButtons) actionButtons.style.display = 'none';
+  if (backBtn) backBtn.style.display = 'none';
+
+  const opt = {
+      margin:       0.5,
+      filename:     `Survey_Results_${surveyData.instanceName.replace(/[^a-z0-9]/gi, '_')}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(element).save().then(() => {
+      // Restore the UI elements after PDF generation
+      if (actionButtons) actionButtons.style.display = 'flex';
+      if (backBtn) backBtn.style.display = 'flex';
+      
+      if (typeof window.hideGlobalSpinner === 'function') {
+          hideGlobalSpinner();
+      }
+  });
+}
+// --- SCROLL TO TOP LOGIC ---
+const scrollTopBtn = document.getElementById("scrollTopBtn");
+
+window.onscroll = function () {
+    if (scrollTopBtn) {
+        // Show the button after scrolling down 200px
+        scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none";
+    }
+};
+
+window.scrollToTop = function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};

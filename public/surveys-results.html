@@ -94,6 +94,57 @@
             font-size: 18px;
             color: var(--primary-color);
         }
+
+        /* --- PRINT STYLESHEET --- */
+        @media print {
+
+            /* 1. Hide the Sidebar and reset any page shifting */
+            .sidebar,
+            #sidebar {
+                display: none !important;
+            }
+
+            body,
+            .container {
+                margin-left: 0 !important;
+                padding-left: 0 !important;
+                max-width: 100% !important;
+            }
+
+            /* 2. Hide interactive UI elements (Buttons, floating icons, banners) */
+            #exportActionButtons,
+            .back-dashboard-btn,
+            #scrollTopBtn,
+            .help-floating-btn,
+            #demoBanner {
+                display: none !important;
+            }
+
+            /* 3. Optimize the layout for paper */
+            body {
+                background: #fff !important;
+            }
+
+            .container {
+                margin: 0 !important;
+                box-shadow: none !important;
+            }
+
+            .result-card {
+                /* Prevent individual questions from being split across two pages */
+                page-break-inside: avoid;
+                break-inside: avoid;
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+                background: #fff !important;
+            }
+
+            /* Optional: ensure bar chart colors print accurately (requires browser support) */
+            .bar-fill {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
     </style>
 </head>
 
@@ -111,9 +162,17 @@
         <h1 id="pageHeader" class="text-center" style="margin-top:0;">Survey Results</h1>
 
         <div class="summary-banner">
-            <h2 id="surveyTitle">Loading Results...</h2>
-            <div style="font-size: 16px; font-weight: bold;">
-                Total Submissions: <span id="totalSubmissions">0</span>
+            <div>
+                <h2 id="surveyTitle" style="margin-bottom: 5px;">Loading Results...</h2>
+                <div style="font-size: 16px; font-weight: bold;">
+                    Total Submissions: <span id="totalSubmissions">0</span>
+                </div>
+            </div>
+            <div id="exportActionButtons"
+                style="display:flex; gap:10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                <button onclick="window.print()" class="btn-sm btn-secondary" style="margin:0;">Print</button>
+                <button onclick="exportCSV()" class="btn-sm btn-success" style="margin:0;">Export CSV</button>
+                <button onclick="exportPDF()" class="btn-sm btn-purple" style="margin:0;">Export PDF</button>
             </div>
         </div>
 
