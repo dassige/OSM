@@ -1454,8 +1454,23 @@ textarea {
 .btn-secondary { background-color: #6c757d; color: white; }
 .btn-secondary:hover { background-color: #5a6268; }
 
+.btn-informative { background-color: #49b89a; color: white; }
+.btn-informative:hover { background-color: #3a8c7a; }
+
 .btn-danger { background-color: var(--danger); color: white; }
 .btn-danger:hover { background-color: #bd2130; }
+
+.btn-warning { background-color: var(--warning); color: white; }
+.btn-warning:hover { background-color: #d39e00; }
+
+.btn-purple { background-color: #b95ec5; color: white; }
+.btn-purple:hover { background-color: #8f45a5; }
+
+.btn-yellow { background-color: #f3fd67; color: rgb(0, 0, 0); }
+.btn-yellow:hover { background-color: #b0b84b; }
+
+.btn-outline-primary { border: 1px solid var(--primary); color: var(--primary); }
+.btn-outline-primary:hover { background-color: rgba(0, 123, 255, 0.1); }
 
 .btn-icon {
     background: none;

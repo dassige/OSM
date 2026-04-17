@@ -58,6 +58,107 @@
     document.body.appendChild(div);
 })();
 
+// --- CUSTOM PROMPT MODAL LOGIC ---
+(function setupPromptModal() {
+    if (document.getElementById('customPromptModal')) return;
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #customPromptModal {
+            display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+        }
+        #customPromptModal .modal-content {
+            background-color: var(--bg-card, #fff); color: var(--text-main, #333);
+            margin: 15% auto; padding: 25px; border: 1px solid var(--border-color, #ddd); width: 90%; max-width: 400px;
+            border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease-out;
+        }
+        .prompt-input {
+            width: 100%; padding: 10px; margin-top: 15px; border: 1px solid var(--border-color); border-radius: 4px;
+            background: var(--input-bg); color: var(--text-main); box-sizing: border-box; font-size: 16px;
+        }
+    `;
+    document.head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.id = 'customPromptModal';
+    div.innerHTML = `
+        <div class="modal-content">
+            <h3 id="promptTitle" style="margin-top:0; font-size:1.25rem;">Action Required</h3>
+            <p id="promptMessage" style="color: var(--text-muted, #666); line-height: 1.5; margin: 15px 0;"></p>
+            <input type="text" id="promptInput" class="prompt-input" autocomplete="off">
+            <div class="confirm-btn-group">
+                <button id="btnPromptCancel" class="confirm-btn confirm-btn-cancel">Cancel</button>
+                <button id="btnPromptYes" class="confirm-btn confirm-btn-ok">Confirm</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(div);
+})();
+
+/**
+ * Asynchronous replacement for native prompt() requiring specific text matching
+ * @param {string} title - The header of the modal
+ * @param {string} message - The body text (supports HTML)
+ * @param {string} requiredText - The exact text the user must type to enable the confirm button
+ * @returns {Promise<boolean>}
+ */
+window.promptAction = function(title, message, requiredText) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('customPromptModal');
+        const titleEl = document.getElementById('promptTitle');
+        const msgEl = document.getElementById('promptMessage');
+        const inputEl = document.getElementById('promptInput');
+        const btnYes = document.getElementById('btnPromptYes');
+        const btnCancel = document.getElementById('btnPromptCancel');
+
+        titleEl.textContent = title || 'Confirm Action';
+        msgEl.innerHTML = message || `Please type <strong>${requiredText}</strong> to proceed.`;
+        inputEl.value = '';
+        inputEl.placeholder = `Type '${requiredText}'`;
+        
+        // Disable submit button initially
+        btnYes.disabled = true;
+        btnYes.style.opacity = '0.5';
+
+        modal.style.display = 'block';
+        inputEl.focus();
+
+        const validateInput = () => {
+            if (inputEl.value === requiredText) {
+                btnYes.disabled = false;
+                btnYes.style.opacity = '1';
+                btnYes.classList.add('btn-danger'); // Add danger styling for high-risk prompts
+            } else {
+                btnYes.disabled = true;
+                btnYes.style.opacity = '0.5';
+                btnYes.classList.remove('btn-danger');
+            }
+        };
+
+        inputEl.addEventListener('input', validateInput);
+
+        const cleanup = () => {
+            modal.style.display = 'none';
+            btnYes.onclick = null;
+            btnCancel.onclick = null;
+            inputEl.removeEventListener('input', validateInput);
+            window.removeEventListener('keydown', handleKey);
+        };
+
+        const handleKey = (e) => { 
+            if (e.key === 'Escape') { cleanup(); resolve(false); } 
+            if (e.key === 'Enter' && !btnYes.disabled) { cleanup(); resolve(true); }
+        };
+
+        window.addEventListener('keydown', handleKey);
+
+        btnYes.onclick = () => { cleanup(); resolve(true); };
+        btnCancel.onclick = () => { cleanup(); resolve(false); };
+        
+        modal.onclick = (e) => { if (e.target === modal) { cleanup(); resolve(false); } };
+    });
+};
 /**
  * Asynchronous replacement for native confirm()
  * @param {string} title - The header of the modal
@@ -212,4 +313,53 @@ window.formatRankCell = function(rank) {
     
     // Fallback if the rank doesn't match a known helmet
     return `<span class="badge" style="background:var(--border-color); color:var(--text-main);">${rank}</span>`;
+};
+/**
+ * Injects and manages a global loading spinner overlay
+ * @param {string} message - The text to display below the spinner
+ */
+window.showGlobalSpinner = function(message = "Processing...") {
+    let spinnerOverlay = document.getElementById('globalSpinnerOverlay');
+    
+    // Create the overlay if it doesn't exist in the DOM
+    if (!spinnerOverlay) {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            #globalSpinnerOverlay {
+                display: none; position: fixed; z-index: 10005; left: 0; top: 0;
+                width: 100%; height: 100%; background-color: rgba(0,0,0,0.6);
+                backdrop-filter: blur(3px); align-items: center; justify-content: center;
+                flex-direction: column; color: white; font-family: sans-serif;
+            }
+            .custom-spinner {
+                width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3);
+                border-radius: 50%; border-top-color: #fff;
+                animation: spin 1s ease-in-out infinite; margin-bottom: 15px;
+            }
+            @keyframes spin { to { transform: rotate(360deg); } }
+        `;
+        document.head.appendChild(style);
+
+        spinnerOverlay = document.createElement('div');
+        spinnerOverlay.id = 'globalSpinnerOverlay';
+        spinnerOverlay.innerHTML = `
+            <div class="custom-spinner"></div>
+            <div id="globalSpinnerText" style="font-size: 1.2rem; font-weight: 500;"></div>
+        `;
+        document.body.appendChild(spinnerOverlay);
+    }
+    
+    // Set message and display
+    document.getElementById('globalSpinnerText').innerText = message;
+    spinnerOverlay.style.display = 'flex';
+};
+
+/**
+ * Hides the global loading spinner
+ */
+window.hideGlobalSpinner = function() {
+    const spinnerOverlay = document.getElementById('globalSpinnerOverlay');
+    if (spinnerOverlay) {
+        spinnerOverlay.style.display = 'none';
+    }
 };

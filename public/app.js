@@ -446,11 +446,12 @@ async function sendSingleAction(name, type) {
     socket.emit("run-process-queue", [target], days);
   }
 }
-
-viewBtn.addEventListener("click", () => {
-  showCompletionToast = true;
-  fetchData(true);
-});
+if (viewBtn) {
+  viewBtn.addEventListener("click", () => {
+    showCompletionToast = true;
+    fetchData(true);
+  });
+}
 
 sendEmailsBtn.addEventListener("click", async () => {
   const targets = [];

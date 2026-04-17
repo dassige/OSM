@@ -18,6 +18,8 @@ const memberRoutes = require("./routes/api/members");
 const skillRoutes = require("./routes/api/skills");
 const formRoutes = require("./routes/api/forms");
 const liveFormRoutes = require("./routes/api/live-forms");
+const surveyRoutes = require("./routes/api/surveys");
+const liveSurveyRoutes = require("./routes/api/live-surveys");
 const reportRoutes = require("./routes/api/reports");
 const userRoutes = require("./routes/api/users");
 const profileRoutes = require("./routes/api/profile");
@@ -82,6 +84,8 @@ app.use("/api/members", memberRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/forms", formRoutes);
 app.use("/api/live-forms", liveFormRoutes);
+app.use("/api/surveys", surveyRoutes);
+app.use("/api/live-surveys", liveSurveyRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/profile", profileRoutes);
@@ -335,5 +339,4 @@ if (require.main === module) {
   })();
 }
 
-// THE FIX: Export 'app' instead of 'server' so Supertest bypasses Socket.io!
 module.exports = app;

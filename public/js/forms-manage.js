@@ -231,21 +231,25 @@ async function saveForm() {
       body: JSON.stringify(payload),
     });
 
+    const responseData = await res.json();
+
     if (!res.ok) {
-      const errorData = await res.json();
-      // Extract specific Joi validation reasons or fallback to general error
-      const reason = errorData.details
-        ? errorData.details.join(" | ")
-        : errorData.error || "Unknown error";
+      const reason = responseData.details
+        ? responseData.details.join(" | ")
+        : responseData.error || "Unknown error";
       throw new Error(reason);
     }
 
-    const result = await res.json();
-    // ... (Success handling as per existing forms-manage.js) ...
-    showToast("Form saved successfully", "success");
-    // Reset the baseline so isFormDirty() returns false until further edits
-    originalFormState = getFormData();
+    if (method === "POST" && responseData.id) {
+      currentForm.id = responseData.id;
+      if (responseData.publicId) currentForm.public_id = responseData.publicId;
+      // Depending on your forms API, the key might be public_id instead of publicId
+      if (responseData.public_id)
+        currentForm.public_id = responseData.public_id;
+    }
 
+    showToast("Form saved successfully", "success");
+    originalFormState = getFormData();
     loadForms();
   } catch (e) {
     // 1. Display reason to user
