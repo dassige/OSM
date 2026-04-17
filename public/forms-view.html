@@ -217,6 +217,31 @@
                 max-width: none;
             }
         }
+
+        /* Add to <style> in forms-view.html */
+        .app-branding-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .app-branding-header img {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .app-branding-header h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--text-main);
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -225,6 +250,11 @@
         <button onclick="window.close()"
             style="margin-left:15px; padding:4px 10px; background:rgb(104, 5, 5); border:none; cursor:pointer; border-radius:4px; color:white;">Close
             Window</button>
+    </div>
+    <div id="appBrandingHeader" class="app-branding-header" style="display: none;">
+        <img id="brandingLogoLeft" src="" alt="App Logo Left">
+        <h2 id="brandingTitle">Form</h2>
+        <img id="brandingLogoRight" src="" alt="App Logo Right">
     </div>
     <div id="reviewActions"
         style="display:none; background:#343a40; color:white; padding:15px; position:sticky; top:0; z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.2); text-align:center;">
@@ -343,8 +373,30 @@
                     if (config.locale) appLocale = config.locale;
                     if (config.timezone) appTimezone = config.timezone;
                     isAiEnabled = config.aiEnabled;
+                    const appName = config?.loginTitle || "FENZ OSM";
+                    const appLogo = config?.appLogo || "resources/logo.png"; // Fallback to default
+                    const customTitle = `${appName} Form`;
+
+                    // Set HTML page header title
+                    document.title = customTitle;
+
+                    // Set DOM elements
+                    const brandingHeader = document.getElementById('appBrandingHeader');
+                    document.getElementById('brandingTitle').innerText = customTitle;
+
+                    if (appLogo) {
+                        document.getElementById('brandingLogoLeft').src = appLogo;
+                        document.getElementById('brandingLogoRight').src = appLogo;
+                        brandingHeader.style.display = 'flex';
+                    }
+
+                    // Apply custom background if configured
+                    if (uiConfig?.appBackground) {
+                        document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
+                    }
                 }
             } catch (e) { }
+
 
             const params = new URLSearchParams(window.location.search);
             const reviewId = params.get('reviewId'), code = params.get('code'), publicId = params.get('id');
@@ -545,7 +597,7 @@
             let aiFeedback = {};
             if (reviewData.ai_feedback) {
                 if (typeof reviewData.ai_feedback === 'string') {
-                    try { aiFeedback = JSON.parse(reviewData.ai_feedback); } catch(e) {}
+                    try { aiFeedback = JSON.parse(reviewData.ai_feedback); } catch (e) { }
                 } else {
                     aiFeedback = reviewData.ai_feedback;
                 }
@@ -584,7 +636,7 @@
                     if (el.type !== 'textarea') {
                         const val = String(el.value).trim();
                         if (subArr.includes(val)) el.checked = true;
-                     }
+                    }
                 });
 
                 if (field.type === 'text_multi') {

@@ -129,6 +129,32 @@
             height: 64px;
             margin-bottom: 20px;
         }
+
+        /* Add to <style> in surveys-view.html */
+        .app-branding-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .app-branding-header img {
+            height: 40px;
+            /* Scaled down bitmap */
+            width: auto;
+            object-fit: contain;
+        }
+
+        .app-branding-header h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--text-main);
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -136,6 +162,11 @@
     <div id="demoBanner" class="demo-banner" style="display:none;">DEMO VERSION</div>
 
     <div class="view-container">
+        <div id="appBrandingHeader" class="app-branding-header" style="display: none;">
+            <img id="brandingLogoLeft" src="" alt="App Logo Left">
+            <h2 id="brandingTitle">Survey</h2>
+            <img id="brandingLogoRight" src="" alt="App Logo Right">
+        </div>
         <div id="previewBanner" class="preview-banner">
             PREVIEW MODE - Submissions are disabled
         </div>
@@ -197,6 +228,38 @@
         let surveyData = null;
 
         document.addEventListener("DOMContentLoaded", async () => {
+            // 1. Fetch Dynamic UI Configuration
+            try {
+                const configRes = await fetch('/ui-config');
+                if (configRes.ok) {
+                    uiConfig = await configRes.json();
+                }
+            } catch (e) {
+                console.warn("Failed to load UI configuration payload", e);
+            }
+
+            // 2. Apply Custom Branding
+            const appName = uiConfig?.loginTitle || "FENZ OSM";
+            const appLogo = uiConfig?.appLogo || "resources/logo.png"; // Fallback to default
+            const customTitle = `${appName} Survey`;
+
+            // Set HTML page header title
+            document.title = customTitle;
+
+            // Set DOM elements
+            const brandingHeader = document.getElementById('appBrandingHeader');
+            document.getElementById('brandingTitle').innerText = customTitle;
+
+            if (appLogo) {
+                document.getElementById('brandingLogoLeft').src = appLogo;
+                document.getElementById('brandingLogoRight').src = appLogo;
+                brandingHeader.style.display = 'flex';
+            }
+
+            // Apply custom background if configured (following your UI rules)
+            if (uiConfig?.appBackground) {
+                document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
+            }
             if (isPreview) {
                 document.getElementById('previewBanner').style.display = 'block';
                 if (!publicId) return showError("Preview requires a valid survey ID.");
