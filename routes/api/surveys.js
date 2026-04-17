@@ -367,7 +367,7 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
     const instance = await db.getLiveSurveyInstanceById(liveInstanceId);
     for (const data of pending) {
       if (data.email) {
-        const surveyUrl = `${req.protocol}://${req.get("host")}/surveys-view.html?code=${data.accessCode}&id=${survey.public_id}`;
+        const surveyUrl = `${req.protocol}://${req.get("host")}/surveys-view.html?code=${data.access_code}&id=${survey.public_id}`;
 
         try {
           await mailer.sendSurveyInvitation(

@@ -15,7 +15,12 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Form Builder:** Drag-and-drop interface to create custom skill verification forms internally.
       * **Unique Tracking:** System generates unique, secure links for every member/skill combination.
       * **Lifecycle Management:** Track exactly when a form was sent, opened, and submitted.
-      * **Data Review:** Admins can review submission answers directly within the app.  * 
+      * **Data Review:** Admins can review submission answers directly within the app.
+  * **Anonymous Survey System:**
+      * **Builder:** Create custom polls and feedback surveys with various question types (Multiple Choice, Checkboxes, Free Text).
+      * **Distribution:** Publish to members with automated email/WhatsApp invitations using custom dynamic templates.
+      * **Anonymous Tracking:** Track completion status to send targeted reminders without linking member identities to their submitted answers.
+      * **Analytics:** View aggregated results with visual bar charts and seamlessly export them to CSV or PDF for reporting.
   * **Multi-User System:**
       * **Super Admin:** A resilient system account defined via environment variables.
       * **User Management:** Create multiple database-backed administrators with secure password hashing.
@@ -25,7 +30,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
       * **Skills:** Configure which skills to track and mark them as Critical.
       * **Smart Form Links:** Define Online Form URLs with dynamic placeholders (e.g., `{{member-name}}`) to pre-fill member details automatically.
-      * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, New Users, Password Resets, and Account Deletions.
+      * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, Surveys, New Users, Password Resets, and Account Deletions.
   * **Reports Console:**
       * **Flexible Reporting:** Generate comprehensive reports grouped by **Member** (for individual follow-up) or **Skill** (for planning training blocks).
       * **Export Options:** Includes built-in support for browser Printing (A4 optimized) and direct **PDF Export**.
@@ -190,7 +195,6 @@ For stateless deployments, host your images publicly and provide the URLs via en
   * `UI_LOGO_URL`
   * `UI_BACKGROUND_URL`
 
-
 ## Usage
 
 ### 1\. Starting the Server
@@ -227,73 +231,109 @@ node server.js
 The application includes a self-contained form system designed to replace external tools like Google Forms.
 
 1.  **Create a Form:**
-    * Go to **Manage Forms**.
-    * Build your questionnaire (Text, Yes/No, Checkboxes).
-    * Save and copy the **Public Link** (🔗).
+
+      * Go to **Manage Forms**.
+      * Build your questionnaire (Text, Yes/No, Checkboxes).
+      * Save and copy the **Public Link** (🔗).
 
 2.  **Link to a Skill:**
-    * Go to **Manage Skills**.
-    * Paste the internal link into the URL field for the relevant skill.
-    * *Note:* The system automatically detects this is an internal form.
+
+      * Go to **Manage Skills**.
+      * Paste the internal link into the URL field for the relevant skill.
+      * *Note:* The system automatically detects this is an internal form.
 
 3.  **Automatic Distribution:**
-    * When you send an email/WhatsApp reminder, the system generates a unique **Access Code**.
-    * The member receives a personalized link (e.g., `.../forms-view.html?code=uuid`).
+
+      * When you send an email/WhatsApp reminder, the system generates a unique **Access Code**.
+      * The member receives a personalized link (e.g., `.../forms-view.html?code=uuid`).
 
 4.  **Tracking & Review:**
-    * Go to **Live Forms**.
-    * Filter by Status (Open/Submitted) or Date.
-    * **Review:** Click the Eye icon to see the member's answers.
-    * **Maintenance:** Use **Purge Filtered** to clean up old records or **Download JSON** for offline archiving.
-5.  **Form Validation:** 
-    * Administrators can "Test the Form" in Demo Mode directly from the management table to verify layout and variables before final approval.
+
+      * Go to **Live Forms**.
+      * Filter by Status (Open/Submitted) or Date.
+      * **Review:** Click the Eye icon to see the member's answers.
+      * **Maintenance:** Use **Purge Filtered** to clean up old records or **Download JSON** for offline archiving.
+
+5.  **Form Validation:** \* Administrators can "Test the Form" in Demo Mode directly from the management table to verify layout and variables before final approval.
+
 6.  **Scoring Simulator:** Use the **Test** button to simulate submissions and verify point weighting.
+
 7.  **Auto-Grading:** Upon submission, the system calculates the score. If the member passes, it is marked `Accepted`. If they fail but have tries left, it resets to `Sent` for a retry.
+
 8.  **AI Review:** If **AI Evaluation** is enabled, paragraph answers show an AI-suggested score and justification for the admin to approve.
 
-
 ### 5\. AI-Assisted Form Generation
-To speed up the creation of new verification questionnaires, you can use AI to analyze technical documents and generate compatible JSON definitions. 
 
-See the [AI Form Generation Guide](AI_FORM_GENERATION.md) for a ready-to-use prompt and detailed instructions.
+To speed up the creation of new verification questionnaires, you can use AI to analyze technical documents and generate compatible JSON definitions.
+
+See the [AI Form Generation Guide](https://www.google.com/search?q=AI_FORM_GENERATION.md) for a ready-to-use prompt and detailed instructions.
+
+### 6\. Anonymous Surveys Workflow
+
+The application includes a fully anonymous survey engine for brigade feedback, elections, or general polling.
+
+1.  **Create a Survey:**
+      * Go to **Manage Surveys**.
+      * Build your questionnaire using Multiple Choice, Yes/No, Checkboxes, or Free Text fields.
+2.  **Publish and Distribute:**
+      * Click **Publish** and select the target members.
+      * The system automatically generates unique tracking links and dispatches invitations using your configured Survey Template.
+3.  **Track and Remind:**
+      * Navigate to **Live Surveys** -\> **Tracking**.
+      * View who has completed the survey (without seeing their answers) and click **Remind All Pending** to follow up with a single click.
+4.  **Analyze Results:**
+      * Navigate to **Live Surveys** -\> **Results**.
+      * View auto-generated percentage bar charts for choice questions and aggregated text responses.
+      * Use the action bar to **Print**, **Export CSV**, or **Export PDF** for offline analysis and reporting.
 
 ## Example Data and Configuration
 
 To facilitate a rapid setup and standardized testing, the application now includes a collection of pre-configured JSON examples located in the `./examples` directory. These files can be imported via the web interface to populate the system with actual FENZ Operational Instructions (OIs) and professionally formatted notification templates.
 
-### 1. Form Examples (`/examples/forms/`)
+### 1\. Form Examples (`/examples/forms/`)
 
 This directory contains JSON definitions for various skill verification questionnaires. These forms are designed for the **Live Forms** system and represent "online test" verifications.
 
-* **Standard OIs included:**
-* `IS1 - Operational Safety`
-* `G7 - Decontamination`
-* `H7-1 - Clandestine Laboratories`
-* `E3-2 - Respiratory Protection`
-* `IS3 - Working Near Roadways`
-* `...and more`
+  * **Standard OIs included:**
 
-* **Bulk Import:** You can replace the entire forms database by using the **Import All** tool in the **Forms Manager**.
-* **AI Generation:** A guide and prompt for generating additional form JSONs from FENZ PDFs can be found in `AI_FORM_GENERATION.md`.
+  * `IS1 - Operational Safety`
 
-### 2. Template Examples (`/examples/templates/`)
+  * `G7 - Decontamination`
+
+  * `H7-1 - Clandestine Laboratories`
+
+  * `E3-2 - Respiratory Protection`
+
+  * `IS3 - Working Near Roadways`
+
+  * `...and more`
+
+  * **Bulk Import:** You can replace the entire forms database by using the **Import All** tool in the **Forms Manager**.
+
+  * **AI Generation:** A guide and prompt for generating additional form JSONs from FENZ PDFs can be found in `AI_FORM_GENERATION.md`.
+
+### 2\. Template Examples (`/examples/templates/`)
 
 These examples provide structured logic for the `mailer.js` and `whatsapp-service.js` modules.
 
-* **Notification Types:**
-* `template_skills.json`: Primary reminders for expiring competencies, including logic for both `row` (with URL) and `rowNoUrl` (for in-person training).
-* `template_accepted.json` / `template_rejected.json`: Automated feedback loops for admin reviews of member submissions, utilizing the `{{custom_comment}}` and `{{url}}` retry variables.
-* `template_newuser.json`: Onboarding credentials for new system administrators.
+  * **Notification Types:**
 
+  * `template_skills.json`: Primary reminders for expiring competencies, including logic for both `row` (with URL) and `rowNoUrl` (for in-person training).
 
-* **Implementation:** These can be imported into the **Templates** editor using the **Import JSON** feature.
+  * `template_accepted.json` / `template_rejected.json`: Automated feedback loops for admin reviews of member submissions, utilizing the `{{custom_comment}}` and `{{url}}` retry variables.
+
+  * `template_surveys.json`: Dynamic invitations for Anonymous Surveys, utilizing the `{{surveyLink}}` variable.
+
+  * `template_newuser.json`: Onboarding credentials for new system administrators.
+
+  * **Implementation:** These can be imported into the **Templates** editor using the **Import JSON** feature.
 
 ### Technical Schema Reference
 
 Both forms and templates utilize a strict JSON schema validated by the backend.
 
-* **Forms:** Managed via the `forms` table in SQLite. Key fields include `structure` (a JSON stringified array of question objects) and `public_id` (a unique UUID for secure public access).
-* **Templates:** Persisted in the `preferences` table as serialized JSON objects.
+  * **Forms/Surveys:** Managed via the `forms` and `surveys` tables in SQLite. Key fields include `structure` (a JSON stringified array of question objects) and `public_id` (a unique UUID for secure public access).
+  * **Templates:** Persisted in the `preferences` table as serialized JSON objects.
 
 ## Docker Deployment
 
@@ -307,11 +347,11 @@ Both forms and templates utilize a strict JSON schema validated by the backend.
 
 Supports stateless deployment using **Litestream** to replicate the database to Google Cloud Storage.
 
-See [Installation on Google Cloud Run](Installation_google_run.md) for details.
+See [Installation on Google Cloud Run](https://www.google.com/search?q=Installation_google_run.md) for details.
 
 ## Integrations
 
-* [**WhatsApp Feature Guide**](whatsapp-feature.md): Detailed instructions on connecting your WhatsApp account, managing sessions, and sending mobile notifications.
+  * [**WhatsApp Feature Guide**](https://www.google.com/search?q=whatsapp-feature.md): Detailed instructions on connecting your WhatsApp account, managing sessions, and sending mobile notifications.
 
 ## Project Structure
 
@@ -366,3 +406,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
