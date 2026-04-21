@@ -40,7 +40,8 @@ const globalAuthGuard = (req, res, next) => {
     req.path.startsWith("/resources/") ||
     req.path.startsWith("/demo/") ||
     req.path.startsWith("/api/live-forms/access/") ||
-    req.path.startsWith("/api/live-forms/submit/")
+    req.path.startsWith("/api/live-forms/submit/") ||
+    req.path.startsWith("/api/live-surveys/")
   ) {
     return next();
   }
