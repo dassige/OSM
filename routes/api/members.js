@@ -21,10 +21,17 @@ router.post("/", hasRole("admin"), async (req, res) => {
 });
 
 router.delete("/:id", hasRole("admin"), async (req, res) => {
-  await db.deleteMember(req.params.id);
-  res.json({ success: true });
+  try {
+    await db.deleteMember(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete Member Error:", error);
+    // Return a JSON error so the frontend 'fetch' doesn't fail with ERR_EMPTY_RESPONSE
+    res.status(500).json({ 
+      error: "Could not delete member. They may have active survey records or other dependencies." 
+    });
+  }
 });
-
 router.post("/bulk-delete", hasRole("admin"), async (req, res) => {
   await db.bulkDeleteMembers(req.body.ids);
   res.json({ success: true });

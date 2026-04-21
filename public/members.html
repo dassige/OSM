@@ -171,7 +171,7 @@
     <script>
 
         let memberTable;
-
+        let currentMembers = [];
         // Helper to parse "Rank" and "Display Name" from the OSM string
         function parseRankAndName(fullName) {
             const parts = (fullName || '').trim().split(' ');
@@ -289,6 +289,7 @@
                 const res = await fetch('/api/members');
                 if (!res.ok) throw new Error(res.status);
                 const data = await res.json();
+                currentMembers = data;
                 memberTable.setData(data);
             } catch (err) {
                 document.getElementById('membersTableBody').innerHTML = `<tr><td colspan="8" class="text-center" style="color:var(--danger);">Error: ${err.message}</td></tr>`;
@@ -451,15 +452,14 @@
             reloadMembers();
         });
 
-        async function deleteMember(id) {
-            const member = currentMembers.find(m => m.id == id);
-            const name = member ? member.name : 'this member';
-            if (await confirmAction('Delete Member', `Are you sure you want to delete ${name}?`)) {
-                await fetch(`/api/members/${id}`, { method: 'DELETE' });
-                reloadMembers();
-            }
-        }
-
+async function deleteMember(id) {
+    const member = memberTable.data.find(m => m.id == id);
+    const name = member ? member.name : 'this member';
+    if (await confirmAction('Delete Member', `Are you sure you want to delete ${name}?`)) {
+        await fetch(`/api/members/${id}`, { method: 'DELETE' });
+        reloadMembers(); // This correctly calls memberTable.setData()
+    }
+}
         function handleFileUpload(input) {
             const file = input.files[0];
             if (!file) return;

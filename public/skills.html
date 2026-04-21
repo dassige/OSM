@@ -200,12 +200,11 @@
     <script src="theme.js"></script>
     <script src="toast.js"></script>
     <script src="utils.js"></script>
-    <script src="utils.js"></script>
     <script src="js/table-controller.js"></script>
     <script>
         let skillTable;
         let currentForms = [];
-
+        let currentSkills = [];
         async function initPage() {
             try {
                 const uiRes = await fetch('/ui-config');
@@ -301,7 +300,13 @@
             try {
                 const res = await fetch('/api/skills');
                 if (!res.ok) throw new Error("Failed");
-                skillTable.setData(await res.json());
+                const data = await res.json();
+
+                // Populate the global state
+                currentSkills = data;
+
+
+                skillTable.setData(currentSkills);
 
                 const formRes = await fetch('/api/forms');
                 if (formRes.ok) currentForms = await formRes.json();
@@ -310,70 +315,6 @@
 
         function handleSort(column) {
             skillTable.handleSort(column);
-        }
-
-        async function toggleSkillEnabled(id, newState) {
-            const skill = skillTable.data.find(s => s.id == id);
-            skill.enabled = newState;
-            try {
-                await fetch(`/api/skills/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(skill) });
-                skillTable.render(); // Just re-render visuals locally
-            } catch (e) {
-                showToast("Failed to update", "error");
-                skill.enabled = !newState;
-                skillTable.render();
-            }
-        }
-
-        window.editSkillByIndex = function (index) {
-            const s = skillTable.data[index];
-            document.getElementById('modalTitle').textContent = "Edit Skill";
-            document.getElementById('skillId').value = s.id;
-            document.getElementById('name').value = s.name;
-            document.getElementById('critical_skill').checked = s.critical_skill;
-            document.getElementById('enabled').checked = s.enabled;
-
-            const type = s.url_type || 'external';
-            switchModalTab(type, false);
-
-            if (type === 'internal') {
-                document.getElementById('selectedFormId').value = s.url;
-                const formName = currentForms.find(f => f.public_id === s.url)?.name || "Unknown Form";
-                const display = document.getElementById('selectedFormName');
-                display.textContent = s.url ? formName : "No form selected";
-                if (s.url) display.classList.add('active');
-            } else {
-                document.getElementById('url').value = s.url || "";
-            }
-
-            document.getElementById('skillModal').style.display = 'block';
-        }
-
-        async function deleteSkill(id) {
-            const skill = skillTable.data.find(s => s.id == id);
-            const name = skill ? skill.name : 'this skill';
-            if (await confirmAction('Delete Skill', `Delete skill '${name}'?`)) {
-                await fetch(`/api/skills/${id}`, { method: 'DELETE' });
-                reloadSkills();
-            }
-        }
-
-        function exportToCSV() {
-            const skills = skillTable.data;
-            if (!skills || skills.length === 0) { showToast("No skills to export.", "warning"); return; }
-            const headers = ['name', 'url', 'critical_skill', 'enabled'];
-            const rows = skills.map(skill => {
-                return `${skill.name},${skill.url || ''},${skill.critical_skill},${skill.enabled}`;
-            });
-            const csvContent = [headers.join(',')].concat(rows).join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = "skills_export.csv";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         }
         function setupDragAndDrop() {
             document.querySelectorAll('.draggable-item').forEach(item => {
@@ -458,18 +399,25 @@
 
 
         async function toggleSkillEnabled(id, newState) {
-            const skill = currentSkills.find(s => s.id == id);
+            const skill = skillTable.data.find(s => s.id == id);
+            if (!skill) return;
+
             skill.enabled = newState;
             try {
-                await fetch(`/api/skills/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(skill) });
-                renderTable();
+                await fetch(`/api/skills/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(skill)
+                });
+
+                // Use the controller's render method, not a global renderTable()
+                skillTable.render();
             } catch (e) {
                 showToast("Failed to update", "error");
                 skill.enabled = !newState;
-                renderTable();
+                skillTable.render();
             }
         }
-
         window.editSkillByIndex = function (index) {
             const s = currentSkills[index];
             document.getElementById('modalTitle').textContent = "Edit Skill";
