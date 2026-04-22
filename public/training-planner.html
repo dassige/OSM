@@ -152,10 +152,7 @@
     <script src="help.js"></script>
     
     <script>
-        const scrollTopBtn = document.getElementById("scrollTopBtn");
-        window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
-        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
-        
+
         // Fetch UI config for header & background
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.loginTitle) {

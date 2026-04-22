@@ -261,7 +261,7 @@ window.showAboutModal = async function() {
                 <p style="font-size: 1.1em; color: var(--text-muted);">${config.loginTitle}</p>
                 <div style="margin: 20px 0; font-size: 0.9em;">
                     <p><strong>Version:</strong> ${config.version}</p>
-                    <p><strong>Deploy Date:</strong> ${config.deployDate}</p>
+                    <p><strong>Version Date:</strong> ${config.deployDate}</p>
                 </div>
                 <div class="modal-credits">
                     <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">Credits</p>
