@@ -76,16 +76,6 @@
                 </div>
             </div>
 
-            <div class="filter-group" style="flex: 0 1 100px;">
-                <label>Rows:</label>
-                <select id="rowsPerPage" class="filter-select" onchange="changeLimit(this.value)">
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                    <option value="200">200</option>
-                </select>
-            </div>
-
             <div class="filter-actions">
                 <button onclick="applyFilters(1)" class="btn-primary" style="height: 38px;">Apply Filters</button>
                 <button onclick="resetFilters()" class="btn-secondary" style="height: 38px;">Reset</button>
@@ -121,6 +111,17 @@
             </table>
 
             <div class="pagination-container" id="paginationControls" style="display:none;">
+                <div class="page-limit-selector">
+                    <label>Rows per page:</label>
+                    <select id="rowsPerPage" onchange="changeLimit(this.value)"
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+
                 <span class="pagination-info" id="pageInfo">Showing 0-0 of 0</span>
                 <div style="display:flex; gap:5px;">
                     <button class="btn-page" id="btnPrev" onclick="changePage(-1)">Previous</button>
@@ -186,14 +187,14 @@
             await loadMetadata();
 
             // 1. Load limit preference BEFORE initializing the controller
-            let initialLimit = 50;
+            let initialLimit = 25;
             try {
                 const res = await fetch('/api/user-preferences/eventLogLimit');
                 const data = await res.json();
                 if (data.value) {
                     initialLimit = parseInt(data.value);
                 }
-            } catch (e) { console.warn("Failed to load limit pref", e); }
+            } catch (e) { /* Use default if not found */ }
 
             // Update UI Dropdown
             const limitSelect = document.getElementById('rowsPerPage');
@@ -290,12 +291,15 @@
         }
 
         async function changeLimit(newLimit) {
-            eventTableCtrl.setLimit(newLimit);
-            fetch('/api/user-preferences', {
+            if (eventTableCtrl) {
+                eventTableCtrl.setLimit(newLimit);
+            }
+            await fetch('/api/user-preferences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key: 'eventLogLimit', value: newLimit })
             });
+            applyFilters(1); // Re-fetch data with the new limit
         }
 
         async function loadMetadata() {
