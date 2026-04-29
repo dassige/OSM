@@ -58,6 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
                               <li><a href="system-tools.html" id="navSystemTools">System Tools</a></li>
                           </ul>
                       </li>
+                      <li><a href="profile.html">User Preferences</a></li>
                       <li><a href="#" onclick="showAboutModal()">About</a></li>
                   </ul>
               </nav>
