@@ -423,7 +423,38 @@
                         <label>Email Body</label>
                         <div class="helper-text">Ensure you include the <code>{{surveyLink}}</code> so the member can
                             access the form.</div>
-                        <textarea id="surveysEmailBody" class="rich-editor"></textarea>
+
+                        <div style="display:flex; gap:20px; flex-direction: column; margin-top:20px;">
+                            <div style="flex:1;">
+                                <label style="font-weight:bold; color:var(--success);">Email Body (Anonymous)</label>
+                                <div class="helper-text">Inform the member that the survey will be anonymous.</div>
+
+                                <div class="palette-container" style="margin-top: 10px;">
+                                    <span class="palette-label">Drag variables:</span>
+                                    <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                                    <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                                    <div class="draggable-item" draggable="true" data-val="surveyName">Survey Name</div>
+                                    <div class="draggable-item" draggable="true" data-val="surveyLink"
+                                        style="border-color:var(--info); color:var(--info);">Survey Link</div>
+                                </div>
+
+                                <textarea id="surveysEmailBody" class="rich-editor"></textarea>
+                            </div>
+                            <div style="flex:1;">
+                                <label style="font-weight:bold; color:var(--danger);">Email Body (Non-Anonymous)</label>
+                                <div class="helper-text">Inform the member their identity will be recorded.</div>
+                                <div class="palette-container" style="margin-top: 10px;">
+                                    <span class="palette-label">Drag variables:</span>
+                                    <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                                    <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                                    <div class="draggable-item" draggable="true" data-val="surveyName">Survey Name</div>
+                                    <div class="draggable-item" draggable="true" data-val="surveyLink"
+                                        style="border-color:var(--info); color:var(--info);">Survey Link</div>
+                                </div>
+
+                                <textarea id="surveysEmailBodyNamed" class="rich-editor"></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -449,7 +480,17 @@
                             <button type="button" class="wa-btn" onclick="formatText('surveysWaBody', '~')"
                                 style="text-decoration:line-through;">S</button>
                         </div>
-                        <textarea id="surveysWaBody" class="droppable-input" rows="5"></textarea>
+                        <div style="display:flex; gap:20px; flex-direction: column; margin-top:20px;">
+                            <div style="flex:1;">
+                                <label style="font-weight:bold; color:var(--success);">Message Body (Anonymous)</label>
+                                <textarea id="surveysWaBody" class="droppable-input" rows="4"></textarea>
+                            </div>
+                            <div style="flex:1;">
+                                <label style="font-weight:bold; color:var(--danger);">Message Body
+                                    (Non-Anonymous)</label>
+                                <textarea id="surveysWaBodyNamed" class="droppable-input" rows="4"></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -704,11 +745,16 @@
                     email: {
                         from: document.getElementById('surveysEmailFrom').value,
                         subject: document.getElementById('surveysEmailSubject').value,
-                        body: chipsToText(tinymce.get('surveysEmailBody').getContent())
+                        body: chipsToText(tinymce.get('surveysEmailBody').getContent()),
+                        bodyNamed: chipsToText(tinymce.get('surveysEmailBodyNamed').getContent()) // ADDED
                     },
-                    whatsapp: { body: document.getElementById('surveysWaBody').value }
+                    whatsapp: {
+                        body: document.getElementById('surveysWaBody').value,
+                        bodyNamed: document.getElementById('surveysWaBodyNamed').value // ADDED
+                    }
                 };
-            } else {
+            }
+            else {
                 const prefix = (type === 'newuser') ? 'newUser' : type;
                 data = {
                     from: document.getElementById(prefix + 'From').value,
@@ -765,8 +811,10 @@
                         if (data.email.from !== undefined) document.getElementById('surveysEmailFrom').value = data.email.from;
                         if (data.email.subject !== undefined) document.getElementById('surveysEmailSubject').value = data.email.subject;
                         if (data.email.body !== undefined) tinymce.get('surveysEmailBody').setContent(textToChips(data.email.body));
+                        if (data.email.bodyNamed !== undefined) tinymce.get('surveysEmailBodyNamed').setContent(textToChips(data.email.bodyNamed));
                     }
                     if (data.whatsapp && data.whatsapp.body !== undefined) document.getElementById('surveysWaBody').value = data.whatsapp.body;
+                    if (data.whatsapp.bodyNamed !== undefined) document.getElementById('surveysWaBodyNamed').value = data.whatsapp.bodyNamed;
                 } else {
                     const prefix = (currentImportType === 'newuser') ? 'newUser' : currentImportType;
                     if (data.from) document.getElementById(prefix + 'From').value = data.from;
@@ -826,22 +874,25 @@
                     document.getElementById('surveysEmailFrom').value = surv.email.from || '';
                     document.getElementById('surveysEmailSubject').value = surv.email.subject || '';
                     tinymce.get('surveysEmailBody').setContent(textToChips(surv.email.body || ''));
+                    tinymce.get('surveysEmailBodyNamed').setContent(textToChips(surv.email.bodyNamed || '')); // ADDED
                     document.getElementById('surveysWaBody').value = surv.whatsapp.body || '';
+                    document.getElementById('surveysWaBodyNamed').value = surv.whatsapp.bodyNamed || ''; // ADDED
                 } catch (e) { console.error("Error parsing surveys template", e); }
             }
-            const loadTab = (key, prefix) => {
-                if (prefs[key]) {
-                    try {
-                        const data = JSON.parse(prefs[key]);
-                        document.getElementById(prefix + 'From').value = data.from || '';
-                        document.getElementById(prefix + 'Subject').value = data.subject || '';
-                        if (data.body) tinymce.get(prefix + 'Body').setContent(textToChips(data.body));
-                    } catch (e) { }
-                }
-            };
-            loadTab('tpl_new_user', 'newUser');
-            loadTab('tpl_reset_password', 'reset');
-            loadTab('tpl_delete_user', 'delete');
+        
+        const loadTab = (key, prefix) => {
+            if (prefs[key]) {
+                try {
+                    const data = JSON.parse(prefs[key]);
+                    document.getElementById(prefix + 'From').value = data.from || '';
+                    document.getElementById(prefix + 'Subject').value = data.subject || '';
+                    if (data.body) tinymce.get(prefix + 'Body').setContent(textToChips(data.body));
+                } catch (e) { }
+            }
+        };
+        loadTab('tpl_new_user', 'newUser');
+        loadTab('tpl_reset_password', 'reset');
+        loadTab('tpl_delete_user', 'delete');
         }
 
         document.getElementById('templateForm').addEventListener('submit', async (e) => {
@@ -878,9 +929,13 @@
                 email: {
                     from: document.getElementById('surveysEmailFrom').value,
                     subject: document.getElementById('surveysEmailSubject').value,
-                    body: chipsToText(tinymce.get('surveysEmailBody').getContent())
+                    body: chipsToText(tinymce.get('surveysEmailBody').getContent()),
+                    bodyNamed: chipsToText(tinymce.get('surveysEmailBodyNamed').getContent()) // ADDED
                 },
-                whatsapp: { body: document.getElementById('surveysWaBody').value }
+                whatsapp: {
+                    body: document.getElementById('surveysWaBody').value,
+                    bodyNamed: document.getElementById('surveysWaBodyNamed').value // ADDED
+                }
             };
             const updates = [
                 { key: 'emailFrom', value: document.getElementById('skillsFrom').value },

@@ -296,6 +296,17 @@
                 }
 
                 surveyData = data.survey;
+
+                if (isReview) {
+                    surveyData.answers = data.answers;
+                    surveyData.respondentName = data.member_name;
+                    // Also ensure is_anonymous is explicitly handled from the template
+                    surveyData.is_anonymous = 0;
+                } else if (data.respondentName) {
+                    // Standard live-survey view for volunteers
+                    surveyData.respondentName = data.respondentName;
+                    surveyData.is_anonymous = data.is_anonymous;
+                }
                 renderSurvey();
             } catch (err) {
                 showError(err.message);
@@ -333,12 +344,20 @@
                 }
             }
 
+            // Update Disclosure for Review Mode
+            if (isReview && disclosure) {
+                title.innerText = "Reviewing Response";
+                text.innerHTML = `This response was submitted by <strong>${surveyData.respondentName}</strong>.`;
+                disclosure.style.backgroundColor = "var(--bg-card)";
+                disclosure.style.borderLeft = "5px solid var(--primary)";
+            }
 
             const container = document.getElementById('questionsContainer');
             let structure = surveyData.structure;
             if (typeof structure === 'string') structure = JSON.parse(structure);
             // If in Review Mode, we have access to surveyData.answers (from the fetch)
             const answers = isReview ? surveyData.answers : {};
+
 
             structure.forEach((q, index) => {
                 const card = document.createElement('div');
@@ -414,6 +433,22 @@
 
                 html += `<div class="error-message" id="err_${q.id}">This field is required.</div>`;
                 card.innerHTML = html;
+
+                if (isReview) {
+                    card.querySelectorAll('input, textarea, select').forEach(input => {
+                        input.disabled = true;
+                        const val = answers[q.id];
+
+                        if (input.type === 'checkbox') {
+                            if (Array.isArray(val) && val.includes(input.value)) input.checked = true;
+                        } else if (input.type === 'radio') {
+                            if (val === input.value) input.checked = true;
+                        } else if (input.tagName === 'SELECT' || input.tagName === 'TEXTAREA') {
+                            input.value = val || "";
+                        }
+                    });
+                }
+
                 container.appendChild(card);
             });
         }

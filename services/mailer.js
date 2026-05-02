@@ -1,97 +1,119 @@
 // services/mailer.js
-const config = require('../config');
-const getTime = () => new Date().toLocaleTimeString(config.locale, { timeZone: config.timezone });
+const config = require("../config");
+const getTime = () =>
+  new Date().toLocaleTimeString(config.locale, { timeZone: config.timezone });
 
 // Helper: Strip HTML tags
 function stripHtml(html) {
-    if (!html) return "";
-    return html.replace(/<[^>]*>?/gm, '');
+  if (!html) return "";
+  return html.replace(/<[^>]*>?/gm, "");
 }
 
 // Helper: Generic Variable Replacement
 function replaceVariables(text, variables) {
-    if (!text) return "";
-    let result = text;
-    for (const [key, value] of Object.entries(variables)) {
-        // Replace {{key}} globally
-        const regex = new RegExp(`{{${key}}}`, 'g');
-        result = result.replace(regex, value);
-    }
-    return result;
+  if (!text) return "";
+  let result = text;
+  for (const [key, value] of Object.entries(variables)) {
+    // Replace {{key}} globally
+    const regex = new RegExp(`{{${key}}}`, "g");
+    result = result.replace(regex, value);
+  }
+  return result;
 }
 
 // Helper: Get Default Template if DB is empty
 function getTemplate(prefs, type, defaults) {
-    const json = prefs[type];
-    if (json) {
-        try { return JSON.parse(json); } catch (e) { return defaults; }
+  const json = prefs[type];
+  if (json) {
+    try {
+      return JSON.parse(json);
+    } catch (e) {
+      return defaults;
     }
-    return defaults;
+  }
+  return defaults;
 }
 
 // 1. Expiring Skills Notification
-async function sendNotification(member, templateConfig, transporter, isTestMode, logger = console.log, appName) {
-    if (!member.expiringSkills || member.expiringSkills.length === 0) return null;
+async function sendNotification(
+  member,
+  templateConfig,
+  transporter,
+  isTestMode,
+  logger = console.log,
+  appName,
+) {
+  if (!member.expiringSkills || member.expiringSkills.length === 0) return null;
 
-    let skillsToProcess = member.expiringSkills;
-    const isFilterEnabled = templateConfig.filterOnlyWithUrl === true || templateConfig.filterOnlyWithUrl === 'true';
+  let skillsToProcess = member.expiringSkills;
+  const isFilterEnabled =
+    templateConfig.filterOnlyWithUrl === true ||
+    templateConfig.filterOnlyWithUrl === "true";
 
-    if (isFilterEnabled) {
-        skillsToProcess = skillsToProcess.filter(s => !!s.url);
+  if (isFilterEnabled) {
+    skillsToProcess = skillsToProcess.filter((s) => !!s.url);
+  }
+
+  if (skillsToProcess.length === 0) return null;
+
+  const globalVars = {
+    appname: appName || "FENZ OSM Manager",
+    name: member.name,
+    email: member.email,
+  };
+
+  const defaults = {
+    from: templateConfig.from || `"${globalVars.appname}" <noreply@fenz.osm>`,
+    subject:
+      templateConfig.subject ||
+      `${globalVars.appname}: Expiring Skills Notification`,
+    intro:
+      templateConfig.intro ||
+      `<p>Hello <strong>{{name}}</strong>,</p><p>You have expiring skills in OSM. Please complete them ASAP.</p>`,
+    rowHtml:
+      templateConfig.rowHtml ||
+      `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} <br> <a href="{{url}}">Form Link</a></li>`,
+    rowHtmlNoUrl:
+      templateConfig.rowHtmlNoUrl ||
+      `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} (No online form available)</li>`,
+  };
+
+  const from = replaceVariables(defaults.from, globalVars);
+  const subject = replaceVariables(defaults.subject, globalVars);
+  const intro = replaceVariables(defaults.intro, globalVars);
+
+  let rowsHtml = "";
+  let plainTextList = "";
+
+  skillsToProcess.forEach((skill) => {
+    if (skill.isSubmitted) {
+      const criticalLabel = skill.isCritical ? "(CRITICAL)" : "";
+      rowsHtml += `<li style="color:#555;"><strong>${skill.skill}</strong> ${criticalLabel} <br> <span style="color:#17a2b8; font-weight:bold; font-size:0.9em;">&#9432; Form submitted and awaiting review</span></li>`;
+      plainTextList += `- ${skill.skill}: Form submitted and awaiting review\n`;
+      return;
+    }
+    let fullUrl = skill.url || "";
+    const templateToUse = fullUrl ? defaults.rowHtml : defaults.rowHtmlNoUrl;
+
+    if (fullUrl) {
+      fullUrl = fullUrl
+        .replace(/{{member-name}}/g, encodeURIComponent(member.name))
+        .replace(/{{member-email}}/g, encodeURIComponent(member.email));
     }
 
-    if (skillsToProcess.length === 0) return null;
+    const criticalLabel = skill.isCritical ? "(CRITICAL)" : "";
+    let row = templateToUse
+      .replace(/{{skill}}/g, skill.skill)
+      .replace(/{{date}}/g, skill.dueDate)
+      .replace(/{{critical}}/g, criticalLabel)
+      .replace(/{{url}}/g, fullUrl)
+      .replace(/{{next-planned-dates}}/g, skill.nextPlannedDates || "None");
 
-    const globalVars = {
-        appname: appName || "FENZ OSM Manager",
-        name: member.name,
-        email: member.email
-    };
+    rowsHtml += row;
+    plainTextList += `- ${skill.skill} (${skill.dueDate}) [Next: ${skill.nextPlannedDates}]\n`;
+  });
 
-    const defaults = {
-        from: templateConfig.from || `"${globalVars.appname}" <noreply@fenz.osm>`,
-        subject: templateConfig.subject || `${globalVars.appname}: Expiring Skills Notification`,
-        intro: templateConfig.intro || `<p>Hello <strong>{{name}}</strong>,</p><p>You have expiring skills in OSM. Please complete them ASAP.</p>`,
-        rowHtml: templateConfig.rowHtml || `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} <br> <a href="{{url}}">Form Link</a></li>`,
-        rowHtmlNoUrl: templateConfig.rowHtmlNoUrl || `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} (No online form available)</li>`
-    };
-
-    const from = replaceVariables(defaults.from, globalVars);
-    const subject = replaceVariables(defaults.subject, globalVars);
-    const intro = replaceVariables(defaults.intro, globalVars);
-
-    let rowsHtml = '';
-    let plainTextList = '';
-
-    skillsToProcess.forEach(skill => {
-        if (skill.isSubmitted) {
-            const criticalLabel = skill.isCritical ? '(CRITICAL)' : '';
-            rowsHtml += `<li style="color:#555;"><strong>${skill.skill}</strong> ${criticalLabel} <br> <span style="color:#17a2b8; font-weight:bold; font-size:0.9em;">&#9432; Form submitted and awaiting review</span></li>`;
-            plainTextList += `- ${skill.skill}: Form submitted and awaiting review\n`;
-            return; 
-        }
-        let fullUrl = skill.url || '';
-        const templateToUse = fullUrl ? defaults.rowHtml : defaults.rowHtmlNoUrl;
-
-        if (fullUrl) {
-            fullUrl = fullUrl
-                .replace(/{{member-name}}/g, encodeURIComponent(member.name))
-                .replace(/{{member-email}}/g, encodeURIComponent(member.email));
-        }
-
-        const criticalLabel = skill.isCritical ? '(CRITICAL)' : '';
-        let row = templateToUse
-            .replace(/{{skill}}/g, skill.skill)
-            .replace(/{{date}}/g, skill.dueDate)
-            .replace(/{{critical}}/g, criticalLabel)
-            .replace(/{{url}}/g, fullUrl)
-            .replace(/{{next-planned-dates}}/g, skill.nextPlannedDates || "None");
-
-        rowsHtml += row;
-        plainTextList += `- ${skill.skill} (${skill.dueDate}) [Next: ${skill.nextPlannedDates}]\n`;
-    });
-
-    const messageHtml = `
+  const messageHtml = `
         <div style="font-family: Arial, sans-serif; color: #333;">
             ${intro}
             <ul>${rowsHtml}</ul>
@@ -99,103 +121,196 @@ async function sendNotification(member, templateConfig, transporter, isTestMode,
         </div>
     `;
 
-    const messageText = `${stripHtml(intro)}\n\n${plainTextList}`;
+  const messageText = `${stripHtml(intro)}\n\n${plainTextList}`;
 
-    if (isTestMode) {
-        logger(`[${getTime()}] [TEST MODE] Simulating email to: ${member.email}`);
-        return { html: messageHtml, text: messageText };
-    }
+  if (isTestMode) {
+    logger(`[${getTime()}] [TEST MODE] Simulating email to: ${member.email}`);
+    return { html: messageHtml, text: messageText };
+  }
 
-    try {
-        const info = await transporter.sendMail({ from, to: member.email, subject, text: messageText, html: messageHtml });
-        logger(`[${getTime()}] [SMTP] Email sent to ${member.name} (ID: ${info.messageId})`);
-        return { info, html: messageHtml, text: messageText };
-    } catch (error) {
-        logger(`[${getTime()}] [SMTP ERROR] Failed to send to ${member.name}: ${error.message}`);
-        throw error;
-    }
+  try {
+    const info = await transporter.sendMail({
+      from,
+      to: member.email,
+      subject,
+      text: messageText,
+      html: messageHtml,
+    });
+    logger(
+      `[${getTime()}] [SMTP] Email sent to ${member.name} (ID: ${info.messageId})`,
+    );
+    return { info, html: messageHtml, text: messageText };
+  } catch (error) {
+    logger(
+      `[${getTime()}] [SMTP ERROR] Failed to send to ${member.name}: ${error.message}`,
+    );
+    throw error;
+  }
 }
 
 // 2. Password Reset
-async function sendPasswordReset(email, newPassword, transporter, appName, templatePref) {
-    const variables = { appname: appName || "FENZ OSM Manager", email: email, password: newPassword };
-    const defaults = {
-        from: `"${variables.appname}" <noreply@fenz.osm>`,
-        subject: `${variables.appname}: Password Reset`,
-        body: `<p>A password reset was requested.</p><p>New Password: <strong>{{password}}</strong></p>`
-    };
-    const config = templatePref || defaults;
-    const from = replaceVariables(config.from || defaults.from, variables);
-    const subject = replaceVariables(config.subject || defaults.subject, variables);
-    const body = replaceVariables(config.body || defaults.body, variables);
+async function sendPasswordReset(
+  email,
+  newPassword,
+  transporter,
+  appName,
+  templatePref,
+) {
+  const variables = {
+    appname: appName || "FENZ OSM Manager",
+    email: email,
+    password: newPassword,
+  };
+  const defaults = {
+    from: `"${variables.appname}" <noreply@fenz.osm>`,
+    subject: `${variables.appname}: Password Reset`,
+    body: `<p>A password reset was requested.</p><p>New Password: <strong>{{password}}</strong></p>`,
+  };
+  const config = templatePref || defaults;
+  const from = replaceVariables(config.from || defaults.from, variables);
+  const subject = replaceVariables(
+    config.subject || defaults.subject,
+    variables,
+  );
+  const body = replaceVariables(config.body || defaults.body, variables);
 
-    await transporter.sendMail({ from, to: email, subject, html: body, text: stripHtml(body) });
-    console.log(`[SMTP] Password reset email sent to ${email}`);
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject,
+    html: body,
+    text: stripHtml(body),
+  });
+  console.log(`[SMTP] Password reset email sent to ${email}`);
 }
 
 // 3. New Account
-async function sendNewAccountNotification(email, name, password, transporter, appName, templatePref) {
-    const variables = { appname: appName || "FENZ OSM Manager", name: name, email: email, password: password };
-    const defaults = {
-        from: `"${variables.appname}" <noreply@fenz.osm>`,
-        subject: `Welcome to ${variables.appname}`,
-        body: `<p>Welcome <strong>{{name}}</strong>,</p><p>Your account has been created.</p><p>Password: <strong>{{password}}</strong></p>`
-    };
-    const config = templatePref || defaults;
-    const from = replaceVariables(config.from || defaults.from, variables);
-    const subject = replaceVariables(config.subject || defaults.subject, variables);
-    const body = replaceVariables(config.body || defaults.body, variables);
+async function sendNewAccountNotification(
+  email,
+  name,
+  password,
+  transporter,
+  appName,
+  templatePref,
+) {
+  const variables = {
+    appname: appName || "FENZ OSM Manager",
+    name: name,
+    email: email,
+    password: password,
+  };
+  const defaults = {
+    from: `"${variables.appname}" <noreply@fenz.osm>`,
+    subject: `Welcome to ${variables.appname}`,
+    body: `<p>Welcome <strong>{{name}}</strong>,</p><p>Your account has been created.</p><p>Password: <strong>{{password}}</strong></p>`,
+  };
+  const config = templatePref || defaults;
+  const from = replaceVariables(config.from || defaults.from, variables);
+  const subject = replaceVariables(
+    config.subject || defaults.subject,
+    variables,
+  );
+  const body = replaceVariables(config.body || defaults.body, variables);
 
-    await transporter.sendMail({ from, to: email, subject, html: body, text: stripHtml(body) });
-    console.log(`[SMTP] New account email sent to ${email}`);
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject,
+    html: body,
+    text: stripHtml(body),
+  });
+  console.log(`[SMTP] New account email sent to ${email}`);
 }
 
 // 4. Account Deletion
-async function sendAccountDeletionNotification(email, name, transporter, appName, templatePref) {
-    const variables = { appname: appName || "FENZ OSM Manager", name: name, email: email };
-    const defaults = {
-        from: `"${variables.appname}" <noreply@fenz.osm>`,
-        subject: `${variables.appname}: Account Deleted`,
-        body: `<p>Hello {{name}},</p><p>Your account on {{appname}} has been deleted.</p>`
-    };
-    const config = templatePref || defaults;
-    const from = replaceVariables(config.from || defaults.from, variables);
-    const subject = replaceVariables(config.subject || defaults.subject, variables);
-    const body = replaceVariables(config.body || defaults.body, variables);
+async function sendAccountDeletionNotification(
+  email,
+  name,
+  transporter,
+  appName,
+  templatePref,
+) {
+  const variables = {
+    appname: appName || "FENZ OSM Manager",
+    name: name,
+    email: email,
+  };
+  const defaults = {
+    from: `"${variables.appname}" <noreply@fenz.osm>`,
+    subject: `${variables.appname}: Account Deleted`,
+    body: `<p>Hello {{name}},</p><p>Your account on {{appname}} has been deleted.</p>`,
+  };
+  const config = templatePref || defaults;
+  const from = replaceVariables(config.from || defaults.from, variables);
+  const subject = replaceVariables(
+    config.subject || defaults.subject,
+    variables,
+  );
+  const body = replaceVariables(config.body || defaults.body, variables);
 
-    await transporter.sendMail({ from, to: email, subject, html: body, text: stripHtml(body) });
-    console.log(`[SMTP] Deletion notification sent to ${email}`);
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject,
+    html: body,
+    text: stripHtml(body),
+  });
+  console.log(`[SMTP] Deletion notification sent to ${email}`);
 }
 
 // 5. Survey Invitations & Reminders
-async function sendSurveyInvitation(email, name, surveyName, surveyLink, transporter, appName, templatePref) {
-    const variables = {
-        appname: appName || "FENZ OSM Manager",
-        name: name || "Member",
-        surveyName: surveyName,
-        surveyLink: surveyLink
-    };
+async function sendSurveyInvitation(
+  email,
+  name,
+  surveyName,
+  surveyLink,
+  transporter,
+  appName,
+  templatePref,
+  isAnonymous = true,
+) {
+  const variables = {
+    appname: appName || "FENZ OSM Manager",
+    name: name || "Member",
+    surveyName,
+    surveyLink,
+  };
+  const defaults = {
+    email: {
+      from: `"${variables.appname}" <noreply@fenz.osm>`,
+      subject: `Action Required: ${variables.surveyName}`,
+      body: `<p>Please complete your anonymous survey: <a href="{{surveyLink}}">{{surveyLink}}</a></p>`,
+      bodyNamed: `<p>Please complete your non-anonymous survey (identity recorded): <a href="{{surveyLink}}">{{surveyLink}}</a></p>`,
+    },
+  };
 
-    const defaults = {
-        email: {
-            from: `"${variables.appname}" <noreply@fenz.osm>`,
-            subject: `Action Required: FENZ OSM Survey - ${variables.surveyName}`,
-            body: `<p>Kia ora {{name}},</p><p>Please complete your online verification survey for <strong>{{surveyName}}</strong>.</p><p>Click the link below to access your secure form:</p><p><a href="{{surveyLink}}">{{surveyLink}}</a></p>`
-        }
-    };
+  const config =
+    templatePref && templatePref.email ? templatePref.email : defaults.email;
+  const from = replaceVariables(config.from || defaults.email.from, variables);
+  const subject = replaceVariables(
+    config.subject || defaults.email.subject,
+    variables,
+  );
 
-    const config = (templatePref && templatePref.email) ? templatePref.email : defaults.email;
-    const from = replaceVariables(config.from || defaults.email.from, variables);
-    const subject = replaceVariables(config.subject || defaults.email.subject, variables);
-    const body = replaceVariables(config.body || defaults.email.body, variables);
+  // Logic: Use non-anonymous body if flag is false AND the template exists
+  let bodyTemplate = config.body || defaults.email.body;
+  if (!isAnonymous && config.bodyNamed) {
+    bodyTemplate = config.bodyNamed;
+  }
+  const body = replaceVariables(bodyTemplate, variables);
 
-    await transporter.sendMail({ from, to: email, subject, html: body, text: stripHtml(body) });
-    console.log(`[SMTP] Survey invitation/reminder sent to ${email}`);
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject,
+    html: body,
+    text: stripHtml(body),
+  });
 }
 
 async function sendSecurityAlert(details, transporter, appName, superEmail) {
-    const subject = `SECURITY ALERT: User Blocked on ${appName}`;
-    const body = `
+  const subject = `SECURITY ALERT: User Blocked on ${appName}`;
+  const body = `
         <h3>Security Alert: User Account Automatically Blocked</h3>
         <p>A user has been blocked after exceeding the maximum number of failed login attempts.</p>
         <ul>
@@ -206,14 +321,20 @@ async function sendSecurityAlert(details, transporter, appName, superEmail) {
         </ul>
         <p>Please review the system logs and manually unblock the user if necessary.</p>
     `;
-    await transporter.sendMail({ from: superEmail, to: superEmail, subject, html: body, text: stripHtml(body) });
+  await transporter.sendMail({
+    from: superEmail,
+    to: superEmail,
+    subject,
+    html: body,
+    text: stripHtml(body),
+  });
 }
 
 module.exports = {
-    sendNotification,
-    sendPasswordReset,
-    sendNewAccountNotification,
-    sendAccountDeletionNotification,
-    sendSurveyInvitation,
-    sendSecurityAlert
+  sendNotification,
+  sendPasswordReset,
+  sendNewAccountNotification,
+  sendAccountDeletionNotification,
+  sendSurveyInvitation,
+  sendSecurityAlert,
 };
