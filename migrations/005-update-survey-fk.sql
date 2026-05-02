@@ -11,7 +11,7 @@ CREATE TABLE survey_tracking_new (
     survey_live_id INTEGER,
     member_id INTEGER,
     access_code TEXT UNIQUE,
-    status TEXT DEFAULT 'sent',
+    status TEXT DEFAULT 'pending',
     completed_at TEXT,
     -- Apply the SET NULL behavior here:
     FOREIGN KEY(member_id) REFERENCES members(id) ON DELETE SET NULL,
