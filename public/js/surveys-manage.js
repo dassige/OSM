@@ -133,6 +133,9 @@ function initFieldEditor(id) {
 function getSurveyData() {
   const name = document.getElementById("surveyName").value;
   const status = document.getElementById("surveyStatusToggle").checked ? 1 : 0;
+  const is_anonymous = document.getElementById("surveyAnonymousToggle").checked
+    ? 1
+    : 0;
   const intro = tinymce.get("surveyIntro")
     ? tinymce.get("surveyIntro").getContent()
     : "";
@@ -176,7 +179,7 @@ function getSurveyData() {
     },
   );
 
-  return { name, status, intro, structure };
+  return { name, status, is_anonymous, intro, structure };
 }
 function isSurveyDirty() {
   if (!originalSurveyState) return false;
@@ -443,7 +446,16 @@ async function importAllSurveys(input) {
 }
 
 // --- UI Rendering ---
-
+/**
+ * Helper to toggle the visibility of the non-anonymous warning banner
+ * @param {boolean} isAnonymous
+ */
+function updateAnonymity(isAnonymous) {
+  const warning = document.getElementById("nonAnonymousWarning");
+  if (warning) {
+    warning.style.display = isAnonymous ? "none" : "block";
+  }
+}
 function renderSurveyList() {
   const list = document.getElementById("surveyList");
   list.innerHTML = "";
@@ -483,12 +495,18 @@ function renderSurveyList() {
             </label>
         `;
 
+    // Add a small badge or icon next to the name
+    const anonIcon =
+      s.is_anonymous === 0
+        ? '<span style="color:var(--danger); font-size:10px; font-weight:bold; margin-left:5px;">[NAMED]</span>'
+        : '<span style="color:var(--text-muted); opacity:0.5;" title="Anonymous Responses">🔒</span>';
+
     item.innerHTML = `
-            <div class="form-info">
-                <div class="form-name">${s.name}</div>
-            </div>
-            ${toggleHtml}
-        `;
+        <div class="form-info">
+            <div class="form-name">${s.name} ${anonIcon}</div>
+        </div>
+        ${toggleHtml}
+    `;
     item.onclick = () => selectSurvey(s.id);
     list.appendChild(item);
   });
@@ -540,6 +558,12 @@ function loadEditor(survey) {
   const btnPublish = document.getElementById("btnPublish");
   if (btnPublish) {
     btnPublish.disabled = !survey.id || !survey.status;
+  }
+  const anonToggle = document.getElementById("surveyAnonymousToggle");
+  if (anonToggle) {
+    // If is_anonymous is 0 (false), uncheck it. Otherwise (1 or null), check it.
+    anonToggle.checked = survey.is_anonymous !== 0;
+    updateAnonymity(anonToggle.checked);
   }
 
   renderFields();

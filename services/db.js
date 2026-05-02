@@ -756,34 +756,47 @@ async function getMfaData(userId) {
 // SURVEYS & ANONYMOUS RESPONSES
 // =============================================================================
 
-async function createSurvey(name, introText, status, structureJson, createdBy) {
+// services/db.js updates
+
+async function createSurvey(name, introText, status, structureJson, createdBy, isAnonymous = 1) {
   if (!db) await initDB();
   const publicId = crypto.randomUUID();
   const result = await db.run(
-    `INSERT INTO surveys (public_id, name, intro_text, status, structure, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO surveys (public_id, name, intro_text, status, structure, created_by, is_anonymous) 
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     publicId,
-    name,
-    introText,
-    status || 0, // Fallback to 0 (disabled) if not provided
-    structureJson,
-    createdBy
-  );
-  return { id: result.lastID, publicId };
-}
-
-async function updateSurvey(id, name, introText, status, structureJson) {
-  if (!db) await initDB();
-  await db.run(
-    `UPDATE surveys SET name = ?, intro_text = ?, status = ?, structure = ? WHERE id = ?`,
     name,
     introText,
     status || 0,
     structureJson,
+    createdBy,
+    isAnonymous
+  );
+  return { id: result.lastID, publicId };
+}
+
+async function updateSurvey(id, name, introText, status, structureJson, isAnonymous = 1) {
+  if (!db) await initDB();
+  await db.run(
+    `UPDATE surveys SET name = ?, intro_text = ?, status = ?, structure = ?, is_anonymous = ? 
+     WHERE id = ?`,
+    name,
+    introText,
+    status || 0,
+    structureJson,
+    isAnonymous,
     id
   );
   return true;
 }
 
+async function getAllSurveys() {
+  if (!db) await initDB();
+  return await db.all(
+    `SELECT id, public_id, name, intro_text as intro, status, structure, is_anonymous, created_at 
+     FROM surveys ORDER BY created_at DESC`
+  );
+}
 async function deleteSurvey(id) {
   if (!db) await initDB();
   // Depending on your schema, you might want to also delete from survey_tracking and survey_responses,
@@ -791,18 +804,12 @@ async function deleteSurvey(id) {
   await db.run(`DELETE FROM surveys WHERE id = ?`, id);
 }
 
-async function getAllSurveys() {
-  if (!db) await initDB();
-  // Fetch everything needed for the UI, including structure for editing
-  return await db.all(
-    `SELECT id, public_id, name, intro_text as intro, status, structure, created_at FROM surveys ORDER BY created_at DESC`
-  );
-}
+
 
 async function getSurveyById(id) {
   if (!db) await initDB();
   return await db.get(
-    `SELECT id, public_id, name, intro_text as intro, status, structure FROM surveys WHERE id = ?`,
+    `SELECT id, public_id, name, intro_text as intro, status, structure, is_anonymous FROM surveys WHERE id = ?`,
     id
   );
 }
@@ -810,7 +817,7 @@ async function getSurveyById(id) {
 async function getSurveyByPublicId(publicId) {
   if (!db) await initDB();
   return await db.get(
-    `SELECT id, name, intro_text, structure, status FROM surveys WHERE public_id = ? AND status = 1`,
+    `SELECT id, name, intro_text, structure, status, is_anonymous FROM surveys WHERE public_id = ? AND status = 1`,
     publicId
   );
 }
@@ -825,19 +832,20 @@ async function publishSurvey(templateId, memberIds, publishedByUserId) {
 
     const instanceName = `${template.name} - ${new Date().toISOString().split('T')[0]}`;
     
+    // Snapshot the is_anonymous flag into the live instance
     const instanceResult = await db.run(
-      `INSERT INTO survey_live (template_id, name, intro_text, structure, published_by) 
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO survey_live (template_id, name, intro_text, structure, published_by, is_anonymous) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
       template.id,
       instanceName,
       template.intro_text,
       template.structure,
-      publishedByUserId
+      publishedByUserId,
+      template.is_anonymous
     );
     
     const liveInstanceId = instanceResult.lastID;
     const trackingData = [];
-
     const stmt = await db.prepare(
       `INSERT INTO survey_tracking (survey_live_id, member_id, access_code) VALUES (?, ?, ?)`
     );
@@ -845,14 +853,11 @@ async function publishSurvey(templateId, memberIds, publishedByUserId) {
     for (const memberId of memberIds) {
       const accessCode = crypto.randomUUID();
       await stmt.run(liveInstanceId, memberId, accessCode);
-      
-      // Store the mapping so the API route can send the emails
       trackingData.push({ memberId, accessCode });
     }
     
     await stmt.finalize();
     await db.exec("COMMIT");
-    
     return { liveInstanceId, trackingData };
   } catch (error) {
     await db.exec("ROLLBACK");
@@ -864,32 +869,30 @@ async function submitSurveyResponse(liveSurveyId, accessCode, submittedDataJson)
   if (!db) await initDB();
   await db.exec("BEGIN TRANSACTION");
   try {
-    // 1. Verify the access code and check if already submitted
-    // FIXED: Changed survey_id to survey_live_id
     const trackingRecord = await db.get(
-      `SELECT id, status FROM survey_tracking WHERE survey_live_id = ? AND access_code = ?`,
+      `SELECT id, member_id, status FROM survey_tracking WHERE survey_live_id = ? AND access_code = ?`,
       liveSurveyId,
       accessCode
     );
 
-    if (!trackingRecord) {
-      throw new Error('Invalid access code.');
-    }
-    if (trackingRecord.status === 'submitted') {
-      throw new Error('Survey already submitted.');
-    }
+    if (!trackingRecord) throw new Error('Invalid access code.');
+    if (trackingRecord.status === 'submitted') throw new Error('Survey already submitted.');
 
-    // 2. Mark as submitted
+    // Fetch the live survey configuration to check anonymity
+    const liveInstance = await db.get(`SELECT is_anonymous FROM survey_live WHERE id = ?`, liveSurveyId);
+
+    // Record member identity if NOT anonymous
+    const memberIdToLink = (liveInstance.is_anonymous === 0) ? trackingRecord.member_id : null;
+
     await db.run(
       `UPDATE survey_tracking SET status = 'submitted', completed_at = CURRENT_TIMESTAMP WHERE id = ?`,
       trackingRecord.id
     );
 
-    // 3. Insert the anonymous response 
-    // FIXED: Changed survey_id to survey_live_id
     await db.run(
-      `INSERT INTO survey_responses (survey_live_id, submitted_data) VALUES (?, ?)`,
+      `INSERT INTO survey_responses (survey_live_id, member_id, submitted_data) VALUES (?, ?, ?)`,
       liveSurveyId,
+      memberIdToLink,
       submittedDataJson
     );
 
@@ -930,7 +933,7 @@ async function getLiveSurveyInstances() {
     if (!db) await initDB();
     return await db.all(`
         SELECT 
-            sl.id, sl.name, sl.published_at, sl.is_archived,
+            sl.id, sl.name, sl.published_at, sl.is_archived, sl.is_anonymous,
             COUNT(st.id) as total_sent,
             SUM(CASE WHEN st.status = 'submitted' THEN 1 ELSE 0 END) as total_submitted
         FROM survey_live sl
@@ -939,7 +942,6 @@ async function getLiveSurveyInstances() {
         ORDER BY sl.published_at DESC
     `);
 }
-
 // Toggle the archive flag
 async function updateSurveyArchiveStatus(id, isArchived) {
     if (!db) await initDB();
@@ -993,7 +995,24 @@ async function getTrackingRecordByAccessCode(accessCode) {
         accessCode
     );
 }
-
+/**
+ * Fetches a tracking record along with the member's name.
+ * Used for the Survey View page to disclose respondent identity.
+ */
+async function getTrackingRecordWithMember(accessCode) {
+    if (!db) await initDB();
+    return await db.get(`
+        SELECT 
+            st.id, 
+            st.survey_live_id, 
+            st.status, 
+            st.member_id,
+            m.name as member_name
+        FROM survey_tracking st
+        JOIN members m ON st.member_id = m.id
+        WHERE st.access_code = ?
+    `, accessCode);
+}
 // Bulk import surveys (wipes existing templates)
 async function importAllSurveys(surveysData, createdByUserId) {
     if (!db) await initDB();
@@ -1026,11 +1045,35 @@ async function importAllSurveys(surveysData, createdByUserId) {
 // Fetch all submitted responses for a live survey instance
 async function getSurveyResponses(liveSurveyId) {
     if (!db) await initDB();
-    // FIXED: Changed created_at to submitted_at
-    return await db.all(
-        `SELECT id, submitted_data, submitted_at FROM survey_responses WHERE survey_live_id = ? ORDER BY submitted_at DESC`, 
-        liveSurveyId
-    );
+    // Joins with members to retrieve identity only if member_id is populated
+    return await db.all(`
+        SELECT 
+            sr.id, 
+            sr.submitted_data, 
+            sr.submitted_at, 
+            m.name as member_name
+         FROM survey_responses sr
+        LEFT JOIN members m ON sr.member_id = m.id
+        WHERE sr.survey_live_id = ? 
+        ORDER BY sr.submitted_at DESC
+    `, liveSurveyId);
+}
+async function getSurveyResponseById(responseId) {
+    if (!db) await initDB();
+    // Joins with survey_live to get structure and members to get identity
+    return await db.get(`
+        SELECT 
+            sr.submitted_data, 
+            sr.submitted_at, 
+            sl.name as survey_name, 
+            sl.structure, 
+            sl.intro_text,
+            m.name as member_name
+        FROM survey_responses sr
+        JOIN survey_live sl ON sr.survey_live_id = sl.id
+        LEFT JOIN members m ON sr.member_id = m.id
+        WHERE sr.id = ?
+    `, responseId);
 }
 module.exports = {
   initDB,
@@ -1097,6 +1140,8 @@ module.exports = {
   getSurveyTracking,
   getLiveSurveyInstanceById,
   getTrackingRecordByAccessCode,
+  getTrackingRecordWithMember,
+  getSurveyResponseById,
   importAllSurveys,
   getSurveyResponses
 };

@@ -95,6 +95,63 @@
             color: var(--primary-color);
         }
 
+        /* Sliding Badge Component */
+        .sliding-badge-container {
+            position: relative;
+            width: 180px;
+            /* Adjusted for Summary/Detailed text width */
+            height: 34px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .sliding-badge {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .badge-label {
+            flex: 1;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+            z-index: 2;
+            transition: color 0.3s ease;
+            color: var(--text-muted);
+        }
+
+        .badge-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: calc(50% - 2px);
+            height: calc(100% - 4px);
+            background: var(--primary);
+            border-radius: 18px;
+            z-index: 1;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Toggle Logic */
+        #resultsViewToggle:checked+.sliding-badge .badge-slider {
+            transform: translateX(100%);
+        }
+
+        #resultsViewToggle:not(:checked)+.sliding-badge .active-label {
+            color: #fff;
+        }
+
+        #resultsViewToggle:checked+.sliding-badge .archived-label {
+            color: #fff;
+        }
+
         /* --- PRINT STYLESHEET --- */
         @media print {
 
@@ -168,15 +225,64 @@
                     Total Submissions: <span id="totalSubmissions">0</span>
                 </div>
             </div>
-            <div id="exportActionButtons"
-                style="display:flex; gap:10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
-                <button onclick="window.print()" class="btn-sm btn-secondary" style="margin:0;">Print</button>
-                <button onclick="exportCSV()" class="btn-sm btn-success" style="margin:0;">Export CSV</button>
-                <button onclick="exportPDF()" class="btn-sm btn-purple" style="margin:0;">Export PDF</button>
+            <div id="viewToggleContainer" style="display:none; margin-right: 15px;">
+                <div class="sliding-badge-container">
+                    <input type="checkbox" id="resultsViewToggle" onchange="toggleResultsView()" style="display:none;">
+                    <label for="resultsViewToggle" class="sliding-badge">
+                        <span class="badge-label active-label">Summary</span>
+                        <span class="badge-label archived-label">Detailed</span>
+                        <div class="badge-slider"></div>
+                    </label>
+                </div>
             </div>
         </div>
-
+        <div id="detailedResultsContainer" style="display:none; margin-top: 20px;">
+            <div class="result-card" style="padding:0; overflow-x:auto;">
+                <table class="data-table" id="detailedResponsesTable" style="width:100%; border:none; margin:0;">
+                    <thead>
+                        <tr>
+                            <th onclick="sortDetailedTable('name')" style="cursor:pointer;">Firefighter <span
+                                    id="sort_name"></span></th>
+                            <th onclick="sortDetailedTable('date')" style="cursor:pointer;">Submitted <span
+                                    id="sort_date"></span></th>
+                            <th style="text-align:center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailedTableBody"></tbody>
+                </table>
+            </div>
+        </div>
         <div id="resultsContainer">
+        </div>
+        <div id="exportActionButtons" class="tools-bar" style="margin-top: 30px; justify-content: flex-end;">
+            <div style="display:flex; gap:10px;">
+                <button onclick="window.print()" class="btn-sm btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg> Print
+                </button>
+                <button onclick="exportCSV()" class="btn-sm btn-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg> Export CSV
+                </button>
+                <button onclick="exportPDF()" class="btn-sm btn-purple">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg> Export PDF
+                </button>
+            </div>
         </div>
     </div>
 

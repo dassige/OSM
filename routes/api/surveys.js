@@ -12,6 +12,25 @@ const config = require("../../config");
 // ============================================================================
 // 1. SPECIFIC ROUTES (Must come before wildcard /:id routes)
 // ============================================================================
+// GET /api/surveys/responses/:id - Protected endpoint for Admin Review
+router.get("/responses/:id", hasRole("admin"), async (req, res) => {
+    try {
+        const response = await db.getSurveyResponseById(req.params.id);
+        if (!response) return res.status(404).json({ error: "Response not found." });
+
+        res.json({
+            survey: {
+                name: response.survey_name,
+                intro: response.intro_text,
+                structure: JSON.parse(response.structure)
+            },
+            answers: JSON.parse(response.submitted_data),
+            member_name: response.member_name
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch response details." });
+    }
+});
 
 // routes/api/surveys.js - Consistently provide structure and response count
 router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
@@ -27,12 +46,20 @@ router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
       id: r.id,
       submittedAt: r.submitted_at,
       answers: JSON.parse(r.submitted_data),
-    }));
+      // Only include identity if the survey isn't anonymous
+      respondent:
+        instance.is_anonymous === 0
+          ? {
+              name: r.member_name,
 
+            }
+          : null,
+    }));
     const tracking = await db.getSurveyTracking(liveId);
 
     res.json({
       instanceName: instance.name,
+      is_anonymous: instance.is_anonymous,
       structure:
         typeof instance.structure === "string"
           ? JSON.parse(instance.structure)
@@ -158,7 +185,7 @@ router.get("/", async (req, res) => {
 // POST /api/surveys - Create a new survey template
 router.post("/", hasRole("admin"), async (req, res) => {
   try {
-    const { name, intro, status, structure } = req.body;
+    const { name, intro, status, structure , is_anonymous} = req.body;
 
     if (!name || !structure) {
       return res
@@ -174,6 +201,7 @@ router.post("/", hasRole("admin"), async (req, res) => {
       status || 0,
       JSON.stringify(structure),
       authorId,
+      is_anonymous || 0
     );
     const adminName = req.session?.user?.name || "Admin";
     await db.logEvent(adminName, "Surveys", "Created Survey Template", {
@@ -276,7 +304,7 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", hasRole("admin"), async (req, res) => {
   try {
     const surveyId = req.params.id;
-    const { name, intro, status, structure } = req.body;
+    const { name, intro, status, structure, is_anonymous } = req.body;
 
     if (!name && !structure && status !== undefined) {
       const existing = await db.getSurveyById(surveyId);
@@ -287,6 +315,7 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
         existing.intro,
         status,
         existing.structure,
+        is_anonymous || existing.is_anonymous
       );
       const adminName = req.session?.user?.name || "Admin";
       await db.logEvent(adminName, "Surveys", "Updated Survey Status", {
@@ -307,6 +336,7 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
       intro,
       status || 0,
       JSON.stringify(structure),
+      is_anonymous || 0
     );
     const adminName = req.session?.user?.name || "Admin";
     await db.logEvent(adminName, "Surveys", "Updated Survey Template", {
