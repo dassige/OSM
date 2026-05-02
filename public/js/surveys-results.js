@@ -1,7 +1,9 @@
 // public/js/surveys-results.js
 const urlParams = new URLSearchParams(window.location.search);
 const liveSurveyId = urlParams.get("id");
-
+let currentView = "summary"; // 'summary' or 'detailed'
+let detailedSortCol = "date";
+let detailedSortDir = "desc";
 let surveyData = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -27,23 +29,123 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadResults();
 });
 
+/**
+ * Main toggle handler called by the checkbox onchange event
+ */
+function toggleResultsView() {
+  const isDetailed = document.getElementById("resultsViewToggle").checked;
+  switchView(isDetailed ? "detailed" : "summary");
+}
+
+/**
+ * Updated switchView to support the sliding toggle
+ */
+function switchView(view) {
+  currentView = view;
+
+  // Toggle container visibility
+  document.getElementById("resultsContainer").style.display =
+    view === "summary" ? "block" : "none";
+  document.getElementById("detailedResultsContainer").style.display =
+    view === "detailed" ? "block" : "none";
+
+  // Ensure the checkbox state matches if this was called programmatically
+  const toggle = document.getElementById("resultsViewToggle");
+  if (toggle) {
+    toggle.checked = view === "detailed";
+  }
+
+  if (view === "detailed") {
+    renderDetailedTable();
+  }
+}
+
+/**
+ * Update loadResults to show the new component for non-anonymous surveys
+ */
 async function loadResults() {
   try {
     const res = await fetch(`/api/surveys/instances/${liveSurveyId}/results`);
     const result = await res.json();
-
-    if (!res.ok) throw new Error(result.error || "Failed to fetch results");
+    if (!res.ok) throw new Error(result.error);
 
     surveyData = result;
     document.getElementById("surveyTitle").innerText = result.instanceName;
     document.getElementById("totalSubmissions").innerText =
-      surveyData.responseCount + "/" + surveyData.stats.totalInvited;
+      `${surveyData.responseCount}/${surveyData.stats.totalInvited}`;
+
+    // Initialize Anonymity UI
+    if (surveyData.is_anonymous === 0) {
+      const container = document.getElementById("viewToggleContainer");
+      if (container) container.style.display = "block";
+      // Default to summary
+      switchView("summary");
+    } else {
+      // Force summary for anonymous and hide toggle
+      switchView("summary");
+      const container = document.getElementById("viewToggleContainer");
+      if (container) container.style.display = "none";
+    }
 
     renderResults();
   } catch (e) {
     showToast(e.message, "error");
   }
 }
+
+function renderDetailedTable() {
+  const tbody = document.getElementById("detailedTableBody");
+  tbody.innerHTML = "";
+
+  // Sort responses
+  const sorted = [...surveyData.responses].sort((a, b) => {
+    let valA, valB;
+    if (detailedSortCol === "name") {
+      valA = a.respondent.name || "";
+      valB = b.respondent.name || "";
+    } else if (detailedSortCol === "rank") {
+      valA = a.rank || "";
+      valB = b.rank || "";
+    } else {
+      valA = a.submittedAt;
+      valB = b.submittedAt;
+    }
+
+    if (valA < valB) return detailedSortDir === "asc" ? -1 : 1;
+    if (valA > valB) return detailedSortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  sorted.forEach((r) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+            <td><strong>${r.respondent.name || "N/A"}</strong></td>
+
+            <td style="font-size:12px;">${new Date(r.submittedAt).toLocaleString()}</td>
+            <td style="text-align:center;">
+                <button onclick="viewSpecificResponse(${r.id})" class="btn-sm btn-primary">View Answers</button>
+            </td>
+        `;
+    tbody.appendChild(tr);
+  });
+}
+
+function sortDetailedTable(col) {
+  if (detailedSortCol === col)
+    detailedSortDir = detailedSortDir === "asc" ? "desc" : "asc";
+  else {
+    detailedSortCol = col;
+    detailedSortDir = "asc";
+  }
+
+  // Save preference
+  saveUserPreference(
+    "survey_results_sort",
+    `${detailedSortCol}_${detailedSortDir}`,
+  );
+  renderDetailedTable();
+}
+
 function renderResults() {
   const container = document.getElementById("resultsContainer");
   container.innerHTML = "";
@@ -181,46 +283,47 @@ function escapeHTML(str) {
 // --- EXPORT FUNCTIONALITY ---
 
 function exportCSV() {
-  if (!surveyData || !surveyData.responses || surveyData.responses.length === 0) {
-      return showToast("No responses available to export.", "warning");
-  }
+  if (!surveyData || !surveyData.responses.length) return;
 
+  const isNamed = surveyData.instance.is_anonymous === 0;
   let csvContent = "data:text/csv;charset=utf-8,";
 
-  // 1. Build Headers
-  const headers = ["Submission ID", "Submitted Date"];
-  surveyData.structure.forEach(q => {
-      // Strip HTML tags from the Rich Text descriptions to make clean CSV column headers
-      let cleanDesc = (q.description || "").replace(/<[^>]*>?/gm, '').trim();
-      headers.push(`"${cleanDesc.replace(/"/g, '""')}"`);
+  // 1. Headers
+  const headers = isNamed
+    ? ["Firefighter", "Rank", "Submitted"]
+    : ["Submission ID", "Submitted"];
+  surveyData.structure.forEach((q) => {
+    let cleanDesc = (q.description || "").replace(/<[^>]*>?/gm, "").trim();
+    headers.push(`"${cleanDesc.replace(/"/g, '""')}"`);
   });
   csvContent += headers.join(",") + "\n";
 
-  // 2. Build Rows
-  surveyData.responses.forEach(r => {
-      let row = [`"${r.id}"`, `"${new Date(r.submittedAt).toLocaleString()}"`];
-      
-      surveyData.structure.forEach(q => {
-          let ans = r.answers[q.id];
-          
-          if (Array.isArray(ans)) {
-              ans = ans.join("; "); // Flatten checkbox arrays
-          } else if (ans === null || ans === undefined) {
-              ans = "";
-          }
-          
-          // Escape quotes for CSV compatibility
-          ans = String(ans).replace(/"/g, '""');
-          row.push(`"${ans}"`);
-      });
-      csvContent += row.join(",") + "\n";
+  // 2. Rows
+  surveyData.responses.forEach((r) => {
+    let row = isNamed
+      ? [
+          `"${r.member_name}"`,
+          `"${r.rank}"`,
+          `"${new Date(r.submittedAt).toLocaleString()}"`,
+        ]
+      : [`"${r.id}"`, `"${new Date(r.submittedAt).toLocaleString()}"`];
+
+    surveyData.structure.forEach((q) => {
+      let ans = r.answers[q.id] || "";
+      if (Array.isArray(ans)) ans = ans.join("; ");
+      row.push(`"${String(ans).replace(/"/g, '""')}"`);
+    });
+    csvContent += row.join(",") + "\n";
   });
 
   // 3. Trigger Download
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `Survey_Results_${surveyData.instanceName.replace(/[^a-z0-9]/gi, '_')}.csv`);
+  link.setAttribute(
+    "download",
+    `Survey_Results_${surveyData.instanceName.replace(/[^a-z0-9]/gi, "_")}.csv`,
+  );
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -229,58 +332,69 @@ function exportCSV() {
 function exportPDF() {
   if (!surveyData) return;
 
-  if (typeof window.showGlobalSpinner === 'function') {
-      showGlobalSpinner("Generating PDF...");
+  if (typeof window.showGlobalSpinner === "function") {
+    showGlobalSpinner("Generating PDF...");
   }
 
   // Dynamically load html2pdf if not already present in the DOM
-  if (typeof html2pdf === 'undefined') {
-      const script = document.createElement('script');
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-      script.onload = () => { generatePDF(); };
-      document.head.appendChild(script);
-  } else {
+  if (typeof html2pdf === "undefined") {
+    const script = document.createElement("script");
+    script.src =
+      "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+    script.onload = () => {
       generatePDF();
+    };
+    document.head.appendChild(script);
+  } else {
+    generatePDF();
   }
 }
 
 function generatePDF() {
-  const element = document.querySelector('.container');
-  
+  const element = document.querySelector(".container");
+
   // Hide the action buttons and back button temporarily so they don't appear in the PDF
-  const actionButtons = document.getElementById('exportActionButtons');
-  const backBtn = document.querySelector('.back-dashboard-btn');
-  if (actionButtons) actionButtons.style.display = 'none';
-  if (backBtn) backBtn.style.display = 'none';
+  const actionButtons = document.getElementById("exportActionButtons");
+  const backBtn = document.querySelector(".back-dashboard-btn");
+  if (actionButtons) actionButtons.style.display = "none";
+  if (backBtn) backBtn.style.display = "none";
 
   const opt = {
-      margin:       0.5,
-      filename:     `Survey_Results_${surveyData.instanceName.replace(/[^a-z0-9]/gi, '_')}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+    margin: 0.5,
+    filename: `Survey_Results_${surveyData.instanceName.replace(/[^a-z0-9]/gi, "_")}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
   };
 
-  html2pdf().set(opt).from(element).save().then(() => {
+  html2pdf()
+    .set(opt)
+    .from(element)
+    .save()
+    .then(() => {
       // Restore the UI elements after PDF generation
-      if (actionButtons) actionButtons.style.display = 'flex';
-      if (backBtn) backBtn.style.display = 'flex';
-      
-      if (typeof window.hideGlobalSpinner === 'function') {
-          hideGlobalSpinner();
+      if (actionButtons) actionButtons.style.display = "flex";
+      if (backBtn) backBtn.style.display = "flex";
+
+      if (typeof window.hideGlobalSpinner === "function") {
+        hideGlobalSpinner();
       }
-  });
+    });
 }
 // --- SCROLL TO TOP LOGIC ---
 const scrollTopBtn = document.getElementById("scrollTopBtn");
 
 window.onscroll = function () {
-    if (scrollTopBtn) {
-        // Show the button after scrolling down 200px
-        scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none";
-    }
+  if (scrollTopBtn) {
+    // Show the button after scrolling down 200px
+    scrollTopBtn.style.display = window.scrollY > 200 ? "flex" : "none";
+  }
 };
 
 window.scrollToTop = function () {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: "smooth" });
 };
+function viewSpecificResponse(responseId) {
+    // Open in a new tab for audit purposes
+    window.open(`surveys-view.html?responseId=${responseId}`, '_blank');
+}

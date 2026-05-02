@@ -243,7 +243,10 @@ function renderTable() {
     const dateStr = new Date(safeDateStr).toLocaleDateString(locale, {
       timeZone: tz,
     });
-
+    const anonymityIcon =
+      item.is_anonymous === 0
+        ? `<span title="Non-Anonymous: Responses linked to identities" style="margin-right:8px; cursor:help; color:var(--danger);">🆔</span>`
+        : `<span title="Anonymous: Private responses" style="margin-right:8px; cursor:help; opacity:0.6;">🔒</span>`;
     const statusBadge = item.is_archived
       ? `<span class="status-badge status-archived">Archived</span>`
       : `<span class="status-badge status-active">Active</span>`;
@@ -271,7 +274,12 @@ function renderTable() {
 
     tr.innerHTML = `
             <td style="white-space:nowrap;">${dateStr}</td>
-            <td style="font-weight:bold;">${item.name}</td>
+            <td style="font-weight:bold;">
+                <div style="display:flex; align-items:center;">
+                    ${anonymityIcon}
+                    <span>${item.name}</span>
+                </div>
+            </td>
             <td>${statusBadge}</td>
             <td>
                 <div class="progress-cell">
@@ -287,6 +295,7 @@ function renderTable() {
     tbody.appendChild(tr);
   });
 }
+
 // --- Status & Deletion Actions ---
 
 async function toggleArchive(id, archive) {
@@ -349,34 +358,47 @@ function downloadFilteredJson() {
   document.body.removeChild(a);
 }
 async function purgeFiltered() {
-  if (uiConfig?.appMode === "demo") return showToast("Purge disabled in Demo Mode", "warning");
-  if (filteredData.length === 0) return showToast("No surveys match the current filter.", "warning");
+  if (uiConfig?.appMode === "demo")
+    return showToast("Purge disabled in Demo Mode", "warning");
+  if (filteredData.length === 0)
+    return showToast("No surveys match the current filter.", "warning");
 
   const msg = `WARNING: You are about to PERMANENTLY DELETE ${filteredData.length} survey instances and ALL associated tracking/response data.<br><br>Type <strong>PURGE</strong> below to confirm.`;
-  
+
   // Use the new custom promptAction modal instead of window.prompt
   const isConfirmed = await promptAction("Purge Surveys", msg, "PURGE");
-  
+
   if (!isConfirmed) return showToast("Purge cancelled.", "info");
 
-  let successCount = 0; let failCount = 0;
-  
+  let successCount = 0;
+  let failCount = 0;
+
   // Optional: Add the spinner while it loops through deletions
-  if (typeof window.showGlobalSpinner === 'function') {
-      showGlobalSpinner(`Purging ${filteredData.length} surveys...`);
+  if (typeof window.showGlobalSpinner === "function") {
+    showGlobalSpinner(`Purging ${filteredData.length} surveys...`);
   }
 
   for (const item of filteredData) {
     try {
-      const res = await fetch(`/api/surveys/instances/${item.id}`, { method: "DELETE" });
-      if (res.ok) successCount++; else failCount++;
-    } catch (e) { failCount++; }
+      const res = await fetch(`/api/surveys/instances/${item.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) successCount++;
+      else failCount++;
+    } catch (e) {
+      failCount++;
+    }
   }
 
-  if (typeof window.hideGlobalSpinner === 'function') hideGlobalSpinner();
+  if (typeof window.hideGlobalSpinner === "function") hideGlobalSpinner();
 
-  if (failCount === 0) showToast(`Successfully purged ${successCount} surveys.`, "success");
-  else showToast(`Purged ${successCount} surveys, but ${failCount} failed.`, "warning");
-  
+  if (failCount === 0)
+    showToast(`Successfully purged ${successCount} surveys.`, "success");
+  else
+    showToast(
+      `Purged ${successCount} surveys, but ${failCount} failed.`,
+      "warning",
+    );
+
   loadData();
 }

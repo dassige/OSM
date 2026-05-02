@@ -187,19 +187,18 @@
                 <h1 class="survey-title" id="surveyTitle">Loading Survey...</h1>
                 <div class="survey-intro" id="surveyIntro"></div>
             </div>
-            <div
-                style="background-color: rgba(23, 162, 184, 0.1); border-left: 4px solid #17a2b8; color: var(--text-main); padding: 15px; margin-bottom: 25px; border-radius: 4px; display: flex; align-items: flex-start; gap: 12px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    stroke="#17a2b8" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-                <div style="font-size: 14px; line-height: 1.5;">
-                    <strong style="color: #17a2b8; font-size: 15px;">Anonymous Survey</strong><br>
-                    Your responses are strictly confidential and fully anonymous. Your identity, email, and secure
-                    tracking link are permanently separated from your answers upon submission.
+            <div id="identityDisclosure"
+                style="background-color: rgba(23, 162, 184, 0.1);display:none; margin-bottom: 20px; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);  transition: all 0.3s ease;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div id="disclosureIcon" style="font-size: 24px;"></div>
+                    <div>
+                        <h4 id="disclosureTitle" style="margin: 0; font-size: 1.1em;"></h4>
+                        <p id="disclosureText" style="margin: 5px 0 0; font-size: 0.9em; color: var(--text-muted);">
+                        </p>
+                    </div>
                 </div>
             </div>
+
             <form id="surveyForm" onsubmit="handleSubmission(event)">
                 <div id="questionsContainer"></div>
                 <button type="submit" class="btn-primary submit-btn" id="btnSubmit">Submit Response</button>
@@ -224,6 +223,8 @@
         const isPreview = urlParams.get('preview') === 'true';
         const publicId = urlParams.get('id');
         const accessCode = urlParams.get('code');
+        const responseId = urlParams.get('responseId');
+        const isReview = !!responseId;
 
         let surveyData = null;
 
@@ -260,7 +261,18 @@
             if (uiConfig?.appBackground) {
                 document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
             }
-            if (isPreview) {
+            if (isReview) {
+                // Set Review Banner
+                const banner = document.getElementById('previewBanner');
+                banner.style.display = 'block';
+                banner.innerText = "REVIEW MODE - Viewing Submitted Answers";
+                banner.style.backgroundColor = "var(--info)"; // Using the info color from styles.css
+
+                // Hide submit button
+                document.getElementById('btnSubmit').style.display = 'none';
+
+                await fetchSurveyData(`/api/surveys/responses/${responseId}`);
+            } else if (isPreview) {
                 document.getElementById('previewBanner').style.display = 'block';
                 if (!publicId) return showError("Preview requires a valid survey ID.");
                 await fetchSurveyData(`/api/live-surveys/preview/${publicId}`);
@@ -295,9 +307,38 @@
             document.getElementById('surveyTitle').innerText = surveyData.name;
             document.getElementById('surveyIntro').innerHTML = surveyData.intro || "";
 
+            const disclosure = document.getElementById("identityDisclosure");
+            const title = document.getElementById("disclosureTitle");
+            const text = document.getElementById("disclosureText");
+            const icon = document.getElementById("disclosureIcon");
+
+            if (disclosure) {
+                disclosure.style.display = "block";
+                if (surveyData.is_anonymous === 0) {
+                    // NON-ANONYMOUS
+                    disclosure.style.borderLeft = "5px solid var(--danger)";
+                    title.innerText = "Non-Anonymous Survey";
+                    title.style.color = "var(--danger)";
+                    disclosure.style.backgroundColor = "rgba(202, 27, 27, 0.301)";
+
+                    text.innerHTML = `You are submitting this survey as <strong>${surveyData.respondentName}</strong>. Your identity and answers will be recorded.`;
+                    icon.innerText = "🆔";
+                } else {
+                    // ANONYMOUS
+                    disclosure.style.borderLeft = "5px solid var(--success)";
+                    title.innerText = "Anonymous Survey";
+                    title.style.color = "var(--success)";
+                    text.innerText = "Your responses are private and will not be linked to your identity.";
+                    icon.innerText = "🔒";
+                }
+            }
+
+
             const container = document.getElementById('questionsContainer');
             let structure = surveyData.structure;
             if (typeof structure === 'string') structure = JSON.parse(structure);
+            // If in Review Mode, we have access to surveyData.answers (from the fetch)
+            const answers = isReview ? surveyData.answers : {};
 
             structure.forEach((q, index) => {
                 const card = document.createElement('div');
@@ -323,6 +364,20 @@
                             <div class="question-desc-wrapper" style="flex: 1;">${desc}</div>
                         </div>
                     </div>`;
+
+                const applyReviewState = (input) => {
+                    if (isReview) {
+                        input.disabled = true;
+                        const val = answers[q.id];
+                        if (input.type === 'checkbox') {
+                            if (Array.isArray(val) && val.includes(input.value)) input.checked = true;
+                        } else if (input.type === 'radio') {
+                            if (val === input.value) input.checked = true;
+                        } else if (input.tagName === 'SELECT' || input.tagName === 'TEXTAREA') {
+                            input.value = val || "";
+                        }
+                    }
+                };
                 // Construct inputs based on type
                 if (q.type === 'text_multi') {
                     html += `<textarea name="${q.id}" class="text-response" placeholder="Enter your answer here..."></textarea>`;

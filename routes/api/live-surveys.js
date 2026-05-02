@@ -21,6 +21,8 @@ router.get("/preview/:publicId", hasRole("admin"), async (req, res) => {
       survey: {
         name: surveyTemplate.name,
         intro: surveyTemplate.intro_text,
+        is_anonymous: surveyTemplate.is_anonymous,
+        respondentName: "[Respondent Name]", // Placeholder for preview mode
         structure: surveyTemplate.structure,
       },
     });
@@ -36,7 +38,7 @@ router.get("/:accessCode", async (req, res) => {
   try {
     const accessCode = req.params.accessCode;
 
-    const trackingRecord = await db.getTrackingRecordByAccessCode(accessCode);
+    const trackingRecord = await db.getTrackingRecordWithMember(accessCode);
 
     if (!trackingRecord) {
       return res
@@ -58,11 +60,9 @@ router.get("/:accessCode", async (req, res) => {
 
     // NEW: Block loading if the survey is archived
     if (liveInstance.is_archived === 1 || liveInstance.is_archived === true) {
-      return res
-        .status(403)
-        .json({
-          error: "This survey is archived and no longer accepting responses.",
-        });
+      return res.status(403).json({
+        error: "This survey is archived and no longer accepting responses.",
+      });
     }
 
     res.json({
@@ -71,6 +71,8 @@ router.get("/:accessCode", async (req, res) => {
         name: liveInstance.name,
         intro: liveInstance.intro_text,
         structure: liveInstance.structure,
+        is_anonymous: liveInstance.is_anonymous, 
+        respondentName: trackingRecord.member_name 
       },
     });
   } catch (error) {
@@ -105,18 +107,20 @@ router.post("/:accessCode/submit", async (req, res) => {
       liveInstance &&
       (liveInstance.is_archived === 1 || liveInstance.is_archived === true)
     ) {
-      return res
-        .status(403)
-        .json({
-          error:
-            "This survey was recently archived and can no longer accept submissions.",
-        });
+      return res.status(403).json({
+        error:
+          "This survey was recently archived and can no longer accept submissions.",
+      });
     }
-
+    // Determine if we should record identity
+    // If is_anonymous is false (0), we pass the member_id to the database service
+    const memberToRecord =
+      liveInstance.is_anonymous === 0 ? trackingRecord.member_id : null;
     await db.submitSurveyResponse(
       trackingRecord.survey_live_id,
       accessCode,
       JSON.stringify(answers),
+      memberToRecord,
     );
     await db.logEvent("Anonymous", "Surveys", "Submitted Survey Response", {
       instanceId: trackingRecord.survey_live_id,

@@ -96,13 +96,27 @@
                                 oninput="this.style.height='';this.style.height=this.scrollHeight+'px'"></textarea>
                         </div>
 
-                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 10px;">
-                            <span style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Active</span>
-                            <label class="switch">
-                                <input type="checkbox" id="surveyStatusToggle"
-                                    onchange="updateStatus(currentSurvey.id, this.checked)">
-                                <span class="slider"></span>
-                            </label>
+                        <div style="display: flex; align-items: center; gap: 20px; flex-shrink: 0; padding-top: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span
+                                    style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Active</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="surveyStatusToggle"
+                                        onchange="updateStatus(currentSurvey.id, this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div
+                                style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--border-color); padding-left: 15px;">
+                                <span
+                                    style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Anonymous</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="surveyAnonymousToggle" checked
+                                        onchange="updateAnonymity(this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -160,6 +174,12 @@
                 </div>
 
                 <div class="editor-content">
+                    <div id="nonAnonymousWarning"
+                        style="display:none; background:rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; color: #856404; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 13px;">
+                        <strong>⚠️ Non-Anonymous Mode:</strong> Firefighter names and ranks will be recorded with their
+                        answers.
+                        Ensure this is required for operational purposes.
+                    </div>
                     <div
                         style="background:var(--bg-card); padding:15px; border-radius:6px; border:1px solid var(--border-color); margin-bottom:20px;">
                         <label style="font-weight:bold; margin-bottom:5px; display:block;">Survey Intro / Header</label>
@@ -262,40 +282,49 @@
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
     </script>
 
-<div id="publishModal" class="modal">
-    <div class="modal-content" style="max-width: 500px; margin-top: 5vh; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;">
-        
-        <div style="flex-shrink: 0;">
-            <span class="close-btn" onclick="closeModal('publishModal')">&times;</span>
-            <h2 style="margin-top:0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;" id="publishModalTitle">Publish Survey</h2>
-            
-            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
-                Publishing creates a survey from this template, generates and sends secure tracking links for your members.
-            </p>
-            
-            <div style="margin-bottom: 20px; background: var(--bg-body); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
-                <label style="display:flex; align-items:center; gap:10px; margin-bottom:15px; font-weight:bold; cursor:pointer;">
-                    <input type="radio" name="publishTarget" value="all" checked onchange="togglePublishSelection()">
-                    Send to All Active Members
-                </label>
-                <label style="display:flex; align-items:center; gap:10px; font-weight:bold; cursor:pointer;">
-                    <input type="radio" name="publishTarget" value="selection" onchange="togglePublishSelection()">
-                    Send to Specific Selection
-                </label>
+    <div id="publishModal" class="modal">
+        <div class="modal-content"
+            style="max-width: 500px; margin-top: 5vh; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;">
+
+            <div style="flex-shrink: 0;">
+                <span class="close-btn" onclick="closeModal('publishModal')">&times;</span>
+                <h2 style="margin-top:0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"
+                    id="publishModalTitle">Publish Survey</h2>
+
+                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+                    Publishing creates a survey from this template, generates and sends secure tracking links for your
+                    members.
+                </p>
+
+                <div
+                    style="margin-bottom: 20px; background: var(--bg-body); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <label
+                        style="display:flex; align-items:center; gap:10px; margin-bottom:15px; font-weight:bold; cursor:pointer;">
+                        <input type="radio" name="publishTarget" value="all" checked
+                            onchange="togglePublishSelection()">
+                        Send to All Active Members
+                    </label>
+                    <label style="display:flex; align-items:center; gap:10px; font-weight:bold; cursor:pointer;">
+                        <input type="radio" name="publishTarget" value="selection" onchange="togglePublishSelection()">
+                        Send to Specific Selection
+                    </label>
+                </div>
             </div>
-        </div>
 
-        <div id="publishSelectionContainer" style="display:none; flex-grow: 1; min-height: 0; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; border-radius: 4px; background: var(--bg-body);">
-            <div style="text-align:center; padding:10px;">Loading members...</div>
-        </div>
+            <div id="publishSelectionContainer"
+                style="display:none; flex-grow: 1; min-height: 0; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; border-radius: 4px; background: var(--bg-body);">
+                <div style="text-align:center; padding:10px;">Loading members...</div>
+            </div>
 
-        <div class="modal-actions-right" style="flex-shrink: 0; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1);">
-            <button onclick="closeModal('publishModal')" class="btn-secondary">Cancel</button>
-            <button onclick="confirmPublish()" class="btn-primary" id="btnConfirmPublish" style="background:var(--success);">Confirm & Send</button>
+            <div class="modal-actions-right"
+                style="flex-shrink: 0; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1);">
+                <button onclick="closeModal('publishModal')" class="btn-secondary">Cancel</button>
+                <button onclick="confirmPublish()" class="btn-primary" id="btnConfirmPublish"
+                    style="background:var(--success);">Confirm & Send</button>
+            </div>
+
         </div>
-        
     </div>
-</div>
 
 </body>
 
