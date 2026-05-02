@@ -395,6 +395,7 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
     const allTracking = await db.getSurveyTracking(liveInstanceId);
     const pending = allTracking.filter((t) => t.status === "pending");
     const instance = await db.getLiveSurveyInstanceById(liveInstanceId);
+    const isAnon = instance.is_anonymous !== 0; // SQLite stores as 1/0
     for (const data of pending) {
       if (data.email) {
         const surveyUrl = `${req.protocol}://${req.get("host")}/surveys-view.html?code=${data.access_code}&id=${survey.public_id}`;
@@ -408,6 +409,7 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
             config.transporter,
             config.ui.loginTitle,
             tpl,
+            isAnon,
           );
         } catch (err) {
           console.error(
@@ -447,6 +449,7 @@ router.post(
 
       // --- EMAIL DISPATCH LOOP ---
       const instance = await db.getLiveSurveyInstanceById(liveId);
+      const isAnon = instance.is_anonymous !== 0; // SQLite stores as 1/0
       const prefs = await db.getPreferences();
       const tpl = prefs.tpl_surveys ? JSON.parse(prefs.tpl_surveys) : null;
       const template = await db.getSurveyById(instance.template_id);
@@ -464,6 +467,7 @@ router.post(
               config.transporter,
               config.ui.loginTitle,
               tpl,
+              isAnon,
             );
             sentCount++;
           } catch (err) {
@@ -508,7 +512,7 @@ router.post(
 
       // --- EMAIL DISPATCH ---
       const instance = await db.getLiveSurveyInstanceById(liveId);
-
+      const isAnon = instance.is_anonymous !== 0; // SQLite stores as 1/0
       if (!record.email) {
         return res.status(400).json({
           error:
@@ -527,6 +531,7 @@ router.post(
         config.transporter,
         config.ui.loginTitle,
         tpl,
+        isAnon,
       );
 
       res.json({
