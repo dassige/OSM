@@ -8,6 +8,7 @@ const db = require("../services/db");
 const config = require("../config");
 const { sendPasswordReset } = require("../services/mailer");
 const whatsappService = require("../services/whatsapp-service");
+const { loginLimiter, mfaLimiter, forgotPasswordLimiter } = require("../middleware/rate-limiter");
 
 // Helper to finalize session and log event
 async function finalizeLogin(req, res, user, authType) {
@@ -34,7 +35,7 @@ async function finalizeLogin(req, res, user, authType) {
 
 // --- CORE AUTHENTICATION ---
 
-router.post("/login", async (req, res) => {
+router.post("/login", loginLimiter, async (req, res) => {
   const { username, password } = req.body;
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
@@ -77,7 +78,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.post("/login/mfa", async (req, res) => {
+router.post("/login/mfa", mfaLimiter, async (req, res) => {
   if (!req.session.mfaPendingUser) {
     return res.status(401).json({ error: "Session expired. Please log in again." });
   }
@@ -107,7 +108,7 @@ router.post("/login/mfa", async (req, res) => {
   }
 });
 
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", forgotPasswordLimiter, async (req, res) => {
   const { email } = req.body;
   if (email === config.auth.username)
     return res.status(400).json({ error: "Cannot reset Super Admin password via email." });

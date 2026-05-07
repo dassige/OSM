@@ -12,6 +12,7 @@ const { sendNotification } = require("./services/mailer");
 const { findWorkingNZProxy, setActiveProxy, getActiveProxy } = require("./services/proxy-manager");
 const { globalAuthGuard } = require("./middleware/auth");
 const { ROLES } = require("./middleware/auth");
+const { apiLimiter } = require("./middleware/rate-limiter");
 
 // --- API Routers
 const memberRoutes = require("./routes/api/members");
@@ -35,6 +36,9 @@ const viewRoutes = require("./routes/views");
 
 const app = express();
 const server = http.createServer(app);
+// Trust first proxy hop so express-rate-limit reads the real client IP
+// from X-Forwarded-For when running behind Docker / Cloud Run / nginx.
+app.set('trust proxy', 1);
 //==============================================================================
 //  SERVE STATIC FILES
 //==============================================================================
@@ -59,6 +63,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // MOUNT THE GLOBAL GUARD BEFORE ALL ROUTES
 app.use(globalAuthGuard);
+app.use('/api', apiLimiter);
 
 async function initializeProxy() {
   let proxyToUse = null;
