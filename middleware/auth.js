@@ -19,6 +19,7 @@ const globalAuthGuard = (req, res, next) => {
     "/styles.css",
     "/ui-config",
     "/login/mfa",
+    "/api/health",
     "/api/demo-credentials",
     "/forms-view.html",
     "/theme.js", 

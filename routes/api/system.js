@@ -9,10 +9,22 @@ const db = require("../../services/db");
 const config = require("../../config");
 const aiService = require("../../services/ai-service");
 const { hasRole } = require("../../middleware/auth");
+const { version } = require("../../package.json");
 
 const upload = multer({ dest: "uploads/" });
 
 
+
+// --- HEALTH CHECK ---
+router.get("/health", async (req, res) => {
+  try {
+    const database = await db.initDB();
+    await database.get("SELECT 1");
+    res.json({ status: "ok", version, uptime: Math.floor(process.uptime()), db: "ok" });
+  } catch (e) {
+    res.status(503).json({ status: "error", version, uptime: Math.floor(process.uptime()), db: "unreachable", error: e.message });
+  }
+});
 
 // --- PREFERENCES ---
 router.get("/preferences", async (req, res) => {
