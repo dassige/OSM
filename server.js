@@ -13,6 +13,7 @@ const formsService = require("./services/forms-service");
 const { sendNotification } = require("./services/mailer");
 const { findWorkingNZProxy, setActiveProxy, getActiveProxy } = require("./services/proxy-manager");
 const { globalAuthGuard } = require("./middleware/auth");
+const { runValidation } = require("./services/env-validator");
 const { ROLES } = require("./middleware/auth");
 const { apiLimiter } = require("./middleware/rate-limiter");
 const logger = require("./services/logger");
@@ -336,6 +337,9 @@ async function getTrainingMap() {
 if (require.main === module) {
   (async () => {
     try {
+      // 0. Validate environment configuration before anything else
+      runValidation(config);
+
       // 1. Wait for DB to be ready before doing anything else
       await db.initDB();
 
