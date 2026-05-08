@@ -1,6 +1,7 @@
 // services/whatsapp-service.js
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
+const logger = require('./logger');
 
 let client;
 let io;
@@ -20,7 +21,7 @@ async function systemLog(title, payload = {}) {
         try {
             await logEvent('System', 'WhatsApp', title, payload);
         } catch (e) {
-            console.error("[WhatsApp] Logging failed:", e.message);
+            logger.error("[WhatsApp] Logging failed", { error: e.message });
         }
     }
 }
@@ -28,7 +29,7 @@ async function systemLog(title, payload = {}) {
 function startClient() {
     if (status !== 'DISCONNECTED') return;
 
-    console.log('[WhatsApp] Starting client...');
+    logger.info('[WhatsApp] Starting client...');
     systemLog('Client Starting', {});
     updateStatus('INITIALIZING');
 
@@ -52,7 +53,7 @@ function startClient() {
     });
 
     client.on('qr', (qr) => {
-        console.log('[WhatsApp] QR Code received');
+        logger.info('[WhatsApp] QR Code received');
         // [CHANGED] Disabled logging for QR Code generation to reduce noise
         // systemLog('QR Code Generated', {}); 
         
@@ -66,7 +67,7 @@ function startClient() {
     });
 
     client.on('ready', () => {
-        console.log('[WhatsApp] Client is ready!');
+        logger.info('[WhatsApp] Client is ready!');
         isClientReady = true;
         qrCodeUrl = null;
         
@@ -84,13 +85,13 @@ function startClient() {
     });
 
     client.on('auth_failure', msg => {
-        console.error('[WhatsApp] Auth Failure', msg);
+        logger.error('[WhatsApp] Auth Failure', { details: msg });
         systemLog('Auth Failure', { error: msg });
         updateStatus('DISCONNECTED');
     });
 
     client.on('disconnected', (reason) => {
-        console.log('[WhatsApp] Client was logged out', reason);
+        logger.info('[WhatsApp] Client was logged out', { reason });
         systemLog('Client Disconnected', { reason }); 
         resetState();
     });
@@ -104,7 +105,7 @@ async function logout() {
             await client.logout();
             systemLog('Client Logged Out (Manual)', {});
         } catch (e) {
-            console.log('[WhatsApp] Logout error:', e.message);
+            logger.warn('[WhatsApp] Logout error', { error: e.message });
         }
         try {
             await client.destroy();

@@ -6,6 +6,7 @@ const { getOIData } = require("../../services/scraper");
 const { getActiveProxy } = require("../../services/proxy-manager");
 const config = require("../../config");
 const { hasRole } = require("../../middleware/auth");
+const logger = require("../../services/logger");
 
 router.get("/", hasRole("admin"), async (req, res) => {
   res.json(await db.getMembers());
@@ -25,7 +26,7 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
     await db.deleteMember(req.params.id);
     res.json({ success: true });
   } catch (error) {
-    console.error("Delete Member Error:", error);
+    logger.error("Delete Member Error", { error: error.message });
     // Return a JSON error so the frontend 'fetch' doesn't fail with ERR_EMPTY_RESPONSE
     res.status(500).json({ 
       error: "Could not delete member. They may have active survey records or other dependencies." 

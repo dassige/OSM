@@ -1,5 +1,6 @@
 // services/mailer.js
 const config = require("../config");
+const logger = require("./logger");
 const getTime = () =>
   new Date().toLocaleTimeString(config.locale, { timeZone: config.timezone });
 
@@ -181,7 +182,7 @@ async function sendPasswordReset(
     html: body,
     text: stripHtml(body),
   });
-  console.log(`[SMTP] Password reset email sent to ${email}`);
+  logger.info(`[SMTP] Password reset email sent to ${email}`);
 }
 
 // 3. New Account
@@ -219,7 +220,7 @@ async function sendNewAccountNotification(
     html: body,
     text: stripHtml(body),
   });
-  console.log(`[SMTP] New account email sent to ${email}`);
+  logger.info(`[SMTP] New account email sent to ${email}`);
 }
 
 // 4. Account Deletion
@@ -255,7 +256,7 @@ async function sendAccountDeletionNotification(
     html: body,
     text: stripHtml(body),
   });
-  console.log(`[SMTP] Deletion notification sent to ${email}`);
+  logger.info(`[SMTP] Deletion notification sent to ${email}`);
 }
 
 // 5. Survey Invitations & Reminders

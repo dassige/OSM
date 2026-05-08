@@ -8,6 +8,7 @@ const packageJson = require("../package.json");
 const config = require("../config");
 const { runMigrations } = require("./migration-runner");
 const { Storage } = require("@google-cloud/storage");
+const logger = require("./logger");
 const storage = new Storage();
 const dbService = require("./db"); 
 let db;
@@ -54,7 +55,7 @@ async function initDB() {
 }
 async function closeDB() {
   if (db) {
-    console.log("[DB] Closing database connection...");
+    logger.info("[DB] Closing database connection...");
     await db.close();
     db = null;
   }
@@ -111,17 +112,17 @@ async function restoreFromSqlDump(sqlContent) {
   if (!db) await initDB();
 
   try {
-    console.log("[DB] Executing logical SQL restore...");
+    logger.info("[DB] Executing logical SQL restore...");
     // Execute the entire dump as a single script
     await db.exec(sqlContent);
-    
+
     // Force Litestream to see the massive change
     await db.run("PRAGMA wal_checkpoint(TRUNCATE);");
-    
-    console.log("[DB] Logical restore complete.");
+
+    logger.info("[DB] Logical restore complete.");
     return true;
   } catch (e) {
-    console.error("[DB] SQL Restore failed:", e);
+    logger.error("[DB] SQL Restore failed", { error: e.message });
     throw new Error(`SQL Restore Failed: ${e.message}`);
   }
 }
@@ -133,7 +134,7 @@ async function restoreFromSqlDump(sqlContent) {
 async function verifyAndReplaceDb(newDbPath) {
   let tempDb;
   try {
-    console.log(`[DB] Verifying integrity of uploaded file: ${newDbPath}`);
+    logger.info(`[DB] Verifying integrity of uploaded file: ${newDbPath}`);
     tempDb = await open({ filename: newDbPath, driver: sqlite3.Database });
     
     // Check for required tables
@@ -158,7 +159,7 @@ async function verifyAndReplaceDb(newDbPath) {
   const shmPath = `${currentDbPath}-shm`;
 
   try {
-    console.log(`[DB] Executing filesystem swap...`);
+    logger.info(`[DB] Executing filesystem swap...`);
 
     // 2. WIPE JOURNALS & CURRENT DB
     // Litestream holds handles to these. Deleting them forces Litestream to reset its sync state.
@@ -168,7 +169,7 @@ async function verifyAndReplaceDb(newDbPath) {
 
     // 3. COPY NEW DATABASE
     fs.copyFileSync(newDbPath, currentDbPath);
-    console.log(`[DB] New database file placed.`);
+    logger.info(`[DB] New database file placed.`);
 
     // 4. TRIGGER WAL MODE
     // Litestream requires WAL mode to sync.
@@ -185,7 +186,7 @@ async function verifyAndReplaceDb(newDbPath) {
 
     // 5. EXTENDED SYNC WINDOW
     if (process.env.GCS_BUCKET_NAME) {
-      console.log(`[DB] Cloud environment detected. Waiting for Litestream to re-index...`);
+      logger.info(`[DB] Cloud environment detected. Waiting for Litestream to re-index...`);
       // We give the sidecar a full 15 seconds to detect the "malformed" old state 
       // is gone and begin snapshotting the new file.
       await new Promise(resolve => setTimeout(resolve, 15000));
@@ -193,11 +194,11 @@ async function verifyAndReplaceDb(newDbPath) {
 
     // 6. RE-INITIALIZE MAIN CONNECTION
     await initDB();
-    console.log(`[DB] Restore complete and connection re-established.`);
+    logger.info(`[DB] Restore complete and connection re-established.`);
     return true;
 
   } catch (e) {
-    console.error("[DB] Restore failed:", e);
+    logger.error("[DB] Restore failed", { error: e.message });
     await initDB().catch(() => {}); // Attempt recovery
     throw e;
   }
@@ -566,7 +567,7 @@ async function logEvent(user, type, title, payload) {
       new Date().toISOString(), // Explicitly override DEFAULT CURRENT_TIMESTAMP with ISO+Z
     );
   } catch (e) {
-    console.error("Failed to write to event log:", e.message);
+    logger.error("Failed to write to event log", { error: e.message });
   }
 }
 async function getEventLogs(filters = {}) {

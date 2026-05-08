@@ -3,6 +3,7 @@ const db = require("./db");
 const crypto = require("crypto");
 const aiService = require("./ai-service");
 const { aiConfig } = require("../config");
+const logger = require("./logger");
 
 async function getAllForms() {
   const database = await db.initDB();
@@ -601,7 +602,7 @@ async function calculateFormScore(structure, submittedData, skipAi = false) {
             reason: evalResult.justification,
           };
         } catch (e) {
-          console.error("AI Eval Failed:", e);
+          logger.error("AI Eval Failed", { error: e.message });
           aiFeedback[field.id] = { score: 0, reason: "AI Service Unavailable" };
         }
       } else {

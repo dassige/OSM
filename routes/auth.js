@@ -6,6 +6,7 @@ const speakeasy = require("speakeasy");
 
 const db = require("../services/db");
 const config = require("../config");
+const logger = require("../services/logger");
 const { sendPasswordReset } = require("../services/mailer");
 const whatsappService = require("../services/whatsapp-service");
 const { loginLimiter, mfaLimiter, forgotPasswordLimiter } = require("../middleware/rate-limiter");
@@ -73,7 +74,7 @@ router.post("/login", loginLimiter, async (req, res) => {
         return res.status(401).json({ error: "Invalid credentials" });
     }
   } catch (e) {
-    console.error("Login Error:", e);
+    logger.error("Login Error", { error: e.message, stack: e.stack });
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -145,7 +146,7 @@ router.get("/logout", async (req, res) => {
       }
     }
   } catch (e) {
-    console.error("Logout cleanup error:", e);
+    logger.error("Logout cleanup error", { error: e.message });
   }
   req.session.destroy();
   res.redirect("/login.html");

@@ -13,6 +13,7 @@ const { findWorkingNZProxy, setActiveProxy, getActiveProxy } = require("./servic
 const { globalAuthGuard } = require("./middleware/auth");
 const { ROLES } = require("./middleware/auth");
 const { apiLimiter } = require("./middleware/rate-limiter");
+const logger = require("./services/logger");
 
 // --- API Routers
 const memberRoutes = require("./routes/api/members");
@@ -69,7 +70,7 @@ async function initializeProxy() {
   let proxyToUse = null;
   if (config.proxyMode === "fixed") proxyToUse = config.fixedProxyUrl;
   else if (config.proxyMode === "dynamic")
-    proxyToUse = await findWorkingNZProxy(console.log);
+    proxyToUse = await findWorkingNZProxy(logger.info.bind(logger));
   
   setActiveProxy(proxyToUse); 
 
@@ -122,20 +123,20 @@ io.on("connection", (socket) => {
   socket.on("get-preferences", async () => {
     try {
       socket.emit("preferences-data", await db.getAllUserPreferences(socket.request.session.user.id || 0));
-    } catch (e) { console.error("[Socket] get-preferences:", e.message); }
+    } catch (e) { logger.error("[Socket] get-preferences", { error: e.message }); }
   });
 
   socket.on("update-preference", async ({ key, value }) => {
     if (userLevel < ROLES.simple) return logger("Unauthorized: Guest cannot save preferences.");
     try {
       await db.saveUserPreference(socket.request.session.user.id || 0, key, value);
-    } catch (e) { console.error("[Socket] update-preference:", e.message); }
+    } catch (e) { logger.error("[Socket] update-preference", { error: e.message }); }
   });
 
   socket.on("wa-get-status", () => {
     try {
       if (userLevel >= ROLES.simple) socket.emit("wa-status-data", whatsappService.getStatus());
-    } catch (e) { console.error("[Socket] wa-get-status:", e.message); }
+    } catch (e) { logger.error("[Socket] wa-get-status", { error: e.message }); }
   });
 
   socket.on("wa-control", (action) => {
@@ -143,7 +144,7 @@ io.on("connection", (socket) => {
     try {
       if (action === "start") whatsappService.startClient();
       if (action === "stop") whatsappService.logout();
-    } catch (e) { console.error("[Socket] wa-control:", e.message); }
+    } catch (e) { logger.error("[Socket] wa-control", { error: e.message }); }
   });
 
   socket.on("wa-send-test", async (data) => {
@@ -344,11 +345,11 @@ if (require.main === module) {
       // 4. Start the Server
       const PORT = process.env.PORT || config.port || 3000;
       server.listen(PORT, '0.0.0.0', () => {
-        console.log(`[System] 🚀 Server listening on port ${PORT}`);
-        console.log(`> App Mode: ${(config.appMode || "PRODUCTION").toUpperCase()}`);
+        logger.info(`[System] Server listening on port ${PORT}`);
+        logger.info(`App Mode: ${(config.appMode || "PRODUCTION").toUpperCase()}`);
       });
     } catch (err) {
-      console.error("Critical Startup Error:", err);
+      logger.error("Critical Startup Error", { error: err.message, stack: err.stack });
     }
   })();
 }

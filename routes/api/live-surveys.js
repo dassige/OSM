@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../../services/db");
 const { hasRole } = require("../../middleware/auth");
+const logger = require("../../services/logger");
 
 // GET /api/live-surveys/preview/:publicId
 // PREVIEW MODE: Fetches the template directly. Protected by admin auth.
@@ -27,7 +28,7 @@ router.get("/preview/:publicId", hasRole("admin"), async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("[API] Error fetching preview:", error);
+    logger.error("[API] Error fetching preview", { error: error.message });
     res.status(500).json({ error: "Internal server error." });
   }
 });
@@ -76,7 +77,7 @@ router.get("/:accessCode", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("[API] Error fetching live survey:", error);
+    logger.error("[API] Error fetching live survey", { error: error.message });
     res.status(500).json({ error: "Internal server error." });
   }
 });
@@ -127,7 +128,7 @@ router.post("/:accessCode/submit", async (req, res) => {
     });
     res.json({ success: true, message: "Response recorded securely." });
   } catch (error) {
-    console.error("[API] Error submitting survey:", error);
+    logger.error("[API] Error submitting survey", { error: error.message });
     res.status(500).json({ error: "Failed to submit response." });
   }
 });
