@@ -122,22 +122,28 @@ io.on("connection", (socket) => {
   socket.on("get-preferences", async () => {
     try {
       socket.emit("preferences-data", await db.getAllUserPreferences(socket.request.session.user.id || 0));
-    } catch (e) {}
+    } catch (e) { console.error("[Socket] get-preferences:", e.message); }
   });
-  
+
   socket.on("update-preference", async ({ key, value }) => {
     if (userLevel < ROLES.simple) return logger("Unauthorized: Guest cannot save preferences.");
-    try { await db.saveUserPreference(socket.request.session.user.id || 0, key, value); } catch (e) {}
+    try {
+      await db.saveUserPreference(socket.request.session.user.id || 0, key, value);
+    } catch (e) { console.error("[Socket] update-preference:", e.message); }
   });
 
   socket.on("wa-get-status", () => {
-    if (userLevel >= ROLES.simple) socket.emit("wa-status-data", whatsappService.getStatus());
+    try {
+      if (userLevel >= ROLES.simple) socket.emit("wa-status-data", whatsappService.getStatus());
+    } catch (e) { console.error("[Socket] wa-get-status:", e.message); }
   });
 
   socket.on("wa-control", (action) => {
     if (userLevel < ROLES.admin) return;
-    if (action === "start") whatsappService.startClient();
-    if (action === "stop") whatsappService.logout();
+    try {
+      if (action === "start") whatsappService.startClient();
+      if (action === "stop") whatsappService.logout();
+    } catch (e) { console.error("[Socket] wa-control:", e.message); }
   });
 
   socket.on("wa-send-test", async (data) => {
@@ -196,7 +202,10 @@ io.on("connection", (socket) => {
       }));
 
       socket.emit("expiring-skills-data", results);
-    } catch (e) { logger(e.message); }
+    } catch (e) {
+      logger(`Error: ${e.message}`);
+      socket.emit("expiring-skills-error", e.message);
+    }
   });
 
   socket.on("run-process-queue", async (targets, days) => {
