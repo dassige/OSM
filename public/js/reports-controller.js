@@ -9,7 +9,10 @@ const reportPanel = document.getElementById("reportPanel");
 let paramContainer = null;
 
 let appConfig = {};
-let userPrefs = {}; // Cache for user preferences
+let userPrefs = {};
+let currentReportData = null;
+let currentPage = 1;
+let currentPageSize = 10;
 
 async function initReports() {
   try {
@@ -28,9 +31,17 @@ async function initReports() {
     const user = await (await fetch("/api/user-session")).json();
     if (user.role === "guest") window.location.href = "/";
 
-    // [NEW] Load User Preferences once
+    // Load User Preferences once
     const prefsRes = await fetch("/api/user-preferences");
     if (prefsRes.ok) userPrefs = await prefsRes.json();
+
+    // Restore saved page size
+    const savedSize = userPrefs["rptPageSize"];
+    if (savedSize) {
+      currentPageSize = savedSize === "all" ? Infinity : parseInt(savedSize);
+      const sel = document.getElementById("rptRowsPerPage");
+      if (sel) sel.value = String(savedSize);
+    }
   } catch (e) {
     console.error("Init Error:", e);
   }
@@ -43,7 +54,10 @@ function loadReportDescription() {
   // 1. Clear dynamic inputs from the sidebar/description card
   if (paramContainer) paramContainer.innerHTML = "";
 
-  // 2. [NEW] Clear the main report content panel
+  // Clear pagination state and panel
+  currentReportData = null;
+  currentPage = 1;
+  document.getElementById('reportPagination').style.display = 'none';
   if (reportPanel) {
     reportPanel.innerHTML = `
             <div style="text-align:center; color:#ccc; padding-top:100px;">
@@ -151,16 +165,71 @@ async function runReport() {
     if (!res.ok) throw new Error("Failed to load data");
 
     const data = await res.json();
-    const html = reportDef.render(data, appConfig);
-    reportPanel.innerHTML = html;
+    if (reportDef.paginate) {
+      currentReportData = data;
+      // honour saved preference; fall back to the report's own default
+      const sel = document.getElementById("rptRowsPerPage");
+      const selVal = sel ? sel.value : String(reportDef.pageSize || 10);
+      currentPageSize = selVal === "all" ? Infinity : parseInt(selVal);
+      renderPage(1);
+    } else {
+      currentReportData = null;
+      document.getElementById('reportPagination').style.display = 'none';
+      reportPanel.innerHTML = reportDef.render(data, appConfig);
+    }
   } catch (e) {
     reportPanel.innerHTML = `<p style="color:red; text-align:center;">Error: ${e.message}</p>`;
   }
 }
 
+function renderPage(page) {
+  const key = reportSelect.value;
+  const reportDef = registry[key];
+  if (!reportDef || !reportDef.paginate || !currentReportData) return;
+
+  const items = reportDef.getItems(currentReportData);
+  const total = items.length;
+  const isAll = currentPageSize === Infinity;
+  const effectiveSize = isAll ? total : currentPageSize;
+  const totalPages = Math.max(1, Math.ceil(total / effectiveSize));
+  currentPage = Math.max(1, Math.min(page, totalPages));
+
+  const start = (currentPage - 1) * effectiveSize;
+  const end = Math.min(start + effectiveSize, total);
+  reportPanel.innerHTML =
+    reportDef.renderHeader(currentReportData, appConfig) +
+    reportDef.renderItems(items.slice(start, end), currentReportData, appConfig);
+
+  const paginationEl = document.getElementById('reportPagination');
+  paginationEl.style.display = 'flex';
+  document.getElementById('rptPageInfo').textContent =
+    `Showing ${total === 0 ? 0 : start + 1}–${end} of ${total}`;
+  document.getElementById('btnRptPrev').disabled = currentPage <= 1;
+  document.getElementById('btnRptNext').disabled = currentPage >= totalPages || isAll;
+}
+
+function changePage(delta) {
+  renderPage(currentPage + delta);
+}
+
+function changeRowsPerPage(value) {
+  currentPageSize = value === "all" ? Infinity : parseInt(value);
+  userPrefs["rptPageSize"] = value;
+  fetch("/api/user-preferences", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key: "rptPageSize", value }),
+  });
+  if (currentReportData) renderPage(1);
+}
+
 // ... (keep downloadPdf and init calls) ...
 async function downloadPdf() {
-  const content = reportPanel.innerHTML;
+  const key = reportSelect.value;
+  const reportDef = registry[key];
+  const content = (currentReportData && reportDef && reportDef.render)
+    ? reportDef.render(currentReportData, appConfig)
+    : reportPanel.innerHTML;
   if (!content || content.includes("Select a report")) {
     if (window.showToast) showToast("Please run a report first.", "warning");
     return;

@@ -260,12 +260,21 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(e => console.error("UI Config Error:", e));
 });
 
+socket.on('disconnect', () => {
+    const banner = document.getElementById('socketBanner');
+    if (banner) banner.style.display = 'block';
+});
+
 socket.on('connect', () => {
+    const banner = document.getElementById('socketBanner');
+    if (banner) banner.style.display = 'none';
+
     // Only fetch if config has already loaded (currentStartDate exists)
-    // Otherwise the fetch callback above will handle it
+    // Otherwise the DOMContentLoaded callback above will handle it
     if (currentStartDate) {
         socket.emit('get-preferences');
         loadSessions();
+        loadExpiringSkills();
     }
 });
 
