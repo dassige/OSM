@@ -1,7 +1,9 @@
 const express = require("express");
 const http = require("http");
+const path = require("path");
 const { Server } = require("socket.io");
 const session = require("express-session");
+const SQLiteStore = require("connect-sqlite3")(session);
 const config = require("./config.js");
 const db = require("./services/db");
 const { getOIData } = require("./services/scraper");
@@ -56,6 +58,10 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   cookie: { secure: false },
+  store: new SQLiteStore({
+    db: "sessions.db",
+    dir: path.dirname(db.getDbPath()),
+  }),
 });
 
 app.use(sessionMiddleware);

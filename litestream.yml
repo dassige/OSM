@@ -2,8 +2,11 @@ dbs:
   - path: /app/fenz.db
     replicas:
       - url: gcs://${GCS_BUCKET_NAME}/fenz.db
-    
-    # This ensures that if the container restarts, it won't 
-    # start the Node app until the DB is pulled from GCS.
+    restore:
+      if-not-exists: true
+
+  - path: /app/sessions.db
+    replicas:
+      - url: gcs://${GCS_BUCKET_NAME}/sessions.db
     restore:
       if-not-exists: true

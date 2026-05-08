@@ -1,8 +1,8 @@
 {
   "name": "fenz-osm",
-  "version": "1.14.6",
+  "version": "1.14.7",
   "description": "FENZ OSM Automation Manager",
-  "versionDate": "2026/05/08 14:59",
+  "versionDate": "2026/05/08 15:29",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -19,6 +19,7 @@
     "@google/generative-ai": "^0.21.0",
     "axios": "^1.12.2",
     "cheerio": "^1.1.2",
+    "connect-sqlite3": "^0.9.16",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-rate-limit": "^8.5.1",

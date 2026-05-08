@@ -26,6 +26,12 @@ if [ ! -z "$GCS_BUCKET_NAME" ]; then
         echo "WARNING: Litestream restore failed (possibly malformed replica). Starting with a fresh DB."
         rm -f /app/fenz.db /app/fenz.db-wal /app/fenz.db-shm
     fi
+
+    if ! litestream restore -if-replica-exists /app/sessions.db; then
+        echo "WARNING: Sessions restore failed. Starting with fresh sessions."
+        rm -f /app/sessions.db /app/sessions.db-wal /app/sessions.db-shm
+    fi
+
     # 2. Execute Litestream, which wraps the node process
     exec litestream replicate -exec "node server.js"
 else
