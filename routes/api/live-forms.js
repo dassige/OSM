@@ -12,11 +12,21 @@ const { hasRole } = require("../../middleware/auth");
 function convertHtmlToText(html) {
   if (!html) return "";
   return html
-    .replace(/<br\s*\/?>/gi, "\n") 
-    .replace(/<\/p>/gi, "\n\n") 
-    .replace(/<\/div>/gi, "\n") 
-    .replace(/<[^>]*>/g, "") 
-    .trim(); 
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .trim();
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 router.get("/", hasRole("admin"), async (req, res) => {
@@ -280,11 +290,21 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
         .replace(/{{url}}/g, "")
         .replace(/{{custom_comment}}/g, customComment || "");
     };
+    const applyHtmlVars = (text) => {
+      if (!text) return "";
+      return text
+        .replace(/{{name}}/g, escapeHtml(member.name))
+        .replace(/{{email}}/g, escapeHtml(member.email))
+        .replace(/{{skill}}/g, escapeHtml(form.skill_name))
+        .replace(/{{appname}}/g, escapeHtml(config.ui.loginTitle))
+        .replace(/{{url}}/g, "")
+        .replace(/{{custom_comment}}/g, escapeHtml(customComment || ""));
+    };
 
     if (notifyEmail && member.email) {
       const from = tplEmail.from ? applyVars(tplEmail.from) : config.ui.loginTitle + " <noreply@fenz.osm>";
       const subject = applyVars(tplEmail.subject);
-      const htmlBody = tplEmail.body ? applyVars(tplEmail.body) : `<p>Hello ${member.name}, your submission for "${form.skill_name}" has been APPROVED.</p>`;
+      const htmlBody = tplEmail.body ? applyHtmlVars(tplEmail.body) : `<p>Hello ${escapeHtml(member.name)}, your submission for &#34;${escapeHtml(form.skill_name)}&#34; has been APPROVED.</p>`;
       const textBody = convertHtmlToText(htmlBody);
 
       if (!isDemo) {
@@ -362,12 +382,22 @@ router.post("/reject/:id", hasRole("admin"), async (req, res) => {
         .replace(/{{url}}/g, newLink || "")
         .replace(/{{custom_comment}}/g, customComment || "");
     };
+    const applyHtmlVars = (text) => {
+      if (!text) return "";
+      return text
+        .replace(/{{name}}/g, escapeHtml(member.name))
+        .replace(/{{email}}/g, escapeHtml(member.email))
+        .replace(/{{skill}}/g, escapeHtml(form.skill_name))
+        .replace(/{{appname}}/g, escapeHtml(config.ui.loginTitle))
+        .replace(/{{url}}/g, escapeHtml(newLink || ""))
+        .replace(/{{custom_comment}}/g, escapeHtml(customComment || ""));
+    };
 
     if (notifyEmail && member.email) {
       const from = tplEmail.from ? applyVars(tplEmail.from) : config.ui.loginTitle + " <noreply@fenz.osm>";
       const subject = applyVars(tplEmail.subject);
       const rawBody = generateNew ? tplEmail.bodyRetry : tplEmail.bodySimple;
-      let htmlBody = rawBody ? applyVars(rawBody) : `<p>Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted.</p>`;
+      let htmlBody = rawBody ? applyHtmlVars(rawBody) : `<p>Hello ${escapeHtml(member.name)}, your submission for &#34;${escapeHtml(form.skill_name)}&#34; was NOT accepted.</p>`;
       let textBody = convertHtmlToText(htmlBody);
 
       if (!isDemo) {
