@@ -94,7 +94,9 @@
                 <div class="form-group"><label>Full Name</label><input type="text" id="name" required
                         placeholder="Exact name as seen in OSM"></div>
                 <div class="form-group"><label>Email Address</label><input type="email" id="email" required></div>
-                <div class="form-group"><label>Mobile (Optional)</label><input type="text" id="mobile"></div>
+                <div class="form-group"><label>Mobile (Optional)</label><input type="text" id="mobile"
+                        pattern="^02[0-9][\d\s\-]{6,9}$"
+                        title="NZ mobile number starting with 02 (e.g. 021 234 5678)"></div>
                 <div class="form-group">
                     <label>Notification Preference</label>
                     <div style="display:flex; gap:15px; flex-wrap:wrap;">

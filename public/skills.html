@@ -464,7 +464,14 @@
                 urlVal = document.getElementById('selectedFormId').value;
                 if (!urlVal) return showToast("Please select a form.", "error");
             } else {
-                urlVal = document.getElementById('url').value;
+                urlVal = document.getElementById('url').value.trim();
+                if (urlVal) {
+                    try {
+                        new URL(urlVal.replace(/\{\{[^}]+\}\}/g, 'x'));
+                    } catch {
+                        return showToast("Please enter a valid URL starting with https://", "error");
+                    }
+                }
             }
 
             const data = {
