@@ -8,6 +8,7 @@ const events = require("./db/events");
 const training = require("./db/training");
 const backup = require("./db/backup");
 const surveys = require("./db/surveys");
+const apiKeys = require("./db/api-keys");
 
 module.exports = {
   initDB,
@@ -21,4 +22,5 @@ module.exports = {
   ...training,
   ...backup,
   ...surveys,
+  ...apiKeys,
 };

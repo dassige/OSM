@@ -1,0 +1,891 @@
+{
+  "info": {
+    "name": "FENZ OSM Manager API",
+    "_postman_id": "fenz-osm-manager-v1",
+    "description": "REST API collection for the FENZ OSM Manager.\n\n**Authentication**\n\nTwo modes are supported:\n\n1. **API Key** (recommended for external integrations) — set the `apiKey` collection variable and all requests will include `X-API-Key` automatically.\n2. **Session Cookie** — use the `POST /login` request first; the session cookie is stored automatically by Postman.\n\n**Setup**\n1. Set the `baseUrl` variable to your instance URL (default: `http://localhost:3000`).\n2. Set the `apiKey` variable to a key generated in System Tools → API Key Management.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key",   "value": "X-API-Key", "type": "string" },
+      { "key": "value", "value": "{{apiKey}}", "type": "string" },
+      { "key": "in",    "value": "header",     "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "apiKey",  "value": "",                      "type": "string", "description": "Paste your API key here (generated in System Tools → API Key Management)" }
+  ],
+  "item": [
+
+    {
+      "name": "Auth",
+      "description": "Login, MFA, logout, and session info.",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"your-password\"\n}"
+            },
+            "description": "Authenticates with email and password. If MFA is enabled, returns `mfaRequired: true` and you must follow up with POST /login/mfa."
+          }
+        },
+        {
+          "name": "Login - MFA",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/login/mfa", "host": ["{{baseUrl}}"], "path": ["login", "mfa"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"123456\"\n}"
+            },
+            "description": "Completes the MFA challenge after a login that returned `mfaRequired: true`."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/forgot-password", "host": ["{{baseUrl}}"], "path": ["forgot-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "description": "Sends a password reset email if the account exists."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/logout", "host": ["{{baseUrl}}"], "path": ["logout"] },
+            "description": "Destroys the current session and redirects to /login.html."
+          }
+        },
+        {
+          "name": "Get Session User",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/user-session", "host": ["{{baseUrl}}"], "path": ["api", "user-session"] },
+            "description": "Returns the currently authenticated user's info and role."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Members",
+      "description": "Volunteer member management. Requires admin role.",
+      "item": [
+        {
+          "name": "List Members",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/members", "host": ["{{baseUrl}}"], "path": ["api", "members"] },
+            "description": "Returns all members."
+          }
+        },
+        {
+          "name": "Create Member",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/members", "host": ["{{baseUrl}}"], "path": ["api", "members"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane@station.nz\",\n  \"mobile\": \"0211234567\",\n  \"station\": \"Station 44\",\n  \"active\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Member",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/members/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "members", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane@station.nz\",\n  \"mobile\": \"0211234567\",\n  \"station\": \"Station 44\",\n  \"active\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Member",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/members/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "members", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Bulk Delete Members",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/members/bulk-delete", "host": ["{{baseUrl}}"], "path": ["api", "members", "bulk-delete"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [1, 2, 3]\n}"
+            }
+          }
+        },
+        {
+          "name": "Discover New Members",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/members/discover", "host": ["{{baseUrl}}"], "path": ["api", "members", "discover"] },
+            "description": "Scrapes the external OI dashboard and returns member names not yet in the database."
+          }
+        },
+        {
+          "name": "Import Members",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/members/import", "host": ["{{baseUrl}}"], "path": ["api", "members", "import"] },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  { \"name\": \"Alice\", \"email\": \"alice@station.nz\", \"mobile\": \"0211111111\", \"active\": 1 },\n  { \"name\": \"Bob\",   \"email\": \"bob@station.nz\",   \"mobile\": \"0212222222\", \"active\": 1 }\n]"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Skills",
+      "description": "OSM skill management. Requires admin role.",
+      "item": [
+        {
+          "name": "List Skills",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/skills", "host": ["{{baseUrl}}"], "path": ["api", "skills"] }
+          }
+        },
+        {
+          "name": "Create Skill",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/skills", "host": ["{{baseUrl}}"], "path": ["api", "skills"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"BA Renewal\",\n  \"code\": \"BA\",\n  \"expiry_months\": 12,\n  \"active\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Skill",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/skills/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "skills", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"BA Renewal\",\n  \"code\": \"BA\",\n  \"expiry_months\": 12,\n  \"active\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Skill",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/skills/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "skills", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Bulk Delete Skills",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/skills/bulk-delete", "host": ["{{baseUrl}}"], "path": ["api", "skills", "bulk-delete"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [1, 2, 3]\n}"
+            }
+          }
+        },
+        {
+          "name": "Discover New Skills",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/skills/discover", "host": ["{{baseUrl}}"], "path": ["api", "skills", "discover"] }
+          }
+        },
+        {
+          "name": "Import Skills",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/skills/import", "host": ["{{baseUrl}}"], "path": ["api", "skills", "import"] },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  { \"name\": \"BA Renewal\", \"code\": \"BA\", \"expiry_months\": 12, \"active\": 1 }\n]"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Forms",
+      "description": "Online verification form template management. Requires admin role.",
+      "item": [
+        {
+          "name": "List Forms",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/forms", "host": ["{{baseUrl}}"], "path": ["api", "forms"] }
+          }
+        },
+        {
+          "name": "Get Form",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/forms/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "forms", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Create Form",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/forms", "host": ["{{baseUrl}}"], "path": ["api", "forms"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"BA Renewal Form\",\n  \"skill_id\": 1,\n  \"questions\": [],\n  \"active\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Form",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/forms/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "forms", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"BA Renewal Form (updated)\",\n  \"skill_id\": 1,\n  \"questions\": [],\n  \"active\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Export All Forms",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/forms/export/all", "host": ["{{baseUrl}}"], "path": ["api", "forms", "export", "all"] },
+            "description": "Downloads all form templates as a JSON file."
+          }
+        },
+        {
+          "name": "Import All Forms",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/forms/import/all", "host": ["{{baseUrl}}"], "path": ["api", "forms", "import", "all"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": "" }]
+            },
+            "description": "Upload a previously exported JSON file to restore all form templates."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Live Forms",
+      "description": "Active form submission tracking. Requires admin role.",
+      "item": [
+        {
+          "name": "List Live Forms",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/live-forms",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "live-forms"],
+              "query": [
+                { "key": "member_id", "value": "",        "disabled": true },
+                { "key": "skill_id",  "value": "",        "disabled": true },
+                { "key": "status",    "value": "pending", "disabled": true, "description": "pending | completed | expired" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export Live Forms",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/live-forms/export", "host": ["{{baseUrl}}"], "path": ["api", "live-forms", "export"] }
+          }
+        },
+        {
+          "name": "Delete All Live Forms",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/live-forms/all", "host": ["{{baseUrl}}"], "path": ["api", "live-forms", "all"] },
+            "description": "Superadmin only — permanently removes all live form records."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Surveys",
+      "description": "Survey response details and results. Requires admin role.",
+      "item": [
+        {
+          "name": "Get Survey Response",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/surveys/responses/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "surveys", "responses", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Get Survey Instance Results",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/surveys/instances/:liveId/results",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "surveys", "instances", ":liveId", "results"],
+              "variable": [{ "key": "liveId", "value": "1" }]
+            },
+            "description": "Returns aggregated results and completion tracking for a live survey instance."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Live Surveys (Public)",
+      "description": "Public-facing survey endpoints — no authentication required for respondent access.",
+      "item": [
+        {
+          "name": "Preview Survey (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/live-surveys/preview/:publicId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "live-surveys", "preview", ":publicId"],
+              "variable": [{ "key": "publicId", "value": "your-public-id" }]
+            }
+          }
+        },
+        {
+          "name": "Fetch Survey for Respondent",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/live-surveys/:accessCode",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "live-surveys", ":accessCode"],
+              "variable": [{ "key": "accessCode", "value": "your-access-code" }]
+            },
+            "description": "Public endpoint — returns survey questions for a unique access code."
+          }
+        },
+        {
+          "name": "Submit Survey Response",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/live-surveys/:accessCode",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "live-surveys", ":accessCode"],
+              "variable": [{ "key": "accessCode", "value": "your-access-code" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"q1\": \"Answer to question 1\",\n  \"q2\": \"Option A\"\n}"
+            },
+            "description": "Public endpoint — submits a respondent's answers."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Training Sessions",
+      "description": "In-person training session management. Requires admin role.",
+      "item": [
+        {
+          "name": "List Training Sessions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/training-sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "training-sessions"],
+              "query": [
+                { "key": "view", "value": "future", "disabled": true, "description": "Pass 'future' to return only upcoming sessions" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Training Session",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/training-sessions", "host": ["{{baseUrl}}"], "path": ["api", "training-sessions"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skill_id\": 1,\n  \"session_date\": \"2026-06-15\",\n  \"location\": \"Station 44 Training Room\",\n  \"notes\": \"Bring BA set\",\n  \"member_ids\": [1, 2, 3]\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Training Session",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/training-sessions/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "training-sessions", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Reports",
+      "description": "Compliance and verification reports. Requires admin role.",
+      "item": [
+        {
+          "name": "Report — By Member",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/data/by-member", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "by-member"] },
+            "description": "Expiring skills grouped per member."
+          }
+        },
+        {
+          "name": "Report — By Skill",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/data/by-skill", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "by-skill"] },
+            "description": "Members grouped per expiring skill."
+          }
+        },
+        {
+          "name": "Report — Planned Sessions",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/data/planned-sessions", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "planned-sessions"] }
+          }
+        },
+        {
+          "name": "Report — Critical Overdue",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/data/critical-overdue", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "critical-overdue"] }
+          }
+        },
+        {
+          "name": "Report — Compliance Matrix",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/data/compliance-matrix", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "compliance-matrix"] }
+          }
+        },
+        {
+          "name": "Report — Verification History",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/data/verification-history", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "verification-history"] }
+          }
+        },
+        {
+          "name": "Report — Training Attendance",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/data/training-attendance", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "training-attendance"] }
+          }
+        },
+        {
+          "name": "Generate PDF",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/reports/pdf", "host": ["{{baseUrl}}"], "path": ["api", "reports", "pdf"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"html\": \"<h1>My Report</h1><p>Content here.</p>\"\n}"
+            },
+            "description": "Renders the provided HTML string to a PDF and returns the binary file."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Statistics",
+      "description": "Dashboard statistics. Requires simple role or higher.",
+      "item": [
+        {
+          "name": "Compliance Overview",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/statistics/data/compliance-overview", "host": ["{{baseUrl}}"], "path": ["api", "statistics", "data", "compliance-overview"] },
+            "description": "Returns the top-level compliance stats shown on the dashboard."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Users",
+      "description": "Admin user account management. Requires admin role.",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Admin\",\n  \"email\": \"newadmin@station.nz\",\n  \"password\": \"temporary-password\",\n  \"role\": \"admin\"\n}"
+            },
+            "description": "Creates a new user. A welcome email with the temporary password is sent automatically."
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Admin\",\n  \"email\": \"newadmin@station.nz\",\n  \"role\": \"admin\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Profile",
+      "description": "Current user's own profile and MFA settings.",
+      "item": [
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/profile", "host": ["{{baseUrl}}"], "path": ["api", "profile"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Name\",\n  \"email\": \"me@station.nz\",\n  \"currentPassword\": \"old-password\",\n  \"newPassword\": \"new-password\"\n}"
+            }
+          }
+        },
+        {
+          "name": "MFA — Setup",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/profile/mfa/setup", "host": ["{{baseUrl}}"], "path": ["api", "profile", "mfa", "setup"] },
+            "description": "Generates a new TOTP secret and QR code URL. Scan with an authenticator app then call MFA Verify."
+          }
+        },
+        {
+          "name": "MFA — Verify & Enable",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/profile/mfa/verify", "host": ["{{baseUrl}}"], "path": ["api", "profile", "mfa", "verify"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "MFA — Disable",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/profile/mfa/disable", "host": ["{{baseUrl}}"], "path": ["api", "profile", "mfa", "disable"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"your-password\"\n}"
+            }
+          }
+        },
+        {
+          "name": "MFA — Status",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/profile/mfa/status", "host": ["{{baseUrl}}"], "path": ["api", "profile", "mfa", "status"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "API Keys",
+      "description": "Manage API keys for external integrations. Requires admin role.",
+      "item": [
+        {
+          "name": "List API Keys",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/api-keys", "host": ["{{baseUrl}}"], "path": ["api", "api-keys"] },
+            "description": "Returns all keys. The full key value is never returned — only the prefix for identification."
+          }
+        },
+        {
+          "name": "Create API Key",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/api-keys", "host": ["{{baseUrl}}"], "path": ["api", "api-keys"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"External Dashboard\",\n  \"role\": \"admin\"\n}"
+            },
+            "description": "Creates a new key. The full key is returned **once** in the response — store it immediately."
+          }
+        },
+        {
+          "name": "Toggle API Key (Revoke / Enable)",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/:id/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api-keys", ":id", "toggle"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Flips the active flag. A revoked key returns 401 on all subsequent requests."
+          }
+        },
+        {
+          "name": "Delete API Key",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api-keys", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "System",
+      "description": "Health check, preferences, event logs, and diagnostics.",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] },
+            "description": "Public — no authentication required. Returns DB connectivity and server uptime."
+          }
+        },
+        {
+          "name": "Get System Preferences",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/preferences", "host": ["{{baseUrl}}"], "path": ["api", "preferences"] }
+          }
+        },
+        {
+          "name": "Save System Preference",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/preferences", "host": ["{{baseUrl}}"], "path": ["api", "preferences"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"app_name\",\n  \"value\": \"Station 44 OSM Manager\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get User Preferences",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/user-preferences", "host": ["{{baseUrl}}"], "path": ["api", "user-preferences"] }
+          }
+        },
+        {
+          "name": "Get User Preference by Key",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/user-preferences/:key",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user-preferences", ":key"],
+              "variable": [{ "key": "key", "value": "theme" }]
+            }
+          }
+        },
+        {
+          "name": "Save User Preference",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/user-preferences", "host": ["{{baseUrl}}"], "path": ["api", "user-preferences"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"theme\",\n  \"value\": \"dark\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Event Logs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                { "key": "category", "value": "",   "disabled": true },
+                { "key": "actor",    "value": "",   "disabled": true },
+                { "key": "from",     "value": "",   "disabled": true, "description": "YYYY-MM-DD" },
+                { "key": "to",       "value": "",   "disabled": true, "description": "YYYY-MM-DD" },
+                { "key": "page",     "value": "1",  "disabled": true },
+                { "key": "limit",    "value": "50", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Event Log Metadata",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/events/meta", "host": ["{{baseUrl}}"], "path": ["api", "events", "meta"] },
+            "description": "Returns distinct categories and actors for filter dropdowns."
+          }
+        },
+        {
+          "name": "Export Event Logs",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/events/export", "host": ["{{baseUrl}}"], "path": ["api", "events", "export"] },
+            "description": "Downloads all matching event logs as a JSON file."
+          }
+        },
+        {
+          "name": "Prune Event Logs",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/events/prune", "host": ["{{baseUrl}}"], "path": ["api", "events", "prune"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"days\": 90\n}"
+            },
+            "description": "Superadmin only — deletes events older than the specified number of days."
+          }
+        },
+        {
+          "name": "Purge All Event Logs",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/events/all", "host": ["{{baseUrl}}"], "path": ["api", "events", "all"] },
+            "description": "Superadmin only — permanently deletes the entire event log."
+          }
+        },
+        {
+          "name": "Write Custom Log Entry",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/logs", "host": ["{{baseUrl}}"], "path": ["api", "logs"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"External Integration\",\n  \"title\": \"Sync Completed\",\n  \"payload\": { \"records\": 42 }\n}"
+            }
+          }
+        }
+      ]
+    }
+
+  ]
+}

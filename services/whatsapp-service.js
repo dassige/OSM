@@ -5,11 +5,22 @@ const logger = require('./logger');
 
 let client;
 let io;
-let logEvent = null; 
+let logEvent = null;
 let qrCodeUrl = null;
-let status = 'DISCONNECTED'; 
+let status = 'DISCONNECTED';
 let isClientReady = false;
 let clientInfo = null;
+
+// --- Reconnect state
+let intentionalLogout = false;
+let reconnectAttempts = 0;
+let reconnectTimer = null;
+const RECONNECT_DELAYS_MS = [5000, 15000, 60000, 300000]; // 5s, 15s, 1min, 5min
+
+// --- Message queue
+const MAX_QUEUE_SIZE = 100;
+const MAX_MESSAGE_RETRIES = 3;
+let messageQueue = []; // [{ mobile, text, retries, addedAt }]
 
 function init(socketIo, logEventCallback) {
     io = socketIo;
@@ -37,8 +48,7 @@ function startClient() {
         authStrategy: new LocalAuth({ clientId: "fenz-osm-client" }),
         puppeteer: {
             headless: true,
-            // [FIX] Explicitly tell Puppeteer where Chrome is installed in Alpine Linux
-            executablePath: '/usr/bin/chromium-browser', 
+            executablePath: '/usr/bin/chromium-browser',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -48,15 +58,12 @@ function startClient() {
                 '--no-zygote',
                 '--disable-gpu'
             ],
-            timeout: 60000 
+            timeout: 60000
         }
     });
 
     client.on('qr', (qr) => {
         logger.info('[WhatsApp] QR Code received');
-        // [CHANGED] Disabled logging for QR Code generation to reduce noise
-        // systemLog('QR Code Generated', {}); 
-        
         qrcode.toDataURL(qr, (err, url) => {
             if (!err) {
                 qrCodeUrl = url;
@@ -70,18 +77,21 @@ function startClient() {
         logger.info('[WhatsApp] Client is ready!');
         isClientReady = true;
         qrCodeUrl = null;
-        
+        reconnectAttempts = 0;
+        clearReconnectTimer();
+
         if (client && client.info) {
             clientInfo = {
                 number: client.info.wid.user,
                 name: client.info.pushname
             };
         }
-        
-        systemLog('Client Connected', clientInfo || {}); 
-        
+
+        systemLog('Client Connected', clientInfo || {});
         updateStatus('READY');
         if (io) io.emit('wa-status-data', getStatus());
+
+        flushMessageQueue();
     });
 
     client.on('auth_failure', msg => {
@@ -91,15 +101,43 @@ function startClient() {
     });
 
     client.on('disconnected', (reason) => {
-        logger.info('[WhatsApp] Client was logged out', { reason });
-        systemLog('Client Disconnected', { reason }); 
-        resetState();
+        logger.info('[WhatsApp] Client disconnected', { reason });
+        systemLog('Client Disconnected', { reason });
+        resetState(false);
+
+        if (!intentionalLogout) {
+            scheduleReconnect();
+        }
     });
 
     client.initialize();
 }
 
+function scheduleReconnect() {
+    const delayMs = RECONNECT_DELAYS_MS[Math.min(reconnectAttempts, RECONNECT_DELAYS_MS.length - 1)];
+    reconnectAttempts++;
+
+    logger.info(`[WhatsApp] Scheduling reconnect attempt #${reconnectAttempts} in ${delayMs / 1000}s`);
+    systemLog('Reconnect Scheduled', { attempt: reconnectAttempts, delayMs });
+    updateStatus('RECONNECTING');
+
+    reconnectTimer = setTimeout(() => {
+        logger.info(`[WhatsApp] Reconnect attempt #${reconnectAttempts}`);
+        startClient();
+    }, delayMs);
+}
+
+function clearReconnectTimer() {
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+}
+
 async function logout() {
+    intentionalLogout = true;
+    clearReconnectTimer();
+
     if (client) {
         try {
             await client.logout();
@@ -111,14 +149,22 @@ async function logout() {
             await client.destroy();
         } catch (e) {}
     }
-    resetState();
+    resetState(true);
 }
 
-function resetState() {
+// preserveQueue: keep queued messages across reconnect cycles
+function resetState(clearQueue = false) {
     client = null;
     isClientReady = false;
     qrCodeUrl = null;
     clientInfo = null;
+
+    if (clearQueue) {
+        messageQueue = [];
+        reconnectAttempts = 0;
+        intentionalLogout = false;
+    }
+
     updateStatus('DISCONNECTED');
 }
 
@@ -128,17 +174,19 @@ function updateStatus(newStatus) {
 }
 
 function getStatus() {
-    return { 
-        status, 
+    return {
+        status,
         qr: qrCodeUrl,
-        info: clientInfo
+        info: clientInfo,
+        queueSize: messageQueue.length,
+        reconnectAttempts
     };
 }
 
 function formatPhone(mobile) {
     if (!mobile) return null;
     let cleaned = mobile.replace(/\D/g, '');
-    
+
     if (cleaned.startsWith('0')) {
         cleaned = '64' + cleaned.substring(1);
     } else if (!cleaned.startsWith('64')) {
@@ -148,10 +196,55 @@ function formatPhone(mobile) {
 }
 
 async function sendMessage(mobile, text) {
-    if (!isClientReady) throw new Error("WhatsApp client not ready.");
+    if (!isClientReady) {
+        if (messageQueue.length >= MAX_QUEUE_SIZE) {
+            throw new Error("WhatsApp client not ready and message queue is full.");
+        }
+        logger.warn('[WhatsApp] Client not ready — queuing message', { mobile });
+        messageQueue.push({ mobile, text, retries: 0, addedAt: new Date().toISOString() });
+        return false; // queued, not sent
+    }
+
     const chatId = formatPhone(mobile);
     await client.sendMessage(chatId, text);
     return true;
 }
 
-module.exports = { init, startClient, logout, getStatus, sendMessage, isReady: () => isClientReady };
+async function flushMessageQueue() {
+    if (messageQueue.length === 0) return;
+
+    logger.info(`[WhatsApp] Flushing ${messageQueue.length} queued message(s)`);
+    const toFlush = [...messageQueue];
+    messageQueue = [];
+
+    for (const item of toFlush) {
+        if (!isClientReady) {
+            // Client dropped again during flush — re-queue remaining
+            messageQueue.unshift(item);
+            break;
+        }
+        try {
+            const chatId = formatPhone(item.mobile);
+            await client.sendMessage(chatId, item.text);
+            logger.info('[WhatsApp] Queued message sent', { mobile: item.mobile });
+        } catch (e) {
+            logger.error('[WhatsApp] Failed to send queued message', { mobile: item.mobile, error: e.message });
+            item.retries++;
+            if (item.retries < MAX_MESSAGE_RETRIES) {
+                messageQueue.push(item); // re-queue for next reconnect
+            } else {
+                logger.warn('[WhatsApp] Dropping message after max retries', { mobile: item.mobile });
+                systemLog('Message Dropped (Max Retries)', { mobile: item.mobile, retries: item.retries });
+            }
+        }
+    }
+}
+
+module.exports = {
+    init,
+    startClient,
+    logout,
+    getStatus,
+    sendMessage,
+    isReady: () => isClientReady
+};

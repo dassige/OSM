@@ -1,8 +1,8 @@
 {
   "name": "fenz-osm",
-  "version": "1.14.10",
+  "version": "1.14.11",
   "description": "FENZ OSM Automation Manager",
-  "versionDate": "2026/05/08 16:14",
+  "versionDate": "2026/05/11 10:07",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -39,6 +39,7 @@
     "speakeasy": "^2.0.0",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^9.0.0",
     "whatsapp-web.js": "^1.20.3",
     "winston": "^3.19.0"

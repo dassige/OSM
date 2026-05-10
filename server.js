@@ -31,6 +31,8 @@ const profileRoutes = require("./routes/api/profile");
 const systemRoutes = require("./routes/api/system");
 const trainingRoutes = require("./routes/api/training");
 const statisticsRoutes = require("./routes/api/statistics");
+const docsRoutes = require("./routes/api/docs");
+const apiKeyRoutes = require("./routes/api/api-keys");
 const authRoutes = require("./routes/auth");
 const viewRoutes = require("./routes/views");
 
@@ -105,6 +107,8 @@ app.use("/api/profile", profileRoutes);
 app.use("/api", systemRoutes);
 app.use("/api/training-sessions", trainingRoutes);
 app.use("/api/statistics", statisticsRoutes);
+app.use("/api/docs", docsRoutes);
+app.use("/api/api-keys", apiKeyRoutes);
 
 
 
