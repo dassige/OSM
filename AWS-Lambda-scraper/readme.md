@@ -1,3 +1,11 @@
+# AWS Lambda — OSM Dashboard Scraper
+
+This Lambda function runs in the AWS `ap-southeast-6` (Auckland) region to scrape the geoblocked FENZ OSM Dashboard and upload the raw HTML payload to a GCS bucket, where the FENZ OSM Manager reads it when running in `APP_MODE=gcs`.
+
+See [Installation_google_run.md](../Installation_google_run.md) for the full Cloud Run deployment context.
+
+---
+
 ## 1. Google Cloud Platform (GCP) Credentials & Bucket Setup
 
 First, we need to create a secure pathway for our AWS Lambda to write to the GCP bucket.

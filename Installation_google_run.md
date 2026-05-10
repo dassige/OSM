@@ -11,6 +11,12 @@ Google Cloud Run is a **stateless** environment. Containers are ephemeral, meani
 * As the Node.js application writes to`fenz.db`, Litestream asynchronously replicates the WAL (Write-Ahead Log) to a Google Cloud Storage (GCS) bucket.
 * When a new container boots, Litestream intercepts the startup script (`start.sh`), downloads the latest snapshot from GCS, reconstructs the database, and*then* starts the Node.js server.
 
+### ⚠️ Session Persistence Note
+
+The application stores user sessions in a separate SQLite file (`sessions.db`) located alongside `fenz.db`. **Litestream only replicates `fenz.db`** — `sessions.db` is not included in the backup/restore cycle.
+
+This means that on a cold container start (e.g., after a scale-to-zero event), all active user sessions are lost and users must log in again. Application data in `fenz.db` is fully preserved. This is expected behaviour for a stateless Cloud Run deployment and has no impact on data integrity.
+
 ## 2. Architecture: Handling Geoblocking (The AWS Lambda Pattern)
 
 The live OSM Dashboard is geoblocked to New Zealand IP addresses. If your Cloud Run service is deployed in a region outside of NZ, live scraping will fail.
@@ -58,6 +64,15 @@ When deploying, you must configure the following environment variables:
 
 * `APP_MODE`: Set to`production`.
 * `OSM_BU_ID`: Your unique Business Unit GUID for the dashboard.
+
+### Application Behaviour (Optional but Recommended)
+
+* `APP_TIMEZONE`: Timezone for date calculations (e.g., `Pacific/Auckland`). Defaults to NZ time.
+* `APP_LOCALE`: Locale for date/time formatting (e.g., `en-NZ`).
+* `APP_BASE_URL`: Public URL of the deployed app (e.g., `https://osm.station44.nz`). Required for valid form links.
+* `TRAINING_DAY_OF_WEEK`: Brigade training day (e.g., `Monday`). Highlighted in the Training Planner.
+* `ENABLE_WHATSAPP`: Set to `true` to enable the WhatsApp integration. See section 6 for resource requirements.
+* `MAX_LOGIN_ATTEMPTS`: Failed login attempts before a user is blocked (default: `5`).
 
 ### UI Customization (Optional)
 

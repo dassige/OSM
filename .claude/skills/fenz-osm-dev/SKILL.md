@@ -109,6 +109,7 @@ When implementing **any** new feature or modifying an existing one, work through
 | 7 | **Postman collection** — update `examples/api/FENZ-OSM-Manager.postman_collection.json` | New or changed endpoint |
 | 8 | **Frontend UI** — follow the UI conventions table | New or changed page/section |
 | 9 | **Demo mode guard** — block destructive actions when `config.appMode === 'demo'` | Any destructive UI action |
+| 10 | **Help content** — update `public/help.js` to reflect the new/changed page or feature | New page, new section, renamed feature, or changed behaviour |
 
 ---
 
@@ -264,6 +265,51 @@ fetch('/ui-config').then(r => r.json()).then(c => {
   }
 });
 ```
+
+---
+
+## ⚠️ Help Content Mandate
+
+`public/help.js` is the **single source of truth** for all in-app contextual help. Every page has a floating `?` button that opens a modal powered by this file. It must stay in sync with the application.
+
+### When to update `help.js`
+
+| Trigger | Required action |
+|---|---|
+| New HTML page added | Add a new `helpContent` key and a routing rule in the IIFE |
+| New section added to an existing page | Update the relevant `helpContent` body |
+| Feature renamed or removed | Update or remove the corresponding entry |
+| Behaviour changed (status names, workflows, limits) | Update the description to match the new behaviour |
+
+### File structure
+
+```js
+// 1. Content object — one key per page/context
+const helpContent = {
+    "my-page": {
+        title: "Page Title",
+        body: `<h3>Section</h3><ul><li>...</li></ul>`
+    },
+    // ...
+    "default": { title: "Help", body: "..." }
+};
+
+// 2. Routing IIFE — maps URL path/params → helpContent key
+(function () {
+    let key = "default";
+    if (path.includes("my-page")) key = "my-page";
+    // dynamic param-based routing for forms-view, surveys-view, etc.
+    const content = helpContent[key] || helpContent["default"];
+    // injects button + modal into DOM
+})();
+```
+
+### Rules
+- Use plain HTML inside `body` — `<h3>`, `<ul>`, `<li>`, `<strong>`, `<code>`. No external CSS classes.
+- Use CSS variables (`var(--primary)`) for any inline colour, never hardcoded hex values.
+- Keep entries concise — this is quick reference help, not a manual. 3–6 bullet points per section is ideal.
+- Never mention internal implementation details (file names, DB column names, env var names) unless they are directly actionable by an admin user.
+- Check the routing IIFE: if the new page URL pattern could conflict with an existing `path.includes()` rule, add the more specific rule first.
 
 ---
 
