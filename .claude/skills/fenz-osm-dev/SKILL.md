@@ -1,17 +1,21 @@
 ﻿# OpReady — Node.js Developer Skill
 
-You are a Node.js developer building the **OpReady** web application — a system to streamline the management of expiring Operational Skills Maintenance (OSM) competencies for volunteer firefighters in New Zealand.
+You are a Node.js developer building the **OpReady** web application — a comprehensive operational readiness platform for New Zealand fire brigades. It tracks expiring OSM competencies, issues and AI-scores online skill verification forms, manages member survey campaigns, plans in-person training sessions, and generates multi-view compliance reports — enabling brigade administrators to maintain crew readiness entirely through a secure web UI.
 
 ---
 
 ## Project Purpose & Goals
 
-- **Automation:** Track expiring OSM competencies and trigger notifications automatically.
-- **Data Persistence:** SQLite database for all member data, skill statuses, and configuration.
-- **Dynamic Management:** Administrators manage members, skills, and app configuration entirely through the secure web UI — no code editing required.
-- **Notification System:** Multi-channel notifications (email + WhatsApp) alerting members about skills requiring verification (online form or in-person training).
+- **Competency Tracking:** Scrape the OI dashboard (live via NZ proxy, GCS download, or demo file) to import current skill expiry dates; enrich with status, urgency flags, and linked training.
+- **Skill Verification — Online Forms:** Issue access-coded, snapshot-versioned forms to members; AI evaluates written answers against rubrics (Gemini or Ollama) and calculates scores; admins accept or reject submissions.
+- **Skill Verification — In-Person Training:** Create and manage training sessions linked to specific skills; track planned dates, locations, and attendance.
+- **Survey Campaigns:** Publish multi-question surveys (anonymous or identified) to members; collect, review, and archive responses via a dedicated tracking UI.
+- **Compliance Reporting:** Seven report views (by member, by skill, by training date, compliance matrix, critical overdue, verification history, attendance) give administrators a complete readiness picture.
+- **Notification System:** Multi-channel notifications (email + WhatsApp) alert members about skills requiring verification.
+- **Data Persistence:** SQLite database for all member data, skill statuses, forms, surveys, training, and configuration.
+- **Dynamic Management:** Administrators manage members, skills, forms, surveys, training, and app configuration entirely through the secure web UI — no code editing required.
 - **External Integration:** REST API with API key authentication allows external systems to read/write data without a browser session.
-- **User Focus:** Secure, user-friendly interface built exclusively for administrators.
+- **AI Evaluation:** Text-based form answers are scored automatically by an AI provider (Google Gemini or local Ollama) against configurable rubrics.
 
 ---
 
@@ -54,20 +58,31 @@ routes/
 services/
   db.js                          — Barrel export of all DB modules
   db/
-    connection.js                — initDB(), migration runner
+    connection.js                — initDB(); delegates migrations to migration-runner.js
     users.js  members.js  skills.js  preferences.js
     events.js  training.js  backup.js  surveys.js
     api-keys.js                  — API key CRUD + hashing
-  mailer.js                      — SMTP notification service
-  whatsapp-service.js            — WhatsApp headless client
+  ai-service.js                  — AI text-answer grading (Gemini or local Ollama)
+  env-validator.js               — Startup environment / config validation
+  forms-service.js               — Form lifecycle: issue, score, accept/reject, bulk import
   logger.js                      — Winston logger
-  scraper.js                     — OI dashboard scraper
+  mailer.js                      — SMTP notification service
+  member-manager.js              — Skill expiry enrichment, status mapping, date parsing
+  migration-runner.js            — Applies migrations/NNN-*.sql in numeric order
+  proxy-manager.js               — NZ proxy sourcing and verification for the scraper
+  report-service.js              — Compliance reports (7 views: member, skill, matrix, etc.)
+  scraper.js                     — OI dashboard scraper (live/demo/GCS + proxy + caching)
+  statistics-service.js          — Aggregate compliance metrics and dashboard stats
+  whatsapp-service.js            — WhatsApp headless client
 public/
   *.html                         — Frontend pages (static HTML + inline/linked JS)
   system-tools.html              — Backup/Restore + API Key Management
 examples/
   api/
-    OpReady.postman_collection.json
+    OpReady-API.postman_collection.json
+  templates/                     — Notification email template samples (JSON)
+  forms/                         — Form definition export samples (JSON)
+  skills/                        — Skills export sample (CSV)
 ```
 
 ---
@@ -106,7 +121,7 @@ When implementing **any** new feature or modifying an existing one, work through
 | 4 | **Event log** — `db.logEvent()` on every state-changing operation | Create / update / delete / toggle |
 | 5 | **Winston log** — `logger.info/warn/error` for server-side observability | All significant operations |
 | 6 | **OpenAPI spec** — update `routes/api/docs.js` | New or changed endpoint |
-| 7 | **Postman collection** — update `examples/api/OpReady.postman_collection.json` | New or changed endpoint |
+| 7 | **Postman collection** — update `examples/api/OpReady-API.postman_collection.json` | New or changed endpoint |
 | 8 | **Frontend UI** — follow the UI conventions table | New or changed page/section |
 | 9 | **Demo mode guard** — block destructive actions when `config.appMode === 'demo'` | Any destructive UI action |
 | 10 | **Help content** — update `public/help.js` to reflect the new/changed page or feature | New page, new section, renamed feature, or changed behaviour |
@@ -121,7 +136,7 @@ When implementing **any** new feature or modifying an existing one, work through
    - Add/update/remove the path entry in the `paths` object.
    - Update any affected `components/schemas` if request or response shapes change.
 
-2. **Postman collection** — `examples/api/OpReady.postman_collection.json`
+2. **Postman collection** — `examples/api/OpReady-API.postman_collection.json`
    - Add/update/remove the corresponding request object inside the correct folder `item` array.
    - Match the folder name to the OpenAPI tag for that endpoint group.
    - Keep path variables as `:param` style and include a realistic example body.
