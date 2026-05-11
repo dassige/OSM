@@ -1,4 +1,4 @@
-const sqlite3 = require("sqlite3");
+﻿const sqlite3 = require("sqlite3");
 const { open } = require("sqlite");
 const path = require("path");
 const packageJson = require("../../package.json");

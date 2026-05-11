@@ -9,10 +9,10 @@ const router = express.Router();
 const spec = {
     openapi: '3.0.3',
     info: {
-        title: 'FENZ OSM Manager API',
-        description: 'REST API for the FENZ OSM Manager — manages expiring Operational Skills Maintenance competencies for volunteer firefighters in New Zealand.',
+        title: 'OpReady API',
+        description: 'REST API for OpReady — manages operational competency tracking, member notifications, skill verification forms, and training scheduling.',
         version,
-        contact: { name: 'FENZ OSM Manager', url: 'https://github.com/dassige/OSM' }
+        contact: { name: 'OpReady', url: 'https://github.com/dassige/OSM' }
     },
     servers: [{ url: '/', description: 'Current server' }],
     tags: [
@@ -991,7 +991,7 @@ const spec = {
 // Serve Swagger UI — admin-only
 router.use('/', hasRole('admin'), swaggerUi.serve);
 router.get('/', hasRole('admin'), swaggerUi.setup(spec, {
-    customSiteTitle: 'FENZ OSM API Docs',
+    customSiteTitle: 'OpReady API Docs',
     customCss: '.swagger-ui .topbar { display: none }',
     swaggerOptions: { persistAuthorization: true }
 }));

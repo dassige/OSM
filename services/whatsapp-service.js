@@ -45,7 +45,7 @@ function startClient() {
     updateStatus('INITIALIZING');
 
     client = new Client({
-        authStrategy: new LocalAuth({ clientId: "fenz-osm-client" }),
+        authStrategy: new LocalAuth({ clientId: "opready-client" }),
         puppeteer: {
             headless: true,
             executablePath: '/usr/bin/chromium-browser',

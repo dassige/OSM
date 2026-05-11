@@ -33,7 +33,7 @@ router.put("/", async (req, res) => {
 router.post("/mfa/setup", async (req, res) => {
   if (!req.session.user || !req.session.user.id) return res.status(401).json({ error: "Unauthorized" });
 
-  const secret = speakeasy.generateSecret({ name: `FENZ OSM (${req.session.user.email})` });
+  const secret = speakeasy.generateSecret({ name: `${config.ui.loginTitle} (${req.session.user.email})` });
 
   // Save secret but do NOT enable yet
   await db.setMfaSecret(req.session.user.id, secret.base32);

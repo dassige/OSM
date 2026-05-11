@@ -1,6 +1,6 @@
-/**
+﻿/**
  * CENTRALIZED HELP CONFIGURATION
- * Detailed guide for FENZ OSM Manager
+ * Detailed guide for OpReady
  */
 const helpContent = {
     // --- Dashboard ---
@@ -317,7 +317,7 @@ const helpContent = {
     "users": {
         title: "User Roles & Security",
         body: `
-            <p>Manage access to the FENZ OSM Manager.</p>
+            <p>Manage access to {{appname}}.</p>
             <h3>Roles</h3>
             <ul>
                 <li><strong>Guest:</strong> Read-only access.</li>
@@ -471,7 +471,7 @@ const helpContent = {
     // --- Default / Fallback ---
     "default": {
         title: "Help",
-        body: "<p>Welcome to FENZ OSM Manager. Please navigate to a specific page to see context-aware help here.</p>"
+        body: "<p>Welcome to {{appname}}. Please navigate to a specific page to see context-aware help here.</p>"
     }
 };
 
@@ -563,7 +563,14 @@ const helpContent = {
 
     btn.addEventListener('click', () => { modal.classList.add('show'); });
     close.addEventListener('click', () => { modal.classList.remove('show'); });
-    window.addEventListener('click', (e) => { 
-        if (e.target === modal) modal.classList.remove('show'); 
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('show');
     });
+
+    // Patch {{appname}} placeholder with the configured app title
+    fetch('/ui-config').then(r => r.json()).then(cfg => {
+        const appName = cfg.loginTitle || 'OpReady';
+        const body = document.querySelector('#globalHelpModal .help-body');
+        if (body) body.innerHTML = body.innerHTML.replace(/\{\{appname\}\}/g, appName);
+    }).catch(() => {});
 })();

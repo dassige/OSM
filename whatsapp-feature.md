@@ -1,4 +1,4 @@
-
+﻿
 # WhatsApp Integration Guide
 
 This application includes a feature to send **Expiring Skill Notifications** directly to members via WhatsApp. This document explains how the feature works, how to set it up, and how to use it effectively.
@@ -77,7 +77,7 @@ On the main **Dashboard**, you will see a new **WhatsApp** column in the "Expiri
 
 In the **Third Party Services** page, you can enable **"Auto-disconnect on Logout"**.
 
-  * **What it does:** If enabled, when you log out of the FENZ OSM web app, the server will automatically destroy the WhatsApp session.
+  * **What it does:** If enabled, when you log out of the OpReady web app, the server will automatically destroy the WhatsApp session.
   * **Why use it?** This is a security feature. If multiple admins share the system, this ensures your personal WhatsApp account doesn't stay linked to the server when you are not using it.
   * **Trade-off:** You will need to re-scan the QR code every time you log back in to use WhatsApp features.
 

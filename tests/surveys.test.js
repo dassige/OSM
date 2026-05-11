@@ -1,4 +1,4 @@
-// tests/surveys.test.js
+﻿// tests/surveys.test.js
 const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 
@@ -27,7 +27,7 @@ jest.mock('../services/mailer', () => ({
 
 jest.mock('../config', () => ({
     transporter: {},
-    ui: { loginTitle: 'FENZ OSM Manager' }
+    ui: { loginTitle: 'OpReady' }
 }));
 
 jest.mock('../middleware/auth', () => ({

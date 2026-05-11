@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   window.ReportRegistry = window.ReportRegistry || {};
 
   window.ReportRegistry["by-member"] = {
@@ -19,7 +19,7 @@
     getItems: function (dataWrapper) { return dataWrapper.items || []; },
     renderHeader: function (dataWrapper, uiConfig) {
       const meta = dataWrapper.meta || {};
-      const appName = uiConfig.loginTitle || "FENZ OSM Manager";
+      const appName = uiConfig.loginTitle || "OpReady";
       return `
         <div class="rpt-header">
           <h1 style="margin:0; font-size:24px;">${appName}</h1>

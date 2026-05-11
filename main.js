@@ -124,7 +124,7 @@ async function sendMessage(member) {
     
     htmlMessage += `
             </ul>
-            <p style="font-size: 12px; color: #888;">This is an automated notification from FENZ OSM Manager.</p>
+            <p style="font-size: 12px; color: #888;">This is an automated notification from ${config.ui.loginTitle}.</p>
         </div>
     `;
 

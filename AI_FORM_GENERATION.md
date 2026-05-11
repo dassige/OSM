@@ -1,6 +1,6 @@
-# Generating Forms with AI
+﻿# Generating Forms with AI
 
-This guide explains how to use an AI (like Gemini) to generate valid JSON form definitions for the **FENZ OSM Manager** using operational documentation as a source.
+This guide explains how to use an AI (like Gemini) to generate valid JSON form definitions for the **OpReady** using operational documentation as a source.
 
 ## Workflow Overview
 1. **Prepare Source Documents:** Gather the technical manuals or operational instructions (OIs) you want to test members on.

@@ -1,4 +1,4 @@
-// public/reports/report-planned-sessions.js
+﻿// public/reports/report-planned-sessions.js
 
 (function() {
     window.ReportRegistry = window.ReportRegistry || {};
@@ -11,7 +11,7 @@
             const data = dataWrapper.items || [];
             const meta = dataWrapper.meta || {};
             
-            const appName = uiConfig.loginTitle || "FENZ OSM Manager";
+            const appName = uiConfig.loginTitle || "OpReady";
             const locale = uiConfig.locale || 'en-NZ';
 
             let html = `

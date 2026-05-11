@@ -1,8 +1,8 @@
-{
+﻿{
   "info": {
-    "name": "FENZ OSM Manager API",
-    "_postman_id": "fenz-osm-manager-v1",
-    "description": "REST API collection for the FENZ OSM Manager.\n\n**Authentication**\n\nTwo modes are supported:\n\n1. **API Key** (recommended for external integrations) — set the `apiKey` collection variable and all requests will include `X-API-Key` automatically.\n2. **Session Cookie** — use the `POST /login` request first; the session cookie is stored automatically by Postman.\n\n**Setup**\n1. Set the `baseUrl` variable to your instance URL (default: `http://localhost:3000`).\n2. Set the `apiKey` variable to a key generated in System Tools → API Key Management.",
+    "name": "OpReady API",
+    "_postman_id": "opready-api-v1",
+    "description": "REST API collection for the OpReady.\n\n**Authentication**\n\nTwo modes are supported:\n\n1. **API Key** (recommended for external integrations) — set the `apiKey` collection variable and all requests will include `X-API-Key` automatically.\n2. **Session Cookie** — use the `POST /login` request first; the session cookie is stored automatically by Postman.\n\n**Setup**\n1. Set the `baseUrl` variable to your instance URL (default: `http://localhost:3000`).\n2. Set the `apiKey` variable to a key generated in System Tools → API Key Management.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {

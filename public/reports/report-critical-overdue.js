@@ -1,4 +1,4 @@
-(function() {
+﻿(function() {
     window.ReportRegistry = window.ReportRegistry || {};
     
     window.ReportRegistry['critical-overdue'] = {
@@ -8,7 +8,7 @@
         render: function(dataWrapper, uiConfig) {
             const data = dataWrapper.items || [];
             const meta = dataWrapper.meta || {};
-            const appName = uiConfig.loginTitle || "FENZ OSM Manager";
+            const appName = uiConfig.loginTitle || "OpReady";
 
             let html = `
                 <div class="rpt-header">

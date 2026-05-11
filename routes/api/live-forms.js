@@ -305,7 +305,7 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
     };
 
     if (notifyEmail && member.email) {
-      const from = tplEmail.from ? applyVars(tplEmail.from) : config.ui.loginTitle + " <noreply@fenz.osm>";
+      const from = tplEmail.from ? applyVars(tplEmail.from) : config.ui.loginTitle + " <noreply@opready.app>";
       const subject = applyVars(tplEmail.subject);
       const htmlBody = tplEmail.body ? applyHtmlVars(tplEmail.body) : `<p>Hello ${escapeHtml(member.name)}, your submission for &#34;${escapeHtml(form.skill_name)}&#34; has been APPROVED.</p>`;
       const textBody = convertHtmlToText(htmlBody);
@@ -398,7 +398,7 @@ router.post("/reject/:id", hasRole("admin"), async (req, res) => {
     };
 
     if (notifyEmail && member.email) {
-      const from = tplEmail.from ? applyVars(tplEmail.from) : config.ui.loginTitle + " <noreply@fenz.osm>";
+      const from = tplEmail.from ? applyVars(tplEmail.from) : config.ui.loginTitle + " <noreply@opready.app>";
       const subject = applyVars(tplEmail.subject);
       const rawBody = generateNew ? tplEmail.bodyRetry : tplEmail.bodySimple;
       let htmlBody = rawBody ? applyHtmlVars(rawBody) : `<p>Hello ${escapeHtml(member.name)}, your submission for &#34;${escapeHtml(form.skill_name)}&#34; was NOT accepted.</p>`;

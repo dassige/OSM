@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
-    <title>Survey - FENZ OSM</title>
+    <title>Survey - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         .view-container {
@@ -240,7 +240,7 @@
             }
 
             // 2. Apply Custom Branding
-            const appName = uiConfig?.loginTitle || "FENZ OSM";
+            const appName = uiConfig?.loginTitle || "OpReady";
             const appLogo = uiConfig?.appLogo || "resources/logo.png"; // Fallback to default
             const customTitle = `${appName} Survey`;
 
@@ -314,7 +314,7 @@
         }
 
         function renderSurvey() {
-            document.title = `${surveyData.name} - FENZ OSM`;
+            document.title = `${surveyData.name} - OpReady`;
             document.getElementById('surveyTitle').innerText = surveyData.name;
             document.getElementById('surveyIntro').innerHTML = surveyData.intro || "";
 

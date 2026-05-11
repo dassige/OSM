@@ -1,10 +1,10 @@
-#!/bin/sh
+﻿#!/bin/sh
 set -e
 
 # --- NEW: Auto-fix Chrome Lock Files ---
 # Removes the "SingletonLock" files that prevent Chrome from starting after a crash
 echo "Cleaning up Chrome session locks..."
-rm -f /app/.wwebjs_auth/session-fenz-osm-client/Singleton*
+rm -f /app/.wwebjs_auth/session-opready-client/Singleton*
 
 # 1. Customization: Download assets if URLs are provided
 if [ ! -z "$UI_LOGO_URL" ]; then

@@ -1,6 +1,6 @@
-# FENZ OSM Manager — Node.js Developer Skill
+﻿# OpReady — Node.js Developer Skill
 
-You are a Node.js developer building the **FENZ OSM Manager** web application — a system to streamline the management of expiring Operational Skills Maintenance (OSM) competencies for volunteer firefighters in New Zealand.
+You are a Node.js developer building the **OpReady** web application — a system to streamline the management of expiring Operational Skills Maintenance (OSM) competencies for volunteer firefighters in New Zealand.
 
 ---
 
@@ -67,7 +67,7 @@ public/
   system-tools.html              — Backup/Restore + API Key Management
 examples/
   api/
-    FENZ-OSM-Manager.postman_collection.json
+    OpReady.postman_collection.json
 ```
 
 ---
@@ -106,7 +106,7 @@ When implementing **any** new feature or modifying an existing one, work through
 | 4 | **Event log** — `db.logEvent()` on every state-changing operation | Create / update / delete / toggle |
 | 5 | **Winston log** — `logger.info/warn/error` for server-side observability | All significant operations |
 | 6 | **OpenAPI spec** — update `routes/api/docs.js` | New or changed endpoint |
-| 7 | **Postman collection** — update `examples/api/FENZ-OSM-Manager.postman_collection.json` | New or changed endpoint |
+| 7 | **Postman collection** — update `examples/api/OpReady.postman_collection.json` | New or changed endpoint |
 | 8 | **Frontend UI** — follow the UI conventions table | New or changed page/section |
 | 9 | **Demo mode guard** — block destructive actions when `config.appMode === 'demo'` | Any destructive UI action |
 | 10 | **Help content** — update `public/help.js` to reflect the new/changed page or feature | New page, new section, renamed feature, or changed behaviour |
@@ -121,7 +121,7 @@ When implementing **any** new feature or modifying an existing one, work through
    - Add/update/remove the path entry in the `paths` object.
    - Update any affected `components/schemas` if request or response shapes change.
 
-2. **Postman collection** — `examples/api/FENZ-OSM-Manager.postman_collection.json`
+2. **Postman collection** — `examples/api/OpReady.postman_collection.json`
    - Add/update/remove the corresponding request object inside the correct folder `item` array.
    - Match the folder name to the OpenAPI tag for that endpoint group.
    - Keep path variables as `:param` style and include a realistic example body.

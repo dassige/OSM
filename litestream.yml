@@ -1,4 +1,4 @@
-dbs:
+﻿dbs:
   - path: /app/fenz.db
     replicas:
       - url: gcs://${GCS_BUCKET_NAME}/fenz.db

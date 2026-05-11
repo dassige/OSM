@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Third Party Services - FENZ OSM</title>
+    <title>Third Party Services - OpReady</title>
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
@@ -97,7 +97,7 @@
             </div>
             <div class="form-group">
                 <label>Message</label>
-                <textarea id="testMessage" rows="4" style="resize: vertical;">This is a test message from FENZ OSM Manager.</textarea>
+                <textarea id="testMessage" rows="4" style="resize: vertical;">This is a test message from OpReady.</textarea>
             </div>
             <div class="modal-actions-right">
                 <button id="btnSendTest" class="btn-primary w-100" style="margin:0;" onclick="sendTestMessage()">Send Test Message</button>
@@ -111,7 +111,7 @@
             <h2 style="margin-top:0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Preference Help</h2>
             <p><strong>Auto-disconnect on Logout</strong></p>
             <p>If this option is enabled, your WhatsApp session will be automatically terminated (logged out) whenever
-                you sign out of the FENZ OSM Manager application.</p>
+                you sign out of the <span id="appNameRef">OpReady</span> application.</p>
             <p>This is a security feature to ensure that subsequent users (who might share this login or computer)
                 cannot access or send messages using your personal WhatsApp account.</p>
             <div class="modal-actions-right">
@@ -147,6 +147,8 @@
             if (c.loginTitle) {
                 document.title = "Third Party Services - " + c.loginTitle;
                 document.getElementById('pageHeader').innerText = "Third Party Services - " + c.loginTitle;
+                document.getElementById('testMessage').value = `This is a test message from ${c.loginTitle}.`;
+                document.getElementById('appNameRef').textContent = c.loginTitle;
             }
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';

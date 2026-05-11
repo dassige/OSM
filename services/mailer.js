@@ -78,13 +78,13 @@ async function sendNotification(
   if (skillsToProcess.length === 0) return null;
 
   const globalVars = {
-    appname: appName || "FENZ OSM Manager",
+    appname: appName || "OpReady",
     name: member.name,
     email: member.email,
   };
 
   const defaults = {
-    from: templateConfig.from || `"${globalVars.appname}" <noreply@fenz.osm>`,
+    from: templateConfig.from || `"${globalVars.appname}" <noreply@opready.app>`,
     subject:
       templateConfig.subject ||
       `${globalVars.appname}: Expiring Skills Notification`,
@@ -178,12 +178,12 @@ async function sendPasswordReset(
   templatePref,
 ) {
   const variables = {
-    appname: appName || "FENZ OSM Manager",
+    appname: appName || "OpReady",
     email: email,
     password: newPassword,
   };
   const defaults = {
-    from: `"${variables.appname}" <noreply@fenz.osm>`,
+    from: `"${variables.appname}" <noreply@opready.app>`,
     subject: `${variables.appname}: Password Reset`,
     body: `<p>A password reset was requested.</p><p>New Password: <strong>{{password}}</strong></p>`,
   };
@@ -212,13 +212,13 @@ async function sendNewAccountNotification(
   templatePref,
 ) {
   const variables = {
-    appname: appName || "FENZ OSM Manager",
+    appname: appName || "OpReady",
     name: name,
     email: email,
     password: password,
   };
   const defaults = {
-    from: `"${variables.appname}" <noreply@fenz.osm>`,
+    from: `"${variables.appname}" <noreply@opready.app>`,
     subject: `Welcome to ${variables.appname}`,
     body: `<p>Welcome <strong>{{name}}</strong>,</p><p>Your account has been created.</p><p>Password: <strong>{{password}}</strong></p>`,
   };
@@ -246,12 +246,12 @@ async function sendAccountDeletionNotification(
   templatePref,
 ) {
   const variables = {
-    appname: appName || "FENZ OSM Manager",
+    appname: appName || "OpReady",
     name: name,
     email: email,
   };
   const defaults = {
-    from: `"${variables.appname}" <noreply@fenz.osm>`,
+    from: `"${variables.appname}" <noreply@opready.app>`,
     subject: `${variables.appname}: Account Deleted`,
     body: `<p>Hello {{name}},</p><p>Your account on {{appname}} has been deleted.</p>`,
   };
@@ -282,14 +282,14 @@ async function sendSurveyInvitation(
   isAnonymous = true,
 ) {
   const variables = {
-    appname: appName || "FENZ OSM Manager",
+    appname: appName || "OpReady",
     name: name || "Member",
     surveyName,
     surveyLink,
   };
   const defaults = {
     email: {
-      from: `"${variables.appname}" <noreply@fenz.osm>`,
+      from: `"${variables.appname}" <noreply@opready.app>`,
       subject: `Action Required: ${variables.surveyName}`,
       body: `<p>Please complete your anonymous survey: <a href="{{surveyLink}}">{{surveyLink}}</a></p>`,
       bodyNamed: `<p>Please complete your non-anonymous survey (identity recorded): <a href="{{surveyLink}}">{{surveyLink}}</a></p>`,

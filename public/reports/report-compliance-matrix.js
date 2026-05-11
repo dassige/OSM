@@ -1,4 +1,4 @@
-// public/reports/report-compliance-matrix.js
+﻿// public/reports/report-compliance-matrix.js
 (function () {
   window.ReportRegistry = window.ReportRegistry || {};
 
@@ -26,7 +26,7 @@
 
       let html = `
                 <div class="rpt-header">
-                    <h1>${uiConfig.loginTitle || "FENZ OSM"} - Compliance Matrix</h1>
+                    <h1>${uiConfig.loginTitle || "OpReady"} - Compliance Matrix</h1>
                     <p>Generated: ${meta.generated} • Total Members: ${rows.length}</p>
                 </div>`;
 
