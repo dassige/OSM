@@ -33,6 +33,7 @@ You are a Node.js developer building the **OpReady** web application — a compr
 | Auth | Session cookies (`express-session` + SQLite store) + `X-API-Key` header for API access |
 | Logging | Winston (`services/logger.js`) |
 | API Docs | OpenAPI 3.0 spec served via `swagger-ui-express` at `/api/docs` |
+| E2E Testing | Playwright (`@playwright/test`); headless Chromium; tests in `tests/ui/` |
 
 ---
 
@@ -126,6 +127,8 @@ When implementing **any** new feature or modifying an existing one, work through
 | 9 | **Demo mode guard** — block destructive actions when `config.appMode === 'demo'` | Any destructive UI action |
 | 10 | **Help content** — update `public/help.js` to reflect the new/changed page or feature | New page, new section, renamed feature, or changed behaviour |
 | 11 | **Tests** — update or create Jest test suites; run `npm test` and confirm all pass before finishing | Any new or changed route handler, DB function, or middleware |
+| 12 | **UI smoke tests** — run `npm run test:ui` and confirm all pages load without JS errors | Any change to a frontend HTML page or the JS it loads |
+| 13 | **README.md** — update the relevant section to reflect the change | New feature, new npm script, new config variable, changed workflow, new deployment option, or anything a developer or operator would need to know |
 
 ---
 
@@ -280,6 +283,51 @@ npm test
 ```
 
 All suites must show **Tests: N passed** with zero failures before the task is done.
+
+---
+
+## ⚠️ Playwright UI Tests
+
+Every frontend change **must** be verified with `npm run test:ui` before the task is considered complete. All 20 smoke tests must pass.
+
+### How it works
+
+Playwright launches a headless Chromium browser against a real server instance running on port **3099** in `APP_MODE=demo`. It logs in as the `demo` / `demo` superadmin, saves the session, then visits every page and fails if:
+- An **uncaught JS exception** occurs (`pageerror` event)
+- A **`console.error`** call is made from page code
+
+Socket.IO polling connections are expected — a `networkidle` timeout after page load is normal and does not count as a failure.
+
+### Run command
+
+```powershell
+npm run test:ui
+```
+
+The server starts automatically on port 3099 if nothing is already listening there. You can also run your dev server on 3099 first and Playwright will reuse it (`reuseExistingServer: true`).
+
+### Test locations
+
+| File | Purpose |
+|---|---|
+| `playwright.config.js` | Server startup, base URL, global setup reference |
+| `tests/ui/global-setup.js` | Logs in once and saves session to `tests/ui/auth-state.json` |
+| `tests/ui/smoke.spec.js` | Visits all 19 authenticated pages + login page; asserts zero JS errors |
+
+### When to update `smoke.spec.js`
+
+| Change | Required action |
+|---|---|
+| New HTML page added to `public/` | Add the page to `AUTH_PAGES` in `smoke.spec.js` |
+| Page removed | Remove the corresponding entry |
+| Page renamed | Update the `url` field |
+
+### Credentials
+
+Tests always use `APP_MODE=demo` credentials. To override:
+```powershell
+$env:TEST_USERNAME = "myuser"; $env:TEST_PASSWORD = "mypass"; npm run test:ui
+```
 
 ---
 

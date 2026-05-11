@@ -60,6 +60,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * [Usage](#usage)
   * [Demo Mode](#demo-mode)
   * [API Access](#api-access)
+  * [Testing](#testing)
   * [Docker Deployment](#docker-deployment)
   * [Google Cloud Run Deployment](#google-cloud-run-deployment)
   * [Project Structure](#project-structure)
@@ -421,6 +422,80 @@ API keys **cannot** access HTML pages — those remain session-only. Endpoints r
 | `GET` | `/api/health` | Health check (no key required) |
 
 See `/api/docs` for the complete endpoint reference including request/response schemas.
+
+---
+
+## Testing
+
+The project has two independent test suites that cover different layers of the application.
+
+### Backend tests (Jest + Supertest)
+
+Unit and integration tests for all API route handlers. Supertest mounts the Express app in-process — no running server needed.
+
+```bash
+npm test
+```
+
+To run both backend and UI tests in one go:
+
+```bash
+npm run test:all
+```
+
+Tests live in `tests/` with one file per route domain (e.g. `tests/members.test.js`). All suites must pass before any backend change is merged.
+
+---
+
+### UI smoke tests (Playwright)
+
+End-to-end tests that launch a real headless Chromium browser against a live server instance and visit every page of the application. The suite fails if any page produces an uncaught JavaScript exception or a `console.error` call.
+
+#### Prerequisites
+
+Playwright and the Chromium browser binary are installed automatically as part of `npm install` + the one-time browser install step:
+
+```bash
+npm install
+npx playwright install chromium
+```
+
+#### Running the tests
+
+```bash
+npm run test:ui
+```
+
+Playwright starts the server automatically on port **3099** in `APP_MODE=demo` (so it never touches your production database), logs in with the `demo` / `demo` superadmin, then visits all 20 pages. The dev server on port 3000 is unaffected.
+
+**What is tested:**
+
+| Category | Pages covered |
+|---|---|
+| Public | Login |
+| Members & Skills | Members, Skills |
+| Forms | Forms Manage, Live Forms, Forms View |
+| Surveys | Surveys Manage, Live Surveys, Surveys Results, Surveys Tracking, Surveys View |
+| Reports & Stats | Reports, Statistics |
+| Training | Training Planner |
+| Admin | Event Log, Templates, Third Parties, Users, System Tools |
+| User | Profile |
+
+#### Overriding credentials
+
+If you need to test against a non-demo server, override via environment variables before running:
+
+```bash
+# PowerShell
+$env:TEST_USERNAME = "myadmin"
+$env:TEST_PASSWORD = "mypassword"
+$env:TEST_PORT     = "3000"
+npm run test:ui
+```
+
+#### Output
+
+Results are printed to the terminal in list format. On failure, Playwright saves a screenshot to `test-results/` showing exactly what the browser rendered when the error occurred.
 
 ---
 
