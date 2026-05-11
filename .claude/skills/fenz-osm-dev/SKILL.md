@@ -129,12 +129,43 @@ When implementing **any** new feature or modifying an existing one, work through
 | 11 | **Tests** — update or create Jest test suites; run `npm test` and confirm all pass before finishing | Any new or changed route handler, DB function, or middleware |
 | 12 | **UI smoke tests** — run `npm run test:ui` and confirm all pages load without JS errors | Any change to a frontend HTML page or the JS it loads |
 | 13 | **README.md** — update the relevant section to reflect the change | New feature, new npm script, new config variable, changed workflow, new deployment option, or anything a developer or operator would need to know |
+| 14 | **UAT Testing Plan** — update both `UAT-TESTING-PLAN.md` and `UAT-TESTING-PLAN.csv` to reflect the change | New page, new feature, renamed feature, removed feature, changed operation, or changed expected behaviour |
+
+---
+
+## ⚠️ UAT Testing Plan Mandate
+
+`UAT-TESTING-PLAN.md` is the **single source of truth** for manual acceptance testing performed by a human tester on the UAT environment. `UAT-TESTING-PLAN.csv` is the importable version used in Google Sheets run trackers. Both files must always reflect the current state of the application and must be kept in sync with each other.
+
+### When to update both files
+
+| Trigger | Required action |
+|---------|----------------|
+| New HTML page added to `public/` | Add a new test section (T-XX) covering all user-facing operations on that page |
+| New feature added to an existing page | Add test cases to the relevant section for the new operations (add, edit, delete, toggle, export, etc.) |
+| Existing operation removed | Remove the corresponding test case row |
+| Existing operation renamed or its behaviour changed | Update the Steps and Expected Result columns to match the new behaviour |
+| New field added to a create/edit form | Add a test case that sets and verifies that field |
+| New destructive action added | Add a test case confirming the action works AND a demo-mode guard test case |
+| New notification trigger added | Add a test case verifying the notification is sent and contains correct content |
+| New event log entry added | Update **Appendix B — Event Log Verification Matrix** in the `.md` and add the corresponding CSV row |
+| New user role or role restriction added | Add role-based test cases for the affected pages/endpoints |
+
+### Rules
+
+- Each test case must have a unique ID in the format `T{section}-{nn}` (e.g., `T03-14`).
+- Every test case must include: the exact **Steps** a human tester should perform, and the **Expected Result** they should observe.
+- Do not describe implementation details (DB column names, function names) — describe only what the user sees and does.
+- When adding test cases, insert them in the same section as the related feature (do not create a new section for minor additions to an existing page).
+- Append new test data requirements to **Appendix A — Test Data Setup Checklist** when the new feature needs specific seed data to be testable.
+- Never leave a feature untested — if you implement it, you must document how to verify it works.
+- **Always update the `.csv` in the same task as the `.md`** — the two files must never be out of sync. The CSV row format is: `Section,ID,Page / Feature,Action,Steps,Expected Result,Status,Notes,Tester,Run Date` with Status/Notes/Tester/Run Date left empty for new rows.
 
 ---
 
 ## ⚠️ API Change Mandate
 
-**Any time an API endpoint is added, modified, or removed**, the following two files MUST be updated in the same task — no exceptions:
+**Any time an API endpoint is added, modified, or removed**, the following three files MUST be updated in the same task — no exceptions:
 
 1. **OpenAPI spec** — `routes/api/docs.js`
    - Add/update/remove the path entry in the `paths` object.
@@ -145,7 +176,13 @@ When implementing **any** new feature or modifying an existing one, work through
    - Match the folder name to the OpenAPI tag for that endpoint group.
    - Keep path variables as `:param` style and include a realistic example body.
 
-If you add a new route group (new router file + new `app.use()` mount), also add the corresponding folder to the Postman collection and a new tag + paths block to the OpenAPI spec.
+3. **Newman smoke collection** — `examples/api/newman-smoke.postman_collection.json`
+   - This collection contains only **read-only GET requests** with assertions; it is run automatically via `npm run test:api` against UAT environments.
+   - If a new **GET endpoint** is added: add a new request to the appropriate folder with the standard three assertions (`Status 200`, `Response time < 5s`, `Valid JSON` / array check).
+   - If a GET endpoint is **removed or its path changes**: update or remove the corresponding request.
+   - Do **not** add mutating (POST/PUT/PATCH/DELETE) requests to this collection — it must remain safe to run against real UAT data without modifying anything.
+
+If you add a new route group (new router file + new `app.use()` mount), also add the corresponding folder to both Postman collections and a new tag + paths block to the OpenAPI spec.
 
 ---
 

@@ -19,3 +19,7 @@ dist
 test-results/
 playwright-report/
 tests/ui/auth-state.json
+# Newman
+examples/api/newman-environment.local.json
+newman-report.json
+newman-report.html

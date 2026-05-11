@@ -1,8 +1,8 @@
 {
   "name": "opready",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "OpReady — Operational Readiness Manager",
-  "versionDate": "2026/05/12 09:27",
+  "versionDate": "2026/05/12 11:13",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -14,6 +14,8 @@
     "dev": "nodemon server.js",
     "test": "jest --detectOpenHandles --forceExit",
     "test:ui": "playwright test",
+    "test:api": "newman run examples/api/newman-smoke.postman_collection.json --environment examples/api/newman-environment.local.json",
+    "test:api:report": "newman run examples/api/newman-smoke.postman_collection.json --environment examples/api/newman-environment.local.json --reporters cli,json --reporter-json-export newman-report.json",
     "test:all": "jest --detectOpenHandles --forceExit && playwright test"
   },
   "dependencies": {
@@ -55,6 +57,7 @@
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "jest": "^30.3.0",
+    "newman": "^6.2.2",
     "supertest": "^7.2.2"
   }
 }

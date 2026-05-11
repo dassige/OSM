@@ -427,7 +427,18 @@ See `/api/docs` for the complete endpoint reference including request/response s
 
 ## Testing
 
-The project has two independent test suites that cover different layers of the application.
+| Command | When to run | Requires |
+|---------|-------------|---------|
+| `npm test` | Before every commit | Nothing — runs in-process |
+| `npm run test:ui` | Before every frontend change | Nothing — spins up its own demo server |
+| `npm run test:all` | Pre-merge / CI | Nothing — combines the two above |
+| `npm run test:api` | Pre-UAT deploy | Live instance + admin API key |
+
+The first three suites are fully self-contained and require no credentials or running server. `test:api` is a release-gate check that runs Newman against a real environment — keep it separate from the development workflow.
+
+---
+
+The project has three independent test suites that cover different layers of the application.
 
 ### Backend tests (Jest + Supertest)
 
@@ -496,6 +507,60 @@ npm run test:ui
 #### Output
 
 Results are printed to the terminal in list format. On failure, Playwright saves a screenshot to `test-results/` showing exactly what the browser rendered when the error occurred.
+
+---
+
+### API smoke tests (Newman)
+
+Read-only API smoke tests that run against a live OpReady instance (local or cloud UAT). Every test is a GET request with assertions — no data is created or modified.
+
+**What is tested:**
+
+| Test | Endpoint | Assertion |
+|---|---|---|
+| T20-01 Health Check | `GET /api/system/health` | `status: ok`, `db: connected`, version present |
+| T20-02 API Docs | `GET /api/docs` | HTTP 200 |
+| T20-03 Auth guard | `GET /api/members` (no key) | HTTP 401/302/403 — no data exposed |
+| — Members | `GET /api/members` | HTTP 200, JSON array |
+| — Skills | `GET /api/skills` | HTTP 200, JSON array |
+| — Forms | `GET /api/forms` | HTTP 200, JSON array |
+| — Live Forms | `GET /api/live-forms` | HTTP 200, valid JSON |
+| — Surveys | `GET /api/surveys` | HTTP 200, JSON array |
+| — Survey Instances | `GET /api/surveys/instances` | HTTP 200, JSON array |
+| — Training | `GET /api/training` | HTTP 200, JSON array |
+| — Users | `GET /api/users` | HTTP 200, JSON array |
+| — API Keys | `GET /api/api-keys` | HTTP 200, JSON array |
+| — Preferences | `GET /api/system/preferences` | HTTP 200, valid JSON |
+| — Event Log | `GET /api/system/events` | HTTP 200, valid JSON |
+
+All requests must respond within 5 seconds.
+
+#### One-time setup
+
+```powershell
+# 1. Install Newman (already a devDependency — just run npm install)
+npm install
+
+# 2. Copy the environment template and fill in your values
+Copy-Item examples/api/newman-environment.example.json examples/api/newman-environment.local.json
+# Then edit newman-environment.local.json:
+#   "baseUrl"  → your UAT instance URL  (e.g. https://opready.example.com)
+#   "apiKey"   → an admin-role API key from System Tools → API Key Management
+```
+
+`newman-environment.local.json` is gitignored — it stays on your machine.
+
+#### Running the tests
+
+```powershell
+# Terminal output only
+npm run test:api
+
+# Terminal output + JSON report saved to newman-report.json
+npm run test:api:report
+```
+
+Newman prints a summary table: requests run, assertions passed/failed, average response time. A non-zero exit code means at least one assertion failed.
 
 ---
 

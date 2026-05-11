@@ -1,0 +1,17 @@
+{
+  "name": "OpReady Newman — Example",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "enabled": true,
+      "description": "Base URL of the OpReady instance to test (no trailing slash)"
+    },
+    {
+      "key": "apiKey",
+      "value": "paste-your-admin-api-key-here",
+      "enabled": true,
+      "description": "Admin-role API key generated in System Tools → API Key Management"
+    }
+  ]
+}
