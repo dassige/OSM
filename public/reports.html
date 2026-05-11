@@ -105,6 +105,14 @@
     <script src="js/reports-controller.js"></script>
 
     <script>
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) {
+                document.title = "Reports - " + c.loginTitle;
+                document.getElementById('pageHeader').innerText = "Reports Console - " + c.loginTitle;
+            }
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+        });
         // Scroll Button Logic
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {

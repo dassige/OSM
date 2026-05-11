@@ -68,6 +68,16 @@
     <script src="utils.js"></script>
     <script src="statistics/compliance-overview.js"></script>
     <script src="js/statistics-controller.js"></script>
+    <script>
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) {
+                document.title = "Compliance Statistics - " + c.loginTitle;
+                document.getElementById('pageHeader').innerText = "Statistics Dashboard - " + c.loginTitle;
+            }
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+        });
+    </script>
 </body>
 
 </html>

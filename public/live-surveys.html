@@ -243,6 +243,16 @@
     <script src="help.js"></script>
     <script src="/js/sidebar.js"></script>
     <script src="js/live-surveys.js"></script>
+    <script>
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) {
+                document.title = "Published Surveys - " + c.loginTitle;
+                document.getElementById('pageHeader').innerText = "Published Surveys - " + c.loginTitle;
+            }
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+        });
+    </script>
 </body>
 
 </html>

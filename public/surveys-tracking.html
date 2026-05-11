@@ -153,6 +153,13 @@
     <script src="help.js"></script>
     <script src="/js/sidebar.js"></script>
     <script src="js/surveys-tracking.js"></script>
+    <script>
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) document.title = "Survey Tracking - " + c.loginTitle;
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+        });
+    </script>
 </body>
 
 </html>
