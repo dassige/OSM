@@ -1,35 +1,36 @@
 const rateLimit = require('express-rate-limit');
+const { rateLimits } = require('../config');
 
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 10,
+    windowMs: rateLimits.login.windowMin * 60 * 1000,
+    max: rateLimits.login.max,
     skipSuccessfulRequests: true,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
+    message: { error: `Too many login attempts. Please try again in ${rateLimits.login.windowMin} minutes.` },
 });
 
 const mfaLimiter = rateLimit({
-    windowMs: 5 * 60 * 1000,
-    max: 5,
+    windowMs: rateLimits.mfa.windowMin * 60 * 1000,
+    max: rateLimits.mfa.max,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: 'Too many MFA attempts. Please try again in 5 minutes.' },
+    message: { error: `Too many MFA attempts. Please try again in ${rateLimits.mfa.windowMin} minutes.` },
 });
 
 const forgotPasswordLimiter = rateLimit({
-    windowMs: 30 * 60 * 1000,
-    max: 3,
+    windowMs: rateLimits.forgotPassword.windowMin * 60 * 1000,
+    max: rateLimits.forgotPassword.max,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: 'Too many password reset requests. Please try again in 30 minutes.' },
+    message: { error: `Too many password reset requests. Please try again in ${rateLimits.forgotPassword.windowMin} minutes.` },
 });
 
 // Public member-facing endpoints (live-forms, live-surveys) are excluded —
 // they can have legitimate bursts when many members submit simultaneously.
 const apiLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 300,
+    windowMs: rateLimits.api.windowMin * 60 * 1000,
+    max: rateLimits.api.max,
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) =>
