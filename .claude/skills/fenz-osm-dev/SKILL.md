@@ -125,6 +125,7 @@ When implementing **any** new feature or modifying an existing one, work through
 | 8 | **Frontend UI** — follow the UI conventions table | New or changed page/section |
 | 9 | **Demo mode guard** — block destructive actions when `config.appMode === 'demo'` | Any destructive UI action |
 | 10 | **Help content** — update `public/help.js` to reflect the new/changed page or feature | New page, new section, renamed feature, or changed behaviour |
+| 11 | **Tests** — update or create Jest test suites; run `npm test` and confirm all pass before finishing | Any new or changed route handler, DB function, or middleware |
 
 ---
 
@@ -223,6 +224,62 @@ router.patch('/:id/toggle', hasRole('admin'), async (req, res) => {
   }
 });
 ```
+
+---
+
+## ⚠️ Testing Mandate
+
+Every relevant backend change **must** be accompanied by updated or new tests, and `npm test` must pass before the task is considered complete.
+
+### Test suite location
+Tests live in `tests/` and use **Jest + supertest**. Each route file has a corresponding `tests/<domain>.test.js`. Shared app setup is in `tests/test-utils.js`.
+
+### When to update tests
+
+| Change | Required action |
+|---|---|
+| New route handler added | Add a test case covering the happy path and at least one error path |
+| Existing handler signature changed | Update the corresponding test — method, path, body, expected response |
+| New DB call added to a handler | Add the new function to the `jest.mock('../services/db', ...)` factory in the test file |
+| New `config` property used anywhere in the load chain | Add the property to any `jest.mock('../config', ...)` factories in affected test files |
+| Middleware added or changed | Update the relevant integration test or security test |
+
+### Critical mock hygiene rules
+
+**DB mock** — every `db.*` function called anywhere in the route module must appear in the mock factory, even pre-fetch calls added solely for event-log context. Missing entries cause `TypeError: db.X is not a function` → 500 in tests.
+
+```js
+jest.mock('../services/db', () => ({
+    getThings:   jest.fn(),
+    getThingById: jest.fn().mockResolvedValue({ name: 'Test Thing' }), // pre-fetch for event log
+    deleteThing: jest.fn(),
+    logEvent:    jest.fn().mockResolvedValue(),
+}));
+```
+
+**Config mock** — the mock must include every top-level property accessed anywhere in the full `require()` chain for the module under test (routes → middleware → config). A route that imports `rate-limiter.js` means `rateLimits` must be in the config mock even if the route itself never reads it.
+
+```js
+jest.mock('../config', () => ({
+    appMode: 'production',
+    auth: { username: 'user', password: 'pass' },
+    rateLimits: {
+        login:         { windowMin: 15, max: 10  },
+        mfa:           { windowMin: 5,  max: 5   },
+        forgotPassword:{ windowMin: 30, max: 3   },
+        api:           { windowMin: 1,  max: 300 },
+    },
+}));
+```
+
+### Run tests before finishing
+Always run `npm test` using the PowerShell tool as the final step of any backend task. Do not mark the task complete if any test is failing.
+
+```powershell
+npm test
+```
+
+All suites must show **Tests: N passed** with zero failures before the task is done.
 
 ---
 

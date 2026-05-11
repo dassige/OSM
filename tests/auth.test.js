@@ -14,7 +14,13 @@ jest.mock('../services/db', () => ({
 }));
 jest.mock('../config', () => ({
     auth: { username: 'super@admin.com', password: 'superpassword' },
-    appMode: 'production'
+    appMode: 'production',
+    rateLimits: {
+        login:         { windowMin: 15, max: 10  },
+        mfa:           { windowMin: 5,  max: 5   },
+        forgotPassword:{ windowMin: 30, max: 3   },
+        api:           { windowMin: 1,  max: 300 },
+    },
 }));
 jest.mock('../services/whatsapp-service', () => ({ logout: jest.fn() }));
 jest.mock('speakeasy', () => ({
