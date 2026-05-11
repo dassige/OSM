@@ -101,20 +101,23 @@
                 <div id="listViewContainer" style="display: none; width: 100%;">
                     <div class="planner-controls" style="margin-bottom: 15px;">
                         <h3 style="margin: 0; font-size: 1.1em;">Scheduled Sessions</h3>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <label style="font-size: 13px; font-weight: bold; color: var(--text-muted);">Per Page:</label>
-                            <select id="listLimitSelect" onchange="changeListLimit(this.value)" style="padding: 4px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-main);">
-                                <option value="10">10</option>
-                                <option value="20">20</option>
-                                <option value="50">50</option>
-                            </select>
-                        </div>
                     </div>
-                    
+
                     <div id="listContent">
                         </div>
 
-                    <div id="listPagination" class="pagination-container" style="display: none; border-radius: 8px; border-top: none; border: 1px solid var(--border-color); margin-top: 15px;">
+                    <div id="listPagination" class="pagination-container" style="display: none; border-radius: 8px; margin-top: 15px;">
+                        <div class="page-limit-selector">
+                            <label>Rows per page:</label>
+                            <select id="listLimitSelect" onchange="changeListLimit(this.value)"
+                                style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="all">All</option>
+                            </select>
+                        </div>
                         <span id="listPageInfo" class="pagination-info">...</span>
                         <div style="display: flex; gap: 5px;">
                             <button id="btnListPrev" class="btn-page" onclick="changeListPage(-1)">Previous</button>

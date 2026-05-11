@@ -12,7 +12,7 @@ let appConfig = {};
 let userPrefs = {};
 let currentReportData = null;
 let currentPage = 1;
-let currentPageSize = 10;
+let currentPageSize = 25;
 
 async function initReports() {
   try {

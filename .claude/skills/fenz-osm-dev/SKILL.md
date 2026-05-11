@@ -416,6 +416,7 @@ Every new page or feature **must** follow the existing UI conventions without ex
 | **Mobile optimisation** | Responsive layout; test at 375 px and 768 px breakpoints |
 | **No native dialogs** | Never use `alert()` or `confirm()`; use `confirmAction()` from `utils.js` and `showToast()` from `toast.js` |
 | **Table sorting** | For any data table, implement sortable column headers; persist sort preference per user |
+| **Pagination** | Every paginated table must use the standard pagination bar (see convention below); persist rows-per-page per user |
 | **System card layout** | New sections in `system-tools.html` use the `<div class="system-card">` pattern |
 | **Button colours** | Follow the colour convention table below — never use inline `background` styles on buttons |
 
@@ -430,6 +431,87 @@ Every new page or feature **must** follow the existing UI conventions without ex
 | `btn-informative` | Teal | **Read-only view**: Preview, View Details |
 | `btn-purple` | Purple | **AI actions**: AI Generate, AI Evaluate, AI Grade |
 | `btn-warning` | Yellow | **Reserved** — true edge-case warnings only (e.g. forced password reset); do not use for regular actions |
+
+---
+
+## Pagination Convention
+
+Every page with a paginated table **must** follow this pattern exactly. Use `event-log.html` as the canonical reference.
+
+### HTML structure
+
+```html
+<div class="pagination-container" id="paginationControls" style="display:none;">
+    <div class="page-limit-selector">
+        <label>Rows per page:</label>
+        <select id="rowsPerPage" onchange="changeLimit(this.value)"
+            style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="all">All</option>
+        </select>
+    </div>
+    <span class="pagination-info" id="pageInfo">Showing 0-0 of 0</span>
+    <div style="display:flex; gap:5px;">
+        <button class="btn-page" id="btnPrev" onclick="changePage(-1)">Previous</button>
+        <button class="btn-page" id="btnNext" onclick="changePage(1)">Next</button>
+    </div>
+</div>
+```
+
+### Rules
+
+| Rule | Detail |
+|---|---|
+| **Label** | Always `"Rows per page:"` — never "Items per page", "Rows:", or "Per Page:" |
+| **Select style** | Always `padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);` — no `height`, no shorthand `background` |
+| **Button class** | Always `btn-page` — never `btn-sm btn-secondary` or inline styles |
+| **Info text format** | Always `"Showing X-Y of Z"` — never "Page X of Y" or "X-Y / Z" |
+| **Position** | Place the `pagination-container` immediately after the `<table>` (inside the same `table-wrapper`). If pagination lives outside a `table-wrapper`, override `border-radius: 8px` via inline style |
+| **Options** | Always `10 / 25 / 50 / 100 / All` in that order. `25` is the `selected` default. Use `value="all"` for the All option |
+| **Default** | Honour the saved user preference on load; fall back to 25 if no preference is stored |
+
+### Preference save/load pattern
+
+`"all"` is stored as the literal string `"all"` in preferences. `TableController.setLimit("all")` maps it to `99999` internally; the same applies when passing `initialLimit: 'all'` to the constructor. Always restore the raw string to the `<select>` element so the dropdown matches the saved choice.
+
+```js
+// On init — load before constructing the controller
+let initialLimit = 25;
+let initialLimitRaw = '25';
+try {
+    const res = await fetch('/api/user-preferences/myPageLimit');
+    const data = await res.json();
+    if (data.value) {
+        initialLimitRaw = data.value;
+        initialLimit = data.value === 'all' ? 99999 : parseInt(data.value);
+    }
+} catch (e) {}
+document.getElementById('rowsPerPage').value = initialLimitRaw;
+
+// On change
+async function changeLimit(newLimit) {
+    tableCtrl.setLimit(newLimit);   // handles 'all' → 99999 internally
+    await fetch('/api/user-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'myPageLimit', value: newLimit })
+    });
+    loadData();
+}
+```
+
+### Per-page preference keys in use
+
+| Page | Preference key |
+|---|---|
+| `event-log.html` | `eventLogLimit` |
+| `reports.html` | `rptPageSize` |
+| `live-forms.html` | `liveFormsLimit` |
+| `live-surveys.html` | `liveSurveyItemsPerPage` |
+| `training-planner.html` | `trainingListLimit` (via Socket.IO) |
 
 ---
 

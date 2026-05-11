@@ -114,10 +114,11 @@
                     <label>Rows per page:</label>
                     <select id="rowsPerPage" onchange="changeLimit(this.value)"
                         style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
-                        <option value="25">25</option>
-                        <option value="50" selected>50</option>
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
                         <option value="100">100</option>
-                        <option value="200">200</option>
+                        <option value="all">All</option>
                     </select>
                 </div>
 
@@ -187,17 +188,19 @@
 
             // 1. Load limit preference BEFORE initializing the controller
             let initialLimit = 25;
+            let initialLimitRaw = '25';
             try {
                 const res = await fetch('/api/user-preferences/eventLogLimit');
                 const data = await res.json();
                 if (data.value) {
-                    initialLimit = parseInt(data.value);
+                    initialLimitRaw = data.value;
+                    initialLimit = data.value === 'all' ? 99999 : parseInt(data.value);
                 }
             } catch (e) { /* Use default if not found */ }
 
             // Update UI Dropdown
             const limitSelect = document.getElementById('rowsPerPage');
-            if (limitSelect) limitSelect.value = initialLimit;
+            if (limitSelect) limitSelect.value = initialLimitRaw;
 
             // 2. Initialize Controller
             eventTableCtrl = new TableController({

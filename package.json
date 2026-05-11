@@ -1,8 +1,8 @@
 {
   "name": "opready",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "OpReady — Operational Readiness Manager",
-  "versionDate": "2026/05/11 14:44",
+  "versionDate": "2026/05/11 15:11",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
