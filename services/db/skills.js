@@ -59,6 +59,11 @@ async function updateSkill(id, skill) {
   );
 }
 
+async function getSkillById(id) {
+  const db = await initDB();
+  return db.get("SELECT * FROM skills WHERE id = ?", id);
+}
+
 async function deleteSkill(id) {
   const db = await initDB();
   await db.run("DELETE FROM skills WHERE id = ?", id);
@@ -81,4 +86,4 @@ async function bulkDeleteSkills(ids) {
   }
 }
 
-module.exports = { getSkills, addSkill, bulkAddSkills, updateSkill, deleteSkill, bulkDeleteSkills };
+module.exports = { getSkills, getSkillById, addSkill, bulkAddSkills, updateSkill, deleteSkill, bulkDeleteSkills };

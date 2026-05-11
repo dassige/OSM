@@ -51,6 +51,11 @@ async function updateMember(id, member) {
   );
 }
 
+async function getMemberById(id) {
+  const db = await initDB();
+  return db.get("SELECT * FROM members WHERE id = ?", id);
+}
+
 async function deleteMember(id) {
   const db = await initDB();
   await db.run("DELETE FROM members WHERE id = ?", id);
@@ -73,4 +78,4 @@ async function bulkDeleteMembers(ids) {
   }
 }
 
-module.exports = { getMembers, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers };
+module.exports = { getMembers, getMemberById, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers };

@@ -14,6 +14,11 @@ async function addTrainingSession(date, skillName) {
   return (await db.run("INSERT INTO training_sessions (date, skill_name) VALUES (?, ?)", date, skillName)).lastID;
 }
 
+async function getTrainingSessionById(id) {
+  const db = await initDB();
+  return db.get("SELECT * FROM training_sessions WHERE id = ?", id);
+}
+
 async function deleteTrainingSession(id) {
   const db = await initDB();
   await db.run("DELETE FROM training_sessions WHERE id = ?", id);
@@ -40,4 +45,4 @@ async function getAllFutureTrainingSessions() {
   );
 }
 
-module.exports = { getTrainingSessions, addTrainingSession, deleteTrainingSession, logEmailAction, getAllFutureTrainingSessions };
+module.exports = { getTrainingSessions, getTrainingSessionById, addTrainingSession, deleteTrainingSession, logEmailAction, getAllFutureTrainingSessions };

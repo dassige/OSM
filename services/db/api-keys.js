@@ -46,6 +46,13 @@ async function touchApiKey(id) {
     );
 }
 
+async function getApiKeyById(id) {
+    const db = await initDB();
+    return db.get(
+        `SELECT id, name, key_prefix, role, created_by, active FROM api_keys WHERE id = ?`, id
+    );
+}
+
 async function toggleApiKey(id) {
     const db = await initDB();
     await db.run(
@@ -60,6 +67,7 @@ async function deleteApiKey(id) {
 
 module.exports = {
     listApiKeys,
+    getApiKeyById,
     createApiKey,
     getApiKeyByHash,
     touchApiKey,

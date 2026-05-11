@@ -141,29 +141,38 @@ await db.logEvent(actor, category, title, payload);
 
 | Argument | Type | How to populate |
 |---|---|---|
-| `actor` | string | `(req.apiKeyUser \|\| req.session?.user)?.name \|\| 'Unknown'` |
-| `category` | string | One of the established categories below |
-| `title` | string | Short action phrase — past tense, e.g. `'Member Created'` |
-| `payload` | object | Contextual fields; **never** include passwords, raw API keys, or session tokens |
+| `actor` | string | `(req.apiKeyUser \|\| req.session?.user)?.name \|\| 'Unknown'` — always check `apiKeyUser` first |
+| `category` | string | One of the established categories below — do not invent new spellings |
+| `title` | string | Short past-tense action phrase, e.g. `'Member Deleted'`. **Never embed IDs or names as template literals** — those belong in `payload` |
+| `payload` | object | Meaningful contextual fields — **never `{}`**; never include passwords, raw API keys, or session tokens |
+
+### Payload rules
+- Always include the record's human-readable name (e.g. `memberName`, `skillName`, `surveyName`) so the log is self-explanatory without a DB lookup.
+- Always include the record's ID so the log is linkable.
+- For toggle operations: include the `newState` after the change (e.g. `'enabled'` / `'disabled'`).
+- For delete and toggle operations: **fetch the record first**, then delete/toggle, so the name and state are captured before they disappear.
+- For bulk operations: include `deletedCount` / `importedCount` rather than a full list of IDs.
+- System-triggered events (no browser session): use `actor = 'System'` explicitly.
+- Anonymous public events (survey/form submissions by members): use `actor = 'System'`; do **not** log the respondent's identity for anonymous surveys.
 
 ### Established Categories
-Use these consistently — do not invent new spellings:
+Use these consistently:
 
 | Category | Used for |
 |---|---|
-| `User Mgmt` | Creating, updating, deleting admin users; password resets |
+| `User Mgmt` | Creating, updating, deleting admin users; password resets; profile updates |
 | `Security` | Login failures, account blocks/unblocks, MFA events |
 | `API Keys` | Key creation, toggle, deletion |
 | `System` | Backup, restore, preferences, startup events, proxy init |
-| `WhatsApp` | Client connect/disconnect, message failures |
+| `WhatsApp` | Client connect/disconnect, message send/fail |
 | `Member` | Member create/update/delete/import |
 | `Skill` | Skill create/update/delete/import |
-| `Forms` | Form create/update/import |
-| `Live Forms` | Form sent, submitted, accepted, rejected, purged |
-| `Surveys` | Survey publish, results export |
+| `Forms` | Form create/update/delete/import |
+| `Live Forms` | Form sent, submitted, accepted, rejected, archived, purged |
+| `Surveys` | Survey publish, template create/update/delete, instance archive/delete |
 | `Training` | Session created/deleted |
 
-### Example
+### Example — delete with pre-fetch
 ```js
 router.delete('/:id', hasRole('admin'), async (req, res) => {
   try {
@@ -173,6 +182,25 @@ router.delete('/:id', hasRole('admin'), async (req, res) => {
     await db.logEvent(actor, 'Member', 'Member Deleted', {
       memberId: req.params.id,
       memberName: member?.name,
+    });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+```
+
+### Example — toggle with state capture
+```js
+router.patch('/:id/toggle', hasRole('admin'), async (req, res) => {
+  try {
+    const key = await db.getApiKeyById(Number(req.params.id));
+    await db.toggleApiKey(Number(req.params.id));
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, 'API Keys', 'API Key Toggled', {
+      keyId: req.params.id,
+      keyName: key?.name,
+      newState: key?.active ? 'disabled' : 'enabled',
     });
     res.json({ success: true });
   } catch (e) {

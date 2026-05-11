@@ -309,7 +309,13 @@ async function handleQueueProcessing(socket, targets, days, logger) {
               await whatsappService.sendMessage(member.mobile, msg);
               logger(`  - WhatsApp sent to ${member.mobile}`);
             }
-            await db.logEvent(currentUser, "WhatsApp", isDemo ? "Notification Simulated" : "Notification Sent", { member: member.name });
+            await db.logEvent(currentUser, "WhatsApp", isDemo ? "Notification Simulated" : "Notification Sent", {
+              memberName: member.name,
+              mobile: member.mobile,
+              skillCount: member.expiringSkills.length,
+              skills: member.expiringSkills.map((s) => s.skill),
+              isDemo,
+            });
           }
         } catch (e) { logger(`  X WhatsApp Failed: ${e.message}`); }
       }

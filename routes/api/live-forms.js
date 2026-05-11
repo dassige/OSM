@@ -90,7 +90,8 @@ router.delete("/all", hasRole("superadmin"), async (req, res) => {
       tries: req.query.tries || req.body.tries,
     };
     const count = await formsService.purgeLiveForms(filters);
-    await db.logEvent(req.session.user.name, "Live Forms", "Filtered Purge Executed", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Live Forms", "Filtered Purge Executed", {
       deletedCount: count,
       targetScope: filters.isArchived === "true" ? "Archived" : "Active",
       filtersApplied: filters,
@@ -106,13 +107,14 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
     const { status, isArchived } = req.body;
     const id = req.params.id;
 
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
     if (isArchived !== undefined) {
       await formsService.setArchiveStatus(id, isArchived);
-      await db.logEvent(req.session.user.name, "Live Forms", isArchived ? "Record Archived" : "Record Restored", { recordId: id });
+      await db.logEvent(actor, "Live Forms", isArchived ? "Record Archived" : "Record Restored", { recordId: id });
     }
     if (status !== undefined) {
       await formsService.updateLiveFormStatus(id, status);
-      await db.logEvent(req.session.user.name, "Live Forms", "Status Updated", { recordId: id, newStatus: status });
+      await db.logEvent(actor, "Live Forms", "Status Updated", { recordId: id, newStatus: status });
     }
     res.json({ success: true });
   } catch (e) {
@@ -123,7 +125,8 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
 router.delete("/:id", hasRole("admin"), async (req, res) => {
   try {
     await formsService.deleteLiveForm(req.params.id);
-    await db.logEvent(req.session.user.name, "Live Forms", `Deleted record ID: ${req.params.id}`, {});
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Live Forms", "Live Form Record Deleted", { recordId: req.params.id });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -319,7 +322,8 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
       }
     }
 
-    await db.logEvent(req.session.user.name, "Live Forms", "Submission Approved", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Live Forms", "Submission Approved", {
       memberName: form.member_name,
       skillName: form.skill_name,
       notifiedVia: { email: notifyEmail, whatsapp: notifyWa },
@@ -413,7 +417,8 @@ router.post("/reject/:id", hasRole("admin"), async (req, res) => {
       }
     }
 
-    await db.logEvent(req.session.user.name, "Live Forms", "Submission Rejected", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Live Forms", "Submission Rejected", {
       memberName: form.member_name,
       skillName: form.skill_name,
       retryGenerated: generateNew,

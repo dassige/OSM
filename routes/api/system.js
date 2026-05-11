@@ -148,7 +148,7 @@ router.get("/system/backup", hasRole("superadmin"), async (req, res) => {
     res.setHeader("Content-Type", "text/plain");
     res.send(dump);
 
-    db.logEvent(req.session.user.name, "System", "SQL Dump Exported", { filename });
+    await db.logEvent(req.session.user.name, "System", "SQL Dump Exported", { filename });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

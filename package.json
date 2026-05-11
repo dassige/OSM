@@ -1,8 +1,8 @@
 {
   "name": "fenz-osm",
-  "version": "1.14.12",
+  "version": "1.14.13",
   "description": "FENZ OSM Automation Manager",
-  "versionDate": "2026/05/11 11:42",
+  "versionDate": "2026/05/11 12:24",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",

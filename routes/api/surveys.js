@@ -124,13 +124,10 @@ router.post(
       const authorId = req.user?.id || req.session?.user?.id || 1;
 
       await db.importAllSurveys(importedSurveys, authorId);
-      const adminName = req.session?.user?.name || "Admin";
-      await db.logEvent(
-        adminName,
-        "Surveys",
-        "Bulk Imported Survey Templates",
-        { count: importedSurveys.length },
-      );
+      const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+      await db.logEvent(actor, "Surveys", "Bulk Imported Survey Templates", {
+        count: importedSurveys.length,
+      });
       res.json({ success: true, count: importedSurveys.length });
     } catch (error) {
       logger.error("[API] Error importing surveys", { error: error.message });
@@ -204,8 +201,8 @@ router.post("/", hasRole("admin"), async (req, res) => {
       authorId,
       is_anonymous || 0
     );
-    const adminName = req.session?.user?.name || "Admin";
-    await db.logEvent(adminName, "Surveys", "Created Survey Template", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Surveys", "Created Survey Template", {
       surveyName: name,
     });
     res.status(201).json(result);
@@ -229,13 +226,13 @@ router.get("/instances", hasRole("admin"), async (req, res) => {
 // PUT /api/surveys/instances/:id/archive - Toggle archive status
 router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {
   try {
+    const instance = await db.getLiveSurveyInstanceById(req.params.id);
     await db.updateSurveyArchiveStatus(req.params.id, req.body.is_archived);
-    const adminName = req.session?.user?.name || "Admin";
-    const action = req.body.is_archived
-      ? "Archived Survey Instance"
-      : "Unarchived Survey Instance";
-    await db.logEvent(adminName, "Surveys", action, {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    const action = req.body.is_archived ? "Archived Survey Instance" : "Unarchived Survey Instance";
+    await db.logEvent(actor, "Surveys", action, {
       instanceId: req.params.id,
+      instanceName: instance?.name,
     });
     res.json({ success: true });
   } catch (error) {
@@ -246,10 +243,12 @@ router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {
 // DELETE /api/surveys/instances/:id - Delete a published instance entirely
 router.delete("/instances/:id", hasRole("admin"), async (req, res) => {
   try {
+    const instance = await db.getLiveSurveyInstanceById(req.params.id);
     await db.deleteSurveyInstance(req.params.id);
-    const adminName = req.session?.user?.name || "Admin";
-    await db.logEvent(adminName, "Surveys", "Deleted Survey Instance", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Surveys", "Deleted Survey Instance", {
       instanceId: req.params.id,
+      instanceName: instance?.name,
     });
     res.json({ success: true });
   } catch (error) {
@@ -318,9 +317,10 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
         existing.structure,
         is_anonymous || existing.is_anonymous
       );
-      const adminName = req.session?.user?.name || "Admin";
-      await db.logEvent(adminName, "Surveys", "Updated Survey Status", {
+      const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+      await db.logEvent(actor, "Surveys", "Updated Survey Status", {
         surveyId,
+        surveyName: existing.name,
         status,
       });
       return res.json({ success: true, message: "Status updated" });
@@ -339,8 +339,8 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
       JSON.stringify(structure),
       is_anonymous || 0
     );
-    const adminName = req.session?.user?.name || "Admin";
-    await db.logEvent(adminName, "Surveys", "Updated Survey Template", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Surveys", "Updated Survey Template", {
       surveyId,
       surveyName: name,
     });
@@ -355,10 +355,12 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
 router.delete("/:id", hasRole("admin"), async (req, res) => {
   try {
     const surveyId = req.params.id;
+    const survey = await db.getSurveyById(surveyId);
     await db.deleteSurvey(surveyId);
-    const adminName = req.session?.user?.name || "Admin";
-    await db.logEvent(adminName, "Surveys", "Deleted Survey Template", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Surveys", "Deleted Survey Template", {
       surveyId,
+      surveyName: survey?.name,
     });
     res.json({ success: true, message: "Survey deleted successfully." });
   } catch (error) {
@@ -417,8 +419,8 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
         }
       }
     }
-    const adminName = req.session?.user?.name || "Admin";
-    await db.logEvent(adminName, "Surveys", "Published Survey", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Surveys", "Published Survey", {
       surveyName: instance.name,
       membersInvited: trackingData.length,
     });
@@ -473,8 +475,8 @@ router.post(
           }
         }
       }
-      const adminName = req.session?.user?.name || "Admin";
-      await db.logEvent(adminName, "Surveys", "Sent Bulk Reminders", {
+      const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+      await db.logEvent(actor, "Surveys", "Sent Bulk Reminders", {
         surveyName: instance.name,
         remindersSent: pending.length,
       });
