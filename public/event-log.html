@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
-    <title id="pageTitle">Event Log - FENZ OSM</title>
+    <title id="pageTitle">Event Log - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
@@ -35,12 +35,11 @@
                 <input type="number" id="pruneDays" class="filter-select" style="width:80px; height: 32px;" value="90"
                     min="1">
                 <span style="color: var(--text-main); font-size: 13px;">days</span>
-                <button onclick="pruneEvents()" class="btn-sm"
-                    style="background-color: #ffc107; color: #333; border: none; height: 32px;">Prune Old</button>
+                <button onclick="pruneEvents()" class="btn-sm btn-danger" style="height: 32px;">Prune Old</button>
                 <button onclick="purgeLog()" class="btn-sm btn-danger" style="height: 32px;">Purge All</button>
             </div>
             <div style="display: flex; gap: 10px;">
-                <button onclick="exportLog()" class="btn-sm btn-success" style="height: 32px;">
+                <button onclick="exportLog()" class="btn-sm btn-primary" style="height: 32px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                         style="vertical-align:text-bottom; margin-right:4px;">
@@ -115,10 +114,11 @@
                     <label>Rows per page:</label>
                     <select id="rowsPerPage" onchange="changeLimit(this.value)"
                         style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
-                        <option value="25">25</option>
-                        <option value="50" selected>50</option>
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
                         <option value="100">100</option>
-                        <option value="200">200</option>
+                        <option value="all">All</option>
                     </select>
                 </div>
 
@@ -188,17 +188,19 @@
 
             // 1. Load limit preference BEFORE initializing the controller
             let initialLimit = 25;
+            let initialLimitRaw = '25';
             try {
                 const res = await fetch('/api/user-preferences/eventLogLimit');
                 const data = await res.json();
                 if (data.value) {
-                    initialLimit = parseInt(data.value);
+                    initialLimitRaw = data.value;
+                    initialLimit = data.value === 'all' ? 99999 : parseInt(data.value);
                 }
             } catch (e) { /* Use default if not found */ }
 
             // Update UI Dropdown
             const limitSelect = document.getElementById('rowsPerPage');
-            if (limitSelect) limitSelect.value = initialLimit;
+            if (limitSelect) limitSelect.value = initialLimitRaw;
 
             // 2. Initialize Controller
             eventTableCtrl = new TableController({
@@ -278,8 +280,6 @@
         function exportLog() {
             const activeTypes = Array.from(document.querySelectorAll('.type-badge.active')).map(b => b.getAttribute('data-type'));
             const user = document.getElementById('userFilter').value;
-            const start = document.getElementById('startDate').value;
-            const end = document.getElementById('endDate').value;
 
             const params = new URLSearchParams();
             if (activeTypes.length > 0) params.append('types', activeTypes.join(','));
@@ -351,6 +351,13 @@
         }
 
         async function applyFilters(page = 1) {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            if (start && end && start > end) {
+                showToast("Start date must be before end date.", "warning");
+                return;
+            }
+
             eventTableCtrl.page = page;
 
             const tbody = document.getElementById('tableBody');
@@ -358,8 +365,6 @@
 
             const activeTypes = Array.from(document.querySelectorAll('.type-badge.active')).map(b => b.getAttribute('data-type'));
             const user = document.getElementById('userFilter').value;
-            const start = document.getElementById('startDate').value;
-            const end = document.getElementById('endDate').value;
 
             const params = new URLSearchParams();
             params.append('page', eventTableCtrl.page);

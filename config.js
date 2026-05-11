@@ -32,7 +32,7 @@ if (appMode === "demo") {
 const ui = {
   appBackground: process.env.UI_BACKGROUND_URL || "resources/background.png",
   loginLogo: process.env.UI_LOGO_URL || "resources/logo.png",
-  loginTitle: process.env.UI_LOGIN_TITLE || "FENZ OSM Automation Manager",
+  loginTitle: process.env.UI_LOGIN_TITLE || "OpReady",
   version: packageJson.version,
   deployDate: packageJson.versionDate,
   trainingDayIndex: getDayIndex(process.env.TRAINING_DAY_OF_WEEK),
@@ -105,6 +105,14 @@ const defaultMinScore = parseFloat(process.env.DEFAULT_MIN_SCORE) || 80;
 const defaultMinScoreType = process.env.DEFAULT_MIN_SCORE_TYPE || "percentage";
 const defaultMaxTries = parseInt(process.env.DEFAULT_MAX_TRIES) || 1;
 
+// --- RATE LIMITING ---
+const rateLimits = {
+  login:         { windowMin: parseInt(process.env.RATE_LIMIT_LOGIN_WINDOW_MIN)  || 15,  max: parseInt(process.env.RATE_LIMIT_LOGIN_MAX)         || 10  },
+  mfa:           { windowMin: parseInt(process.env.RATE_LIMIT_MFA_WINDOW_MIN)    || 5,   max: parseInt(process.env.RATE_LIMIT_MFA_MAX)           || 5   },
+  forgotPassword:{ windowMin: parseInt(process.env.RATE_LIMIT_FORGOT_WINDOW_MIN) || 30,  max: parseInt(process.env.RATE_LIMIT_FORGOT_MAX)        || 3   },
+  api:           { windowMin: parseInt(process.env.RATE_LIMIT_API_WINDOW_MIN)    || 1,   max: parseInt(process.env.RATE_LIMIT_API_MAX)           || 300 },
+};
+
 const aiConfig = {
   enabled: process.env.ENABLE_AI_EVALUATION === "true",
   provider: process.env.AI_PROVIDER || "gemini",
@@ -131,5 +139,6 @@ module.exports = {
   defaultMinScoreType,
   defaultMaxTries,
   aiConfig,
-  gcsConfig
+  gcsConfig,
+  rateLimits,
 };

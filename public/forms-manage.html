@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
-    <title id="pageTitle">Forms Manager - FENZ OSM</title>
+    <title id="pageTitle">Forms Manager - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js"
@@ -50,8 +50,8 @@
                     </div>
 
                     <div class="sidebar-actions">
-                        <button onclick="createNewForm()" class="btn-sm"
-                            style="flex: 0 0 34px; background:var(--success); color:white; font-size: 18px; font-weight: bold; padding: 0; height: 32px;"
+                        <button onclick="createNewForm()" class="btn-sm btn-success"
+                            style="flex: 0 0 34px; font-size: 18px; font-weight: bold; padding: 0; height: 32px;"
                             title="Add New Form">+</button>
 
                         <button onclick="document.getElementById('importBulkInput').click()" class="btn-sm"
@@ -78,8 +78,8 @@
                             </svg> <span>All</span>
                         </button>
 
-                        <button onclick="openModal('aiHelpModal')" class="btn-sm"
-                            style="flex: 0 0 34px; background:#6f42c1; color:white; font-weight:bold; padding: 0; height: 32px;"
+                        <button onclick="openModal('aiHelpModal')" class="btn-sm btn-purple"
+                            style="flex: 0 0 34px; font-weight:bold; padding: 0; height: 32px;"
                             title="AI Form Generation Help">AI</button>
                     </div>
                 </div>
@@ -133,9 +133,9 @@
 
                 </div>
                 <div class="editor-toolbar">
-                    <button onclick="previewForm()" class="btn-sm" style="background:#6f42c1; color:white;">Preview</button>
-                    <button onclick="testScoring()" class="btn-sm" style="background:var(--info); color:white;">Test</button>
-                    <button onclick="saveForm()" class="btn-sm btn-primary">Save</button>
+                    <button onclick="previewForm()" class="btn-sm btn-informative">Preview</button>
+                    <button onclick="testScoring()" class="btn-sm btn-primary">Test</button>
+                    <button onclick="saveForm()" class="btn-sm btn-success">Save</button>
 
                     <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 5px;"></div>
 
@@ -224,7 +224,7 @@
             <div class="help-body">
                 <h1 id="generating-forms-with-ai">Generating Forms with AI</h1>
                 <p>This guide explains how to use an AI (like Gemini) to generate valid JSON form definitions for
-                    the <strong>FENZ OSM Manager</strong> using operational documentation as a source.</p>
+                    the <strong>OpReady Manager</strong> using operational documentation as a source.</p>
                 <h2 id="workflow-overview">Workflow Overview</h2>
                 <ol>
                     <li><strong>Prepare Source Documents:</strong> Gather the technical manuals or operational
@@ -263,7 +263,7 @@ The output must be a single JSON object with these keys:
                         it into an AI chat and upload your source PDF/OI.</em></p>
             </div>
             <div class="modal-actions-right">
-                <button onclick="closeModal('aiHelpModal')" class="btn-primary">Close</button>
+                <button onclick="closeModal('aiHelpModal')" class="btn-secondary">Close</button>
             </div>
         </div>
     </div>
@@ -305,6 +305,14 @@ The output must be a single JSON object with these keys:
         </svg>
     </button>
     <script>
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) {
+                document.title = "Forms Manager - " + c.loginTitle;
+                document.getElementById('pageHeader').innerText = "Forms Manager - " + c.loginTitle;
+            }
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+        });
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }

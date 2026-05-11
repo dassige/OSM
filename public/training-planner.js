@@ -143,26 +143,22 @@ function renderFutureList() {
 
     container.innerHTML = html;
 
-    // 4. Update Pagination Controls
+    // 4. Update Pagination Controls — always show when there is data
     const paginationEl = document.getElementById('listPagination');
-    if (totalDays > listLimit) {
-        paginationEl.style.display = 'flex';
-        document.getElementById('listPageInfo').textContent = `Showing days ${startIndex + 1}-${endIndex} of ${totalDays}`;
-        document.getElementById('btnListPrev').disabled = (listPage <= 1);
-        document.getElementById('btnListNext').disabled = (listPage >= totalPages);
-    } else {
-        paginationEl.style.display = 'none';
-    }
+    paginationEl.style.display = 'flex';
+    document.getElementById('listPageInfo').textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalDays}`;
+    document.getElementById('btnListPrev').disabled = (listPage <= 1);
+    document.getElementById('btnListNext').disabled = (listPage >= totalPages);
 }
 
 // --- [NEW] PAGINATION ACTIONS ---
 
 window.changeListLimit = function (val) {
-    listLimit = parseInt(val);
+    listLimit = val === 'all' ? 99999 : parseInt(val);
     listPage = 1; // Reset to start
     renderFutureList();
-    // Save preference
-    socket.emit('update-preference', { key: 'trainingListLimit', value: listLimit });
+    // Save preference (store the raw string so "all" round-trips correctly)
+    socket.emit('update-preference', { key: 'trainingListLimit', value: val });
 };
 
 window.changeListPage = function (delta) {
@@ -260,12 +256,21 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(e => console.error("UI Config Error:", e));
 });
 
+socket.on('disconnect', () => {
+    const banner = document.getElementById('socketBanner');
+    if (banner) banner.style.display = 'block';
+});
+
 socket.on('connect', () => {
+    const banner = document.getElementById('socketBanner');
+    if (banner) banner.style.display = 'none';
+
     // Only fetch if config has already loaded (currentStartDate exists)
-    // Otherwise the fetch callback above will handle it
+    // Otherwise the DOMContentLoaded callback above will handle it
     if (currentStartDate) {
         socket.emit('get-preferences');
         loadSessions();
+        loadExpiringSkills();
     }
 });
 
@@ -304,12 +309,13 @@ socket.on('preferences-data', (prefs) => {
             applyDayFilter();
         }
     }
-    if (prefs.trainingListLimit) {
-        const val = parseInt(prefs.trainingListLimit);
-        if (!isNaN(val) && listLimit !== val) {
+    if (prefs.trainingListLimit !== undefined) {
+        const raw = String(prefs.trainingListLimit);
+        const val = raw === 'all' ? 99999 : parseInt(raw);
+        if (!isNaN(val)) {
             listLimit = val;
             const select = document.getElementById('listLimitSelect');
-            if (select) select.value = val;
+            if (select) select.value = raw;
             // Re-render if we are in list view and have data
             if (currentView === 'list' && cachedFutureSessions.length > 0) {
                 renderFutureList();

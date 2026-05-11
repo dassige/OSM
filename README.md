@@ -1,9 +1,9 @@
-
-# FENZ OSM Manager
+﻿
+# OpReady
 
 ## Description
 
-**FENZ OSM Manager** is a Node.js web application designed to streamline the tracking and management of expiring Operational Skills Maintenance (OSM) competencies.
+**OpReady** is a Node.js web application designed to streamline the tracking and management of expiring Operational Skills Maintenance (OSM) competencies.
 
 It automates the process of checking a dashboard for expiring skills, persists data via a local SQLite database, and provides a secure web interface for administrators to send targeted email reminders. This application manages all members, skills, and configurations dynamically via the web interface—no code editing required.
 
@@ -47,7 +47,9 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **Cloud-Native Persistence:** Uses **Litestream** to replicate the SQLite database to Google Cloud Storage (GCS) for stateless deployments (e.g., Google Cloud Run).
   * **Dockerized:** Ready for production deployment with a flexible configuration system.
   * **Demo Mode:** Run the application in a fully sandboxed environment using static local data and a separate database (`demo.db`). This allows for safe testing and demonstration without connecting to the live OSM Dashboard or risking production data.
-  * **WhatsApp Integration:** Send expiring skill notifications directly to members' WhatsApp accounts using a headless client. Includes support for bulk sending, test messages, and session management.
+  * **WhatsApp Integration:** Send expiring skill notifications directly to members' WhatsApp accounts using a headless client. Includes support for bulk sending, test messages, session management, **automatic reconnection with exponential backoff**, and a **message queue** that retries delivery once the connection is restored.
+  * **REST API with API Key Authentication:** Every `/api/*` endpoint can be called by external systems using an `X-API-Key` request header. Keys are managed (create, revoke, delete) through the System Tools page without restarting the server.
+  * **API Reference (Swagger UI):** Interactive OpenAPI 3.0 documentation is available at `/api/docs` for authenticated admin users.
 
 ## Table of Contents
 
@@ -57,6 +59,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * [UI Customization](#ui-customization)
   * [Usage](#usage)
   * [Demo Mode](#demo-mode)
+  * [API Access](#api-access)
   * [Docker Deployment](#docker-deployment)
   * [Google Cloud Run Deployment](#google-cloud-run-deployment)
   * [Project Structure](#project-structure)
@@ -335,6 +338,92 @@ Both forms and templates utilize a strict JSON schema validated by the backend.
   * **Forms/Surveys:** Managed via the `forms` and `surveys` tables in SQLite. Key fields include `structure` (a JSON stringified array of question objects) and `public_id` (a unique UUID for secure public access).
   * **Templates:** Persisted in the `preferences` table as serialized JSON objects.
 
+## API Access
+
+The application exposes its full REST API to external systems via **API Key authentication**. This allows dashboards, scripts, or integrations to read and write data without a browser session.
+
+### Interactive API Reference
+
+An interactive **Swagger UI** is available at:
+
+```
+GET /api/docs
+```
+
+Requires an active admin session. The raw OpenAPI 3.0 spec is also downloadable at `/api/docs/spec.json`.
+
+---
+
+### Managing API Keys
+
+API keys are managed exclusively through **System Tools → API Key Management** (admin role required).
+
+| Action | Description |
+|--------|-------------|
+| **Create** | Provide a name and role (`admin` or `simple`). The full key is shown **once** — copy it immediately. |
+| **Revoke / Enable** | Toggle a key active/inactive without deleting it. |
+| **Delete** | Permanently removes the key. |
+
+> **Security:** Only the SHA-256 hash of each key is stored in the database. If a key is lost, delete it and create a new one.
+
+---
+
+### Authenticating with an API Key
+
+Add the key as an `X-API-Key` HTTP request header on any `/api/*` endpoint.
+
+**curl:**
+```bash
+curl -H "X-API-Key: osm_a1b2c3d4..." \
+     https://your-osm-instance.example.com/api/members
+```
+
+**JavaScript (fetch):**
+```js
+const res = await fetch('https://your-osm-instance.example.com/api/members', {
+  headers: { 'X-API-Key': 'osm_a1b2c3d4...' }
+});
+const members = await res.json();
+```
+
+**Python (requests):**
+```python
+import requests
+
+headers = {'X-API-Key': 'osm_a1b2c3d4...'}
+r = requests.get('https://your-osm-instance.example.com/api/members', headers=headers)
+members = r.json()
+```
+
+---
+
+### Key Roles & Permissions
+
+| Role | Access |
+|------|--------|
+| `admin` | Full read/write access to all `/api/*` endpoints |
+| `simple` | Read-only access to statistics and reports (`/api/statistics/*`, `/api/reports/*`) |
+
+API keys **cannot** access HTML pages — those remain session-only. Endpoints restricted to `superadmin` (e.g., purge event log) are not accessible via API key.
+
+---
+
+### Common Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/members` | List all members |
+| `GET` | `/api/skills` | List all skills |
+| `GET` | `/api/reports/data/by-member` | Compliance report grouped by member |
+| `GET` | `/api/reports/data/by-skill` | Compliance report grouped by skill |
+| `GET` | `/api/statistics/data/compliance-overview` | Dashboard compliance stats |
+| `GET` | `/api/live-forms` | Live form submission records |
+| `GET` | `/api/health` | Health check (no key required) |
+
+See `/api/docs` for the complete endpoint reference including request/response schemas.
+
+---
+
 ## Docker Deployment
 
 1.  **Build and Run:**
@@ -351,29 +440,50 @@ See [Installation on Google Cloud Run](https://www.google.com/search?q=Installat
 
 ## Integrations
 
-  * [**WhatsApp Feature Guide**](https://www.google.com/search?q=whatsapp-feature.md): Detailed instructions on connecting your WhatsApp account, managing sessions, and sending mobile notifications.
+  * [**WhatsApp Feature Guide**](whatsapp-feature.md): Detailed instructions on connecting your WhatsApp account, managing sessions, and sending mobile notifications.
+
+### WhatsApp Resilience
+
+The WhatsApp service includes built-in fault tolerance:
+
+* **Automatic Reconnection:** On an unexpected disconnect the service waits and retries automatically using exponential backoff — 5 s, 15 s, 60 s, then 5 min intervals. The UI displays a `RECONNECTING` status during recovery. Manual logout suppresses auto-reconnect.
+* **Message Queue:** Messages sent while the client is offline are queued (up to 100) and delivered automatically once the connection is restored. Each message is retried up to 3 times across reconnect cycles; permanently undeliverable messages are logged and dropped cleanly.
 
 ## Project Structure
 
 ```text
-├── .env                    # Secrets & Config
-├── server.js               # Express Web Server
-├── fenz.db                 # SQLite Database
-├── config.js               # Configuration loader
-├── start.sh                # Startup Script (Litestream)
-├── public/                 # Frontend Assets
-│   ├── reports/            # Report Renderers
-│   ├── email-templates.html # Template Editor
-│   ├── system-tools.html   # Backup/Restore
-│   ├── event-log.html      # Audit Log
+├── .env                      # Secrets & Config
+├── server.js                 # Express Web Server
+├── fenz.db                   # SQLite Database
+├── config.js                 # Configuration loader
+├── start.sh                  # Startup Script (Litestream)
+├── migrations/               # Auto-applied SQL migrations
+│   ├── 001-baseline.sql
+│   ├── ...
+│   └── 009-add-api-keys.sql  # API key table
+├── middleware/
+│   └── auth.js               # globalAuthGuard, hasRole, X-API-Key support
+├── public/                   # Frontend Assets
+│   ├── reports/              # Report Renderers
+│   ├── email-templates.html  # Template Editor
+│   ├── system-tools.html     # Backup/Restore + API Key Management
+│   ├── event-log.html        # Audit Log
 │   └── ...
-├── services/               # Backend Logic
-│   ├── db.js               # Database Adapter
-│   ├── mailer.js           # SMTP Service
-│   ├── report-service.js   # Reporting Logic
-│   ├── scraper.js          # Dashboard Scraper
+├── routes/api/               # REST API Routers
+│   ├── api-keys.js           # API key CRUD
+│   ├── docs.js               # Swagger UI + OpenAPI spec (/api/docs)
 │   └── ...
-└── Dockerfile              # Container definition
+├── services/                 # Backend Logic
+│   ├── db.js                 # Database Adapter (facade)
+│   ├── db/
+│   │   ├── api-keys.js       # API key DB functions
+│   │   └── ...
+│   ├── mailer.js             # SMTP Service
+│   ├── whatsapp-service.js   # WhatsApp client (w/ reconnect & message queue)
+│   ├── report-service.js     # Reporting Logic
+│   ├── scraper.js            # Dashboard Scraper
+│   └── ...
+└── Dockerfile                # Container definition
 ```
 
 ## Credits
@@ -381,7 +491,7 @@ See [Installation on Google Cloud Run](https://www.google.com/search?q=Installat
   * **Project Lead & Developer:** Gerardo Dassi
   * **Persistence:** Litestream
   * **Icons:** Feather Icons
-  * **AI Assistance:** A significant portion of the code and documentation in this project was generated by **Google Gemini**, acting as a pair programmer under the guidance and architectural direction of the Project Lead.
+  * **AI Assistance:** A significant portion of the code and documentation in this project was generated by **Google Gemini** and **Anthropic Claude Code**, acting as pair programmers under the guidance and architectural direction of the Project Lead.
 
 ## License
 

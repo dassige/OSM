@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Compliance Statistics - FENZ OSM</title>
+    <title>Compliance Statistics - OpReady</title>
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -35,9 +35,9 @@
                     <option value="compliance-overview">Overall Compliance Overview</option>
                 </select>
                 <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button onclick="window.print()" class="btn-sm btn-secondary" style="margin:0;">Print</button>
-                    <button onclick="downloadPdf()" class="btn-sm btn-danger" style="margin:0;">Export PDF</button>
-                    <button onclick="runStat()" class="btn-sm btn-success" style="flex-grow:1; margin:0;">Refresh Data</button>
+                    <button onclick="window.print()" class="btn-sm btn-primary" style="margin:0;">Print</button>
+                    <button onclick="downloadPdf()" class="btn-sm btn-primary" style="margin:0;">Export PDF</button>
+                    <button onclick="runStat()" class="btn-sm btn-primary" style="flex-grow:1; margin:0;">Refresh Data</button>
                 </div>
             </div>
             
@@ -68,6 +68,16 @@
     <script src="utils.js"></script>
     <script src="statistics/compliance-overview.js"></script>
     <script src="js/statistics-controller.js"></script>
+    <script>
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) {
+                document.title = "Compliance Statistics - " + c.loginTitle;
+                document.getElementById('pageHeader').innerText = "Statistics Dashboard - " + c.loginTitle;
+            }
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+        });
+    </script>
 </body>
 
 </html>

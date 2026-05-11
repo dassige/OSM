@@ -2,7 +2,7 @@
 services:
 
   app:
-    container_name: fenz-osm-manager
+    container_name: opready
     build: .
     ports:
       - "3000:3000"

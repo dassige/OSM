@@ -1,4 +1,4 @@
-
+﻿
 # WhatsApp Integration Guide
 
 This application includes a feature to send **Expiring Skill Notifications** directly to members via WhatsApp. This document explains how the feature works, how to set it up, and how to use it effectively.
@@ -13,6 +13,13 @@ The integration relies on a library called **`whatsapp-web.js`**. Unlike the off
 * **Session Persistence:** Once linked, the session tokens are saved locally in the `.wwebjs_auth` folder, allowing the server to stay connected even after restarts.
 
 > **Note:** Because this relies on your physical phone's connection, your phone must have an active internet connection for the server to send messages.
+
+### Connection Resilience
+
+The service includes built-in fault tolerance so temporary disruptions do not require manual intervention:
+
+* **Automatic Reconnection:** If the connection drops unexpectedly, the service waits and retries automatically using an exponential backoff schedule — **5 s → 15 s → 60 s → 5 min** — repeating at the 5-minute interval until reconnected. The status indicator on the Third Party Services page shows `RECONNECTING` during this window. A manual `Stop Service` suppresses auto-reconnect.
+* **Server-Side Message Queue:** Any notification triggered while the client is disconnected is held in a server-side queue (up to 100 messages). When the connection is restored, queued messages are delivered automatically — up to 3 retry attempts per message. Messages that still fail after 3 retries are logged and discarded cleanly.
 
 ## 2. Configuration & Setup
 
@@ -70,15 +77,17 @@ On the main **Dashboard**, you will see a new **WhatsApp** column in the "Expiri
 
 In the **Third Party Services** page, you can enable **"Auto-disconnect on Logout"**.
 
-  * **What it does:** If enabled, when you log out of the FENZ OSM web app, the server will automatically destroy the WhatsApp session.
+  * **What it does:** If enabled, when you log out of the OpReady web app, the server will automatically destroy the WhatsApp session.
   * **Why use it?** This is a security feature. If multiple admins share the system, this ensures your personal WhatsApp account doesn't stay linked to the server when you are not using it.
   * **Trade-off:** You will need to re-scan the QR code every time you log back in to use WhatsApp features.
 
 ## 5\. Troubleshooting
 
-  * **"Protocol Error / Target Closed":** This usually happens if the server restarts while the browser is busy. Simply click "Start Service" again.
-  * **QR Code Not Loading:** If the QR code doesn't appear within 30 seconds, try refreshing the page. If the issue persists, check the server console logs.
-  * **Messages Not Sending:** Ensure your physical phone has an internet connection. If the phone is off or in airplane mode, messages will remain "queued" until the phone reconnects.
+  * **"Protocol Error / Target Closed":** This usually happens if the server restarts while the browser is busy. The service will attempt to reconnect automatically (see Connection Resilience above). If the status does not recover within a few minutes, click **Stop Service** and then **Start Service** to force a clean restart.
+  * **Status stuck on `RECONNECTING`:** The backoff retries up to the 5-minute interval indefinitely. If your phone or network is the cause, restore connectivity and the service will reconnect on the next attempt. Click **Stop Service** to abort if you no longer need WhatsApp.
+  * **QR Code Not Loading:** If the QR code doesn't appear within 30 seconds, try refreshing the page. If the issue persists, check the server console logs for Puppeteer/Chrome errors.
+  * **Messages Not Sending (Phone Offline):** Ensure your physical phone has an active internet connection. Messages triggered while the server client is disconnected are queued server-side and delivered automatically once the connection is restored — you do not need to resend them manually.
+  * **Messages Not Sending (Client Ready but Failing):** Check that the member's mobile number is correctly formatted in the database (NZ numbers starting with `02` are auto-converted to the `64XX` WhatsApp format). Send a test message from the Third Party Services page to verify connectivity.
 
 <!-- end list -->
 

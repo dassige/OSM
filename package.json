@@ -1,8 +1,8 @@
 {
-  "name": "fenz-osm",
-  "version": "1.13.9",
-  "description": "FENZ OSM Automation Manager",
-  "versionDate": "2026/05/08 09:36",
+  "name": "opready",
+  "version": "2.0.6",
+  "description": "OpReady — Operational Readiness Manager",
+  "versionDate": "2026/05/11 15:52",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -19,8 +19,10 @@
     "@google/generative-ai": "^0.21.0",
     "axios": "^1.12.2",
     "cheerio": "^1.1.2",
+    "connect-sqlite3": "^0.9.16",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "express-rate-limit": "^8.5.1",
     "express-session": "^1.17.3",
     "fs": "^0.0.1-security",
     "http": "^0.0.1-security",
@@ -37,8 +39,10 @@
     "speakeasy": "^2.0.0",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^9.0.0",
-    "whatsapp-web.js": "^1.20.3"
+    "whatsapp-web.js": "^1.20.3",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "jest": "^30.3.0",

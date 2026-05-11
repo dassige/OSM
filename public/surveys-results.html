@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
-    <title id="pageTitle">Survey Results - FENZ OSM</title>
+    <title id="pageTitle">Survey Results - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <style>
@@ -256,7 +256,7 @@
         </div>
         <div id="exportActionButtons" class="tools-bar" style="margin-top: 30px; justify-content: flex-end;">
             <div style="display:flex; gap:10px;">
-                <button onclick="window.print()" class="btn-sm btn-secondary">
+                <button onclick="window.print()" class="btn-sm btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
                         <polyline points="6 9 6 2 18 2 18 9"></polyline>
@@ -264,7 +264,7 @@
                         <rect x="6" y="14" width="12" height="8"></rect>
                     </svg> Print
                 </button>
-                <button onclick="exportCSV()" class="btn-sm btn-success">
+                <button onclick="exportCSV()" class="btn-sm btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -272,7 +272,7 @@
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg> Export CSV
                 </button>
-                <button onclick="exportPDF()" class="btn-sm btn-purple">
+                <button onclick="exportPDF()" class="btn-sm btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -305,6 +305,16 @@
     <script src="help.js"></script>
     <script src="/js/sidebar.js"></script>
     <script src="js/surveys-results.js"></script>
+    <script>
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) {
+                document.title = "Survey Results - " + c.loginTitle;
+                document.getElementById('pageHeader').innerText = "Survey Results - " + c.loginTitle;
+            }
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+        });
+    </script>
 </body>
 
 </html>

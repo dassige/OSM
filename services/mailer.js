@@ -1,5 +1,6 @@
 // services/mailer.js
 const config = require("../config");
+const logger = require("./logger");
 const getTime = () =>
   new Date().toLocaleTimeString(config.locale, { timeZone: config.timezone });
 
@@ -7,6 +8,26 @@ const getTime = () =>
 function stripHtml(html) {
   if (!html) return "";
   return html.replace(/<[^>]*>?/gm, "");
+}
+
+// Helper: Escape user-supplied values for safe HTML insertion
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Helper: Return a copy of a variables object with all string values HTML-escaped
+function escapeHtmlVars(variables) {
+  const safe = {};
+  for (const [key, value] of Object.entries(variables)) {
+    safe[key] = typeof value === "string" ? escapeHtml(value) : value;
+  }
+  return safe;
 }
 
 // Helper: Generic Variable Replacement
@@ -57,13 +78,13 @@ async function sendNotification(
   if (skillsToProcess.length === 0) return null;
 
   const globalVars = {
-    appname: appName || "FENZ OSM Manager",
+    appname: appName || "OpReady",
     name: member.name,
     email: member.email,
   };
 
   const defaults = {
-    from: templateConfig.from || `"${globalVars.appname}" <noreply@fenz.osm>`,
+    from: templateConfig.from || `"${globalVars.appname}" <noreply@opready.app>`,
     subject:
       templateConfig.subject ||
       `${globalVars.appname}: Expiring Skills Notification`,
@@ -80,7 +101,7 @@ async function sendNotification(
 
   const from = replaceVariables(defaults.from, globalVars);
   const subject = replaceVariables(defaults.subject, globalVars);
-  const intro = replaceVariables(defaults.intro, globalVars);
+  const intro = replaceVariables(defaults.intro, escapeHtmlVars(globalVars));
 
   let rowsHtml = "";
   let plainTextList = "";
@@ -88,7 +109,7 @@ async function sendNotification(
   skillsToProcess.forEach((skill) => {
     if (skill.isSubmitted) {
       const criticalLabel = skill.isCritical ? "(CRITICAL)" : "";
-      rowsHtml += `<li style="color:#555;"><strong>${skill.skill}</strong> ${criticalLabel} <br> <span style="color:#17a2b8; font-weight:bold; font-size:0.9em;">&#9432; Form submitted and awaiting review</span></li>`;
+      rowsHtml += `<li style="color:#555;"><strong>${escapeHtml(skill.skill)}</strong> ${criticalLabel} <br> <span style="color:#17a2b8; font-weight:bold; font-size:0.9em;">&#9432; Form submitted and awaiting review</span></li>`;
       plainTextList += `- ${skill.skill}: Form submitted and awaiting review\n`;
       return;
     }
@@ -103,11 +124,11 @@ async function sendNotification(
 
     const criticalLabel = skill.isCritical ? "(CRITICAL)" : "";
     let row = templateToUse
-      .replace(/{{skill}}/g, skill.skill)
-      .replace(/{{date}}/g, skill.dueDate)
+      .replace(/{{skill}}/g, escapeHtml(skill.skill))
+      .replace(/{{date}}/g, escapeHtml(skill.dueDate))
       .replace(/{{critical}}/g, criticalLabel)
-      .replace(/{{url}}/g, fullUrl)
-      .replace(/{{next-planned-dates}}/g, skill.nextPlannedDates || "None");
+      .replace(/{{url}}/g, escapeHtml(fullUrl))
+      .replace(/{{next-planned-dates}}/g, escapeHtml(skill.nextPlannedDates || "None"));
 
     rowsHtml += row;
     plainTextList += `- ${skill.skill} (${skill.dueDate}) [Next: ${skill.nextPlannedDates}]\n`;
@@ -117,7 +138,7 @@ async function sendNotification(
         <div style="font-family: Arial, sans-serif; color: #333;">
             ${intro}
             <ul>${rowsHtml}</ul>
-            <p style="font-size: 12px; color: #888; margin-top:20px;">Notification from ${globalVars.appname}.</p>
+            <p style="font-size: 12px; color: #888; margin-top:20px;">Notification from ${escapeHtml(globalVars.appname)}.</p>
         </div>
     `;
 
@@ -157,22 +178,19 @@ async function sendPasswordReset(
   templatePref,
 ) {
   const variables = {
-    appname: appName || "FENZ OSM Manager",
+    appname: appName || "OpReady",
     email: email,
     password: newPassword,
   };
   const defaults = {
-    from: `"${variables.appname}" <noreply@fenz.osm>`,
+    from: `"${variables.appname}" <noreply@opready.app>`,
     subject: `${variables.appname}: Password Reset`,
     body: `<p>A password reset was requested.</p><p>New Password: <strong>{{password}}</strong></p>`,
   };
   const config = templatePref || defaults;
   const from = replaceVariables(config.from || defaults.from, variables);
-  const subject = replaceVariables(
-    config.subject || defaults.subject,
-    variables,
-  );
-  const body = replaceVariables(config.body || defaults.body, variables);
+  const subject = replaceVariables(config.subject || defaults.subject, variables);
+  const body = replaceVariables(config.body || defaults.body, escapeHtmlVars(variables));
 
   await transporter.sendMail({
     from,
@@ -181,7 +199,7 @@ async function sendPasswordReset(
     html: body,
     text: stripHtml(body),
   });
-  console.log(`[SMTP] Password reset email sent to ${email}`);
+  logger.info(`[SMTP] Password reset email sent to ${email}`);
 }
 
 // 3. New Account
@@ -194,23 +212,20 @@ async function sendNewAccountNotification(
   templatePref,
 ) {
   const variables = {
-    appname: appName || "FENZ OSM Manager",
+    appname: appName || "OpReady",
     name: name,
     email: email,
     password: password,
   };
   const defaults = {
-    from: `"${variables.appname}" <noreply@fenz.osm>`,
+    from: `"${variables.appname}" <noreply@opready.app>`,
     subject: `Welcome to ${variables.appname}`,
     body: `<p>Welcome <strong>{{name}}</strong>,</p><p>Your account has been created.</p><p>Password: <strong>{{password}}</strong></p>`,
   };
   const config = templatePref || defaults;
   const from = replaceVariables(config.from || defaults.from, variables);
-  const subject = replaceVariables(
-    config.subject || defaults.subject,
-    variables,
-  );
-  const body = replaceVariables(config.body || defaults.body, variables);
+  const subject = replaceVariables(config.subject || defaults.subject, variables);
+  const body = replaceVariables(config.body || defaults.body, escapeHtmlVars(variables));
 
   await transporter.sendMail({
     from,
@@ -219,7 +234,7 @@ async function sendNewAccountNotification(
     html: body,
     text: stripHtml(body),
   });
-  console.log(`[SMTP] New account email sent to ${email}`);
+  logger.info(`[SMTP] New account email sent to ${email}`);
 }
 
 // 4. Account Deletion
@@ -231,22 +246,19 @@ async function sendAccountDeletionNotification(
   templatePref,
 ) {
   const variables = {
-    appname: appName || "FENZ OSM Manager",
+    appname: appName || "OpReady",
     name: name,
     email: email,
   };
   const defaults = {
-    from: `"${variables.appname}" <noreply@fenz.osm>`,
+    from: `"${variables.appname}" <noreply@opready.app>`,
     subject: `${variables.appname}: Account Deleted`,
     body: `<p>Hello {{name}},</p><p>Your account on {{appname}} has been deleted.</p>`,
   };
   const config = templatePref || defaults;
   const from = replaceVariables(config.from || defaults.from, variables);
-  const subject = replaceVariables(
-    config.subject || defaults.subject,
-    variables,
-  );
-  const body = replaceVariables(config.body || defaults.body, variables);
+  const subject = replaceVariables(config.subject || defaults.subject, variables);
+  const body = replaceVariables(config.body || defaults.body, escapeHtmlVars(variables));
 
   await transporter.sendMail({
     from,
@@ -255,7 +267,7 @@ async function sendAccountDeletionNotification(
     html: body,
     text: stripHtml(body),
   });
-  console.log(`[SMTP] Deletion notification sent to ${email}`);
+  logger.info(`[SMTP] Deletion notification sent to ${email}`);
 }
 
 // 5. Survey Invitations & Reminders
@@ -270,14 +282,14 @@ async function sendSurveyInvitation(
   isAnonymous = true,
 ) {
   const variables = {
-    appname: appName || "FENZ OSM Manager",
+    appname: appName || "OpReady",
     name: name || "Member",
     surveyName,
     surveyLink,
   };
   const defaults = {
     email: {
-      from: `"${variables.appname}" <noreply@fenz.osm>`,
+      from: `"${variables.appname}" <noreply@opready.app>`,
       subject: `Action Required: ${variables.surveyName}`,
       body: `<p>Please complete your anonymous survey: <a href="{{surveyLink}}">{{surveyLink}}</a></p>`,
       bodyNamed: `<p>Please complete your non-anonymous survey (identity recorded): <a href="{{surveyLink}}">{{surveyLink}}</a></p>`,
@@ -297,7 +309,7 @@ async function sendSurveyInvitation(
   if (!isAnonymous && config.bodyNamed) {
     bodyTemplate = config.bodyNamed;
   }
-  const body = replaceVariables(bodyTemplate, variables);
+  const body = replaceVariables(bodyTemplate, escapeHtmlVars(variables));
 
   await transporter.sendMail({
     from,
@@ -314,10 +326,10 @@ async function sendSecurityAlert(details, transporter, appName, superEmail) {
         <h3>Security Alert: User Account Automatically Blocked</h3>
         <p>A user has been blocked after exceeding the maximum number of failed login attempts.</p>
         <ul>
-            <li><strong>User Email:</strong> ${details.email}</li>
+            <li><strong>User Email:</strong> ${escapeHtml(details.email)}</li>
             <li><strong>Date/Time:</strong> ${new Date().toLocaleString()}</li>
             <li><strong>Failed Attempts:</strong> ${details.attempts}</li>
-            <li><strong>IP Address:</strong> ${details.ip}</li>
+            <li><strong>IP Address:</strong> ${escapeHtml(details.ip)}</li>
         </ul>
         <p>Please review the system logs and manually unblock the user if necessary.</p>
     `;

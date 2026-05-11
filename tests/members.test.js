@@ -6,6 +6,7 @@ const { createTestApp } = require('./test-utils');
 jest.mock('../services/db', () => ({
     getMembers: jest.fn(),
     addMember: jest.fn(),
+    getMemberById: jest.fn().mockResolvedValue({ name: 'Test Member' }),
     deleteMember: jest.fn(),
     logEvent: jest.fn().mockResolvedValue()
 }));

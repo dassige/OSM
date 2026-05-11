@@ -8,6 +8,7 @@ jest.mock('../services/db', () => ({
     getSkills: jest.fn(),
     addSkill: jest.fn(),
     updateSkill: jest.fn(),
+    getSkillById: jest.fn().mockResolvedValue({ name: 'Test Skill' }),
     deleteSkill: jest.fn(),
     logEvent: jest.fn().mockResolvedValue()
 }));

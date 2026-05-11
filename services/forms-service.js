@@ -3,6 +3,7 @@ const db = require("./db");
 const crypto = require("crypto");
 const aiService = require("./ai-service");
 const { aiConfig } = require("../config");
+const logger = require("./logger");
 
 async function getAllForms() {
   const database = await db.initDB();
@@ -213,19 +214,32 @@ async function ensureLiveForm(
     return existing.form_access_code;
   }
 
+  // Snapshot the form template at issuance time so future edits don't affect this record
+  const form = await getFormByPublicId(formPublicId);
+  const snapshot = form
+    ? JSON.stringify({
+        name: form.name,
+        intro: form.intro,
+        structure: form.structure,
+        min_score: form.min_score,
+        min_score_type: form.min_score_type,
+        max_tries: form.max_tries,
+      })
+    : null;
+
   const accessCode = crypto.randomUUID();
-  // Standardize sent datetime
   const now = new Date().toISOString();
 
   await database.run(
-    `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, form_sent_datetime) 
-     VALUES (?, ?, ?, ?, ?, 'sent', ?)`,
+    `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, form_sent_datetime, form_snapshot)
+     VALUES (?, ?, ?, ?, ?, 'sent', ?, ?)`,
     skillId,
     skillExpiringDate,
     memberId,
     formPublicId,
     accessCode,
     now,
+    snapshot,
   );
   return accessCode;
 }
@@ -243,14 +257,15 @@ async function createRetryLiveForm(previousId) {
   const newTries = 1;
 
   await database.run(
-    `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, tries) 
-         VALUES (?, ?, ?, ?, ?, 'sent', ?)`,
+    `INSERT INTO live_forms (skill_id, skill_expiring_date, member_id, skill_form_public_id, form_access_code, form_status, tries, form_snapshot)
+         VALUES (?, ?, ?, ?, ?, 'sent', ?, ?)`,
     prev.skill_id,
     prev.skill_expiring_date,
     prev.member_id,
     prev.skill_form_public_id,
     accessCode,
     newTries,
+    prev.form_snapshot,
   );
 
   return accessCode;
@@ -403,10 +418,20 @@ async function getLiveFormByCode(code) {
   );
 
   if (result) {
-    try {
-      result.structure = JSON.parse(result.structure);
-    } catch (e) {
-      result.structure = [];
+    if (result.form_snapshot) {
+      try {
+        const snap = JSON.parse(result.form_snapshot);
+        result.form_name = snap.name;
+        result.intro = snap.intro;
+        result.structure = snap.structure;
+        result.min_score = snap.min_score;
+        result.min_score_type = snap.min_score_type;
+        result.max_tries = snap.max_tries;
+      } catch (e) {
+        try { result.structure = JSON.parse(result.structure); } catch (e2) { result.structure = []; }
+      }
+    } else {
+      try { result.structure = JSON.parse(result.structure); } catch (e) { result.structure = []; }
     }
 
     if (result.form_submitted_data) {
@@ -451,23 +476,34 @@ async function getLiveFormSubmission(id) {
     id,
   );
   if (result) {
-    try {
-      result.structure = JSON.parse(result.structure);
-    } catch (e) {
-      result.structure = [];
+    if (result.form_snapshot) {
+      try {
+        const snap = JSON.parse(result.form_snapshot);
+        result.form_name = snap.name;
+        result.intro = snap.intro;
+        result.structure = snap.structure;
+        result.min_score = snap.min_score;
+        result.min_score_type = snap.min_score_type;
+        result.max_tries = snap.max_tries;
+      } catch (e) {
+        try { result.structure = JSON.parse(result.structure); } catch (e2) { result.structure = []; }
+      }
+    } else {
+      try { result.structure = JSON.parse(result.structure); } catch (e) { result.structure = []; }
     }
+
     if (result.form_submitted_data) {
       try {
         result.form_submitted_data = JSON.parse(result.form_submitted_data);
       } catch (e) {}
     }
-  }
 
-  if (result.ai_feedback) {
-    try {
-      result.ai_feedback = JSON.parse(result.ai_feedback);
-    } catch (e) {
-      result.ai_feedback = {};
+    if (result.ai_feedback) {
+      try {
+        result.ai_feedback = JSON.parse(result.ai_feedback);
+      } catch (e) {
+        result.ai_feedback = {};
+      }
     }
   }
 
@@ -566,7 +602,7 @@ async function calculateFormScore(structure, submittedData, skipAi = false) {
             reason: evalResult.justification,
           };
         } catch (e) {
-          console.error("AI Eval Failed:", e);
+          logger.error("AI Eval Failed", { error: e.message });
           aiFeedback[field.id] = { score: 0, reason: "AI Service Unavailable" };
         }
       } else {

@@ -5,6 +5,9 @@ let currentOsmData = [];
 let currentSort = { column: "name", order: "asc" };
 let isWaReady = false;
 let showCompletionToast = false;
+let isJobRunning = false;
+let isLoadingData = false;
+let jobTimeoutId = null;
 
 const ICON_ASC =
   '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
@@ -31,7 +34,28 @@ function init() {
     if (err.message === "unauthorized") window.location.href = "/login.html";
   });
 
+  socket.on("disconnect", () => {
+    const banner = document.getElementById("socketBanner");
+    if (banner) banner.style.display = "block";
+    sendEmailsBtn.disabled = true;
+    if (viewBtn) viewBtn.disabled = true;
+  });
+
   socket.on("connect", () => {
+    const banner = document.getElementById("socketBanner");
+    if (banner) banner.style.display = "none";
+
+    if (isJobRunning) {
+      setIdleState(1);
+      if (window.showToast) showToast("Reconnected. The operation was interrupted — please retry.", "warning");
+    } else if (isLoadingData) {
+      isLoadingData = false;
+      if (viewBtn) { viewBtn.disabled = false; viewBtn.textContent = "Reload Expiring Skills"; }
+      const overlay = document.getElementById("loadingOverlay");
+      if (overlay) overlay.style.display = "none";
+      if (window.showToast) showToast("Reconnected. Please reload the data.", "info");
+    }
+
     socket.emit("get-preferences");
     socket.emit("wa-get-status");
   });
@@ -74,6 +98,14 @@ function parseRankAndName(fullName) {
   return { rank: "-", displayName: fullName || "" };
 }
 function setRunningState() {
+  isJobRunning = true;
+  jobTimeoutId = setTimeout(() => {
+    if (isJobRunning) {
+      setIdleState(1);
+      if (window.showToast) showToast("Operation timed out — no response from server. Please retry.", "error");
+    }
+  }, 90000);
+
   sendEmailsBtn.disabled = true;
   viewBtn.disabled = true;
   document
@@ -90,6 +122,8 @@ function setRunningState() {
 }
 
 function setIdleState(code) {
+  isJobRunning = false;
+  if (jobTimeoutId) { clearTimeout(jobTimeoutId); jobTimeoutId = null; }
   const isTableVisible = tableContainer.style.display !== "none";
   document
     .querySelectorAll(".header-checkbox-label input")
@@ -151,6 +185,7 @@ function fetchData(forceRefresh = false) {
   if (tableContainer) tableContainer.style.display = "none";
   if (overlay) overlay.style.display = "block";
 
+  isLoadingData = true;
   socket.emit("view-expiring-skills", days, forceRefresh);
 }
 
@@ -543,6 +578,7 @@ socket.on("progress-update", (data) => {
 });
 
 socket.on("expiring-skills-data", (data) => {
+  isLoadingData = false;
   if (viewBtn) {
     viewBtn.disabled = false;
     viewBtn.textContent = "Reload Expiring Skills";

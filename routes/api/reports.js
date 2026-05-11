@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const puppeteer = require("puppeteer-core");
+const logger = require("../../services/logger");
 
 const reportService = require("../../services/report-service");
 const { getActiveProxy } = require("../../services/proxy-manager");
@@ -32,7 +33,7 @@ router.get("/data/:type", async (req, res) => {
     else 
       res.status(400).json({ error: "Unknown report type" });
   } catch (e) {
-    console.error("Report Error:", e);
+    logger.error("Report Error", { error: e.message });
     res.status(500).json({ error: e.message });
   }
 });
@@ -66,7 +67,7 @@ router.post("/pdf", async (req, res) => {
     res.contentType("application/pdf");
     res.send(pdf);
   } catch (e) {
-    console.error("[PDF Export Error]", e.message);
+    logger.error("[PDF Export Error]", { error: e.message });
     res.status(500).json({ error: e.message });
   }
 });

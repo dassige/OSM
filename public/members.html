@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
-    <title id="pageTitle">Member Management - FENZ OSM</title>
+    <title id="pageTitle">Member Management - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
@@ -34,10 +34,9 @@
                 <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger"
                     style="display: none; margin-right: auto;">Delete Selected</button>
                 <button onclick="exportToCSV()" class="btn-secondary">Export CSV</button>
-                <button onclick="openOsmImportModal()" class="btn-info"
-                    style="background-color: var(--info); color: white;">Import from OSM</button>
+                <button onclick="openOsmImportModal()" class="btn-success">Import from OSM</button>
                 <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
-                <button onclick="openModal()" class="btn-primary">Add Member</button>
+                <button onclick="openModal()" class="btn-success">Add Member</button>
             </div>
 
             <div class="help-bar">
@@ -94,7 +93,9 @@
                 <div class="form-group"><label>Full Name</label><input type="text" id="name" required
                         placeholder="Exact name as seen in OSM"></div>
                 <div class="form-group"><label>Email Address</label><input type="email" id="email" required></div>
-                <div class="form-group"><label>Mobile (Optional)</label><input type="text" id="mobile"></div>
+                <div class="form-group"><label>Mobile (Optional)</label><input type="text" id="mobile"
+                        pattern="^02[0-9][\d\s\-]{6,9}$"
+                        title="NZ mobile number starting with 02 (e.g. 021 234 5678)"></div>
                 <div class="form-group">
                     <label>Notification Preference</label>
                     <div style="display:flex; gap:15px; flex-wrap:wrap;">
@@ -111,7 +112,7 @@
                 </div>
                 <div class="modal-actions-right">
                     <button type="button" onclick="closeModal('memberModal')" class="btn-secondary">Cancel</button>
-                    <button type="submit" class="btn-primary">Save</button>
+                    <button type="submit" class="btn-success">Save</button>
                 </div>
             </form>
         </div>
@@ -125,7 +126,7 @@
             <p><strong>Optional:</strong> <code>mobile</code>, <code>messengerId</code>, <code>enabled</code></p>
             <div class="code-block">name,email,mobile,messengerId,enabled
                 "Doe, John",john@example.com,021123,fb_123,true</div>
-            <br><button onclick="closeModal('helpModal')" class="btn-primary w-100">Close</button>
+            <br><button onclick="closeModal('helpModal')" class="btn-secondary w-100">Close</button>
         </div>
     </div>
 

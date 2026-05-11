@@ -1,6 +1,6 @@
-# Google Cloud Run Deployment Guide
+﻿# Google Cloud Run Deployment Guide
 
-Deploying the **FENZ OSM Manager** to Google Cloud Run requires specific configurations to handle both database persistence and geoblocked data retrieval.
+Deploying the **OpReady** to Google Cloud Run requires specific configurations to handle both database persistence and geoblocked data retrieval.
 
 ## 1. The Persistence Challenge (Litestream)
 
@@ -11,6 +11,12 @@ Google Cloud Run is a **stateless** environment. Containers are ephemeral, meani
 * As the Node.js application writes to`fenz.db`, Litestream asynchronously replicates the WAL (Write-Ahead Log) to a Google Cloud Storage (GCS) bucket.
 * When a new container boots, Litestream intercepts the startup script (`start.sh`), downloads the latest snapshot from GCS, reconstructs the database, and*then* starts the Node.js server.
 
+### ⚠️ Session Persistence Note
+
+The application stores user sessions in a separate SQLite file (`sessions.db`) located alongside `fenz.db`. **Litestream only replicates `fenz.db`** — `sessions.db` is not included in the backup/restore cycle.
+
+This means that on a cold container start (e.g., after a scale-to-zero event), all active user sessions are lost and users must log in again. Application data in `fenz.db` is fully preserved. This is expected behaviour for a stateless Cloud Run deployment and has no impact on data integrity.
+
 ## 2. Architecture: Handling Geoblocking (The AWS Lambda Pattern)
 
 The live OSM Dashboard is geoblocked to New Zealand IP addresses. If your Cloud Run service is deployed in a region outside of NZ, live scraping will fail.
@@ -19,14 +25,14 @@ To bypass this without complex proxy routing, the application supports a **Cloud
 
 1. The Lambda function uploads this raw HTML file to your GCS Bucket.
 2. An external worker (e.g., an AWS Lambda function running in the`ap-southeast-6` Auckland region) scrapes the live OSM Dashboard HTML.
-3. The FENZ OSM Manager is configured with`APP_MODE=gcs`. Instead of making outbound HTTP requests to the live dashboard, the internal scraper service securely downloads and parses the HTML payload directly from the GCS bucket.
+3. The OpReady is configured with`APP_MODE=gcs`. Instead of making outbound HTTP requests to the live dashboard, the internal scraper service securely downloads and parses the HTML payload directly from the GCS bucket.
    More info at [AWS Lambda scraper Readme](AWS-Lambda-scraper\readme.md).
 
 ## 3. Preparation
 
 ### A. Create a Storage Bucket
 
-Create a private Google Cloud Storage bucket (e.g., `fenz-osm-production-data`). This bucket will serve a dual purpose:
+Create a private Google Cloud Storage bucket (e.g., `opready-production-data`). This bucket will serve a dual purpose:
 
 1. Storing the Litestream SQLite database backups.
 2. Storing the`osm_dashboard_export.html` payload dropped by your AWS Lambda function.
@@ -42,7 +48,7 @@ When deploying, you must configure the following environment variables:
 ### Core System & Security
 
 * `DB_PATH`: Must be set to`/app/fenz.db` for Litestream to function correctly.
-* `GCS_BUCKET_NAME`: The name of your storage bucket (e.g.,`fenz-osm-production-data`).
+* `GCS_BUCKET_NAME`: The name of your storage bucket (e.g.,`opready-production-data`).
 * `APP_USERNAME`: The master Super Admin username.
 * `APP_PASSWORD`: A secure password for the Super Admin.
 * `SESSION_SECRET`: A long, random cryptographic string for cookie signing.
@@ -59,6 +65,15 @@ When deploying, you must configure the following environment variables:
 * `APP_MODE`: Set to`production`.
 * `OSM_BU_ID`: Your unique Business Unit GUID for the dashboard.
 
+### Application Behaviour (Optional but Recommended)
+
+* `APP_TIMEZONE`: Timezone for date calculations (e.g., `Pacific/Auckland`). Defaults to NZ time.
+* `APP_LOCALE`: Locale for date/time formatting (e.g., `en-NZ`).
+* `APP_BASE_URL`: Public URL of the deployed app (e.g., `https://osm.station44.nz`). Required for valid form links.
+* `TRAINING_DAY_OF_WEEK`: Brigade training day (e.g., `Monday`). Highlighted in the Training Planner.
+* `ENABLE_WHATSAPP`: Set to `true` to enable the WhatsApp integration. See section 6 for resource requirements.
+* `MAX_LOGIN_ATTEMPTS`: Failed login attempts before a user is blocked (default: `5`).
+
 ### UI Customization (Optional)
 
 * `UI_LOGIN_TITLE`: Custom text for the login screen (e.g., "Station 44 OSM").
@@ -72,12 +87,12 @@ Use the Google Cloud CLI to build and deploy the container. Execute this from th
 **Example `gcloud` Command (GCS Payload Architecture):**
 
 ```bash
-gcloud run deploy fenz-osm-manager \
+gcloud run deploy OpReady \
   --source . \
   --region australia-southeast1 \
   --allow-unauthenticated \
   --set-env-vars DB_PATH=/app/fenz.db \
-  --set-env-vars GCS_BUCKET_NAME=fenz-osm-production-data \
+  --set-env-vars GCS_BUCKET_NAME=opready-production-data \
   --set-env-vars APP_MODE=gcs \
   --set-env-vars GCS_DATA_FILENAME=osm_dashboard_export.html \
   --set-env-vars APP_USERNAME=admin \
@@ -93,7 +108,7 @@ If you intend to enable the WhatsApp integration (ENABLE_WHATSAPP=true), the app
 You **MUST** allocate sufficient resources to the container. We recommend updating your service with the following specifications:
 
 ```bash
-gcloud run services update fenz-osm-manager \
+gcloud run services update OpReady \
   --memory 2Gi \
   --cpu 1 \
   --execution-environment gen2 \

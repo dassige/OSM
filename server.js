@@ -1,7 +1,9 @@
 const express = require("express");
 const http = require("http");
+const path = require("path");
 const { Server } = require("socket.io");
 const session = require("express-session");
+const SQLiteStore = require("connect-sqlite3")(session);
 const config = require("./config.js");
 const db = require("./services/db");
 const { getOIData } = require("./services/scraper");
@@ -11,7 +13,10 @@ const formsService = require("./services/forms-service");
 const { sendNotification } = require("./services/mailer");
 const { findWorkingNZProxy, setActiveProxy, getActiveProxy } = require("./services/proxy-manager");
 const { globalAuthGuard } = require("./middleware/auth");
+const { runValidation } = require("./services/env-validator");
 const { ROLES } = require("./middleware/auth");
+const { apiLimiter } = require("./middleware/rate-limiter");
+const logger = require("./services/logger");
 
 // --- API Routers
 const memberRoutes = require("./routes/api/members");
@@ -26,6 +31,8 @@ const profileRoutes = require("./routes/api/profile");
 const systemRoutes = require("./routes/api/system");
 const trainingRoutes = require("./routes/api/training");
 const statisticsRoutes = require("./routes/api/statistics");
+const docsRoutes = require("./routes/api/docs");
+const apiKeyRoutes = require("./routes/api/api-keys");
 const authRoutes = require("./routes/auth");
 const viewRoutes = require("./routes/views");
 
@@ -35,6 +42,9 @@ const viewRoutes = require("./routes/views");
 
 const app = express();
 const server = http.createServer(app);
+// Trust first proxy hop so express-rate-limit reads the real client IP
+// from X-Forwarded-For when running behind Docker / Cloud Run / nginx.
+app.set('trust proxy', 1);
 //==============================================================================
 //  SERVE STATIC FILES
 //==============================================================================
@@ -51,6 +61,10 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   cookie: { secure: false },
+  store: new SQLiteStore({
+    db: "sessions.db",
+    dir: path.dirname(db.getDbPath()),
+  }),
 });
 
 app.use(sessionMiddleware);
@@ -59,12 +73,13 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // MOUNT THE GLOBAL GUARD BEFORE ALL ROUTES
 app.use(globalAuthGuard);
+app.use('/api', apiLimiter);
 
 async function initializeProxy() {
   let proxyToUse = null;
   if (config.proxyMode === "fixed") proxyToUse = config.fixedProxyUrl;
   else if (config.proxyMode === "dynamic")
-    proxyToUse = await findWorkingNZProxy(console.log);
+    proxyToUse = await findWorkingNZProxy(logger.info.bind(logger));
   
   setActiveProxy(proxyToUse); 
 
@@ -92,6 +107,8 @@ app.use("/api/profile", profileRoutes);
 app.use("/api", systemRoutes);
 app.use("/api/training-sessions", trainingRoutes);
 app.use("/api/statistics", statisticsRoutes);
+app.use("/api/docs", docsRoutes);
+app.use("/api/api-keys", apiKeyRoutes);
 
 
 
@@ -117,22 +134,28 @@ io.on("connection", (socket) => {
   socket.on("get-preferences", async () => {
     try {
       socket.emit("preferences-data", await db.getAllUserPreferences(socket.request.session.user.id || 0));
-    } catch (e) {}
+    } catch (e) { logger.error("[Socket] get-preferences", { error: e.message }); }
   });
-  
+
   socket.on("update-preference", async ({ key, value }) => {
     if (userLevel < ROLES.simple) return logger("Unauthorized: Guest cannot save preferences.");
-    try { await db.saveUserPreference(socket.request.session.user.id || 0, key, value); } catch (e) {}
+    try {
+      await db.saveUserPreference(socket.request.session.user.id || 0, key, value);
+    } catch (e) { logger.error("[Socket] update-preference", { error: e.message }); }
   });
 
   socket.on("wa-get-status", () => {
-    if (userLevel >= ROLES.simple) socket.emit("wa-status-data", whatsappService.getStatus());
+    try {
+      if (userLevel >= ROLES.simple) socket.emit("wa-status-data", whatsappService.getStatus());
+    } catch (e) { logger.error("[Socket] wa-get-status", { error: e.message }); }
   });
 
   socket.on("wa-control", (action) => {
     if (userLevel < ROLES.admin) return;
-    if (action === "start") whatsappService.startClient();
-    if (action === "stop") whatsappService.logout();
+    try {
+      if (action === "start") whatsappService.startClient();
+      if (action === "stop") whatsappService.logout();
+    } catch (e) { logger.error("[Socket] wa-control", { error: e.message }); }
   });
 
   socket.on("wa-send-test", async (data) => {
@@ -191,7 +214,10 @@ io.on("connection", (socket) => {
       }));
 
       socket.emit("expiring-skills-data", results);
-    } catch (e) { logger(e.message); }
+    } catch (e) {
+      logger(`Error: ${e.message}`);
+      socket.emit("expiring-skills-error", e.message);
+    }
   });
 
   socket.on("run-process-queue", async (targets, days) => {
@@ -283,7 +309,13 @@ async function handleQueueProcessing(socket, targets, days, logger) {
               await whatsappService.sendMessage(member.mobile, msg);
               logger(`  - WhatsApp sent to ${member.mobile}`);
             }
-            await db.logEvent(currentUser, "WhatsApp", isDemo ? "Notification Simulated" : "Notification Sent", { member: member.name });
+            await db.logEvent(currentUser, "WhatsApp", isDemo ? "Notification Simulated" : "Notification Sent", {
+              memberName: member.name,
+              mobile: member.mobile,
+              skillCount: member.expiringSkills.length,
+              skills: member.expiringSkills.map((s) => s.skill),
+              isDemo,
+            });
           }
         } catch (e) { logger(`  X WhatsApp Failed: ${e.message}`); }
       }
@@ -315,6 +347,9 @@ async function getTrainingMap() {
 if (require.main === module) {
   (async () => {
     try {
+      // 0. Validate environment configuration before anything else
+      runValidation(config);
+
       // 1. Wait for DB to be ready before doing anything else
       await db.initDB();
 
@@ -330,11 +365,11 @@ if (require.main === module) {
       // 4. Start the Server
       const PORT = process.env.PORT || config.port || 3000;
       server.listen(PORT, '0.0.0.0', () => {
-        console.log(`[System] 🚀 Server listening on port ${PORT}`);
-        console.log(`> App Mode: ${(config.appMode || "PRODUCTION").toUpperCase()}`);
+        logger.info(`[System] Server listening on port ${PORT}`);
+        logger.info(`App Mode: ${(config.appMode || "PRODUCTION").toUpperCase()}`);
       });
     } catch (err) {
-      console.error("Critical Startup Error:", err);
+      logger.error("Critical Startup Error", { error: err.message, stack: err.stack });
     }
   })();
 }

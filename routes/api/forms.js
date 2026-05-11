@@ -151,7 +151,11 @@ router.post("/import", hasRole("admin"), upload.single("formFile"), async (req, 
     }
     const id = await formsService.createForm(data.name, data.status, data.intro, data.structure);
     fs.unlinkSync(req.file.path);
-    await db.logEvent(req.session.user.name, "Forms", `Imported form: ${data.name}`, { id });
+    await db.logEvent(req.session.user.name, "Forms", "Form Imported", {
+      formId: id,
+      formName: data.name,
+      sourceFile: req.file.originalname,
+    });
     res.json({ success: true, id });
   } catch (e) {
     if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);

@@ -4,6 +4,7 @@ const router = express.Router();
 const db = require("../../services/db");
 const formsService = require("../../services/forms-service");
 const config = require("../../config");
+const logger = require("../../services/logger");
 const whatsappService = require("../../services/whatsapp-service");
 const { hasRole } = require("../../middleware/auth");
 
@@ -11,11 +12,21 @@ const { hasRole } = require("../../middleware/auth");
 function convertHtmlToText(html) {
   if (!html) return "";
   return html
-    .replace(/<br\s*\/?>/gi, "\n") 
-    .replace(/<\/p>/gi, "\n\n") 
-    .replace(/<\/div>/gi, "\n") 
-    .replace(/<[^>]*>/g, "") 
-    .trim(); 
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .trim();
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 router.get("/", hasRole("admin"), async (req, res) => {
@@ -79,7 +90,8 @@ router.delete("/all", hasRole("superadmin"), async (req, res) => {
       tries: req.query.tries || req.body.tries,
     };
     const count = await formsService.purgeLiveForms(filters);
-    await db.logEvent(req.session.user.name, "Live Forms", "Filtered Purge Executed", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Live Forms", "Filtered Purge Executed", {
       deletedCount: count,
       targetScope: filters.isArchived === "true" ? "Archived" : "Active",
       filtersApplied: filters,
@@ -95,13 +107,14 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
     const { status, isArchived } = req.body;
     const id = req.params.id;
 
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
     if (isArchived !== undefined) {
       await formsService.setArchiveStatus(id, isArchived);
-      await db.logEvent(req.session.user.name, "Live Forms", isArchived ? "Record Archived" : "Record Restored", { recordId: id });
+      await db.logEvent(actor, "Live Forms", isArchived ? "Record Archived" : "Record Restored", { recordId: id });
     }
     if (status !== undefined) {
       await formsService.updateLiveFormStatus(id, status);
-      await db.logEvent(req.session.user.name, "Live Forms", "Status Updated", { recordId: id, newStatus: status });
+      await db.logEvent(actor, "Live Forms", "Status Updated", { recordId: id, newStatus: status });
     }
     res.json({ success: true });
   } catch (e) {
@@ -112,7 +125,8 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
 router.delete("/:id", hasRole("admin"), async (req, res) => {
   try {
     await formsService.deleteLiveForm(req.params.id);
-    await db.logEvent(req.session.user.name, "Live Forms", `Deleted record ID: ${req.params.id}`, {});
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Live Forms", "Live Form Record Deleted", { recordId: req.params.id });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -266,7 +280,7 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
         if (parsed.whatsapp && parsed.whatsapp.body) {
           tplWa.body = parsed.whatsapp.body;
         }
-      } catch (e) { console.error("Template parse error", e); }
+      } catch (e) { logger.warn("Template parse error", { error: e.message }); }
     }
 
     const applyVars = (text) => {
@@ -279,11 +293,21 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
         .replace(/{{url}}/g, "")
         .replace(/{{custom_comment}}/g, customComment || "");
     };
+    const applyHtmlVars = (text) => {
+      if (!text) return "";
+      return text
+        .replace(/{{name}}/g, escapeHtml(member.name))
+        .replace(/{{email}}/g, escapeHtml(member.email))
+        .replace(/{{skill}}/g, escapeHtml(form.skill_name))
+        .replace(/{{appname}}/g, escapeHtml(config.ui.loginTitle))
+        .replace(/{{url}}/g, "")
+        .replace(/{{custom_comment}}/g, escapeHtml(customComment || ""));
+    };
 
     if (notifyEmail && member.email) {
-      const from = tplEmail.from ? applyVars(tplEmail.from) : config.ui.loginTitle + " <noreply@fenz.osm>";
+      const from = tplEmail.from ? applyVars(tplEmail.from) : config.ui.loginTitle + " <noreply@opready.app>";
       const subject = applyVars(tplEmail.subject);
-      const htmlBody = tplEmail.body ? applyVars(tplEmail.body) : `<p>Hello ${member.name}, your submission for "${form.skill_name}" has been APPROVED.</p>`;
+      const htmlBody = tplEmail.body ? applyHtmlVars(tplEmail.body) : `<p>Hello ${escapeHtml(member.name)}, your submission for &#34;${escapeHtml(form.skill_name)}&#34; has been APPROVED.</p>`;
       const textBody = convertHtmlToText(htmlBody);
 
       if (!isDemo) {
@@ -298,7 +322,8 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
       }
     }
 
-    await db.logEvent(req.session.user.name, "Live Forms", "Submission Approved", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Live Forms", "Submission Approved", {
       memberName: form.member_name,
       skillName: form.skill_name,
       notifiedVia: { email: notifyEmail, whatsapp: notifyWa },
@@ -348,7 +373,7 @@ router.post("/reject/:id", hasRole("admin"), async (req, res) => {
           if (parsed.whatsapp.bodyRetry) tplWa.bodyRetry = parsed.whatsapp.bodyRetry;
           if (parsed.whatsapp.bodySimple) tplWa.bodySimple = parsed.whatsapp.bodySimple;
         }
-      } catch (e) { console.error("Template parse error", e); }
+      } catch (e) { logger.warn("Template parse error", { error: e.message }); }
     }
 
     const applyVars = (text) => {
@@ -361,12 +386,22 @@ router.post("/reject/:id", hasRole("admin"), async (req, res) => {
         .replace(/{{url}}/g, newLink || "")
         .replace(/{{custom_comment}}/g, customComment || "");
     };
+    const applyHtmlVars = (text) => {
+      if (!text) return "";
+      return text
+        .replace(/{{name}}/g, escapeHtml(member.name))
+        .replace(/{{email}}/g, escapeHtml(member.email))
+        .replace(/{{skill}}/g, escapeHtml(form.skill_name))
+        .replace(/{{appname}}/g, escapeHtml(config.ui.loginTitle))
+        .replace(/{{url}}/g, escapeHtml(newLink || ""))
+        .replace(/{{custom_comment}}/g, escapeHtml(customComment || ""));
+    };
 
     if (notifyEmail && member.email) {
-      const from = tplEmail.from ? applyVars(tplEmail.from) : config.ui.loginTitle + " <noreply@fenz.osm>";
+      const from = tplEmail.from ? applyVars(tplEmail.from) : config.ui.loginTitle + " <noreply@opready.app>";
       const subject = applyVars(tplEmail.subject);
       const rawBody = generateNew ? tplEmail.bodyRetry : tplEmail.bodySimple;
-      let htmlBody = rawBody ? applyVars(rawBody) : `<p>Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted.</p>`;
+      let htmlBody = rawBody ? applyHtmlVars(rawBody) : `<p>Hello ${escapeHtml(member.name)}, your submission for &#34;${escapeHtml(form.skill_name)}&#34; was NOT accepted.</p>`;
       let textBody = convertHtmlToText(htmlBody);
 
       if (!isDemo) {
@@ -382,7 +417,8 @@ router.post("/reject/:id", hasRole("admin"), async (req, res) => {
       }
     }
 
-    await db.logEvent(req.session.user.name, "Live Forms", "Submission Rejected", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Live Forms", "Submission Rejected", {
       memberName: form.member_name,
       skillName: form.skill_name,
       retryGenerated: generateNew,

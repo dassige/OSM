@@ -5,8 +5,8 @@ const { createTestApp } = require('./test-utils');
 // --- 1. MOCK DEPENDENCIES ---
 jest.mock('../services/db', () => ({
     logEvent: jest.fn().mockResolvedValue(),
-    // The submit route manually updates the DB on a "retry", so we mock the SQLite connection
-    initDB: jest.fn().mockResolvedValue({ run: jest.fn().mockResolvedValue() }) 
+    getPreferences: jest.fn().mockResolvedValue({}),
+    initDB: jest.fn().mockResolvedValue({ run: jest.fn().mockResolvedValue() })
 }));
 
 jest.mock('../services/forms-service', () => ({
@@ -14,20 +14,28 @@ jest.mock('../services/forms-service', () => ({
     setArchiveStatus: jest.fn().mockResolvedValue(),
     updateLiveFormStatus: jest.fn().mockResolvedValue(),
     getLiveFormByCode: jest.fn(),
+    getLiveFormSubmission: jest.fn(),
     submitLiveForm: jest.fn().mockResolvedValue(),
     calculateFormScore: jest.fn(),
-    incrementTries: jest.fn().mockResolvedValue() 
+    incrementTries: jest.fn().mockResolvedValue(),
+    createRetryLiveForm: jest.fn()
 }));
 
 // We mock config since the submit/accept routes check app modes and AI settings
 jest.mock('../config', () => ({
     appMode: 'testing',
     ui: { loginTitle: 'Test App' },
-    aiConfig: { enabled: false }
+    aiConfig: { enabled: false },
+    enableWhatsApp: false,
+    transporter: { sendMail: jest.fn().mockResolvedValue() }
 }));
 
 jest.mock('../middleware/auth', () => ({
-    hasRole: () => (req, res, next) => next() 
+    hasRole: () => (req, res, next) => next()
+}));
+
+jest.mock('../services/whatsapp-service', () => ({
+    sendMessage: jest.fn().mockResolvedValue()
 }));
 
 const formsService = require('../services/forms-service');
@@ -144,10 +152,10 @@ describe('Live Forms API Endpoints (Isolated)', () => {
 
         it('should force a retry (400) if the score is too low and max_tries is not reached', async () => {
             // 1. Mock the open form
-            formsService.getLiveFormByCode.mockResolvedValue({ 
+            formsService.getLiveFormByCode.mockResolvedValue({
                 id: 5,
                 form_status: 'sent',
-                min_score: 80, 
+                min_score: 80,
                 min_score_type: 'percentage',
                 tries: 1, // Only on first try
                 max_tries: 3
@@ -168,6 +176,95 @@ describe('Live Forms API Endpoints (Isolated)', () => {
             expect(response.status).toBe(400);
             expect(response.body.status).toBe('retry');
             expect(response.body.currentTry).toBe(1);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    //  Shared mock submission used by review/accept/reject tests
+    // -------------------------------------------------------------------------
+    const mockSubmission = {
+        id: 5,
+        form_status: 'submitted',
+        form_name: 'First Aid Form',
+        intro: '',
+        structure: [],
+        member_name: 'John Doe',
+        member_email: 'john@fenz.osm',
+        member_mobile: '021123456',
+        member_prefs: 'email',
+        skill_name: 'First Aid',
+        form_submitted_data: { q1: 'yes' },
+        form_submitted_datetime: '2026-01-01T00:00:00.000Z',
+        ai_feedback: {},
+        current_score: 8,
+        max_tries: 3,
+        tries: 1,
+        min_score: 80,
+        min_score_type: 'percentage',
+        is_archived: 0
+    };
+
+    describe('GET /api/live-forms/review/:id (Admin Review)', () => {
+        it('should return 404 when the record does not exist', async () => {
+            formsService.getLiveFormSubmission.mockResolvedValue(null);
+
+            const response = await request(app).get('/api/live-forms/review/999');
+            expect(response.status).toBe(404);
+            expect(response.body.error).toMatch(/not found/i);
+        });
+
+        it('should return submission details with computed max score', async () => {
+            formsService.getLiveFormSubmission.mockResolvedValue(mockSubmission);
+            formsService.calculateFormScore.mockResolvedValue({ achieved: 8, maximum: 10, feedback: {} });
+
+            const response = await request(app).get('/api/live-forms/review/5');
+
+            expect(response.status).toBe(200);
+            expect(response.body.member).toBe('John Doe');
+            expect(response.body.skill).toBe('First Aid');
+            expect(response.body.max_score).toBe(10);
+            expect(response.body.achieved_score).toBe(8);
+        });
+    });
+
+    describe('POST /api/live-forms/accept/:id', () => {
+        it('should accept a submission and return success', async () => {
+            formsService.getLiveFormSubmission.mockResolvedValue(mockSubmission);
+
+            const response = await request(app)
+                .post('/api/live-forms/accept/5')
+                .send({ notifyEmail: false, notifyWa: false });
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(formsService.updateLiveFormStatus).toHaveBeenCalledWith('5', 'accepted');
+        });
+    });
+
+    describe('POST /api/live-forms/reject/:id', () => {
+        it('should reject a submission without generating a retry link', async () => {
+            formsService.getLiveFormSubmission.mockResolvedValue(mockSubmission);
+
+            const response = await request(app)
+                .post('/api/live-forms/reject/5')
+                .send({ notifyEmail: false, notifyWa: false, generateNew: false });
+
+            expect(response.status).toBe(200);
+            expect(formsService.updateLiveFormStatus).toHaveBeenCalledWith('5', 'rejected');
+            expect(formsService.createRetryLiveForm).not.toHaveBeenCalled();
+        });
+
+        it('should reject and generate a new retry link when generateNew is true', async () => {
+            formsService.getLiveFormSubmission.mockResolvedValue(mockSubmission);
+            formsService.createRetryLiveForm.mockResolvedValue('new-access-code-abc');
+
+            const response = await request(app)
+                .post('/api/live-forms/reject/5')
+                .send({ notifyEmail: false, notifyWa: false, generateNew: true });
+
+            expect(response.status).toBe(200);
+            expect(formsService.setArchiveStatus).toHaveBeenCalledWith('5', true);
+            expect(formsService.createRetryLiveForm).toHaveBeenCalledWith('5');
         });
     });
 });

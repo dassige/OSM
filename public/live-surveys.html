@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
-    <title id="pageTitle">Published Surveys - FENZ OSM</title>
+    <title id="pageTitle">Published Surveys - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <style>
@@ -102,12 +102,6 @@
             gap: 15px;
         }
 
-        .pagination-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
         .bulk-actions {
             display: flex;
             gap: 10px;
@@ -179,7 +173,7 @@
 
         <div class="pagination-container">
             <div class="bulk-actions">
-                <button onclick="downloadFilteredJson()" class="btn-sm btn-secondary">
+                <button onclick="downloadFilteredJson()" class="btn-sm btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -196,20 +190,21 @@
                 </button>
             </div>
 
-            <div class="pagination-controls">
-                <div style="display: flex; align-items: center; gap: 8px; margin-right: 15px;">
-                    <span style="font-size: 13px; color: var(--text-muted);">Rows:</span>
-                    <select id="rowsPerPage" onchange="changeRowsPerPage()"
-                        style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); height: 30px;">
-                        <option value="15" selected>15</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                        <option value="all">All</option>
-                    </select>
-                </div>
-                <button onclick="changePage(-1)" id="btnPrev" class="btn-sm btn-secondary">Previous</button>
-                <span id="pageInfo" style="font-size: 13px; font-weight: bold;">Page 1 of 1</span>
-                <button onclick="changePage(1)" id="btnNext" class="btn-sm btn-secondary">Next</button>
+            <div class="page-limit-selector">
+                <label>Rows per page:</label>
+                <select id="rowsPerPage" onchange="changeRowsPerPage()"
+                    style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="all">All</option>
+                </select>
+            </div>
+            <span class="pagination-info" id="pageInfo">Showing 0-0 of 0</span>
+            <div style="display:flex; gap:5px;">
+                <button onclick="changePage(-1)" id="btnPrev" class="btn-page">Previous</button>
+                <button onclick="changePage(1)" id="btnNext" class="btn-page">Next</button>
             </div>
         </div>
     </div>
@@ -243,6 +238,16 @@
     <script src="help.js"></script>
     <script src="/js/sidebar.js"></script>
     <script src="js/live-surveys.js"></script>
+    <script>
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) {
+                document.title = "Published Surveys - " + c.loginTitle;
+                document.getElementById('pageHeader').innerText = "Published Surveys - " + c.loginTitle;
+            }
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+        });
+    </script>
 </body>
 
 </html>

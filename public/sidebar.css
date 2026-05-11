@@ -7,8 +7,8 @@
     --collapsed-btn-size: 60px;
     --page-margin: 40px;
     --primary-purple: #4b0082;
-    --fenz-teal: #17A2B8;        /* Professional Teal */
-    --fenz-teal-hover: #006666;  /* Darker Teal for hover */
+    --brand-teal: #17A2B8;        /* Professional Teal */
+    --brand-teal-hover: #006666;  /* Darker Teal for hover */
     --bg-white: #ffffff;
     --border-color: #ddd;
 }
@@ -65,7 +65,7 @@ body.osm-no-margin {
     cursor: pointer !important;
     
     /* Teal Theme Applied Here */
-    background: var(--fenz-teal) !important;
+    background: var(--brand-teal) !important;
     color: #ffffff !important; /* Forces SVG icons to be white */
     border: none !important;   /* Cleaner look for colored buttons */
     
@@ -75,7 +75,7 @@ body.osm-no-margin {
 }
 
 .osm-icon-btn:hover {
-    background: var(--fenz-teal-hover) !important;
+    background: var(--brand-teal-hover) !important;
     color: #ffffff !important;
 }
 
@@ -133,7 +133,7 @@ body.osm-no-margin {
 /* Smooth hover effect */
 .osm-menu a:hover, .menu-label:hover {
     background-color: rgba(23, 162, 184, 0.08) !important; /* 8% opacity FENZ Teal */
-    color: var(--fenz-teal-hover) !important;
+    color: var(--brand-teal-hover) !important;
 }
 
 /* Chevron indicator for dropdowns */

@@ -1,6 +1,6 @@
-/**
+﻿/**
  * CENTRALIZED HELP CONFIGURATION
- * Detailed guide for FENZ OSM Manager
+ * Detailed guide for OpReady
  */
 const helpContent = {
     // --- Dashboard ---
@@ -290,11 +290,26 @@ const helpContent = {
 
     // --- System Tools ---
     "system-tools": {
-        title: "Backup & Restoration",
+        title: "System Tools",
         body: `
-            <p><strong>Database Backup:</strong> Downloads a complete snapshot of the <code>fenz.db</code> SQLite file. This includes all members, skills, history, and configuration.</p>
-            <p><strong>Restore:</strong> Uploads a <code>.db</code> file to replace the current system state. <strong style="color:red;">Warning:</strong> This completely overwrites the current database and cannot be undone.</p>
+            <h3>1. Database Backup</h3>
+            <p>Downloads a complete snapshot of the <code>fenz.db</code> SQLite file. This includes all members, skills, live forms, history, and configuration.</p>
+
+            <h3>2. Database Restore</h3>
+            <p>Uploads a <code>.db</code> file to replace the current system state. <strong style="color:red;">Warning:</strong> This completely overwrites the current database and cannot be undone. The uploaded file must match the current application version.</p>
             <p><em>Note:</em> In <strong>Demo Mode</strong>, these operations apply only to the sandboxed <code>demo.db</code>.</p>
+
+            <h3>3. API Key Management</h3>
+            <p>Create and manage API keys that allow external systems to authenticate to the REST API without a browser session.</p>
+            <ul>
+                <li><strong>Create:</strong> Give the key a name and assign a role (<em>admin</em> for full access, <em>simple</em> for read-only statistics and reports). The full key is shown <strong>once</strong> — copy it immediately as it cannot be retrieved again.</li>
+                <li><strong>Revoke / Enable:</strong> Toggle a key inactive without deleting it. A revoked key is rejected immediately on all API requests.</li>
+                <li><strong>Delete:</strong> Permanently removes the key from the database.</li>
+            </ul>
+            <p>External systems authenticate by adding the header <code>X-API-Key: osm_…</code> to any <code>/api/*</code> request. See the interactive API reference at <code>/api/docs</code> for the full endpoint list.</p>
+
+            <h3>4. AI Evaluator Test Lab</h3>
+            <p>An ad-hoc sandbox for testing the AI grading logic against custom question/answer pairs before enabling it for live forms. Settings auto-save to your user profile.</p>
         `
     },
 
@@ -302,7 +317,7 @@ const helpContent = {
     "users": {
         title: "User Roles & Security",
         body: `
-            <p>Manage access to the FENZ OSM Manager.</p>
+            <p>Manage access to {{appname}}.</p>
             <h3>Roles</h3>
             <ul>
                 <li><strong>Guest:</strong> Read-only access.</li>
@@ -311,7 +326,7 @@ const helpContent = {
                 <li><strong>Super Admin:</strong> (Environment User) Has access to everything, including Database Restore and Log Purging.</li>
             </ul>
             <h3>Security</h3>
-            <p>Users are automatically <strong>Blocked</strong> after 5 failed login attempts. An admin must manually uncheck "Blocked" in the Edit User modal to restore access.</p>
+            <p>Users are automatically <strong>Blocked</strong> after a configurable number of failed login attempts (set via <code>MAX_LOGIN_ATTEMPTS</code> in the environment configuration, default 5). An admin must manually uncheck "Blocked" in the Edit User modal to restore access.</p>
         `
     },
 
@@ -319,15 +334,31 @@ const helpContent = {
     "third-parties": {
         title: "WhatsApp Integration",
         body: `
-            <p>Connects the server to a real WhatsApp account to send notifications.</p>
-            <h3>Setup</h3>
+            <p>Connects the server to a real WhatsApp account to send skill expiry notifications directly to members' phones.</p>
+
+            <h3>1. Setup</h3>
             <ol>
                 <li>Click <strong>Start Service</strong> to launch the headless browser.</li>
-                <li>Scan the <strong>QR Code</strong> using <em>Linked Devices</em> on your mobile WhatsApp app.</li>
-                <li>Once connected, the status turns <strong>Green</strong>.</li>
+                <li>Wait for a <strong>QR Code</strong> to appear, then scan it using <em>Linked Devices</em> in your mobile WhatsApp app.</li>
+                <li>Once connected, the status indicator turns <strong>Green (Ready)</strong> and shows your account name and number.</li>
             </ol>
-            <h3>Preferences</h3>
-            <p><strong>Auto-disconnect:</strong> If enabled, logging out of the web app will automatically kill the WhatsApp session. This is recommended for shared computers.</p>
+
+            <h3>2. Connection Status</h3>
+            <ul>
+                <li><strong style="color:#6c757d;">Disconnected:</strong> Service is stopped. Click <em>Start Service</em> to begin.</li>
+                <li><strong style="color:#fd7e14;">Initializing / QR Ready:</strong> Browser is starting up or waiting for QR scan.</li>
+                <li><strong style="color:#fd7e14;">Reconnecting:</strong> Connection was lost unexpectedly. The service is automatically retrying (5 s → 15 s → 60 s → 5 min intervals). No action needed.</li>
+                <li><strong style="color:#28a745;">Ready:</strong> Connected and able to send messages.</li>
+            </ul>
+
+            <h3>3. Automatic Resilience</h3>
+            <ul>
+                <li><strong>Auto-Reconnect:</strong> If the connection drops, the service retries automatically using an exponential backoff schedule. You do not need to click <em>Start Service</em> again unless the status stays stuck for an extended period.</li>
+                <li><strong>Message Queue:</strong> Notifications triggered while disconnected are held in a server-side queue and delivered automatically once the connection is restored — up to 3 retry attempts per message.</li>
+            </ul>
+
+            <h3>4. Preferences</h3>
+            <p><strong>Auto-disconnect:</strong> If enabled, logging out of the web app will automatically destroy the WhatsApp session. Recommended for shared computers — you will need to re-scan the QR code on the next login.</p>
         `
     },
 
@@ -335,13 +366,24 @@ const helpContent = {
     "reports": {
         title: "Reporting Console",
         body: `
-            <p>Generate printable lists of expiring competencies.</p>
+            <p>Generate, print, and export compliance and verification reports. All reports respect your configured timezone and date format.</p>
+
+            <h3>Report Types</h3>
             <ul>
-                <li><strong>By Member:</strong> Grouped by person. Useful for individual performance reviews.</li>
-                <li><strong>By Skill:</strong> Grouped by competency. Useful for planning training blocks.</li>
-                <li><strong>Planned Sessions:</strong> A timeline of future training scheduled in the Planner.</li>
+                <li><strong>By Member:</strong> All expiring skills grouped per person. Useful for individual follow-up conversations.</li>
+                <li><strong>By Skill:</strong> All affected members grouped per competency. Useful for planning training blocks.</li>
+                <li><strong>Planned Sessions:</strong> A timeline of future in-person training sessions scheduled in the Training Planner.</li>
+                <li><strong>Critical Overdue:</strong> Members with expired or imminently expiring <em>Critical</em> skills — the highest-priority action list.</li>
+                <li><strong>Compliance Matrix:</strong> A full member × skill grid showing compliance status at a glance.</li>
+                <li><strong>Verification History:</strong> A chronological record of completed Live Form submissions and outcomes.</li>
+                <li><strong>Training Attendance:</strong> Attendance records for past in-person training sessions.</li>
             </ul>
-            <p>Use the <strong>Export PDF</strong> button to generate a high-quality A4 document.</p>
+
+            <h3>Export Options</h3>
+            <ul>
+                <li><strong>Print:</strong> Opens the browser print dialog with an A4-optimised layout.</li>
+                <li><strong>Export PDF:</strong> Generates and downloads a PDF directly without opening the print dialog.</li>
+            </ul>
         `
     },
     
@@ -405,10 +447,31 @@ const helpContent = {
         `
     },
 
+    // --- Profile ---
+    "profile": {
+        title: "My Profile & Security Settings",
+        body: `
+            <p>Manage your own account credentials and two-factor authentication.</p>
+
+            <h3>1. Profile Details</h3>
+            <ul>
+                <li><strong>Name &amp; Email:</strong> Update your display name and login email address.</li>
+                <li><strong>Change Password:</strong> Enter your current password, then your new password twice to confirm. Passwords are stored using a secure one-way hash.</li>
+            </ul>
+
+            <h3>2. Two-Factor Authentication (MFA)</h3>
+            <ul>
+                <li><strong>Enable MFA:</strong> Click <em>Set Up MFA</em> to generate a QR code. Scan it with an authenticator app (Google Authenticator, Authy, etc.). Enter the 6-digit code to confirm and activate.</li>
+                <li><strong>Disable MFA:</strong> Re-enter your current password to remove the second factor from your account.</li>
+                <li>MFA is applied at login — after entering your password you will be asked for the current 6-digit code from your app.</li>
+            </ul>
+        `
+    },
+
     // --- Default / Fallback ---
     "default": {
         title: "Help",
-        body: "<p>Welcome to FENZ OSM Manager. Please navigate to a specific page to see context-aware help here.</p>"
+        body: "<p>Welcome to {{appname}}. Please navigate to a specific page to see context-aware help here.</p>"
     }
 };
 
@@ -500,7 +563,14 @@ const helpContent = {
 
     btn.addEventListener('click', () => { modal.classList.add('show'); });
     close.addEventListener('click', () => { modal.classList.remove('show'); });
-    window.addEventListener('click', (e) => { 
-        if (e.target === modal) modal.classList.remove('show'); 
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('show');
     });
+
+    // Patch {{appname}} placeholder with the configured app title
+    fetch('/ui-config').then(r => r.json()).then(cfg => {
+        const appName = cfg.loginTitle || 'OpReady';
+        const body = document.querySelector('#globalHelpModal .help-body');
+        if (body) body.innerHTML = body.innerHTML.replace(/\{\{appname\}\}/g, appName);
+    }).catch(() => {});
 })();

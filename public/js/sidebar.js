@@ -98,14 +98,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const parentItem = submenu.parentElement;
         const isExpanded = parentItem.classList.toggle('expanded');
         
-        let sidebarState = JSON.parse(localStorage.getItem('fenz_sidebar_state')) || {};
+        let sidebarState = JSON.parse(localStorage.getItem('opready_sidebar_state')) || {};
         sidebarState[menuId] = isExpanded;
-        localStorage.setItem('fenz_sidebar_state', JSON.stringify(sidebarState));
+        localStorage.setItem('opready_sidebar_state', JSON.stringify(sidebarState));
     };
 
     // Restore Submenu State
     const restoreSidebarState = function() {
-        let sidebarState = JSON.parse(localStorage.getItem('fenz_sidebar_state')) || {};
+        let sidebarState = JSON.parse(localStorage.getItem('opready_sidebar_state')) || {};
         
         for (const [menuId, isExpanded] of Object.entries(sidebarState)) {
             if (isExpanded) {

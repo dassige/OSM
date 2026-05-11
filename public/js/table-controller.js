@@ -13,9 +13,9 @@ class TableController {
         this.onRenderComplete = config.onRenderComplete;
 
         // Pagination State
-        this.paginationConfig = config.pagination || null; 
+        this.paginationConfig = config.pagination || null;
         this.page = 1;
-        this.limit = config.initialLimit || 25;
+        this.limit = config.initialLimit === 'all' ? 99999 : (parseInt(config.initialLimit) || 25);
         this.total = 0;
 
         this.data = [];
@@ -96,7 +96,7 @@ class TableController {
     }
 
     setLimit(newLimit) {
-        this.limit = parseInt(newLimit);
+        this.limit = newLimit === 'all' ? 99999 : parseInt(newLimit);
         this.page = 1; // Reset to first page
         if (this.paginationConfig.onPageChange) {
             this.paginationConfig.onPageChange(this.page, this.limit);

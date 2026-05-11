@@ -1,10 +1,10 @@
-#!/bin/sh
+﻿#!/bin/sh
 set -e
 
 # --- NEW: Auto-fix Chrome Lock Files ---
 # Removes the "SingletonLock" files that prevent Chrome from starting after a crash
 echo "Cleaning up Chrome session locks..."
-rm -f /app/.wwebjs_auth/session-fenz-osm-client/Singleton*
+rm -f /app/.wwebjs_auth/session-opready-client/Singleton*
 
 # 1. Customization: Download assets if URLs are provided
 if [ ! -z "$UI_LOGO_URL" ]; then
@@ -26,6 +26,12 @@ if [ ! -z "$GCS_BUCKET_NAME" ]; then
         echo "WARNING: Litestream restore failed (possibly malformed replica). Starting with a fresh DB."
         rm -f /app/fenz.db /app/fenz.db-wal /app/fenz.db-shm
     fi
+
+    if ! litestream restore -if-replica-exists /app/sessions.db; then
+        echo "WARNING: Sessions restore failed. Starting with fresh sessions."
+        rm -f /app/sessions.db /app/sessions.db-wal /app/sessions.db-shm
+    fi
+
     # 2. Execute Litestream, which wraps the node process
     exec litestream replicate -exec "node server.js"
 else

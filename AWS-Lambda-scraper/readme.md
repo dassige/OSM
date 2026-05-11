@@ -1,8 +1,16 @@
+﻿# AWS Lambda — OSM Dashboard Scraper
+
+This Lambda function runs in the AWS `ap-southeast-6` (Auckland) region to scrape the geoblocked OpReady Dashboard and upload the raw HTML payload to a GCS bucket, where the OpReady reads it when running in `APP_MODE=gcs`.
+
+See [Installation_google_run.md](../Installation_google_run.md) for the full Cloud Run deployment context.
+
+---
+
 ## 1. Google Cloud Platform (GCP) Credentials & Bucket Setup
 
 First, we need to create a secure pathway for our AWS Lambda to write to the GCP bucket.
 
-* Create the Bucket: In the GCP Console, navigate to Cloud Storage and create your bucket (e.g., fenz-osm-dashboard-snapshots).
+* Create the Bucket: In the GCP Console, navigate to Cloud Storage and create your bucket (e.g., opready-dashboard-snapshots).
 * Create a Service Account: Navigate to IAM & Admin > Service Accounts. Create a new service account specifically for this Lambda function.
 * Assign Roles: Grant this service account the Storage Object Admin or Storage Object Creator role so it has permission to write files to the bucket.
 * Generate JSON Key: Go to the "Keys" tab for the newly created service account, click "Add Key" -> "Create new key", and select JSON. Download this file. We will extract the project_id, client_email, and private_key from this JSON to use as environment variables in AWS.
@@ -13,8 +21,8 @@ Because we require external dependencies (axios for scraping and @google-cloud/s
 
 * Local Project Setup: On your local machine, initialize a new Node.js project:
   Bash
-  mkdir fenz-osm-scraper
-  cd fenz-osm-scraper
+  mkdir opready-scraper
+  cd opready-scraper
   npm init -y
   npm install axios @google-cloud/storage
 * Backend Logic (index.js): Create an index.js file with the following handler. Notice the .replace(/\\n/g, '\n') on the private key—this is a crucial step because AWS environment variables often escape newline characters, which will corrupt the GCP RSA key.

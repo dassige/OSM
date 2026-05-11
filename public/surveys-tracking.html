@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
-    <title id="pageTitle">Survey Tracking - FENZ OSM</title>
+    <title id="pageTitle">Survey Tracking - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <style>
@@ -111,7 +111,7 @@
             <div style="flex-grow: 1;"></div>
 
             <div class="filter-group" style="flex-direction: row; align-items: flex-end;">
-                <button onclick="remindAllPending()" class="btn-sm" style="background: #ffc107; color: #000; border: none; display: flex; align-items: center; gap: 5px; height: 36px; padding: 0 15px;" title="Send Reminder to All Pending">
+                <button onclick="remindAllPending()" class="btn-sm btn-primary" style="display: flex; align-items: center; gap: 5px; height: 36px; padding: 0 15px;" title="Send Reminder to All Pending">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                     Remind All Pending
                 </button>
@@ -153,6 +153,13 @@
     <script src="help.js"></script>
     <script src="/js/sidebar.js"></script>
     <script src="js/surveys-tracking.js"></script>
+    <script>
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) document.title = "Survey Tracking - " + c.loginTitle;
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+        });
+    </script>
 </body>
 
 </html>

@@ -6,7 +6,7 @@ let uiConfig = null;
 
 // Pagination variables
 let currentPage = 1;
-let itemsPerPage = 15;
+let itemsPerPage = 25;
 
 document.addEventListener("DOMContentLoaded", () => {
   fetch("/ui-config")
@@ -205,12 +205,13 @@ function renderTable() {
 
   // Pagination slice
   const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
+  const showStart = filteredData.length > 0 ? startIndex + 1 : 0;
   document.getElementById("pageInfo").innerText =
-    `Page ${currentPage} of ${totalPages} (${filteredData.length} total)`;
+    `Showing ${showStart}-${endIndex} of ${filteredData.length}`;
   document.getElementById("btnPrev").disabled = currentPage === 1;
   document.getElementById("btnNext").disabled = currentPage === totalPages;
-
-  const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedItems = filteredData.slice(
     startIndex,
     startIndex + itemsPerPage,

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Reports - FENZ OSM</title>
+    <title>Reports - OpReady</title>
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
@@ -43,9 +43,9 @@
                 </select>
 
                 <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button onclick="window.print()" class="btn-sm btn-secondary" style="margin:0;">Print</button>
-                    <button onclick="downloadPdf()" class="btn-sm btn-danger" style="margin:0;">Export PDF</button>
-                    <button onclick="runReport()" class="btn-sm btn-success" style="flex-grow:1; margin:0;">Run Report</button>
+                    <button onclick="window.print()" class="btn-sm btn-primary" style="margin:0;">Print</button>
+                    <button onclick="downloadPdf()" class="btn-sm btn-primary" style="margin:0;">Export PDF</button>
+                    <button onclick="runReport()" class="btn-sm btn-primary" style="flex-grow:1; margin:0;">Run Report</button>
                 </div>
             </div>
 
@@ -58,6 +58,25 @@
         <div id="reportPanel" class="report-container">
             <div style="text-align:center; color:#ccc; padding-top:100px;">
                 Select a report above and click "Run Report"
+            </div>
+        </div>
+
+        <div class="pagination-container" id="reportPagination" style="display:none;">
+            <div class="page-limit-selector">
+                <label>Rows per page:</label>
+                <select id="rptRowsPerPage" onchange="changeRowsPerPage(this.value)"
+                    style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="all">All</option>
+                </select>
+            </div>
+            <span class="pagination-info" id="rptPageInfo">Showing 0-0 of 0</span>
+            <div style="display:flex; gap:5px;">
+                <button class="btn-page" id="btnRptPrev" onclick="changePage(-1)">Previous</button>
+                <button class="btn-page" id="btnRptNext" onclick="changePage(1)">Next</button>
             </div>
         </div>
     </div>
@@ -87,6 +106,14 @@
     <script src="js/reports-controller.js"></script>
 
     <script>
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            if (c.loginTitle) {
+                document.title = "Reports - " + c.loginTitle;
+                document.getElementById('pageHeader').innerText = "Reports Console - " + c.loginTitle;
+            }
+            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+        });
         // Scroll Button Logic
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {

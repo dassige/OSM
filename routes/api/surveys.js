@@ -8,6 +8,7 @@ const { hasRole } = require("../../middleware/auth");
 const nodemailer = require("nodemailer");
 const mailer = require("../../services/mailer");
 const config = require("../../config");
+const logger = require("../../services/logger");
 
 // ============================================================================
 // 1. SPECIFIC ROUTES (Must come before wildcard /:id routes)
@@ -73,7 +74,7 @@ router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("[API] Error fetching survey results:", error);
+    logger.error("[API] Error fetching survey results", { error: error.message });
     res.status(500).json({ error: "Failed to retrieve survey results." });
   }
 });
@@ -98,7 +99,7 @@ router.get("/export/all", hasRole("admin"), async (req, res) => {
     res.setHeader("Content-type", "application/json");
     res.send(JSON.stringify(surveys, null, 2));
   } catch (error) {
-    console.error("[API] Error exporting all surveys:", error);
+    logger.error("[API] Error exporting all surveys", { error: error.message });
     res.status(500).json({ error: "Failed to export surveys." });
   }
 });
@@ -123,16 +124,13 @@ router.post(
       const authorId = req.user?.id || req.session?.user?.id || 1;
 
       await db.importAllSurveys(importedSurveys, authorId);
-      const adminName = req.session?.user?.name || "Admin";
-      await db.logEvent(
-        adminName,
-        "Surveys",
-        "Bulk Imported Survey Templates",
-        { count: importedSurveys.length },
-      );
+      const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+      await db.logEvent(actor, "Surveys", "Bulk Imported Survey Templates", {
+        count: importedSurveys.length,
+      });
       res.json({ success: true, count: importedSurveys.length });
     } catch (error) {
-      console.error("[API] Error importing surveys:", error);
+      logger.error("[API] Error importing surveys", { error: error.message });
       res.status(500).json({ error: "Failed to import surveys." });
     }
   },
@@ -165,7 +163,7 @@ router.get(
         tracking: trackingData,
       });
     } catch (error) {
-      console.error("[API] Error fetching survey tracking:", error);
+      logger.error("[API] Error fetching survey tracking", { error: error.message });
       res.status(500).json({ error: "Failed to retrieve tracking data." });
     }
   },
@@ -177,7 +175,7 @@ router.get("/", async (req, res) => {
     const surveys = await db.getAllSurveys();
     res.json(surveys);
   } catch (error) {
-    console.error("[API] Error fetching surveys:", error);
+    logger.error("[API] Error fetching surveys", { error: error.message });
     res.status(500).json({ error: "Failed to retrieve surveys." });
   }
 });
@@ -203,13 +201,13 @@ router.post("/", hasRole("admin"), async (req, res) => {
       authorId,
       is_anonymous || 0
     );
-    const adminName = req.session?.user?.name || "Admin";
-    await db.logEvent(adminName, "Surveys", "Created Survey Template", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Surveys", "Created Survey Template", {
       surveyName: name,
     });
     res.status(201).json(result);
   } catch (error) {
-    console.error("[API] Error creating survey:", error);
+    logger.error("[API] Error creating survey", { error: error.message });
     res.status(500).json({ error: "Failed to create survey." });
   }
 });
@@ -220,7 +218,7 @@ router.get("/instances", hasRole("admin"), async (req, res) => {
     const instances = await db.getLiveSurveyInstances();
     res.json(instances || []);
   } catch (error) {
-    console.error("[API] Error fetching live instances:", error);
+    logger.error("[API] Error fetching live instances", { error: error.message });
     res.status(500).json({ error: "Failed to retrieve published surveys." });
   }
 });
@@ -228,13 +226,13 @@ router.get("/instances", hasRole("admin"), async (req, res) => {
 // PUT /api/surveys/instances/:id/archive - Toggle archive status
 router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {
   try {
+    const instance = await db.getLiveSurveyInstanceById(req.params.id);
     await db.updateSurveyArchiveStatus(req.params.id, req.body.is_archived);
-    const adminName = req.session?.user?.name || "Admin";
-    const action = req.body.is_archived
-      ? "Archived Survey Instance"
-      : "Unarchived Survey Instance";
-    await db.logEvent(adminName, "Surveys", action, {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    const action = req.body.is_archived ? "Archived Survey Instance" : "Unarchived Survey Instance";
+    await db.logEvent(actor, "Surveys", action, {
       instanceId: req.params.id,
+      instanceName: instance?.name,
     });
     res.json({ success: true });
   } catch (error) {
@@ -245,10 +243,12 @@ router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {
 // DELETE /api/surveys/instances/:id - Delete a published instance entirely
 router.delete("/instances/:id", hasRole("admin"), async (req, res) => {
   try {
+    const instance = await db.getLiveSurveyInstanceById(req.params.id);
     await db.deleteSurveyInstance(req.params.id);
-    const adminName = req.session?.user?.name || "Admin";
-    await db.logEvent(adminName, "Surveys", "Deleted Survey Instance", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Surveys", "Deleted Survey Instance", {
       instanceId: req.params.id,
+      instanceName: instance?.name,
     });
     res.json({ success: true });
   } catch (error) {
@@ -280,7 +280,7 @@ router.get("/:id/export", hasRole("admin"), async (req, res) => {
     res.setHeader("Content-type", "application/json");
     res.send(JSON.stringify(survey, null, 2));
   } catch (error) {
-    console.error("[API] Error exporting survey:", error);
+    logger.error("[API] Error exporting survey", { error: error.message });
     res.status(500).json({ error: "Failed to export survey." });
   }
 });
@@ -295,7 +295,7 @@ router.get("/:id", async (req, res) => {
     }
     res.json(survey);
   } catch (error) {
-    console.error("[API] Error fetching survey:", error);
+    logger.error("[API] Error fetching survey", { error: error.message });
     res.status(500).json({ error: "Failed to retrieve survey." });
   }
 });
@@ -317,9 +317,10 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
         existing.structure,
         is_anonymous || existing.is_anonymous
       );
-      const adminName = req.session?.user?.name || "Admin";
-      await db.logEvent(adminName, "Surveys", "Updated Survey Status", {
+      const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+      await db.logEvent(actor, "Surveys", "Updated Survey Status", {
         surveyId,
+        surveyName: existing.name,
         status,
       });
       return res.json({ success: true, message: "Status updated" });
@@ -338,14 +339,14 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
       JSON.stringify(structure),
       is_anonymous || 0
     );
-    const adminName = req.session?.user?.name || "Admin";
-    await db.logEvent(adminName, "Surveys", "Updated Survey Template", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Surveys", "Updated Survey Template", {
       surveyId,
       surveyName: name,
     });
     res.json({ success: true, message: "Survey updated successfully." });
   } catch (error) {
-    console.error("[API] Error updating survey:", error);
+    logger.error("[API] Error updating survey", { error: error.message });
     res.status(500).json({ error: "Failed to update survey." });
   }
 });
@@ -354,14 +355,16 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
 router.delete("/:id", hasRole("admin"), async (req, res) => {
   try {
     const surveyId = req.params.id;
+    const survey = await db.getSurveyById(surveyId);
     await db.deleteSurvey(surveyId);
-    const adminName = req.session?.user?.name || "Admin";
-    await db.logEvent(adminName, "Surveys", "Deleted Survey Template", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Surveys", "Deleted Survey Template", {
       surveyId,
+      surveyName: survey?.name,
     });
     res.json({ success: true, message: "Survey deleted successfully." });
   } catch (error) {
-    console.error("[API] Error deleting survey:", error);
+    logger.error("[API] Error deleting survey", { error: error.message });
     res.status(500).json({ error: "Failed to delete survey." });
   }
 });
@@ -412,15 +415,12 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
             isAnon,
           );
         } catch (err) {
-          console.error(
-            `[SMTP ERROR] Failed to send survey link to ${data.email}:`,
-            err,
-          );
+          logger.error(`[SMTP ERROR] Failed to send survey link to ${data.email}`, { error: err.message });
         }
       }
     }
-    const adminName = req.session?.user?.name || "Admin";
-    await db.logEvent(adminName, "Surveys", "Published Survey", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Surveys", "Published Survey", {
       surveyName: instance.name,
       membersInvited: trackingData.length,
     });
@@ -428,7 +428,7 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
       message: `Survey published successfully! Links generated for ${trackingData.length} members.`,
     });
   } catch (error) {
-    console.error("[API] Error publishing survey:", error);
+    logger.error("[API] Error publishing survey", { error: error.message });
     res.status(500).json({ error: "Failed to publish survey." });
   }
 });
@@ -471,15 +471,12 @@ router.post(
             );
             sentCount++;
           } catch (err) {
-            console.error(
-              `[SMTP ERROR] Remind-All failed for ${item.email}:`,
-              err,
-            );
+            logger.error(`[SMTP ERROR] Remind-All failed for ${item.email}`, { error: err.message });
           }
         }
       }
-      const adminName = req.session?.user?.name || "Admin";
-      await db.logEvent(adminName, "Surveys", "Sent Bulk Reminders", {
+      const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+      await db.logEvent(actor, "Surveys", "Sent Bulk Reminders", {
         surveyName: instance.name,
         remindersSent: pending.length,
       });
@@ -487,7 +484,7 @@ router.post(
         message: `Reminder emails triggered for ${sentCount} out of ${pending.length} pending members.`,
       });
     } catch (error) {
-      console.error("[API] Error sending bulk reminders:", error);
+      logger.error("[API] Error sending bulk reminders", { error: error.message });
       res.status(500).json({ error: "Failed to send reminders." });
     }
   },
@@ -538,7 +535,7 @@ router.post(
         message: `Reminder email successfully sent to ${record.member_name}.`,
       });
     } catch (error) {
-      console.error("[API] Error sending reminder:", error);
+      logger.error("[API] Error sending reminder", { error: error.message });
       res.status(500).json({ error: "Failed to send reminder." });
     }
   },

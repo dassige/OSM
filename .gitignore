@@ -10,6 +10,7 @@ public/resources/logo_dvfb.png
 # Database
 fenz.db*
 demo.db*
+sessions.db*
 public/custom
 public/FENZ
 TODO.txt

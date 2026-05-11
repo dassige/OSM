@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const logger = require('./logger');
 
 async function runMigrations(db) {
-    console.log('[Migrations] Checking for pending database updates...');
+    logger.info('[Migrations] Checking for pending database updates...');
 
     // 1. Ensure migration tracking table exists
     await db.exec(`
@@ -17,7 +18,7 @@ async function runMigrations(db) {
     const migrationsDir = path.join(__dirname, '../migrations');
     
     if (!fs.existsSync(migrationsDir)) {
-        console.warn('[Migrations] Directory not found. Skipping.');
+        logger.warn('[Migrations] Directory not found. Skipping.');
         return;
     }
 
@@ -31,7 +32,7 @@ async function runMigrations(db) {
         const record = await db.get('SELECT id FROM schema_migrations WHERE filename = ?', file);
         
         if (!record) {
-            console.log(`[Migrations] Applying: ${file}`);
+            logger.info(`[Migrations] Applying: ${file}`);
             const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
             
             try {
@@ -51,14 +52,14 @@ async function runMigrations(db) {
                 }
 
                 await db.run('INSERT INTO schema_migrations (filename) VALUES (?)', file);
-                console.log(`[Migrations] Success: ${file}`);
+                logger.info(`[Migrations] Success: ${file}`);
             } catch (e) {
-                console.error(`[Migrations] FAILED: ${file}`, e);
+                logger.error(`[Migrations] FAILED: ${file}`, { error: e.message, stack: e.stack });
                 process.exit(1); // Stop server start on migration fail
             }
         }
     }
-    console.log('[Migrations] Database is up to date.');
+    logger.info('[Migrations] Database is up to date.');
 }
 
 module.exports = { runMigrations };

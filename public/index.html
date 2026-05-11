@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
-    <title id="pageTitle">FENZ OSM Console</title>
+    <title id="pageTitle">OpReady Console</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
@@ -44,13 +44,17 @@
                 style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
     </div>
 
+    <div id="socketBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#c0392b; color:white; text-align:center; padding:8px 15px; font-size:13px; font-weight:500;">
+        &#9888; Connection lost &mdash; reconnecting&hellip;
+    </div>
+
     <div class="container">
         <div class="header-row">
             <div class="header-spacer"></div>
 
             <div class="header-title-group">
                 <img src="resources/logo.png" id="headerLogo" alt="Station Logo">
-                <h1 id="mainHeader">FENZ OSM Automation</h1>
+                <h1 id="mainHeader">OpReady Automation</h1>
             </div>
 
             <div class="header-actions-group">
@@ -225,7 +229,7 @@
             <span class="close-btn" onclick="closeModal('aboutModal')">&times;</span>
             <img id="aboutLogo" alt="App Logo" class="modal-about-logo">
             <h2 style="margin-top: 0;">About</h2>
-            <p style="font-size: 1.1em; color: var(--text-muted);">FENZ OSM Automation Manager</p>
+            <p style="font-size: 1.1em; color: var(--text-muted);">OpReady Automation Manager</p>
             <div style="margin: 20px 0; font-size: 0.9em;">
                 <p style="margin: 10px 0;"><strong>Version:</strong> <span id="disp-version">...</span></p>
                 <p style="margin: 10px 0;"><strong>Date:</strong> <span id="disp-date">...</span></p>

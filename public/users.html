@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="pageTitle">Manage Users - FENZ OSM</title>
+    <title id="pageTitle">Manage Users - OpReady</title>
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
@@ -30,7 +30,7 @@
 
         <div id="tableContainer" style="display: block;">
             <div class="table-toolbar">
-                <button class="btn-primary" onclick="openAddModal()">Add User</button>
+                <button class="btn-success" onclick="openAddModal()">Add User</button>
             </div>
 
             <table id="userTable">
@@ -86,7 +86,7 @@
                     style="background-color: var(--bg-hover); padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: var(--text-muted); border: 1px solid var(--border-color);">
                     <p style="margin: 0;">A random password will be generated automatically and emailed to the user.</p>
                 </div>
-                <button type="submit" class="btn-primary w-100" id="createBtn">
+                <button type="submit" class="btn-success w-100" id="createBtn">
                     <div class="btn-content">
                         <div class="spinner" id="createSpinner"></div><span id="btnText">Create User & Send Email</span>
                     </div>
@@ -125,7 +125,7 @@
                 </div>
                 <div class="modal-actions-right">
                     <button type="button" onclick="closeModal('editUserModal')" class="btn-secondary">Cancel</button>
-                    <button type="submit" class="btn-primary">Save Changes</button>
+                    <button type="submit" class="btn-success">Save Changes</button>
                 </div>
             </form>
         </div>
