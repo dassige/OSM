@@ -34,10 +34,9 @@
                 <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger"
                     style="display: none; margin-right: auto;">Delete Selected</button>
                 <button onclick="exportToCSV()" class="btn-secondary">Export CSV</button>
-                <button onclick="openOsmImportModal()" class="btn-info"
-                    style="background-color: var(--info); color: white;">Import from OSM</button>
+                <button onclick="openOsmImportModal()" class="btn-success">Import from OSM</button>
                 <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
-                <button onclick="openModal()" class="btn-primary">Add Skill</button>
+                <button onclick="openModal()" class="btn-success">Add Skill</button>
             </div>
 
             <div class="help-bar">
@@ -141,7 +140,7 @@
                 </div>
                 <div class="modal-actions-right">
                     <button type="button" onclick="closeModal('skillModal')" class="btn-secondary">Cancel</button>
-                    <button type="submit" class="btn-primary">Save</button>
+                    <button type="submit" class="btn-success">Save</button>
                 </div>
             </form>
         </div>
@@ -169,7 +168,7 @@
             <h2>CSV File Format</h2>
             <p><strong>Required:</strong> <code>name</code></p>
             <p><strong>Optional:</strong> <code>url</code>, <code>critical_skill</code>, <code>enabled</code></p>
-            <br><button onclick="closeModal('helpModal')" class="btn-primary w-100">Close</button>
+            <br><button onclick="closeModal('helpModal')" class="btn-secondary w-100">Close</button>
         </div>
     </div>
 

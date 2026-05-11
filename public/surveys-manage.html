@@ -50,8 +50,8 @@
                     </div>
 
                     <div class="sidebar-actions">
-                        <button onclick="createNewSurvey()" class="btn-sm"
-                            style="flex: 0 0 34px; background:var(--success); color:white; font-size: 18px; font-weight: bold; padding: 0; height: 32px;"
+                        <button onclick="createNewSurvey()" class="btn-sm btn-success"
+                            style="flex: 0 0 34px; font-size: 18px; font-weight: bold; padding: 0; height: 32px;"
                             title="Add New Survey">+</button>
 
                         <button onclick="document.getElementById('importBulkInput').click()" class="btn-sm"
@@ -78,8 +78,8 @@
                             </svg> <span>All</span>
                         </button>
 
-                        <button onclick="openModal('aiHelpModal')" class="btn-sm"
-                            style="flex: 0 0 34px; background:#6f42c1; color:white; font-weight:bold; padding: 0; height: 32px;"
+                        <button onclick="openModal('aiHelpModal')" class="btn-sm btn-purple"
+                            style="flex: 0 0 34px; font-weight:bold; padding: 0; height: 32px;"
                             title="AI Survey Generation Help">AI</button>
                     </div>
                 </div>
@@ -121,11 +121,9 @@
                     </div>
                 </div>
                 <div class="editor-toolbar">
-                    <button id="btnPublish" onclick="openPublishModal()" class="btn-sm"
-                        style="background:var(--success); color:white;" disabled>Publish</button>
-                    <button onclick="previewSurvey()" class="btn-sm"
-                        style="background:#6f42c1; color:white;">Preview</button>
-                    <button onclick="saveSurvey()" class="btn-sm btn-primary">Save</button>
+                    <button id="btnPublish" onclick="openPublishModal()" class="btn-sm btn-success" disabled>Publish</button>
+                    <button onclick="previewSurvey()" class="btn-sm btn-informative">Preview</button>
+                    <button onclick="saveSurvey()" class="btn-sm btn-success">Save</button>
 
                     <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 5px;"></div>
 
@@ -258,7 +256,7 @@
                 </div>
             </div>
             <div class="modal-actions-right">
-                <button onclick="closeModal('aiHelpModal')" class="btn-primary">Close</button>
+                <button onclick="closeModal('aiHelpModal')" class="btn-secondary">Close</button>
             </div>
         </div>
     </div>
@@ -327,8 +325,7 @@
             <div class="modal-actions-right"
                 style="flex-shrink: 0; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1);">
                 <button onclick="closeModal('publishModal')" class="btn-secondary">Cancel</button>
-                <button onclick="confirmPublish()" class="btn-primary" id="btnConfirmPublish"
-                    style="background:var(--success);">Confirm & Send</button>
+                <button onclick="confirmPublish()" class="btn-success" id="btnConfirmPublish">Confirm & Send</button>
             </div>
 
         </div>

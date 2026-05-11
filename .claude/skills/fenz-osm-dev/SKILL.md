@@ -417,6 +417,19 @@ Every new page or feature **must** follow the existing UI conventions without ex
 | **No native dialogs** | Never use `alert()` or `confirm()`; use `confirmAction()` from `utils.js` and `showToast()` from `toast.js` |
 | **Table sorting** | For any data table, implement sortable column headers; persist sort preference per user |
 | **System card layout** | New sections in `system-tools.html` use the `<div class="system-card">` pattern |
+| **Button colours** | Follow the colour convention table below — never use inline `background` styles on buttons |
+
+### Button Colour Convention
+
+| Class | Colour | Use for |
+|---|---|---|
+| `btn-danger` | Red | **Destructive**: Delete, Remove, Purge, Revoke, Disable, Disconnect |
+| `btn-success` | Green | **Confirm/Save**: Save, Create, Add, Import, Publish, Enable, Start, Update |
+| `btn-primary` | Blue | **Active trigger**: Export, Send, Test, Run, Print, Download, Open |
+| `btn-secondary` | Gray | **Passive**: Cancel, Close, Back |
+| `btn-informative` | Teal | **Read-only view**: Preview, View Details |
+| `btn-purple` | Purple | **AI actions**: AI Generate, AI Evaluate, AI Grade |
+| `btn-warning` | Yellow | **Reserved** — true edge-case warnings only (e.g. forced password reset); do not use for regular actions |
 
 ---
 

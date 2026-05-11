@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.wwebjs*
+import-skills.csv
+import-members.csv
+public/custom
+public/FENZ
+TODO.txt
+dist
+external_docs
