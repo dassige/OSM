@@ -722,7 +722,7 @@
               "mode": "raw",
               "raw": "{\n  \"name\": \"External Dashboard\",\n  \"role\": \"admin\"\n}"
             },
-            "description": "Creates a new key. The full key is returned **once** in the response — store it immediately."
+            "description": "Creates a new API key. `role` must be one of: `superadmin`, `admin`, `simple`, `guest`. The full key is returned **once** in the response — store it immediately."
           }
         },
         {

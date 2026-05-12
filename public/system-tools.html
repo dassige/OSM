@@ -217,8 +217,10 @@
             <div class="form-group" style="margin-top:14px;">
                 <label>Role</label>
                 <select id="apiKeyRole" style="width:100%;">
-                    <option value="admin">admin — full read/write access</option>
+                    <option value="superadmin">superadmin — full access including user &amp; key management</option>
+                    <option value="admin" selected>admin — full read/write access</option>
                     <option value="simple">simple — read-only statistics/reports</option>
+                    <option value="guest">guest — read-only public data</option>
                 </select>
             </div>
             <div style="display:flex; gap:12px; margin-top:24px; justify-content:flex-end;">

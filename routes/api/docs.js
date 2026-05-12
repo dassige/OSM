@@ -28,7 +28,8 @@ const spec = {
         { name: 'Statistics', description: 'Dashboard statistics' },
         { name: 'Users', description: 'Admin user account management' },
         { name: 'Profile', description: 'Current user profile and MFA' },
-        { name: 'System', description: 'Health, preferences, and event logs' }
+        { name: 'System', description: 'Health, preferences, and event logs' },
+        { name: 'API Keys', description: 'API key management for external integrations' }
     ],
     components: {
         securitySchemes: {
@@ -37,6 +38,12 @@ const spec = {
                 in: 'cookie',
                 name: 'connect.sid',
                 description: 'Session cookie set after successful login'
+            },
+            xApiKey: {
+                type: 'apiKey',
+                in: 'header',
+                name: 'X-API-Key',
+                description: 'API key in the format `osm_<64-hex-chars>`. Manage keys via System Tools → API Key Management.'
             }
         },
         schemas: {
@@ -136,6 +143,19 @@ const spec = {
                     title: { type: 'string' },
                     payload: { type: 'object' },
                     created_at: { type: 'string', format: 'date-time' }
+                }
+            },
+            ApiKey: {
+                type: 'object',
+                properties: {
+                    id: { type: 'integer' },
+                    name: { type: 'string', example: 'External Dashboard' },
+                    key_prefix: { type: 'string', example: 'osm_a1b2c3d4' },
+                    role: { type: 'string', enum: ['superadmin', 'admin', 'simple', 'guest'] },
+                    created_by: { type: 'string' },
+                    created_at: { type: 'string', format: 'date-time' },
+                    last_used_at: { type: 'string', format: 'date-time', nullable: true },
+                    active: { type: 'integer', enum: [0, 1] }
                 }
             }
         }
@@ -960,6 +980,83 @@ const spec = {
                 }
             }
         },
+        // -------------------------------------------------------------------------
+        // API KEYS
+        // -------------------------------------------------------------------------
+        '/api/api-keys': {
+            get: {
+                tags: ['API Keys'],
+                summary: 'List all API keys (admin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                responses: {
+                    200: {
+                        description: 'Array of API key records (full key value is never returned)',
+                        content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/ApiKey' } } } }
+                    }
+                }
+            },
+            post: {
+                tags: ['API Keys'],
+                summary: 'Create a new API key (admin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['name', 'role'],
+                                properties: {
+                                    name: { type: 'string', example: 'External Dashboard' },
+                                    role: { type: 'string', enum: ['superadmin', 'admin', 'simple', 'guest'], example: 'admin' }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: {
+                        description: 'Key created — full key returned once only',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        success: { type: 'boolean', example: true },
+                                        key: { type: 'string', example: 'osm_a1b2c3d4...' },
+                                        prefix: { type: 'string', example: 'osm_a1b2c3d4' }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    400: { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/api-keys/{id}/toggle': {
+            patch: {
+                tags: ['API Keys'],
+                summary: 'Toggle (revoke / enable) an API key (admin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Toggled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+        '/api/api-keys/{id}': {
+            delete: {
+                tags: ['API Keys'],
+                summary: 'Delete an API key permanently (admin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+
         '/api/logs': {
             post: {
                 tags: ['System'],

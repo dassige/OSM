@@ -11,7 +11,7 @@ router.get('/', hasRole('admin'), async (req, res) => {
 router.post('/', hasRole('admin'), async (req, res) => {
     const { name, role } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required.' });
-    if (!['admin', 'simple'].includes(role)) return res.status(400).json({ error: 'Role must be admin or simple.' });
+    if (!['superadmin', 'admin', 'simple', 'guest'].includes(role)) return res.status(400).json({ error: 'Role must be one of: superadmin, admin, simple, guest.' });
 
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
     const { raw, prefix } = await db.createApiKey(name.trim(), role, actor);

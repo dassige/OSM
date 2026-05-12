@@ -339,9 +339,9 @@
 
 | ID | Action | Steps | Expected Result |
 |----|--------|-------|----------------|
-| T17-05 | Create an API key | Click `[Create API Key]` → enter Name = `{UAT Test Key}`, Role = `admin` → click `[Generate]`. | The full API key (`osm_...`) is displayed once. Key appears in the list with its prefix, name, and active status. Event log records "API Key Created". |
+| T17-05 | Create an API key for each role | Click `[Create API Key]` → enter a name, select Role = `superadmin` → click `[Generate]`. Repeat for roles `admin`, `simple`, and `guest`. | For each creation: the full API key (`osm_...`) is displayed once; the key appears in the list with the correct role label. Event log records "API Key Created" for each. |
 | T17-06 | Copy the API key | Click `[Copy]` next to the displayed key. | Key is copied to the clipboard. The full key value is NOT shown again after closing this dialog. |
-| T17-07 | Verify API key works | Use the copied key in a REST client (e.g., Postman): `GET /api/members` with header `X-API-Key: {copied_key}`. | HTTP 200 response with member data is returned. |
+| T17-07 | Verify API key works | Use the copied `admin` key in a REST client (e.g., Postman): `GET /api/members` with header `X-API-Key: {copied_key}`. | HTTP 200 response with member data is returned. |
 | T17-08 | Disable (toggle) an API key | Click `[Toggle]` on the active API key. | Key status changes to Disabled. Event log records "API Key Toggled" with `newState: disabled`. |
 | T17-09 | Verify disabled key is rejected | Retry the API request from T17-07 with the now-disabled key. | HTTP 403 response. Request is rejected. |
 | T17-10 | Re-enable an API key | Click `[Toggle]` again. | Key status returns to Active. Event log records "API Key Toggled" with `newState: enabled`. |

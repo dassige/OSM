@@ -1,4 +1,4 @@
-Section,ID,Page / Feature,Action,Steps,Expected Result,Status,Notes,Tester,Run Date
+﻿Section,ID,Page / Feature,Action,Steps,Expected Result,Status,Notes,Tester,Run Date
 T01,T01-01,Authentication & Login,Load login page,"Navigate to the application root URL.","Login form appears with Username and Password fields. No authenticated content is visible.",,,,
 T01,T01-02,Authentication & Login,Login with wrong credentials,"Enter wronguser / wrongpass → click [Login].","Error message displayed. No redirect.",,,,
 T01,T01-03,Authentication & Login,Account lock after repeated failures,"Attempt login with wrong password 5+ times consecutively.","Account is blocked. A message indicates too many failed attempts. Further login is refused.",,,,
@@ -151,7 +151,7 @@ T17,T17-01,System Tools,Page load,"Navigate to system-tools.html.","Backup, Rest
 T17,T17-02,System Tools,Create a database backup,"Click [Download Backup].","A .sql file is downloaded containing a complete SQL dump. File size is non-zero.",,,,
 T17,T17-03,System Tools,Restore from backup,"Create a test member. Download a new backup. Delete the test member. Click [Restore] → upload the backup file → confirm.","Application restores to the backed-up state. The test member reappears. Event log records Database Restored.",,,,
 T17,T17-04,System Tools,Demo mode blocks restore,"On a demo-mode instance, click [Restore].","Action is blocked with an error: Disabled in demo mode. No data is changed.",,,,
-T17,T17-05,System Tools,Create an API key,"Click [Create API Key] → enter Name, Role = admin → click [Generate].","The full API key is displayed once. Key appears in the list. Event log records API Key Created.",,,,
+T17,T17-05,System Tools,Create an API key for each role,"Click [Create API Key] → enter a name, select Role = superadmin → click [Generate]. Repeat for roles admin, simple, and guest.","For each creation: the full API key is displayed once; key appears in the list with the correct role label. Event log records API Key Created for each.",,,,
 T17,T17-06,System Tools,Copy the API key,"Click [Copy] next to the displayed key.","Key is copied to the clipboard. The full key value is NOT shown again after closing this dialog.",,,,
 T17,T17-07,System Tools,Verify API key works,"Use the copied key in a REST client: GET /api/members with header X-API-Key: {copied_key}.","HTTP 200 response with member data is returned.",,,,
 T17,T17-08,System Tools,Disable (toggle) an API key,"Click [Toggle] on the active API key.","Key status changes to Disabled. Event log records API Key Toggled with newState: disabled.",,,,

@@ -302,7 +302,7 @@ const helpContent = {
             <h3>3. API Key Management</h3>
             <p>Create and manage API keys that allow external systems to authenticate to the REST API without a browser session.</p>
             <ul>
-                <li><strong>Create:</strong> Give the key a name and assign a role (<em>admin</em> for full access, <em>simple</em> for read-only statistics and reports). The full key is shown <strong>once</strong> — copy it immediately as it cannot be retrieved again.</li>
+                <li><strong>Create:</strong> Give the key a name and assign a role — <em>superadmin</em> (full access including user &amp; key management), <em>admin</em> (full read/write), <em>simple</em> (read-only statistics/reports), or <em>guest</em> (read-only public data). The full key is shown <strong>once</strong> — copy it immediately as it cannot be retrieved again.</li>
                 <li><strong>Revoke / Enable:</strong> Toggle a key inactive without deleting it. A revoked key is rejected immediately on all API requests.</li>
                 <li><strong>Delete:</strong> Permanently removes the key from the database.</li>
             </ul>
