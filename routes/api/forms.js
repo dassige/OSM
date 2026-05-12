@@ -47,11 +47,12 @@ router.post("/import/all", hasRole("admin"), upload.single("formsFile"), async (
     }
 
     await formsService.importBulkForms(value);
-    fs.unlinkSync(req.file.path);
-    await db.logEvent(req.session.user.name, "Forms", "Bulk Import (Wipe & Replace)", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Forms", "Bulk Import (Wipe & Replace)", {
       formsImportedCount: value.length,
       sourceFile: req.file.originalname,
     });
+    fs.unlinkSync(req.file.path);
     res.json({ success: true, count: value.length });
   } catch (e) {
     if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
@@ -76,8 +77,8 @@ router.post("/", hasRole("admin"), validateForm, async (req, res) => {
     const { name, status, intro, structure } = req.body;
     const id = await formsService.createForm(name, status, intro, structure);
     const newForm = await formsService.getFormById(id);
-
-    await db.logEvent(req.session.user.name, "Forms", "Created Form", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Forms", "Created Form", {
       formId: id,
       formName: name,
       questionCount: structure.length,
@@ -92,7 +93,8 @@ router.post("/", hasRole("admin"), validateForm, async (req, res) => {
 router.put("/:id", hasRole("admin"), validateForm, async (req, res) => {
   try {
     await formsService.updateForm(req.params.id, req.body);
-    await db.logEvent(req.session.user.name, "Forms", "Updated Form", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Forms", "Updated Form", {
       formId: req.params.id,
       formName: req.body.name || "N/A",
       updateType: req.body.structure ? "Full Content Edit" : "Status Change",
@@ -109,7 +111,8 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
     const formToDelete = await formsService.getFormById(req.params.id);
     if (formToDelete) {
       await formsService.deleteForm(req.params.id);
-      await db.logEvent(req.session.user.name, "Forms", "Deleted Form", {
+      const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+      await db.logEvent(actor, "Forms", "Deleted Form", {
         formId: req.params.id,
         formName: formToDelete.name,
       });
@@ -149,12 +152,13 @@ router.post("/import", hasRole("admin"), upload.single("formFile"), async (req, 
       throw new Error("Invalid form structure file.");
     }
     const id = await formsService.createForm(data.name, data.status, data.intro, data.structure);
-    fs.unlinkSync(req.file.path);
-    await db.logEvent(req.session.user.name, "Forms", "Form Imported", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "Forms", "Form Imported", {
       formId: id,
       formName: data.name,
       sourceFile: req.file.originalname,
     });
+    fs.unlinkSync(req.file.path);
     res.json({ success: true, id });
   } catch (e) {
     if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
