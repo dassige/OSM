@@ -1,8 +1,8 @@
 {
   "name": "opready",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "OpReady — Operational Readiness Manager",
-  "versionDate": "2026/05/12 15:15",
+  "versionDate": "2026/05/12 16:32",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -16,7 +16,9 @@
     "test:ui": "playwright test",
     "test:api": "newman run examples/api/newman-smoke.postman_collection.json --environment examples/api/newman-environment.local.json",
     "test:api:report": "newman run examples/api/newman-smoke.postman_collection.json --environment examples/api/newman-environment.local.json --reporters cli,json --reporter-json-export newman-report.json",
-    "test:all": "jest --detectOpenHandles --forceExit && playwright test"
+    "test:all": "jest --detectOpenHandles --forceExit && playwright test",
+    "screenshots": "node scripts/take-screenshots.js",
+    "generate-demo-db": "node scripts/generate-demo-db.js"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.7.0",
