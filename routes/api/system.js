@@ -74,7 +74,8 @@ router.get("/events/export", hasRole("admin"), async (req, res) => {
 
 router.delete("/events/all", hasRole("superadmin"), async (req, res) => {
   await db.purgeEventLog();
-  await db.logEvent(req.session.user.name, "System", "Event Log Purged", {
+  const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+  await db.logEvent(actor, "System", "Event Log Purged", {
     action: "Full Wipe",
     reason: "Administrative reset",
   });
@@ -83,7 +84,8 @@ router.delete("/events/all", hasRole("superadmin"), async (req, res) => {
 
 router.post("/events/prune", hasRole("superadmin"), async (req, res) => {
   await db.pruneEventLog(parseInt(req.body.days) || 90);
-  await db.logEvent(req.session.user.name, "System", "Event Log Pruned", {
+  const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+  await db.logEvent(actor, "System", "Event Log Pruned", {
     olderThanDays: parseInt(req.body.days) || 90,
     action: "Partial Deletion",
   });
@@ -143,7 +145,8 @@ router.get("/system/backup", hasRole("superadmin"), async (req, res) => {
     res.setHeader("Content-Type", "text/plain");
     res.send(dump);
 
-    await db.logEvent(req.session.user.name, "System", "SQL Dump Exported", { filename });
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "System", "SQL Dump Exported", { filename });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -156,7 +159,8 @@ router.post("/system/restore", hasRole("superadmin"), upload.single("databaseFil
     const sqlContent = fs.readFileSync(req.file.path, "utf8");
     await db.restoreFromSqlDump(sqlContent);
     
-    await db.logEvent(req.session.user.name, "System", "Database Restored via SQL", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "System", "Database Restored via SQL", {
       sourceFile: req.file.originalname
     });
     

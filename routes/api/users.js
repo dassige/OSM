@@ -37,7 +37,8 @@ router.post("/", hasRole("admin"), async (req, res) => {
       tpl
     );
     
-    await db.logEvent(req.session.user.name, "User Mgmt", "Created User Account", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "User Mgmt", "Created User Account", {
       newUserEmail: req.body.email,
       newUserName: req.body.name,
       assignedRole: req.body.role,
@@ -59,13 +60,14 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
 
     await db.updateUser(req.params.id, name, email, role, enabled, blocked);
 
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
     if (userRecord.blocked === 1 && !blocked) {
-      await db.logEvent(req.session.user.name, "Security", "User Account Unblocked", {
+      await db.logEvent(actor, "Security", "User Account Unblocked", {
         targetAccount: email,
-        actionTakenBy: req.session.user.email,
+        actionTakenBy: (req.apiKeyUser || req.session?.user)?.email || 'Unknown',
       });
     } else {
-      await db.logEvent(req.session.user.name, "User Mgmt", "Updated User Profile/Status", {
+      await db.logEvent(actor, "User Mgmt", "Updated User Profile/Status", {
         targetEmail: email,
         targetName: name,
         newRole: role,
@@ -94,7 +96,8 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
         tpl
       );
       
-      await db.logEvent(req.session.user.name, "User Mgmt", "Deleted User Account", {
+      const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+      await db.logEvent(actor, "User Mgmt", "Deleted User Account", {
         deletedUserEmail: user.email,
         deletedUserName: user.name,
         deletedUserRole: user.role,
@@ -125,7 +128,8 @@ router.post("/:id/reset", hasRole("admin"), async (req, res) => {
       tpl
     );
     
-    await db.logEvent(req.session.user.name, "User Mgmt", "Administrative Password Reset", {
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, "User Mgmt", "Administrative Password Reset", {
       targetEmail: user.email,
       targetName: user.name,
     });
