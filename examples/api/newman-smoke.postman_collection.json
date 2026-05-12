@@ -344,6 +344,68 @@
     },
 
     {
+      "name": "Reports",
+      "description": "Read-only report data endpoints.",
+      "item": [
+        {
+          "name": "Survey Participation Overview",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/survey-participation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "data", "survey-participation"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Survey Participation | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Survey Participation | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('Survey Participation | Valid JSON with items array', () => {",
+                  "  pm.response.to.be.json;",
+                  "  pm.expect(pm.response.json()).to.have.property('items').that.is.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Survey Response Log",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/survey-response-log?days=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "data", "survey-response-log"],
+              "query": [{ "key": "days", "value": "30" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Survey Response Log | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Survey Response Log | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('Survey Response Log | Valid JSON with items array', () => {",
+                  "  pm.response.to.be.json;",
+                  "  pm.expect(pm.response.json()).to.have.property('items').that.is.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
       "name": "Users & API Keys",
       "item": [
         {

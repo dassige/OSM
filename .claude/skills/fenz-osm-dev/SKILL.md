@@ -672,6 +672,157 @@ async function changeLimit(newLimit) {
 
 ---
 
+## ⚠️ Report Implementation Guide
+
+Reports use a **client-side registry pattern**. Each report is a self-contained JS module that registers itself with `window.ReportRegistry`. The controller (`public/js/reports-controller.js`) reads the registry and orchestrates fetching, pagination, and PDF export.
+
+### Architecture at a Glance
+
+| Layer | File | Responsibility |
+|---|---|---|
+| Registry module | `public/reports/report-<key>.js` | Renders HTML from data; defines title, description, optional params |
+| Controller | `public/js/reports-controller.js` | Dropdown wiring, param rendering, fetch, pagination, PDF export |
+| API route | `routes/api/reports.js` | Maps `GET /api/reports/data/:type` → service call |
+| Service | `services/report-service.js` | Queries DB (or scraper); returns `{ items, meta }` |
+| HTML page | `public/reports.html` | `<option>` + `<script>` entries per report; no other changes needed |
+
+### Step-by-step: adding a new report
+
+#### 1. Service method — `services/report-service.js`
+
+For pure DB queries (no scraper needed), call `db.initDB()` directly (same pattern as `getVerificationHistory`):
+
+```js
+async function getMyReport(days = 30) {
+    const database = await db.initDB();
+    const rows = await database.all(`
+        SELECT ...
+        WHERE created_at >= datetime('now', '-' || ? || ' days')
+        ORDER BY created_at DESC
+    `, [days]);
+    return { items: rows, meta: { generated: getGeneratedDate(), days } };
+}
+```
+
+For reports that require scraper data (OI competency records), call `getFreshData(userId, proxyUrl, days)` and process `reportData`.
+
+Export the function in `module.exports` at the bottom of the file.
+
+#### 2. Route case — `routes/api/reports.js`
+
+Add one `else if` inside the `GET /data/:type` handler:
+
+```js
+else if (type === "my-report")
+    res.json(await reportService.getMyReport(days));
+```
+
+No `hasRole()` guard is needed — the route relies on `globalAuthGuard` in `server.js`. Use `req.session.user.id` for user-specific queries and `getActiveProxy()` for scraper-backed reports.
+
+#### 3. Registry module — `public/reports/report-<key>.js`
+
+```js
+(function () {
+    window.ReportRegistry = window.ReportRegistry || {};
+
+    window.ReportRegistry['my-report'] = {
+        title: 'Display Name',
+        description: 'One-line description shown in the description card.',
+
+        // Optional — omit if no user-configurable inputs are needed
+        params: [
+            { key: 'days', label: 'Lookback Period (Days)', type: 'number', default: 30, prefKey: 'rpt_myreport_days' }
+        ],
+
+        // Set paginate: true for long tables; false for summary/overview reports
+        paginate: true,
+        pageSize: 25,
+
+        // Required when paginate: true — controller calls getItems() to split pages
+        getItems: function (dataWrapper) { return dataWrapper.items || []; },
+
+        // Required when paginate: true — renders the fixed header above each page
+        renderHeader: function (dataWrapper, uiConfig) {
+            const meta = dataWrapper.meta || {};
+            return `<div class="rpt-header"><h1>Report Title</h1><p>Period: Last ${meta.days || 30} Days &bull; Generated: ${meta.generated}</p></div>`;
+        },
+
+        // Required when paginate: true — renders a slice of items per page
+        renderItems: function (rows, dataWrapper, uiConfig) {
+            const locale = (uiConfig && uiConfig.locale) || 'en-NZ';
+            let html = `<table class="rpt-table"><thead>...</thead><tbody>`;
+            if (rows.length === 0) return html + '<tr><td colspan="N" style="text-align:center">No data.</td></tr></tbody></table>';
+            rows.forEach(function (row) { html += `<tr>...</tr>`; });
+            return html + '</tbody></table>';
+        },
+
+        // Always required — entry point called by the controller
+        render: function (dataWrapper, uiConfig) {
+            // For paginated reports: combine header + items
+            return this.renderHeader(dataWrapper, uiConfig) +
+                   this.renderItems(this.getItems(dataWrapper), dataWrapper, uiConfig);
+            // For non-paginated reports: build the full HTML here directly
+        }
+    };
+})();
+```
+
+**Key conventions:**
+- Use `class="rpt-header"` for the report header block and `class="rpt-table"` for data tables — both are styled in `styles.css` for screen and print.
+- Use `locale` from `uiConfig.locale` (default `'en-NZ'`) when formatting dates: `new Date(dateStr).toLocaleDateString(locale)`.
+- Never hardcode colours — use inline `color:green` / `color:#dc3545` for status indicators, not CSS variables (these must survive PDF export).
+- For non-paginated reports, set `paginate: false` and omit `getItems`, `renderHeader`, `renderItems` — put everything in `render`.
+
+#### 4. Wire up `reports.html`
+
+Add the dropdown option (inside the `<select id="reportSelect">` element) and the script tag:
+
+```html
+<!-- In the <select> -->
+<option value="my-report">My Report Display Name</option>
+
+<!-- In the <script> section near the bottom -->
+<script src="reports/report-my-report.js"></script>
+```
+
+Optionally group related options with a disabled `<optgroup>` label as a visual separator.
+
+#### 5. Mandatory checklist for every new report
+
+| # | What | Where |
+|---|---|---|
+| 1 | Service method | `services/report-service.js` + `module.exports` |
+| 2 | Route case | `routes/api/reports.js` `GET /data/:type` handler |
+| 3 | Registry module | `public/reports/report-<key>.js` |
+| 4 | Dropdown option + script tag | `public/reports.html` |
+| 5 | OpenAPI enum | `routes/api/docs.js` — add `'my-report'` to the `type` enum |
+| 6 | Postman collection | `examples/api/OpReady-API.postman_collection.json` — add GET item to Reports folder |
+| 7 | Newman smoke test | `examples/api/newman-smoke.postman_collection.json` — add GET item with Status 200 + items array assertions |
+| 8 | Help content | `public/help.js` — add bullet to the `"reports"` key body |
+| 9 | UAT plan | `UAT-TESTING-PLAN.md` + `UAT-TESTING-PLAN.csv` — add T11-NN test case |
+| 10 | Jest test | `tests/reports.test.js` — add a describe block covering happy path + error path; mock the new service function |
+
+### Response shape contract for reports
+
+All report service functions must return:
+```js
+{ items: [...], meta: { generated: getGeneratedDate(), /* other fields */ } }
+```
+Matrix-style reports may use `{ headers: [...], rows: [...], meta: {...} }` instead.
+
+### Preference key naming convention
+
+For `params` entries with a `prefKey`, use the pattern `rpt_<shortname>_<param>`:
+
+| Report | Preference key |
+|---|---|
+| By Member days | `rpt_mem_days` |
+| By Skill days | `rpt_skill_days` |
+| Verification History days | `rpt_hist_days` |
+| Survey Response Log days | `rpt_surv_days` |
+
+---
+
 ## Notification Channels
 
 | Channel | Service | Notes |

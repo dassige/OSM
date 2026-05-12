@@ -249,7 +249,46 @@ async function getVerificationHistory(days = 30) {
 
 // Alias: training attendance uses the same grouped-by-date structure as planned sessions
 async function getTrainingAttendance(userId, proxyUrl) {
-    return await getPlannedSessions(userId, proxyUrl); 
+    return await getPlannedSessions(userId, proxyUrl);
+}
+
+async function getSurveyParticipation() {
+    const database = await db.initDB();
+    const rows = await database.all(`
+        SELECT
+            sl.id,
+            sl.name,
+            sl.published_at,
+            sl.is_archived,
+            sl.is_anonymous,
+            COUNT(st.id) as total_sent,
+            SUM(CASE WHEN st.status = 'submitted' THEN 1 ELSE 0 END) as total_submitted
+        FROM survey_live sl
+        LEFT JOIN survey_tracking st ON sl.id = st.survey_live_id
+        GROUP BY sl.id
+        ORDER BY sl.published_at DESC
+    `);
+    return { items: rows, meta: { generated: getGeneratedDate() } };
+}
+
+async function getSurveyResponseLog(days = 30) {
+    const database = await db.initDB();
+    // Use survey_tracking (not survey_responses) so member identity is always available,
+    // even for anonymous surveys where survey_responses.member_id is intentionally NULL.
+    const rows = await database.all(`
+        SELECT
+            st.completed_at as submitted_at,
+            sl.name as survey_name,
+            sl.is_anonymous,
+            m.name as member_name
+        FROM survey_tracking st
+        JOIN survey_live sl ON st.survey_live_id = sl.id
+        JOIN members m ON st.member_id = m.id
+        WHERE st.status = 'submitted'
+        AND st.completed_at >= datetime('now', '-' || ? || ' days')
+        ORDER BY st.completed_at DESC
+    `, [days]);
+    return { items: rows, meta: { generated: getGeneratedDate(), days } };
 }
 
 module.exports = {
@@ -259,5 +298,7 @@ module.exports = {
     getCriticalOverdue,
     getComplianceMatrix,
     getVerificationHistory,
-    getTrainingAttendance
+    getTrainingAttendance,
+    getSurveyParticipation,
+    getSurveyResponseLog
 };

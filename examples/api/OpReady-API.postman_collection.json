@@ -556,6 +556,22 @@
           }
         },
         {
+          "name": "Report — Survey Participation",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/data/survey-participation", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "survey-participation"] },
+            "description": "All published survey campaigns with invitation counts, response rates, and archive status."
+          }
+        },
+        {
+          "name": "Report — Survey Response Log",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/data/survey-response-log?days=30", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "survey-response-log"], "query": [{ "key": "days", "value": "30" }] },
+            "description": "Chronological log of individual survey responses submitted in the last N days."
+          }
+        },
+        {
           "name": "Generate PDF",
           "request": {
             "method": "POST",

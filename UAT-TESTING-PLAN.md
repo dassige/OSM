@@ -240,6 +240,8 @@
 | T11-09 | Print a report | After generating any report, click `[Print]`. | Browser print dialog opens with a print-optimised layout. |
 | T11-10 | Export a report to PDF | Click `[Export PDF]` (if available). | A PDF file is downloaded containing the report. |
 | T11-11 | Change rows per page | Use the Rows-per-page selector on a report with many rows. | Table updates immediately and preference persists on next page load. |
+| T11-12 | Report: Survey Participation | Select "Survey Participation Overview" → click `[Run Report]`. | Table appears showing all published survey campaigns with Name, Published date, Sent, Responded, Response Rate %, Type, and Status columns. |
+| T11-13 | Report: Survey Response Log | Select "Survey Response Log" → optionally change Lookback Period → click `[Run Report]`. | Paginated log shows survey responses for the period. Anonymous survey respondents display as *Anonymous*. |
 
 ---
 

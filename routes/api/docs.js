@@ -651,7 +651,7 @@ const spec = {
                         required: true,
                         schema: {
                             type: 'string',
-                            enum: ['by-member', 'by-skill', 'planned-sessions', 'critical-overdue', 'compliance-matrix', 'verification-history', 'training-attendance']
+                            enum: ['by-member', 'by-skill', 'planned-sessions', 'critical-overdue', 'compliance-matrix', 'verification-history', 'training-attendance', 'survey-participation', 'survey-response-log']
                         }
                     }
                 ],

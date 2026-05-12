@@ -368,7 +368,7 @@ const helpContent = {
         body: `
             <p>Generate, print, and export compliance and verification reports. All reports respect your configured timezone and date format.</p>
 
-            <h3>Report Types</h3>
+            <h3>Competency Reports</h3>
             <ul>
                 <li><strong>By Member:</strong> All expiring skills grouped per person. Useful for individual follow-up conversations.</li>
                 <li><strong>By Skill:</strong> All affected members grouped per competency. Useful for planning training blocks.</li>
@@ -377,6 +377,12 @@ const helpContent = {
                 <li><strong>Compliance Matrix:</strong> A full member × skill grid showing compliance status at a glance.</li>
                 <li><strong>Verification History:</strong> A chronological record of completed Live Form submissions and outcomes.</li>
                 <li><strong>Training Attendance:</strong> Attendance records for past in-person training sessions.</li>
+            </ul>
+
+            <h3>Survey Reports</h3>
+            <ul>
+                <li><strong>Survey Participation Overview:</strong> All published survey campaigns with sent/responded counts and response rate percentage.</li>
+                <li><strong>Survey Response Log:</strong> A chronological log of individual survey submissions for a configurable lookback period. Anonymous survey respondents are shown as <em>Anonymous</em>.</li>
             </ul>
 
             <h3>Export Options</h3>

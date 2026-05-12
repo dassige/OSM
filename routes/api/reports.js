@@ -11,7 +11,7 @@ router.get("/data/:type", async (req, res) => {
   try {
     const type = req.params.type;
     const proxyUrl = getActiveProxy();
-    const userId = req.session.user.id;
+    const userId = (req.apiKeyUser || req.session?.user)?.id;
 
     const days = req.query.days ? parseInt(req.query.days) : undefined;
 
@@ -29,7 +29,11 @@ router.get("/data/:type", async (req, res) => {
       res.json(await reportService.getVerificationHistory(days));
     else if (type === "training-attendance")
       res.json(await reportService.getTrainingAttendance(userId, proxyUrl));
-    else 
+    else if (type === "survey-participation")
+      res.json(await reportService.getSurveyParticipation());
+    else if (type === "survey-response-log")
+      res.json(await reportService.getSurveyResponseLog(days));
+    else
       res.status(400).json({ error: "Unknown report type" });
   } catch (e) {
     logger.error("Report Error", { error: e.message });

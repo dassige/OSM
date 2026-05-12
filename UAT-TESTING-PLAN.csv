@@ -114,6 +114,8 @@ T11,T11-08,Reports,Report: Training Attendance,"Select Training Attendance → c
 T11,T11-09,Reports,Print a report,"After generating any report, click [Print].","Browser print dialog opens with a print-optimised layout.",,,,
 T11,T11-10,Reports,Export a report to PDF,"Click [Export PDF].","A PDF file is downloaded containing the report.",,,,
 T11,T11-11,Reports,Change rows per page,"Use the Rows-per-page selector on a report with many rows.","Table updates immediately and preference persists on next page load.",,,,
+T11,T11-12,Reports,Report: Survey Participation,"Select Survey Participation Overview → click [Run Report].","Table appears showing all published survey campaigns with Name, Published date, Sent, Responded, Response Rate %, Type, and Status columns.",,,,
+T11,T11-13,Reports,Report: Survey Response Log,"Select Survey Response Log → optionally change Lookback Period → click [Run Report].","Paginated log shows survey responses for the period. Anonymous survey respondents display as Anonymous.",,,,
 T12,T12-01,Statistics,Page load,"Navigate to statistics.html.","Compliance doughnut chart and skill priority breakdown are rendered. Summary figures are correct.",,,,
 T12,T12-02,Statistics,Verify compliance chart,"Observe the doughnut chart sections.","Segments represent Current, Expiring Soon, Overdue, Unknown proportions matching the member data.",,,,
 T12,T12-03,Statistics,Skill priority breakdown,"Observe the priority breakdown chart or table.","Shows distribution of members by urgency level across all skills.",,,,
