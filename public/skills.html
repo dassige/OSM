@@ -225,7 +225,6 @@
                 }
             } catch (e) { }
 
-            // Initialize Table Controller
             skillTable = new TableController({
                 tbodyId: 'skillsTableBody',
                 emptyMessage: 'No skills found.',
@@ -301,10 +300,7 @@
                 if (!res.ok) throw new Error("Failed");
                 const data = await res.json();
 
-                // Populate the global state
                 currentSkills = data;
-
-
                 skillTable.setData(currentSkills);
 
                 const formRes = await fetch('/api/forms');

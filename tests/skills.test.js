@@ -1,9 +1,6 @@
-// tests/skills.test.js
 const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 
-// --- 1. MOCK DEPENDENCIES ---
-// We mock the database functions specific to the skills table
 jest.mock('../services/db', () => ({
     getSkills: jest.fn(),
     addSkill: jest.fn(),
@@ -22,10 +19,8 @@ jest.mock('../middleware/auth', () => ({
 const db = require('../services/db');
 const skillRoutes = require('../routes/api/skills');
 
-// --- 2. BUILD THE ISOLATED APP ---
 const app = createTestApp({ path: '/api/skills', router: skillRoutes });
 
-// --- 3. RUN TESTS ---
 describe('Skills API Endpoints (Isolated)', () => {
     
     // Reset mocks before each test so counts and data don't leak

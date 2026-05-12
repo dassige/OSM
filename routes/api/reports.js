@@ -10,10 +10,9 @@ const { getActiveProxy } = require("../../services/proxy-manager");
 router.get("/data/:type", async (req, res) => {
   try {
     const type = req.params.type;
-    const proxyUrl = getActiveProxy(); // Dynamically get the current proxy
+    const proxyUrl = getActiveProxy();
     const userId = req.session.user.id;
 
-    // Extract parameter if present
     const days = req.query.days ? parseInt(req.query.days) : undefined;
 
     if (type === "by-member")
@@ -52,7 +51,6 @@ router.post("/pdf", async (req, res) => {
 
     const page = await browser.newPage();
 
-    // Set the content from the request body
     await page.setContent(req.body.html, { waitUntil: "networkidle0" });
 
     const pdf = await page.pdf({

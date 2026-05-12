@@ -1,9 +1,7 @@
-// tests/auth.test.js
 const request = require('supertest');
 const express = require('express');
 const authRoutes = require('../routes/auth');
 
-// Mock dependencies
 jest.mock('../services/db', () => ({
     getUserByEmail: jest.fn(),
     authenticateUser: jest.fn(),
@@ -33,7 +31,7 @@ const db = require('../services/db');
 const app = express();
 app.use(express.json());
 app.use((req, res, next) => {
-    req.session = { destroy: jest.fn() }; // Mock the session object
+    req.session = { destroy: jest.fn() };
     next();
 });
 app.use('/', authRoutes);

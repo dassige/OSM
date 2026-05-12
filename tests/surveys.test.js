@@ -1,8 +1,6 @@
-﻿// tests/surveys.test.js
-const request = require('supertest');
+﻿const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 
-// --- 1. MOCK DEPENDENCIES ---
 jest.mock('../services/db', () => ({
     getLiveSurveyInstanceById: jest.fn(),
     getSurveyResponses: jest.fn(),
@@ -33,7 +31,7 @@ jest.mock('../config', () => ({
 jest.mock('../middleware/auth', () => ({
     // Bypass authentication and role checking for isolated routing tests
     hasRole: () => (req, res, next) => {
-        req.user = { id: 1 }; // Mock user object
+        req.user = { id: 1 };
         req.session = { user: { id: 1, name: 'Admin' } };
         next();
     }
@@ -43,10 +41,8 @@ const db = require('../services/db');
 const mailer = require('../services/mailer');
 const surveysRoutes = require('../routes/api/surveys');
 
-// --- 2. BUILD THE ISOLATED APP ---
 const app = createTestApp({ path: '/api/surveys', router: surveysRoutes });
 
-// --- 3. RUN TESTS ---
 describe('Surveys API Endpoints (Isolated)', () => {
 
     beforeEach(() => {
@@ -107,7 +103,6 @@ describe('Surveys API Endpoints (Isolated)', () => {
             expect(response.status).toBe(200);
             expect(response.body.message).toMatch(/published successfully/);
             
-            // Ensure the mailer was called twice (once for each pending member)
             expect(mailer.sendSurveyInvitation).toHaveBeenCalledTimes(2);
             expect(db.logEvent).toHaveBeenCalledWith('Admin', 'Surveys', 'Published Survey', expect.any(Object));
         });

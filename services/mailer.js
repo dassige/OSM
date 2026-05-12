@@ -4,13 +4,11 @@ const logger = require("./logger");
 const getTime = () =>
   new Date().toLocaleTimeString(config.locale, { timeZone: config.timezone });
 
-// Helper: Strip HTML tags
 function stripHtml(html) {
   if (!html) return "";
   return html.replace(/<[^>]*>?/gm, "");
 }
 
-// Helper: Escape user-supplied values for safe HTML insertion
 function escapeHtml(str) {
   if (str === null || str === undefined) return "";
   return String(str)
@@ -21,7 +19,6 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-// Helper: Return a copy of a variables object with all string values HTML-escaped
 function escapeHtmlVars(variables) {
   const safe = {};
   for (const [key, value] of Object.entries(variables)) {
@@ -30,7 +27,6 @@ function escapeHtmlVars(variables) {
   return safe;
 }
 
-// Helper: Generic Variable Replacement
 function replaceVariables(text, variables) {
   if (!text) return "";
   let result = text;
@@ -42,7 +38,6 @@ function replaceVariables(text, variables) {
   return result;
 }
 
-// Helper: Get Default Template if DB is empty
 function getTemplate(prefs, type, defaults) {
   const json = prefs[type];
   if (json) {
@@ -55,7 +50,6 @@ function getTemplate(prefs, type, defaults) {
   return defaults;
 }
 
-// 1. Expiring Skills Notification
 async function sendNotification(
   member,
   templateConfig,
@@ -169,7 +163,6 @@ async function sendNotification(
   }
 }
 
-// 2. Password Reset
 async function sendPasswordReset(
   email,
   newPassword,
@@ -202,7 +195,6 @@ async function sendPasswordReset(
   logger.info(`[SMTP] Password reset email sent to ${email}`);
 }
 
-// 3. New Account
 async function sendNewAccountNotification(
   email,
   name,
@@ -237,7 +229,6 @@ async function sendNewAccountNotification(
   logger.info(`[SMTP] New account email sent to ${email}`);
 }
 
-// 4. Account Deletion
 async function sendAccountDeletionNotification(
   email,
   name,
@@ -270,7 +261,6 @@ async function sendAccountDeletionNotification(
   logger.info(`[SMTP] Deletion notification sent to ${email}`);
 }
 
-// 5. Survey Invitations & Reminders
 async function sendSurveyInvitation(
   email,
   name,

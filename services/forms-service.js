@@ -153,10 +153,8 @@ async function updateForm(id, data) {
   );
 }
 
-// [NEW] Get a list of skill names using this form
 async function getFormUsage(id) {
   const database = await db.initDB();
-  // First find the public_id associated with this internal ID
   const form = await database.get(
     "SELECT public_id FROM forms WHERE id = ?",
     id,
@@ -170,11 +168,8 @@ async function getFormUsage(id) {
   return skills.map((s) => s.name);
 }
 
-// [UPDATED] Delete form and clean up skill references
 async function deleteForm(id) {
   const database = await db.initDB();
-
-  // Fetch public_id to identify references in the skills table
   const form = await database.get(
     "SELECT public_id FROM forms WHERE id = ?",
     id,
@@ -183,13 +178,10 @@ async function deleteForm(id) {
 
   await database.exec("BEGIN TRANSACTION");
   try {
-    // 1. Remove the reference from any skills using this form
     await database.run(
       "UPDATE skills SET url = '', url_type = 'external' WHERE url = ? AND url_type = 'internal'",
       form.public_id,
     );
-
-    // 2. Delete the form itself
     await database.run("DELETE FROM forms WHERE id = ?", id);
 
     await database.exec("COMMIT");
@@ -271,7 +263,6 @@ async function createRetryLiveForm(previousId) {
   return accessCode;
 }
 
-// --- HELPER: Build WHERE clause for Live Forms ---
 function buildLiveFormsWhere(filters) {
   let clauses = ["1=1"];
   let params = [];
@@ -306,7 +297,6 @@ function buildLiveFormsWhere(filters) {
     }
   }
 
-  // Date Range: Sent
   if (filters.sentStart) {
     clauses.push("lf.form_sent_datetime >= ?");
     params.push(filters.sentStart + " 00:00:00");
@@ -316,7 +306,6 @@ function buildLiveFormsWhere(filters) {
     params.push(filters.sentEnd + " 23:59:59");
   }
 
-  // Date Range: Submitted
   if (filters.subStart) {
     clauses.push("lf.form_submitted_datetime >= ?");
     params.push(filters.subStart + " 00:00:00");
@@ -325,7 +314,6 @@ function buildLiveFormsWhere(filters) {
     clauses.push("lf.form_submitted_datetime <= ?");
     params.push(filters.subEnd + " 23:59:59");
   }
-  //  Tries Filter
   if (filters.tries) {
     clauses.push("lf.tries = ?");
     params.push(filters.tries);
@@ -341,19 +329,16 @@ async function setArchiveStatus(id, isArchived) {
     id,
   );
 }
-//  Get Live Forms with Filters & Pagination
 async function getLiveForms(filters = {}, pagination = null) {
   const database = await db.initDB();
   const { where, params } = buildLiveFormsWhere(filters);
 
-  // 1. Get Count
   const countResult = await database.get(
     `SELECT COUNT(*) as total FROM live_forms lf WHERE ${where}`,
     params,
   );
   const total = countResult.total;
 
-  // 2. Get Data
   let query = `
         SELECT lf.*, m.name as member_name, s.name as skill_name 
         FROM live_forms lf 
@@ -397,15 +382,13 @@ async function deleteLiveForm(id) {
   await database.run(`DELETE FROM live_forms WHERE id = ?`, id);
 }
 
-// services/forms-service.js
-
 async function getLiveFormByCode(code) {
   const database = await db.initDB();
   const result = await database.get(
     `
         SELECT lf.*, 
                f.name as form_name, f.intro, f.structure, 
-               f.max_tries, f.min_score, f.min_score_type,  -- ADD THESE
+               f.max_tries, f.min_score, f.min_score_type,
                m.name as member_name, m.email as member_email,
                s.name as skill_name
         FROM live_forms lf
@@ -442,10 +425,9 @@ async function getLiveFormByCode(code) {
   }
   return result;
 }
-//  Submit Live Form
 async function submitLiveForm(code, formData) {
   const database = await db.initDB();
-  const now = new Date().toISOString(); // UTC ISO string
+  const now = new Date().toISOString();
   await database.run(
     `UPDATE live_forms 
      SET form_status = 'submitted', 
@@ -457,7 +439,6 @@ async function submitLiveForm(code, formData) {
     code,
   );
 }
-// Admin: Get specific submission details
 async function getLiveFormSubmission(id) {
   const database = await db.initDB();
   const result = await database.get(
@@ -509,7 +490,6 @@ async function getLiveFormSubmission(id) {
 
   return result;
 }
-// Check if a form is currently in 'submitted' state
 async function checkSubmittedStatus(memberId, skillId) {
   const database = await db.initDB();
   const record = await database.get(
@@ -519,7 +499,6 @@ async function checkSubmittedStatus(memberId, skillId) {
   );
   return !!record;
 }
-// Retrieve statuses including recently accepted forms
 async function getAllActiveStatuses(visibilityDays) {
   const database = await db.initDB();
   return await database.all(
@@ -534,18 +513,10 @@ async function getAllActiveStatuses(visibilityDays) {
     visibilityDays,
   );
 }
-/**
- * Core Scoring Engine
- * @param {Array} structure - The form's question definitions
- * @param {Object} submittedData - The member's responses
- * @returns {Object} { achieved: number, maximum: number }
- */
-//
-
 async function calculateFormScore(structure, submittedData, skipAi = false) {
   let totalAchieved = 0;
   let totalPossible = 0;
-  const aiFeedback = {}; // Container for feedback
+  const aiFeedback = {};
 
   for (const field of structure) {
     const weight = parseFloat(field.points) || 0;
@@ -581,7 +552,6 @@ async function calculateFormScore(structure, submittedData, skipAi = false) {
     } else if (field.type === "text_multi") {
       if (!skipAi && aiConfig.enabled && field.correctAnswer) {
         try {
-          // 1. Get wrapper response from AI Service
           const aiResponse = await aiService.evaluateTextAnswer(
             field.description,
             field.correctAnswer,
@@ -589,13 +559,11 @@ async function calculateFormScore(structure, submittedData, skipAi = false) {
             weight,
           );
 
-          // 2. Unwrap result safely
           const evalResult = aiResponse.result || {
             score: 0,
             justification: "AI Error",
           };
 
-          // 3. Add to total and save feedback
           totalAchieved += evalResult.score || 0;
           aiFeedback[field.id] = {
             score: evalResult.score || 0,
@@ -611,7 +579,6 @@ aiFeedback[field.id] = { score: 0, reason: "Manual review required (or cached)."
     }
   }
 
-  // RETURN EVERYTHING: Score, Max, and Feedback
   return {
     achieved: totalAchieved,
     maximum: totalPossible,
@@ -639,7 +606,6 @@ async function updateLiveFormStatus(
     params.push(score);
   }
 
-  // Save Feedback JSON if provided
   if (feedback !== undefined) {
     query += `, ai_feedback = ?`;
     params.push(JSON.stringify(feedback));

@@ -10,7 +10,6 @@ const formsService = require("../../services/forms-service");
 const { hasRole } = require("../../middleware/auth");
 const { validateForm, validateBulkData } = require("../../middleware/validation");
 
-// Local multer instance for JSON file uploads
 const upload = multer({ dest: "uploads/" });
 
 router.get("/", hasRole("admin"), async (req, res) => {
@@ -61,7 +60,7 @@ router.post("/import/all", hasRole("admin"), upload.single("formsFile"), async (
 });
 
 router.get("/:id", async (req, res) => {
-  // Global guard handles the auth, but we double-check session for safety on this specific fetch
+  // This route has no hasRole() guard so that members can fetch their own form; the session check below prevents unauthenticated access
   if (!req.session.loggedIn) return res.status(401).json({ error: "Unauthorized" });
   try {
     const form = await formsService.getFormById(req.params.id);
@@ -168,10 +167,8 @@ router.get("/public/:publicId", async (req, res) => {
     const form = await formsService.getFormByPublicId(req.params.publicId);
     if (!form) return res.status(404).json({ error: "Form not found" });
 
-    // Identify if the session belongs to an Administrator
     const isAdmin = req.session?.user?.role === "admin" || req.session?.user?.role === "superadmin";
-
-    // Strip correct answers if the requester is not an admin
+    // Correct answers are stripped for non-admins so members can't see rubric answers before submitting
     const structure = (form.structure || []).map((field) => {
       const { correctAnswer, ...publicField } = field;
       return isAdmin ? field : publicField;

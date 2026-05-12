@@ -1,4 +1,3 @@
-// middleware/auth.js
 const { getApiKeyByHash, touchApiKey, hashKey } = require('../services/db/api-keys');
 
 const ROLES = { guest: 0, simple: 1, admin: 2, superadmin: 3 };

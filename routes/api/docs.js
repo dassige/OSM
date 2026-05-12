@@ -988,7 +988,6 @@ const spec = {
     }
 };
 
-// Serve Swagger UI — admin-only
 router.use('/', hasRole('admin'), swaggerUi.serve);
 router.get('/', hasRole('admin'), swaggerUi.setup(spec, {
     customSiteTitle: 'OpReady API Docs',
@@ -996,7 +995,6 @@ router.get('/', hasRole('admin'), swaggerUi.setup(spec, {
     swaggerOptions: { persistAuthorization: true }
 }));
 
-// Also expose the raw spec as JSON
 router.get('/spec.json', hasRole('admin'), (req, res) => {
     res.json(spec);
 });

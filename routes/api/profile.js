@@ -7,7 +7,6 @@ const qrcode = require("qrcode");
 const db = require("../../services/db");
 const config = require("../../config");
 
-// Update Own Profile
 router.put("/", async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -29,13 +28,12 @@ router.put("/", async (req, res) => {
   }
 });
 
-// Generate Secret & QR Code for MFA
 router.post("/mfa/setup", async (req, res) => {
   if (!req.session.user || !req.session.user.id) return res.status(401).json({ error: "Unauthorized" });
 
   const secret = speakeasy.generateSecret({ name: `${config.ui.loginTitle} (${req.session.user.email})` });
 
-  // Save secret but do NOT enable yet
+  // Secret is stored but MFA stays inactive until the user proves their TOTP app is configured correctly
   await db.setMfaSecret(req.session.user.id, secret.base32);
 
   qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
@@ -44,13 +42,12 @@ router.post("/mfa/setup", async (req, res) => {
   });
 });
 
-// Verify Setup & Enable MFA
 router.post("/mfa/verify", async (req, res) => {
   const { token } = req.body;
   const userId = req.session.user.id;
   const userName = req.session.user.name;
 
-  // --- DEMO MODE BYPASS ---
+  // No real TOTP secret in demo mode, so verification is skipped
   if (config.appMode === "demo") {
     await db.setMfaStatus(userId, true);
     await db.logEvent(userName, "Security", "MFA Enabled (Demo Simulation)", { userId, userName });
@@ -73,7 +70,6 @@ router.post("/mfa/verify", async (req, res) => {
   }
 });
 
-// Disable MFA
 router.post("/mfa/disable", async (req, res) => {
   const userId = req.session.user.id;
   const userName = req.session.user.name;
@@ -83,7 +79,6 @@ router.post("/mfa/disable", async (req, res) => {
   res.json({ success: true });
 });
 
-// Get Current MFA Status
 router.get("/mfa/status", async (req, res) => {
   const userId = req.session.user.id;
   const data = await db.getMfaData(userId);

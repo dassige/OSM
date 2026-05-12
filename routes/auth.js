@@ -11,7 +11,7 @@ const { sendPasswordReset } = require("../services/mailer");
 const whatsappService = require("../services/whatsapp-service");
 const { loginLimiter, mfaLimiter, forgotPasswordLimiter } = require("../middleware/rate-limiter");
 
-// Helper to finalize session and log event
+// Shared by both password and MFA login paths to ensure identical session state
 async function finalizeLogin(req, res, user, authType) {
   await db.resetLoginAttempts(user.id);
   req.session.loggedIn = true;
@@ -34,13 +34,10 @@ async function finalizeLogin(req, res, user, authType) {
   res.json({ success: true });
 }
 
-// --- CORE AUTHENTICATION ---
-
 router.post("/login", loginLimiter, async (req, res) => {
   const { username, password } = req.body;
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-  // 1. Superuser Check
   if (username === config.auth.username && password === config.auth.password) {
     req.session.loggedIn = true;
     req.session.user = {
@@ -50,7 +47,6 @@ router.post("/login", loginLimiter, async (req, res) => {
     return res.json({ success: true });
   }
 
-  // 2. Database User Check
   try {
     const userRecord = await db.getUserByEmail(username);
     if (userRecord) {
@@ -87,7 +83,7 @@ router.post("/login/mfa", mfaLimiter, async (req, res) => {
   const { token } = req.body;
   const user = req.session.mfaPendingUser;
 
-  // Demo Mode Bypass
+  // No real TOTP secret is stored in demo mode, so MFA verification is bypassed
   if (config.appMode === 'demo') {
       delete req.session.mfaPendingUser;
       return await finalizeLogin(req, res, user, "demo-mfa"); 
@@ -151,8 +147,6 @@ router.get("/logout", async (req, res) => {
   req.session.destroy();
   res.redirect("/login.html");
 });
-
-// --- SESSION CHECK (API) ---
 
 router.get("/api/user-session", (req, res) => {
   if (req.session && req.session.user) res.json(req.session.user);

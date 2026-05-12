@@ -579,7 +579,6 @@
     <script src="toast.js"></script>
     <script src="utils.js"></script>
     <script>
-        // --- VIEW SWITCHING LOGIC ---
         function toggleSubTab(prefix, type) {
             const btnEmail = document.getElementById(`btn-${prefix}-email`);
             const btnWa = document.getElementById(`btn-${prefix}-wa`);
@@ -746,11 +745,11 @@
                         from: document.getElementById('surveysEmailFrom').value,
                         subject: document.getElementById('surveysEmailSubject').value,
                         body: chipsToText(tinymce.get('surveysEmailBody').getContent()),
-                        bodyNamed: chipsToText(tinymce.get('surveysEmailBodyNamed').getContent()) // ADDED
+                        bodyNamed: chipsToText(tinymce.get('surveysEmailBodyNamed').getContent())
                     },
                     whatsapp: {
                         body: document.getElementById('surveysWaBody').value,
-                        bodyNamed: document.getElementById('surveysWaBodyNamed').value // ADDED
+                        bodyNamed: document.getElementById('surveysWaBodyNamed').value
                     }
                 };
             }
@@ -874,9 +873,9 @@
                     document.getElementById('surveysEmailFrom').value = surv.email.from || '';
                     document.getElementById('surveysEmailSubject').value = surv.email.subject || '';
                     tinymce.get('surveysEmailBody').setContent(textToChips(surv.email.body || ''));
-                    tinymce.get('surveysEmailBodyNamed').setContent(textToChips(surv.email.bodyNamed || '')); // ADDED
+                    tinymce.get('surveysEmailBodyNamed').setContent(textToChips(surv.email.bodyNamed || ''));
                     document.getElementById('surveysWaBody').value = surv.whatsapp.body || '';
-                    document.getElementById('surveysWaBodyNamed').value = surv.whatsapp.bodyNamed || ''; // ADDED
+                    document.getElementById('surveysWaBodyNamed').value = surv.whatsapp.bodyNamed || '';
                 } catch (e) { console.error("Error parsing surveys template", e); }
             }
         
@@ -930,11 +929,11 @@
                     from: document.getElementById('surveysEmailFrom').value,
                     subject: document.getElementById('surveysEmailSubject').value,
                     body: chipsToText(tinymce.get('surveysEmailBody').getContent()),
-                    bodyNamed: chipsToText(tinymce.get('surveysEmailBodyNamed').getContent()) // ADDED
+                    bodyNamed: chipsToText(tinymce.get('surveysEmailBodyNamed').getContent())
                 },
                 whatsapp: {
                     body: document.getElementById('surveysWaBody').value,
-                    bodyNamed: document.getElementById('surveysWaBodyNamed').value // ADDED
+                    bodyNamed: document.getElementById('surveysWaBodyNamed').value
                 }
             };
             const updates = [
@@ -964,6 +963,7 @@
             showToast("Templates saved!", "success");
         });
 
+        // TinyMCE editors need time to fully initialize before content can be injected
         setTimeout(loadData, 1500);
 
         const scrollTopBtn = document.getElementById("scrollTopBtn");

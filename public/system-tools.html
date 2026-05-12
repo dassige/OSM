@@ -262,18 +262,15 @@
             const inputs = document.querySelectorAll('.save-pref');
 
             try {
-                // 1. Load existing preferences from Database
                 const res = await fetch('/api/user-preferences');
                 currentAiPrefs = await res.json();
 
-                // 2. Populate inputs and attach auto-save
                 inputs.forEach(input => {
                     const key = input.getAttribute('data-key');
                     if (currentAiPrefs[key] !== undefined) {
                         input.value = currentAiPrefs[key];
                     }
 
-                    // Standard listener for saving
                     input.addEventListener('change', () => {
                         savePreference(key, input.value);
                         if (key === 'ai_test_provider') toggleOllamaField(input.value);
@@ -289,7 +286,6 @@
                     }
                 });
 
-                // 3. Set initial visibility
                 toggleOllamaField(document.getElementById('testAiProvider').value);
 
             } catch (e) {
@@ -358,7 +354,6 @@
 
         initAiLab();
 
-        // Init UI Config
         fetch('/ui-config')
             .then(r => r.json())
             .then(c => {
@@ -382,7 +377,6 @@
             })
             .catch(() => window.location.href = "/login.html");
 
-        // Restore Logic
         document.getElementById('restoreForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -507,8 +501,6 @@
             }
         }
 
-        // ---- API Key Management ----
-
         async function loadApiKeys() {
             const tbody = document.getElementById('apiKeyBody');
             try {
@@ -596,8 +588,6 @@
         }
 
         loadApiKeys();
-
-        // ---- End API Key Management ----
 
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {

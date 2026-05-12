@@ -4,7 +4,6 @@ const db = require('./db');
 const config = require('../config');
 const { isExpiring, isExpired } = require('./member-manager');
 
-// [NEW] Helper for formatted timestamp
 function getGeneratedTimestamp() {
     return new Date().toLocaleString(config.locale || 'en-NZ', {
         timeZone: config.timezone,
@@ -17,7 +16,7 @@ async function getComplianceOverview(userId) {
     const dbMembers = await db.getMembers();
     const dbSkills = await db.getSkills();
     
-    // [DYNAMIC] Fetch preference saved from the home page dashboard
+    // Per-user preference so the overview matches the threshold the user set on their dashboard
     const daysThreshold = await db.getUserPreference(userId, 'daysToExpiry') || 30;
 
     const scrapeData = await getOIData(config.url, config.scrapingInterval);
@@ -52,7 +51,7 @@ async function getComplianceOverview(userId) {
         meta: { 
             threshold: daysThreshold, 
             totalMembers: activeMembers.length,
-            generated: getGeneratedTimestamp() // [NEW] Added timestamp
+            generated: getGeneratedTimestamp()
         }
     };
 }

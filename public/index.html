@@ -291,7 +291,6 @@
     <script src="toast.js"></script>
     <script src="help.js"></script>
     <script>
-        // --- AUTH & MENU LOGIC ---
         function toggleProfileMenu() {
             document.getElementById("profileDropdown").classList.toggle("show");
             document.getElementById("myDropdown").classList.remove("show");
@@ -301,14 +300,12 @@
             document.getElementById("profileDropdown").classList.remove("show");
         }
 
-        // Fetch User Session & Adjust UI
         fetch('/api/user-session')
             .then(r => r.json())
             .then(user => {
                 document.getElementById('userNameDisplay').textContent = user.name || 'User';
                 const role = user.role || 'guest';
 
-                // --- ROLE BASED MENU VISIBILITY ---
                 if (role === 'superadmin') {
                     document.getElementById('groupOperations').style.display = 'block';
                     document.getElementById('groupComms').style.display = 'block';
@@ -332,7 +329,6 @@
             .catch(() => window.location.href = '/login.html');
         document.getElementById('logoutLinkLeft').addEventListener('click', () => window.location.href = '/logout');
 
-        // Close dropdowns on click outside
         window.onclick = function (event) {
             if (!event.target.closest('.menu-btn') &&
                 !event.target.closest('.profile-btn') &&
@@ -346,7 +342,6 @@
             if (event.target == document.getElementById('pendingReviewsModal')) closeModal('pendingReviewsModal');
         }
 
-        // Scroll To Top
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {
             if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
@@ -357,7 +352,6 @@
         };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-        //  Load UI Config (Logo)
         fetch('/ui-config')
             .then(r => r.json())
             .then(config => {

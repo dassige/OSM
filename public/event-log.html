@@ -186,7 +186,7 @@
             await checkAdmin();
             await loadMetadata();
 
-            // 1. Load limit preference BEFORE initializing the controller
+            // Persist the rows-per-page preference; must be loaded before the controller initialises
             let initialLimit = 25;
             let initialLimitRaw = '25';
             try {
@@ -196,13 +196,11 @@
                     initialLimitRaw = data.value;
                     initialLimit = data.value === 'all' ? 99999 : parseInt(data.value);
                 }
-            } catch (e) { /* Use default if not found */ }
+            } catch (e) { }
 
-            // Update UI Dropdown
             const limitSelect = document.getElementById('rowsPerPage');
             if (limitSelect) limitSelect.value = initialLimitRaw;
 
-            // 2. Initialize Controller
             eventTableCtrl = new TableController({
                 tbodyId: 'tableBody',
                 emptyMessage: 'No events matching criteria.',
@@ -240,7 +238,6 @@
                 }
             });
 
-            // 3. Fetch logs
             await applyFilters(1);
         }
 
@@ -299,7 +296,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key: 'eventLogLimit', value: newLimit })
             });
-            applyFilters(1); // Re-fetch data with the new limit
+            applyFilters(1);
         }
 
         async function loadMetadata() {
@@ -419,7 +416,7 @@
             document.getElementById('payloadModal').style.display = 'block';
         };
 
-        // Bridge to capture inline HTML button clicks for "Previous" and "Next"
+        // Expose to global scope so inline onclick handlers in the HTML can call it
         window.changePage = function (delta) {
             eventTableCtrl.changePage(delta);
         }

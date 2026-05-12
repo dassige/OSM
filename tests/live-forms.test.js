@@ -1,8 +1,6 @@
-// tests/live-forms.test.js
 const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 
-// --- 1. MOCK DEPENDENCIES ---
 jest.mock('../services/db', () => ({
     logEvent: jest.fn().mockResolvedValue(),
     getPreferences: jest.fn().mockResolvedValue({}),
@@ -41,10 +39,8 @@ jest.mock('../services/whatsapp-service', () => ({
 const formsService = require('../services/forms-service');
 const liveFormRoutes = require('../routes/api/live-forms');
 
-// --- 2. BUILD THE ISOLATED APP ---
 const app = createTestApp({ path: '/api/live-forms', router: liveFormRoutes });
 
-// --- 3. RUN TESTS ---
 describe('Live Forms API Endpoints (Isolated)', () => {
     
     beforeEach(() => {
@@ -53,11 +49,9 @@ describe('Live Forms API Endpoints (Isolated)', () => {
 
     describe('GET /api/live-forms (Admin Data Table)', () => {
         it('should fetch forms and correctly pass pagination and filter parameters to the service', async () => {
-            // Setup mock return
             const mockReturn = { total: 100, records: [{ id: 1, skill_name: 'Driving' }] };
             formsService.getLiveForms.mockResolvedValue(mockReturn);
 
-            // Execute request with query parameters
             const response = await request(app).get('/api/live-forms?status=accepted&page=2&limit=50');
 
             expect(response.status).toBe(200);
@@ -121,17 +115,14 @@ describe('Live Forms API Endpoints (Isolated)', () => {
 
     describe('POST /api/live-forms/submit/:code (Public Form Submission)', () => {
         it('should accept the form if the score meets the percentage threshold', async () => {
-            // 1. Mock the open form
-            formsService.getLiveFormByCode.mockResolvedValue({ 
+            formsService.getLiveFormByCode.mockResolvedValue({
                 id: 5,
                 form_status: 'sent',
-                min_score: 80, 
+                min_score: 80,
                 min_score_type: 'percentage',
                 tries: 1,
                 max_tries: 3
             });
-
-            // 2. Mock the grading AI/Engine returning a passing score (90%)
             formsService.calculateFormScore.mockResolvedValue({
                 achieved: 9,
                 maximum: 10,
@@ -151,17 +142,14 @@ describe('Live Forms API Endpoints (Isolated)', () => {
         });
 
         it('should force a retry (400) if the score is too low and max_tries is not reached', async () => {
-            // 1. Mock the open form
             formsService.getLiveFormByCode.mockResolvedValue({
                 id: 5,
                 form_status: 'sent',
                 min_score: 80,
                 min_score_type: 'percentage',
-                tries: 1, // Only on first try
+                tries: 1,
                 max_tries: 3
             });
-
-            // 2. Mock the grading engine returning a failing score (50%)
             formsService.calculateFormScore.mockResolvedValue({
                 achieved: 5,
                 maximum: 10,
@@ -172,16 +160,13 @@ describe('Live Forms API Endpoints (Isolated)', () => {
                 .post('/api/live-forms/submit/VALID_CODE')
                 .send({ "q1": "bad answer" });
 
-            // Expect a 400 Bad Request instructing the user to retry
             expect(response.status).toBe(400);
             expect(response.body.status).toBe('retry');
             expect(response.body.currentTry).toBe(1);
         });
     });
 
-    // -------------------------------------------------------------------------
-    //  Shared mock submission used by review/accept/reject tests
-    // -------------------------------------------------------------------------
+    // Shared mock used by review/accept/reject tests below
     const mockSubmission = {
         id: 5,
         form_status: 'submitted',

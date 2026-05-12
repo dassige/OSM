@@ -25,8 +25,7 @@ test.describe.serial('T14 — Users CRUD', () => {
     await confirmDialog(page);
     const resp = await respPromise;
 
-    // 200 = created + email sent; 500 can occur if SMTP is unconfigured in demo mode.
-    // Accept both: the important thing is the user appears in the list.
+    // 500 can occur when SMTP is unconfigured in demo mode; the user may still be created
     expect([200, 201, 500]).toContain(resp.status());
 
     if (resp.status() < 500) {

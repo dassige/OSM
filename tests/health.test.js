@@ -1,4 +1,3 @@
-// tests/health.test.js
 const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 

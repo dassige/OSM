@@ -15,7 +15,6 @@ const upload = multer({ dest: "uploads/" });
 
 
 
-// --- HEALTH CHECK ---
 router.get("/health", async (req, res) => {
   try {
     const database = await db.initDB();
@@ -26,7 +25,6 @@ router.get("/health", async (req, res) => {
   }
 });
 
-// --- PREFERENCES ---
 router.get("/preferences", async (req, res) => {
   res.json(await db.getPreferences());
 });
@@ -55,7 +53,6 @@ router.post("/user-preferences", async (req, res) => {
   res.json({ success: true });
 });
 
-// --- EVENT LOGS ---
 router.get("/events", hasRole("admin"), async (req, res) => {
   res.json(await db.getEventLogs(req.query));
 });
@@ -99,7 +96,6 @@ router.post("/logs", async (req, res) => {
   res.json({ success: true });
 });
 
-// --- SYSTEM & AI TOOLS ---
 router.get("/system/ollama-models", hasRole("superadmin"), async (req, res) => {
   const baseUrl = req.query.baseUrl || config.aiConfig.ollamaUrl;
   try {
@@ -138,7 +134,6 @@ router.post("/system/ai-test", hasRole("superadmin"), async (req, res) => {
   }
 });
 
-// --- BACKUP & RESTORE ---
 router.get("/system/backup", hasRole("superadmin"), async (req, res) => {
   try {
     const dump = await db.generateSqlDump();
@@ -173,7 +168,6 @@ router.post("/system/restore", hasRole("superadmin"), upload.single("databaseFil
   }
 });
 
-// --- DEMO MODE CREDENTIALS ---
 router.get("/demo-credentials", (req, res) => {
   if (config.appMode !== "demo")
     return res.status(403).json({ error: "Not in demo mode" });

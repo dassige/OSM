@@ -1,9 +1,6 @@
 const { expect } = require('@playwright/test');
 
-/**
- * Navigate to a URL and wait for the page to settle.
- * A networkidle timeout is expected on pages with persistent Socket.IO connections.
- */
+// networkidle timeout is expected on pages with persistent Socket.IO connections
 async function goTo(page, url) {
   await page.goto(url);
   try {
@@ -13,10 +10,7 @@ async function goTo(page, url) {
   }
 }
 
-/**
- * If the page has a rows-per-page selector, set it to "all" so all table rows
- * are rendered in the DOM. Necessary before locating rows by name.
- */
+// Sets rows-per-page to "all" so all table rows are in the DOM before locating rows by name
 async function showAllRows(page, selectId = '#rowsPerPage') {
   const sel = page.locator(selectId);
   if (await sel.count() > 0) {
@@ -26,20 +20,13 @@ async function showAllRows(page, selectId = '#rowsPerPage') {
   }
 }
 
-/**
- * Click the "Yes" button in the shared custom confirm modal.
- * The caller is responsible for waiting for the confirm modal to appear first
- * (e.g. by clicking a delete button that triggers it).
- */
+// Caller must trigger the confirm modal (e.g. click a delete button) before calling this
 async function confirmDialog(page) {
   await page.locator('#btnConfirmYes').waitFor({ state: 'visible' });
   await page.locator('#btnConfirmYes').click();
 }
 
-/**
- * Wait for a fetch response matching urlPart and HTTP method.
- * Must be set up BEFORE the action that triggers the request.
- */
+// Must be set up BEFORE the action that triggers the request
 function waitForAPI(page, urlPart, method) {
   return page.waitForResponse(
     r => r.url().includes(urlPart) && r.request().method() === method,

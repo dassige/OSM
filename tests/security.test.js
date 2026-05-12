@@ -1,10 +1,8 @@
-// tests/security.test.js
 const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 const memberRoutes = require('../routes/api/members');
 const systemRoutes = require('../routes/api/system');
 
-// Mock dependencies
 jest.mock('../services/db', () => ({
     getMembers: jest.fn().mockResolvedValue([]),
     addMember: jest.fn(),
@@ -14,7 +12,6 @@ jest.mock('../services/db', () => ({
 // We MUST use the REAL auth middleware here to test if it blocks requests properly!
 jest.unmock('../middleware/auth'); 
 
-// --- App 1: Simple User ---
 const simpleUserApp = createTestApp(
     [
         { path: '/api/members', router: memberRoutes },
@@ -23,7 +20,6 @@ const simpleUserApp = createTestApp(
     { user: { id: 1, name: 'Simple FF', role: 'simple' } } // Inject SIMPLE role
 );
 
-// --- App 2: Admin User ---
 const adminUserApp = createTestApp(
     [
         { path: '/api/members', router: memberRoutes },
@@ -57,7 +53,6 @@ describe('Role-Based Access Control (RBAC) Regression', () => {
         });
 
         it('blocks admin user from purging the event log (requires superadmin role)', async () => {
-            // Even though they are an admin, they aren't a superadmin!
             const res = await request(adminUserApp).delete('/api/system/events/all');
             expect(res.status).toBe(403);
             expect(res.body.error).toMatch(/Forbidden/);

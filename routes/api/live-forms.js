@@ -8,7 +8,6 @@ const logger = require("../../services/logger");
 const whatsappService = require("../../services/whatsapp-service");
 const { hasRole } = require("../../middleware/auth");
 
-// Helper to convert HTML to Text with formatting preservation
 function convertHtmlToText(html) {
   if (!html) return "";
   return html
@@ -133,7 +132,6 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
   }
 });
 
-// --- PUBLIC LIVE FORM ACCESS ---
 router.get("/access/:code", async (req, res) => {
   try {
     const result = await formsService.getLiveFormByCode(req.params.code);
@@ -219,7 +217,6 @@ router.post("/submit/:code", async (req, res) => {
   }
 });
 
-// Admin: Get specific submission details
 router.get("/review/:id", hasRole("admin"), async (req, res) => {
   try {
     const result = await formsService.getLiveFormSubmission(req.params.id);
@@ -254,7 +251,6 @@ router.get("/review/:id", hasRole("admin"), async (req, res) => {
   }
 });
 
-// --- ACCEPT SUBMISSION ---
 router.post("/accept/:id", hasRole("admin"), async (req, res) => {
   try {
     const { notifyEmail, notifyWa, customComment } = req.body;
@@ -335,7 +331,6 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
   }
 });
 
-// --- REJECT SUBMISSION ---
 router.post("/reject/:id", hasRole("admin"), async (req, res) => {
   try {
     const { notifyEmail, notifyWa, customComment, generateNew } = req.body;

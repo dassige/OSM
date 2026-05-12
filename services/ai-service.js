@@ -25,7 +25,6 @@ async function evaluateTextAnswer(question, reference, memberAnswer, maxPoints, 
     4. Return ONLY a JSON object: {"score": number, "justification": "string"}
   `;
 
-  // Internal helper to call specific providers with the active config
   try {
     let rawResponse;
     if (activeConfig.provider === "ollama") {
@@ -43,10 +42,11 @@ async function evaluateTextAnswer(question, reference, memberAnswer, maxPoints, 
       rawResponse = result.response.text();
     }
 
+    // AI models sometimes wrap JSON in markdown code fences; strip them before parsing
     const jsonStr = rawResponse.replace(/```json|```/g, "").trim();
     return { 
         result: JSON.parse(jsonStr), 
-        raw: rawResponse // Return raw response for the debug log
+        raw: rawResponse
     };
   } catch (e) {
     throw e; // Let the controller handle the error for logging

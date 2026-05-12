@@ -25,7 +25,6 @@ function parseDate(dateStr) {
   const fallback = new Date(cleanStr);
   return isNaN(fallback.getTime()) ? null : fallback;
 }
-// Helper: Get YYYY-MM-DD string for today in the target timezone
 function getTodayInTimezone() {
   return new Intl.DateTimeFormat(config.locale, {
     timeZone: config.timezone,
@@ -44,21 +43,21 @@ function isExpired(dueDateStr) {
   if (cleanDue.toLowerCase().includes("expired")) return true;
 
   const todayStr = getTodayInTimezone();
-  // Direct string comparison works for YYYY-MM-DD
+  // Zero-padded YYYY-MM-DD is lexicographically sortable, so string comparison is correct
   return cleanDue < todayStr;
 }
 function isExpiring(dueDateStr, daysThreshold) {
   const expiryDate = parseDate(dueDateStr);
   if (!expiryDate) return false;
 
-  // Create a Date object representing today at 00:00 in the target timezone
   const todayStr = getTodayInTimezone();
+  // Appending T00:00:00Z normalizes both dates to UTC midnight, preventing timezone off-by-one errors
   const todayDate = new Date(todayStr + "T00:00:00Z");
 
   const thresholdDate = new Date(todayDate);
   thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
 
-  // Use UTC dates for stable comparison
+  // Normalize expiry to UTC midnight so local-timezone Date parsing doesn't shift the date
   const utcExpiry = new Date(
     expiryDate.toISOString().split("T")[0] + "T00:00:00Z",
   );
@@ -91,8 +90,7 @@ function processMemberSkills(
           if (config.url_type === "internal") {
             skill.url = `${appBaseUrl}/forms-view.html?id=${config.url}`;
 
-            // [NEW] Lookup Live Form Status
-            // Key format matches what we build in server.js
+            // Key format must match the composite key built in server.js when populating liveFormsMap
             const key = `${member.id}_${config.id}`;
             skill.liveFormStatus = liveFormsMap[key] || null;
           } else {

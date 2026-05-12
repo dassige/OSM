@@ -2,9 +2,8 @@ const axios = require('axios');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const DEFAULT_SOURCE = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=NZ&ssl=all&anonymity=all";
 
-let activeProxy = null; // Store state here
+let activeProxy = null;
 
-// Add getters and setters
 function getActiveProxy() {
     return activeProxy;
 }
@@ -13,7 +12,7 @@ function setActiveProxy(proxyUrl) {
     activeProxy = proxyUrl;
 }
 async function findWorkingNZProxy(logger = console.log, customSource = null) {
-    // ... (This function remains mostly the same, ensuring it passes the URL to verifyProxy)
+    // Proxies are tested sequentially (not in parallel) to avoid hammering the source with simultaneous connection attempts
     const sourceUrl = customSource || DEFAULT_SOURCE;
     logger(`[ProxyManager] 📡 Fetching NZ proxy list from source...`);
 
@@ -58,12 +57,12 @@ async function findWorkingNZProxy(logger = console.log, customSource = null) {
 async function verifyProxy(proxyUrl) {
     try {
         const agent = new HttpsProxyAgent(proxyUrl);
-        
+
         const start = Date.now();
         await axios.get("https://www.dashboardlive.nz/index.php", {
             timeout: 5000,
-            httpsAgent: agent, // Use the agent
-            proxy: false       // Disable native proxy
+            httpsAgent: agent,
+            proxy: false // Prevents axios from double-proxying via environment HTTP_PROXY variables
         });
         return true;
     } catch (e) {

@@ -10,10 +10,7 @@ const mailer = require("../../services/mailer");
 const config = require("../../config");
 const logger = require("../../services/logger");
 
-// ============================================================================
-// 1. SPECIFIC ROUTES (Must come before wildcard /:id routes)
-// ============================================================================
-// GET /api/surveys/responses/:id - Protected endpoint for Admin Review
+// Specific routes must be declared before wildcard /:id routes to avoid Express matching them as IDs
 router.get("/responses/:id", hasRole("admin"), async (req, res) => {
     try {
         const response = await db.getSurveyResponseById(req.params.id);
@@ -33,7 +30,6 @@ router.get("/responses/:id", hasRole("admin"), async (req, res) => {
     }
 });
 
-// routes/api/surveys.js - Consistently provide structure and response count
 router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
   try {
     const liveId = req.params.liveId;
@@ -79,12 +75,11 @@ router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
   }
 });
 
-// GET /api/surveys/export/all - Export all survey templates
 router.get("/export/all", hasRole("admin"), async (req, res) => {
   try {
     const surveys = await db.getAllSurveys();
 
-    // Strip out DB-specific IDs to make the payload clean
+    // Strip server-side IDs so the export can be imported into any instance without key conflicts
     surveys.forEach((s) => {
       if (typeof s.structure === "string")
         s.structure = JSON.parse(s.structure);
@@ -104,7 +99,6 @@ router.get("/export/all", hasRole("admin"), async (req, res) => {
   }
 });
 
-// POST /api/surveys/import/all - Bulk import survey templates
 router.post(
   "/import/all",
   hasRole("admin"),
@@ -135,7 +129,6 @@ router.post(
     }
   },
 );
-// GET /api/surveys/instances/:liveId/tracking - Get tracking data for a specific instance
 router.get(
   "/instances/:liveId/tracking",
   hasRole("admin"),
@@ -149,17 +142,16 @@ router.get(
 
       const instance = await db.getLiveSurveyInstanceById(liveId);
 
-      // Attempt to get the GUID from the instance, or fallback to the parent template's GUID
+      // Instance may not have its own GUID (older records); fall back to the parent template's GUID
       let surveyGuid = instance ? instance.public_id : null;
       if (!surveyGuid && instance && instance.template_id) {
-        // FIXED: Using the properly encapsulated db.getSurveyById instead of raw db.get
         const template = await db.getSurveyById(instance.template_id);
         if (template) surveyGuid = template.public_id;
       }
 
       res.json({
         instanceName: instance ? instance.name : "Unknown Survey",
-        surveyGuid: surveyGuid || liveId, // Fallback to the integer ID just in case
+        surveyGuid: surveyGuid || liveId, // Integer ID fallback keeps the UI functional even without a GUID
         tracking: trackingData,
       });
     } catch (error) {
@@ -169,7 +161,6 @@ router.get(
   },
 );
 
-// GET /api/surveys - Get the list of all surveys (Global guard handles auth)
 router.get("/", async (req, res) => {
   try {
     const surveys = await db.getAllSurveys();
@@ -180,7 +171,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /api/surveys - Create a new survey template
 router.post("/", hasRole("admin"), async (req, res) => {
   try {
     const { name, intro, status, structure , is_anonymous} = req.body;
@@ -212,7 +202,6 @@ router.post("/", hasRole("admin"), async (req, res) => {
   }
 });
 
-// GET /api/surveys/instances - Get all published live survey instances
 router.get("/instances", hasRole("admin"), async (req, res) => {
   try {
     const instances = await db.getLiveSurveyInstances();
@@ -223,7 +212,6 @@ router.get("/instances", hasRole("admin"), async (req, res) => {
   }
 });
 
-// PUT /api/surveys/instances/:id/archive - Toggle archive status
 router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {
   try {
     const instance = await db.getLiveSurveyInstanceById(req.params.id);
@@ -240,7 +228,6 @@ router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {
   }
 });
 
-// DELETE /api/surveys/instances/:id - Delete a published instance entirely
 router.delete("/instances/:id", hasRole("admin"), async (req, res) => {
   try {
     const instance = await db.getLiveSurveyInstanceById(req.params.id);
@@ -256,11 +243,6 @@ router.delete("/instances/:id", hasRole("admin"), async (req, res) => {
   }
 });
 
-// ============================================================================
-// 2. WILDCARD ROUTES (Must come last)
-// ============================================================================
-
-// GET /api/surveys/:id/export - Export a single survey template
 router.get("/:id/export", hasRole("admin"), async (req, res) => {
   try {
     const survey = await db.getSurveyById(req.params.id);
@@ -269,7 +251,7 @@ router.get("/:id/export", hasRole("admin"), async (req, res) => {
     if (typeof survey.structure === "string")
       survey.structure = JSON.parse(survey.structure);
 
-    // Strip DB-specific markers
+    // Strip server-side IDs so the export is portable across instances
     delete survey.id;
     delete survey.public_id;
     delete survey.created_at;
@@ -284,7 +266,6 @@ router.get("/:id/export", hasRole("admin"), async (req, res) => {
     res.status(500).json({ error: "Failed to export survey." });
   }
 });
-// GET /api/surveys/:id - Get a specific survey by ID
 router.get("/:id", async (req, res) => {
   try {
     const survey = await db.getSurveyById(req.params.id);
@@ -300,7 +281,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// PUT /api/surveys/:id - Update an existing survey template
 router.put("/:id", hasRole("admin"), async (req, res) => {
   try {
     const surveyId = req.params.id;
@@ -351,7 +331,6 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
   }
 });
 
-// DELETE /api/surveys/:id - Delete a survey template
 router.delete("/:id", hasRole("admin"), async (req, res) => {
   try {
     const surveyId = req.params.id;
@@ -369,7 +348,6 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
   }
 });
 
-// POST /api/surveys/:id/publish - Publish and distribute links
 router.post("/:id/publish", hasRole("admin"), async (req, res) => {
   try {
     const surveyId = req.params.id;
@@ -383,22 +361,19 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
 
     const authorId = req.user?.id || req.session?.user?.id || 1;
 
-    // db.publishSurvey now returns the tracking codes
     const { liveInstanceId, trackingData } = await db.publishSurvey(
       surveyId,
       memberIds,
       authorId,
     );
 
-    // --- EMAIL DISPATCH LOOP ---
-
-    const survey = await db.getSurveyById(surveyId); // Fetch to get the actual survey name
+    const survey = await db.getSurveyById(surveyId);
     const prefs = await db.getPreferences();
     const tpl = prefs.tpl_surveys ? JSON.parse(prefs.tpl_surveys) : null;
     const allTracking = await db.getSurveyTracking(liveInstanceId);
     const pending = allTracking.filter((t) => t.status === "pending");
     const instance = await db.getLiveSurveyInstanceById(liveInstanceId);
-    const isAnon = instance.is_anonymous !== 0; // SQLite stores as 1/0
+    const isAnon = instance.is_anonymous !== 0; // SQLite stores booleans as 1/0; strict comparison needed
     for (const data of pending) {
       if (data.email) {
         const surveyUrl = `${req.protocol}://${req.get("host")}/surveys-view.html?code=${data.access_code}&id=${survey.public_id}`;
@@ -433,7 +408,6 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
   }
 });
 
-// POST /api/surveys/instances/:liveId/remind-all - Trigger reminder emails for all pending members
 router.post(
   "/instances/:liveId/remind-all",
   hasRole("admin"),
@@ -447,16 +421,14 @@ router.post(
         return res.status(400).json({ error: "No pending members found." });
       }
 
-      // --- EMAIL DISPATCH LOOP ---
       const instance = await db.getLiveSurveyInstanceById(liveId);
-      const isAnon = instance.is_anonymous !== 0; // SQLite stores as 1/0
+      const isAnon = instance.is_anonymous !== 0; // SQLite stores booleans as 1/0; strict comparison needed
       const prefs = await db.getPreferences();
       const tpl = prefs.tpl_surveys ? JSON.parse(prefs.tpl_surveys) : null;
       const template = await db.getSurveyById(instance.template_id);
       let sentCount = 0;
       for (const item of pending) {
         if (item.email) {
-          // Using properties defined in your tracking schema
           const surveyUrl = `${req.protocol}://${req.get("host")}/surveys-view.html?code=${item.access_code}&id=${template.public_id}`;
           try {
             await mailer.sendSurveyInvitation(
@@ -476,6 +448,7 @@ router.post(
         }
       }
       const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+
       await db.logEvent(actor, "Surveys", "Sent Bulk Reminders", {
         surveyName: instance.name,
         remindersSent: pending.length,
@@ -490,7 +463,6 @@ router.post(
   },
 );
 
-// POST /api/surveys/instances/:liveId/remind/:trackingId - Trigger a single reminder email
 router.post(
   "/instances/:liveId/remind/:trackingId",
   hasRole("admin"),
@@ -507,9 +479,8 @@ router.post(
           .status(400)
           .json({ error: "Member has already submitted the survey." });
 
-      // --- EMAIL DISPATCH ---
       const instance = await db.getLiveSurveyInstanceById(liveId);
-      const isAnon = instance.is_anonymous !== 0; // SQLite stores as 1/0
+      const isAnon = instance.is_anonymous !== 0; // SQLite stores booleans as 1/0; strict comparison needed
       if (!record.email) {
         return res.status(400).json({
           error:

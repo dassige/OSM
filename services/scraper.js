@@ -8,11 +8,10 @@ const config = require("../config");
 const { Storage } = require('@google-cloud/storage');
 const getTime = () =>
   new Date().toLocaleTimeString(config.locale, { timeZone: config.timezone });
-const storage = new Storage(); // Instantiate the client
+const storage = new Storage();
 let cachedData = null;
 let lastScrapeTime = 0;
 
-// Helper to format JS Date object back to YYYY-MM-DD
 function formatDateToISO(dateObj) {
   const y = dateObj.getFullYear();
   const m = String(dateObj.getMonth() + 1).padStart(2, "0");
@@ -26,7 +25,6 @@ async function getOIData(
   proxyUrl = null,
   logger = console.log,
 ) {
-  // 1. Check Cache
   if (cachedData && lastScrapeTime > 0 && intervalMinutes > 0) {
     const now = Date.now();
     const cacheAgeMs = now - lastScrapeTime;
@@ -39,7 +37,6 @@ async function getOIData(
     }
   }
 
-  // 2. Fetch Data (Network or Local File)
   let responseData = "";
 
   try {
@@ -105,7 +102,6 @@ async function getOIData(
       return [];
     }
 
-    // 3. Parse Data
     const $ = cheerio.load(responseData);
     const osmStatusTable = $("tbody");
 
@@ -126,10 +122,9 @@ async function getOIData(
       }
     });
 
-    // 4. [DEMO MODE] Dynamic Date Adjustment
+    // Shift all skill dates relative to today so the static demo file stays current without manual edits
     if (config.appMode === "demo") {
-      // Attempt to find the reference date in the footer div
-      // We look for the div with the specific blue background color from the static file
+      // The static demo file embeds its reference date in a footer div with background:#000099
       const footerText = $('div[style*="background:#000099"]').text().trim();
 
       if (footerText) {
@@ -149,11 +144,8 @@ async function getOIData(
             const originalDueDate = new Date(record.dueDate);
             if (isNaN(originalDueDate.getTime())) return record;
 
-            // Calculate difference: (Skill Date) - (Reference Date)
             const timeDiff =
               originalDueDate.getTime() - referenceDate.getTime();
-
-            // Apply difference to Today
             const newDueDate = new Date(today.getTime() + timeDiff);
 
             return {

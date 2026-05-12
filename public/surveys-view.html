@@ -130,7 +130,6 @@
             margin-bottom: 20px;
         }
 
-        /* Add to <style> in surveys-view.html */
         .app-branding-header {
             display: flex;
             align-items: center;
@@ -143,7 +142,6 @@
 
         .app-branding-header img {
             height: 40px;
-            /* Scaled down bitmap */
             width: auto;
             object-fit: contain;
         }
@@ -229,7 +227,6 @@
         let surveyData = null;
 
         document.addEventListener("DOMContentLoaded", async () => {
-            // 1. Fetch Dynamic UI Configuration
             try {
                 const configRes = await fetch('/ui-config');
                 if (configRes.ok) {
@@ -239,15 +236,12 @@
                 console.warn("Failed to load UI configuration payload", e);
             }
 
-            // 2. Apply Custom Branding
             const appName = uiConfig?.loginTitle || "OpReady";
-            const appLogo = uiConfig?.appLogo || "resources/logo.png"; // Fallback to default
+            const appLogo = uiConfig?.appLogo || "resources/logo.png";
             const customTitle = `${appName} Survey`;
 
-            // Set HTML page header title
             document.title = customTitle;
 
-            // Set DOM elements
             const brandingHeader = document.getElementById('appBrandingHeader');
             document.getElementById('brandingTitle').innerText = customTitle;
 
@@ -257,18 +251,14 @@
                 brandingHeader.style.display = 'flex';
             }
 
-            // Apply custom background if configured (following your UI rules)
             if (uiConfig?.appBackground) {
                 document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
             }
             if (isReview) {
-                // Set Review Banner
                 const banner = document.getElementById('previewBanner');
                 banner.style.display = 'block';
                 banner.innerText = "REVIEW MODE - Viewing Submitted Answers";
-                banner.style.backgroundColor = "var(--info)"; // Using the info color from styles.css
-
-                // Hide submit button
+                banner.style.backgroundColor = "var(--info)";
                 document.getElementById('btnSubmit').style.display = 'none';
 
                 await fetchSurveyData(`/api/surveys/responses/${responseId}`);
@@ -300,10 +290,9 @@
                 if (isReview) {
                     surveyData.answers = data.answers;
                     surveyData.respondentName = data.member_name;
-                    // Also ensure is_anonymous is explicitly handled from the template
+                    // Review responses come from a non-anonymous context; set explicitly to avoid relying on template default
                     surveyData.is_anonymous = 0;
                 } else if (data.respondentName) {
-                    // Standard live-survey view for volunteers
                     surveyData.respondentName = data.respondentName;
                     surveyData.is_anonymous = data.is_anonymous;
                 }
@@ -326,7 +315,6 @@
             if (disclosure) {
                 disclosure.style.display = "block";
                 if (surveyData.is_anonymous === 0) {
-                    // NON-ANONYMOUS
                     disclosure.style.borderLeft = "5px solid var(--danger)";
                     title.innerText = "Non-Anonymous Survey";
                     title.style.color = "var(--danger)";
@@ -335,7 +323,6 @@
                     text.innerHTML = `You are submitting this survey as <strong>${surveyData.respondentName}</strong>. Your identity and answers will be recorded.`;
                     icon.innerText = "🆔";
                 } else {
-                    // ANONYMOUS
                     disclosure.style.borderLeft = "5px solid var(--success)";
                     title.innerText = "Anonymous Survey";
                     title.style.color = "var(--success)";
@@ -344,7 +331,7 @@
                 }
             }
 
-            // Update Disclosure for Review Mode
+            // In review mode override the disclosure banner to reflect the reviewer context
             if (isReview && disclosure) {
                 title.innerText = "Reviewing Response";
                 text.innerHTML = `This response was submitted by <strong>${surveyData.respondentName}</strong>.`;
@@ -355,7 +342,6 @@
             const container = document.getElementById('questionsContainer');
             let structure = surveyData.structure;
             if (typeof structure === 'string') structure = JSON.parse(structure);
-            // If in Review Mode, we have access to surveyData.answers (from the fetch)
             const answers = isReview ? surveyData.answers : {};
 
 
@@ -397,7 +383,6 @@
                         }
                     }
                 };
-                // Construct inputs based on type
                 if (q.type === 'text_multi') {
                     html += `<textarea name="${q.id}" class="text-response" placeholder="Enter your answer here..."></textarea>`;
                 } else if (q.type === 'boolean') {
@@ -461,7 +446,6 @@
                 return;
             }
 
-            // Gather and Validate Data
             let isValid = true;
             const answers = {};
             const cards = document.querySelectorAll('.question-card');
@@ -496,12 +480,10 @@
 
             if (!isValid) {
                 showToast("Please complete all required fields.", "error");
-                // Scroll to first error
                 document.querySelector('.error-message[style*="display: block"]').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
 
-            // Submit Payload
             const btn = document.getElementById('btnSubmit');
             btn.disabled = true;
             btn.innerText = "Submitting...";

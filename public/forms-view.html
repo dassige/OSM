@@ -218,7 +218,6 @@
             }
         }
 
-        /* Add to <style> in forms-view.html */
         .app-branding-header {
             display: flex;
             align-items: center;
@@ -386,13 +385,11 @@
                     if (config.timezone) appTimezone = config.timezone;
                     isAiEnabled = config.aiEnabled;
                     const appName = config?.loginTitle || "OpReady";
-                    const appLogo = config?.appLogo || "resources/logo.png"; // Fallback to default
+                    const appLogo = config?.appLogo || "resources/logo.png";
                     const customTitle = `${appName} Form`;
 
-                    // Set HTML page header title
                     document.title = customTitle;
 
-                    // Set DOM elements
                     const brandingHeader = document.getElementById('appBrandingHeader');
                     document.getElementById('brandingTitle').innerText = customTitle;
 
@@ -402,7 +399,6 @@
                         brandingHeader.style.display = 'flex';
                     }
 
-                    // Apply custom background if configured
                     if (uiConfig?.appBackground) {
                         document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
                     }
@@ -425,11 +421,9 @@
                     reviewData = data;
 
                     if (data.is_archived) {
-                        // Hide the black review actions bar entirely for archived forms
                         document.getElementById('reviewActions').style.display = 'none';
                         document.body.style.paddingTop = '40px';
 
-                        // Add a read-only watermark or banner
                         const roBanner = document.createElement('div');
                         roBanner.style.cssText = "background:#6c757d; color:white; padding:10px; text-align:center; font-weight:bold; border-radius:6px; margin-bottom:20px;";
                         roBanner.innerText = "ARCHIVED RECORD (READ-ONLY)";
@@ -441,7 +435,6 @@
                         year: 'numeric', month: 'long', day: 'numeric',
                         hour: '2-digit', minute: '2-digit'
                     });
-                    // --- COMPREHENSIVE HEADER RENDER ---
                     const headerPanel = document.createElement('div');
                     headerPanel.style.cssText = "background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:20px; margin-bottom:30px; box-shadow: 0 2px 8px var(--shadow);";
 
@@ -493,8 +486,7 @@
                     renderForm(data);
                     fillForm(data.submittedData);
                     disableForm();
-                    // [REINFORCED GUARD] Only show management bar if NOT archived
-                    if (!data.is_archived && ['accepted', 'rejected'].includes(data.form_status)) {
+                                if (!data.is_archived && ['accepted', 'rejected'].includes(data.form_status)) {
                         document.getElementById('reviewActions').style.display = 'block';
                         document.body.style.paddingTop = '0';
                         if (data.form_status === 'rejected') document.getElementById('btnResend').style.display = 'inline-block';
@@ -509,7 +501,6 @@
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error);
 
-                    // --- PUBLIC LIVE MODE HEADER ---
                     const publicHeader = document.createElement('div');
                     publicHeader.style.cssText = "background:var(--bg-hover); border:1px solid var(--border-color); border-radius:8px; padding:20px; margin-bottom:25px; box-shadow: 0 2px 8px var(--shadow);";
 
@@ -532,7 +523,6 @@
                                     <span style="font-style:normal; font-size:1.8em">⚠️</span> Important: Do not submit this form if you are not the member listed above. Submissions are tracked and audited.
                                 </div>
                             `;
-                    // Insert into form header
                     const headerContainer = document.querySelector('.form-header');
                     headerContainer.insertBefore(publicHeader, document.getElementById('formName'));
 
@@ -555,7 +545,7 @@
             document.getElementById('formName').innerText = form.name;
             document.getElementById('formIntro').innerHTML = form.intro;
 
-            // Add review-mode to body to activate the .review-correct CSS rules
+            // Activates .review-correct/.review-wrong CSS rules scoped under body.review-mode
             if (isPreview) document.body.classList.add('review-mode');
 
             const container = document.getElementById('questionsContainer');
@@ -656,13 +646,11 @@
                     if (ta) {
                         if (isUnanswered) ta.classList.add('review-unanswered');
                         else ta.value = subArr.join('\n');
-                        // 1. Reference Box
                         const refBox = document.createElement('div');
                         refBox.className = 'reference-box';
                         refBox.innerHTML = `<strong>Reference:</strong><br>${corrArr.join(', ')}`;
                         ta.parentNode.appendChild(refBox);
 
-                        // 2. NEW: AI Feedback Box
                         if (reviewData.ai_feedback && reviewData.ai_feedback[field.id]) {
                             const aiData = reviewData.ai_feedback[field.id];
                             const aiBox = document.createElement('div');
@@ -689,10 +677,7 @@
                 }
             });
         }
-        // public/forms-view.html - Inside the script block
-
         document.getElementById('submissionForm').addEventListener('submit', async (e) => {
-            // 1. PREVENT DEFAULT GET SUBMISSION
             e.preventDefault();
 
             // Preview Mode check
@@ -701,7 +686,6 @@
                 return;
             }
 
-            // 2. CAPTURE DATA
             const formData = new FormData(e.target);
             const data = {};
             for (let [key, value] of formData.entries()) {
@@ -733,7 +717,6 @@
             if (retryAlert) retryAlert.style.display = 'none';
 
             try {
-                // 3. EXECUTE POST REQUEST
                 const res = await fetch(`/api/live-forms/submit/${submissionCode}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -744,7 +727,6 @@
                 document.getElementById('aiProcessing').style.display = 'none';
 
                 if (res.ok) {
-                    // Success logic...
                     const isSuccess = result.status === 'accepted';
                     const icon = isSuccess
                         ? '<svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#28a745" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
@@ -764,7 +746,6 @@
                     document.getElementById('formContent').style.display = 'block';
                 }
                 else if (res.status === 400 && result.status === 'retry') {
-                    // Retry logic...
                     document.getElementById('retryMsg').textContent = result.message;
                     document.getElementById('tryCounter').textContent = `Attempt ${result.currentTry} of ${result.maxAllowed} failed.`;
                     document.getElementById('retryAlert').style.display = 'block';
@@ -777,7 +758,6 @@
                     throw new Error(result.error || "Submission failed");
                 }
             } catch (err) {
-                // Restore form on error
                 document.getElementById('aiProcessing').style.display = 'none';
                 document.getElementById('formContent').style.display = 'block';
                 if (window.showToast) showToast(err.message, "error");
@@ -803,8 +783,6 @@
             updateCommentVisibility();
             document.getElementById('reviewModal').style.display = 'block';
         }
-
-        // public/forms-view.html
 
         async function submitReviewAction() {
             const modal = document.getElementById('reviewModal');
@@ -845,7 +823,6 @@
             }
         }
         async function archiveSubmission() {
-            // --- USE CUSTOM MODAL ---
             const confirmed = await confirmAction(
                 "Archive Submission",
                 "Are you sure you want to move this record to the Archive Library?"
@@ -857,12 +834,10 @@
                 const res = await fetch(`/api/live-forms/${reviewData.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    // --- PASS isArchived BOOLEAN ---
                     body: JSON.stringify({ isArchived: true })
                 });
 
                 if (res.ok) {
-                    // Use custom toast if available
                     if (window.showToast) showToast("Record archived", "success");
                     setTimeout(() => window.close(), 1000);
                 } else {
@@ -873,7 +848,7 @@
             }
         }
         function highlightCorrectAnswers(formData) {
-            // Enable existing CSS rules for correct/wrong answers
+            // Activates .review-correct/.review-wrong CSS rules scoped under body.review-mode
             document.body.classList.add('review-mode');
 
             formData.structure.forEach(field => {
@@ -883,7 +858,6 @@
                 const corrArr = (Array.isArray(correct) ? correct : [correct])
                     .map(v => String(v).trim());
 
-                // Select all input elements for this question
                 const elements = document.querySelectorAll(`[name="${field.id}"], [name="${field.id}[]"]`);
 
                 elements.forEach(el => {
@@ -891,8 +865,8 @@
                     const val = String(el.value).trim();
 
                     if (label && corrArr.includes(val)) {
-                        label.classList.add('review-correct'); // Green background
-                        el.checked = true; // Visual selection
+                        label.classList.add('review-correct');
+                        el.checked = true;
                     }
 
                     // Handle Select dropdowns
@@ -902,7 +876,6 @@
                     }
                 });
 
-                // Populate Reference Answers for text areas
                 if (field.type === 'text_multi') {
                     const ta = document.querySelector(`textarea[name="${field.id}"]`);
                     if (ta) {

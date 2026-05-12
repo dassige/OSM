@@ -114,7 +114,6 @@
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });
-        // Scroll Button Logic
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {
             if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {

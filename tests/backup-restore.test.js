@@ -1,8 +1,6 @@
-﻿// tests/backup-restore.test.js
-const request = require('supertest');
+﻿const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 
-// --- 1. MOCK DEPENDENCIES ---
 jest.mock('../services/db', () => ({
     generateSqlDump: jest.fn(),
     restoreFromSqlDump: jest.fn().mockResolvedValue(),
@@ -17,11 +15,9 @@ jest.mock('../middleware/auth', () => ({
 const db = require('../services/db');
 const systemRoutes = require('../routes/api/system');
 
-// --- 2. BUILD THE ISOLATED APP ---
 // systemRoutes defines paths like "/system/backup", so we mount the router at "/api"
 const app = createTestApp({ path: '/api', router: systemRoutes });
 
-// --- 3. RUN TESTS ---
 describe('Database Backup & Restore API (Isolated)', () => {
     
     beforeEach(() => {
@@ -39,7 +35,6 @@ describe('Database Backup & Restore API (Isolated)', () => {
             expect(response.status).toBe(200);
             expect(response.text).toBe(fakeSql);
             
-            // Verify the browser is instructed to download this as a file
             expect(response.headers['content-type']).toMatch(/text\/plain/);
             expect(response.headers['content-disposition']).toMatch(/attachment; filename="fenz_backup_/);
             
@@ -65,7 +60,6 @@ describe('Database Backup & Restore API (Isolated)', () => {
     describe('POST /api/system/restore', () => {
         
         it('should return 400 Bad Request if no file is uploaded', async () => {
-            // Sending a POST without attaching a file
             const response = await request(app).post('/api/system/restore');
             
             expect(response.status).toBe(400);
@@ -75,7 +69,6 @@ describe('Database Backup & Restore API (Isolated)', () => {
         it('should safely process an uploaded SQL file and clean it up from disk', async () => {
             const fakeSqlContent = 'DROP TABLE IF EXISTS test; CREATE TABLE test (id INT);';
             
-            // Supertest's .attach() perfectly simulates a user uploading a file via an HTML form!
             const response = await request(app)
                 .post('/api/system/restore')
                 .attach('databaseFile', Buffer.from(fakeSqlContent), 'test_backup.sql');
@@ -86,16 +79,12 @@ describe('Database Backup & Restore API (Isolated)', () => {
             // Prove the router extracted the text from the uploaded file and sent it to the DB
             expect(db.restoreFromSqlDump).toHaveBeenCalledWith(fakeSqlContent);
             
-            // Prove it logged the action
             expect(db.logEvent).toHaveBeenCalledWith(
                 expect.any(String),
                 'System',
                 'Database Restored via SQL',
                 { sourceFile: 'test_backup.sql' }
             );
-
-            // Note: Our Express router has a 'finally' block that deletes the temp file. 
-            // Multer handles the disk write, and the route cleans it up, preventing disk leaks!
         });
     });
 });

@@ -203,7 +203,6 @@
                     if (prefs.sortMembers) initialSort = prefs.sortMembers;
                 }
 
-                // Initialize the Table Controller
                 memberTable = new TableController({
                     tbodyId: 'membersTableBody',
                     emptyMessage: 'No members found.',
@@ -247,7 +246,6 @@
                         const hasEmail = prefs.includes('email') ? 'active' : '';
                         const hasWa = prefs.includes('whatsapp') ? 'active' : '';
 
-                        // Extract Rank and Display Name dynamically
                         const { rank, displayName } = parseRankAndName(m.name);
 
                         tr.innerHTML = `
@@ -297,17 +295,17 @@
             }
         }
 
-        // Global wrapper to catch header clicks
+        // Expose to global scope so inline onclick handlers in the table header can call it
         function handleSort(column) {
             memberTable.handleSort(column);
         }
 
-        // Update the edit function to retrieve data directly from the controller
         function editMemberByIndex(index) {
             const m = memberTable.data[index];
             document.getElementById('modalTitle').textContent = "Edit Member";
             document.getElementById('memberId').value = m.id;
-            document.getElementById('name').value = m.name; // Keep full OSM name in edit modal
+            // Preserve full OSM name (including rank prefix) so the server stores it as-is
+            document.getElementById('name').value = m.name;
             document.getElementById('email').value = m.email;
             document.getElementById('mobile').value = m.mobile;
             document.getElementById('enabled').checked = m.enabled;
@@ -351,7 +349,6 @@
                 const prefs = (m.notificationPreference || '').split(',');
                 const hasEmail = prefs.includes('email') ? 'active' : '';
                 const hasWa = prefs.includes('whatsapp') ? 'active' : '';
-                // Extract rank and name for formatting
                 const { rank, displayName } = parseRankAndName(m.name);
                 tr.innerHTML = `
                     <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()"></td>
@@ -458,7 +455,7 @@ async function deleteMember(id) {
     const name = member ? member.name : 'this member';
     if (await confirmAction('Delete Member', `Are you sure you want to delete ${name}?`)) {
         await fetch(`/api/members/${id}`, { method: 'DELETE' });
-        reloadMembers(); // This correctly calls memberTable.setData()
+        reloadMembers();
     }
 }
         function handleFileUpload(input) {

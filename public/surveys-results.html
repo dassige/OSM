@@ -152,10 +152,7 @@
             color: #fff;
         }
 
-        /* --- PRINT STYLESHEET --- */
         @media print {
-
-            /* 1. Hide the Sidebar and reset any page shifting */
             .sidebar,
             #sidebar {
                 display: none !important;
@@ -168,7 +165,6 @@
                 max-width: 100% !important;
             }
 
-            /* 2. Hide interactive UI elements (Buttons, floating icons, banners) */
             #exportActionButtons,
             .back-dashboard-btn,
             #scrollTopBtn,
@@ -177,7 +173,6 @@
                 display: none !important;
             }
 
-            /* 3. Optimize the layout for paper */
             body {
                 background: #fff !important;
             }

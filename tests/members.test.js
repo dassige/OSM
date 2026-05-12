@@ -1,8 +1,6 @@
-// tests/members.test.js
 const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 
-// --- 1. MOCK DEPENDENCIES ---
 jest.mock('../services/db', () => ({
     getMembers: jest.fn(),
     addMember: jest.fn(),
@@ -19,13 +17,11 @@ jest.mock('../middleware/auth', () => ({
 const db = require('../services/db');
 const memberRoutes = require('../routes/api/members');
 
-// --- 2. BUILD THE ISOLATED APP IN ONE LINE ---
 const app = createTestApp(   [
         { path: '/api/members', router: memberRoutes }
     ]);
 
 
-// --- 3. RUN TESTS ---
 describe('Members API Endpoints (Isolated)', () => {
     
     beforeEach(() => {

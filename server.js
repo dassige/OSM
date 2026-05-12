@@ -18,7 +18,6 @@ const { ROLES } = require("./middleware/auth");
 const { apiLimiter } = require("./middleware/rate-limiter");
 const logger = require("./services/logger");
 
-// --- API Routers
 const memberRoutes = require("./routes/api/members");
 const skillRoutes = require("./routes/api/skills");
 const formRoutes = require("./routes/api/forms");
@@ -36,21 +35,12 @@ const apiKeyRoutes = require("./routes/api/api-keys");
 const authRoutes = require("./routes/auth");
 const viewRoutes = require("./routes/views");
 
-// =============================================================================
-//  INITIALIZATION & MIDDLEWARE
-// =============================================================================
-
 const app = express();
 const server = http.createServer(app);
-// Trust first proxy hop so express-rate-limit reads the real client IP
-// from X-Forwarded-For when running behind Docker / Cloud Run / nginx.
+// Trust first proxy hop so rate limiting reads the real client IP from X-Forwarded-For
 app.set('trust proxy', 1);
-//==============================================================================
-//  SERVE STATIC FILES
-//==============================================================================
 app.use(express.static("public"));
 
-// Initialize Socket.IO
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"], credentials: true },
 });
@@ -71,7 +61,7 @@ app.use(sessionMiddleware);
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// MOUNT THE GLOBAL GUARD BEFORE ALL ROUTES
+// Guard must be registered before route mounts
 app.use(globalAuthGuard);
 app.use('/api', apiLimiter);
 
@@ -89,9 +79,6 @@ async function initializeProxy() {
   });
 }
 
-// =============================================================================
-//  AUTHENTICATION & API ROUTES 
-// =============================================================================
 app.use("/", authRoutes);
 app.use("/", viewRoutes); 
 
@@ -112,9 +99,6 @@ app.use("/api/api-keys", apiKeyRoutes);
 
 
 
-// =============================================================================
-//  SOCKET.IO EVENTS
-// =============================================================================
 const wrap = (middleware) => (socket, next) =>
   middleware(socket.request, {}, next);
 io.use(wrap(sessionMiddleware));
@@ -340,29 +324,19 @@ async function getTrainingMap() {
   return map;
 }
 
-// =============================================================================
-//  SERVER INITIALIZATION & BOOTSTRAP
-// =============================================================================
-
 if (require.main === module) {
   (async () => {
     try {
-      // 0. Validate environment configuration before anything else
       runValidation(config);
-
-      // 1. Wait for DB to be ready before doing anything else
       await db.initDB();
 
-      // 2. Initialize Services that depend on DB
       whatsappService.init(io, db.logEvent);
       if (config.enableWhatsApp) {
         whatsappService.startClient();
       }
 
-      // 3. Initialize Proxy (which logs to DB)
       await initializeProxy();
 
-      // 4. Start the Server
       const PORT = process.env.PORT || config.port || 3000;
       server.listen(PORT, '0.0.0.0', () => {
         logger.info(`[System] Server listening on port ${PORT}`);

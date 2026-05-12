@@ -4,7 +4,7 @@ const db = require('./db');
 const config = require('../config');
 const { isExpiring, isExpired } = require('./member-manager');
 
-// Helper: Strip rank (e.g. "QFF Skywalker" -> "Skywalker")
+// Strips the rank prefix (e.g. "QFF") from a name so it can be sorted alphabetically by surname
 function getNameWithoutRank(fullName) {
     if (!fullName) return "";
     const parts = fullName.split(' ');
@@ -14,7 +14,6 @@ function getNameWithoutRank(fullName) {
     return fullName;
 }
 
-// Helper: Format "Generated" date consistently
 function getGeneratedDate() {
     return new Date().toLocaleDateString(config.locale || 'en-NZ', { 
         timeZone: config.timezone,
@@ -22,7 +21,6 @@ function getGeneratedDate() {
     });
 }
 
-// Helper: Rank Priority for Sorting
 function getRankPriority(name) {
     const n = name.toUpperCase();
     if (n.startsWith('CFO')) return 1;
@@ -33,16 +31,15 @@ function getRankPriority(name) {
     if (n.startsWith('QFF')) return 6;
     if (n.startsWith('FF')) return 7;
     if (n.startsWith('RFF')) return 8;
-    if (n.startsWith('R')) return 9; // Recruit
+    if (n.startsWith('R')) return 9; // Recruit (must be checked after RFF)
     return 99; // Civilians / Others
 }
 
-// --- CORE DATA FETCHING ---
 async function getFreshData(userId, proxyUrl, daysOverride) {
     const dbMembers = await db.getMembers();
     const dbSkills = await db.getSkills();
     
-    // Determine Threshold (Override -> Pref -> Default 30)
+    // Priority: explicit days param → saved user preference → hard-coded default (30)
     let daysThreshold = 30;
     if (daysOverride !== undefined && !isNaN(daysOverride)) {
         daysThreshold = daysOverride;
@@ -66,7 +63,6 @@ async function getFreshData(userId, proxyUrl, daysOverride) {
             const skillConfig = enabledSkills.find(dbS => dbS.name === s.skill);
             if (!skillConfig) return; 
 
-            // Check expiry logic using the resolved threshold
             const isDue = isExpiring(s.dueDate, daysThreshold) || isExpired(s.dueDate);
             
             if (isDue) {
@@ -84,9 +80,6 @@ async function getFreshData(userId, proxyUrl, daysOverride) {
     return { reportData, daysThreshold };
 }
 
-// --- REPORT FUNCTIONS ---
-
-// 1. Group by Member
 async function getGroupedByMember(userId, proxyUrl, days) {
     const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl, days);
     
@@ -98,7 +91,6 @@ async function getGroupedByMember(userId, proxyUrl, days) {
         grouped[item.member].skills.push(item);
     });
 
-    // Sort Members: Rank -> Name
     const sortedMembers = Object.values(grouped).sort((a, b) => {
         const rankA = getRankPriority(a.name);
         const rankB = getRankPriority(b.name);
@@ -107,7 +99,6 @@ async function getGroupedByMember(userId, proxyUrl, days) {
         return a.sortName.localeCompare(b.sortName); // Alphabetical fallback
     });
 
-    // Sort Skills within Member: Due Date Ascending
     sortedMembers.forEach(m => {
         m.skills.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     });
@@ -118,7 +109,6 @@ async function getGroupedByMember(userId, proxyUrl, days) {
     };
 }
 
-// 2. Group by Skill
 async function getGroupedBySkill(userId, proxyUrl, days) {
     const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl, days);
 
@@ -130,10 +120,7 @@ async function getGroupedBySkill(userId, proxyUrl, days) {
         grouped[item.skill].members.push(item);
     });
 
-    // 1. Sort Skills Alphabetically
     const sortedSkills = Object.values(grouped).sort((a, b) => a.name.localeCompare(b.name));
-    
-    // 2. Sort Members within Skill: Rank -> Name
     sortedSkills.forEach(s => {
         s.members.sort((a, b) => {
             const rankA = getRankPriority(a.member);
@@ -150,7 +137,6 @@ async function getGroupedBySkill(userId, proxyUrl, days) {
     };
 }
 
-// 3. Planned Sessions
 async function getPlannedSessions(userId, proxyUrl) {
     const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl);
     const futureSessions = await db.getAllFutureTrainingSessions();
@@ -182,7 +168,6 @@ async function getPlannedSessions(userId, proxyUrl) {
     };
 }
 
-// 4. Critical Overdue
 async function getCriticalOverdue(userId, proxyUrl, days) {
     const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl, days);
     
@@ -201,13 +186,12 @@ async function getCriticalOverdue(userId, proxyUrl, days) {
     };
 }
 
-// 5. Compliance Matrix
 async function getComplianceMatrix(userId, proxyUrl, days) {
     const dbMembers = await db.getMembers();
     const dbSkills = await db.getSkills();
     const scrapeData = await getOIData(config.url, config.scrapingInterval, proxyUrl);
 
-    // Threshold Logic
+    // Priority: explicit days param → saved user preference → hard-coded default (30)
     let daysThreshold = 30;
     if (days !== undefined && !isNaN(days)) {
         daysThreshold = days;
@@ -215,7 +199,6 @@ async function getComplianceMatrix(userId, proxyUrl, days) {
         try { const pref = await db.getUserPreference(userId, 'daysToExpiry'); if (pref) daysThreshold = parseInt(pref); } catch(e){}
     }
     
-    // Sort Members by Rank
     const activeMembers = dbMembers.filter(m => m.enabled).sort((a, b) => {
         const rankA = getRankPriority(a.name);
         const rankB = getRankPriority(b.name);
@@ -249,7 +232,6 @@ async function getComplianceMatrix(userId, proxyUrl, days) {
     };
 }
 
-// 6. Verification History
 async function getVerificationHistory(days = 30) {
     const database = await db.initDB();
     const rows = await database.all(`
@@ -265,7 +247,7 @@ async function getVerificationHistory(days = 30) {
     return { items: rows, meta: { generated: getGeneratedDate(), days: days } };
 }
 
-// 7. Training Attendance (Wrapper)
+// Alias: training attendance uses the same grouped-by-date structure as planned sessions
 async function getTrainingAttendance(userId, proxyUrl) {
     return await getPlannedSessions(userId, proxyUrl); 
 }

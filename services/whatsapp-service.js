@@ -11,13 +11,11 @@ let status = 'DISCONNECTED';
 let isClientReady = false;
 let clientInfo = null;
 
-// --- Reconnect state
 let intentionalLogout = false;
 let reconnectAttempts = 0;
 let reconnectTimer = null;
 const RECONNECT_DELAYS_MS = [5000, 15000, 60000, 300000]; // 5s, 15s, 1min, 5min
 
-// --- Message queue
 const MAX_QUEUE_SIZE = 100;
 const MAX_MESSAGE_RETRIES = 3;
 let messageQueue = []; // [{ mobile, text, retries, addedAt }]

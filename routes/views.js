@@ -10,25 +10,23 @@ const requirePageAccess = (allowedRoles) => {
   return (req, res, next) => {
     const userRole = req.session?.user?.role;
     if (allowedRoles.includes(userRole)) {
-      next(); // User is authorized, pass control to express.static to serve the file
+      next();
     } else {
       res.redirect("/");
     }
   };
 };
 
-// Define reusable role groupings
 const adminAndSuper = ["admin", "superadmin"];
 const allAuthenticated = ["simple", "admin", "superadmin"];
 
 
-// --- PUBLIC UI CONFIG ---
 router.get("/ui-config", (req, res) => {
   res.json({
     ...config.ui,
     appMode: config.appMode,
-    locale: config.locale, // <-- Ensure this is explicitly passed too!
-    timezone: config.timezone, // <-- Add this line!
+    locale: config.locale,
+    timezone: config.timezone,
     defaultMinScore: config.defaultMinScore,
     defaultMinScoreType: config.defaultMinScoreType,
     defaultMaxTries: config.defaultMaxTries,
@@ -36,7 +34,6 @@ router.get("/ui-config", (req, res) => {
   });
 });
 
-// --- PAGE ACCESS CONTROL ---
 router.get("/system-tools.html", requirePageAccess(["superadmin"]));
 router.get("/users.html", requirePageAccess(adminAndSuper));
 router.get("/event-log.html", requirePageAccess(adminAndSuper));

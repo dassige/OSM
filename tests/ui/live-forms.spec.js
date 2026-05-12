@@ -31,7 +31,6 @@ test.describe('T06 — Live Forms — Filter & Status', () => {
     await respPromise1;
     expect(page.url()).toContain('/live-forms.html');
 
-    // Toggle back to active view
     const respPromise2 = waitForAPI(page, '/api/live-forms', 'GET');
     await label.click();
     await respPromise2;
@@ -41,7 +40,6 @@ test.describe('T06 — Live Forms — Filter & Status', () => {
   test('T06-07 | Change status of first active record to accepted', async ({ page }) => {
     await goTo(page, '/live-forms.html');
 
-    // Skip if no active records are available in this environment
     const firstEditBtn = page.locator('.btn-icon.edit').first();
     if (await firstEditBtn.count() === 0) {
       test.skip(true, 'No active live form records in demo data');

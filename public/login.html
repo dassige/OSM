@@ -42,7 +42,6 @@
             /* Clip ribbon */
         }
 
-        /* [NEW] Demo Banner Style */
         .demo-banner {
             background-color: #ffc107;
             color: #333;
@@ -57,7 +56,6 @@
             font-size: 14px;
         }
 
-        /* [NEW] Demo Link Style */
         .demo-link {
             display: block;
             margin-top: 20px;
@@ -238,11 +236,9 @@
     </div>
 
     <script>
-        // Global State
         let currentAppMode = 'production';
         let mfaMode = false;
 
-        // 1. Fetch UI Config & Set Mode
         fetch('/ui-config')
             .then(response => response.json())
             .then(config => {
@@ -262,10 +258,8 @@
                     document.body.style.backgroundImage = `url('${config.appBackground}')`;
                 }
 
-                // Store App Mode Globally
                 currentAppMode = config.appMode || 'production';
 
-                // Show Demo Banner if needed
                 if (currentAppMode === 'demo') {
                     document.getElementById('demoBanner').style.display = 'block';
                     document.getElementById('demoLink').style.display = 'block';
@@ -273,7 +267,6 @@
             })
             .catch(err => console.error("Failed to load UI config:", err));
 
-        // 2. Login Form Handler
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -284,7 +277,6 @@
 
             try {
                 if (!mfaMode) {
-                    // --- STEP 1: CREDENTIALS CHECK ---
                     const username = document.getElementById('username').value;
                     const password = document.getElementById('password').value;
                     btn.textContent = "Verifying...";
@@ -299,17 +291,14 @@
 
                     if (res.ok) {
                         if (data.mfaRequired) {
-                            // --- SWITCH TO MFA MODE ---
                             mfaMode = true;
-
-                            // Hide Credentials / Show MFA
                             document.getElementById('credFields').style.display = 'none';
-                            const mfaContainer = document.getElementById('mfaFields'); // Defined here!
+                            const mfaContainer = document.getElementById('mfaFields');
                             mfaContainer.style.display = 'block';
 
                             document.getElementById('loginTitle').textContent = "Security Check";
 
-                            // Demo Mode Hint (Only if actually in Demo Mode)
+                            // In demo mode, pre-fill a bypass code so testers can proceed without a real TOTP app
                             if (currentAppMode === 'demo') {
                                 if (!document.getElementById('demoMfaHint')) {
                                     const hint = document.createElement('p');
@@ -327,12 +316,10 @@
                             btn.disabled = false;
                             document.getElementById('mfaToken').focus();
                         } else {
-                            // Success (No MFA)
                             window.location.href = '/';
                             sessionStorage.removeItem('hasShownReviewModal');
                         }
                     } else {
-                        // Handle Auth Errors
                         if (res.status === 403) {
                             if (data.error && data.error.includes("disabled")) {
                                 errorMsg.textContent = "User DISABLED";
@@ -350,7 +337,6 @@
                     }
 
                 } else {
-                    // --- STEP 2: MFA VERIFICATION ---
                     const token = document.getElementById('mfaToken').value;
                     btn.textContent = "Checking...";
 
@@ -376,12 +362,10 @@
                 errorMsg.style.display = 'block';
                 btn.disabled = false;
 
-                // Reset button text based on mode
                 btn.textContent = mfaMode ? "Verify Code" : "Sign In";
             }
         });
 
-        // --- UTILITIES (Modal/Forgot Password) ---
         function openForgotModal() { document.getElementById('forgotModal').style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -424,7 +408,6 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    // Remove the native alert fallback
                     if (window.showToast) window.showToast('Check email for new password.', 'success');
                     closeModal('forgotModal');
                     document.getElementById('forgotForm').reset();

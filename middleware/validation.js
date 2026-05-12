@@ -1,6 +1,5 @@
 const Joi = require("joi");
 
-// Schema for a single form object
 const formSchema = Joi.object({
   id: Joi.alternatives()
     .try(Joi.number(), Joi.string().pattern(/^fld_[a-z0-9]+$/))
@@ -40,7 +39,7 @@ const formSchema = Joi.object({
 const bulkFormSchema = Joi.array().items(formSchema).min(1).required();
 
 const validateForm = (req, res, next) => {
-  // CORRECTED: For PUT requests, allow partial updates (e.g. status toggle)
+  // PUT allows partial updates so individual fields (e.g. status toggle) can be patched without resending the full structure
   const schema = req.method === 'PUT' 
     ? formSchema.fork(['name', 'structure', 'min_score', 'min_score_type'], (s) => s.optional())
     : formSchema;

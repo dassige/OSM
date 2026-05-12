@@ -160,7 +160,6 @@
     
     <script>
 
-        // Fetch UI config for header & background
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.loginTitle) {
                 document.title = "Training Planner - " + c.loginTitle;

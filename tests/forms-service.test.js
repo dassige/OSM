@@ -1,4 +1,3 @@
-// tests/forms-service.test.js
 jest.mock('../services/db', () => ({
     initDB: jest.fn().mockResolvedValue({})
 }));

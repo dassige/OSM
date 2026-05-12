@@ -48,7 +48,6 @@ test.describe.serial('T04 — Skills CRUD', () => {
     await page.locator(`tr:has-text("${NAME}")`).first().locator('.btn-icon.edit').click();
     await page.locator('#skillModal').waitFor({ state: 'visible' });
 
-    // Select the External URL tab and fill in the URL
     await page.locator('#tab-external').click();
     await page.fill('#url', TEST_URL);
 

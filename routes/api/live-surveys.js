@@ -4,8 +4,6 @@ const db = require("../../services/db");
 const { hasRole } = require("../../middleware/auth");
 const logger = require("../../services/logger");
 
-// GET /api/live-surveys/preview/:publicId
-// PREVIEW MODE: Fetches the template directly. Protected by admin auth.
 router.get("/preview/:publicId", hasRole("admin"), async (req, res) => {
   try {
     const publicId = req.params.publicId;
@@ -33,8 +31,6 @@ router.get("/preview/:publicId", hasRole("admin"), async (req, res) => {
   }
 });
 
-// GET /api/live-surveys/:accessCode
-// LIVE MODE: Fetches the published instance using a member's unique tracking code
 router.get("/:accessCode", async (req, res) => {
   try {
     const accessCode = req.params.accessCode;
@@ -59,7 +55,6 @@ router.get("/:accessCode", async (req, res) => {
       return res.status(404).json({ error: "Survey instance not found." });
     }
 
-    // NEW: Block loading if the survey is archived
     if (liveInstance.is_archived === 1 || liveInstance.is_archived === true) {
       return res.status(403).json({
         error: "This survey is archived and no longer accepting responses.",
@@ -82,8 +77,6 @@ router.get("/:accessCode", async (req, res) => {
   }
 });
 
-// POST /api/live-surveys/:accessCode/submit
-// LIVE MODE: Processes the anonymous response and marks the code as consumed
 router.post("/:accessCode/submit", async (req, res) => {
   try {
     const accessCode = req.params.accessCode;
@@ -100,7 +93,7 @@ router.post("/:accessCode/submit", async (req, res) => {
     if (trackingRecord.status === "submitted")
       return res.status(400).json({ error: "Already submitted." });
 
-    // NEW: Double-check the archive status at the moment of submission
+    // Re-check archive status at submission time to prevent a race where archive completes after the page loaded
     const liveInstance = await db.getLiveSurveyInstanceById(
       trackingRecord.survey_live_id,
     );
@@ -113,8 +106,7 @@ router.post("/:accessCode/submit", async (req, res) => {
           "This survey was recently archived and can no longer accept submissions.",
       });
     }
-    // Determine if we should record identity
-    // If is_anonymous is false (0), we pass the member_id to the database service
+    // Only persist member identity when the survey is non-anonymous to honour privacy settings
     const memberToRecord =
       liveInstance.is_anonymous === 0 ? trackingRecord.member_id : null;
     await db.submitSurveyResponse(

@@ -26,8 +26,7 @@ const forgotPasswordLimiter = rateLimit({
     message: { error: `Too many password reset requests. Please try again in ${rateLimits.forgotPassword.windowMin} minutes.` },
 });
 
-// Public member-facing endpoints (live-forms, live-surveys) are excluded —
-// they can have legitimate bursts when many members submit simultaneously.
+// Public member-facing endpoints are excluded — they can see legitimate submission bursts from many members at once
 const apiLimiter = rateLimit({
     windowMs: rateLimits.api.windowMin * 60 * 1000,
     max: rateLimits.api.max,

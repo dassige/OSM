@@ -174,7 +174,6 @@
     <script>
         let userTable;
 
-        // Initialize Table Controller for Users
         window.addEventListener('DOMContentLoaded', () => {
             userTable = new TableController({
                 tbodyId: 'userTable',
@@ -230,11 +229,11 @@
                     return tr;
                 }
             });
-            // Overwrite tbodyId targeting specific tbody (fixes TableController quirk if using just table id)
+            // TableController expects a tbody id, not a table id; create one dynamically to avoid a mismatch
             userTable.tbodyId = document.querySelector('#userTable tbody').id = 'userTableBody';
         });
 
-        // Global wrapper for column clicks
+        // Expose to global scope so inline onclick handlers in the table header can call it
         function handleSort(column) {
             userTable.handleSort(column);
         }
@@ -265,7 +264,6 @@
         });
 
 
-        // --- ADD USER ---
         document.getElementById('addUserForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('newName').value;
@@ -289,7 +287,6 @@
             finally { btn.disabled = false; spinner.style.display = 'none'; btnText.innerText = 'Create User & Send Email'; }
         });
 
-        // --- EDIT USER ---
         function openEditModal(u) {
             document.getElementById('editUserId').value = u.id;
             document.getElementById('editName').value = u.name;
@@ -328,7 +325,6 @@
             } catch (e) { showToast('Network Error', 'error'); }
         });
 
-        // --- RESET PASSWORD ---
         function openReset(id, name, email) {
             document.getElementById('resetUserId').value = id;
             document.getElementById('resetUserName').innerText = name;
@@ -354,7 +350,6 @@
             finally { btn.disabled = false; spinner.style.display = 'none'; btnText.innerText = 'Reset & Email Password'; }
         });
 
-        // --- DELETE USER ---
         async function deleteUser(id, name) {
             if (await confirmAction('Delete User', `Delete user '${name}'?\n\nThis cannot be undone.`)) {
                 const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
@@ -367,7 +362,6 @@
 
         loadUsers();
 
-        // Scroll To Top
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {
             if (scrollTopBtn) {

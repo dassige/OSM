@@ -288,7 +288,6 @@
                 skills.forEach(s => sSel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
             } catch (e) { }
 
-            // Initialize the Table Controller
             liveFormsTable = new TableController({
                 tbodyId: 'tableBody',
                 emptyMessage: 'No records found matching your filters.',
@@ -360,7 +359,6 @@
 
                     let actionHtml = '';
                     if (isArchivedMode) {
-                        // ... existing archived actions ...
                         actionHtml = `
                             <button class="btn-icon" onclick="openReview('${row.id}')" title="View (Read Only)">
                                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -376,7 +374,6 @@
                             </button>
                         `;
                     } else {
-                        // ... existing active actions ...
                         const canReview = ['submitted', 'accepted', 'rejected'].includes(row.form_status);
                         actionHtml = `
                             ${canReview ? `
@@ -395,7 +392,6 @@
                         `;
                     }
 
-                    // Extract Rank and Display Name
                     const { rank, displayName } = parseRankAndName(row.member_name);
 
                     const tr = document.createElement('tr');
@@ -461,7 +457,7 @@
             }
         }
 
-        // Global wrapper for inline HTML onclick handlers
+        // Expose to global scope so inline onclick handlers in the table header can call it
         function handleSort(column) {
             liveFormsTable.handleSort(column);
         }

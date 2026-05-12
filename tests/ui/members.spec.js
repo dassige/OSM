@@ -50,7 +50,6 @@ test.describe.serial('T03 — Members CRUD', () => {
     await page.locator(`tr:has-text("${NAME2}")`).first().locator('.btn-icon.edit').click();
     await page.locator('#memberModal').waitFor({ state: 'visible' });
 
-    // Enable WhatsApp preference if not already checked
     const waPref = page.locator('#prefWa');
     if (!(await waPref.isChecked())) await waPref.check();
 

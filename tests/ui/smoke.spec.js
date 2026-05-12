@@ -1,8 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-// Pages that require an authenticated superadmin session.
-// forms-view and surveys-view are included without an ID — they should
-// still load the page shell without throwing JS errors.
+// forms-view and surveys-view are included without an ID — the page shell should load without JS errors
 const AUTH_PAGES = [
   { url: '/members.html',           name: 'Members' },
   { url: '/skills.html',            name: 'Skills' },
@@ -25,7 +23,6 @@ const AUTH_PAGES = [
   { url: '/profile.html',           name: 'Profile' },
 ];
 
-// Collects console.error messages and uncaught JS exceptions from the page.
 function attachErrorListeners(page) {
   const errors = [];
   page.on('pageerror', err => errors.push(`[uncaught] ${err.message}`));
@@ -35,9 +32,7 @@ function attachErrorListeners(page) {
   return errors;
 }
 
-// Navigates and waits for the page to settle. networkidle is attempted with a
-// short timeout because Socket.IO polling connections keep the network active
-// indefinitely — a timeout here is expected and not an error.
+// Socket.IO polling keeps the network active indefinitely, so a networkidle timeout here is expected
 async function loadPage(page, url) {
   await page.goto(url);
   try {
@@ -54,7 +49,6 @@ test.describe('Smoke — authenticated pages', () => {
 
       await loadPage(page, url);
 
-      // Confirm the session is still valid — not redirected to login
       expect(page.url(), 'Page redirected to login — session may have expired').not.toContain('/login.html');
       expect(errors, `JS errors on ${name}:\n${errors.join('\n')}`).toEqual([]);
     });
