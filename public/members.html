@@ -59,6 +59,23 @@
                 </div>
             </div>
 
+            <!-- Mobile-only sort bar -->
+            <div id="members-sort-bar" class="sort-bar-container">
+                <span class="sort-bar-label">Sort:</span>
+                <button class="sort-bar-btn" id="mobileSortBtn-rank" onclick="handleSort('rank')">
+                    Rank <span id="mobile-icon-rank"></span>
+                </button>
+                <button class="sort-bar-btn" id="mobileSortBtn-name" onclick="handleSort('name')">
+                    Name <span id="mobile-icon-name"></span>
+                </button>
+                <button class="sort-bar-btn" id="mobileSortBtn-email" onclick="handleSort('email')">
+                    Email <span id="mobile-icon-email"></span>
+                </button>
+                <button class="sort-bar-btn" id="mobileSortBtn-mobile" onclick="handleSort('mobile')">
+                    Mobile <span id="mobile-icon-mobile"></span>
+                </button>
+            </div>
+
             <table id="membersTable">
                 <thead>
                     <tr>

@@ -65,12 +65,19 @@ class TableController {
             icon.innerHTML = this.ICON_NONE;
             icon.classList.remove('active');
         });
-        
+        document.querySelectorAll('.sort-bar-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
         const activeIcon = document.getElementById(`icon-${this.sortState.column}`);
         if (activeIcon) {
             activeIcon.innerHTML = this.sortState.order === 'asc' ? this.ICON_ASC : this.ICON_DESC;
             activeIcon.classList.add('active');
         }
+        const activeMobileBtn = document.getElementById(`mobileSortBtn-${this.sortState.column}`);
+        if (activeMobileBtn) activeMobileBtn.classList.add('active');
+        const activeMobileIcon = document.getElementById(`mobile-icon-${this.sortState.column}`);
+        if (activeMobileIcon) activeMobileIcon.innerHTML = this.sortState.order === 'asc' ? this.ICON_ASC : this.ICON_DESC;
     }
 
     // --- Pagination Logic ---

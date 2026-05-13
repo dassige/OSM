@@ -198,6 +198,17 @@
                 </button>
             </div>
 
+            <!-- Mobile-only sort bar -->
+            <div id="mobile-sort-bar" class="sort-bar-container">
+                <span class="sort-bar-label">Sort:</span>
+                <button class="sort-bar-btn" id="mobileSortBtn-rank" onclick="handleSort('rank')">
+                    Rank <span id="mobile-icon-rank"></span>
+                </button>
+                <button class="sort-bar-btn" id="mobileSortBtn-name" onclick="handleSort('name')">
+                    Name <span id="mobile-icon-name"></span>
+                </button>
+            </div>
+
             <table id="skillsTable">
                 <thead>
                     <tr>
@@ -236,6 +247,8 @@
                 </thead>
                 <tbody></tbody>
             </table>
+
+            <div id="skillsCardView" class="skills-card-view"></div>
         </div>
 
     </div> <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">

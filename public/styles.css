@@ -412,6 +412,16 @@ th.sortable:hover {
     border-bottom: none;
 }
 
+.member-header-row td {
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.skill-detail-row td {
+    border-top: none;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
 .skill-cell {
     color: var(--text-main);
 }
@@ -761,6 +771,10 @@ textarea {
 /* Mobile notification bar — hidden on desktop */
 #notify-controls-bar { display: none; }
 
+/* Mobile card view and sort bar — hidden on desktop, shown on mobile */
+.skills-card-view { display: none; }
+.sort-bar-container { display: none; }
+
 /* Desktop default for the controls action group (replaces removed inline style) */
 #controls-actions {
     flex-grow: 1;
@@ -1094,6 +1108,126 @@ textarea {
 
     /* Hide blank desktop-only spacer cells in sub-rows in card mode */
     #skillsTable .merged-cell { display: none !important; }
+
+    /* On mobile, hide the table and show the card view + sort bar instead */
+    #skillsTable { display: none !important; }
+    #skillsCardView { display: block; }
+    .sort-bar-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 8px 15px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .sort-bar-label {
+        font-size: 13px;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-right: 2px;
+    }
+
+    .sort-bar-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 14px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-body);
+        color: var(--text-main);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .sort-bar-btn.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+
+    .sort-bar-btn.active svg {
+        stroke: white;
+    }
+
+    /* Member card styles */
+    .member-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px var(--shadow);
+        margin-bottom: 12px;
+        overflow: hidden;
+    }
+
+    .member-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 15px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-card);
+    }
+
+    .member-card-rank {
+        color: var(--text-muted);
+        font-size: 0.82em;
+        min-width: 36px;
+        text-align: center;
+    }
+
+    .member-card-name {
+        font-weight: 600;
+        color: var(--text-main);
+        flex: 1;
+        font-size: 1em;
+    }
+
+    .member-card-skill {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 15px;
+        border-bottom: 1px solid var(--border-color);
+        gap: 10px;
+    }
+
+    .member-card-skill:last-child {
+        border-bottom: none;
+    }
+
+    .member-card-skill .skill-name {
+        flex: 1;
+        color: var(--text-main);
+        font-size: 0.95em;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .member-card-skill .skill-date {
+        color: var(--text-muted);
+        white-space: nowrap;
+        font-size: 0.88em;
+    }
+
+    .member-card-no-skill {
+        padding: 10px 15px;
+        color: var(--success);
+        font-style: italic;
+        font-size: 0.9em;
+    }
+
+    .member-card-notification {
+        padding: 10px 15px;
+        border-top: 1px dashed var(--border-color);
+        background: var(--bg-body);
+    }
 
     /* Members table: hide checkbox column and label the toggle in card mode */
     #membersTable td:nth-of-type(1) { display: none !important; }
