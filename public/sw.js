@@ -1,5 +1,10 @@
 /* OpReady Service Worker — App Shell + Offline Fallback */
 
+// On localhost the SW registers (satisfying PWA criteria) but skips all
+// caching so every file is always fetched fresh from the dev server.
+const IS_DEV = self.location.hostname === 'localhost' ||
+               self.location.hostname === '127.0.0.1';
+
 const CACHE_VERSION = 'v2';
 const SHELL_CACHE   = `opready-shell-${CACHE_VERSION}`;
 const PAGES_CACHE   = `opready-pages-${CACHE_VERSION}`;
@@ -27,15 +32,19 @@ const SHELL_ASSETS = [
 // Non-atomic: each asset is attempted individually so one slow or missing
 // file cannot abort the entire service worker installation (critical on
 // mobile connections where a single timeout would block Android installability).
+// On localhost (IS_DEV) skip pre-caching entirely so edits are visible immediately.
 self.addEventListener('install', event => {
     self.skipWaiting();
+    if (IS_DEV) return;
     event.waitUntil(
-        caches.open(SHELL_CACHE).then(function (cache) {
-            return Promise.all(
-                SHELL_ASSETS.map(function (url) {
-                    return cache.add(url).catch(function (err) {
+        caches.open(SHELL_CACHE).then(async cache => {
+            await Promise.all(
+                SHELL_ASSETS.map(async url => {
+                    try {
+                        await cache.add(url);
+                    } catch (err) {
                         console.warn('[SW] Failed to pre-cache ' + url + ':', err);
-                    });
+                    }
                 })
             );
         })
@@ -66,6 +75,9 @@ self.addEventListener('fetch', event => {
     if (url.origin !== self.location.origin) return;
     if (url.pathname.startsWith('/api/')) return;
     if (url.pathname.startsWith('/socket.io/')) return;
+
+    // Dev mode: pass everything straight to the network so edits are instant
+    if (IS_DEV) return;
 
     // Shell assets → cache-first (always fresh after SW update)
     if (SHELL_ASSETS.includes(url.pathname)) {

@@ -66,27 +66,87 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
   
     document.body.insertAdjacentHTML("afterbegin", sidebarHTML);
-  
+
+    // Inject backdrop element (used only on mobile)
+    const backdrop = document.createElement("div");
+    backdrop.id = "osm-backdrop";
+    document.body.appendChild(backdrop);
+
     const sidebar = document.getElementById("osm-sidebar-container");
     const openBtn = document.getElementById("osm-open-btn");
     const closeBtn = document.getElementById("osm-close-btn");
-  
-    // Sidebar Toggle
-    const toggleSidebar = (isCollapsed) => {
-      if (isCollapsed) {
-        sidebar.classList.add("collapsed");
-        document.body.classList.add("osm-no-margin");
-        openBtn.style.display = "flex";
-      } else {
-        sidebar.classList.remove("collapsed");
-        document.body.classList.remove("osm-no-margin");
-        openBtn.style.display = "none";
-      }
-      localStorage.setItem("sidebar-collapsed", isCollapsed);
+
+    const isMobile = () => window.innerWidth <= 768;
+
+    // Populate sidebar-header app title on mobile
+    const titleEl = document.createElement("span");
+    titleEl.className = "sidebar-title";
+    titleEl.textContent = "OpReady";
+    fetch("/ui-config").then(r => r.json())
+        .then(c => { if (c.loginTitle) titleEl.textContent = c.loginTitle; })
+        .catch(() => {});
+    document.querySelector(".sidebar-header").insertBefore(titleEl, closeBtn);
+
+    // ── Backdrop helpers ──────────────────────────────────────────────────────
+    const showBackdrop = () => {
+        backdrop.classList.remove("hiding");
+        backdrop.classList.add("visible");
     };
-  
+    const hideBackdrop = () => {
+        backdrop.classList.add("hiding");
+        setTimeout(() => {
+            backdrop.classList.remove("visible", "hiding");
+        }, 250);
+    };
+
+    // ── Sidebar Toggle ────────────────────────────────────────────────────────
+    const toggleSidebar = (isCollapsed) => {
+        if (isCollapsed) {
+            sidebar.classList.add("collapsed");
+            hideBackdrop();
+            document.body.style.overflow = "";
+            // Desktop only: restore push-layout margin
+            if (!isMobile()) {
+                document.body.classList.add("osm-no-margin");
+                openBtn.style.display = "flex";
+            }
+        } else {
+            sidebar.classList.remove("collapsed");
+            if (isMobile()) {
+                // Overlay mode: show backdrop, lock body scroll
+                showBackdrop();
+                document.body.style.overflow = "hidden";
+            } else {
+                // Desktop push mode
+                document.body.classList.remove("osm-no-margin");
+                openBtn.style.display = "none";
+            }
+        }
+        // Only persist collapsed state for desktop (mobile always starts closed)
+        if (!isMobile()) {
+            localStorage.setItem("sidebar-collapsed", isCollapsed);
+        }
+    };
+
     openBtn.addEventListener("click", () => toggleSidebar(false));
     closeBtn.addEventListener("click", () => toggleSidebar(true));
+    backdrop.addEventListener("click", () => toggleSidebar(true));
+
+    // Close sidebar when navigating on mobile (link tap)
+    document.getElementById("osm-sidebar-nav").addEventListener("click", e => {
+        if (isMobile() && e.target.tagName === "A" && e.target.href) {
+            toggleSidebar(true);
+        }
+    });
+
+    // On resize: clean up overlay state if switching desktop↔mobile
+    window.addEventListener("resize", () => {
+        if (!isMobile()) {
+            // Restore desktop state
+            backdrop.classList.remove("visible", "hiding");
+            document.body.style.overflow = "";
+        }
+    });
   
     // Toggle Submenu Logic with Memory
     window.toggleSubmenu = function(event, menuId) {
@@ -161,8 +221,15 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Initialize state
-    const wasCollapsed = localStorage.getItem("sidebar-collapsed") === "true";
-    toggleSidebar(wasCollapsed);
+    // Mobile always starts with sidebar closed and hamburger visible.
+    // Desktop restores the last saved preference.
+    if (isMobile()) {
+        sidebar.classList.add("collapsed");
+        openBtn.style.display = "flex";
+    } else {
+        const wasCollapsed = localStorage.getItem("sidebar-collapsed") === "true";
+        toggleSidebar(wasCollapsed);
+    }
     
     applyRoleBasedAccess().then(() => {
         restoreSidebarState();

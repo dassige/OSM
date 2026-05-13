@@ -69,8 +69,9 @@ body {
 /* Dashboard Headers & Legends */
 .section-header-flex {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
     margin-bottom: 15px;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
@@ -94,7 +95,43 @@ body {
     display: inline-flex;
     align-items: center;
     vertical-align: text-bottom;
-    margin-right: 15px;
+    margin-right: 10px;
+}
+
+/* Info icon button that opens the legend modal */
+.btn-legend-info {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: var(--brand-teal, #17A2B8);
+    display: inline-flex;
+    align-items: center;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.btn-legend-info:hover {
+    opacity: 1;
+}
+
+/* Legend list inside the popup modal */
+.legend-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--text-main);
+}
+.legend-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.4;
 }
 
 .notification-th-header {
@@ -718,6 +755,18 @@ textarea {
     gap: 10px;
 }
 
+/* Icons hidden on desktop; shown instead of text on mobile */
+#controls .btn-icon { display: none; }
+
+/* Mobile notification bar — hidden on desktop */
+#notify-controls-bar { display: none; }
+
+/* Desktop default for the controls action group (replaces removed inline style) */
+#controls-actions {
+    flex-grow: 1;
+    justify-content: flex-end;
+}
+
 .days-wrapper {
     display: flex;
     align-items: center;
@@ -735,7 +784,9 @@ textarea {
 /* Filter Chips */
 .type-toggles {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
+    align-items: center;
 }
 
 .type-badge {
@@ -2977,6 +3028,100 @@ input:checked + .slider:before { transform: translateX(14px); }
 
     .report-container {
         padding: 10mm;
+    }
+
+    /* Dashboard controls bar: single row, compact input, icon-only buttons */
+    #controls {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center;
+    }
+
+    #controls .days-wrapper input {
+        width: 52px;
+    }
+
+    #controls-actions {
+        flex-grow: 1;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    #controls .btn-text { display: none !important; }
+
+    #controls .btn-icon {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #controls-actions button {
+        flex: unset;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: white;
+    }
+
+    /* Mobile notification select-all bar */
+    #notify-controls-bar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 10px 15px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .notify-bar-label {
+        font-size: 13px;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-right: 2px;
+    }
+
+    .notify-bar-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 14px;
+        cursor: pointer;
+        color: var(--text-main);
+    }
+
+    .notify-bar-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .notify-bar-reset {
+        margin-left: auto;
+        background: none;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        border-radius: 4px;
+    }
+
+    .notify-bar-reset:hover {
+        color: var(--text-main);
+        background: var(--bg-hover);
+    }
+
+    /* Hide the select-all controls inside the table header on mobile */
+    .notification-th-controls {
+        display: none;
     }
 }
 

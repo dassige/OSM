@@ -190,3 +190,94 @@ body:not(.osm-no-margin) .back-dashboard-btn {
 body.osm-no-margin .back-dashboard-btn {
     left: 60px !important;
 }
+
+/* =========================================
+   6. MOBILE OVERLAY NAVIGATION (≤ 768px)
+   ========================================= */
+
+/* Backdrop — injected by sidebar.js, hidden by default */
+#osm-backdrop {
+    display: none;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.45) !important;
+    z-index: 999990 !important;
+    cursor: pointer;
+}
+#osm-backdrop.visible {
+    display: block;
+    animation: osmBackdropIn 0.25s ease forwards;
+}
+#osm-backdrop.hiding {
+    animation: osmBackdropOut 0.25s ease forwards;
+}
+@keyframes osmBackdropIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes osmBackdropOut { from { opacity: 1; } to { opacity: 0; } }
+
+@media screen and (max-width: 768px) {
+    /* Content always fills full width — sidebar is an overlay, not a pusher */
+    body,
+    body.osm-no-margin {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+        padding-top: 64px !important;
+        overflow-x: hidden !important;
+    }
+
+    /* Sidebar: overlay drawer, 85 % of screen width, capped at 300 px */
+    #osm-sidebar-container {
+        width: min(85vw, 300px) !important;
+        box-shadow: 6px 0 32px rgba(0, 0, 0, 0.22) !important;
+    }
+
+    /* Collapsed: slide out by the sidebar's own full width, not a fixed px value */
+    #osm-sidebar-container.collapsed {
+        transform: translateX(-100%) !important;
+    }
+
+    /* Hamburger button: larger touch target */
+    #osm-open-btn {
+        width: 44px !important;
+        height: 44px !important;
+        top: 10px !important;
+        left: 10px !important;
+        border-radius: 6px !important;
+    }
+
+    /* Sidebar header: app name beside close button */
+    .sidebar-header {
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 12px 15px !important;
+    }
+    .sidebar-header .sidebar-title {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--brand-teal);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* All menu rows: 48 px minimum touch target */
+    .osm-menu a,
+    .menu-label {
+        min-height: 48px !important;
+        padding: 13px 20px !important;
+        font-size: 15px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    /* Keep chevron right-aligned in flex rows */
+    .has-children > .menu-label::after {
+        margin-left: auto !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Back-to-dashboard: always relative to left edge, not sidebar width */
+    .back-dashboard-btn,
+    body:not(.osm-no-margin) .back-dashboard-btn {
+        left: 64px !important;
+    }
+}

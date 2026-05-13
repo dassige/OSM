@@ -50,7 +50,7 @@ function init() {
       if (window.showToast) showToast("Reconnected. The operation was interrupted — please retry.", "warning");
     } else if (isLoadingData) {
       isLoadingData = false;
-      if (viewBtn) { viewBtn.disabled = false; viewBtn.textContent = "Reload Expiring Skills"; }
+      if (viewBtn) { viewBtn.disabled = false; (viewBtn.querySelector('.btn-text') || viewBtn).textContent = "Reload Expiring Skills"; }
       const overlay = document.getElementById("loadingOverlay");
       if (overlay) overlay.style.display = "none";
       if (window.showToast) showToast("Reconnected. Please reload the data.", "info");
@@ -177,7 +177,7 @@ function fetchData(forceRefresh = false) {
 
   if (viewBtn) {
     viewBtn.disabled = true;
-    viewBtn.textContent = "Loading...";
+    (viewBtn.querySelector('.btn-text') || viewBtn).textContent = "Loading...";
   }
 
   const overlay = document.getElementById("loadingOverlay");
@@ -581,7 +581,7 @@ socket.on("expiring-skills-data", (data) => {
   isLoadingData = false;
   if (viewBtn) {
     viewBtn.disabled = false;
-    viewBtn.textContent = "Reload Expiring Skills";
+    (viewBtn.querySelector('.btn-text') || viewBtn).textContent = "Reload Expiring Skills";
   }
 
   const tableContainer = document.getElementById("tableContainer");
@@ -690,6 +690,10 @@ window.resetCheckboxesToDefaults = function () {
   if (masterEmail) masterEmail.checked = false;
   const masterWa = document.getElementById("selectAllWhatsapp");
   if (masterWa) masterWa.checked = false;
+  const mobEmail = document.getElementById("mobileSelectAllEmail");
+  if (mobEmail) mobEmail.checked = false;
+  const mobWa = document.getElementById("mobileSelectAllWhatsapp");
+  if (mobWa) mobWa.checked = false;
   updateSendButtonState();
   if (window.showToast)
     window.showToast("Reset to default preferences", "success");

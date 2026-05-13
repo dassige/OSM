@@ -86,9 +86,15 @@
                 <input type="number" id="daysInput" value="30" min="1">
             </div>
 
-            <div class="action-group" style="flex-grow: 1; justify-content: flex-end;">
-                <button id="viewBtn" style="margin:0;">Reload Expiring Skills</button>
-                <button id="sendEmailsBtn" disabled style="margin:0;">Send Notifications</button>
+            <div class="action-group" id="controls-actions">
+                <button id="viewBtn" style="margin:0;" title="Reload Expiring Skills">
+                    <span class="btn-text">Reload Expiring Skills</span>
+                    <span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></span>
+                </button>
+                <button id="sendEmailsBtn" disabled style="margin:0;" title="Send Notifications">
+                    <span class="btn-text">Send Notifications</span>
+                    <span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></span>
+                </button>
             </div>
         </div>
 
@@ -102,11 +108,13 @@
         </div>
         <div id="tableContainer">
             <div class="section-header-flex">
-                <div style="display:flex; align-items:center; gap:15px;">
- 
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <h2 style="margin: 0;">Expiring Skills List</h2>
+                    <button class="btn-legend-info" onclick="document.getElementById('legendModal').style.display='block'" title="Show legend">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    </button>
                 </div>
-                <h2 style="margin: 0;">Expiring Skills List</h2>
-                <div class="type-toggles" style="display: flex; gap: 8px; align-items: center;">
+                <div class="type-toggles">
                     <span class="filter-label">Filters:</span>
                     <div id="btnHideNoSkills" class="type-badge" title="Hide members with 'NO expiring skills'">Hide
                         Empty</div>
@@ -118,69 +126,77 @@
                 </div>
             </div>
 
-            <p class="skills-legend">
-                <em>
-                    Skills displayed in <b>bold</b> are configured as 'Critical'. <br>
-                    <span class="legend-item">
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2"
-                            fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-form-link"
-                            style="margin-right: 5px;">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg> Online form link available
-                    </span>
+            <div id="legendModal" class="modal">
+                <div class="modal-content" style="max-width: 460px;">
+                    <span class="close-btn" onclick="closeModal('legendModal')">&times;</span>
+                    <h3 style="margin-top: 0; margin-bottom: 18px;">Skills Table Legend</h3>
+                    <ul class="legend-list">
+                        <li>Skills in <strong>bold</strong> are configured as <em>Critical</em>.</li>
+                        <li>
+                            <span class="legend-item">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-form-link"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            </span>
+                            Online form link available
+                        </li>
+                        <li>
+                            <span class="legend-item">
+                                <span class="status-circle sent" style="margin-left:0; width:20px; height:20px;">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                </span>
+                            </span>
+                            Form Sent — awaiting member submission
+                        </li>
+                        <li>
+                            <span class="legend-item">
+                                <span class="status-circle submitted" style="margin-left:0; width:20px; height:20px;">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </span>
+                            </span>
+                            Form Submitted — awaiting admin review
+                        </li>
+                        <li>
+                            <span class="legend-item">
+                                <span class="status-circle accepted" style="margin-left:0; width:20px; height:20px;">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </span>
+                            </span>
+                            Verification Accepted
+                        </li>
+                        <li>
+                            <span class="legend-item">
+                                <span class="status-circle rejected" style="margin-left:0; width:20px; height:20px;">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </span>
+                            </span>
+                            Verification Rejected
+                        </li>
+                        <li>
+                            <span style="background-color:var(--danger); color:white; padding:1px 5px; border-radius:2px; font-size:0.85em;">Red date</span>
+                            — Skill is overdue (past expiry)
+                        </li>
+                    </ul>
+                    <div class="modal-actions-center" style="margin-top: 20px;">
+                        <button onclick="closeModal('legendModal')" class="btn-secondary">Close</button>
+                    </div>
+                </div>
+            </div>
 
-                    <span class="legend-item">
-                        <span class="status-circle sent"
-                            style="margin-left:0; margin-right:5px; width:20px; height:20px;">
-                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                            </svg>
-                        </span> Form Sent (Awaiting member submission)
-                    </span>
-
-                    <span class="legend-item">
-                        <span class="status-circle submitted"
-                            style="margin-left:0; margin-right:5px; width:20px; height:20px;">
-                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </span> Form Submitted (Awaiting admin review)
-                    </span>
-
-                    <span class="legend-item">
-                        <span class="status-circle accepted"
-                            style="margin-left:0; margin-right:5px; width:20px; height:20px;">
-                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </span> Verification Accepted
-                    </span>
-
-                    <span class="legend-item">
-                        <span class="status-circle rejected"
-                            style="margin-left:0; margin-right:5px; width:20px; height:20px;">
-                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </span> Verification Rejected
-                    </span>
-
-                    <span
-                        style="background-color:var(--danger); color:white; padding:0 4px; border-radius:2px; font-size:0.9em;">Red
-                        Date</span> = Overdue.
-                </em>
-            </p>
+            <!-- Mobile-only notification select-all bar -->
+            <div id="notify-controls-bar">
+                <span class="notify-bar-label">Notify all:</span>
+                <label class="notify-bar-item">
+                    <input type="checkbox" id="mobileSelectAllEmail" checked> Email
+                </label>
+                <label class="notify-bar-item">
+                    <input type="checkbox" id="mobileSelectAllWhatsapp"> WhatsApp
+                </label>
+                <button class="notify-bar-reset" onclick="resetCheckboxesToDefaults()" title="Reset to member defaults">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                    </svg>
+                </button>
+            </div>
 
             <table id="skillsTable">
                 <thead>
@@ -209,7 +225,7 @@
                                     </svg>
                                 </button>
                             </div>
-                            <div style="display:flex; flex-direction:column; gap:5px;">
+                            <div class="notification-th-controls" style="display:flex; flex-direction:column; gap:5px;">
                                 <label class="header-checkbox-label"><input type="checkbox" id="selectAllEmail" checked>
                                     Email</label>
                                 <label class="header-checkbox-label"><input type="checkbox" id="selectAllWhatsapp">
@@ -346,6 +362,7 @@
             }
             if (event.target == document.getElementById('aboutModal')) closeModal('aboutModal');
             if (event.target == document.getElementById('pendingReviewsModal')) closeModal('pendingReviewsModal');
+            if (event.target == document.getElementById('legendModal')) closeModal('legendModal');
         }
 
         const scrollTopBtn = document.getElementById("scrollTopBtn");
@@ -357,6 +374,17 @@
             }
         };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+        // Mobile notify bar → proxy changes to the desktop master checkboxes
+        // (setupMasterCheckbox in app.js drives all row checkboxes via the desktop element)
+        ['Email', 'Whatsapp'].forEach(ch => {
+            const mob = document.getElementById('mobileSelectAll' + ch);
+            if (!mob) return;
+            mob.addEventListener('change', () => {
+                const desktop = document.getElementById('selectAll' + ch);
+                if (desktop) { desktop.checked = mob.checked; desktop.dispatchEvent(new Event('change')); }
+            });
+        });
 
         fetch('/ui-config')
             .then(r => r.json())
