@@ -602,10 +602,11 @@ Every new page or feature **must** follow the existing UI conventions without ex
 | **Role access** | Clearly specify which roles can access the page; redirect on `fetch('/api/user-session')` if access denied |
 | **Demo mode** | Page must respect demo-mode flag; disable destructive actions in demo |
 | **UI customisation** | Honour app name, page background, locale/date formatting, and timezone from `/ui-config` |
-| **Mobile optimisation** | Responsive layout; test at 375 px and 768 px breakpoints |
+| **Mobile optimisation** | Responsive layout; test at 375 px and 768 px breakpoints. Every data table **must** have a companion mobile card layout — see the Mobile Card Layout convention below |
 | **No native dialogs** | Never use `alert()` or `confirm()`; use `confirmAction()` from `utils.js` and `showToast()` from `toast.js` |
-| **Table sorting** | For any data table, implement sortable column headers; persist sort preference per user |
-| **Pagination** | Every paginated table must use the standard pagination bar (see convention below); persist rows-per-page per user |
+| **Table sorting** | For any data table, implement sortable column headers with visual indicators (▲/▼/⇅); persist sort column + direction together per user — see Column Sorting convention below |
+| **Pagination** | Every paginated table must use the standard pagination bar; persist rows-per-page per user. The mobile card layout must include an identical pagination bar — see Table Convention below |
+| **Mobile table cards** | Every page that adds or modifies a data table must also implement a card layout for mobile (≤ 768 px); cards must expose all row-level actions, the same pagination bar, and sort controls |
 | **System card layout** | New sections in `system-tools.html` use the `<div class="system-card">` pattern |
 | **Button colours** | Follow the colour convention table below — never use inline `background` styles on buttons |
 
@@ -623,11 +624,17 @@ Every new page or feature **must** follow the existing UI conventions without ex
 
 ---
 
-## Pagination Convention
+## ⚠️ Table Convention
+
+Every data table **must** implement all three of: a footer pagination bar, column header sorting, and a mobile card layout. All three user choices — rows-per-page, sort column, and sort direction — must be persisted to user preferences via `/api/user-preferences`. No table is exempt unless it contains fewer than 10 rows and will never grow beyond that.
+
+---
+
+### Table Pagination
 
 Every page with a paginated table **must** follow this pattern exactly. Use `event-log.html` as the canonical reference.
 
-### HTML structure
+#### HTML structure
 
 ```html
 <div class="pagination-container" id="paginationControls" style="display:none;">
@@ -650,7 +657,7 @@ Every page with a paginated table **must** follow this pattern exactly. Use `eve
 </div>
 ```
 
-### Rules
+#### Rules
 
 | Rule | Detail |
 |---|---|
@@ -662,7 +669,7 @@ Every page with a paginated table **must** follow this pattern exactly. Use `eve
 | **Options** | Always `10 / 25 / 50 / 100 / All` in that order. `25` is the `selected` default. Use `value="all"` for the All option |
 | **Default** | Honour the saved user preference on load; fall back to 25 if no preference is stored |
 
-### Preference save/load pattern
+#### Preference save/load pattern
 
 `"all"` is stored as the literal string `"all"` in preferences. `TableController.setLimit("all")` maps it to `99999` internally; the same applies when passing `initialLimit: 'all'` to the constructor. Always restore the raw string to the `<select>` element so the dropdown matches the saved choice.
 
@@ -692,7 +699,7 @@ async function changeLimit(newLimit) {
 }
 ```
 
-### Per-page preference keys in use
+#### Per-page preference keys in use
 
 | Page | Preference key |
 |---|---|
@@ -701,6 +708,246 @@ async function changeLimit(newLimit) {
 | `live-forms.html` | `liveFormsLimit` |
 | `live-surveys.html` | `liveSurveyItemsPerPage` |
 | `training-planner.html` | `trainingListLimit` (via Socket.IO) |
+
+---
+
+### Column Sorting
+
+Every data table must have sortable column headers. Columns that contain only action buttons or static icons are exempt; all data columns must be sortable.
+
+#### HTML — sortable `<th>`
+
+```html
+<thead>
+  <tr>
+    <th data-sort="name" class="sortable sort-asc">Name <span class="sort-icon">▲</span></th>
+    <th data-sort="status" class="sortable">Status <span class="sort-icon">⇅</span></th>
+    <th data-sort="expires_at" class="sortable">Expires <span class="sort-icon">⇅</span></th>
+    <th>Actions</th>
+  </tr>
+</thead>
+```
+
+#### JS — sort state and preference pattern
+
+```js
+let sortCol = 'name';   // default column
+let sortDir = 'asc';    // 'asc' | 'desc'
+
+// On init — restore saved sort before rendering
+try {
+    const res = await fetch('/api/user-preferences/myPageSort');
+    const data = await res.json();
+    if (data.value) {
+        const [col, dir] = data.value.split(':');
+        sortCol = col;
+        sortDir = dir;
+    }
+} catch (e) {}
+updateSortHeaders();
+
+// Click handler — attach once after DOM ready
+document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', async () => {
+        const col = th.dataset.sort;
+        if (sortCol === col) {
+            sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortCol = col;
+            sortDir = 'asc';
+        }
+        updateSortHeaders();
+        await fetch('/api/user-preferences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'myPageSort', value: `${sortCol}:${sortDir}` })
+        });
+        loadData();
+    });
+});
+
+function updateSortHeaders() {
+    document.querySelectorAll('th.sortable').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        const icon = th.querySelector('.sort-icon');
+        if (th.dataset.sort === sortCol) {
+            th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+            if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+        } else {
+            if (icon) icon.textContent = '⇅';
+        }
+    });
+}
+```
+
+#### Rules
+
+| Rule | Detail |
+|---|---|
+| **Preference key format** | Store column + direction as `"col:dir"` in a **single** key — never two separate keys |
+| **Preference key naming** | `<pageKey>Sort` — e.g. `membersSort`, `skillsSort`, `liveFormsSort`, `apiKeysSort` |
+| **Default sort** | Choose the column most useful on first load (`name` asc for lists; `expires_at` asc for expiry tables) |
+| **Client-side sort** | When all data is loaded at once, sort in JS before rendering: `arr.sort((a, b) => a[sortCol].localeCompare(b[sortCol], undefined, { sensitivity: 'base' }))` |
+| **Server-side sort** | When the API supports pagination, pass `sortCol` and `sortDir` as query params and let the backend sort |
+| **Case-insensitive** | String comparisons must use `localeCompare` with `{ sensitivity: 'base' }` — never `<` / `>` on raw strings |
+| **Mobile sync** | The same `sortCol`/`sortDir` variables drive both the desktop table and the mobile card list — never fork state |
+
+#### Per-page sort preference keys in use
+
+| Page | Preference key |
+|---|---|
+| `members.html` | `membersSort` |
+| `skills.html` | `skillsSort` |
+| `live-forms.html` | `liveFormsSort` |
+| `event-log.html` | `eventLogSort` |
+
+---
+
+### Mobile Card Layout
+
+Every page that contains a data table **must** also render a card list for mobile viewports (≤ 768 px). The table is hidden via CSS at that breakpoint; the card list is shown. Both share the same JS state. Use `skills.html` (v3.1.1+) as the canonical reference.
+
+#### Structure rules
+
+- The `<table>` wrapper and the `.card-list` container both exist in the DOM simultaneously — only CSS controls which is visible.
+- Cards are generated from the same data array as the table rows; the same `currentPage`, `limit`, `sortCol`, and `sortDir` variables apply.
+- A **duplicate** pagination bar (same HTML structure) must appear inside the `.card-list` container so it is visible on mobile.
+- The mobile pagination bar shares the same limit and page state as the desktop bar — changing one changes both.
+
+#### HTML pattern
+
+```html
+<!-- Desktop table (hidden on mobile via CSS) -->
+<div class="table-wrapper" id="tableWrapper">
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th data-sort="name" class="sortable sort-asc">Name <span class="sort-icon">▲</span></th>
+                <!-- ... -->
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <div class="pagination-container" id="paginationControls" style="display:none;">
+        <!-- standard pagination bar -->
+    </div>
+</div>
+
+<!-- Mobile card list (hidden on desktop via CSS) -->
+<div class="card-list" id="cardList">
+    <!-- Sort controls — visible only on mobile -->
+    <div class="mobile-sort-bar">
+        <label>Sort by:</label>
+        <select id="mobileSortCol" onchange="applyMobileSort()">
+            <option value="name">Name</option>
+            <option value="status">Status</option>
+            <option value="expires_at">Expiry Date</option>
+        </select>
+        <button class="btn-secondary btn-sm" id="mobileSortDirBtn" onclick="toggleMobileSortDir()">▲ Asc</button>
+    </div>
+    <!-- Cards injected by JS -->
+    <div id="cardContainer"></div>
+    <!-- Duplicate pagination bar for mobile -->
+    <div class="pagination-container" id="paginationControlsMobile" style="display:none;">
+        <div class="page-limit-selector">
+            <label>Rows per page:</label>
+            <select id="rowsPerPageMobile" onchange="changeLimit(this.value)"
+                style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+                <option value="10">10</option>
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="all">All</option>
+            </select>
+        </div>
+        <span class="pagination-info" id="pageInfoMobile">Showing 0-0 of 0</span>
+        <div style="display:flex; gap:5px;">
+            <button class="btn-page" id="btnPrevMobile" onclick="changePage(-1)">Previous</button>
+            <button class="btn-page" id="btnNextMobile" onclick="changePage(1)">Next</button>
+        </div>
+    </div>
+</div>
+```
+
+#### CSS (add to the page `<style>` block)
+
+```css
+@media (max-width: 768px) {
+    #tableWrapper { display: none; }
+    #cardList      { display: block; }
+    .mobile-sort-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+}
+@media (min-width: 769px) {
+    #cardList      { display: none; }
+    .mobile-sort-bar { display: none; }
+}
+```
+
+#### Card HTML (one per row, rendered by JS)
+
+```html
+<div class="table-card">
+    <div class="card-header">
+        <span class="card-title">Record Name</span>
+        <span class="badge badge-success">Active</span>
+    </div>
+    <div class="card-body">
+        <div class="card-row"><span class="card-label">Field</span><span>Value</span></div>
+        <div class="card-row"><span class="card-label">Expires</span><span>2025-09-01</span></div>
+    </div>
+    <div class="card-actions">
+        <button class="btn-primary btn-sm" onclick="editRecord(id)">Edit</button>
+        <button class="btn-danger btn-sm" onclick="deleteRecord(id)">Delete</button>
+    </div>
+</div>
+```
+
+#### Mobile sort JS helpers
+
+```js
+function applyMobileSort() {
+    const col = document.getElementById('mobileSortCol').value;
+    if (sortCol !== col) { sortCol = col; sortDir = 'asc'; }
+    saveSortPref();
+    renderPage();
+}
+
+function toggleMobileSortDir() {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    const btn = document.getElementById('mobileSortDirBtn');
+    btn.textContent = sortDir === 'asc' ? '▲ Asc' : '▼ Desc';
+    saveSortPref();
+    renderPage();
+}
+
+async function saveSortPref() {
+    await fetch('/api/user-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'myPageSort', value: `${sortCol}:${sortDir}` })
+    });
+}
+
+// Call on init to sync mobile dropdown with restored pref
+function syncMobileSortControls() {
+    const sel = document.getElementById('mobileSortCol');
+    if (sel) sel.value = sortCol;
+    const btn = document.getElementById('mobileSortDirBtn');
+    if (btn) btn.textContent = sortDir === 'asc' ? '▲ Asc' : '▼ Desc';
+}
+```
+
+#### Rules
+
+| Rule | Detail |
+|---|---|
+| **Always implement** | Every page that adds or modifies a data table must implement the card layout in the same task — never defer mobile to a follow-up |
+| **Shared state** | Desktop and mobile share `currentPage`, `limit`, `sortCol`, `sortDir` — never fork these variables |
+| **Action parity** | Every row-level action in the desktop table (edit, delete, view, toggle, etc.) must also appear on the card |
+| **Pagination parity** | Both pagination bars must show and hide together; `changeLimit()` and `changePage()` update both simultaneously |
+| **CSS classes** | Use `table-card`, `card-header`, `card-title`, `card-body`, `card-row`, `card-label`, `card-actions` — defined in `styles.css`; do not invent alternatives |
+| **Breakpoint** | Always `768px` — match the existing rules in `styles.css`; do not introduce a second breakpoint value |
+| **No native dialogs** | Same rule as desktop — `confirmAction()` and `showToast()` only |
 
 ---
 
