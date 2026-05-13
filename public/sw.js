@@ -1,10 +1,13 @@
 /* OpReady Service Worker — App Shell + Offline Fallback */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const SHELL_CACHE   = `opready-shell-${CACHE_VERSION}`;
 const PAGES_CACHE   = `opready-pages-${CACHE_VERSION}`;
 
-// Core app shell — cached on install
+// Core app shell — cached on install.
+// Keep this list lean: every byte here is downloaded on every SW install.
+// Large decorative assets (logo.png ~4.6 MB) must NOT be listed here —
+// they will be cached lazily by stale-while-revalidate on first use instead.
 const SHELL_ASSETS = [
     '/offline.html',
     '/styles.css',
@@ -14,18 +17,29 @@ const SHELL_ASSETS = [
     '/toast.js',
     '/js/pwa.js',
     '/resources/favicon.png',
-    '/resources/logo.png',
     '/icons/icon-192.png',
     '/icons/icon-512.png',
-    // /manifest.json is served dynamically — not pre-cached
+    // /manifest.json — served dynamically, not pre-cached
+    // /resources/logo.png — 4.6 MB, cached lazily on first page load
 ];
 
 // ── Install: pre-cache the app shell ────────────────────────────────────────
+// Non-atomic: each asset is attempted individually so one slow or missing
+// file cannot abort the entire service worker installation (critical on
+// mobile connections where a single timeout would block Android installability).
 self.addEventListener('install', event => {
-    event.waitUntil(
-        caches.open(SHELL_CACHE).then(cache => cache.addAll(SHELL_ASSETS))
-    );
     self.skipWaiting();
+    event.waitUntil(
+        caches.open(SHELL_CACHE).then(function (cache) {
+            return Promise.all(
+                SHELL_ASSETS.map(function (url) {
+                    return cache.add(url).catch(function (err) {
+                        console.warn('[SW] Failed to pre-cache ' + url + ':', err);
+                    });
+                })
+            );
+        })
+    );
 });
 
 // ── Activate: delete old cache versions ─────────────────────────────────────
