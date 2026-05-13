@@ -621,6 +621,7 @@ Icons are written to `public/icons/`. The manifest references them at `/icons/ic
 ## Integrations
 
   * [**WhatsApp Feature Guide**](whatsapp-feature.md): Detailed instructions on connecting your WhatsApp account, managing sessions, and sending mobile notifications.
+  * [**Cloudflare Tunnel Guide**](cloudflared-tunnel.md): Step-by-step instructions for exposing OpReady over HTTPS using a Cloudflare Tunnel — required for PWA installation on Android and other non-localhost devices.
 
 ### WhatsApp Resilience
 
