@@ -31,6 +31,13 @@
     if (localStorage.getItem('pwa-install-dismissed') === 'true') return;
 
     var deferredPrompt = null;
+    var appName = 'OpReady'; // fallback; overwritten by ui-config fetch below
+
+    // Fetch app name from ui-config (same source every other page uses)
+    fetch('/ui-config')
+        .then(function (r) { return r.json(); })
+        .then(function (cfg) { if (cfg.loginTitle) appName = cfg.loginTitle; })
+        .catch(function () {});
 
     window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
@@ -53,10 +60,10 @@
         banner.setAttribute('aria-live', 'polite');
         banner.innerHTML =
             '<div class="pwa-banner-content">' +
-                '<img src="/icons/icon-72.png" alt="OpReady icon" class="pwa-banner-icon" onerror="this.style.display=\'none\'">' +
+                '<img src="/icons/icon-72.png" alt="' + appName + ' icon" class="pwa-banner-icon" onerror="this.style.display=\'none\'">' +
                 '<div class="pwa-banner-text">' +
-                    '<strong>Install OpReady</strong>' +
-                    '<span>Add to your home screen for quick access — works offline too.</span>' +
+                    '<strong>Install ' + appName + '</strong>' +
+                    '<span>Add to your home screen for quick access</span>' +
                 '</div>' +
                 '<div class="pwa-banner-actions">' +
                     '<button id="pwa-install-btn" class="pwa-btn-install">Install</button>' +
