@@ -1055,9 +1055,15 @@ textarea {
     }
 
     tr {
-        margin-bottom: 15px;
+        margin-bottom: 12px;
         box-shadow: 0 2px 4px var(--shadow);
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
     }
+
+    tbody tr:nth-child(odd)  { background-color: var(--bg-card) !important; }
+    tbody tr:nth-child(even) { background-color: var(--bg-body) !important; }
 
     td {
         border: none;
@@ -1086,20 +1092,19 @@ textarea {
         content: attr(data-label);
     }
 
-    #skillsTable td:nth-of-type(1)::before {
-        content: "Member";
-    }
+    /* Hide blank desktop-only spacer cells in sub-rows in card mode */
+    #skillsTable .merged-cell { display: none !important; }
 
-    #skillsTable td:nth-of-type(2)::before {
-        content: "Skill";
-    }
+    /* Members table: hide checkbox column and label the toggle in card mode */
+    #membersTable td:nth-of-type(1) { display: none !important; }
+    #membersTable td:nth-of-type(2)::before { content: "Enabled"; }
+    /* Bulk delete requires checkboxes — suppress it in card mode */
+    #bulkDeleteBtn { display: none !important; }
 
-    #skillsTable td:nth-of-type(3)::before {
-        content: "Due Date";
-    }
-
-    #skillsTable td:nth-of-type(4)::before {
-        content: "Actions";
+    /* Table toolbar: wrap buttons so they don't overflow on narrow screens */
+    .table-toolbar {
+        flex-wrap: wrap;
+        justify-content: flex-start;
     }
 
     .dropdown-submenu .submenu-content {
@@ -2386,16 +2391,22 @@ input:checked + .slider:before { transform: translateX(14px); }
 }
 
 .btn-page {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    padding: 6px 12px;
+    background-color: var(--primary);
+    border: 1px solid var(--primary);
+    padding: 0;
+    width: 32px;
+    height: 32px;
     border-radius: 4px;
     cursor: pointer;
-    color: var(--text-main);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-page:hover:not(:disabled) {
-    background-color: var(--bg-hover);
+    background-color: #138496;
+    border-color: #138496;
 }
 
 .btn-page:disabled {
@@ -3406,6 +3417,11 @@ input:checked + .slider:before { transform: translateX(14px); }
         width: 40px !important;
         height: 40px !important;
         font-size: 0.9rem !important;
+    }
+
+    /* Table toolbar: 2-up button layout on very small screens */
+    .table-toolbar button {
+        flex: 1 1 calc(50% - 5px);
     }
 }
 

@@ -124,10 +124,12 @@
                                 <option value="all">All</option>
                             </select>
                         </div>
-                        <span id="listPageInfo" class="pagination-info">...</span>
-                        <div style="display: flex; gap: 5px;">
-                            <button id="btnListPrev" class="btn-page" onclick="changeListPage(-1)">Previous</button>
-                            <button id="btnListNext" class="btn-page" onclick="changeListPage(1)">Next</button>
+                        <span id="listPageInfo" class="pagination-info">0-0 of 0</span>
+                        <div style="display: flex; gap: 0;">
+                            <button id="btnListFirst" class="btn-page" onclick="goToListFirstPage()" title="First page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
+                            <button id="btnListPrev" class="btn-page" onclick="changeListPage(-1)" title="Previous page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                            <button id="btnListNext" class="btn-page" onclick="changeListPage(1)" title="Next page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                            <button id="btnListLast" class="btn-page" onclick="goToListLastPage()" title="Last page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
                         </div>
                     </div>
                 </div>

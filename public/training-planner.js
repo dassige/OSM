@@ -146,27 +146,48 @@ function renderFutureList() {
     // 4. Update Pagination Controls — always show when there is data
     const paginationEl = document.getElementById('listPagination');
     paginationEl.style.display = 'flex';
-    document.getElementById('listPageInfo').textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalDays}`;
+    document.getElementById('listPageInfo').textContent = `${startIndex + 1}-${endIndex} of ${totalDays}`;
+    document.getElementById('btnListFirst').disabled = (listPage <= 1);
     document.getElementById('btnListPrev').disabled = (listPage <= 1);
     document.getElementById('btnListNext').disabled = (listPage >= totalPages);
+    document.getElementById('btnListLast').disabled = (listPage >= totalPages);
 }
 
 // --- [NEW] PAGINATION ACTIONS ---
 
 window.changeListLimit = function (val) {
     listLimit = val === 'all' ? 99999 : parseInt(val);
-    listPage = 1; // Reset to start
+    listPage = 1;
     renderFutureList();
-    // Save preference (store the raw string so "all" round-trips correctly)
     socket.emit('update-preference', { key: 'trainingListLimit', value: val });
 };
 
 window.changeListPage = function (delta) {
     listPage += delta;
     renderFutureList();
-    // Scroll to top of list container for better UX
     const container = document.getElementById('listViewContainer');
     if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+window.goToListFirstPage = function () {
+    if (listPage !== 1) {
+        listPage = 1;
+        renderFutureList();
+        const container = document.getElementById('listViewContainer');
+        if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+};
+
+window.goToListLastPage = function () {
+    const totalDays = cachedFutureSessions.length;
+    const effectiveLimit = listLimit === 99999 ? totalDays : listLimit;
+    const totalPages = Math.ceil(totalDays / (effectiveLimit || 1)) || 1;
+    if (listPage !== totalPages) {
+        listPage = totalPages;
+        renderFutureList();
+        const container = document.getElementById('listViewContainer');
+        if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 };
 // --- NAVIGATION LOGIC ---
 

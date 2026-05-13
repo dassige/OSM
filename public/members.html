@@ -59,7 +59,7 @@
                 </div>
             </div>
 
-            <table>
+            <table id="membersTable">
                 <thead>
                     <tr>
                         <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
@@ -87,6 +87,27 @@
                 </thead>
                 <tbody id="membersTableBody"></tbody>
             </table>
+
+            <div class="pagination-container" id="membersPaginationControls" style="display:none;">
+                <div class="page-limit-selector">
+                    <label>Rows per page:</label>
+                    <select id="membersRowsPerPage" onchange="changeLimit(this.value)"
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <span class="pagination-info" id="membersPageInfo">0-0 of 0</span>
+                <div style="display:flex; gap:0;">
+                    <button class="btn-page" id="membersBtnFirst" onclick="goToFirstPage()" title="First page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
+                    <button class="btn-page" id="membersBtnPrev" onclick="changePage(-1)" title="Previous page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <button class="btn-page" id="membersBtnNext" onclick="changePage(1)" title="Next page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    <button class="btn-page" id="membersBtnLast" onclick="goToLastPage()" title="Last page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -137,7 +158,7 @@
     </div>
 
     <div id="osmImportModal" class="modal">
-        <div class="modal-content" style="width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
+        <div class="modal-content" style="max-width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
             <span class="close-btn" onclick="closeModal('osmImportModal')">&times;</span>
             <h2 id="osmModalTitle">Import Members from OSM</h2>
             <div
@@ -179,6 +200,8 @@
 
         let memberTable;
         let currentMembers = [];
+        let membersPage = 1;
+        let membersLimit = 25;
         // Helper to parse "Rank" and "Display Name" from the OSM string
         function parseRankAndName(fullName) {
             const parts = (fullName || '').trim().split(' ');
@@ -208,6 +231,17 @@
                     const prefs = await prefRes.json();
                     if (prefs.sortMembers) initialSort = prefs.sortMembers;
                 }
+
+                let membersLimitRaw = '25';
+                try {
+                    const limRes = await fetch('/api/user-preferences/membersPageLimit');
+                    const limData = await limRes.json();
+                    if (limData.value) {
+                        membersLimitRaw = limData.value;
+                        membersLimit = limData.value === 'all' ? 99999 : parseInt(limData.value);
+                    }
+                } catch (e) {}
+                document.getElementById('membersRowsPerPage').value = membersLimitRaw;
 
                 memberTable = new TableController({
                     tbodyId: 'membersTableBody',
@@ -241,8 +275,7 @@
                         return 0;
                     },
                     onRenderComplete: () => {
-                        document.getElementById('selectAllCheckbox').checked = false;
-                        updateBulkDeleteButton();
+                        applyMembersPagination();
                     },
                     renderRow: (m, index) => {
                         const tr = document.createElement('tr');
@@ -256,7 +289,7 @@
 
                         tr.innerHTML = `
                     <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()"></td>
-                    <td class="text-center">
+                    <td data-label="Enabled" class="text-center">
                         <label class="switch">
                             <input type="checkbox" ${m.enabled ? 'checked' : ''} onchange="toggleMemberEnabled(${m.id}, this.checked)">
                             <span class="slider"></span>
@@ -295,6 +328,7 @@
                 if (!res.ok) throw new Error(res.status);
                 const data = await res.json();
                 currentMembers = data;
+                membersPage = 1;
                 memberTable.setData(data);
             } catch (err) {
                 document.getElementById('membersTableBody').innerHTML = `<tr><td colspan="8" class="text-center" style="color:var(--danger);">Error: ${err.message}</td></tr>`;
@@ -304,6 +338,87 @@
         // Expose to global scope so inline onclick handlers in the table header can call it
         function handleSort(column) {
             memberTable.handleSort(column);
+        }
+
+        function applyMembersPagination() {
+            const allData = memberTable.data;
+            const total = allData.length;
+            const effectiveLimit = membersLimit === 99999 ? total : membersLimit;
+
+            document.getElementById('selectAllCheckbox').checked = false;
+            updateBulkDeleteButton();
+
+            if (total === 0) { updateMembersPaginationUI(0, 0, 0); return; }
+
+            const totalPages = Math.ceil(total / effectiveLimit);
+            if (membersPage > totalPages) membersPage = 1;
+
+            const start = (membersPage - 1) * effectiveLimit;
+            const end = Math.min(start + effectiveLimit, total);
+
+            const tbody = document.getElementById('membersTableBody');
+            tbody.innerHTML = '';
+            allData.slice(start, end).forEach((m, i) => {
+                tbody.appendChild(memberTable.renderRow(m, start + i));
+            });
+
+            updateMembersPaginationUI(total, start + 1, end);
+        }
+
+        function updateMembersPaginationUI(total, start, end) {
+            const controls = document.getElementById('membersPaginationControls');
+            const info = document.getElementById('membersPageInfo');
+            const btnFirst = document.getElementById('membersBtnFirst');
+            const btnPrev = document.getElementById('membersBtnPrev');
+            const btnNext = document.getElementById('membersBtnNext');
+            const btnLast = document.getElementById('membersBtnLast');
+            const effectiveLimit = membersLimit === 99999 ? total : membersLimit;
+            const totalPages = membersLimit === 99999 ? 1 : Math.ceil(total / (effectiveLimit || 1));
+            controls.style.display = total > 0 ? 'flex' : 'none';
+            info.textContent = total === 0 ? '0-0 of 0' : `${start}-${end} of ${total}`;
+            btnFirst.disabled = membersPage <= 1;
+            btnPrev.disabled = membersPage <= 1;
+            btnNext.disabled = membersPage >= totalPages;
+            btnLast.disabled = membersPage >= totalPages;
+        }
+
+        function goToFirstPage() {
+            if (membersPage !== 1) {
+                membersPage = 1;
+                applyMembersPagination();
+            }
+        }
+
+        function goToLastPage() {
+            const total = memberTable.data.length;
+            const effectiveLimit = membersLimit === 99999 ? total : membersLimit;
+            const totalPages = membersLimit === 99999 ? 1 : Math.ceil(total / (effectiveLimit || 1));
+            if (membersPage !== totalPages) {
+                membersPage = totalPages;
+                applyMembersPagination();
+            }
+        }
+
+        async function changeLimit(newLimit) {
+            membersLimit = newLimit === 'all' ? 99999 : parseInt(newLimit);
+            membersPage = 1;
+            applyMembersPagination();
+            await fetch('/api/user-preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'membersPageLimit', value: newLimit })
+            });
+        }
+
+        function changePage(delta) {
+            const total = memberTable.data.length;
+            const effectiveLimit = membersLimit === 99999 ? total : membersLimit;
+            const totalPages = membersLimit === 99999 ? 1 : Math.ceil(total / (effectiveLimit || 1));
+            const newPage = membersPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                membersPage = newPage;
+                applyMembersPagination();
+            }
         }
 
         function editMemberByIndex(index) {
@@ -358,7 +473,7 @@
                 const { rank, displayName } = parseRankAndName(m.name);
                 tr.innerHTML = `
                     <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()"></td>
-                    <td class="text-center">
+                    <td data-label="Enabled" class="text-center">
                         <label class="switch">
                             <input type="checkbox" ${m.enabled ? 'checked' : ''} onchange="toggleMemberEnabled(${m.id}, this.checked)">
                             <span class="slider"></span>

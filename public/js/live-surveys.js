@@ -171,6 +171,21 @@ function changePage(delta) {
   if (currentPage > totalPages) currentPage = totalPages;
   renderTable();
 }
+
+window.goToFirstPage = function () {
+  if (currentPage !== 1) {
+    currentPage = 1;
+    renderTable();
+  }
+};
+
+window.goToLastPage = function () {
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
+  if (currentPage !== totalPages) {
+    currentPage = totalPages;
+    renderTable();
+  }
+};
 function changeRowsPerPage() {
   const val = document.getElementById("rowsPerPage").value;
 
@@ -209,9 +224,11 @@ function renderTable() {
   const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
   const showStart = filteredData.length > 0 ? startIndex + 1 : 0;
   document.getElementById("pageInfo").innerText =
-    `Showing ${showStart}-${endIndex} of ${filteredData.length}`;
+    `${showStart}-${endIndex} of ${filteredData.length}`;
+  document.getElementById("btnFirst").disabled = currentPage === 1;
   document.getElementById("btnPrev").disabled = currentPage === 1;
   document.getElementById("btnNext").disabled = currentPage === totalPages;
+  document.getElementById("btnLast").disabled = currentPage === totalPages;
   const paginatedItems = filteredData.slice(
     startIndex,
     startIndex + itemsPerPage,

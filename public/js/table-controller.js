@@ -75,18 +75,32 @@ class TableController {
 
     // --- Pagination Logic ---
     setupPaginationListeners() {
-        const { prevId, nextId } = this.paginationConfig;
+        const { prevId, nextId, firstId, lastId } = this.paginationConfig;
         const btnPrev = document.getElementById(prevId);
         const btnNext = document.getElementById(nextId);
-        
+        const btnFirst = firstId ? document.getElementById(firstId) : null;
+        const btnLast = lastId ? document.getElementById(lastId) : null;
+
+        if (btnFirst) btnFirst.addEventListener('click', () => this.goToPage(1));
         if (btnPrev) btnPrev.addEventListener('click', () => this.changePage(-1));
         if (btnNext) btnNext.addEventListener('click', () => this.changePage(1));
+        if (btnLast) btnLast.addEventListener('click', () => this.goToPage(Math.ceil(this.total / this.limit)));
+    }
+
+    goToPage(pageNum) {
+        const totalPages = Math.ceil(this.total / this.limit);
+        if (pageNum >= 1 && pageNum <= totalPages && pageNum !== this.page) {
+            this.page = pageNum;
+            if (this.paginationConfig.onPageChange) {
+                this.paginationConfig.onPageChange(this.page, this.limit);
+            }
+        }
     }
 
     changePage(delta) {
         const totalPages = Math.ceil(this.total / this.limit);
         const newPage = this.page + delta;
-        
+
         if (newPage >= 1 && newPage <= totalPages) {
             this.page = newPage;
             if (this.paginationConfig.onPageChange) {
@@ -97,7 +111,7 @@ class TableController {
 
     setLimit(newLimit) {
         this.limit = newLimit === 'all' ? 99999 : parseInt(newLimit);
-        this.page = 1; // Reset to first page
+        this.page = 1;
         if (this.paginationConfig.onPageChange) {
             this.paginationConfig.onPageChange(this.page, this.limit);
         }
@@ -105,13 +119,15 @@ class TableController {
 
     updatePaginationUI() {
         if (!this.paginationConfig) return;
-        const { containerId, infoId, prevId, nextId } = this.paginationConfig;
-        
+        const { containerId, infoId, prevId, nextId, firstId, lastId } = this.paginationConfig;
+
         const container = document.getElementById(containerId);
         const info = document.getElementById(infoId);
         const btnPrev = document.getElementById(prevId);
         const btnNext = document.getElementById(nextId);
-        
+        const btnFirst = firstId ? document.getElementById(firstId) : null;
+        const btnLast = lastId ? document.getElementById(lastId) : null;
+
         if (!container || !info || !btnPrev || !btnNext) return;
 
         const totalPages = Math.ceil(this.total / this.limit);
@@ -119,10 +135,12 @@ class TableController {
         const end = Math.min(this.page * this.limit, this.total);
 
         container.style.display = this.total > 0 ? 'flex' : 'none';
-        info.textContent = `Showing ${start}-${end} of ${this.total}`;
-        
+        info.textContent = `${start}-${end} of ${this.total}`;
+
         btnPrev.disabled = this.page <= 1;
         btnNext.disabled = this.page >= totalPages;
+        if (btnFirst) btnFirst.disabled = this.page <= 1;
+        if (btnLast) btnLast.disabled = this.page >= totalPages;
     }
 
     render() {

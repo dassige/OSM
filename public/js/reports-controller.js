@@ -203,13 +203,32 @@ function renderPage(page) {
   const paginationEl = document.getElementById('reportPagination');
   paginationEl.style.display = 'flex';
   document.getElementById('rptPageInfo').textContent =
-    `Showing ${total === 0 ? 0 : start + 1}–${end} of ${total}`;
+    `${total === 0 ? 0 : start + 1}–${end} of ${total}`;
+  document.getElementById('btnRptFirst').disabled = currentPage <= 1;
   document.getElementById('btnRptPrev').disabled = currentPage <= 1;
   document.getElementById('btnRptNext').disabled = currentPage >= totalPages || isAll;
+  document.getElementById('btnRptLast').disabled = currentPage >= totalPages || isAll;
 }
 
 function changePage(delta) {
   renderPage(currentPage + delta);
+}
+
+function goToFirstPage() {
+  if (currentPage !== 1) renderPage(1);
+}
+
+function goToLastPage() {
+  const key = reportSelect.value;
+  const reportDef = registry[key];
+  if (!reportDef || !currentReportData) return;
+  const items = currentReportData.rows || currentReportData;
+  const total = items.length;
+  const isAll = !isFinite(currentPageSize);
+  if (!isAll) {
+    const totalPages = Math.ceil(total / currentPageSize) || 1;
+    if (currentPage !== totalPages) renderPage(totalPages);
+  }
 }
 
 function changeRowsPerPage(value) {

@@ -284,17 +284,21 @@ function renderTable() {
 
     const rankTd = document.createElement("td");
     rankTd.className = "member-cell text-center";
+    rankTd.setAttribute("data-label", "Member");
     rankTd.innerHTML = formatRankCell(rank);
     tr.appendChild(rankTd);
 
     const nameTd = document.createElement("td");
     nameTd.textContent = displayName;
     nameTd.className = "member-cell";
+    nameTd.setAttribute("data-label", "Name");
     tr.appendChild(nameTd);
     // --------------------------------
 
     const skillTd = document.createElement("td");
+    skillTd.setAttribute("data-label", "Skill");
     const dateTd = document.createElement("td");
+    dateTd.setAttribute("data-label", "Due Date");
 
     if (hasVisibleSkills) {
       skillTd.innerHTML = buildSkillHtml(visibleSkills[0], member.id);
@@ -325,6 +329,7 @@ function renderTable() {
 
     const actionTd = document.createElement("td");
     actionTd.className = "member-cell";
+    actionTd.setAttribute("data-label", "Notification");
 
     if (member.emailEligible && hasVisibleSkills) {
       const wrapper = document.createElement("div");
@@ -404,10 +409,12 @@ function renderTable() {
       const subSkillTd = document.createElement("td");
       subSkillTd.innerHTML = buildSkillHtml(visibleSkills[i], member.id);
       subSkillTd.className = "skill-cell";
+      subSkillTd.setAttribute("data-label", "Skill");
 
       const subDateTd = document.createElement("td");
       subDateTd.textContent = visibleSkills[i].dueDate;
       subDateTd.className = "date-cell";
+      subDateTd.setAttribute("data-label", "Due Date");
       if (isDateInPast(visibleSkills[i].dueDate)) {
         subDateTd.classList.add("date-expired");
       }
