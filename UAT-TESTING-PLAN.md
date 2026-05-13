@@ -438,6 +438,32 @@
 
 ---
 
+## T21 — Progressive Web App (PWA)
+
+**Purpose:** Verify that OpReady is installable, provides an offline fallback, and meets core PWA requirements.
+
+> These tests must be performed in a browser that supports PWA installation (Chrome, Edge, or Android Chrome). Safari on iOS supports "Add to Home Screen" but does not fire the `beforeinstallprompt` event — test separately where noted.
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T21-01 | Manifest accessible | Navigate to `/manifest.json` in the browser. | HTTP 200. JSON file with `name`, `icons`, `start_url`, `display: standalone`, and `theme_color`. Content-Type is `application/manifest+json`. |
+| T21-02 | Service worker registers | Open Chrome DevTools → Application → Service Workers. Load any app page. | A service worker for the site is listed with status `activated and is running`. No registration errors in the Console. |
+| T21-03 | Install banner appears (Chrome/Edge) | Open the app in Chrome or Edge on a device where it is not yet installed. Wait a few seconds on any authenticated page. | A teal install banner slides in at the top of the page with an **Install** button and a dismiss (×) button. |
+| T21-04 | Install from banner | With the install banner visible, click **Install**. | The browser install prompt appears. Accepting it installs the app. The banner disappears. The app is added to the home screen / taskbar. |
+| T21-05 | Banner dismiss | Show the install banner (see T21-03). Click the × button. | The banner slides out and is removed. Refreshing the page does not re-show the banner within the same session. |
+| T21-06 | Standalone display | Open the installed PWA from the home screen or taskbar. | The app opens without browser chrome (no address bar). The title bar or status bar reflects the teal theme colour (`#17A2B8`). |
+| T21-07 | Offline fallback page | Install the app or open in Chrome. In DevTools → Network, enable **Offline** throttling. Navigate to any app page. | The `offline.html` page is displayed with the OpReady icon, "You're offline" message, and a **Try again** button. No white blank screen or browser error page. |
+| T21-08 | Cached page served offline | Load the dashboard at least once online. Enable Offline in DevTools. Reload the dashboard. | The cached dashboard page is served (no network request needed). If the cache is cold, `offline.html` is shown. |
+| T21-09 | Try-again button | On the offline page, restore the network connection (disable Offline throttling) and click **Try again**. | The page reloads and returns to the app normally. |
+| T21-10 | App icons present | Check DevTools → Application → Manifest. | All icon sizes (72 – 512 px) are listed and load without errors. A maskable icon is present for Android adaptive icons. |
+| T21-11 | iOS Add to Home Screen | On an iPhone or iPad in Safari, tap Share → **Add to Home Screen**. | The OpReady icon (not the Safari default screenshot) appears on the home screen. Tapping it opens the app in standalone mode. |
+| T21-12 | PWA Lighthouse audit | In Chrome DevTools → Lighthouse, run a **Progressive Web App** audit on the dashboard. | All PWA criteria pass (or near-pass — network-dependent checks may show as warnings in non-HTTPS environments). |
+| T21-13 | Help content for PWA | Open System Tools page. Click the **?** help button. | The help modal includes a section titled *Install as App (PWA)* describing how to install on each platform. |
+| T21-14 | Banner does not show on login | Open `/login.html` in a fresh browser session. | No install banner appears on the login page. |
+| T21-15 | Banner hidden when already installed | Open the app from the installed PWA shortcut. | No install banner is shown (app is already installed, `display-mode: standalone` matches). |
+
+---
+
 ## Appendix A — Test Data Setup Checklist
 
 Before starting the UAT run, ensure the following data is in place on the UAT instance:

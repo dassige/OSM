@@ -130,6 +130,7 @@ When implementing **any** new feature or modifying an existing one, work through
 | 12 | **UI smoke tests** — run `npm run test:ui` and confirm all pages load without JS errors | Any change to a frontend HTML page or the JS it loads |
 | 13 | **README.md** — update the relevant section to reflect the change | New feature, new npm script, new config variable, changed workflow, new deployment option, or anything a developer or operator would need to know |
 | 14 | **UAT Testing Plan** — update both `UAT-TESTING-PLAN.md` and `UAT-TESTING-PLAN.csv` to reflect the change | New page, new feature, renamed feature, removed feature, changed operation, or changed expected behaviour |
+| 15 | **Scripts index** — update `scripts/scripts.md` to document the script's purpose, invocation, prerequisites, and options | Any script added to or modified in `scripts/` |
 
 ---
 
@@ -495,6 +496,37 @@ const helpContent = {
 - Keep entries concise — this is quick reference help, not a manual. 3–6 bullet points per section is ideal.
 - Never mention internal implementation details (file names, DB column names, env var names) unless they are directly actionable by an admin user.
 - Check the routing IIFE: if the new page URL pattern could conflict with an existing `path.includes()` rule, add the more specific rule first.
+
+---
+
+## ⚠️ Scripts Mandate
+
+`scripts/scripts.md` is the **single source of truth** for all standalone utility scripts in the `scripts/` directory. It must be kept in sync with the actual scripts present in that directory.
+
+### When to update `scripts/scripts.md`
+
+| Trigger | Required action |
+|---------|----------------|
+| New script added to `scripts/` | Add a new `## <filename>` section documenting purpose, npm shortcut (if any), direct invocation, prerequisites, environment variables, and expected output |
+| Existing script modified | Update the relevant section to match the new behaviour, options, or output |
+| Script deleted | Remove its section from the file |
+| npm shortcut added or renamed | Update both the script section and any `npm shortcut` code block |
+
+### Required section structure
+
+Every script entry must include at minimum:
+
+```markdown
+## script-name.js
+
+One-sentence description of what the script does.
+
+**npm shortcut** (if one exists in package.json)
+**Direct invocation**
+**Prerequisites** — what must be in place before running
+**What it does** or **Environment variables** — whichever is relevant
+**Output** — what the script produces or modifies
+```
 
 ---
 

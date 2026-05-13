@@ -310,6 +310,14 @@ const helpContent = {
 
             <h3>4. AI Evaluator Test Lab</h3>
             <p>An ad-hoc sandbox for testing the AI grading logic against custom question/answer pairs before enabling it for live forms. Settings auto-save to your user profile.</p>
+
+            <h3>5. Install as App (PWA)</h3>
+            <p>OpReady is a <strong>Progressive Web App</strong>. When supported by your browser, an <em>Install OpReady</em> banner will appear at the top of the page. Installing adds OpReady to your device's home screen or taskbar for one-tap access, works offline for recently visited pages, and removes browser chrome for a native app feel.</p>
+            <ul>
+                <li>The install banner appears automatically when the browser detects the app is installable. Dismiss it and it won't reappear until the next session.</li>
+                <li>On iOS (Safari): use the Share button → <strong>Add to Home Screen</strong>.</li>
+                <li>On Android (Chrome) or desktop (Chrome/Edge): accept the Install banner or use the browser menu → <strong>Install OpReady</strong>.</li>
+            </ul>
         `
     },
 

@@ -578,6 +578,46 @@ Supports stateless deployment using **Litestream** to replicate the database to 
 
 See [Installation on Google Cloud Run](https://www.google.com/search?q=Installation_google_run.md) for details.
 
+## Progressive Web App (PWA)
+
+OpReady ships as a full Progressive Web App, installable on any device directly from the browser.
+
+### Installing
+
+| Platform | Steps |
+|---|---|
+| **Android (Chrome)** | Accept the *Install OpReady* banner that appears at the top of any page, or use the browser menu → **Install app** |
+| **iOS (Safari)** | Tap the Share icon → **Add to Home Screen** |
+| **Desktop (Chrome / Edge)** | Accept the install banner, or use the address-bar install icon, or browser menu → **Install OpReady** |
+
+### What you get
+
+* **Home screen / taskbar shortcut** — one-tap access, no browser chrome
+* **Offline fallback** — recently visited pages remain accessible when there is no network; the app shows a friendly offline page for content not yet cached
+* **Background asset caching** — CSS, JS, and icons are served from the local cache after the first visit; updates are applied silently on next reload
+* **App shortcuts** — long-press the icon to jump directly to Dashboard, Live Forms, or Members
+
+### Regenerating icons
+
+If the favicon is replaced, regenerate all PWA icon sizes:
+
+```bash
+node scripts/generate-icons.js
+```
+
+Icons are written to `public/icons/`. The manifest references them at `/icons/icon-{size}.png`.
+
+### Caching strategy
+
+| Request type | Strategy |
+|---|---|
+| App shell (CSS, JS, core images) | Cache-first; updated on every SW install |
+| HTML page navigations | Network-first; falls back to cached page, then `/offline.html` |
+| Static assets (other images, fonts) | Stale-while-revalidate |
+| `/api/*` requests | Network-only (never cached) |
+
+---
+
 ## Integrations
 
   * [**WhatsApp Feature Guide**](whatsapp-feature.md): Detailed instructions on connecting your WhatsApp account, managing sessions, and sending mobile notifications.
