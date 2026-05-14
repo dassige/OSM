@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -15,6 +15,62 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
+    <style>
+        /* Toolbar mobile/desktop variants */
+        .toolbar-btn-mobile { display: none; }
+
+        /* Card list hidden on desktop */
+        #cardList { display: none; }
+
+        /* Sort bar hidden on desktop */
+        #lf-sort-bar { display: none; }
+
+        @media (max-width: 768px) {
+            /* Toolbar swap */
+            .toolbar-btn-desktop { display: none; }
+            .toolbar-btn-mobile {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                border-radius: 6px;
+            }
+
+            /* Desktop table hidden, cards visible */
+            #tableWrapper { display: none; }
+            #cardList { display: block; }
+
+            /* Sort bar: hidden by default, shown when expanded (accordion) */
+            #lf-sort-bar { display: none; }
+            #lf-sort-bar.sort-expanded { display: flex; }
+
+            /* Filter bar: hidden by default, shown when expanded (accordion) */
+            .filter-bar {
+                display: none;
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                margin-bottom: 10px;
+            }
+            .filter-bar.filter-expanded { display: flex; }
+            .filter-bar .filter-group { min-width: unset; flex: unset; width: 100%; }
+            .filter-bar .filter-group-date .date-range-container { flex-direction: column; gap: 6px; }
+            .filter-bar .filter-actions { flex-direction: row; justify-content: flex-end; gap: 8px; }
+
+            /* Keep the tools-bar buttons on one row on mobile */
+            .tools-bar {
+                flex-direction: row;
+                align-items: center;
+                flex-wrap: nowrap;
+                gap: 8px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -34,72 +90,111 @@
     <div class="container">
         <h1 id="pageHeader" class="text-center" style="margin-bottom: 30px;">Live Forms Management</h1>
 
-        <div class="filter-bar">
-            <div class="filter-group" style="flex: 0 0 auto; min-width: 160px;">
-                <label>View Mode</label>
-                <div class="sliding-badge-container">
-                    <input type="checkbox" id="archiveToggle" onchange="applyFilters(1)" style="display:none;">
-                    <label for="archiveToggle" class="sliding-badge">
-                        <span class="badge-label active-label">Active</span>
-                        <span class="badge-label archived-label">Archived</span>
-                        <div class="badge-slider"></div>
-                    </label>
+        <!-- Filter section: accordion on mobile, always-visible on desktop -->
+        <div class="filter-section">
+            <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilters()"
+                title="Show or hide filters">
+                <span style="display:flex; align-items:center; gap:8px;">
+                    Filters
+                    <span id="filterActiveCount" style="display:none; background:var(--primary); color:#fff; border-radius:10px; padding:1px 8px; font-size:0.78em; font-weight:700;"></span>
+                </span>
+                <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+
+            <div class="filter-bar" id="filterBar">
+                <div class="filter-group" style="flex: 0 0 auto; min-width: 160px;">
+                    <label>View Mode</label>
+                    <div class="sliding-badge-container">
+                        <input type="checkbox" id="archiveToggle" onchange="applyFilters(1)" style="display:none;"
+                            title="Toggle between active and archived records">
+                        <label for="archiveToggle" class="sliding-badge">
+                            <span class="badge-label active-label">Active</span>
+                            <span class="badge-label archived-label">Archived</span>
+                            <div class="badge-slider"></div>
+                        </label>
+                    </div>
                 </div>
-            </div>
-            <div class="filter-group">
-                <label>Status</label>
-                <select id="filterStatus" class="filter-select">
-                    <option value="">All Statuses</option>
-                    <option value="sent">Sent</option>
-                    <option value="submitted">Submitted</option>
-                    <option value="accepted">Accepted</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="disabled">Disabled</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Member</label>
-                <select id="filterMember" class="filter-select">
-                    <option value="">All Members</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Skill</label>
-                <select id="filterSkill" class="filter-select">
-                    <option value="">All Skills</option>
-                </select>
-            </div>
-
-            <div class="filter-group" style="flex: 0 1 100px; min-width:100px;">
-                <label>Tries</label>
-                <input type="number" id="filterTries" class="filter-select" min="1" placeholder="Any">
-            </div>
-
-            <div class="filter-group filter-group-date">
-                <label>Sent Date</label>
-                <div class="date-range-container">
-                    <input type="date" id="filterSentStart" class="filter-date">
-                    <input type="date" id="filterSentEnd" class="filter-date">
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="filterStatus" class="filter-select" title="Filter by form status">
+                        <option value="">All Statuses</option>
+                        <option value="sent">Sent</option>
+                        <option value="submitted">Submitted</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="disabled">Disabled</option>
+                    </select>
                 </div>
-            </div>
-
-            <div class="filter-group filter-group-date">
-                <label>Submitted Date</label>
-                <div class="date-range-container">
-                    <input type="date" id="filterSubStart" class="filter-date">
-                    <input type="date" id="filterSubEnd" class="filter-date">
+                <div class="filter-group">
+                    <label>Member</label>
+                    <select id="filterMember" class="filter-select" title="Filter by member"></select>
                 </div>
-            </div>
-
-            <div class="filter-actions">
-                <button onclick="applyFilters(1)" class="btn-primary" style="height: 38px;">Apply</button>
-                <button onclick="resetFilters()" class="btn-secondary" style="height: 38px;">Reset</button>
+                <div class="filter-group">
+                    <label>Skill</label>
+                    <select id="filterSkill" class="filter-select" title="Filter by skill"></select>
+                </div>
+                <div class="filter-group" style="flex: 0 1 100px; min-width:100px;">
+                    <label>Tries</label>
+                    <input type="number" id="filterTries" class="filter-select" min="1" placeholder="Any"
+                        title="Filter by number of submission attempts">
+                </div>
+                <div class="filter-group filter-group-date">
+                    <label>Sent Date</label>
+                    <div class="date-range-container">
+                        <input type="date" id="filterSentStart" class="filter-date" title="Sent date from">
+                        <input type="date" id="filterSentEnd" class="filter-date" title="Sent date to">
+                    </div>
+                </div>
+                <div class="filter-group filter-group-date">
+                    <label>Submitted Date</label>
+                    <div class="date-range-container">
+                        <input type="date" id="filterSubStart" class="filter-date" title="Submitted date from">
+                        <input type="date" id="filterSubEnd" class="filter-date" title="Submitted date to">
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button onclick="applyFilters(1)" class="btn-primary" style="height: 38px;"
+                        title="Apply selected filters">Apply</button>
+                    <button onclick="resetFilters()" class="btn-secondary" style="height: 38px;"
+                        title="Clear all filters">Reset</button>
+                </div>
             </div>
         </div>
 
+        <!-- Mobile sort accordion -->
+        <div class="sort-section">
+            <button class="sort-toggle-btn" id="sortToggleBtn" onclick="toggleSortBar()" title="Show or hide sort options">
+                <span>Sort by</span>
+                <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+            <div id="lf-sort-bar" class="sort-bar-container">
+                <span class="sort-bar-label">Sort:</span>
+                <button class="sort-bar-btn" id="mobileSortBtn-member_rank" onclick="handleSort('member_rank')"
+                    title="Sort by rank">Rank <span id="mobile-icon-member_rank"></span></button>
+                <button class="sort-bar-btn" id="mobileSortBtn-member_name" onclick="handleSort('member_name')"
+                    title="Sort by member name">Name <span id="mobile-icon-member_name"></span></button>
+                <button class="sort-bar-btn" id="mobileSortBtn-skill_name" onclick="handleSort('skill_name')"
+                    title="Sort by skill">Skill <span id="mobile-icon-skill_name"></span></button>
+                <button class="sort-bar-btn" id="mobileSortBtn-tries" onclick="handleSort('tries')"
+                    title="Sort by number of tries">Tries <span id="mobile-icon-tries"></span></button>
+                <button class="sort-bar-btn" id="mobileSortBtn-form_status" onclick="handleSort('form_status')"
+                    title="Sort by form status">Status <span id="mobile-icon-form_status"></span></button>
+                <button class="sort-bar-btn" id="mobileSortBtn-form_sent_datetime"
+                    onclick="handleSort('form_sent_datetime')" title="Sort by sent date">Sent
+                    <span id="mobile-icon-form_sent_datetime"></span></button>
+            </div>
+        </div>
 
-
-        <div class="table-wrapper">
+        <!-- Desktop table -->
+        <div class="table-wrapper" id="tableWrapper">
             <table id="liveFormsTable">
                 <thead>
                     <tr>
@@ -107,11 +202,9 @@
                             <div class="th-content" style="justify-content:center;">Rank <span id="icon-member_rank"
                                     class="sort-icon"></span></div>
                         </th>
-
                         <th class="sortable" onclick="handleSort('member_name')">
                             <div class="th-content">Name <span id="icon-member_name" class="sort-icon"></span></div>
                         </th>
-
                         <th class="sortable" onclick="handleSort('skill_name')">
                             <div class="th-content">Skill <span id="icon-skill_name" class="sort-icon"></span></div>
                         </th>
@@ -132,15 +225,15 @@
                             </div>
                         </th>
                         <th class="sortable text-center" onclick="handleSort('form_status')">
-                            <div class="th-content" style="justify-content:center;">Status <span id="icon-form_status"
-                                    class="sort-icon"></span></div>
+                            <div class="th-content" style="justify-content:center;">Status <span
+                                    id="icon-form_status" class="sort-icon"></span></div>
                         </th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
                     <tr>
-                        <td colspan="7" class="text-center">Loading...</td>
+                        <td colspan="8" class="text-center">Loading...</td>
                     </tr>
                 </tbody>
             </table>
@@ -149,7 +242,8 @@
                 <div class="page-limit-selector">
                     <label>Rows per page:</label>
                     <select id="rowsPerPage" onchange="changeLimit(this.value)"
-                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                        title="Number of rows to display per page">
                         <option value="10">10</option>
                         <option value="25" selected>25</option>
                         <option value="50">50</option>
@@ -157,49 +251,101 @@
                         <option value="all">All</option>
                     </select>
                 </div>
-                <span class="pagination-info" id="pageInfo">0-0 of 0</span>
-                <div style="display:flex; gap:0;">
-                    <button class="btn-page" id="btnFirst" title="First page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
-                    <button class="btn-page" id="btnPrev" onclick="changePage(-1)" title="Previous page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                    <button class="btn-page" id="btnNext" onclick="changePage(1)" title="Next page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                    <button class="btn-page" id="btnLast" title="Last page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
+                <div style="display:flex; align-items:center; gap:0;">
+                    <button class="btn-page" id="btnFirst" title="First page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
+                    <button class="btn-page" id="btnPrev" title="Previous page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <button id="pageInfo" class="btn-page" style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1 of 1</button>
+                    <button class="btn-page" id="btnNext" title="Next page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    <button class="btn-page" id="btnLast" title="Last page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile card list -->
+        <div id="cardList">
+            <div id="cardContainer"></div>
+            <div id="paginationControlsMobile" class="pagination-container" style="display:none;">
+                <div class="page-limit-selector">
+                    <label>Rows per page:</label>
+                    <select id="rowsPerPageMobile" onchange="changeLimit(this.value)"
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                        title="Number of rows to display per page">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:0;">
+                    <button class="btn-page" id="btnFirstMobile" title="First page" style="margin:0 1px;"
+                        onclick="liveFormsTable.goToPage(1)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
+                    <button class="btn-page" id="btnPrevMobile" title="Previous page" style="margin:0 1px;"
+                        onclick="liveFormsTable.changePage(-1)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <button id="pageInfoMobile" class="btn-page" style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1 of 1</button>
+                    <button class="btn-page" id="btnNextMobile" title="Next page" style="margin:0 1px;"
+                        onclick="liveFormsTable.changePage(1)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    <button class="btn-page" id="btnLastMobile" title="Last page" style="margin:0 1px;"
+                        onclick="liveFormsTable.goToPage(Math.ceil(liveFormsTable.total / liveFormsTable.limit))"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
                 </div>
             </div>
         </div>
 
     </div>
     <br>
-        <div class="tools-bar">
-            <button onclick="loadData()" class="btn-icon" title="Refresh Table"
-                style="margin-right: 15px; color: var(--primary);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+    <div class="tools-bar">
+        <!-- Refresh — text on desktop, icon on mobile -->
+        <button onclick="loadData()" class="btn-sm btn-secondary toolbar-btn-desktop" title="Refresh table">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 4v6h-6"></path>
+                <path d="M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh
+        </button>
+        <button onclick="loadData()" class="btn-secondary toolbar-btn-mobile" title="Refresh table">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 4v6h-6"></path>
+                <path d="M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+        </button>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <!-- Download JSON — text on desktop, icon on mobile -->
+            <button onclick="exportJson()" class="btn-sm btn-primary toolbar-btn-desktop"
+                title="Download filtered records as JSON">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M23 4v6h-6"></path>
-                    <path d="M1 20v-6h6"></path>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download JSON
+            </button>
+            <button onclick="exportJson()" class="btn-primary toolbar-btn-mobile"
+                title="Download filtered records as JSON">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
             </button>
-            <div style="display:flex; gap:10px;">
-                <button onclick="exportJson()" class="btn-sm btn-primary" title="Download filtered records as JSON">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Download JSON
-                </button>
-                <button onclick="purgeFiltered()" class="btn-sm btn-danger"
-                    title="Delete ALL records matching current filters">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                    Purge Filtered
-                </button>
-            </div>
+            <!-- Purge Filtered — kept as text on all sizes (destructive action) -->
+            <button onclick="purgeFiltered()" class="btn-sm btn-danger"
+                title="Delete ALL records matching current filters">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Purge Filtered
+            </button>
         </div>
+    </div>
+
     <div id="statusModal" class="modal">
         <div class="modal-content" style="max-width: 400px;">
             <span class="close-btn" onclick="closeModal('statusModal')">&times;</span>
@@ -211,10 +357,10 @@
                     style="font-family:monospace; font-size:0.9em; color:var(--text-muted); user-select: all;"></span>
             </p>
             <input type="hidden" id="editId">
-
             <div class="form-group" style="margin-top:20px;">
                 <label>New Status</label>
-                <select id="editStatusSelect" class="filter-select" style="width: 100%;">
+                <select id="editStatusSelect" class="filter-select" style="width: 100%;"
+                    title="Select the new status for this form record">
                     <option value="sent">Sent</option>
                     <option value="submitted">Submitted</option>
                     <option value="accepted">Accepted</option>
@@ -222,7 +368,6 @@
                     <option value="disabled">Disabled</option>
                 </select>
             </div>
-
             <div class="modal-actions-right">
                 <button onclick="saveStatus()" class="btn-success w-100">Save Changes</button>
             </div>
@@ -247,7 +392,6 @@
         let appLocale = 'en-NZ';
         let appTimezone = 'Pacific/Auckland';
 
-        // Helper to parse "Rank" and "Display Name"
         function parseRankAndName(fullName) {
             const parts = (fullName || '').trim().split(' ');
             if (parts.length > 1 && /^[A-Za-z]{2,4}$/.test(parts[0])) {
@@ -265,7 +409,6 @@
                 }
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
                 if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
-
                 if (c.locale) appLocale = c.locale;
                 if (c.timezone) appTimezone = c.timezone;
             } catch (e) { }
@@ -281,6 +424,7 @@
                     const saved = prefs.liveFormsLimit;
                     initialLimit = saved === 'all' ? 99999 : parseInt(saved);
                     document.getElementById('rowsPerPage').value = saved;
+                    document.getElementById('rowsPerPageMobile').value = saved;
                 }
             } catch (e) { console.error("Pref error", e); }
 
@@ -288,11 +432,13 @@
                 const mRes = await fetch('/api/members');
                 const members = await mRes.json();
                 const mSel = document.getElementById('filterMember');
+                mSel.innerHTML = '<option value="">All Members</option>';
                 members.forEach(m => mSel.innerHTML += `<option value="${m.id}">${m.name}</option>`);
 
                 const sRes = await fetch('/api/skills');
                 const skills = await sRes.json();
                 const sSel = document.getElementById('filterSkill');
+                sSel.innerHTML = '<option value="">All Skills</option>';
                 skills.forEach(s => sSel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
             } catch (e) { }
 
@@ -317,12 +463,14 @@
                         body: JSON.stringify({ key: 'sortLiveForms', value: newSort })
                     });
                 },
+                onRenderComplete: () => {
+                    updatePageInfoFormat();
+                    renderCards();
+                },
                 sortFunction: (a, b, sortState) => {
                     const parsedA = parseRankAndName(a.member_name);
                     const parsedB = parseRankAndName(b.member_name);
-
                     let valA, valB;
-
                     if (sortState.column === 'member_rank') {
                         valA = parsedA.rank.toLowerCase();
                         valB = parsedB.rank.toLowerCase();
@@ -337,7 +485,6 @@
                         valA = (a[sortState.column] || '').toString().toLowerCase();
                         valB = (b[sortState.column] || '').toString().toLowerCase();
                     }
-
                     if (valA < valB) return sortState.order === 'asc' ? -1 : 1;
                     if (valA > valB) return sortState.order === 'asc' ? 1 : -1;
                     return 0;
@@ -345,71 +492,14 @@
                 renderRow: (row, index) => {
                     const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
                     const isArchivedMode = document.getElementById('archiveToggle').checked;
-
-                    let scoreDisplay = '<span style="color:var(--text-muted);">-</span>';
-                    if (row.current_score !== null && row.current_score !== undefined) {
-                        const formattedScore = `<strong>${Number(row.current_score).toFixed(1)}</strong>`;
-                        if (row.form_status === 'accepted') {
-                            scoreDisplay = `<span style="color:var(--success);">${formattedScore}</span>`;
-                        } else if (row.form_status === 'rejected') {
-                            scoreDisplay = `<span style="color:var(--danger);">${formattedScore}</span>`;
-                        } else {
-                            scoreDisplay = formattedScore;
-                        }
-                    }
-
-                    const fmtDate = (dStr) => {
-                        if (!dStr) return '<span style="color:var(--text-muted);">-</span>';
-                        return new Date(dStr).toLocaleString(appLocale, {
-                            timeZone: appTimezone,
-                            year: 'numeric', month: '2-digit', day: '2-digit',
-                            hour: '2-digit', minute: '2-digit'
-                        });
-                    };
-
-                    let actionHtml = '';
-                    if (isArchivedMode) {
-                        actionHtml = `
-                            <button class="btn-icon" onclick="openReview('${row.id}')" title="View (Read Only)">
-                                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                            </button>
-                            <button class="btn-icon" onclick="downloadSingleJson('${row.id}')" title="Download JSON">
-                                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                            </button>
-                            <button class="btn-icon" onclick="toggleArchive('${row.id}', false)" title="Restore (Un-archive)" style="color:var(--success);">
-                                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                            </button>
-                            <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete Permanently">
-                                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            </button>
-                        `;
-                    } else {
-                        const canReview = ['submitted', 'accepted', 'rejected'].includes(row.form_status);
-                        actionHtml = `
-                            ${canReview ? `
-                            <button class="btn-icon" onclick="openReview('${row.id}')" title="Review Submission" style="color:var(--info);">
-                                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                            </button>` : ''}
-                            <button class="btn-icon" onclick="downloadSingleJson('${row.id}')" title="Download JSON">
-                                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                            </button>
-                            <button class="btn-icon edit" onclick="openEdit('${row.id}', '${row.member_name}', '${row.skill_name}', '${row.form_status}', '${row.form_access_code}')" title="Edit Status">
-                                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            </button>
-                            <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Delete">
-                                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            </button>
-                        `;
-                    }
-
+                    const scoreDisplay = buildScoreDisplay(row);
+                    const actionHtml = buildActionHtml(row, isArchivedMode);
                     const { rank, displayName } = parseRankAndName(row.member_name);
 
                     const tr = document.createElement('tr');
                     tr.className = rowClass;
                     tr.innerHTML = `
-                        <td data-label="Rank" class="text-center">
-                           ${formatRankCell(rank)}
-                        </td>
+                        <td data-label="Rank" class="text-center">${formatRankCell(rank)}</td>
                         <td data-label="Name" style="font-weight:bold;">${displayName || 'Unknown'}</td>
                         <td data-label="Skill">${row.skill_name || 'Unknown'}</td>
                         <td data-label="Tries" class="text-center">${row.tries || 1}</td>
@@ -435,6 +525,159 @@
             loadData();
         }
 
+        // --- Shared helpers ---
+
+        function fmtDate(dStr) {
+            if (!dStr) return '<span style="color:var(--text-muted);">-</span>';
+            return new Date(dStr).toLocaleString(appLocale, {
+                timeZone: appTimezone,
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        function buildScoreDisplay(row) {
+            if (row.current_score === null || row.current_score === undefined) {
+                return '<span style="color:var(--text-muted);">-</span>';
+            }
+            const formatted = `<strong>${Number(row.current_score).toFixed(1)}</strong>`;
+            if (row.form_status === 'accepted') return `<span style="color:var(--success);">${formatted}</span>`;
+            if (row.form_status === 'rejected') return `<span style="color:var(--danger);">${formatted}</span>`;
+            return formatted;
+        }
+
+        function buildActionHtml(row, isArchivedMode) {
+            if (isArchivedMode) {
+                return `
+                    <button class="btn-icon" onclick="openReview('${row.id}')" title="View submission (read only)">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                    <button class="btn-icon" onclick="downloadSingleJson('${row.id}')" title="Download record as JSON">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    </button>
+                    <button class="btn-icon" onclick="toggleArchive('${row.id}', false)" title="Restore (un-archive) this record" style="color:var(--success);">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                    </button>
+                    <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Permanently delete this record">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                `;
+            }
+            const canReview = ['submitted', 'accepted', 'rejected'].includes(row.form_status);
+            return `
+                ${canReview ? `
+                <button class="btn-icon" onclick="openReview('${row.id}')" title="Review this submission" style="color:var(--info);">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>` : ''}
+                <button class="btn-icon" onclick="downloadSingleJson('${row.id}')" title="Download record as JSON">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                </button>
+                <button class="btn-icon edit" onclick="openEdit('${row.id}', '${row.member_name}', '${row.skill_name}', '${row.form_status}', '${row.form_access_code}')" title="Edit form status">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Permanently delete this record">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            `;
+        }
+
+        // --- Page info: override TableController's range format with "X of Y" ---
+        function updatePageInfoFormat() {
+            const totalPages = Math.max(1, Math.ceil(liveFormsTable.total / liveFormsTable.limit));
+            const text = `${liveFormsTable.page} of ${totalPages}`;
+            const info = document.getElementById('pageInfo');
+            if (info) info.textContent = text;
+        }
+
+        // --- Mobile card rendering ---
+        function renderCards() {
+            const container = document.getElementById('cardContainer');
+            if (!container) return;
+            const data = liveFormsTable.data;
+            const isArchivedMode = document.getElementById('archiveToggle').checked;
+
+            container.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:20px;">${liveFormsTable.emptyMessage}</p>`;
+                syncMobilePagination(false);
+                return;
+            }
+
+            data.forEach(row => {
+                const { rank, displayName } = parseRankAndName(row.member_name);
+                const rankHtml = (rank && rank !== '-') ? `<div class="card-rank">${formatRankCell(rank)}</div>` : '';
+                const scoreDisplay = buildScoreDisplay(row);
+                const canReview = ['submitted', 'accepted', 'rejected'].includes(row.form_status);
+
+                const card = document.createElement('div');
+                card.className = 'table-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        ${rankHtml}
+                        <span class="card-title">${displayName || 'Unknown'}</span>
+                        <span class="badge status-${row.form_status}">${row.form_status}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-row"><span class="card-label">Skill:</span><span>${row.skill_name || 'Unknown'}</span></div>
+                        <div class="card-row"><span class="card-label">Tries:</span><span>${row.tries || 1}</span></div>
+                        <div class="card-row"><span class="card-label">Score:</span><span>${scoreDisplay}</span></div>
+                        <div class="card-row"><span class="card-label">Sent:</span><span style="font-size:0.88em;">${fmtDate(row.form_sent_datetime)}</span></div>
+                        <div class="card-row"><span class="card-label">Uploaded:</span><span style="font-size:0.88em;">${fmtDate(row.form_submitted_datetime)}</span></div>
+                        <div class="card-row"><span class="card-label">Reviewed:</span><span style="font-size:0.88em;">${fmtDate(row.form_reviewed_datetime)}</span></div>
+                    </div>
+                    <div class="card-actions">
+                        ${isArchivedMode ? `
+                            ${canReview ? `<button class="btn-informative btn-sm" onclick="openReview('${row.id}')" title="View submission (read only)">View</button>` : ''}
+                            <button class="btn-primary btn-sm" onclick="downloadSingleJson('${row.id}')" title="Download record as JSON">JSON</button>
+                            <button class="btn-success btn-sm" onclick="toggleArchive('${row.id}', false)" title="Restore (un-archive) this record">Restore</button>
+                            <button class="btn-danger btn-sm" onclick="deleteRecord('${row.id}')" title="Permanently delete this record">Delete</button>
+                        ` : `
+                            ${canReview ? `<button class="btn-informative btn-sm" onclick="openReview('${row.id}')" title="Review this submission">Review</button>` : ''}
+                            <button class="btn-primary btn-sm" onclick="downloadSingleJson('${row.id}')" title="Download record as JSON">JSON</button>
+                            <button class="btn-success btn-sm" onclick="openEdit('${row.id}', '${row.member_name}', '${row.skill_name}', '${row.form_status}', '${row.form_access_code}')" title="Edit form status">Edit</button>
+                            <button class="btn-danger btn-sm" onclick="deleteRecord('${row.id}')" title="Permanently delete this record">Delete</button>
+                        `}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            syncMobilePagination(true);
+        }
+
+        function syncMobilePagination(show) {
+            const ctrl = document.getElementById('paginationControlsMobile');
+            if (!ctrl) return;
+            ctrl.style.display = show ? 'flex' : 'none';
+            if (!show) return;
+
+            const totalPages = Math.max(1, Math.ceil(liveFormsTable.total / liveFormsTable.limit));
+            document.getElementById('pageInfoMobile').textContent = `${liveFormsTable.page} of ${totalPages}`;
+            document.getElementById('btnFirstMobile').disabled = liveFormsTable.page <= 1;
+            document.getElementById('btnPrevMobile').disabled = liveFormsTable.page <= 1;
+            document.getElementById('btnNextMobile').disabled = liveFormsTable.page >= totalPages;
+            document.getElementById('btnLastMobile').disabled = liveFormsTable.page >= totalPages;
+            document.getElementById('rowsPerPageMobile').value = document.getElementById('rowsPerPage').value;
+        }
+
+        // --- Filter accordion ---
+        function toggleFilters() {
+            const bar = document.getElementById('filterBar');
+            const btn = document.getElementById('filterToggleBtn');
+            const expanded = bar.classList.toggle('filter-expanded');
+            btn.classList.toggle('expanded', expanded);
+        }
+
+        // --- Sort accordion ---
+        function toggleSortBar() {
+            const bar = document.getElementById('lf-sort-bar');
+            const btn = document.getElementById('sortToggleBtn');
+            const expanded = bar.classList.toggle('sort-expanded');
+            btn.classList.toggle('expanded', expanded);
+        }
+
+        // --- Data loading ---
         async function loadData() {
             const params = new URLSearchParams();
             const getVal = (id) => document.getElementById(id).value;
@@ -453,7 +696,8 @@
             params.append('page', liveFormsTable.page);
             params.append('limit', liveFormsTable.limit);
 
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="text-center">Loading...</td></tr>';
+            document.getElementById('cardContainer').innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px;">Loading...</p>';
 
             try {
                 const res = await fetch(`/api/live-forms?${params.toString()}`);
@@ -463,17 +707,19 @@
                 liveFormsTable.emptyMessage = `No ${isArchived ? 'archived' : 'active'} records found matching your filters.`;
                 liveFormsTable.setData(result.records, result.total);
             } catch (e) {
-                document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--danger);">Error: ${e.message}</td></tr>`;
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" class="text-center" style="color:var(--danger);">Error: ${e.message}</td></tr>`;
+                document.getElementById('cardContainer').innerHTML = `<p style="text-align:center; color:var(--danger); padding:20px;">Error: ${e.message}</p>`;
             }
         }
 
-        // Expose to global scope so inline onclick handlers in the table header can call it
         function handleSort(column) {
             liveFormsTable.handleSort(column);
         }
 
         function changeLimit(val) {
             liveFormsTable.setLimit(val);
+            document.getElementById('rowsPerPage').value = val;
+            document.getElementById('rowsPerPageMobile').value = val;
             fetch('/api/user-preferences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -493,10 +739,30 @@
             loadData();
         }
 
+        function updateFilterHighlights() {
+            const filterIds = [
+                'filterStatus', 'filterMember', 'filterSkill', 'filterTries',
+                'filterSentStart', 'filterSentEnd', 'filterSubStart', 'filterSubEnd'
+            ];
+            let activeCount = 0;
+            filterIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const active = el.value && el.value.trim() !== '';
+                    el.classList.toggle('filter-active', active);
+                    if (active) activeCount++;
+                }
+            });
+            const badge = document.getElementById('filterActiveCount');
+            if (badge) {
+                badge.textContent = activeCount > 0 ? activeCount : '';
+                badge.style.display = activeCount > 0 ? 'inline-block' : 'none';
+            }
+        }
+
         async function toggleArchive(id, newState) {
             const label = newState ? 'Archive' : 'Restore';
             if (!await confirmAction(`${label} Record`, `Are you sure you want to ${label.toLowerCase()} this record?`)) return;
-
             try {
                 const res = await fetch(`/api/live-forms/${id}`, {
                     method: 'PUT',
@@ -521,7 +787,6 @@
 
             const params = new URLSearchParams();
             const getVal = (id) => document.getElementById(id).value;
-
             params.append('isArchived', isArchived);
             if (getVal('filterStatus')) params.append('status', getVal('filterStatus'));
             if (getVal('filterMember')) params.append('memberId', getVal('filterMember'));
@@ -549,10 +814,8 @@
         function exportJson() {
             const params = new URLSearchParams();
             const getVal = (id) => document.getElementById(id).value;
-
             const isArchived = document.getElementById('archiveToggle').checked;
             params.append('isArchived', isArchived);
-
             if (getVal('filterStatus')) params.append('status', getVal('filterStatus'));
             if (getVal('filterMember')) params.append('memberId', getVal('filterMember'));
             if (getVal('filterSkill')) params.append('skillId', getVal('filterSkill'));
@@ -561,7 +824,6 @@
             if (getVal('filterSentEnd')) params.append('sentEnd', getVal('filterSentEnd'));
             if (getVal('filterSubStart')) params.append('subStart', getVal('filterSubStart'));
             if (getVal('filterSubEnd')) params.append('subEnd', getVal('filterSubEnd'));
-
             window.location.href = `/api/live-forms/export?${params.toString()}`;
         }
 
@@ -594,8 +856,16 @@
             const id = document.getElementById('editId').value;
             const status = document.getElementById('editStatusSelect').value;
             try {
-                const res = await fetch(`/api/live-forms/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
-                if (res.ok) { closeModal('statusModal'); loadData(); showToast("Status updated", "success"); } else throw new Error("Update failed");
+                const res = await fetch(`/api/live-forms/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                if (res.ok) {
+                    closeModal('statusModal');
+                    loadData();
+                    showToast("Status updated", "success");
+                } else throw new Error("Update failed");
             } catch (e) { showToast(e.message, "error"); }
         }
 
@@ -608,39 +878,20 @@
             } catch (e) { showToast("Delete failed", "error"); }
         }
 
-        window.addEventListener('focus', () => {
-            if (document.getElementById('tableBody')) {
-                loadData();
-            }
-        });
-
-        function updateFilterHighlights() {
-            const filterIds = [
-                'filterStatus', 'filterMember', 'filterSkill', 'filterTries',
-                'filterSentStart', 'filterSentEnd', 'filterSubStart', 'filterSubEnd'
-            ];
-
-            filterIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    if (el.value && el.value.trim() !== "") {
-                        el.classList.add('filter-active');
-                    } else {
-                        el.classList.remove('filter-active');
-                    }
-                }
-            });
-        }
-
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; }
 
+        window.addEventListener('focus', () => {
+            if (document.getElementById('tableBody')) loadData();
+        });
+
         const scrollTopBtn = document.getElementById("scrollTopBtn");
-        window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
+        window.onscroll = function () {
+            if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none";
+        };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
         init();
-
     </script>
     <script src="/js/pwa.js"></script>
 

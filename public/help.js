@@ -540,8 +540,8 @@ const helpContent = {
     // Force inline styles to guarantee visibility and position
     const helpHtml = `
         <button id="globalHelpBtn" title="Get Help" 
-                style="position: fixed; top: 20px; right: 20px; z-index: 9999; 
-                       width: 45px; height: 45px; border-radius: 50%; 
+                style="position: fixed; top: 7px; right: 20px; z-index: 9999;
+                       width: 45px; height: 45px; border-radius: 50%;
                        background-color: #17a2b8; color: white; border: none; 
                        cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
                        display: flex; align-items: center; justify-content: center;">

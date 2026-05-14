@@ -1,5 +1,17 @@
 // public/js/surveys-manage.js
 
+// --- Mobile two-screen navigation ---
+function openMobileEditor() {
+  document.querySelector('.manager-container')?.classList.add('mobile-editor-open');
+}
+function closeMobileEditor() {
+  document.querySelector('.manager-container')?.classList.remove('mobile-editor-open');
+}
+async function mobileBackToList() {
+  if (!(await checkDirty())) return;
+  closeMobileEditor();
+}
+
 let surveys = [];
 let currentSurvey = null;
 let currentFields = [];
@@ -318,6 +330,7 @@ async function deleteSurvey() {
     originalSurveyState = null;
     document.getElementById("builderPanel").style.display = "none";
     document.getElementById("emptyPanel").style.display = "flex";
+    closeMobileEditor();
     loadSurveys();
   } catch (e) {
     showToast(e.message, "error");
@@ -435,6 +448,7 @@ async function importAllSurveys(input) {
       currentSurvey = null;
       document.getElementById("builderPanel").style.display = "none";
       document.getElementById("emptyPanel").style.display = "flex";
+      closeMobileEditor();
       loadSurveys();
     } else {
       throw new Error(result.error);
@@ -568,6 +582,7 @@ function loadEditor(survey) {
 
   renderFields();
   renderSurveyList();
+  openMobileEditor();
 
   setTimeout(() => {
     originalSurveyState = getSurveyData();

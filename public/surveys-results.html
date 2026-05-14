@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <style>
-        /* Card & Layout */
+        /* ── Result cards ── */
         .result-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -31,7 +31,7 @@
             color: var(--text-main);
         }
 
-        /* Bar Chart Styles */
+        /* ── Bar chart ── */
         .bar-container {
             display: flex;
             align-items: center;
@@ -44,6 +44,7 @@
             color: var(--text-muted);
             padding-right: 15px;
             text-align: right;
+            word-break: break-word;
         }
 
         .bar-track {
@@ -71,7 +72,7 @@
             color: var(--text-main);
         }
 
-        /* Text Response Styles */
+        /* ── Text responses ── */
         .text-response {
             background: var(--input-bg);
             padding: 10px 15px;
@@ -82,7 +83,7 @@
             color: var(--text-main);
         }
 
-        /* Banner */
+        /* ── Summary banner ── */
         .summary-banner {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -101,11 +102,10 @@
             color: var(--primary-color);
         }
 
-        /* Sliding Badge Component */
+        /* ── Sliding badge toggle ── */
         .sliding-badge-container {
             position: relative;
             width: 180px;
-            /* Adjusted for Summary/Detailed text width */
             height: 34px;
             background: var(--input-bg);
             border: 1px solid var(--border-color);
@@ -145,17 +145,55 @@
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Toggle Logic */
-        #resultsViewToggle:checked+.sliding-badge .badge-slider {
+        #resultsViewToggle:checked + .sliding-badge .badge-slider {
             transform: translateX(100%);
         }
 
-        #resultsViewToggle:not(:checked)+.sliding-badge .active-label {
+        #resultsViewToggle:not(:checked) + .sliding-badge .active-label {
             color: #fff;
         }
 
-        #resultsViewToggle:checked+.sliding-badge .archived-label {
+        #resultsViewToggle:checked + .sliding-badge .archived-label {
             color: #fff;
+        }
+
+        /* ── Detailed view: card list hidden on desktop ── */
+        #detailedCardList { display: none; }
+
+        /* ── Mobile overrides ── */
+        @media (max-width: 768px) {
+            /* Summary banner: stack vertically */
+            .summary-banner {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            #viewToggleContainer {
+                margin-right: 0 !important;
+                align-self: flex-end;
+            }
+
+            /* Bar chart: tighten widths so labels don't clip */
+            .bar-label {
+                width: 35%;
+                font-size: 12px;
+                padding-right: 8px;
+            }
+
+            .bar-track {
+                width: 48%;
+            }
+
+            .bar-percent {
+                width: 17%;
+                font-size: 12px;
+                padding-left: 6px;
+            }
+
+            /* Detailed table hidden; cards shown */
+            #detailedTableWrapper { display: none; }
+            #detailedCardList      { display: block; }
         }
 
         @media print {
@@ -189,7 +227,6 @@
             }
 
             .result-card {
-                /* Prevent individual questions from being split across two pages */
                 page-break-inside: avoid;
                 break-inside: avoid;
                 border: 1px solid #ccc !important;
@@ -197,7 +234,6 @@
                 background: #fff !important;
             }
 
-            /* Optional: ensure bar chart colors print accurately (requires browser support) */
             .bar-fill {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
@@ -219,6 +255,7 @@
     <div class="container">
         <h1 id="pageHeader" class="text-center" style="margin-top:0;">Survey Results</h1>
 
+        <!-- Summary banner: survey name + submission count + view toggle -->
         <div class="summary-banner">
             <div>
                 <h2 id="surveyTitle" style="margin-bottom: 5px;">Loading Results...</h2>
@@ -227,8 +264,10 @@
                 </div>
             </div>
             <div id="viewToggleContainer" style="display:none; margin-right: 15px;">
-                <div class="sliding-badge-container">
-                    <input type="checkbox" id="resultsViewToggle" onchange="toggleResultsView()" style="display:none;">
+                <div class="sliding-badge-container"
+                    title="Switch between summary charts and individual responses">
+                    <input type="checkbox" id="resultsViewToggle" onchange="toggleResultsView()"
+                        style="display:none;">
                     <label for="resultsViewToggle" class="sliding-badge">
                         <span class="badge-label active-label">Summary</span>
                         <span class="badge-label archived-label">Detailed</span>
@@ -237,45 +276,166 @@
                 </div>
             </div>
         </div>
+
+        <!-- Detailed view: per-respondent table + mobile cards -->
         <div id="detailedResultsContainer" style="display:none; margin-top: 20px;">
-            <div class="result-card" style="padding:0; overflow-x:auto;">
-                <table class="data-table" id="detailedResponsesTable" style="width:100%; border:none; margin:0;">
+
+            <!-- Desktop table -->
+            <div class="table-wrapper" id="detailedTableWrapper">
+                <table class="data-table" id="detailedResponsesTable"
+                    style="width:100%; border:none; margin:0;">
                     <thead>
                         <tr>
-                            <th onclick="sortDetailedTable('name')" style="cursor:pointer;">Firefighter <span
-                                    id="sort_name"></span></th>
-                            <th onclick="sortDetailedTable('date')" style="cursor:pointer;">Submitted <span
-                                    id="sort_date"></span></th>
-                            <th style="text-align:center;">Actions</th>
+                            <th class="sortable" data-sort="name" onclick="sortDetailedTable('name')">
+                                Firefighter <span id="icon-name" class="sort-icon">⇅</span>
+                            </th>
+                            <th class="sortable" data-sort="date" onclick="sortDetailedTable('date')"
+                                style="width:200px;">
+                                Submitted <span id="icon-date" class="sort-icon">⇅</span>
+                            </th>
+                            <th style="text-align:center; width:140px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="detailedTableBody"></tbody>
                 </table>
+
+                <div class="pagination-container" id="detailedPaginationControls" style="display:none;">
+                    <div class="page-limit-selector">
+                        <label>Rows per page:</label>
+                        <select id="detailedRowsPerPage" onchange="changeDetailedLimit(this.value)"
+                            style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                            title="Number of rows to display per page">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0;">
+                        <button class="btn-page" id="detailedBtnFirst" onclick="goToDetailedFirstPage()"
+                            title="First page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg"
+                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                                <line x1="6" y1="6" x2="6" y2="18"></line>
+                            </svg></button>
+                        <button class="btn-page" id="detailedBtnPrev" onclick="changeDetailedPage(-1)"
+                            title="Previous page" style="margin:0 1px;"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg></button>
+                        <button id="detailedPageInfo" class="btn-page"
+                            style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1
+                            of 1</button>
+                        <button class="btn-page" id="detailedBtnNext" onclick="changeDetailedPage(1)"
+                            title="Next page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg"
+                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg></button>
+                        <button class="btn-page" id="detailedBtnLast" onclick="goToDetailedLastPage()"
+                            title="Last page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg"
+                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                                <line x1="18" y1="6" x2="18" y2="18"></line>
+                            </svg></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile card list for detailed view -->
+            <div id="detailedCardList">
+                <div id="detailedCardContainer"></div>
+                <div class="pagination-container" id="detailedPaginationControlsMobile"
+                    style="display:none;">
+                    <div class="page-limit-selector">
+                        <label>Rows per page:</label>
+                        <select id="detailedRowsPerPageMobile" onchange="changeDetailedLimit(this.value)"
+                            style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                            title="Number of rows to display per page">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0;">
+                        <button class="btn-page" id="detailedBtnFirstMobile"
+                            onclick="goToDetailedFirstPage()" title="First page"
+                            style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16"
+                                height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                                <line x1="6" y1="6" x2="6" y2="18"></line>
+                            </svg></button>
+                        <button class="btn-page" id="detailedBtnPrevMobile"
+                            onclick="changeDetailedPage(-1)" title="Previous page"
+                            style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16"
+                                height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg></button>
+                        <button id="detailedPageInfoMobile" class="btn-page"
+                            style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1
+                            of 1</button>
+                        <button class="btn-page" id="detailedBtnNextMobile"
+                            onclick="changeDetailedPage(1)" title="Next page"
+                            style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16"
+                                height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg></button>
+                        <button class="btn-page" id="detailedBtnLastMobile"
+                            onclick="goToDetailedLastPage()" title="Last page"
+                            style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16"
+                                height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                                <line x1="18" y1="6" x2="18" y2="18"></line>
+                            </svg></button>
+                    </div>
+                </div>
             </div>
         </div>
-        <div id="resultsContainer">
-        </div>
+
+        <!-- Summary view: per-question charts -->
+        <div id="resultsContainer"></div>
+
+        <!-- Export actions -->
         <div id="exportActionButtons" class="tools-bar" style="margin-top: 30px; justify-content: flex-end;">
             <div style="display:flex; gap:10px;">
-                <button onclick="window.print()" class="btn-sm btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
+                <button onclick="window.print()" class="btn-sm btn-primary"
+                    title="Print survey results">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2"
+                        style="vertical-align:middle; margin-right:5px;">
                         <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <path
+                            d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2">
+                        </path>
                         <rect x="6" y="14" width="12" height="8"></rect>
                     </svg> Print
                 </button>
-                <button onclick="exportCSV()" class="btn-sm btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
+                <button onclick="exportCSV()" class="btn-sm btn-primary"
+                    title="Export all responses to a CSV file">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2"
+                        style="vertical-align:middle; margin-right:5px;">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg> Export CSV
                 </button>
-                <button onclick="exportPDF()" class="btn-sm btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
+                <button onclick="exportPDF()" class="btn-sm btn-primary"
+                    title="Export survey results as a PDF document">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2"
+                        style="vertical-align:middle; margin-right:5px;">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
                         <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -287,7 +447,6 @@
         </div>
     </div>
 
-
     <div id="toastContainer" class="toast-container"></div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
@@ -298,24 +457,14 @@
         </svg>
     </button>
     <button onclick="openModal('helpModal')" class="help-floating-btn" title="Help">?</button>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="utils.js"></script>
-
     <script src="toast.js"></script>
     <script src="theme.js"></script>
     <script src="help.js"></script>
     <script src="/js/sidebar.js"></script>
     <script src="js/surveys-results.js"></script>
-    <script>
-        fetch('/ui-config').then(r => r.json()).then(c => {
-            if (c.loginTitle) {
-                document.title = "Survey Results - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "Survey Results - " + c.loginTitle;
-            }
-            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
-        });
-    </script>
     <script src="/js/pwa.js"></script>
 
 </body>

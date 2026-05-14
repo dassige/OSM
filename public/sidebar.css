@@ -83,8 +83,99 @@ body.osm-no-margin {
 .sidebar-header {
     padding: 10px 15px !important;
     display: flex !important;
+    align-items: center !important;
     justify-content: flex-end !important;
     border-bottom: 1px solid #eee !important;
+}
+
+/* Title hidden on desktop, shown on mobile */
+.sidebar-header .sidebar-title {
+    display: none !important;
+}
+
+/* Actions group: close + profile buttons side by side */
+.sidebar-header-actions {
+    display: flex !important;
+    gap: 6px !important;
+    align-items: center !important;
+}
+
+/* Profile button: auto-width to show icon + name */
+#osm-profile-btn {
+    width: auto !important;
+    padding: 0 10px !important;
+    gap: 6px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    max-width: 160px !important;
+}
+
+#osm-profile-name {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* =========================================
+   PROFILE DROPDOWN (inside sidebar)
+   ========================================= */
+.osm-profile-dropdown {
+    display: none;
+    background-color: #fff;
+    border-bottom: 2px solid #eee;
+}
+
+.osm-profile-dropdown.show {
+    display: block;
+}
+
+.osm-profile-name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #eee;
+    font-weight: 600;
+    font-size: 15px;
+    color: #333;
+}
+
+.osm-profile-dropdown a {
+    display: block !important;
+    padding: 11px 20px !important;
+    color: #333333 !important;
+    text-decoration: none !important;
+    font-size: 15px !important;
+    border-bottom: 1px solid #f1f1f1 !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease, color 0.2s ease !important;
+}
+
+.osm-profile-dropdown a:hover {
+    background-color: rgba(23, 162, 184, 0.08) !important;
+    color: var(--brand-teal-hover) !important;
+}
+
+.osm-profile-dropdown a.osm-logout {
+    color: #dc3545 !important;
+}
+
+.osm-dark-mode-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 20px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f1f1;
+    color: #333;
+    font-size: 15px;
+    transition: background-color 0.2s ease;
+}
+
+.osm-dark-mode-row:hover {
+    background-color: rgba(23, 162, 184, 0.08);
 }
 
 /* Floating MENU button */
@@ -244,19 +335,31 @@ body.osm-no-margin .back-dashboard-btn {
         border-radius: 6px !important;
     }
 
-    /* Sidebar header: app name beside close button */
+    /* Sidebar header: title on left, action buttons on right */
     .sidebar-header {
         justify-content: space-between !important;
         align-items: center !important;
         padding: 12px 15px !important;
     }
+
+    /* Show title on mobile */
     .sidebar-header .sidebar-title {
+        display: block !important;
         font-weight: 700;
         font-size: 1rem;
         color: var(--brand-teal);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Profile button: taller touch target, capped width so title isn't squeezed */
+    #osm-profile-btn {
+        height: 44px !important;
+        max-width: 120px !important;
+        border-radius: 6px !important;
     }
 
     /* All menu rows: 48 px minimum touch target */

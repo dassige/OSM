@@ -280,7 +280,7 @@ function renderTable() {
 
     visibleCount++;
 
-    const rowClass = index % 2 === 0 ? "row-even" : "row-odd";
+    const rowClass = visibleCount % 2 === 1 ? "row-even" : "row-odd";
 
     // --- Member header row (rank + name + notification only) ---
     const tr = document.createElement("tr");

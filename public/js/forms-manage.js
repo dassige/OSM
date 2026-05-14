@@ -1,5 +1,17 @@
 // public/js/forms-manage.js
 
+// --- Mobile two-screen navigation ---
+function openMobileEditor() {
+  document.querySelector('.manager-container')?.classList.add('mobile-editor-open');
+}
+function closeMobileEditor() {
+  document.querySelector('.manager-container')?.classList.remove('mobile-editor-open');
+}
+async function mobileBackToList() {
+  if (!(await checkDirty())) return;
+  closeMobileEditor();
+}
+
 let forms = [];
 let currentForm = null;
 let currentFields = [];
@@ -335,6 +347,7 @@ async function deleteForm() {
     originalFormState = null;
     document.getElementById("builderPanel").style.display = "none";
     document.getElementById("emptyPanel").style.display = "flex";
+    closeMobileEditor();
     loadForms();
   } catch (e) {
     showToast(e.message, "error");
@@ -457,6 +470,7 @@ async function importAllForms(input) {
       currentForm = null;
       document.getElementById("builderPanel").style.display = "none";
       document.getElementById("emptyPanel").style.display = "flex";
+      closeMobileEditor();
       loadForms();
     } else {
       throw new Error(result.error);
@@ -581,6 +595,7 @@ function loadEditor(form) {
   renderFields();
   renderFormList();
 
+  openMobileEditor();
   setTimeout(() => {
     originalFormState = getFormData();
   }, 500);

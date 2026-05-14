@@ -42,10 +42,10 @@
         <div class="manager-container">
             <div class="sidebar">
                 <div class="sidebar-header">
-                    <div style="display: flex; align-items: center; justify-content: center; position: relative;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                         <h3 style="margin:0; font-size: 1.1em; color: var(--text-main);">Forms</h3>
                         <button onclick="toggleFormSort()" id="btnSortForms" class="btn-sm"
-                            style="position: absolute; right: 0; background:transparent; color:var(--text-main); border:1px solid var(--border-color);"
+                            style="background:transparent; color:var(--text-main); border:1px solid var(--border-color);"
                             title="Sort by Name (A-Z)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -95,14 +95,14 @@
             
             <div id="builderPanel" class="editor-panel" style="display:none;">
                 <div class="editor-header">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; width: 100%;">
+                    <div class="editor-meta-row" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; width: 100%;">
                         <div style="flex: 1;">
                             <textarea id="formName" class="editor-title-input" placeholder="Form Name" rows="1"
                                 oninput="this.style.height='';this.style.height=this.scrollHeight+'px'"></textarea>
                                 <div id="thresholdWarning" style="color: var(--danger); font-size: 11px; font-weight: bold; margin-top: 5px; display: none;">
                                     ⚠️ Threshold exceeds maximum possible score!
                                 </div> 
-                                <div style="display:flex; gap:20px; align-items:center; margin-top:10px; background:var(--bg-body); padding:10px; border-radius:6px; border:1px solid var(--border-color);">
+                                <div class="scoring-settings-row" style="margin-top:10px; background:var(--bg-body); padding:10px; border-radius:6px; border:1px solid var(--border-color);">
                                    
                                     <div class="form-group" style="margin-bottom:0 !important; flex:1; border-left: 1px solid var(--border-color); padding-left: 20px;">
                                         <label style="margin-bottom:5px !important; color: var(--primary);">Max Score Achievable</label>
@@ -139,6 +139,10 @@
 
                 </div>
                 <div class="editor-toolbar">
+                    <button onclick="mobileBackToList()" class="btn-sm btn-secondary mobile-back-btn" title="Back to form list">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        List
+                    </button>
                     <button onclick="previewForm()" class="btn-sm btn-informative">Preview</button>
                     <button onclick="testScoring()" class="btn-sm btn-primary">Test</button>
                     <button onclick="saveForm()" class="btn-sm btn-success">Save</button>

@@ -602,13 +602,16 @@ Every new page or feature **must** follow the existing UI conventions without ex
 | **Role access** | Clearly specify which roles can access the page; redirect on `fetch('/api/user-session')` if access denied |
 | **Demo mode** | Page must respect demo-mode flag; disable destructive actions in demo |
 | **UI customisation** | Honour app name, page background, locale/date formatting, and timezone from `/ui-config` |
-| **Mobile optimisation** | Responsive layout; test at 375 px and 768 px breakpoints. Every data table **must** have a companion mobile card layout — see the Mobile Card Layout convention below |
+| **Mobile optimisation** | Responsive layout; test at 375 px and 768 px breakpoints. Every data table **must** have a companion mobile card layout — see the Mobile Card Layout convention below. Filter bars and sort bars **must** collapse into accordion sections on mobile — see the Mobile Accordion Convention below |
 | **No native dialogs** | Never use `alert()` or `confirm()`; use `confirmAction()` from `utils.js` and `showToast()` from `toast.js` |
 | **Table sorting** | For any data table, implement sortable column headers with visual indicators (▲/▼/⇅); persist sort column + direction together per user — see Column Sorting convention below |
 | **Pagination** | Every paginated table must use the standard pagination bar; persist rows-per-page per user. The mobile card layout must include an identical pagination bar — see Table Convention below |
 | **Mobile table cards** | Every page that adds or modifies a data table must also implement a card layout for mobile (≤ 768 px); cards must expose all row-level actions, the same pagination bar, and sort controls |
+| **Mobile accordion sections** | Every filter bar and every sort bar **must** be wrapped in a collapsible accordion on mobile (≤ 768 px). Both are hidden by default and expand via a toggle button with a chevron indicator. Filter accordion shows an active-count badge when filters are set. Desktop layout is unaffected — see Mobile Accordion Convention below |
 | **System card layout** | New sections in `system-tools.html` use the `<div class="system-card">` pattern |
 | **Button colours** | Follow the colour convention table below — never use inline `background` styles on buttons |
+| **Tooltips** | Every button and input field must have a `title` attribute providing a short descriptive tooltip — see Tooltip Convention below |
+| **Mobile icon buttons** | On mobile (≤ 768 px), replace labelled toolbar buttons with compact SVG icon buttons — see Mobile Icon Button Convention below |
 
 ### Button Colour Convention
 
@@ -624,6 +627,124 @@ Every new page or feature **must** follow the existing UI conventions without ex
 
 ---
 
+### Tooltip Convention
+
+Every interactive element — buttons, icon-only buttons, and input fields — **must** carry a `title` attribute with a short, plain-English description of what it does or what value it expects. This is mandatory, not optional.
+
+#### Rules
+
+| Element | Required `title` content |
+|---|---|
+| Text button | Action phrase matching the label — e.g. `title="Export skills to CSV"` |
+| Icon-only button (`btn-icon`) | Action phrase since there is no visible label — e.g. `title="Edit skill"`, `title="Delete skill"` |
+| Toggle / switch | Current-state description — e.g. `title="Toggle skill enabled state"` |
+| Text input | What value is expected — e.g. `title="Exact skill name as it appears in OSM"` |
+| Select / dropdown | What the control does — e.g. `title="Filter by status"` |
+| Checkbox | What checking it means — e.g. `title="Mark this skill as critical"` |
+
+#### Pattern
+
+```html
+<!-- Text button -->
+<button class="btn-success" onclick="openModal()" title="Add a new skill">Add Skill</button>
+
+<!-- Icon-only button -->
+<button class="btn-icon edit" onclick="editSkill(${s.id})" title="Edit skill">
+    <svg ...></svg>
+</button>
+
+<!-- Input -->
+<input type="text" id="name" required placeholder="e.g. OI (IS1) - Operational Safety"
+    title="Exact skill name as it appears in the OSM dashboard">
+
+<!-- Toggle switch — put title on the wrapping label -->
+<label class="switch" title="Toggle skill enabled state">
+    <input type="checkbox" ...><span class="slider"></span>
+</label>
+```
+
+#### Rules
+- Keep tooltips short (3–8 words) and action-oriented.
+- Do not repeat the visible label verbatim — add meaning, e.g. `title="Export skills to CSV"` not `title="Export CSV"`.
+- For destructive actions, be explicit: `title="Permanently delete this skill"`.
+- Never leave `title=""` (empty string) — omit the attribute entirely if you have nothing meaningful to say, but that should be rare.
+
+---
+
+### Mobile Icon Button Convention
+
+On mobile viewports (≤ 768 px), text-labelled toolbar buttons waste horizontal space and force multi-row wrapping. Replace them with compact SVG icon buttons at the 768 px breakpoint. Common actions have standard icons — use them consistently.
+
+#### Standard icon mapping
+
+| Action | Icon description | SVG path hint |
+|---|---|---|
+| Add / New | Plus `+` | `M12 5v14M5 12h14` |
+| Import (file/CSV) | Upload arrow | `M21 15v4a2 2 0 0 1-2 2H5… M17 8l-5-5-5 5` |
+| Import from OSM | Cloud download | `M8 17l4 4 4-4M12 12v9` + cloud arc |
+| Export / Download | Download arrow | `M21 15v4… M7 10l5 5 5-5M12 15V3` |
+| Save | Floppy disk | `M19 21H5a2 2 0 0 1-2-2V5… M17 21v-8H7v8M7 3v4h8` |
+| Delete / Remove | Trash | existing trash SVG used throughout the codebase |
+| Edit | Pencil | existing edit SVG used throughout the codebase |
+| Filter | Funnel | `M22 3H2l8 9.46V19l4 2v-8.54L22 3z` |
+| Search | Magnifier | existing search SVG |
+| Refresh / Reload | Circular arrows | `M23 4v6h-6M1 20v-6h6… path` |
+| Settings | Gear / cog | existing settings SVG |
+
+#### HTML pattern
+
+Use a `<style>` block scoped to the page (or a shared class in `styles.css` when added globally). Show the text label on desktop; swap to the icon-only button on mobile.
+
+```html
+<!-- Desktop: text button -->
+<button class="btn-success toolbar-btn-desktop" onclick="openModal()" title="Add a new skill">
+    Add Skill
+</button>
+
+<!-- Mobile: icon-only button (hidden on desktop) -->
+<button class="btn-success toolbar-btn-mobile" onclick="openModal()" title="Add a new skill">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="2.5"
+         stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+</button>
+```
+
+```css
+/* In the page <style> block */
+.toolbar-btn-mobile { display: none; }
+
+@media (max-width: 768px) {
+    .toolbar-btn-desktop { display: none; }
+    .toolbar-btn-mobile  {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border-radius: 6px;
+    }
+}
+```
+
+#### Rules
+
+| Rule | Detail |
+|---|---|
+| **Always pair with `title`** | Icon-only buttons have no visible label — the `title` tooltip is the only description; it is mandatory |
+| **Preserve colour class** | Keep the same `btn-danger` / `btn-success` / `btn-primary` class as the desktop button |
+| **Size** | Icon buttons must be 36 × 36 px minimum for touch targets |
+| **SVG stroke width** | Use `stroke-width="2"` or `stroke-width="2.5"` to match the rest of the codebase; never `fill` icons |
+| **Group order** | Maintain the same left-to-right order as the desktop toolbar |
+| **Destructive actions** | Keep a short visible label on mobile for destructive actions (e.g. "Delete") — icon alone is not enough for irreversible operations |
+| **Bulk-delete button** | This button is dynamically shown/hidden by JS — keep it as a text button even on mobile so the count is visible |
+| **Modal buttons** | Buttons inside modal windows (`<div class="modal-content">`) must remain as full text buttons on all screen sizes — never swap them for icon-only buttons |
+
+---
+
 ## ⚠️ Table Convention
 
 Every data table **must** implement all three of: a footer pagination bar, column header sorting, and a mobile card layout. All three user choices — rows-per-page, sort column, and sort direction — must be persisted to user preferences via `/api/user-preferences`. No table is exempt unless it contains fewer than 10 rows and will never grow beyond that.
@@ -632,7 +753,7 @@ Every data table **must** implement all three of: a footer pagination bar, colum
 
 ### Table Pagination
 
-Every page with a paginated table **must** follow this pattern exactly. Use `event-log.html` as the canonical reference.
+Every page with a paginated table **must** follow this pattern exactly. Use `skills.html` as the canonical reference.
 
 #### HTML structure
 
@@ -641,7 +762,8 @@ Every page with a paginated table **must** follow this pattern exactly. Use `eve
     <div class="page-limit-selector">
         <label>Rows per page:</label>
         <select id="rowsPerPage" onchange="changeLimit(this.value)"
-            style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+            style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+            title="Number of rows to display per page">
             <option value="10">10</option>
             <option value="25" selected>25</option>
             <option value="50">50</option>
@@ -649,10 +771,15 @@ Every page with a paginated table **must** follow this pattern exactly. Use `eve
             <option value="all">All</option>
         </select>
     </div>
-    <span class="pagination-info" id="pageInfo">Showing 0-0 of 0</span>
-    <div style="display:flex; gap:5px;">
-        <button class="btn-page" id="btnPrev" onclick="changePage(-1)">Previous</button>
-        <button class="btn-page" id="btnNext" onclick="changePage(1)">Next</button>
+    <div style="display:flex; align-items:center; gap:0;">
+        <button class="btn-page" id="btnFirst" onclick="goToFirstPage()" title="First page" style="margin:0 1px;"><!-- first-page SVG --></button>
+        <button class="btn-page" id="btnPrev"  onclick="changePage(-1)"  title="Previous page" style="margin:0 1px;"><!-- prev SVG --></button>
+        <button id="pageInfo" class="btn-page"
+            style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">
+            1 of 1
+        </button>
+        <button class="btn-page" id="btnNext" onclick="changePage(1)"   title="Next page"  style="margin:0 1px;"><!-- next SVG --></button>
+        <button class="btn-page" id="btnLast" onclick="goToLastPage()"  title="Last page"  style="margin:0 1px;"><!-- last-page SVG --></button>
     </div>
 </div>
 ```
@@ -664,7 +791,9 @@ Every page with a paginated table **must** follow this pattern exactly. Use `eve
 | **Label** | Always `"Rows per page:"` — never "Items per page", "Rows:", or "Per Page:" |
 | **Select style** | Always `padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);` — no `height`, no shorthand `background` |
 | **Button class** | Always `btn-page` — never `btn-sm btn-secondary` or inline styles |
-| **Info text format** | Always `"Showing X-Y of Z"` — never "Page X of Y" or "X-Y / Z" |
+| **Button spacing** | Set `margin:0 1px` on every element in the button group (including the page indicator); use `gap:0` on the wrapper div |
+| **Page indicator** | A non-interactive `btn-page` button placed between Prev and Next. Text format: `"X of Y"` (current page of total pages). Override: `width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none;` — never use a `<span>` |
+| **Navigation buttons** | Always provide First / Prev / Next / Last — never Prev/Next only |
 | **Position** | Place the `pagination-container` immediately after the `<table>` (inside the same `table-wrapper`). If pagination lives outside a `table-wrapper`, override `border-radius: 8px` via inline style |
 | **Options** | Always `10 / 25 / 50 / 100 / All` in that order. `25` is the `selected` default. Use `value="all"` for the All option |
 | **Default** | Honour the saved user preference on load; fall back to 25 if no preference is stored |
@@ -703,6 +832,8 @@ async function changeLimit(newLimit) {
 
 | Page | Preference key |
 |---|---|
+| `skills.html` | `skillsPageLimit` |
+| `members.html` | `membersPageLimit` |
 | `event-log.html` | `eventLogLimit` |
 | `reports.html` | `rptPageSize` |
 | `live-forms.html` | `liveFormsLimit` |
@@ -885,19 +1016,40 @@ Every page that contains a data table **must** also render a card list for mobil
 
 #### Card HTML (one per row, rendered by JS)
 
+Every card has three sections: **header** (primary identifier + optional status toggle), **body** (fields), and **footer** (actions).
+
 ```html
 <div class="table-card">
+    <!-- Header: optional rank, primary identifier, optional status toggle — all inline -->
     <div class="card-header">
-        <span class="card-title">Record Name</span>
-        <span class="badge badge-success">Active</span>
+        <!-- Include .card-rank only when the record has a rank/badge field; omit entirely when absent -->
+        <div class="card-rank"><!-- formatRankCell(rank) output, or rank badge --></div>
+        <span class="card-title">Record Name or Title</span>
+        <!-- Include .switch only when the record has an enabled/disabled field; omit entirely when absent -->
+        <label class="switch" title="Toggle enabled state">
+            <input type="checkbox" checked onchange="toggleRecord(id, this.checked)">
+            <span class="slider"></span>
+        </label>
     </div>
+    <!-- Body: one .card-row per field — label left, value right -->
     <div class="card-body">
-        <div class="card-row"><span class="card-label">Field</span><span>Value</span></div>
-        <div class="card-row"><span class="card-label">Expires</span><span>2025-09-01</span></div>
+        <div class="card-row">
+            <span class="card-label">Field:</span>
+            <span>Plain text value</span>
+        </div>
+        <div class="card-row">
+            <span class="card-label">Status:</span>
+            <span class="badge badge-success">Active</span>
+        </div>
+        <div class="card-row">
+            <span class="card-label">Expires:</span>
+            <span>2025-09-01</span>
+        </div>
     </div>
+    <!-- Footer: all row-level action buttons, right-aligned -->
     <div class="card-actions">
-        <button class="btn-primary btn-sm" onclick="editRecord(id)">Edit</button>
-        <button class="btn-danger btn-sm" onclick="deleteRecord(id)">Delete</button>
+        <button class="btn-primary btn-sm" onclick="editRecord(id)" title="Edit this record">Edit</button>
+        <button class="btn-danger btn-sm" onclick="deleteRecord(id)" title="Permanently delete this record">Delete</button>
     </div>
 </div>
 ```
@@ -945,9 +1097,119 @@ function syncMobileSortControls() {
 | **Shared state** | Desktop and mobile share `currentPage`, `limit`, `sortCol`, `sortDir` — never fork these variables |
 | **Action parity** | Every row-level action in the desktop table (edit, delete, view, toggle, etc.) must also appear on the card |
 | **Pagination parity** | Both pagination bars must show and hide together; `changeLimit()` and `changePage()` update both simultaneously |
+| **Card header** | Contains `.card-title` with the record's primary identifier (name, title, or most meaningful field). If the record has a rank or badge field, place a `.card-rank` div as the **first** element before `.card-title` — it renders inline thanks to the header's `display: flex`. If the record has an enabled/disabled state, place a `.switch` toggle as the **last** element. Omit `.card-rank` and/or `.switch` entirely when the record has no such fields |
+| **Card body** | Each field occupies one `.card-row`. The `.card-label` span (muted text, left side) and the value `<span>` (right side) are separated by `justify-content: space-between` — defined in `styles.css`. Label text ends with a colon (`Field:`). Status and enum values should use a `<span class="badge ...">` or an SVG icon rather than plain text where the desktop table uses a badge or icon |
+| **Card footer** | `.card-actions` contains all row-level action buttons. Use the same colour class (`btn-danger`, `btn-primary`, etc.) and `title` attribute as the desktop table equivalents. Buttons are right-aligned (`justify-content: flex-end` defined in `styles.css`) |
 | **CSS classes** | Use `table-card`, `card-header`, `card-title`, `card-body`, `card-row`, `card-label`, `card-actions` — defined in `styles.css`; do not invent alternatives |
+| **Banded rows** | Banding is applied only to the **header and footer** of each card, not the body. Odd cards use `var(--card-band-odd)` (light sand); even cards use `var(--card-band-even)` (light gray). Both variables are defined in `styles.css` for light and dark modes. The rules `.table-card .card-header/.card-actions` (odd default) and `.table-card:nth-child(even) .card-header/.card-actions` (even override) are global — no per-page CSS or JS needed |
 | **Breakpoint** | Always `768px` — match the existing rules in `styles.css`; do not introduce a second breakpoint value |
 | **No native dialogs** | Same rule as desktop — `confirmAction()` and `showToast()` only |
+
+---
+
+## ⚠️ Mobile Accordion Convention
+
+Every **filter bar** and every **sort bar** on a page must be wrapped in a collapsible accordion section for mobile viewports (≤ 768 px). On desktop the toggle button is hidden and the content is always visible. Use `live-forms.html` as the canonical reference.
+
+### Global CSS (already in `styles.css`)
+
+`.filter-toggle-btn` and `.sort-toggle-btn` are defined globally in `styles.css`:
+- Outside any media query: `display: none` (hidden on desktop)
+- Inside `@media (max-width: 768px)`: styled as full-width pill buttons with chevron, chevron rotates 180° when `.expanded` class is present
+
+### Filter accordion
+
+```html
+<div class="filter-section">
+    <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilters()" title="Show or hide filters">
+        <span style="display:flex; align-items:center; gap:8px;">
+            Filters
+            <span id="filterActiveCount" style="display:none; background:var(--primary); color:#fff; border-radius:10px; padding:1px 8px; font-size:0.78em; font-weight:700;"></span>
+        </span>
+        <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    </button>
+    <div class="filter-bar" id="filterBar">
+        <!-- filter inputs -->
+    </div>
+</div>
+```
+
+Page `<style>` block additions:
+```css
+@media (max-width: 768px) {
+    .filter-bar { display: none; flex-direction: column; gap: 10px; padding: 12px;
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 8px; margin-bottom: 10px; }
+    .filter-bar.filter-expanded { display: flex; }
+    .filter-bar .filter-group { min-width: unset; flex: unset; width: 100%; }
+    /* ... date-range and actions overrides */
+}
+```
+
+JS:
+```js
+function toggleFilters() {
+    const bar = document.getElementById('filterBar');
+    const btn = document.getElementById('filterToggleBtn');
+    const expanded = bar.classList.toggle('filter-expanded');
+    btn.classList.toggle('expanded', expanded);
+}
+```
+
+Active-count badge — call `updateFilterHighlights()` after any filter change; count non-empty filter values and show the badge number.
+
+### Sort accordion
+
+```html
+<div class="sort-section">
+    <button class="sort-toggle-btn" id="sortToggleBtn" onclick="toggleSortBar()" title="Show or hide sort options">
+        <span>Sort by</span>
+        <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    </button>
+    <div id="PAGE-sort-bar" class="sort-bar-container">
+        <!-- sort-bar-btn buttons -->
+    </div>
+</div>
+```
+
+Page `<style>` block additions:
+```css
+@media (max-width: 768px) {
+    /* Override the global .sort-bar-container show rule for this specific bar */
+    #PAGE-sort-bar { display: none; }
+    #PAGE-sort-bar.sort-expanded { display: flex; }
+}
+```
+
+JS:
+```js
+function toggleSortBar() {
+    const bar = document.getElementById('PAGE-sort-bar');
+    const btn = document.getElementById('sortToggleBtn');
+    const expanded = bar.classList.toggle('sort-expanded');
+    btn.classList.toggle('expanded', expanded);
+}
+```
+
+### Rules
+
+| Rule | Detail |
+|---|---|
+| **Both required** | Every page with a filter bar must have a filter accordion; every page with a sort bar must have a sort accordion |
+| **Desktop unaffected** | Toggle buttons (`filter-toggle-btn`, `sort-toggle-btn`) have `display:none` globally — the accordion never appears on desktop |
+| **Collapsed by default** | Both sections start collapsed on mobile; the user expands them on demand |
+| **Solid teal tint** | Toggle buttons use `background: var(--toggle-btn-bg)` and `border: 1px solid var(--toggle-btn-border)` when collapsed — solid colors defined in `:root` (`#e8f6f8` / `#a2dae3`) and `body.dark-mode` (`#1d2b2d` / `#1b535c`), applied globally in `styles.css`. Never use `rgba` (semi-transparent) or `var(--bg-card)` on individual pages |
+| **Active-count badge** | Filter accordion only — show a badge with the count of active filters; hide it when all filters are cleared |
+| **Global CSS** | `.filter-toggle-btn` and `.sort-toggle-btn` base styles live in `styles.css`; page-specific ID overrides (show/hide the sort bar ID) live in the page `<style>` block |
+| **Chevron class** | Always use `class="filter-chevron"` on the SVG inside both toggle buttons — the global CSS handles the rotation transition |
 
 ---
 

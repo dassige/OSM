@@ -13,6 +13,14 @@
     --input-bg: #ffffff;
     --shadow: rgba(0, 0, 0, 0.1);
 
+    /* Card banding — odd header/footer: light sand; even header/footer: light gray */
+    --card-band-odd: #fdf8f0;
+    --card-band-even: #f0f2f5;
+
+    /* Mobile accordion toggle buttons — solid teal tint */
+    --toggle-btn-bg: #e8f6f8;
+    --toggle-btn-border: #a2dae3;
+
     /* Status Colors */
     --success: #28a745;
     --danger: #dc3545;
@@ -33,6 +41,14 @@ body.dark-mode {
     --border-color: #444444;
     --input-bg: #2d2d2d;
     --shadow: rgba(0, 0, 0, 0.5);
+
+    /* Card banding — warm dark sand / cool dark gray */
+    --card-band-odd: #28231e;
+    --card-band-even: #1e2226;
+
+    /* Mobile accordion toggle buttons — solid dark teal tint */
+    --toggle-btn-bg: #1d2b2d;
+    --toggle-btn-border: #1b535c;
 }
 
 body.dark-mode::before {
@@ -775,6 +791,10 @@ textarea {
 .skills-card-view { display: none; }
 .sort-bar-container { display: none; }
 
+/* Mobile accordion toggle buttons — hidden on desktop, shown on mobile */
+.filter-toggle-btn,
+.sort-toggle-btn { display: none; }
+
 /* Desktop default for the controls action group (replaces removed inline style) */
 #controls-actions {
     flex-grow: 1;
@@ -886,7 +906,7 @@ textarea {
 /* --- GLOBAL HELP SYSTEM REPAIR --- */
 #globalHelpBtn {
     position: fixed;
-    top: 20px;
+    top: 7px;
     right: 20px;
     z-index: 2000;
     width: 45px;
@@ -987,24 +1007,28 @@ textarea {
 /* Mobile Responsiveness */
 @media screen and (max-width: 768px) {
     .header-row {
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
+        column-gap: 8px;
+        align-items: center;
         padding-left: 0;
         margin-top: 60px; /* Clear profile button */
-        gap: 15px;
     }
 
     .header-spacer {
         display: none;
     }
 
+    /* Dissolve the wrapper — logo and title become direct grid children */
     .header-title-group {
-        flex-direction: column;
-        gap: 10px;
+        display: contents;
     }
 
     .header-actions-group {
-        width: 100%;
+        display: flex;
         justify-content: center;
+        align-items: center;
+        width: auto;
     }
 
     #mainHeader {
@@ -1028,8 +1052,9 @@ textarea {
     }
 
     #headerLogo {
-        margin-right: 0;
-        height: 60px;
+        height: 44px;
+        width: 44px;
+        object-fit: contain;
     }
 
     /* Slightly larger on mobile stack */
@@ -1155,6 +1180,36 @@ textarea {
         stroke: white;
     }
 
+    /* Mobile accordion toggle buttons */
+    .filter-toggle-btn,
+    .sort-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 10px 14px;
+        background: var(--toggle-btn-bg);
+        border: 1px solid var(--toggle-btn-border);
+        border-radius: 8px;
+        color: var(--text-main);
+        font-size: 0.95em;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 6px;
+        box-shadow: none;
+    }
+
+    .filter-toggle-btn .filter-chevron,
+    .sort-toggle-btn .filter-chevron {
+        transition: transform 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .filter-toggle-btn.expanded .filter-chevron,
+    .sort-toggle-btn.expanded .filter-chevron {
+        transform: rotate(180deg);
+    }
+
     /* Member card styles */
     .member-card {
         background: var(--bg-card);
@@ -1164,6 +1219,8 @@ textarea {
         margin-bottom: 12px;
         overflow: hidden;
     }
+
+    .member-card:nth-child(even) { background: var(--bg-hover); }
 
     .member-card-header {
         display: flex;
@@ -1229,10 +1286,7 @@ textarea {
         background: var(--bg-body);
     }
 
-    /* Members table: hide checkbox column and label the toggle in card mode */
-    #membersTable td:nth-of-type(1) { display: none !important; }
-    #membersTable td:nth-of-type(2)::before { content: "Enabled"; }
-    /* Bulk delete requires checkboxes — suppress it in card mode */
+    /* Bulk delete uses checkboxes not present in card view — suppress on mobile */
     #bulkDeleteBtn { display: none !important; }
 
     /* Table toolbar: wrap buttons so they don't overflow on narrow screens */
@@ -1258,6 +1312,81 @@ textarea {
         top: 15px;
         left: 15px;
     }
+}
+
+/* --- GENERIC TABLE CARD LAYOUT (mobile card view, used by live-forms, skills, etc.) --- */
+.table-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--shadow);
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.table-card .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 15px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-band-odd);
+}
+
+.table-card .card-rank {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.table-card .card-title {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 1em;
+    flex: 1;
+    min-width: 0;
+}
+
+.table-card .card-body {
+    padding: 4px 0;
+}
+
+.table-card .card-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 7px 15px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 10px;
+    font-size: 0.9em;
+}
+
+.table-card .card-row:last-child {
+    border-bottom: none;
+}
+
+.table-card .card-label {
+    color: var(--text-muted);
+    min-width: 72px;
+    flex-shrink: 0;
+    font-size: 0.88em;
+    padding-top: 1px;
+}
+
+.table-card .card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 15px;
+    border-top: 1px solid var(--border-color);
+    background: var(--card-band-odd);
+    justify-content: flex-end;
+}
+
+.table-card:nth-child(even) .card-header,
+.table-card:nth-child(even) .card-actions {
+    background: var(--card-band-even);
 }
 
 /* --- TOAST NOTIFICATIONS --- */
@@ -1470,8 +1599,6 @@ a .status-circle {
 @media screen and (max-width: 768px) {
     .notification-wrapper {
         margin-right: 0;
-        margin-bottom: 10px;
-        /* Stack on mobile if needed, or keep inline */
     }
 }
 
@@ -2229,31 +2356,103 @@ input:checked + .slider:before { transform: translateX(14px); }
     padding: 5px 0;
 }
 
+/* Mobile back button — hidden on desktop, shown when editor is open on mobile */
+.mobile-back-btn { display: none; }
+
+.scoring-settings-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
 @media screen and (max-width: 768px) {
+    /* Two-screen stack: list or editor — never both at once */
     .manager-container {
         flex-direction: column;
         height: auto;
+        margin-top: 0;
     }
+
+    /* List screen: full-width, full scroll height */
     .sidebar {
         width: 100%;
         position: static;
-        max-height: 250px;
+        max-height: none;
     }
+
+    /* Editor panel hidden by default on mobile */
+    .editor-panel {
+        display: none !important;
+    }
+
+    /* When editor is open: hide list, show editor full-width */
+    .manager-container.mobile-editor-open .sidebar {
+        display: none;
+    }
+    .manager-container.mobile-editor-open #builderPanel {
+        display: flex !important;
+        width: 100%;
+    }
+
+    /* Back-to-list button — only visible on mobile */
+    .mobile-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Editor header stacks vertically */
     .editor-header {
         flex-direction: column;
         align-items: stretch;
     }
+
+    /* Name + toggles row: stack vertically so name gets full width */
+    .editor-meta-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+
+    /* Smaller title font on mobile — 24px is too large for a narrow viewport */
+    .editor-title-input {
+        font-size: 18px;
+    }
+
+    /* Scoring row (forms): 2-column grid; Max Score spans full width */
+    .scoring-settings-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px !important;
+    }
+    .scoring-settings-row > .form-group:first-child {
+        grid-column: 1 / -1;
+        border-left: none !important;
+        padding-left: 0 !important;
+    }
+
+    /* Toolbox fixed to bottom of viewport so it doesn't scroll away */
     .toolbox {
-        bottom: 10px;
-        padding: 8px;
-        gap: 5px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        border-radius: 0;
+        z-index: 200;
+        padding: 8px 12px;
+        gap: 6px;
     }
     .btn-tool {
         flex: 1;
-        font-size: 10px;
-        padding: 8px 4px;
+        font-size: 11px;
+        padding: 10px 4px;
         white-space: nowrap;
         min-width: 0;
+    }
+
+    /* Bottom padding so content clears the fixed toolbox */
+    .editor-content {
+        padding-bottom: 70px;
     }
 }
 /* --- 14. TABS & SUB-NAVIGATION --- */
@@ -3552,6 +3751,7 @@ input:checked + .slider:before { transform: translateX(14px); }
         height: 40px !important;
         font-size: 0.9rem !important;
     }
+
 
     /* Table toolbar: 2-up button layout on very small screens */
     .table-toolbar button {

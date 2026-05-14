@@ -15,34 +15,51 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
+    <style>
+        /* ── Mobile: remove legacy gap that was clearing the old profile button ── */
+        @media (max-width: 768px) {
+            .header-row { margin-top: 0 !important; }
+        }
+
+        /* Hide desktop-only filters on mobile */
+        @media (max-width: 768px) {
+            .desktop-only-filters { display: none !important; }
+
+            /* Sort bar: hidden by default, shown when expanded */
+            #mobile-sort-bar { display: none; }
+            #mobile-sort-bar.sort-expanded { display: flex; }
+
+            /* Filter badges: hidden by default, shown when expanded */
+            #index-filter-bar { display: none; }
+            #index-filter-bar.filter-expanded {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                padding: 10px 14px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                margin-bottom: 8px;
+            }
+            #controls-actions {
+                flex-direction: row !important;
+                flex-wrap: wrap;
+                justify-content: stretch;
+                gap: 8px;
+            }
+            #controls-actions button {
+                flex: 1;
+                min-width: 0;
+            }
+        }
+        /* Hide mobile filter accordion on desktop */
+        @media (min-width: 769px) {
+            .filter-section { display: none; }
+        }
+    </style>
 </head>
 
 <body>
-
-    <div class="profile-menu">
-        <button onclick="toggleProfileMenu()" class="profile-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <span id="userNameDisplay">User</span>
-        </button>
-                       <div id="profileDropdown" class="dropdown-content profile-dropdown">
-                            <a href="profile.html" id="navUserSettings">User Settings</a>
-                            <div style="padding: 12px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border-top:1px solid var(--border-color);"
-                                onclick="document.getElementById('darkModeToggle').click()">
-                                <span style="color: var(--text-main); font-size: 16px;">Dark Mode</span>
-                                <label class="switch" style="margin:0; pointer-events:none;">
-                                    <input type="checkbox" id="darkModeToggle"
-                                        onchange="toggleDarkMode(this.checked); event.stopPropagation();"
-                                        style="pointer-events:auto;">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                            <a href="#" id="logoutLinkLeft" class="logout">Logout</a>
-                        </div> 
-    </div>
 
 
     <div id="demoBanner" class="demo-banner">
@@ -91,7 +108,7 @@
                     <span class="btn-text">Reload Expiring Skills</span>
                     <span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></span>
                 </button>
-                <button id="sendEmailsBtn" disabled style="margin:0;" title="Send Notifications">
+                <button id="sendEmailsBtn" disabled style="margin:0;" title="Send Notifications to all selected members">
                     <span class="btn-text">Send Notifications</span>
                     <span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></span>
                 </button>
@@ -114,7 +131,8 @@
                         <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                     </button>
                 </div>
-                <div class="type-toggles">
+                <!-- Desktop filters: always visible, hidden on mobile (accordion below takes over) -->
+                <div class="type-toggles desktop-only-filters">
                     <span class="filter-label">Filters:</span>
                     <div id="btnHideNoSkills" class="type-badge" title="Hide members with 'NO expiring skills'">Hide
                         Empty</div>
@@ -123,6 +141,27 @@
                     <div id="btnHideWithUrl" class="type-badge" title="Hide Skills with Online form">No Form Only</div>
                     <div id="btnExpiredOnly" class="type-badge expired-filter" title="Display only expired skills">
                         Expired Only</div>
+                </div>
+            </div>
+
+            <!-- Mobile filter accordion (mirrors desktop type-toggles) -->
+            <div class="filter-section">
+                <button class="filter-toggle-btn" id="indexFilterToggleBtn" onclick="toggleIndexFilters()" title="Show or hide filters">
+                    <span style="display:flex; align-items:center; gap:8px;">
+                        Filters
+                        <span id="indexFilterActiveCount" style="display:none; background:var(--primary); color:#fff; border-radius:10px; padding:1px 8px; font-size:0.78em; font-weight:700;"></span>
+                    </span>
+                    <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div id="index-filter-bar">
+                    <div id="btnHideNoSkillsMobile" class="type-badge" title="Hide members with 'NO expiring skills'">Hide Empty</div>
+                    <div id="btnHideNoUrlMobile" class="type-badge" title="Hide Skills without Online form">Has Form Only</div>
+                    <div id="btnHideWithUrlMobile" class="type-badge" title="Hide Skills with Online form">No Form Only</div>
+                    <div id="btnExpiredOnlyMobile" class="type-badge expired-filter" title="Display only expired skills">Expired Only</div>
                 </div>
             </div>
 
@@ -181,6 +220,27 @@
                 </div>
             </div>
 
+            <!-- Mobile sort accordion -->
+            <div class="sort-section">
+                <button class="sort-toggle-btn" id="indexSortToggleBtn" onclick="toggleIndexSort()" title="Show or hide sort options">
+                    <span>Sort by</span>
+                    <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div id="mobile-sort-bar" class="sort-bar-container">
+                    <span class="sort-bar-label">Sort:</span>
+                    <button class="sort-bar-btn" id="mobileSortBtn-rank" onclick="handleSort('rank')" title="Sort by rank">
+                        Rank <span id="mobile-icon-rank"></span>
+                    </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-name" onclick="handleSort('name')" title="Sort by member name">
+                        Name <span id="mobile-icon-name"></span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Mobile-only notification select-all bar -->
             <div id="notify-controls-bar">
                 <span class="notify-bar-label">Notify all:</span>
@@ -195,17 +255,6 @@
                         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                         <path d="M3 3v5h5"></path>
                     </svg>
-                </button>
-            </div>
-
-            <!-- Mobile-only sort bar -->
-            <div id="mobile-sort-bar" class="sort-bar-container">
-                <span class="sort-bar-label">Sort:</span>
-                <button class="sort-bar-btn" id="mobileSortBtn-rank" onclick="handleSort('rank')">
-                    Rank <span id="mobile-icon-rank"></span>
-                </button>
-                <button class="sort-bar-btn" id="mobileSortBtn-name" onclick="handleSort('name')">
-                    Name <span id="mobile-icon-name"></span>
                 </button>
             </div>
 
@@ -326,53 +375,14 @@
     <script src="toast.js"></script>
     <script src="help.js"></script>
     <script>
-        function toggleProfileMenu() {
-            document.getElementById("profileDropdown").classList.toggle("show");
-            document.getElementById("myDropdown").classList.remove("show");
-        }
-        function toggleMenu() {
-            document.getElementById("myDropdown").classList.toggle("show");
-            document.getElementById("profileDropdown").classList.remove("show");
-        }
-
         fetch('/api/user-session')
             .then(r => r.json())
             .then(user => {
-                document.getElementById('userNameDisplay').textContent = user.name || 'User';
-                const role = user.role || 'guest';
-
-                if (role === 'superadmin') {
-                    document.getElementById('groupOperations').style.display = 'block';
-                    document.getElementById('groupComms').style.display = 'block';
-                    document.getElementById('groupReports').style.display = 'block';
-                    document.getElementById('groupSystem').style.display = 'block';
-
-                } else if (role === 'admin') {
-                    document.getElementById('groupOperations').style.display = 'block';
-                    document.getElementById('groupComms').style.display = 'block';
-                    document.getElementById('groupReports').style.display = 'block';
-                    document.getElementById('groupSystem').style.display = 'block';
-                    document.getElementById('navSystemTools').style.display = 'none';
-                } else if (role === 'simple') {
-                    document.getElementById('groupReports').style.display = 'block';
-                    document.getElementById('navEventLog').style.display = 'none';
-                }
-
-                document.body.setAttribute('data-user-role', role);
-                if (window.updateRoleUI) window.updateRoleUI(role);
+                if (window.updateRoleUI) window.updateRoleUI(user.role || 'guest');
             })
             .catch(() => window.location.href = '/login.html');
-        document.getElementById('logoutLinkLeft').addEventListener('click', () => window.location.href = '/logout');
 
         window.onclick = function (event) {
-            if (!event.target.closest('.menu-btn') &&
-                !event.target.closest('.profile-btn') &&
-                !event.target.closest('.dropdown-content')) {
-
-                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
-                const profileDropdown = document.getElementById("profileDropdown");
-                if (profileDropdown) profileDropdown.classList.remove("show");
-            }
             if (event.target == document.getElementById('aboutModal')) closeModal('aboutModal');
             if (event.target == document.getElementById('pendingReviewsModal')) closeModal('pendingReviewsModal');
             if (event.target == document.getElementById('legendModal')) closeModal('legendModal');
@@ -387,6 +397,52 @@
             }
         };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+        // --- Mobile accordion: sort ---
+        function toggleIndexSort() {
+            const bar = document.getElementById('mobile-sort-bar');
+            const btn = document.getElementById('indexSortToggleBtn');
+            const expanded = bar.classList.toggle('sort-expanded');
+            btn.classList.toggle('expanded', expanded);
+        }
+
+        // --- Mobile accordion: filters (mirrors desktop type-badge state) ---
+        function toggleIndexFilters() {
+            const bar = document.getElementById('index-filter-bar');
+            const btn = document.getElementById('indexFilterToggleBtn');
+            const expanded = bar.classList.toggle('filter-expanded');
+            btn.classList.toggle('expanded', expanded);
+        }
+
+        // Sync a mobile type-badge click to its desktop counterpart and update badge count
+        function syncMobileFilter(mobileId, desktopId) {
+            const mob = document.getElementById(mobileId);
+            const desk = document.getElementById(desktopId);
+            if (!mob || !desk) return;
+            mob.addEventListener('click', () => {
+                desk.click();
+                mob.classList.toggle('active', desk.classList.contains('active'));
+                updateIndexFilterCount();
+            });
+        }
+
+        function updateIndexFilterCount() {
+            const mobileIds = ['btnHideNoSkillsMobile', 'btnHideNoUrlMobile', 'btnHideWithUrlMobile', 'btnExpiredOnlyMobile'];
+            const activeCount = mobileIds.filter(id => document.getElementById(id)?.classList.contains('active')).length;
+            const badge = document.getElementById('indexFilterActiveCount');
+            if (badge) {
+                badge.textContent = activeCount > 0 ? activeCount : '';
+                badge.style.display = activeCount > 0 ? 'inline-block' : 'none';
+            }
+        }
+
+        // Wire up mobile filter badges after DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            syncMobileFilter('btnHideNoSkillsMobile', 'btnHideNoSkills');
+            syncMobileFilter('btnHideNoUrlMobile', 'btnHideNoUrl');
+            syncMobileFilter('btnHideWithUrlMobile', 'btnHideWithUrl');
+            syncMobileFilter('btnExpiredOnlyMobile', 'btnExpiredOnly');
+        });
 
         // Mobile notify bar → proxy changes to the desktop master checkboxes
         // (setupMasterCheckbox in app.js drives all row checkboxes via the desktop element)

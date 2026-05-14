@@ -42,10 +42,10 @@
         <div class="manager-container">
             <div class="sidebar">
                 <div class="sidebar-header">
-                    <div style="display: flex; align-items: center; justify-content: center; position: relative;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                         <h3 style="margin:0; font-size: 1.1em; color: var(--text-main);">Surveys</h3>
                         <button onclick="toggleSurveySort()" id="btnSortSurveys" class="btn-sm"
-                            style="position: absolute; right: 0; background:transparent; color:var(--text-main); border:1px solid var(--border-color);"
+                            style="background:transparent; color:var(--text-main); border:1px solid var(--border-color);"
                             title="Sort by Name (A-Z)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -95,7 +95,7 @@
 
             <div id="builderPanel" class="editor-panel" style="display:none;">
                 <div class="editor-header">
-                    <div
+                    <div class="editor-meta-row"
                         style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; width: 100%;">
                         <div style="flex: 1;">
                             <textarea id="surveyName" class="editor-title-input" placeholder="Survey Name" rows="1"
@@ -127,6 +127,10 @@
                     </div>
                 </div>
                 <div class="editor-toolbar">
+                    <button onclick="mobileBackToList()" class="btn-sm btn-secondary mobile-back-btn" title="Back to survey list">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        List
+                    </button>
                     <button id="btnPublish" onclick="openPublishModal()" class="btn-sm btn-success" disabled>Publish</button>
                     <button onclick="previewSurvey()" class="btn-sm btn-informative">Preview</button>
                     <button onclick="saveSurvey()" class="btn-sm btn-success">Save</button>
