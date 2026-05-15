@@ -544,19 +544,28 @@ th.sortable:hover {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 10500; /* must exceed floating buttons (2000), help btn (2000), processing overlay (9999), toasts (9999), PWA banner (10000) */
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4);
+    overflow-y: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* When opened via JS (style.display = 'block'), switch to flex for true V+H centering */
+.modal[style*="display: block"],
+.modal[style*="display:block"] {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
 }
 
 .modal-content {
     background-color: var(--bg-card);
     color: var(--text-main);
-    margin: 10% auto;
+    margin: 0;
     padding: 20px;
     border: 1px solid var(--border-color);
     width: 80%;
@@ -3813,7 +3822,7 @@ input:checked + .slider:before { transform: translateX(14px); }
     /* Wide modals: reduce max-width */
     .modal-content {
         max-width: 90vw !important;
-        margin: 20px auto !important;
+        margin: 0 !important;
     }
 
     /* Compact action bars */

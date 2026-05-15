@@ -445,9 +445,10 @@ async function importAllForms(input) {
 
   // --- [CONFIRMATION MODAL] ---
   if (
-    !(await confirmAction(
+    !(await promptAction(
       "Bulk Import",
-      "WARNING: This will DELETE ALL existing forms and replace them with the imported file.\n\nAre you sure?",
+      "This will <strong>DELETE ALL existing forms</strong> and replace them with the imported file. This cannot be undone.<br><br>Type <strong>IMPORT</strong> to confirm.",
+      "IMPORT",
     ))
   ) {
     input.value = ""; // Clear input if user cancels

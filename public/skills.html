@@ -805,7 +805,7 @@
         async function deleteSelected() {
             const ids = Array.from(document.querySelectorAll('.skill-checkbox:checked')).map(cb => cb.value);
             if (!ids.length) return;
-            if (await confirmAction('Delete Skills', `Delete ${ids.length} skills?`)) {
+            if (await promptAction('Delete Skills', `This will permanently delete <strong>${ids.length} skill${ids.length !== 1 ? 's' : ''}</strong>. This cannot be undone.<br><br>Type <strong>DELETE</strong> to confirm.`, 'DELETE')) {
                 await fetch('/api/skills/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
                 reloadSkills();
             }

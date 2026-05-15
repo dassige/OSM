@@ -494,7 +494,7 @@
         document.getElementById('restoreForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (!await confirmAction("Restore Database", "Are you sure you want to restore the database? Current data will be lost.")) return;
+            if (!await promptAction("Restore Database", "This will <strong>overwrite all current data</strong> with the selected backup. The server will restart. This cannot be undone.<br><br>Type <strong>RESTORE</strong> to confirm.", "RESTORE")) return;
 
             const btn = document.getElementById('restoreBtn');
             const spinner = document.getElementById('restoreSpinner');

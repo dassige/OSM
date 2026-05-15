@@ -425,7 +425,7 @@
         }
 
         async function purgeLog() {
-            if (!await confirmAction('Purge Log', "DANGER: This will permanently delete ALL events from the log.\n\nAre you sure?")) return;
+            if (!await promptAction('Purge Log', 'DANGER: This will permanently delete <strong>ALL</strong> events from the log and cannot be undone.<br><br>Type <strong>PURGE</strong> to confirm.', 'PURGE')) return;
             try {
                 const res = await fetch('/api/events/all', { method: 'DELETE' });
                 if (res.ok) { showToast('Log purged', 'success'); applyFilters(1); }
@@ -435,7 +435,7 @@
 
         async function pruneEvents() {
             const days = document.getElementById('pruneDays').value;
-            if (!await confirmAction('Prune Events', `Delete events older than ${days} days?`)) return;
+            if (!await promptAction('Prune Events', `This will permanently delete all events <strong>older than ${days} days</strong>. This cannot be undone.<br><br>Type <strong>DELETE</strong> to confirm.`, 'DELETE')) return;
             try {
                 const res = await fetch('/api/events/prune', {
                     method: 'POST',

@@ -10,23 +10,29 @@
     const style = document.createElement('style');
     style.innerHTML = `
         #customConfirmModal {
-            display: none; 
-            position: fixed; 
-            z-index: 10001; 
-            left: 0; 
+            display: none;
+            position: fixed;
+            z-index: 10500;
+            left: 0;
             top: 0;
-            width: 100%; 
-            height: 100%; 
+            width: 100%;
+            height: 100%;
             background-color: rgba(0,0,0,0.5);
             backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+        }
+        #customConfirmModal[style*="display: flex"],
+        #customConfirmModal[style*="display:flex"] {
+            display: flex !important;
         }
         #customConfirmModal .modal-content {
-            background-color: var(--bg-card, #fff); 
+            background-color: var(--bg-card, #fff);
             color: var(--text-main, #333);
-            margin: 15% auto; 
-            padding: 25px; 
+            margin: 0;
+            padding: 25px;
             border: 1px solid var(--border-color, #ddd);
-            width: 90%; 
+            width: 90%;
             max-width: 400px;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
@@ -65,12 +71,15 @@
     const style = document.createElement('style');
     style.innerHTML = `
         #customPromptModal {
-            display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; 
+            display: none; position: fixed; z-index: 10500; left: 0; top: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+            align-items: center; justify-content: center;
         }
+        #customPromptModal[style*="display: flex"],
+        #customPromptModal[style*="display:flex"] { display: flex !important; }
         #customPromptModal .modal-content {
             background-color: var(--bg-card, #fff); color: var(--text-main, #333);
-            margin: 15% auto; padding: 25px; border: 1px solid var(--border-color, #ddd); width: 90%; max-width: 400px;
+            margin: 0; padding: 25px; border: 1px solid var(--border-color, #ddd); width: 90%; max-width: 400px;
             border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease-out;
         }
         .prompt-input {
@@ -121,7 +130,7 @@ window.promptAction = function(title, message, requiredText) {
         btnYes.disabled = true;
         btnYes.style.opacity = '0.5';
 
-        modal.style.display = 'block';
+        modal.style.display = 'flex';
         inputEl.focus();
 
         const validateInput = () => {
@@ -175,7 +184,7 @@ window.confirmAction = function(title, message) {
 
         titleEl.textContent = title || 'Confirm Action';
         msgEl.textContent = message || 'Are you sure you want to proceed?';
-        modal.style.display = 'block';
+        modal.style.display = 'flex';
 
         // Focus the confirm button for accessibility/keyboard usage
         btnYes.focus();

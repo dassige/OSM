@@ -612,6 +612,8 @@ Every new page or feature **must** follow the existing UI conventions without ex
 | **Button colours** | Follow the colour convention table below — never use inline `background` styles on buttons |
 | **Tooltips** | Every button and input field must have a `title` attribute providing a short descriptive tooltip — see Tooltip Convention below |
 | **Mobile icon buttons** | On mobile (≤ 768 px), replace labelled toolbar buttons with compact SVG icon buttons — see Mobile Icon Button Convention below |
+| **Modals** | All modals must render above every floating element (`z-index: 10500`) and be centred both horizontally and vertically — see Modal Convention below |
+| **Destructive confirmation** | Mass-destructive, irreversible operations must use `promptAction()` requiring the user to type a keyword — see Destructive Confirmation Convention below |
 
 ### Button Colour Convention
 
@@ -742,6 +744,110 @@ Use a `<style>` block scoped to the page (or a shared class in `styles.css` when
 | **Destructive actions** | Keep a short visible label on mobile for destructive actions (e.g. "Delete") — icon alone is not enough for irreversible operations |
 | **Bulk-delete button** | This button is dynamically shown/hidden by JS — keep it as a text button even on mobile so the count is visible |
 | **Modal buttons** | Buttons inside modal windows (`<div class="modal-content">`) must remain as full text buttons on all screen sizes — never swap them for icon-only buttons |
+
+---
+
+## ⚠️ Modal Convention
+
+Every custom modal **must** render on top of all page chrome and be centred both horizontally and vertically. Follow these rules without exception.
+
+### Z-index and stacking
+
+The global `styles.css` rule `.modal { z-index: 10500 }` is the baseline. This value exceeds every floating element in the app:
+
+| Element | z-index |
+|---|---|
+| Floating home / help buttons | 2000 |
+| Help modal overlay | 3000 |
+| Toast container | 9999 |
+| Processing overlay | 9999 |
+| PWA install banner | 10000 |
+| **Custom modals (`.modal` class)** | **10500** |
+| `confirmAction` / `promptAction` utility modals | 10500 |
+
+Never set a lower `z-index` on any modal element. If a new floating element is added with a `z-index` higher than 10500, raise the modal baseline to exceed it — do not leave modals beneath floating UI.
+
+### Centering
+
+The CSS uses an attribute selector to switch `.modal` to `display: flex` when JS sets `style.display = 'block'`, giving true V+H centering without requiring every page's JS to be updated:
+
+```css
+/* In styles.css — do not duplicate this in page <style> blocks */
+.modal[style*="display: block"],
+.modal[style*="display:block"] {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+```
+
+`.modal-content` uses `margin: 0` — the flex parent handles all centering. Never restore `margin: 10% auto` or `margin: 15% auto`.
+
+### Utility modals (`confirmAction`, `promptAction`)
+
+These are injected by `utils.js` and do **not** carry the `modal` CSS class. They are shown with `modal.style.display = 'flex'` (not `'block'`) and their injected CSS includes `align-items: center; justify-content: center` so they self-centre. Their `z-index` is also set to `10500`. Do not change these values.
+
+### Rules summary
+
+| Rule | Detail |
+|---|---|
+| **Never use `z-index` below 10500** | All modal overlays must exceed every floating element |
+| **Never use `margin: N% auto`** | Flex centering replaces percentage-margin vertical positioning |
+| **Page `<style>` blocks** | Do not re-declare `z-index` or `margin` on `.modal` or `.modal-content` in per-page style blocks — the global CSS applies |
+| **Showing a modal** | Always use `element.style.display = 'block'` for `.modal`-classed elements (CSS converts to flex automatically); use `'flex'` directly for the confirm/prompt utility modals |
+| **Hiding a modal** | Always `element.style.display = 'none'` |
+| **Mobile** | On ≤ 480 px the global CSS anchors modals to the bottom of the screen — this is intentional and must not be overridden |
+
+---
+
+## ⚠️ Destructive Confirmation Convention
+
+Any action that is **mass-destructive and irreversible** must use `promptAction()` instead of `confirmAction()`. This forces the user to deliberately type a keyword before the action proceeds — a simple "Are you sure?" click-through is not sufficient for these operations.
+
+### When to use `promptAction` vs `confirmAction`
+
+| Operation type | Function to use |
+|---|---|
+| Purge ALL records (log, forms, surveys) | `promptAction` — keyword `"PURGE"` |
+| Prune records by age (e.g. delete events older than N days) | `promptAction` — keyword `"DELETE"` |
+| Bulk delete of multiple records (members, skills, users) | `promptAction` — keyword `"DELETE"` |
+| Restore database (overwrites all data) | `promptAction` — keyword `"RESTORE"` |
+| Bulk import that replaces all existing data | `promptAction` — keyword `"IMPORT"` |
+| Single record delete | `confirmAction` |
+| Archive / toggle / disable (reversible) | `confirmAction` |
+| Unsaved-changes guard | `confirmAction` |
+| Send notification / trigger action | `confirmAction` |
+
+### Keyword convention
+
+| Operation | Keyword |
+|---|---|
+| Purge entire dataset | `"PURGE"` |
+| Bulk delete selected records | `"DELETE"` |
+| Database restore | `"RESTORE"` |
+| Replace-all import | `"IMPORT"` |
+
+Use uppercase single-word keywords only. Never use "CONFIRM" as a keyword — it provides no friction.
+
+### Message format
+
+The `message` argument supports HTML. Always include:
+1. A plain description of what will be destroyed and the scope (bold the scope)
+2. "This cannot be undone."
+3. The typing instruction: `Type <strong>KEYWORD</strong> to confirm.`
+
+```js
+await promptAction(
+    "Purge Records",
+    `This will permanently delete ALL <strong>${count} records</strong> matching the current filters. This cannot be undone.<br><br>Type <strong>PURGE</strong> to confirm.`,
+    "PURGE"
+);
+```
+
+### Where `promptAction` is defined
+
+`window.promptAction(title, message, requiredText)` lives in `public/utils.js`. It returns a `Promise<boolean>`. The confirm button stays disabled until the user types the exact keyword. On match, the button gains `btn-danger` styling to signal the action is irreversible.
 
 ---
 

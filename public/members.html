@@ -654,7 +654,7 @@
         async function deleteSelected() {
             const ids = Array.from(document.querySelectorAll('.member-checkbox:checked')).map(cb => cb.value);
             if (!ids.length) return;
-            if (await confirmAction('Delete Members', `Are you sure you want to delete ${ids.length} members?`)) {
+            if (await promptAction('Delete Members', `This will permanently delete <strong>${ids.length} member${ids.length !== 1 ? 's' : ''}</strong>. This cannot be undone.<br><br>Type <strong>DELETE</strong> to confirm.`, 'DELETE')) {
                 await fetch('/api/members/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
                 reloadMembers();
             }
