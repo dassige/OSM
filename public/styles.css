@@ -21,6 +21,11 @@
     --toggle-btn-bg: #e8f6f8;
     --toggle-btn-border: #a2dae3;
 
+    /* Training-day calendar column */
+    --training-day-bg: #ede5c5;
+    --training-day-border: #a88c1c;
+    --training-day-header: #c7b468;
+
     /* Status Colors */
     --success: #28a745;
     --danger: #dc3545;
@@ -49,6 +54,11 @@ body.dark-mode {
     /* Mobile accordion toggle buttons — solid dark teal tint */
     --toggle-btn-bg: #1d2b2d;
     --toggle-btn-border: #1b535c;
+
+    /* Training-day calendar column — dark mode */
+    --training-day-bg: #2d2810;
+    --training-day-border: #a88c1c;
+    --training-day-header: #3d3512;
 }
 
 body.dark-mode::before {
@@ -2918,14 +2928,6 @@ input:checked + .slider:before { transform: translateX(14px); }
 .day-column.hidden-day { display: none; }
 .day-column.past-day { opacity: 0.6; }
 
-.day-column.training-day {
-    background-color: rgb(237, 229, 197); /* Transparent sand/yellow */
-    border-color: rgb(168, 140, 28);
-}
-
-.day-column.training-day .day-header {
-    background-color: rgb(199, 180, 104); /* Slightly darker tint for the header */
-}
 .day-header {
     padding: 10px;
     text-align: center;
@@ -3021,12 +3023,168 @@ input:checked + .slider:before { transform: translateX(14px); }
 
 .session-delete:hover { background: var(--danger); }
 
-/*Only collapse to single column on very small screens (phones) */
-@media screen and (max-width: 600px) {
-    .planner-layout { flex-direction: column; }
-    .planner-sidebar { width: 100%; position: static; max-height: 250px; }
-    .weekly-grid { grid-template-columns: 1fr; }
-    .day-column { min-height: 120px; }
+/* View-tab toggle buttons */
+.view-tab-btn {
+    padding: 8px 18px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-hover);
+    color: var(--text-main);
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.view-tab-btn.view-tab-active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Training-day column — dark-mode safe */
+.day-column.training-day {
+    background-color: var(--training-day-bg);
+    border-color: var(--training-day-border);
+}
+.day-column.training-day .day-header {
+    background-color: var(--training-day-header);
+}
+
+/* Mobile day-picker strip */
+.mobile-day-picker {
+    display: none;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 4px 0 8px 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.mobile-day-picker::-webkit-scrollbar { display: none; }
+
+.mobile-day-chip {
+    flex-shrink: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-main);
+    cursor: pointer;
+    text-align: center;
+    min-width: 52px;
+    font-size: 12px;
+    line-height: 1.3;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    box-shadow: 0 1px 3px var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+.mobile-day-chip.chip-has-sessions::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 14px;
+    height: 14px;
+    background: linear-gradient(to top left, var(--warning) 50%, transparent 50%);
+}
+.mobile-day-chip.chip-filtered-out {
+    opacity: 0.22;
+    pointer-events: none;
+}
+.mobile-day-chip .chip-name { font-weight: 600; }
+.mobile-day-chip .chip-num  { font-size: 11px; color: var(--text-muted); }
+.mobile-day-chip.chip-selected {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+.mobile-day-chip.chip-selected .chip-num { color: rgba(255,255,255,0.8); }
+.mobile-day-chip.chip-past  { opacity: 0.55; }
+.mobile-day-chip.chip-training { border-color: var(--training-day-border); }
+.mobile-day-chip.chip-training.chip-selected { border-color: var(--primary); }
+
+/* Mobile selected-day sessions panel */
+.mobile-selected-day-panel {
+    display: none;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 8px;
+    box-shadow: 0 2px 5px var(--shadow);
+}
+.mobile-selected-day-panel .msd-date-label {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1.05em;
+    margin-bottom: 10px;
+}
+.mobile-session-chip {
+    background: var(--info);
+    color: white;
+    padding: 9px 36px 9px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    position: relative;
+    margin-bottom: 7px;
+    word-break: break-word;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+}
+.mobile-session-chip .mobile-session-delete {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.mobile-session-chip .mobile-session-delete:hover { background: var(--danger); }
+.mobile-day-empty {
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 13px;
+    padding: 6px 0;
+}
+
+/* Mobile future-sessions card list */
+.list-cards-mobile { display: none; }
+
+/* Skills sidebar accordion for mobile */
+#skillsPanelContent { display: block; }
+
+@media (max-width: 768px) {
+    /* Planner layout */
+    .planner-layout    { flex-direction: column; gap: 12px; }
+    .planner-sidebar   { width: 100%; position: static; max-height: none; }
+
+    /* Week nav controls: week strip on top, Today + filter toggle below */
+    .planner-controls       { flex-wrap: wrap; gap: 10px; }
+    .planner-ctrl-nav       { order: 1; width: 100%; justify-content: center; flex: unset; }
+    .planner-ctrl-today     { order: 2; flex: 0 0 auto; }
+    .planner-ctrl-filter    { order: 3; flex: 0 0 auto; margin-left: auto; }
+
+    /* Hide desktop calendar grid; show mobile alternatives */
+    .weekly-grid                 { display: none; }
+    .mobile-day-picker           { display: flex; }
+    .mobile-selected-day-panel   { display: block; }
+
+    /* Hide desktop list content; show mobile cards */
+    #listContent     { display: none; }
+    .list-cards-mobile { display: block; }
+
+    /* Skills panel accordion */
+    #skillsPanelContent { display: none; }
+    #skillsPanelContent.skills-expanded { display: block; }
 }
 /* --- 20. EVENT LOG SPECIFICS --- */
 .log-type-badge {

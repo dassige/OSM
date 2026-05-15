@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -38,58 +38,80 @@
     <div class="container">
         <h1 id="pageHeader" class="text-center" style="margin-bottom: 20px;">Renewal Planner</h1>
 
+        <!-- View toggle tabs -->
         <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
-            <button id="btnViewCalendar" onclick="switchView('calendar')" class="btn-sm"
-                style="background: var(--primary); color: white; border: 1px solid var(--primary); padding: 8px 16px; font-size: 14px;">
+            <button id="btnViewCalendar" onclick="switchView('calendar')" class="view-tab-btn view-tab-active"
+                title="View week calendar and schedule training sessions">
                 Calendar View
             </button>
-            <button id="btnViewList" onclick="switchView('list')" class="btn-sm"
-                style="background: transparent; color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 14px;">
+            <button id="btnViewList" onclick="switchView('list')" class="view-tab-btn"
+                title="View all upcoming scheduled training sessions">
                 Future Sessions
             </button>
         </div>
 
         <div class="planner-layout">
-            
+
+            <!-- ── Expiring Skills Sidebar ───────────────────────────────── -->
             <div class="planner-sidebar">
-                <div style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-hover); border-radius: 8px 8px 0 0;">
-                    <h3 style="margin: 0 0 10px 0; font-size: 1.1em; color: var(--text-main);">Expiring Skills</h3>
-                    <p style="font-size: 0.85em; color: var(--text-muted); margin: 0 0 10px 0;">
-                        Drag skills onto the calendar to schedule a session.
-                    </p>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <label for="expiryDays" style="font-size: 13px; font-weight: bold; color: var(--text-muted);">Days to expiry:</label>
-                        <input type="number" id="expiryDays" value="90" min="1" 
-                               style="width: 70px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-main);"
-                               onchange="updateExpiryPreference(this.value)">
+
+                <!-- Mobile accordion toggle (hidden on desktop via global CSS) -->
+                <button class="filter-toggle-btn" id="skillsToggleBtn" onclick="toggleSkillsPanel()"
+                    title="Show or hide expiring skills list">
+                    <span style="display:flex; align-items:center; gap:8px;">
+                        Expiring Skills
+                        <span id="skillsCountBadge" style="display:none; background:var(--primary); color:#fff; border-radius:10px; padding:1px 8px; font-size:0.78em; font-weight:700;"></span>
+                    </span>
+                    <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+
+                <div id="skillsPanelContent">
+                    <div style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-hover); border-radius: 8px 8px 0 0;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.1em; color: var(--text-main);">Expiring Skills</h3>
+                        <p style="font-size: 0.85em; color: var(--text-muted); margin: 0 0 10px 0;">
+                            Drag skills onto the calendar to schedule a session.
+                        </p>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label for="expiryDays" style="font-size: 13px; font-weight: bold; color: var(--text-muted);">Days to expiry:</label>
+                            <input type="number" id="expiryDays" value="90" min="1"
+                                style="width: 70px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-main);"
+                                title="Number of days ahead to look for expiring skills"
+                                onchange="updateExpiryPreference(this.value)">
+                        </div>
                     </div>
+                    <div id="skillList" style="flex: 1; overflow-y: auto; padding: 15px;"></div>
                 </div>
-                <div id="skillList" style="flex: 1; overflow-y: auto; padding: 15px;">
-                    </div>
             </div>
 
+            <!-- ── Main area ─────────────────────────────────────────────── -->
             <div class="planner-main">
-                
+
+                <!-- ── CALENDAR VIEW ──────────────────────────────────────── -->
                 <div id="calendarViewContainer" style="display: flex; flex-direction: column; width: 100%;">
-                    
+
+                    <!-- Week navigation bar -->
                     <div class="planner-controls" style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-                        
-                        <div style="flex: 1; display: flex; justify-content: flex-start;">
-                            <button class="btn-sm btn-secondary" onclick="goToToday()" style="border-radius: 20px; padding: 6px 20px; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">Today</button>
+
+                        <div class="planner-ctrl-today" style="flex: 1; display: flex; justify-content: flex-start;">
+                            <button class="btn-sm btn-secondary" onclick="goToToday()" title="Jump to the current week" style="border-radius: 20px; padding: 6px 20px; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">Today</button>
                         </div>
 
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-                            <button class="btn-circle" onclick="changeWeek(-1)" title="Previous Week">
+                        <div class="planner-ctrl-nav" style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                            <button class="btn-circle" onclick="changeWeek(-1)" title="Go to previous week">
                                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                             </button>
                             <div id="currentWeekLabel" class="current-week-badge">...</div>
-                            <button class="btn-circle" onclick="changeWeek(1)" title="Next Week">
+                            <button class="btn-circle" onclick="changeWeek(1)" title="Go to next week">
                                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                             </button>
                         </div>
 
-                        <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
-                            <label class="switch" style="margin: 0;">
+                        <div class="planner-ctrl-filter" style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
+                            <label class="switch" style="margin: 0;" title="When on, hide days that are not the configured training day (unless they already have sessions)">
                                 <input type="checkbox" id="filterTrainingDay" onchange="toggleDayFilter(this.checked)">
                                 <span class="slider"></span>
                             </label>
@@ -100,58 +122,124 @@
 
                     </div>
 
-                    <div id="calendarGrid" class="weekly-grid">
-                        </div>
+                    <!-- Mobile: horizontal day-picker strip (hidden on desktop via CSS) -->
+                    <div id="mobileDayPicker" class="mobile-day-picker"></div>
+
+                    <!-- Mobile: selected-day sessions panel (hidden on desktop via CSS) -->
+                    <div id="mobileSelectedDayPanel" class="mobile-selected-day-panel"></div>
+
+                    <!-- Desktop: 7-column weekly grid (hidden on mobile via CSS) -->
+                    <div id="calendarGrid" class="weekly-grid"></div>
+
                 </div>
 
+                <!-- ── LIST VIEW ──────────────────────────────────────────── -->
                 <div id="listViewContainer" style="display: none; width: 100%;">
                     <div class="planner-controls" style="margin-bottom: 15px;">
                         <h3 style="margin: 0; font-size: 1.1em;">Scheduled Sessions</h3>
                     </div>
 
-                    <div id="listContent">
-                        </div>
+                    <!-- Desktop list (hidden on mobile via CSS) -->
+                    <div id="listContent"></div>
 
+                    <!-- Mobile cards (hidden on desktop via CSS) -->
+                    <div class="list-cards-mobile" id="listCardsMobile">
+                        <div id="cardContainerList"></div>
+                        <div class="pagination-container" id="listPaginationMobile" style="display:none; border-radius:8px;">
+                            <div class="page-limit-selector">
+                                <label>Rows per page:</label>
+                                <select id="listLimitSelectMobile" onchange="changeListLimit(this.value)"
+                                    style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                                    title="Number of date groups to display per page">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                    <option value="all">All</option>
+                                </select>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0;">
+                                <button id="btnListFirstMobile" class="btn-page" onclick="goToListFirstPage()" title="First page" style="margin:0 1px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg>
+                                </button>
+                                <button id="btnListPrevMobile" class="btn-page" onclick="changeListPage(-1)" title="Previous page" style="margin:0 1px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <button id="listPageInfoMobile" class="btn-page" style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1 of 1</button>
+                                <button id="btnListNextMobile" class="btn-page" onclick="changeListPage(1)" title="Next page" style="margin:0 1px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                                <button id="btnListLastMobile" class="btn-page" onclick="goToListLastPage()" title="Last page" style="margin:0 1px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Desktop pagination -->
                     <div id="listPagination" class="pagination-container" style="display: none; border-radius: 8px; margin-top: 15px;">
                         <div class="page-limit-selector">
                             <label>Rows per page:</label>
                             <select id="listLimitSelect" onchange="changeListLimit(this.value)"
-                                style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
-                                <option value="10" selected>10</option>
-                                <option value="25">25</option>
+                                style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                                title="Number of date groups to display per page">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
                                 <option value="50">50</option>
                                 <option value="100">100</option>
                                 <option value="all">All</option>
                             </select>
                         </div>
-                        <span id="listPageInfo" class="pagination-info">0-0 of 0</span>
-                        <div style="display: flex; gap: 0;">
-                            <button id="btnListFirst" class="btn-page" onclick="goToListFirstPage()" title="First page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
-                            <button id="btnListPrev" class="btn-page" onclick="changeListPage(-1)" title="Previous page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                            <button id="btnListNext" class="btn-page" onclick="changeListPage(1)" title="Next page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                            <button id="btnListLast" class="btn-page" onclick="goToListLastPage()" title="Last page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
+                        <div style="display:flex; align-items:center; gap:0;">
+                            <button id="btnListFirst" class="btn-page" onclick="goToListFirstPage()" title="First page" style="margin:0 1px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg>
+                            </button>
+                            <button id="btnListPrev" class="btn-page" onclick="changeListPage(-1)" title="Previous page" style="margin:0 1px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            </button>
+                            <button id="listPageInfo" class="btn-page" style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1 of 1</button>
+                            <button id="btnListNext" class="btn-page" onclick="changeListPage(1)" title="Next page" style="margin:0 1px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                            <button id="btnListLast" class="btn-page" onclick="goToListLastPage()" title="Last page" style="margin:0 1px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
                         </div>
                     </div>
+
                 </div>
 
             </div>
         </div>
     </div>
 
+    <!-- ── Member popup modal ────────────────────────────────────────────── -->
     <div id="memberModal" class="modal">
         <div class="modal-content" style="max-width: 400px;">
             <span class="close-btn" onclick="document.getElementById('memberModal').style.display='none'">&times;</span>
             <h2 id="memberModalTitle" style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; color: var(--primary);">Skill Name</h2>
             <p style="font-size: 0.9em; color: var(--text-muted); margin-bottom: 15px;">Members expiring in the selected timeframe:</p>
-            <ul id="memberList" style="padding-left: 20px; color: var(--text-main); line-height: 1.6;">
-                </ul>
+            <ul id="memberList" style="padding-left: 20px; color: var(--text-main); line-height: 1.6;"></ul>
             <div class="modal-actions-right">
                 <button onclick="document.getElementById('memberModal').style.display='none'" class="btn-secondary w-100">Close</button>
             </div>
         </div>
     </div>
 
-    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+    <!-- ── Mobile: Schedule Skill modal ─────────────────────────────────── -->
+    <div id="scheduleSkillModal" class="modal">
+        <div class="modal-content" style="max-width: 420px;">
+            <span class="close-btn" onclick="document.getElementById('scheduleSkillModal').style.display='none'">&times;</span>
+            <h2 id="scheduleSkillModalTitle" style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; color: var(--primary);">Schedule a Skill</h2>
+            <p style="font-size: 0.9em; color: var(--text-muted); margin-bottom: 12px;">Tap a skill to schedule it on the selected day:</p>
+            <div id="scheduleSkillList" style="max-height: 320px; overflow-y: auto;"></div>
+            <div class="modal-actions-right" style="margin-top: 14px;">
+                <button onclick="document.getElementById('scheduleSkillModal').style.display='none'" class="btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Back to top">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="19" x2="12" y2="5"></line>
@@ -165,9 +253,8 @@
     <script src="utils.js"></script>
     <script src="toast.js"></script>
     <script src="help.js"></script>
-    
-    <script>
 
+    <script>
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.loginTitle) {
                 document.title = "Training Planner - " + c.loginTitle;

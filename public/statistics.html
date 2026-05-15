@@ -41,9 +41,9 @@
                     <option value="compliance-overview">Overall Compliance Overview</option>
                 </select>
                 <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button onclick="window.print()" class="btn-sm btn-primary" style="margin:0;">Print</button>
-                    <button onclick="downloadPdf()" class="btn-sm btn-primary" style="margin:0;">Export PDF</button>
-                    <button onclick="runStat()" class="btn-sm btn-primary" style="flex-grow:1; margin:0;">Refresh Data</button>
+                    <button onclick="window.print()" class="btn-sm btn-primary" style="margin:0;" title="Print this statistics view">Print</button>
+                    <button onclick="downloadPdf()" class="btn-sm btn-primary" style="margin:0;" title="Export this statistics view as a PDF file">Export PDF</button>
+                    <button onclick="runStat()" class="btn-sm btn-primary" style="flex-grow:1; margin:0;" title="Fetch latest data and render the selected view">Refresh Data</button>
                 </div>
             </div>
             
@@ -74,17 +74,7 @@
     <script src="utils.js"></script>
     <script src="statistics/compliance-overview.js"></script>
     <script src="js/statistics-controller.js"></script>
-    <script>
-        fetch('/ui-config').then(r => r.json()).then(c => {
-            if (c.loginTitle) {
-                document.title = "Compliance Statistics - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "Statistics Dashboard - " + c.loginTitle;
-            }
-            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
-        });
-    </script>
-    <script src="/js/pwa.js"></script>
+<script src="/js/pwa.js"></script>
 
 </body>
 

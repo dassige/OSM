@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -15,6 +15,73 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
+    <style>
+        /* Mobile/desktop visibility */
+        .toolbar-btn-mobile { display: none; }
+        #evtLogCardList { display: none; }
+        #evtLog-sort-bar { display: none; }
+
+        @media (max-width: 768px) {
+            #tableWrapper { display: none; }
+            #evtLogCardList { display: block; }
+
+            .toolbar-btn-desktop { display: none; }
+            .toolbar-btn-mobile {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                border-radius: 6px;
+            }
+
+            /* Filter accordion on mobile */
+            .filter-bar {
+                display: none;
+                flex-direction: column;
+                gap: 6px;
+                padding: 8px 10px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                margin-bottom: 10px;
+            }
+            .filter-bar.filter-expanded { display: flex; }
+            /* Inline layout: label left, control right — removes the per-group label row.
+               flex: 0 0 auto !important overrides inline style="flex: 1 1 150px" which
+               in column-direction layout inflates each group to 150px height. */
+            .filter-bar .filter-group {
+                flex: 0 0 auto !important;
+                flex-direction: row !important;
+                align-items: center;
+                gap: 8px;
+                min-width: unset;
+                width: 100%;
+            }
+            .filter-bar .filter-group > label {
+                min-width: 6.5em;
+                font-size: 12px;
+                flex-shrink: 0;
+                white-space: nowrap;
+            }
+            .filter-bar .filter-group > select,
+            .filter-bar .filter-group > div { flex: 1; min-width: 0; }
+            /* Date inputs side-by-side, override global width:100% */
+            .filter-bar .date-range-container { flex-direction: row !important; align-items: center; gap: 6px; }
+            .filter-bar .date-range-container input.filter-date { width: auto !important; flex: 1; min-width: 0; }
+            .filter-bar .filter-actions { flex-direction: row; justify-content: flex-end; gap: 8px; }
+
+            /* Mobile sort bar inside card list */
+            #evtLog-sort-bar { display: none; }
+            #evtLog-sort-bar.sort-expanded { display: flex; }
+
+            .mobile-sort-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+        }
+        @media (min-width: 769px) {
+            .mobile-sort-bar { display: none; }
+        }
+    </style>
 </head>
 
 <body>
@@ -35,17 +102,18 @@
         <h1 id="pageHeader" class="text-center" style="margin-bottom: 30px;">System Event Log</h1>
 
         <div id="maintenanceToolbar" class="filter-bar maintenance-bar">
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-grow: 1;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <strong style="color: #1c1604;">Maintenance:</strong>
                 <span style="color: var(--text-main); font-size: 13px;">Prune events older than</span>
                 <input type="number" id="pruneDays" class="filter-select" style="width:80px; height: 32px;" value="90"
-                    min="1">
+                    min="1" title="Number of days to keep — events older than this will be deleted">
                 <span style="color: var(--text-main); font-size: 13px;">days</span>
-                <button onclick="pruneEvents()" class="btn-sm btn-danger" style="height: 32px;">Prune Old</button>
-                <button onclick="purgeLog()" class="btn-sm btn-danger" style="height: 32px;">Purge All</button>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="exportLog()" class="btn-sm btn-primary" style="height: 32px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: nowrap;">
+                <button onclick="pruneEvents()" class="btn-sm btn-danger" style="height: 32px;" title="Delete events older than the specified number of days">Prune Old</button>
+                <button onclick="purgeLog()" class="btn-sm btn-danger" style="height: 32px;" title="Permanently delete all events from the log">Purge All</button>
+                <!-- Desktop: text button -->
+                <button onclick="exportLog()" class="btn-sm btn-primary toolbar-btn-desktop" style="height: 32px;" title="Export the current filtered event log as a JSON file">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                         style="vertical-align:text-bottom; margin-right:4px;">
@@ -55,56 +123,77 @@
                     </svg>
                     Export JSON
                 </button>
+                <!-- Mobile: icon-only button -->
+                <button onclick="exportLog()" class="btn-sm btn-primary toolbar-btn-mobile" style="height:32px; width:32px;" title="Export the current filtered event log as a JSON file">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
             </div>
         </div>
 
-        <div class="filter-bar">
-            <div class="filter-group" style="flex: 1 1 100%; width: 100%;">
-                <label>Event Types:</label>
-                <div class="type-toggles" id="typeToggles" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
-            </div>
+        <div class="filter-section">
+            <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilters()" title="Show or hide filters">
+                <span style="display:flex; align-items:center; gap:8px;">
+                    Filters
+                    <span id="filterActiveCount" style="display:none; background:var(--primary); color:#fff; border-radius:10px; padding:1px 8px; font-size:0.78em; font-weight:700;"></span>
+                </span>
+                <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+            <div class="filter-bar" id="filterBar">
+                <div class="filter-group" style="flex: 1 1 100%; width: 100%;">
+                    <label>Event Types:</label>
+                    <div class="type-toggles" id="typeToggles" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+                </div>
 
-            <div class="filter-group" style="flex: 1 1 150px;">
-                <label>User:</label>
-                <select id="userFilter" class="filter-select">
-                    <option value="">All Users</option>
-                    <option value="System">System</option>
-                </select>
-            </div>
+                <div class="filter-group" style="flex: 1 1 150px;">
+                    <label>User:</label>
+                    <select id="userFilter" class="filter-select" title="Filter events by the user who performed the action">
+                        <option value="">All Users</option>
+                        <option value="System">System</option>
+                    </select>
+                </div>
 
-            <div class="filter-group filter-group-date">
-                <label>Date Range:</label>
-                <div class="date-range-container">
-                    <input type="date" id="startDate" class="filter-date">
-                    <span style="color:var(--text-muted); align-self: center;">to</span>
-                    <input type="date" id="endDate" class="filter-date">
+                <div class="filter-group filter-group-date">
+                    <label>Date Range:</label>
+                    <div class="date-range-container">
+                        <input type="date" id="startDate" class="filter-date" title="Show events from this date onwards">
+                        <span style="color:var(--text-muted); align-self: center;">to</span>
+                        <input type="date" id="endDate" class="filter-date" title="Show events up to and including this date">
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button onclick="applyFilters(1)" class="btn-primary" style="height: 38px;" title="Apply the selected filters to the event log">Apply Filters</button>
+                    <button onclick="resetFilters()" class="btn-secondary" style="height: 38px;" title="Clear all filters and show all events">Reset</button>
                 </div>
             </div>
-
-            <div class="filter-actions">
-                <button onclick="applyFilters(1)" class="btn-primary" style="height: 38px;">Apply Filters</button>
-                <button onclick="resetFilters()" class="btn-secondary" style="height: 38px;">Reset</button>
-            </div>
         </div>
 
-        <div class="table-wrapper">
+        <div class="table-wrapper" id="tableWrapper">
             <table id="eventTable" style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr>
-                        <th
-                            style="width: 160px; padding: 12px 15px; text-align: left; background-color: var(--bg-header); border-bottom: 1px solid var(--border-color);">
-                            Datetime</th>
-                        <th
-                            style="width: 150px; padding: 12px 15px; text-align: left; background-color: var(--bg-header); border-bottom: 1px solid var(--border-color);">
-                            User</th>
-                        <th
-                            style="width: 120px; padding: 12px 15px; text-align: left; background-color: var(--bg-header); border-bottom: 1px solid var(--border-color);">
-                            Event Type</th>
-                        <th
-                            style="padding: 12px 15px; text-align: left; background-color: var(--bg-header); border-bottom: 1px solid var(--border-color);">
-                            Title</th>
-                        <th
-                            style="width: 60px; text-align:center; padding: 12px 15px; background-color: var(--bg-header); border-bottom: 1px solid var(--border-color);">
+                        <th data-sort="timestamp" class="sortable sort-desc" onclick="handleSort('timestamp')"
+                            style="width: 160px; padding: 12px 15px; text-align: left; background-color: var(--bg-header); border-bottom: 1px solid var(--border-color); cursor:pointer; user-select:none;">
+                            Datetime <span class="sort-icon">▼</span></th>
+                        <th data-sort="user" class="sortable" onclick="handleSort('user')"
+                            style="width: 150px; padding: 12px 15px; text-align: left; background-color: var(--bg-header); border-bottom: 1px solid var(--border-color); cursor:pointer; user-select:none;">
+                            User <span class="sort-icon">⇅</span></th>
+                        <th data-sort="event_type" class="sortable" onclick="handleSort('event_type')"
+                            style="width: 120px; padding: 12px 15px; text-align: left; background-color: var(--bg-header); border-bottom: 1px solid var(--border-color); cursor:pointer; user-select:none;">
+                            Event Type <span class="sort-icon">⇅</span></th>
+                        <th data-sort="title" class="sortable" onclick="handleSort('title')"
+                            style="padding: 12px 15px; text-align: left; background-color: var(--bg-header); border-bottom: 1px solid var(--border-color); cursor:pointer; user-select:none;">
+                            Title <span class="sort-icon">⇅</span></th>
+                        <th style="width: 60px; text-align:center; padding: 12px 15px; background-color: var(--bg-header); border-bottom: 1px solid var(--border-color);">
                             Info</th>
                     </tr>
                 </thead>
@@ -119,7 +208,8 @@
                 <div class="page-limit-selector">
                     <label>Rows per page:</label>
                     <select id="rowsPerPage" onchange="changeLimit(this.value)"
-                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                        title="Number of rows to display per page">
                         <option value="10">10</option>
                         <option value="25" selected>25</option>
                         <option value="50">50</option>
@@ -127,13 +217,63 @@
                         <option value="all">All</option>
                     </select>
                 </div>
+                <div style="display:flex; align-items:center; gap:0;">
+                    <button class="btn-page" id="btnFirst" title="First page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
+                    <button class="btn-page" id="btnPrev" onclick="changePage(-1)" title="Previous page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <button id="pageInfo" class="btn-page" style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1 of 1</button>
+                    <button class="btn-page" id="btnNext" onclick="changePage(1)" title="Next page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    <button class="btn-page" id="btnLast" title="Last page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
+            </div>
+        </div>
 
-                <span class="pagination-info" id="pageInfo">0-0 of 0</span>
-                <div style="display:flex; gap:0;">
-                    <button class="btn-page" id="btnFirst" title="First page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
-                    <button class="btn-page" id="btnPrev" onclick="changePage(-1)" title="Previous page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                    <button class="btn-page" id="btnNext" onclick="changePage(1)" title="Next page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                    <button class="btn-page" id="btnLast" title="Last page"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
+        <!-- Mobile card list -->
+        <div id="evtLogCardList">
+            <div class="sort-section">
+                <button class="sort-toggle-btn" id="sortToggleBtnEvt" onclick="toggleSortBarEvt()" title="Show or hide sort options">
+                    <span>Sort by</span>
+                    <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div id="evtLog-sort-bar" class="sort-bar-container">
+                    <span class="sort-bar-label">Sort:</span>
+                    <button class="sort-bar-btn" id="mobileSortBtn-timestamp" onclick="handleSort('timestamp')" title="Sort by datetime">
+                        Datetime <span id="mobile-icon-timestamp" class="sort-icon"></span>
+                    </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-user" onclick="handleSort('user')" title="Sort by user">
+                        User <span id="mobile-icon-user" class="sort-icon"></span>
+                    </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-event_type" onclick="handleSort('event_type')" title="Sort by event type">
+                        Event Type <span id="mobile-icon-event_type" class="sort-icon"></span>
+                    </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-title" onclick="handleSort('title')" title="Sort by title">
+                        Title <span id="mobile-icon-title" class="sort-icon"></span>
+                    </button>
+                </div>
+            </div>
+            <div id="evtCardContainer"></div>
+            <div class="pagination-container" id="paginationControlsMobile" style="display:none;">
+                <div class="page-limit-selector">
+                    <label>Rows per page:</label>
+                    <select id="rowsPerPageMobile" onchange="changeLimit(this.value)"
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                        title="Number of rows to display per page">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:0;">
+                    <button class="btn-page" id="btnFirstMobile" title="First page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
+                    <button class="btn-page" id="btnPrevMobile" title="Previous page" style="margin:0 1px;" onclick="eventTableCtrl.changePage(-1)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <button id="pageInfoMobile" class="btn-page" style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1 of 1</button>
+                    <button class="btn-page" id="btnNextMobile" title="Next page" style="margin:0 1px;" onclick="eventTableCtrl.changePage(1)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    <button class="btn-page" id="btnLastMobile" title="Last page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
                 </div>
             </div>
         </div>
@@ -173,6 +313,9 @@
     <script src="js/table-controller.js"></script>
 
     <script>
+        let sortCol = 'timestamp';
+        let sortDir = 'desc';
+
         let eventTableCtrl;
         let appLocale = 'en-NZ';
         let appTimezone = 'Pacific/Auckland';
@@ -209,6 +352,18 @@
             const limitSelect = document.getElementById('rowsPerPage');
             if (limitSelect) limitSelect.value = initialLimitRaw;
 
+            // Restore sort preference
+            try {
+                const sortRes = await fetch('/api/user-preferences/eventLogSort');
+                const sortData = await sortRes.json();
+                if (sortData.value) {
+                    const [col, dir] = sortData.value.split(':');
+                    sortCol = col;
+                    sortDir = dir;
+                }
+            } catch (e) {}
+            updateSortHeaders();
+
             eventTableCtrl = new TableController({
                 tbodyId: 'tableBody',
                 emptyMessage: 'No events matching criteria.',
@@ -222,13 +377,17 @@
                     lastId: 'btnLast',
                     onPageChange: (newPage, newLimit) => applyFilters(newPage)
                 },
+                onRenderComplete: () => {
+                    renderCards(eventTableCtrl.data);
+                    syncMobilePagination(eventTableCtrl.total > 0);
+                },
                 renderRow: (evt, index) => {
                     const tr = document.createElement('tr');
                     tr.className = index % 2 === 0 ? 'row-even' : 'row-odd';
                     tr.style.borderBottom = '1px solid var(--border-color)';
 
                     let detailsBtn = '<span style="color:var(--text-muted); font-size:12px;">None</span>';
-                    if (evt.payload && evt.payload !== '{}' && evt.payload !== 'null') {
+                    if (evt.payload && JSON.stringify(evt.payload) !== '{}' && evt.payload !== 'null') {
                         const safePayload = JSON.stringify(evt.payload).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
                         detailsBtn = `
                             <button class="btn-icon" onclick="showModal('${safePayload}', '${evt.timestamp}', '${evt.user}', '${evt.event_type}', '${evt.title.replace(/'/g, "\\'")}')" title="View Details" style="color:var(--info);">
@@ -247,6 +406,10 @@
                     return tr;
                 }
             });
+
+            // Wire up mobile First/Last buttons after controller is constructed
+            document.getElementById('btnFirstMobile').addEventListener('click', () => eventTableCtrl.goToPage(1));
+            document.getElementById('btnLastMobile').addEventListener('click', () => eventTableCtrl.goToPage(Math.ceil(eventTableCtrl.total / eventTableCtrl.limit)));
 
             await applyFilters(1);
         }
@@ -336,6 +499,7 @@
 
                             badge.addEventListener('click', () => {
                                 badge.classList.toggle('active');
+                                updateFilterHighlights();
                             });
 
                             typeContainer.appendChild(badge);
@@ -354,10 +518,13 @@
             document.getElementById('userFilter').value = "";
             document.getElementById('startDate').value = "";
             document.getElementById('endDate').value = "";
+            updateFilterHighlights();
             applyFilters(1);
         }
 
         async function applyFilters(page = 1) {
+            updateFilterHighlights();
+
             const start = document.getElementById('startDate').value;
             const end = document.getElementById('endDate').value;
             if (start && end && start > end) {
@@ -380,6 +547,8 @@
             if (user) params.append('user', user);
             if (start) params.append('startDate', start);
             if (end) params.append('endDate', end);
+            params.append('sortCol', sortCol);
+            params.append('sortDir', sortDir);
 
             try {
                 const res = await fetch(`/api/events?${params.toString()}`);
@@ -429,6 +598,125 @@
         // Expose to global scope so inline onclick handlers in the HTML can call it
         window.changePage = function (delta) {
             eventTableCtrl.changePage(delta);
+        }
+
+        function handleSort(col) {
+            if (sortCol === col) {
+                sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortCol = col;
+                sortDir = 'asc';
+            }
+            updateSortHeaders();
+            fetch('/api/user-preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'eventLogSort', value: `${sortCol}:${sortDir}` })
+            });
+            applyFilters(1);
+        }
+
+        function updateSortHeaders() {
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                const icon = th.querySelector('.sort-icon');
+                if (th.dataset.sort === sortCol) {
+                    th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+                    if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+                } else {
+                    if (icon) icon.textContent = '⇅';
+                }
+            });
+            // sync mobile sort bar icons
+            ['timestamp','user','event_type','title'].forEach(col => {
+                const btn = document.getElementById(`mobileSortBtn-${col}`);
+                const icon = document.getElementById(`mobile-icon-${col}`);
+                if (btn) btn.classList.toggle('active', col === sortCol);
+                if (icon) icon.textContent = col === sortCol ? (sortDir === 'asc' ? '▲' : '▼') : '⇅';
+            });
+        }
+
+        function toggleFilters() {
+            const bar = document.getElementById('filterBar');
+            const btn = document.getElementById('filterToggleBtn');
+            const expanded = bar.classList.toggle('filter-expanded');
+            btn.classList.toggle('expanded', expanded);
+        }
+
+        function updateFilterHighlights() {
+            const filterIds = ['userFilter', 'startDate', 'endDate'];
+            let activeCount = 0;
+            filterIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.value && el.value.trim() !== '') activeCount++;
+            });
+            // also count active type badges
+            activeCount += document.querySelectorAll('.type-badge.active').length;
+            const badge = document.getElementById('filterActiveCount');
+            if (badge) {
+                badge.textContent = activeCount > 0 ? activeCount : '';
+                badge.style.display = activeCount > 0 ? 'inline-block' : 'none';
+            }
+        }
+
+        function toggleSortBarEvt() {
+            const bar = document.getElementById('evtLog-sort-bar');
+            const btn = document.getElementById('sortToggleBtnEvt');
+            const expanded = bar.classList.toggle('sort-expanded');
+            btn.classList.toggle('expanded', expanded);
+        }
+
+        function renderCards(logs) {
+            const container = document.getElementById('evtCardContainer');
+            if (!container) return;
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px;">No events matching criteria.</p>';
+                return;
+            }
+            container.innerHTML = logs.map((evt, idx) => {
+                let detailsBtn = '';
+                if (evt.payload && evt.payload !== '{}' && evt.payload !== 'null' && JSON.stringify(evt.payload) !== '{}') {
+                    const safePayload = JSON.stringify(evt.payload).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                    detailsBtn = `<button class="btn-informative btn-sm" onclick="showModal('${safePayload}', '${evt.timestamp}', '${evt.user}', '${evt.event_type}', '${(evt.title || '').replace(/'/g, "\\'")}')" title="View event payload details">View Details</button>`;
+                }
+                return `
+                <div class="table-card">
+                    <div class="card-header">
+                        <span class="card-title">${evt.title || ''}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-row">
+                            <span class="card-label">Datetime:</span>
+                            <span style="font-size:0.9em;">${formatDate(evt.timestamp)}</span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label">User:</span>
+                            <span><strong>${evt.user}</strong></span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label">Event Type:</span>
+                            <span class="log-type-badge ${getBadgeClass(evt.event_type)}">${evt.event_type}</span>
+                        </div>
+                    </div>
+                    ${detailsBtn ? `<div class="card-actions">${detailsBtn}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function syncMobilePagination(show) {
+            const ctrl = document.getElementById('paginationControlsMobile');
+            if (!ctrl) return;
+            ctrl.style.display = show ? 'flex' : 'none';
+            if (!show) return;
+            const totalPages = Math.max(1, Math.ceil(eventTableCtrl.total / eventTableCtrl.limit));
+            document.getElementById('pageInfoMobile').textContent = `${eventTableCtrl.page} of ${totalPages}`;
+            const atFirst = eventTableCtrl.page <= 1;
+            const atLast = eventTableCtrl.page >= totalPages;
+            document.getElementById('btnFirstMobile').disabled = atFirst;
+            document.getElementById('btnPrevMobile').disabled = atFirst;
+            document.getElementById('btnNextMobile').disabled = atLast;
+            document.getElementById('btnLastMobile').disabled = atLast;
+            document.getElementById('rowsPerPageMobile').value = document.getElementById('rowsPerPage').value;
         }
 
         init();

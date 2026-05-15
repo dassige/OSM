@@ -203,7 +203,7 @@ function renderPage(page) {
   const paginationEl = document.getElementById('reportPagination');
   paginationEl.style.display = 'flex';
   document.getElementById('rptPageInfo').textContent =
-    `${total === 0 ? 0 : start + 1}–${end} of ${total}`;
+    `${currentPage} of ${totalPages}`;
   document.getElementById('btnRptFirst').disabled = currentPage <= 1;
   document.getElementById('btnRptPrev').disabled = currentPage <= 1;
   document.getElementById('btnRptNext').disabled = currentPage >= totalPages || isAll;

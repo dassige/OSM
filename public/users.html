@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -15,6 +15,29 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
+    <style>
+        .toolbar-btn-mobile { display: none; }
+        #usersCardList { display: none; }
+
+        @media (max-width: 768px) {
+            #usersTableWrapper { display: none; }
+            #usersCardList { display: block; }
+
+            .toolbar-btn-desktop { display: none; }
+            .toolbar-btn-mobile {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                border-radius: 6px;
+            }
+
+            #users-sort-bar { display: none; }
+            #users-sort-bar.sort-expanded { display: flex; }
+        }
+    </style>
 </head>
 
 <body>
@@ -34,9 +57,15 @@
         <p class="text-center" style="color: var(--text-muted); margin-bottom: 30px;">Manage additional users for the
             web application.</p>
 
-        <div id="tableContainer" style="display: block;">
+        <div id="usersTableWrapper">
             <div class="table-toolbar">
-                <button class="btn-success" onclick="openAddModal()">Add User</button>
+                <button class="btn-success toolbar-btn-desktop" onclick="openAddModal()" title="Add a new system user">Add User</button>
+                <button class="btn-success toolbar-btn-mobile" onclick="openAddModal()" title="Add a new system user">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
             </div>
 
             <table id="userTable">
@@ -66,6 +95,36 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Mobile card list -->
+        <div id="usersCardList">
+            <div class="sort-section">
+                <button class="sort-toggle-btn" id="sortToggleBtnUsers" onclick="toggleSortBarUsers()" title="Show or hide sort options">
+                    <span>Sort by</span>
+                    <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div id="users-sort-bar" class="sort-bar-container">
+                    <span class="sort-bar-label">Sort:</span>
+                    <button class="sort-bar-btn" id="mobileSortBtn-name" onclick="handleSort('name')" title="Sort by name">
+                        Name <span id="mobile-icon-name" class="sort-icon"></span>
+                    </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-email" onclick="handleSort('email')" title="Sort by email">
+                        Email <span id="mobile-icon-email" class="sort-icon"></span>
+                    </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-role" onclick="handleSort('role')" title="Sort by role">
+                        Role <span id="mobile-icon-role" class="sort-icon"></span>
+                    </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-status" onclick="handleSort('status')" title="Sort by status">
+                        Status <span id="mobile-icon-status" class="sort-icon"></span>
+                    </button>
+                </div>
+            </div>
+            <div id="usersCardContainer"></div>
+        </div>
     </div>
 
     <div id="userModal" class="modal">
@@ -76,13 +135,13 @@
             <form id="addUserForm" autocomplete="off">
                 <input type="text" style="display:none">
                 <input type="password" style="display:none">
-                <div class="form-group"><label>Name</label><input type="text" id="newName" required autocomplete="off">
+                <div class="form-group"><label>Name</label><input type="text" id="newName" required autocomplete="off" title="Full name of the new user">
                 </div>
                 <div class="form-group"><label>Email</label><input type="email" id="newEmail" required
-                        autocomplete="off"></div>
+                        autocomplete="off" title="Email address used to log in"></div>
                 <div class="form-group">
                     <label>Role</label>
-                    <select id="newRole">
+                    <select id="newRole" title="Permission level for this user">
                         <option value="simple" selected>Simple (Can send emails)</option>
                         <option value="guest">Guest (Read only)</option>
                         <option value="admin">Admin (Full Access)</option>
@@ -108,11 +167,11 @@
             </h2>
             <form id="editUserForm" autocomplete="off">
                 <input type="hidden" id="editUserId">
-                <div class="form-group"><label>Name</label><input type="text" id="editName" required></div>
-                <div class="form-group"><label>Email</label><input type="email" id="editEmail" required></div>
+                <div class="form-group"><label>Name</label><input type="text" id="editName" required title="Full name of the user"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="editEmail" required title="Email address used to log in"></div>
                 <div class="form-group">
                     <label>Role</label>
-                    <select id="editRole">
+                    <select id="editRole" title="Permission level for this user">
                         <option value="simple">Simple</option>
                         <option value="guest">Guest</option>
                         <option value="admin">Admin</option>
@@ -180,30 +239,47 @@
     <script>
         let userTable;
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Load sort preference
+            let initialSort = { column: 'name', order: 'asc' };
+            try {
+                const res = await fetch('/api/user-preferences/usersSort');
+                const data = await res.json();
+                if (data.value) {
+                    const [col, dir] = data.value.split(':');
+                    initialSort = { column: col, order: dir };
+                }
+            } catch (e) {}
+
             userTable = new TableController({
                 tbodyId: 'userTable',
                 emptyMessage: 'No database users found.',
-                initialSort: { column: 'name', order: 'asc' },
+                initialSort: initialSort,
                 sortFunction: (a, b, sortState) => {
                     let valA, valB;
-
                     if (sortState.column === 'status') {
-                        // Derive a string for sorting status
                         valA = a.blocked ? 'blocked' : (a.enabled ? 'active' : 'disabled');
                         valB = b.blocked ? 'blocked' : (b.enabled ? 'active' : 'disabled');
                     } else {
                         valA = (a[sortState.column] || '').toString().toLowerCase();
                         valB = (b[sortState.column] || '').toString().toLowerCase();
                     }
-
                     if (valA < valB) return sortState.order === 'asc' ? -1 : 1;
                     if (valA > valB) return sortState.order === 'asc' ? 1 : -1;
                     return 0;
                 },
+                onSortChange: async (sortState) => {
+                    await fetch('/api/user-preferences', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key: 'usersSort', value: `${sortState.column}:${sortState.order}` })
+                    });
+                },
+                onRenderComplete: () => {
+                    renderUserCards(userTable.data);
+                },
                 renderRow: (u) => {
                     const tr = document.createElement('tr');
-
                     const statusBadges = [];
                     if (u.blocked === 1) {
                         statusBadges.push('<span class="badge badge-blocked">BLOCKED</span>');
@@ -212,23 +288,21 @@
                     } else {
                         statusBadges.push('<span class="badge badge-enabled">ACTIVE</span>');
                     }
-
                     const userObj = JSON.stringify(u).replace(/"/g, '&quot;');
                     const nameEscaped = u.name.replace(/'/g, "\\'");
-
                     tr.innerHTML = `
                         <td data-label="Name">${u.name}</td>
                         <td data-label="Email">${u.email}</td>
                         <td data-label="Role"><span class="badge badge-${u.role || 'simple'}">${u.role || 'simple'}</span></td>
                         <td data-label="Status" class="text-center">${statusBadges.join(' ')}</td>
                         <td data-label="Actions" class="text-right ws-nowrap">
-                            <button class="btn-icon edit" onclick="openEditModal(${userObj})" title="Edit User">
+                            <button class="btn-icon edit" onclick="openEditModal(${userObj})" title="Edit this user">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                             </button>
-                            <button class="btn-icon reset" onclick="openReset('${u.id}', '${nameEscaped}', '${u.email}')" title="Reset Password">
+                            <button class="btn-icon reset" onclick="openReset('${u.id}', '${nameEscaped}', '${u.email}')" title="Reset this user's password and email them a new one">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
                             </button>
-                            <button class="btn-icon delete" onclick="deleteUser('${u.id}', '${nameEscaped}')" title="Delete User">
+                            <button class="btn-icon delete" onclick="deleteUser('${u.id}', '${nameEscaped}')" title="Permanently delete this user">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             </button>
                         </td>`;
@@ -237,6 +311,8 @@
             });
             // TableController expects a tbody id, not a table id; create one dynamically to avoid a mismatch
             userTable.tbodyId = document.querySelector('#userTable tbody').id = 'userTableBody';
+
+            loadUsers();
         });
 
         // Expose to global scope so inline onclick handlers in the table header can call it
@@ -366,7 +442,60 @@
 
         function openAddModal() { document.getElementById('userModal').style.display = 'block'; }
 
-        loadUsers();
+        function renderUserCards(users) {
+            const container = document.getElementById('usersCardContainer');
+            if (!container) return;
+            if (!users || users.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px;">No database users found.</p>';
+                return;
+            }
+            container.innerHTML = users.map((u, idx) => {
+                const userObj = JSON.stringify(u).replace(/"/g, '&quot;');
+                const nameEscaped = u.name.replace(/'/g, "\\'");
+                let statusBadge = '';
+                if (u.blocked === 1) statusBadge = '<span class="badge badge-blocked">BLOCKED</span>';
+                else if (u.enabled === 0) statusBadge = '<span class="badge badge-disabled">DISABLED</span>';
+                else statusBadge = '<span class="badge badge-enabled">ACTIVE</span>';
+                return `
+        <div class="table-card">
+            <div class="card-header">
+                <span class="card-title">${u.name}</span>
+            </div>
+            <div class="card-body">
+                <div class="card-row">
+                    <span class="card-label">Email:</span>
+                    <span>${u.email}</span>
+                </div>
+                <div class="card-row">
+                    <span class="card-label">Role:</span>
+                    <span class="badge badge-${u.role || 'simple'}">${u.role || 'simple'}</span>
+                </div>
+                <div class="card-row">
+                    <span class="card-label">Status:</span>
+                    <span>${statusBadge}</span>
+                </div>
+            </div>
+            <div class="card-actions">
+                <button class="btn-icon edit" onclick="openEditModal(${userObj})" title="Edit this user">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                </button>
+                <button class="btn-icon reset" onclick="openReset('${u.id}', '${nameEscaped}', '${u.email}')" title="Reset password and email new one">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                </button>
+                <button class="btn-icon delete" onclick="deleteUser('${u.id}', '${nameEscaped}')" title="Permanently delete this user">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            </div>
+        </div>`;
+            }).join('');
+        }
+
+        function toggleSortBarUsers() {
+            const bar = document.getElementById('users-sort-bar');
+            const btn = document.getElementById('sortToggleBtnUsers');
+            const expanded = bar.classList.toggle('sort-expanded');
+            btn.classList.toggle('expanded', expanded);
+        }
 
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {

@@ -50,16 +50,37 @@
             .filter-bar {
                 display: none;
                 flex-direction: column;
-                gap: 10px;
-                padding: 12px;
+                gap: 6px;
+                padding: 8px 10px;
                 background: var(--bg-card);
                 border: 1px solid var(--border-color);
                 border-radius: 8px;
                 margin-bottom: 10px;
             }
             .filter-bar.filter-expanded { display: flex; }
-            .filter-bar .filter-group { min-width: unset; flex: unset; width: 100%; }
-            .filter-bar .filter-group-date .date-range-container { flex-direction: column; gap: 6px; }
+            /* Inline layout: label left, control right.
+               flex: 0 0 auto !important overrides inline flex values (e.g. flex: 0 1 100px)
+               which in column-direction inflate group height. */
+            .filter-bar .filter-group {
+                flex: 0 0 auto !important;
+                flex-direction: row !important;
+                align-items: center;
+                gap: 8px;
+                min-width: unset;
+                width: 100%;
+            }
+            .filter-bar .filter-group > label {
+                min-width: 7.5em;
+                font-size: 12px;
+                flex-shrink: 0;
+                white-space: nowrap;
+            }
+            .filter-bar .filter-group > input,
+            .filter-bar .filter-group > select,
+            .filter-bar .filter-group > div { flex: 1; min-width: 0; }
+            /* Date inputs side-by-side, override global width:100% */
+            .filter-bar .date-range-container { flex-direction: row !important; align-items: center; gap: 6px; }
+            .filter-bar .date-range-container .filter-date { width: auto !important; flex: 1; min-width: 0; }
             .filter-bar .filter-actions { flex-direction: row; justify-content: flex-end; gap: 8px; }
 
             /* Keep the tools-bar buttons on one row on mobile */

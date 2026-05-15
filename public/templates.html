@@ -17,6 +17,39 @@
         referrerpolicy="no-referrer"></script>
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
+    <style>
+        .form-group input.droppable-input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .toolbar-btn-mobile { display: none; }
+
+        @media (max-width: 768px) {
+            .toolbar-btn-desktop { display: none; }
+            .toolbar-btn-mobile {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                border-radius: 6px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .tab-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                flex-wrap: nowrap;
+            }
+            .tab {
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -68,9 +101,10 @@
 
             <div id="tab-skills" class="tab-content active">
                 <div class="template-actions">
-                    <button type="button" class="btn-sm btn-success" onclick="triggerImport('skills')">Import</button>
-                    <button type="button" class="btn-sm btn-primary"
-                        onclick="exportTemplate('skills')">Export</button>
+                    <button type="button" class="btn-sm btn-success toolbar-btn-desktop" onclick="triggerImport('skills')" title="Import template from JSON file">Import</button>
+                    <button type="button" class="btn-success toolbar-btn-mobile" onclick="triggerImport('skills')" title="Import template from JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></button>
+                    <button type="button" class="btn-sm btn-primary toolbar-btn-desktop" onclick="exportTemplate('skills')" title="Export template as JSON file">Export</button>
+                    <button type="button" class="btn-primary toolbar-btn-mobile" onclick="exportTemplate('skills')" title="Export template as JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
                 </div>
 
                 <div class="sub-nav-container">
@@ -200,10 +234,10 @@
 
             <div id="tab-accepted" class="tab-content">
                 <div class="template-actions">
-                    <button type="button" class="btn-sm btn-success"
-                        onclick="triggerImport('accepted')">Import</button>
-                    <button type="button" class="btn-sm btn-primary"
-                        onclick="exportTemplate('accepted')">Export</button>
+                    <button type="button" class="btn-sm btn-success toolbar-btn-desktop" onclick="triggerImport('accepted')" title="Import template from JSON file">Import</button>
+                    <button type="button" class="btn-success toolbar-btn-mobile" onclick="triggerImport('accepted')" title="Import template from JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></button>
+                    <button type="button" class="btn-sm btn-primary toolbar-btn-desktop" onclick="exportTemplate('accepted')" title="Export template as JSON file">Export</button>
+                    <button type="button" class="btn-primary toolbar-btn-mobile" onclick="exportTemplate('accepted')" title="Export template as JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
                 </div>
 
                 <div class="sub-nav-container">
@@ -267,10 +301,10 @@
 
             <div id="tab-rejected" class="tab-content">
                 <div class="template-actions">
-                    <button type="button" class="btn-sm btn-success"
-                        onclick="triggerImport('rejected')">Import</button>
-                    <button type="button" class="btn-sm btn-primary"
-                        onclick="exportTemplate('rejected')">Export</button>
+                    <button type="button" class="btn-sm btn-success toolbar-btn-desktop" onclick="triggerImport('rejected')" title="Import template from JSON file">Import</button>
+                    <button type="button" class="btn-success toolbar-btn-mobile" onclick="triggerImport('rejected')" title="Import template from JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></button>
+                    <button type="button" class="btn-sm btn-primary toolbar-btn-desktop" onclick="exportTemplate('rejected')" title="Export template as JSON file">Export</button>
+                    <button type="button" class="btn-primary toolbar-btn-mobile" onclick="exportTemplate('rejected')" title="Export template as JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
                 </div>
 
                 <div class="sub-nav-container">
@@ -391,10 +425,10 @@
 
             <div id="tab-surveys" class="tab-content">
                 <div class="template-actions">
-                    <button type="button" class="btn-sm btn-success"
-                        onclick="triggerImport('surveys')">Import</button>
-                    <button type="button" class="btn-sm btn-primary"
-                        onclick="exportTemplate('surveys')">Export</button>
+                    <button type="button" class="btn-sm btn-success toolbar-btn-desktop" onclick="triggerImport('surveys')" title="Import template from JSON file">Import</button>
+                    <button type="button" class="btn-success toolbar-btn-mobile" onclick="triggerImport('surveys')" title="Import template from JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></button>
+                    <button type="button" class="btn-sm btn-primary toolbar-btn-desktop" onclick="exportTemplate('surveys')" title="Export template as JSON file">Export</button>
+                    <button type="button" class="btn-primary toolbar-btn-mobile" onclick="exportTemplate('surveys')" title="Export template as JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
                 </div>
 
                 <div class="sub-nav-container">
@@ -469,31 +503,38 @@
                         <code>_italic_</code>, <code>~strike~</code>.
                     </div>
 
-                    <div class="form-group wa-input-wrapper">
-                        <label>Message Body</label>
-                        <div class="palette-container" style="margin-bottom:5px; margin-top: 10px;">
-                            <span class="palette-label">Drag variables:</span>
-                            <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
-                            <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
-                            <div class="draggable-item" draggable="true" data-val="surveyName">Survey Name</div>
-                            <div class="draggable-item" draggable="true" data-val="surveyLink"
-                                style="border-color:var(--info); color:var(--info);">Survey Link</div>
-                        </div>
-                        <div class="wa-toolbar">
-                            <button type="button" class="wa-btn" onclick="formatText('surveysWaBody', '*')">B</button>
-                            <button type="button" class="wa-btn" onclick="formatText('surveysWaBody', '_')"
-                                style="font-style:italic;">I</button>
-                            <button type="button" class="wa-btn" onclick="formatText('surveysWaBody', '~')"
-                                style="text-decoration:line-through;">S</button>
-                        </div>
-                        <div style="display:flex; gap:20px; flex-direction: column; margin-top:20px;">
-                            <div style="flex:1;">
-                                <label style="font-weight:bold; color:var(--success);">Message Body (Anonymous)</label>
+                    <div class="palette-container" style="margin-bottom:5px; margin-top: 10px;">
+                        <span class="palette-label">Drag variables:</span>
+                        <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                        <div class="draggable-item" draggable="true" data-val="name">Member Name</div>
+                        <div class="draggable-item" draggable="true" data-val="surveyName">Survey Name</div>
+                        <div class="draggable-item" draggable="true" data-val="surveyLink"
+                            style="border-color:var(--info); color:var(--info);">Survey Link</div>
+                    </div>
+                    <div style="display:flex; gap:20px; flex-direction: column; margin-top:20px;">
+                        <div style="flex:1;">
+                            <label style="font-weight:bold; color:var(--success);">Message Body (Anonymous)</label>
+                            <div class="wa-input-wrapper form-group">
+                                <div class="wa-toolbar">
+                                    <button type="button" class="wa-btn" onclick="formatText('surveysWaBody', '*')" title="Bold">B</button>
+                                    <button type="button" class="wa-btn" onclick="formatText('surveysWaBody', '_')"
+                                        style="font-style:italic;" title="Italic">I</button>
+                                    <button type="button" class="wa-btn" onclick="formatText('surveysWaBody', '~')"
+                                        style="text-decoration:line-through;" title="Strikethrough">S</button>
+                                </div>
                                 <textarea id="surveysWaBody" class="droppable-input" rows="4"></textarea>
                             </div>
-                            <div style="flex:1;">
-                                <label style="font-weight:bold; color:var(--danger);">Message Body
-                                    (Non-Anonymous)</label>
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-weight:bold; color:var(--danger);">Message Body (Non-Anonymous)</label>
+                            <div class="wa-input-wrapper form-group">
+                                <div class="wa-toolbar">
+                                    <button type="button" class="wa-btn" onclick="formatText('surveysWaBodyNamed', '*')" title="Bold">B</button>
+                                    <button type="button" class="wa-btn" onclick="formatText('surveysWaBodyNamed', '_')"
+                                        style="font-style:italic;" title="Italic">I</button>
+                                    <button type="button" class="wa-btn" onclick="formatText('surveysWaBodyNamed', '~')"
+                                        style="text-decoration:line-through;" title="Strikethrough">S</button>
+                                </div>
                                 <textarea id="surveysWaBodyNamed" class="droppable-input" rows="4"></textarea>
                             </div>
                         </div>
@@ -504,10 +545,10 @@
 
             <div id="tab-newuser" class="tab-content">
                 <div class="template-actions">
-                    <button type="button" class="btn-sm btn-success"
-                        onclick="triggerImport('newuser')">Import</button>
-                    <button type="button" class="btn-sm btn-primary"
-                        onclick="exportTemplate('newuser')">Export</button>
+                    <button type="button" class="btn-sm btn-success toolbar-btn-desktop" onclick="triggerImport('newuser')" title="Import template from JSON file">Import</button>
+                    <button type="button" class="btn-success toolbar-btn-mobile" onclick="triggerImport('newuser')" title="Import template from JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></button>
+                    <button type="button" class="btn-sm btn-primary toolbar-btn-desktop" onclick="exportTemplate('newuser')" title="Export template as JSON file">Export</button>
+                    <button type="button" class="btn-primary toolbar-btn-mobile" onclick="exportTemplate('newuser')" title="Export template as JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
                 </div>
                 <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:10px;">New User
                     Notification</h3>
@@ -527,8 +568,10 @@
 
             <div id="tab-reset" class="tab-content">
                 <div class="template-actions">
-                    <button type="button" class="btn-sm btn-success" onclick="triggerImport('reset')">Import</button>
-                    <button type="button" class="btn-sm btn-primary" onclick="exportTemplate('reset')">Export</button>
+                    <button type="button" class="btn-sm btn-success toolbar-btn-desktop" onclick="triggerImport('reset')" title="Import template from JSON file">Import</button>
+                    <button type="button" class="btn-success toolbar-btn-mobile" onclick="triggerImport('reset')" title="Import template from JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></button>
+                    <button type="button" class="btn-sm btn-primary toolbar-btn-desktop" onclick="exportTemplate('reset')" title="Export template as JSON file">Export</button>
+                    <button type="button" class="btn-primary toolbar-btn-mobile" onclick="exportTemplate('reset')" title="Export template as JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
                 </div>
                 <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:10px;">Password
                     Reset Notification</h3>
@@ -547,9 +590,10 @@
 
             <div id="tab-delete" class="tab-content">
                 <div class="template-actions">
-                    <button type="button" class="btn-sm btn-success" onclick="triggerImport('delete')">Import</button>
-                    <button type="button" class="btn-sm btn-primary"
-                        onclick="exportTemplate('delete')">Export</button>
+                    <button type="button" class="btn-sm btn-success toolbar-btn-desktop" onclick="triggerImport('delete')" title="Import template from JSON file">Import</button>
+                    <button type="button" class="btn-success toolbar-btn-mobile" onclick="triggerImport('delete')" title="Import template from JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></button>
+                    <button type="button" class="btn-sm btn-primary toolbar-btn-desktop" onclick="exportTemplate('delete')" title="Export template as JSON file">Export</button>
+                    <button type="button" class="btn-primary toolbar-btn-mobile" onclick="exportTemplate('delete')" title="Export template as JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
                 </div>
                 <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:10px;">Account
                     Deleted Notification</h3>
@@ -686,7 +730,12 @@
             plugins: 'preview searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
             toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | ltr rtl',
             content_style: "body { font-family:Helvetica,Arial,sans-serif; font-size:14px; margin: 8px; } body.dark-mode { background: #333; color: #fff; }",
+            mobile: {
+                toolbar: 'bold italic underline | link | bullist numlist | removeformat',
+                menubar: false
+            },
             setup: function (editor) {
+                editor.on('focus', function () { lastTinyMCEEditor = editor; lastFocusedInput = null; });
                 editor.on('drop', function (e) {
                     const content = e.dataTransfer.getData('text/html');
                     if (content && content.includes('data-val')) {
@@ -697,15 +746,35 @@
             }
         });
 
+        let lastFocusedInput = null;
+        let lastTinyMCEEditor = null;
+
         document.querySelectorAll('.draggable-item').forEach(item => {
             item.addEventListener('dragstart', (e) => {
                 const val = item.getAttribute('data-val');
                 e.dataTransfer.setData('text/plain', `{{${val}}}`);
                 e.dataTransfer.setData('text/html', `<span class="mceNonEditable chip" data-val="${val}">{{${val}}}</span>`);
             });
+            item.addEventListener('click', () => {
+                const val = item.getAttribute('data-val');
+                const text = `{{${val}}}`;
+                if (lastTinyMCEEditor) {
+                    lastTinyMCEEditor.insertContent(text);
+                    return;
+                }
+                if (lastFocusedInput) {
+                    const el = lastFocusedInput;
+                    const start = el.selectionStart ?? el.value.length;
+                    const end = el.selectionEnd ?? el.value.length;
+                    el.value = el.value.substring(0, start) + text + el.value.substring(end);
+                    el.focus();
+                    el.setSelectionRange(start + text.length, start + text.length);
+                }
+            });
         });
 
         document.querySelectorAll('.droppable-input').forEach(input => {
+            input.addEventListener('focus', () => { lastFocusedInput = input; lastTinyMCEEditor = null; });
             input.addEventListener('dragover', e => e.preventDefault());
             input.addEventListener('drop', e => {
                 e.preventDefault();

@@ -14,6 +14,11 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
+    <style>
+        @media (max-width: 768px) {
+            .container > div { padding: 16px !important; }
+        }
+    </style>
 </head>
 
 <body>
@@ -44,27 +49,31 @@
 
                     <div class="form-group">
                         <label>Email (Username)</label>
-                        <input type="text" id="email" disabled style="opacity: 0.7; cursor: not-allowed;">
+                        <input type="text" id="email" disabled style="opacity: 0.7; cursor: not-allowed;"
+                            title="Your login email address (read-only)">
                     </div>
                     <div class="form-group">
                         <label>Full Name</label>
-                        <input type="text" id="name" required autocomplete="off">
+                        <input type="text" id="name" required autocomplete="off"
+                            title="Your display name used across the app">
                     </div>
 
                     <div class="form-group">
                         <label>New Password</label>
                         <input type="password" id="password" placeholder="Leave blank to keep current"
-                            autocomplete="new-password" minlength="8">
+                            autocomplete="new-password" minlength="8"
+                            title="Leave blank to keep your current password">
                     </div>
 
                     <div class="form-group">
                         <label>Repeat New Password</label>
                         <input type="password" id="passwordConfirm" placeholder="Repeat to confirm"
-                            autocomplete="new-password" minlength="8">
+                            autocomplete="new-password" minlength="8"
+                            title="Repeat the new password to confirm">
                     </div>
 
                     <div id="accountActions" style="margin-top: 20px;">
-                        <button type="submit" class="btn-success">Update Account</button>
+                        <button type="submit" class="btn-success" title="Save changes to your name and/or password">Update Account</button>
                     </div>
                     <div id="envUserMsg"
                         style="display:none; color:var(--danger); font-size:0.9em; margin-top:15px; padding: 10px; background: rgba(220, 53, 69, 0.1); border-radius: 4px; border: 1px solid var(--danger);">
@@ -83,10 +92,11 @@
                             Google Authenticator).</div>
                     </div>
                     <div id="mfaActions">
-                        <button id="btnEnableMfa" type="button" class="btn-success" style="margin: 0;">Setup
-                            2FA</button>
+                        <button id="btnEnableMfa" type="button" class="btn-success" style="margin: 0;"
+                            title="Set up Two-Factor Authentication with an authenticator app">Setup 2FA</button>
                         <button id="btnDisableMfa" type="button" class="btn-danger"
-                            style="margin: 0; display:none;">Disable</button>
+                            style="margin: 0; display:none;"
+                            title="Remove Two-Factor Authentication from your account">Disable</button>
                     </div>
                 </div>
             </div>
@@ -98,7 +108,7 @@
                         <div class="switch-label">Pending Review Alert</div>
                         <div class="switch-desc">Show a popup on login if Live Forms are waiting for review.</div>
                     </div>
-                    <label class="switch" style="margin: 0;">
+                    <label class="switch" style="margin: 0;" title="Toggle the pending review login alert">
                         <input type="checkbox" id="prefReviewAlert"
                             onchange="savePreference('show_pending_reviews_alert', this.checked)">
                         <span class="slider"></span>
@@ -123,10 +133,12 @@
                 <label>Verification Code</label>
                 <input type="text" id="mfaVerifyToken" placeholder="Enter 6-digit code" maxlength="6"
                     autocomplete="one-time-code"
-                    style="text-align:center; letter-spacing: 4px; font-size: 1.2em; font-weight: bold;">
+                    style="text-align:center; letter-spacing: 4px; font-size: 1.2em; font-weight: bold;"
+                    title="Enter the 6-digit code shown in your authenticator app">
             </div>
 
-            <button id="btnVerifyMfa" class="btn-success w-100" style="margin: 0;">Verify & Enable</button>
+            <button id="btnVerifyMfa" class="btn-success w-100" style="margin: 0;"
+                title="Verify the code and activate Two-Factor Authentication">Verify & Enable</button>
         </div>
     </div>
 
@@ -170,10 +182,10 @@
                 const mfaBtn = document.getElementById('btnEnableMfa');
                 if (mfaBtn) {
                     mfaBtn.disabled = true;
-                    mfaBtn.style.backgroundColor = 'var(--border-color)';
-                    mfaBtn.style.color = 'var(--text-muted)';
-                    mfaBtn.style.cursor = 'not-allowed';
+                    mfaBtn.classList.remove('btn-success');
+                    mfaBtn.classList.add('btn-secondary');
                     mfaBtn.innerText = "Unavailable";
+                    mfaBtn.title = "Not available for environment-defined Super Admin accounts";
                 }
 
                 const mfaDesc = document.getElementById('mfaStatusDesc');
@@ -320,11 +332,10 @@
             try {
                 const res = await fetch('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 if (res.ok) {
-                    msgBox.className = 'alert-box status-success';
-                    msgBox.innerText = 'Profile updated successfully.';
-                    msgBox.style.display = 'block';
+                    msgBox.style.display = 'none';
                     document.getElementById('password').value = '';
                     document.getElementById('passwordConfirm').value = '';
+                    if (window.showToast) showToast('Profile updated successfully.', 'success');
                 } else { throw new Error('Update failed'); }
             } catch (err) {
                 msgBox.className = 'alert-box status-error';

@@ -137,12 +137,10 @@ class TableController {
 
         if (!container || !info || !btnPrev || !btnNext) return;
 
-        const totalPages = Math.ceil(this.total / this.limit);
-        const start = this.total === 0 ? 0 : ((this.page - 1) * this.limit) + 1;
-        const end = Math.min(this.page * this.limit, this.total);
+        const totalPages = Math.max(1, Math.ceil(this.total / this.limit));
 
         container.style.display = this.total > 0 ? 'flex' : 'none';
-        info.textContent = `${start}-${end} of ${this.total}`;
+        info.textContent = `${this.page} of ${totalPages}`;
 
         btnPrev.disabled = this.page <= 1;
         btnNext.disabled = this.page >= totalPages;

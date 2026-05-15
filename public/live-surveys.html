@@ -77,18 +77,38 @@
             .filter-bar {
                 display: none;
                 flex-direction: column;
-                gap: 10px;
-                padding: 12px;
+                gap: 6px;
+                padding: 8px 10px;
                 background: var(--bg-card);
                 border: 1px solid var(--border-color);
                 border-radius: 8px;
                 margin-bottom: 10px;
             }
             .filter-bar.filter-expanded { display: flex; }
-            .filter-bar .filter-group { min-width: unset; flex: unset; width: 100%; }
-            .filter-bar .filter-group > div { flex-direction: column; gap: 6px; }
+            /* Inline layout: label left, control right.
+               flex: 0 0 auto !important overrides inline flex values (e.g. flex:1)
+               which in column-direction inflate group height. */
+            .filter-bar .filter-group {
+                flex: 0 0 auto !important;
+                flex-direction: row !important;
+                align-items: center;
+                gap: 8px;
+                min-width: unset;
+                width: 100%;
+            }
+            .filter-bar .filter-group > label {
+                min-width: 8em;
+                font-size: 12px;
+                flex-shrink: 0;
+                white-space: nowrap;
+            }
+            .filter-bar .filter-group > input,
+            .filter-bar .filter-group > select,
+            .filter-bar .filter-group > div { flex: 1; min-width: 0; }
+            /* Date inputs side-by-side; higher specificity overrides global flex:0 0 auto and width:135px */
+            .filter-bar .date-range-container { flex-direction: row !important; align-items: center; gap: 6px; }
+            .filter-bar .date-range-container .filter-date { width: auto !important; flex: 1 !important; min-width: 0; }
             .filter-bar .filter-actions { flex-direction: row; justify-content: flex-end; gap: 8px; }
-            .date-input { width: 100%; }
         }
     </style>
 </head>
@@ -138,9 +158,9 @@
                 <div class="filter-group filter-group-date">
                     <label>Published Between</label>
                     <div class="date-range-container">
-                        <input type="date" id="filterDateFrom" class="date-input" title="Published date from"
+                        <input type="date" id="filterDateFrom" class="date-input filter-date" title="Published date from"
                             onchange="updateFilterHighlights()">
-                        <input type="date" id="filterDateTo" class="date-input" title="Published date to"
+                        <input type="date" id="filterDateTo" class="date-input filter-date" title="Published date to"
                             onchange="updateFilterHighlights()">
                     </div>
                 </div>
