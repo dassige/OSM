@@ -21,11 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     .then((r) => r.json())
     .then((c) => {
       uiConfig = c;
-      if (c.loginTitle) {
-        document.title = "Survey Results - " + c.loginTitle;
-        document.getElementById("pageHeader").innerText =
-          "Survey Results - " + c.loginTitle;
-      }
+      initPageTitle("Survey Results", "Survey Results");
       if (c.appBackground)
         document.body.style.backgroundImage = `url('${c.appBackground}')`;
       if (c.appMode === "demo")

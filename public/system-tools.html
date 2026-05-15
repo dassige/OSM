@@ -472,10 +472,7 @@
             .then(r => r.json())
             .then(c => {
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-                if (c.loginTitle) {
-                    document.title = "System Tools - " + c.loginTitle;
-                    document.getElementById('pageHeader').textContent = "System Tools - " + c.loginTitle;
-                }
+                initPageTitle("System Tools", "System Tools");
                 if (c.appMode === 'demo') {
                     document.getElementById('demoBanner').style.display = 'block';
                 }

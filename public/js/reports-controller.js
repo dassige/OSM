@@ -20,11 +20,7 @@ async function initReports() {
     appConfig = c;
     if (c.appBackground)
       document.body.style.backgroundImage = `url('${c.appBackground}')`;
-    if (c.loginTitle) {
-      document.title = "Reports - " + c.loginTitle;
-      document.getElementById("pageHeader").innerText =
-        "Reports Console - " + c.loginTitle;
-    }
+    initPageTitle("Reports", "Reports Console");
     if (c.appMode === "demo")
       document.getElementById("demoBanner").style.display = "block";
 

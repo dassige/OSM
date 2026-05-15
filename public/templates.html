@@ -657,10 +657,7 @@
 
         let currentImportType = null;
         fetch('/ui-config').then(r => r.json()).then(c => {
-            if (c.loginTitle) {
-                document.title = "Templates - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "Templates - " + c.loginTitle;
-            }
+            initPageTitle("Templates", "Templates");
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });

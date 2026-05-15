@@ -50,11 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((r) => r.json())
     .then((c) => {
       uiConfig = c;
-      if (c.loginTitle) {
-        document.title = "Forms Manager - " + c.loginTitle;
-        document.getElementById("pageHeader").innerText =
-          "Forms Manager - " + c.loginTitle;
-      }
+      initPageTitle("Forms Manager", "Forms Manager");
       if (c.appBackground)
         document.body.style.backgroundImage = `url('${c.appBackground}')`;
       if (c.appMode === "demo")

@@ -430,10 +430,7 @@
         async function init() {
             try {
                 const c = await (await fetch('/ui-config')).json();
-                if (c.loginTitle) {
-                    document.title = "Live Forms - " + c.loginTitle;
-                    document.getElementById('pageHeader').innerText = "Live Forms Management - " + c.loginTitle;
-                }
+                initPageTitle("Live Forms", "Live Forms Management");
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
                 if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
                 if (c.locale) appLocale = c.locale;

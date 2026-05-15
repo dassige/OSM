@@ -352,10 +352,7 @@
             try {
                 const uiRes = await fetch('/ui-config');
                 const uiConfig = await uiRes.json();
-                if (uiConfig.loginTitle) {
-                    document.title = "Skills Management - " + uiConfig.loginTitle;
-                    document.getElementById('pageHeader').innerText = "Manage Skills - " + uiConfig.loginTitle;
-                }
+                initPageTitle("Skills Management", "Manage Skills");
                 if (uiConfig.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
                 if (uiConfig.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
             } catch (e) { }

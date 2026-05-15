@@ -333,10 +333,7 @@
                 if (configData.locale) appLocale = configData.locale;
                 if (configData.timezone) appTimezone = configData.timezone;
                 if (configData.appBackground) document.body.style.backgroundImage = `url('${configData.appBackground}')`;
-                if (configData.loginTitle) {
-                    document.title = "Event Log - " + configData.loginTitle;
-                    document.getElementById('pageHeader').innerText = "System Event Log - " + configData.loginTitle;
-                }
+                initPageTitle("Event Log", "System Event Log");
                 if (configData.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
             } catch (e) { }
 

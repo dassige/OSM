@@ -12,11 +12,7 @@ async function initStats() {
   appConfig = c;
   if (c.appBackground)
     document.body.style.backgroundImage = `url('${c.appBackground}')`;
-  if (c.loginTitle) {
-    document.title = "Statistics - " + c.loginTitle;
-    document.getElementById("pageHeader").innerText =
-      "Statistics Dashboard - " + c.loginTitle;
-  }
+  initPageTitle("Statistics", "Statistics Dashboard");
 
   if (c.appMode === "demo")
     document.getElementById("demoBanner").style.display = "block";

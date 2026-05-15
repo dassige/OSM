@@ -328,10 +328,7 @@
                 const uiRes = await fetch('/ui-config');
                 if (uiRes.ok) {
                     const uiConfig = await uiRes.json();
-                    if (uiConfig.loginTitle) {
-                        document.getElementById('pageTitle').innerText = "Member Management - " + uiConfig.loginTitle;
-                        document.getElementById('pageHeader').innerText = "Manage Members - " + uiConfig.loginTitle;
-                    }
+                    initPageTitle("Member Management", "Manage Members");
                     if (uiConfig.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
                     if (uiConfig.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
                 }

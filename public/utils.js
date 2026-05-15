@@ -372,3 +372,37 @@ window.hideGlobalSpinner = function() {
         spinnerOverlay.style.display = 'none';
     }
 };
+
+// --- PAGE TITLE UTILITY ---
+(function() {
+    // Single cached fetch shared across all callers on a page
+    let _configPromise = null;
+    function _getConfig() {
+        if (!_configPromise) {
+            _configPromise = fetch('/ui-config').then(r => r.json()).catch(() => ({}));
+        }
+        return _configPromise;
+    }
+
+    /**
+     * Sets both the browser tab title and the visible page heading, then syncs
+     * the mobile top banner (if present).
+     *
+     * @param {string} tabPrefix   - Prefix for document.title, e.g. "Skills Management"
+     * @param {string} headingText - Text for the <h1>, e.g. "Manage Skills"
+     *                               Defaults to tabPrefix when omitted.
+     * @param {string} headerId    - ID of the heading element (default: "pageHeader")
+     */
+    window.initPageTitle = async function(tabPrefix, headingText, headerId) {
+        headerId = headerId || 'pageHeader';
+        const displayText = headingText || tabPrefix;
+        const cfg = await _getConfig();
+        const appName = cfg.loginTitle || 'OpReady';
+        document.title = tabPrefix + ' - ' + appName;
+        const el = document.getElementById(headerId);
+        if (el) el.innerText = displayText + ' - ' + appName;
+        // Sync the mobile banner title (shows only the section name, no app suffix)
+        const bannerTitle = document.getElementById('mobileBannerTitle');
+        if (bannerTitle) bannerTitle.textContent = displayText;
+    };
+})();

@@ -336,10 +336,7 @@
         }
 
         fetch('/ui-config').then(r => r.json()).then(c => {
-            if (c.loginTitle) {
-                document.title = "Manage Users - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "System Users - " + c.loginTitle;
-            }
+            initPageTitle("Manage Users", "System Users");
 
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';

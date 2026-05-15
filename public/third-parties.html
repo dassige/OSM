@@ -222,9 +222,8 @@
         const waAutoDisconnect = document.getElementById('waAutoDisconnect');
 
         fetch('/ui-config').then(r => r.json()).then(c => {
+            initPageTitle("Third Party Services", "Third Party Services");
             if (c.loginTitle) {
-                document.title = "Third Party Services - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "Third Party Services - " + c.loginTitle;
                 document.getElementById('testMessage').value = `This is a test message from ${c.loginTitle}.`;
                 document.getElementById('appNameRef').textContent = c.loginTitle;
             }

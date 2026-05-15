@@ -285,14 +285,6 @@
         </svg>
     </button>
     <script>
-        fetch('/ui-config').then(r => r.json()).then(c => {
-            if (c.loginTitle) {
-                document.title = "Surveys Manager - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "Surveys Manager - " + c.loginTitle;
-            }
-            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
-        });
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }

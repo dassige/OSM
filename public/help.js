@@ -600,4 +600,81 @@ const helpContent = {
         const body = document.querySelector('#globalHelpModal .help-body');
         if (body) body.innerHTML = body.innerHTML.replace(/\{\{appname\}\}/g, appName);
     }).catch(() => {});
+
+    // --- MOBILE TOP BANNER ---
+    // Pages that get the Android-style top navigation banner
+    const bannerKeys = [
+        'index', 'members', 'skills', 'templates', 'system-tools',
+        'event-log', 'users', 'profile', 'third-parties', 'training-planner',
+        'forms-manage', 'reports', 'live-forms', 'statistics', 'surveys-manage',
+        'live-surveys', 'surveys-tracking', 'surveys-results',
+        'forms-view-review', 'forms-view-preview', 'surveys-view-preview'
+    ];
+
+    // Short display titles for the banner (no app-name suffix)
+    const bannerTitles = {
+        'index': 'Dashboard',
+        'members': 'Members',
+        'skills': 'Skills',
+        'templates': 'Templates',
+        'system-tools': 'System Tools',
+        'event-log': 'Event Log',
+        'users': 'Users',
+        'profile': 'My Profile',
+        'third-parties': 'Third Party Services',
+        'training-planner': 'Training Planner',
+        'forms-manage': 'Forms Manager',
+        'reports': 'Reports',
+        'live-forms': 'Live Forms',
+        'statistics': 'Statistics',
+        'surveys-manage': 'Surveys Manager',
+        'live-surveys': 'Published Surveys',
+        'surveys-tracking': 'Survey Tracking',
+        'surveys-results': 'Survey Results',
+        'forms-view-review': 'Form Review',
+        'forms-view-preview': 'Form Preview',
+        'surveys-view-preview': 'Survey Preview'
+    };
+
+    if (bannerKeys.indexOf(key) !== -1) {
+        document.body.classList.add('has-mobile-banner');
+        if (key === 'index') document.body.classList.add('is-home-page');
+
+        const bannerLabel = bannerTitles[key] || content.title;
+        const noBack = (key === 'index');
+        const backUrls = {
+            'surveys-results':  '/live-surveys.html',
+            'surveys-tracking': '/live-surveys.html'
+        };
+        const backUrl = backUrls[key] || '/';
+        const backTitle = backUrl === '/' ? 'Back to Dashboard' : 'Back to Live Surveys';
+
+        const bannerEl = document.createElement('div');
+        bannerEl.id = 'mobilePageBanner';
+        bannerEl.innerHTML = `
+            ${noBack ? '' : `<a href="${backUrl}" id="mobileBannerBack" title="${backTitle}"
+               style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;text-decoration:none;border-radius:50%;flex-shrink:0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                     fill="none" stroke="#ffffff" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </a>`}
+            <span id="mobileBannerTitle">${bannerLabel}</span>
+            <button id="mobileBannerHelp" title="Get Help">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </button>
+        `;
+        document.body.insertBefore(bannerEl, document.body.firstChild);
+
+        document.getElementById('mobileBannerHelp').addEventListener('click', () => {
+            modal.classList.add('show');
+        });
+    }
 })();

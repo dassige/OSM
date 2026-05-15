@@ -12,11 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((r) => r.json())
     .then((c) => {
       uiConfig = c;
-      if (c.loginTitle) {
-        document.title = "Published Surveys - " + c.loginTitle;
-        document.getElementById("pageHeader").innerText =
-          "Published Surveys - " + c.loginTitle;
-      }
+      initPageTitle("Published Surveys", "Published Surveys");
       if (c.appBackground)
         document.body.style.backgroundImage = `url('${c.appBackground}')`;
       if (c.appMode === "demo")

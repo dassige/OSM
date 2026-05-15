@@ -159,10 +159,7 @@
 
         fetch('/ui-config').then(r => r.json()).then(c => {
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-            if (c.loginTitle) {
-                document.title = "My Profile - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "User Settings - " + c.loginTitle;
-            }
+            initPageTitle("My Profile", "User Settings");
             currentAppMode = c.appMode || 'production';
             if (currentAppMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });

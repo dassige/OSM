@@ -256,10 +256,7 @@
 
     <script>
         fetch('/ui-config').then(r => r.json()).then(c => {
-            if (c.loginTitle) {
-                document.title = "Training Planner - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "Renewal Planner - " + c.loginTitle;
-            }
+            initPageTitle("Training Planner", "Renewal Planner");
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });

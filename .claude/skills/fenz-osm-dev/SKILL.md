@@ -1319,6 +1319,83 @@ function toggleSortBar() {
 
 ---
 
+## ⚠️ Mobile Top Navigation Banner
+
+Every page that includes `help.js` automatically receives an Android-style fixed top banner on mobile (≤ 768 px). The banner is injected by the `help.js` IIFE and styled globally in `styles.css`. No per-page work is needed unless a new page is added or a page's back-navigation target differs from the dashboard.
+
+### How it works
+
+| Layer | File | Responsibility |
+|---|---|---|
+| Banner injection | `public/help.js` (end of IIFE) | Injects `#mobilePageBanner`, adds `has-mobile-banner` and optionally `is-home-page` to `<body>` |
+| Shared title utility | `public/utils.js` — `window.initPageTitle()` | Sets `document.title`, `#pageHeader`/`#mainHeader`, and `#mobileBannerTitle` in one call |
+| Global CSS | `public/styles.css` — `/* Mobile Top Navigation Banner */` section | Banner layout, colour, button styles, floating-button suppression |
+
+### Banner structure
+
+```
+[ ≡ hamburger (#osm-open-btn, fixed z:99999) ] [ ‹ back ] [ Page Title ] [ ? help ]
+```
+
+- The sidebar hamburger (`#osm-open-btn` from `sidebar.js`) is `position:fixed; left:10px; top:10px; z-index:99999`. The banner has `padding-left:58px` to clear it — never remove this padding.
+- The back chevron (`#mobileBannerBack`) and help button (`#mobileBannerHelp`) are injected inside `#mobilePageBanner`.
+- On the **dashboard** (`key === 'index'`): no back button is rendered and `is-home-page` class is added to `<body>`.
+- On **all other pages**: a white chevron SVG links to the page's back destination.
+
+### Banner colour
+
+Background: `#0d8a9e` — a darker teal than the sidebar icon buttons (`#17a2b8`). Never replace this with `var(--bg-header)` or a gray value.
+
+### Page title management
+
+All pages call `window.initPageTitle(tabPrefix, headingText, headerId?)` instead of setting titles directly. The function:
+- Fetches `/ui-config` once (module-level cached promise — no double fetch)
+- Sets `document.title = tabPrefix + ' - ' + appName`
+- Sets `#pageHeader` (or `headerId`) innerText to `headingText + ' - ' + appName`
+- Updates `#mobileBannerTitle` to `headingText` (no app-name suffix on mobile)
+
+On the dashboard (`app.js`) the title is set directly to the app name — `initPageTitle` is not used there.
+
+### In-page `<h1>` visibility on mobile
+
+| Page | Element | Visible on mobile? |
+|---|---|---|
+| Dashboard (`index.html`) | `#mainHeader` | **Yes** — kept visible; only `#pageHeader` is suppressed |
+| All other pages | `#pageHeader` | **No** — hidden by `body.has-mobile-banner #pageHeader { display: none }` |
+
+### Back-navigation targets (`backUrls` map in `help.js`)
+
+Most pages navigate back to `/` (dashboard). Exceptions are declared in the `backUrls` map:
+
+| Page key | Back destination |
+|---|---|
+| `surveys-results` | `/live-surveys.html` |
+| `surveys-tracking` | `/live-surveys.html` |
+| *(all others)* | `/` |
+
+To add a new exception, insert an entry in the `backUrls` object inside the banner-injection block of `help.js`.
+
+### Adding a new page to the banner
+
+1. Add the page's `key` string to the `bannerKeys` array in `help.js`.
+2. Add a short display title to the `bannerTitles` map.
+3. If the page needs a non-dashboard back destination, add it to `backUrls`.
+4. Ensure the page calls `initPageTitle(tabPrefix, headingText)` in its JS (inline or controller file).
+5. If `utils.js` is not already included on the page, add `<script src="utils.js"></script>` before the inline script.
+
+### Rules
+
+| Rule | Detail |
+|---|---|
+| **Never hardcode `document.title` or `#pageHeader`** | Always use `initPageTitle()` so the banner stays in sync |
+| **Never set `background` on `#mobilePageBanner` per-page** | The global `#0d8a9e` rule in `styles.css` is authoritative |
+| **Never remove `padding-left: 58px` from the banner** | It is load-bearing — required to clear the sidebar hamburger |
+| **SVG stroke on back chevron** | Always `stroke="#ffffff"` (explicit hex) — never `stroke="currentColor"`, which can be overridden by global `a { color }` rules |
+| **Dashboard has no back button** | Omit the `<a>` element entirely (`noBack = true`) — do not use `visibility:hidden` (leaves dead space in the flex layout) |
+| **`#pageHeader` hidden on mobile, `#mainHeader` shown** | These are separate elements; suppressing both is wrong — keep the rule targeting only `#pageHeader` |
+
+---
+
 ## ⚠️ Report Implementation Guide
 
 Reports use a **client-side registry pattern**. Each report is a self-contained JS module that registers itself with `window.ReportRegistry`. The controller (`public/js/reports-controller.js`) reads the registry and orchestrates fetching, pagination, and PDF export.
