@@ -78,8 +78,14 @@
             .filter-bar .filter-group > input,
             .filter-bar .filter-group > select,
             .filter-bar .filter-group > div { flex: 1; min-width: 0; }
-            /* Date inputs side-by-side, override global width:100% */
-            .filter-bar .date-range-container { flex-direction: row !important; align-items: center; gap: 6px; }
+            /* Date filter groups: stack label above inputs so the two date pickers get full width */
+            .filter-bar .filter-group-date {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 4px;
+            }
+            .filter-bar .filter-group-date > label { min-width: unset; }
+            .filter-bar .date-range-container { flex-direction: row !important; align-items: center; gap: 6px; width: 100%; }
             .filter-bar .date-range-container .filter-date { width: auto !important; flex: 1; min-width: 0; }
             .filter-bar .filter-actions { flex-direction: row; justify-content: flex-end; gap: 8px; }
 

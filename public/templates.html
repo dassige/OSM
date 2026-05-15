@@ -48,6 +48,13 @@
                 white-space: nowrap;
                 flex-shrink: 0;
             }
+            /* Take import/export buttons out of absolute positioning so they
+               sit above the sub-nav channel buttons instead of overlapping them */
+            .template-actions {
+                position: static;
+                justify-content: flex-end;
+                margin-bottom: 12px;
+            }
         }
     </style>
 </head>

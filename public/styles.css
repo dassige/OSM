@@ -1893,6 +1893,14 @@ input:checked + .slider:before { transform: translateX(14px); }
     margin-bottom: 5px;
     font-weight: bold;
 }
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="number"],
+.form-group input[type="password"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+}
 
 .code-block {
     background: var(--bg-hover);
@@ -2472,6 +2480,20 @@ input:checked + .slider:before { transform: translateX(14px); }
     /* Bottom padding so content clears the fixed toolbox */
     .editor-content {
         padding-bottom: 70px;
+    }
+
+    /* Question card header: wrap controls to a second line on narrow screens */
+    .field-header {
+        flex-wrap: wrap;
+    }
+    .header-controls {
+        order: 10;
+        flex-basis: 100%;
+        margin-left: 0;
+        margin-top: 6px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-color);
+        gap: 6px;
     }
 }
 /* --- 14. TABS & SUB-NAVIGATION --- */
@@ -3184,12 +3206,13 @@ input:checked + .slider:before { transform: translateX(14px); }
 
     /* Hide desktop calendar grid; show mobile alternatives */
     .weekly-grid                 { display: none; }
-    .mobile-day-picker           { display: flex; }
-    .mobile-selected-day-panel   { display: block; }
+    .mobile-day-picker           { display: flex; min-width: 0; }
+    .mobile-selected-day-panel   { display: block; min-width: 0; }
 
     /* Hide desktop list content; show mobile cards */
-    #listContent     { display: none; }
-    .list-cards-mobile { display: block; }
+    #listContent        { display: none; }
+    #listPagination     { display: none !important; }
+    .list-cards-mobile  { display: block; }
 
     /* Skills panel accordion */
     #skillsPanelContent { display: none; }
@@ -3923,6 +3946,14 @@ input:checked + .slider:before { transform: translateX(14px); }
     /* Table toolbar: 2-up button layout on very small screens */
     .table-toolbar button {
         flex: 1 1 calc(50% - 5px);
+    }
+
+    /* Icon-only mobile buttons must stay square — never stretch */
+    .table-toolbar .toolbar-btn-mobile {
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+        padding: 0;
     }
 }
 
