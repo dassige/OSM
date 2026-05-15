@@ -950,7 +950,6 @@ textarea {
 }
 
 .help-modal-overlay {
-    display: none;
     position: fixed;
     z-index: 3000;
     left: 0;
@@ -959,18 +958,26 @@ textarea {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    visibility: hidden;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    transition: opacity 0.25s ease, visibility 0s linear 0.25s;
 }
 
 .help-modal-overlay.show {
-    display: block;
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.25s ease, visibility 0s linear 0s;
 }
 
 .help-modal-content {
     background-color: var(--bg-card);
     color: var(--text-main);
-    margin: 10vh auto;
+    margin: 0;
     padding: 25px;
     border: 1px solid var(--border-color);
     width: 90%;
@@ -984,21 +991,37 @@ textarea {
 }
 
 .help-close-btn {
-    color: var(--text-muted);
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    padding: 4px;
     cursor: pointer;
-    line-height: 20px;
+    color: var(--text-muted);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .help-close-btn:hover {
     color: var(--text-main);
+    background-color: rgba(0, 0, 0, 0.07);
 }
 
 .help-body {
     line-height: 1.6;
     color: var(--text-main);
+}
+
+.help-body h3 {
+    margin-top: 16px;
+    margin-bottom: 4px;
+    font-size: 0.92em;
+    color: var(--text-muted);
+    font-weight: 600;
 }
 
 .help-body ul,
@@ -1009,6 +1032,14 @@ textarea {
 
 .help-body li {
     margin-bottom: 8px;
+}
+
+.help-modal-footer {
+    margin-top: 20px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
 }
 
 @keyframes slideDown {

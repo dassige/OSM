@@ -554,9 +554,17 @@ const helpContent = {
 
         <div id="globalHelpModal" class="help-modal-overlay">
             <div class="help-modal-content">
-                <span class="help-close-btn">&times;</span>
-                <h2 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px; color:var(--primary);">${content.title}</h2>
+                <button class="help-close-btn" title="Close help">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2 style="margin-top:0; padding-right:32px; border-bottom:1px solid var(--border-color); padding-bottom:10px; color:var(--primary);">${content.title}</h2>
                 <div class="help-body">${content.body}</div>
+                <div class="help-modal-footer">
+                    <button class="btn-secondary help-close-footer-btn" title="Close help">Close</button>
+                </div>
             </div>
         </div>
     `;
@@ -573,12 +581,17 @@ const helpContent = {
     }
 
     const modal = document.getElementById('globalHelpModal');
-    const close = document.querySelector('.help-close-btn');
+    const closeModal = () => modal.classList.remove('show');
 
-    btn.addEventListener('click', () => { modal.classList.add('show'); });
-    close.addEventListener('click', () => { modal.classList.remove('show'); });
+    btn.addEventListener('click', () => modal.classList.add('show'));
+    document.querySelectorAll('.help-close-btn, .help-close-footer-btn').forEach(el => {
+        el.addEventListener('click', closeModal);
+    });
     window.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.remove('show');
+        if (e.target === modal) closeModal();
+    });
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
     });
 
     // Patch {{appname}} placeholder with the configured app title
