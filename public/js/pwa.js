@@ -16,24 +16,43 @@
         });
     }
 
-    // ── Install Banner ───────────────────────────────────────────────────────
-    // Don't show on the login page — user isn't in the app yet
-    var isLoginPage = window.location.pathname === '/login.html' ||
-                      window.location.pathname.endsWith('/login.html');
-    if (isLoginPage) return;
+    // ── Capture install prompt globally (all pages) ──────────────────────────
+    // Stored on window so the About modal can trigger it from any page.
+    window.__pwaInstallPrompt = null;
 
-    // Don't show if already running as installed PWA
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__pwaInstallPrompt = e;
+        // Notify the About modal if it's already open
+        var btn = document.getElementById('pwa-about-install-btn');
+        if (btn) btn.style.display = 'inline-flex';
+        // Attempt to show the banner (no-op if conditions aren't met)
+        tryShowBanner();
+    });
+
+    window.addEventListener('appinstalled', function () {
+        window.__pwaInstallPrompt = null;
+        removeBanner();
+        var btn = document.getElementById('pwa-about-install-btn');
+        if (btn) btn.style.display = 'none';
+    });
+
+    // ── Install Banner ───────────────────────────────────────────────────────
+    // Only show on the dashboard (index), only once per session, not if already installed.
+    var isIndexPage = window.location.pathname === '/' ||
+                      window.location.pathname === '/index.html' ||
+                      window.location.pathname.endsWith('/index.html');
+
     var isInstalled = window.matchMedia('(display-mode: standalone)').matches ||
                       window.navigator.standalone === true;
-    if (isInstalled) return;
 
-    // Don't re-show if permanently dismissed
-    if (localStorage.getItem('pwa-install-dismissed') === 'true') return;
+    var bannerSuppressed = isInstalled ||
+                           !isIndexPage ||
+                           sessionStorage.getItem('pwa-install-offered') === 'true' ||
+                           localStorage.getItem('pwa-install-dismissed') === 'true';
 
-    var deferredPrompt = null;
     var appName = 'OpReady'; // fallback; overwritten by ui-config fetch below
     var configReady = false;
-    var promptPending = false;
 
     // Fetch app name from ui-config (same source every other page uses)
     fetch('/ui-config')
@@ -43,28 +62,20 @@
         .finally(function () {
             configReady = true;
             // If the install prompt already fired while we were fetching, show now
-            if (promptPending) showBanner();
+            if (window.__pwaInstallPrompt) tryShowBanner();
         });
 
-    window.addEventListener('beforeinstallprompt', function (e) {
-        e.preventDefault();
-        deferredPrompt = e;
-        if (configReady) {
-            showBanner();
-        } else {
-            // Config not yet loaded — defer banner until fetch completes
-            promptPending = true;
-        }
-    });
-
-    // Detect when installed from outside the banner
-    window.addEventListener('appinstalled', function () {
-        removeBanner();
-        deferredPrompt = null;
-    });
+    function tryShowBanner() {
+        if (bannerSuppressed) return;
+        if (!configReady) return; // wait for app name
+        if (!window.__pwaInstallPrompt) return;
+        showBanner();
+    }
 
     function showBanner() {
         if (document.getElementById('pwa-install-banner')) return;
+        // Mark as offered for this session — won't re-appear on subsequent page visits
+        sessionStorage.setItem('pwa-install-offered', 'true');
 
         var banner = document.createElement('div');
         banner.id = 'pwa-install-banner';
@@ -86,19 +97,12 @@
         document.body.insertBefore(banner, document.body.firstChild);
 
         document.getElementById('pwa-install-btn').addEventListener('click', function () {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then(function (result) {
-                if (result.outcome === 'accepted') {
-                    removeBanner();
-                }
-                deferredPrompt = null;
-            });
+            triggerPwaInstall(function () { removeBanner(); });
         });
 
         document.getElementById('pwa-dismiss-btn').addEventListener('click', function () {
             removeBanner();
-            // Remember dismissal per-session only (not permanent)
+            localStorage.setItem('pwa-install-dismissed', 'true');
         });
     }
 
@@ -111,4 +115,18 @@
             }, 300);
         }
     }
+
+    // ── Shared install trigger (used by banner + About modal) ────────────────
+    window.triggerPwaInstall = function (onAccepted) {
+        var prompt = window.__pwaInstallPrompt;
+        if (!prompt) return;
+        prompt.prompt();
+        prompt.userChoice.then(function (result) {
+            window.__pwaInstallPrompt = null;
+            if (result.outcome === 'accepted') {
+                localStorage.removeItem('pwa-install-dismissed');
+                if (typeof onAccepted === 'function') onAccepted();
+            }
+        });
+    };
 })();

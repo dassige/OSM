@@ -280,14 +280,36 @@ window.showAboutModal = async function() {
                         <li><strong>Icons:</strong> Feather Icons</li>
                     </ul>
                 </div>
-                <div class="modal-actions-center">
+                <div class="modal-actions-center" style="gap:10px; flex-wrap:wrap;">
+                    <button id="pwa-about-install-btn" class="btn-primary"
+                        style="display:none; align-items:center; gap:6px;"
+                        onclick="triggerPwaInstall(function(){ document.getElementById('pwa-about-install-btn').style.display='none'; })"
+                        title="Install ${config.loginTitle} as an app on this device">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Install App
+                    </button>
                     <button onclick="closeModal('globalAboutModal')" class="btn-secondary">Close</button>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
     }
-    
+
+    // Show Install button only when the browser has a pending install prompt and app isn't installed
+    var installBtn = document.getElementById('pwa-about-install-btn');
+    if (installBtn) {
+        var alreadyInstalled = window.matchMedia('(display-mode: standalone)').matches ||
+                               window.navigator.standalone === true;
+        installBtn.style.display =
+            (!alreadyInstalled && window.__pwaInstallPrompt) ? 'inline-flex' : 'none';
+    }
+
     modal.style.display = 'block';
 };
 
