@@ -32,17 +32,29 @@
 
     var deferredPrompt = null;
     var appName = 'OpReady'; // fallback; overwritten by ui-config fetch below
+    var configReady = false;
+    var promptPending = false;
 
     // Fetch app name from ui-config (same source every other page uses)
     fetch('/ui-config')
         .then(function (r) { return r.json(); })
         .then(function (cfg) { if (cfg.loginTitle) appName = cfg.loginTitle; })
-        .catch(function () {});
+        .catch(function () {})
+        .finally(function () {
+            configReady = true;
+            // If the install prompt already fired while we were fetching, show now
+            if (promptPending) showBanner();
+        });
 
     window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
         deferredPrompt = e;
-        showBanner();
+        if (configReady) {
+            showBanner();
+        } else {
+            // Config not yet loaded — defer banner until fetch completes
+            promptPending = true;
+        }
     });
 
     // Detect when installed from outside the banner
