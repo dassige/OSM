@@ -5,7 +5,7 @@
 const IS_DEV = self.location.hostname === 'localhost' ||
                self.location.hostname === '127.0.0.1';
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const SHELL_CACHE   = `opready-shell-${CACHE_VERSION}`;
 const PAGES_CACHE   = `opready-pages-${CACHE_VERSION}`;
 
