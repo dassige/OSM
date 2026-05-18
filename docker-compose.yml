@@ -20,3 +20,8 @@ services:
 # use this in development   
 #    command: npx nodemon  server.js
     restart: unless-stopped
+networks:
+  default:
+    driver: bridge
+  opready:
+    driver: bridge
