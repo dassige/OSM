@@ -13,7 +13,8 @@ services:
       - ${UI_RESOURCES_PATH:-./public/resources}:/app/public/resources
     env_file:         
       - .env  
-   
+    networks:
+      - opready 
 # CHANGED: Use nodemon with legacy watch for better file change detection to avoid crashing SQLlite on journal refreshing- 
 # USE it in PRODUCTION         
     command: npx nodemon -L server.js
@@ -21,7 +22,5 @@ services:
 #    command: npx nodemon  server.js
     restart: unless-stopped
 networks:
-  default:
-    driver: bridge
   opready:
     driver: bridge
