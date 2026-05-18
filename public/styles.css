@@ -3920,16 +3920,16 @@ input:checked + .slider:before { transform: translateX(14px); }
         width: 100%;
     }
 
-    /* Modals — full-width, anchored to bottom on small screens */
+    /* Modals — full-width, centred on small screens */
     .modal {
-        align-items: flex-end !important;
-        padding: 0 !important;
+        align-items: center !important;
+        padding: 16px !important;
     }
 
     .modal-content {
         max-width: 100% !important;
         width: 100% !important;
-        border-radius: 16px 16px 0 0 !important;
+        border-radius: 12px !important;
         max-height: 90dvh !important;
         overflow-y: auto !important;
         margin: 0 !important;
