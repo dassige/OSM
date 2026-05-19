@@ -13,6 +13,7 @@ async function initDB() {
   const dbPath = getDbPath();
   db = await open({ filename: dbPath, driver: sqlite3.Database });
   await db.exec("PRAGMA foreign_keys = ON;");
+  await db.exec("PRAGMA journal_mode=WAL;");
   await runMigrations(db);
   await db.run(
     "INSERT INTO preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING",

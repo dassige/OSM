@@ -386,6 +386,25 @@ async function getTrainingMap() {
   return map;
 }
 
+async function shutdown(signal) {
+  logger.info(`[System] ${signal} received — starting graceful shutdown`);
+  server.close();
+  io.close();
+  if (config.enableWhatsApp) {
+    try {
+      await whatsappService.logout();
+    } catch (e) {
+      logger.warn('[System] WhatsApp logout error during shutdown', { error: e.message });
+    }
+  }
+  try {
+    await db.closeDB();
+  } catch (e) {
+    logger.warn('[System] DB close error during shutdown', { error: e.message });
+  }
+  process.exit(0);
+}
+
 if (require.main === module) {
   (async () => {
     try {
@@ -404,6 +423,9 @@ if (require.main === module) {
         logger.info(`[System] Server listening on port ${PORT}`);
         logger.info(`App Mode: ${(config.appMode || "PRODUCTION").toUpperCase()}`);
       });
+
+      process.on('SIGTERM', () => shutdown('SIGTERM'));
+      process.on('SIGINT',  () => shutdown('SIGINT'));
     } catch (err) {
       logger.error("Critical Startup Error", { error: err.message, stack: err.stack });
     }
