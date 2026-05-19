@@ -136,3 +136,67 @@ Member mapping applied:
 ```
 
 The script is **non-destructive** to `fenz.db` — it copies it first and only modifies the copy. Re-running it overwrites any previous `fenz_demo.db`.
+
+---
+
+## generate-icons.js
+
+Generates all PWA icon PNG files (9 sizes) from `public/resources/favicon.png` and writes them to `public/icons/`. Run once after initial setup, and again any time the favicon is replaced.
+
+**Direct invocation**
+
+```powershell
+node scripts/generate-icons.js
+```
+
+**Prerequisites**
+
+- `sharp` npm package must be installed — it is a dev dependency of this project (`npm install` covers it).
+- `public/resources/favicon.png` must exist (the source image).
+
+**What it does**
+
+Reads `public/resources/favicon.png` and produces the following files in `public/icons/`:
+
+| File | Size | Purpose |
+|---|---|---|
+| `icon-72.png` | 72 × 72 | Android legacy |
+| `icon-96.png` | 96 × 96 | Android legacy |
+| `icon-128.png` | 128 × 128 | Chrome Web Store |
+| `icon-144.png` | 144 × 144 | IE / Windows |
+| `icon-152.png` | 152 × 152 | iOS legacy |
+| `icon-192.png` | 192 × 192 | Android / Chrome (primary) |
+| `icon-384.png` | 384 × 384 | Android splash |
+| `icon-512.png` | 512 × 512 | Android / Chrome (large) |
+| `icon-512-maskable.png` | 512 × 512 | Android adaptive icon (safe-zone padded) |
+
+All icons use `#17A2B8` (brand teal) as the background for transparent areas. The script is **non-destructive** to the source file and will overwrite any previously generated icons.
+
+---
+
+## inject-pwa-tags.js
+
+One-shot utility that injects PWA meta tags (`<link rel="manifest">`, `theme-color`, Apple web-app tags) and the `<script src="/js/pwa.js">` loader into every app HTML file. Idempotent — skips files already patched.
+
+**Direct invocation**
+
+```powershell
+node scripts/inject-pwa-tags.js
+```
+
+**Prerequisites**
+
+No npm dependencies beyond Node.js built-ins. The HTML files must exist in `public/`.
+
+**What it does**
+
+For each HTML file listed inside the script:
+1. Detects whether the file has already been patched (looks for `href="/manifest.json"`); skips it if so.
+2. Inserts the PWA meta block immediately after the `<link rel="icon">` tag (falls back to after `<meta name="viewport">` if the icon tag is absent).
+3. Appends `<script src="/js/pwa.js"></script>` before `</body>`.
+
+**Output**
+
+Prints `PATCHED: <filename>` or `SKIP (already patched): <filename>` for every file processed, followed by a summary count. Files are written in-place.
+
+> **Note:** This script was used once during initial PWA setup. It is kept for reference and can be re-run safely if new HTML pages are added without the PWA tags, but the normal workflow for new pages is to add the tags manually following the pattern in existing files.

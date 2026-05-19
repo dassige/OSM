@@ -1,14 +1,21 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#17A2B8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OpReady">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <title id="pageTitle">Survey Tracking - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <style>
+        /* ── Filter bar (desktop: always visible; mobile: accordion) ── */
         .filter-bar {
             display: flex;
             gap: 15px;
@@ -44,6 +51,7 @@
             box-sizing: border-box;
         }
 
+        /* ── Status badges ── */
         .status-badge {
             padding: 4px 8px;
             border-radius: 4px;
@@ -73,6 +81,35 @@
             font-family: monospace;
             font-size: 12px;
         }
+
+        /* ── Card list hidden on desktop; sort bar hidden everywhere until expanded ── */
+        #cardList { display: none; }
+        #tracking-sort-bar { display: none; }
+
+        /* ── Mobile overrides ── */
+        @media (max-width: 768px) {
+            /* Desktop table hidden, card list shown */
+            #tableWrapper { display: none; }
+            #cardList      { display: block; }
+
+            /* Sort bar: collapsed by default, expanded via accordion */
+            #tracking-sort-bar { display: none; }
+            #tracking-sort-bar.sort-expanded { display: flex; }
+
+            /* Filter bar: collapsed by default, expanded via accordion */
+            .filter-bar {
+                display: none;
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+            .filter-bar.filter-expanded { display: flex; }
+            .filter-bar .filter-group { min-width: unset; flex: unset; width: 100%; }
+            .filter-bar .filter-group select,
+            .filter-bar .filter-group input { width: 100%; }
+            .filter-actions { flex-direction: row !important; justify-content: flex-end; gap: 8px; width: 100%; }
+        }
     </style>
 </head>
 
@@ -89,55 +126,212 @@
     <div class="container">
         <h1 id="pageHeader" class="text-center" style="margin-top:0;">Tracking: Loading...</h1>
 
-<div class="filter-bar">
-            <div class="filter-group" style="flex: 1; min-width: 200px;">
-                <label>Member Name</label>
-                <input type="text" id="filterName" placeholder="Search members...">
-            </div>
-            <div class="filter-group">
-                <label>Completion Status</label>
-                <select id="filterStatus" style="width: 150px;">
-                    <option value="all">All Statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="submitted">Submitted</option>
-                </select>
-            </div>
-            
-            <div class="filter-group" style="flex-direction: row; gap: 10px; align-items: flex-end;">
-                <button onclick="applyFilters()" class="btn-sm btn-primary" style="height: 36px; padding: 0 15px;">Apply</button>
-                <button onclick="resetFilters()" class="btn-sm btn-secondary" style="height: 36px; padding: 0 15px;">Reset</button>
-            </div>
+        <!-- Filter section: accordion on mobile, always-visible on desktop -->
+        <div class="filter-section">
+            <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilters()"
+                title="Show or hide filters">
+                <span style="display:flex; align-items:center; gap:8px;">
+                    Filters
+                    <span id="filterActiveCount"
+                        style="display:none; background:var(--primary); color:#fff; border-radius:10px; padding:1px 8px; font-size:0.78em; font-weight:700;"></span>
+                </span>
+                <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
 
-            <div style="flex-grow: 1;"></div>
-
-            <div class="filter-group" style="flex-direction: row; align-items: flex-end;">
-                <button onclick="remindAllPending()" class="btn-sm btn-primary" style="display: flex; align-items: center; gap: 5px; height: 36px; padding: 0 15px;" title="Send Reminder to All Pending">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                    Remind All Pending
-                </button>
+            <div class="filter-bar" id="filterBar">
+                <div class="filter-group" style="flex: 1; min-width: 200px;">
+                    <label>Member Name</label>
+                    <input type="text" id="filterName" placeholder="Search members..."
+                        title="Filter by member name" oninput="updateFilterHighlights()">
+                </div>
+                <div class="filter-group">
+                    <label>Completion Status</label>
+                    <select id="filterStatus" style="width: 160px;" title="Filter by completion status"
+                        onchange="updateFilterHighlights()">
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="submitted">Submitted</option>
+                    </select>
+                </div>
+                <div class="filter-actions" style="display:flex; gap:10px; align-items:flex-end;">
+                    <button onclick="applyFilters()" class="btn-primary" style="height:36px;"
+                        title="Apply selected filters">Apply</button>
+                    <button onclick="resetFilters()" class="btn-secondary" style="height:36px;"
+                        title="Clear all filters">Reset</button>
+                </div>
             </div>
         </div>
-        <div style="overflow-x:auto;">
+
+        <!-- Mobile sort accordion -->
+        <div class="sort-section">
+            <button class="sort-toggle-btn" id="sortToggleBtn" onclick="toggleSortBar()"
+                title="Show or hide sort options">
+                <span>Sort by</span>
+                <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+            <div id="tracking-sort-bar" class="sort-bar-container">
+                <span class="sort-bar-label">Sort:</span>
+                <button class="sort-bar-btn" id="mobileSortBtn-rank" onclick="handleSort('rank')"
+                    title="Sort by rank">Rank <span id="mobile-icon-rank"></span></button>
+                <button class="sort-bar-btn" id="mobileSortBtn-member_name" onclick="handleSort('member_name')"
+                    title="Sort by member name">Member <span id="mobile-icon-member_name"></span></button>
+                <button class="sort-bar-btn" id="mobileSortBtn-status" onclick="handleSort('status')"
+                    title="Sort by completion status">Status <span id="mobile-icon-status"></span></button>
+                <button class="sort-bar-btn" id="mobileSortBtn-completed_at" onclick="handleSort('completed_at')"
+                    title="Sort by completed date">Completed <span id="mobile-icon-completed_at"></span></button>
+            </div>
+        </div>
+
+        <!-- Action toolbar -->
+        <div class="tools-bar" style="margin-bottom: 20px;">
+            <button onclick="remindAllPending()" class="btn-primary"
+                title="Send a reminder email to all members who have not yet submitted">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                Remind All Pending
+            </button>
+        </div>
+
+        <!-- Desktop table wrapper -->
+        <div class="table-wrapper" id="tableWrapper">
             <table class="data-table" style="width: 100%;">
                 <thead>
                     <tr>
-                        <th onclick="setSort('member_name')" style="cursor:pointer;">Member <span
-                                id="sort_member_name"></span></th>
-                        <th onclick="setSort('status')" style="cursor:pointer; width: 120px;">Status <span
-                                id="sort_status"></span></th>
-                        <th onclick="setSort('completed_at')" style="cursor:pointer; width: 160px;">Completed Date <span
-                                id="sort_completed_at"></span></th>
-                        <th style="width: 200px; text-align:right;">Actions</th>
+                        <th class="sortable text-center" data-sort="rank" onclick="handleSort('rank')" style="width: 80px;">
+                            <div class="th-content" style="justify-content:center;">Rank <span id="icon-rank" class="sort-icon">⇅</span></div>
+                        </th>
+                        <th class="sortable sort-asc" data-sort="member_name" onclick="handleSort('member_name')">
+                            Member <span id="icon-member_name" class="sort-icon">▲</span>
+                        </th>
+                        <th class="sortable" data-sort="status" onclick="handleSort('status')"
+                            style="width: 120px;">
+                            Status <span id="icon-status" class="sort-icon">⇅</span>
+                        </th>
+                        <th class="sortable" data-sort="completed_at" onclick="handleSort('completed_at')"
+                            style="width: 180px;">
+                            Completed Date <span id="icon-completed_at" class="sort-icon">⇅</span>
+                        </th>
+                        <th style="width: 140px; text-align:right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
                     <tr>
-                        <td colspan="4" style="text-align:center;">Loading...</td>
+                        <td colspan="5" style="text-align:center;">Loading...</td>
                     </tr>
                 </tbody>
             </table>
+
+            <div class="pagination-container" id="paginationControls" style="display:none;">
+                <div class="page-limit-selector">
+                    <label>Rows per page:</label>
+                    <select id="rowsPerPage" onchange="changeTrackingLimit(this.value)"
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                        title="Number of rows to display per page">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:0;">
+                    <button class="btn-page" id="btnFirst" onclick="goToFirstPage()" title="First page"
+                        style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                            <line x1="6" y1="6" x2="6" y2="18"></line>
+                        </svg></button>
+                    <button class="btn-page" id="btnPrev" onclick="changeTrackingPage(-1)" title="Previous page"
+                        style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg></button>
+                    <button id="pageInfo" class="btn-page"
+                        style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1
+                        of 1</button>
+                    <button class="btn-page" id="btnNext" onclick="changeTrackingPage(1)" title="Next page"
+                        style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg></button>
+                    <button class="btn-page" id="btnLast" onclick="goToLastPage()" title="Last page"
+                        style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                            <line x1="18" y1="6" x2="18" y2="18"></line>
+                        </svg></button>
+                </div>
+            </div>
         </div>
+
+        <!-- Mobile card list -->
+        <div id="cardList">
+            <div id="cardContainer"></div>
+            <div class="pagination-container" id="paginationControlsMobile" style="display:none;">
+                <div class="page-limit-selector">
+                    <label>Rows per page:</label>
+                    <select id="rowsPerPageMobile" onchange="changeTrackingLimit(this.value)"
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                        title="Number of rows to display per page">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:0;">
+                    <button class="btn-page" id="btnFirstMobile" onclick="goToFirstPage()" title="First page"
+                        style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                            <line x1="6" y1="6" x2="6" y2="18"></line>
+                        </svg></button>
+                    <button class="btn-page" id="btnPrevMobile" onclick="changeTrackingPage(-1)"
+                        title="Previous page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg"
+                            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg></button>
+                    <button id="pageInfoMobile" class="btn-page"
+                        style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1
+                        of 1</button>
+                    <button class="btn-page" id="btnNextMobile" onclick="changeTrackingPage(1)" title="Next page"
+                        style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg></button>
+                    <button class="btn-page" id="btnLastMobile" onclick="goToLastPage()" title="Last page"
+                        style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                            <line x1="18" y1="6" x2="18" y2="18"></line>
+                        </svg></button>
+                </div>
+            </div>
+        </div>
+
     </div>
+
+    <div id="toastContainer" class="toast-container"></div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -146,6 +340,7 @@
             <polyline points="5 12 12 5 19 12"></polyline>
         </svg>
     </button>
+    <button onclick="openModal('helpModal')" class="help-floating-btn" title="Help">?</button>
 
     <script src="utils.js"></script>
     <script src="toast.js"></script>
@@ -155,11 +350,12 @@
     <script src="js/surveys-tracking.js"></script>
     <script>
         fetch('/ui-config').then(r => r.json()).then(c => {
-            if (c.loginTitle) document.title = "Survey Tracking - " + c.loginTitle;
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
         });
     </script>
+    <script src="/js/pwa.js"></script>
+
 </body>
 
 </html>

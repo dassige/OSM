@@ -5,6 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#17A2B8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OpReady">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <title id="pageTitle">Surveys Manager - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -36,10 +42,10 @@
         <div class="manager-container">
             <div class="sidebar">
                 <div class="sidebar-header">
-                    <div style="display: flex; align-items: center; justify-content: center; position: relative;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                         <h3 style="margin:0; font-size: 1.1em; color: var(--text-main);">Surveys</h3>
                         <button onclick="toggleSurveySort()" id="btnSortSurveys" class="btn-sm"
-                            style="position: absolute; right: 0; background:transparent; color:var(--text-main); border:1px solid var(--border-color);"
+                            style="background:transparent; color:var(--text-main); border:1px solid var(--border-color);"
                             title="Sort by Name (A-Z)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -89,7 +95,7 @@
 
             <div id="builderPanel" class="editor-panel" style="display:none;">
                 <div class="editor-header">
-                    <div
+                    <div class="editor-meta-row"
                         style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; width: 100%;">
                         <div style="flex: 1;">
                             <textarea id="surveyName" class="editor-title-input" placeholder="Survey Name" rows="1"
@@ -121,6 +127,10 @@
                     </div>
                 </div>
                 <div class="editor-toolbar">
+                    <button onclick="mobileBackToList()" class="btn-sm btn-secondary mobile-back-btn" title="Back to survey list">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        List
+                    </button>
                     <button id="btnPublish" onclick="openPublishModal()" class="btn-sm btn-success" disabled>Publish</button>
                     <button onclick="previewSurvey()" class="btn-sm btn-informative">Preview</button>
                     <button onclick="saveSurvey()" class="btn-sm btn-success">Save</button>
@@ -275,14 +285,6 @@
         </svg>
     </button>
     <script>
-        fetch('/ui-config').then(r => r.json()).then(c => {
-            if (c.loginTitle) {
-                document.title = "Surveys Manager - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "Surveys Manager - " + c.loginTitle;
-            }
-            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
-        });
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -330,6 +332,8 @@
 
         </div>
     </div>
+    <script src="/js/pwa.js"></script>
+
 
 </body>
 

@@ -44,7 +44,10 @@ async function getEventLogs(filters = {}) {
   const limit = filters.limit && filters.limit > 0 ? parseInt(filters.limit) : 50;
   const offset = (page - 1) * limit;
 
-  const rows = await db.all(`SELECT * ${baseQuery} ORDER BY id DESC LIMIT ? OFFSET ?`, [...params, limit, offset]);
+  const allowedSortCols = { timestamp: 'timestamp', user: 'user', event_type: 'event_type', title: 'title' };
+  const sortColumn = allowedSortCols[filters.sortCol] || 'id';
+  const sortDirection = filters.sortDir === 'asc' ? 'ASC' : 'DESC';
+  const rows = await db.all(`SELECT * ${baseQuery} ORDER BY ${sortColumn} ${sortDirection} LIMIT ? OFFSET ?`, [...params, limit, offset]);
   const logs = rows.map((r) => {
     try { return { ...r, payload: JSON.parse(r.payload) }; }
     catch (e) { return { ...r, payload: {} }; }

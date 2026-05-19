@@ -1,52 +1,21 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#17A2B8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OpReady">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <title id="pageTitle">Published Surveys - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <style>
-        .filter-bar {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            background: var(--bg-card);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            align-items: flex-end;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .filter-group label {
-            font-size: 12px;
-            font-weight: bold;
-            color: var(--text-muted);
-        }
-
-        .filter-group input,
-        .filter-group select {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
-            background: var(--input-bg);
-            color: var(--text-main);
-            height: 36px;
-            box-sizing: border-box;
-        }
-
-        .date-input {
-            width: 130px;
-        }
+        .date-input { width: 130px; }
 
         .progress-cell {
             display: flex;
@@ -89,22 +58,75 @@
             border: 1px solid rgba(108, 117, 125, 0.3);
         }
 
-        .pagination-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px;
-            padding: 15px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
+        /* Card list hidden on desktop */
+        #cardList { display: none; }
 
-        .bulk-actions {
-            display: flex;
-            gap: 10px;
+        /* Sort bar hidden on desktop */
+        #ls-sort-bar { display: none; }
+
+        .toolbar-btn-mobile { display: none; }
+
+        @media (max-width: 768px) {
+            .toolbar-btn-desktop { display: none; }
+            .toolbar-btn-mobile {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                border-radius: 6px;
+            }
+            /* Desktop table hidden, cards visible */
+            #tableWrapper { display: none; }
+            #cardList { display: block; }
+
+            /* Sort bar: hidden by default, shown when expanded */
+            #ls-sort-bar { display: none; }
+            #ls-sort-bar.sort-expanded { display: flex; }
+
+            /* Filter bar: hidden by default, shown when expanded */
+            .filter-bar {
+                display: none;
+                flex-direction: column;
+                gap: 6px;
+                padding: 8px 10px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                margin-bottom: 10px;
+            }
+            .filter-bar.filter-expanded { display: flex; }
+            /* Inline layout: label left, control right.
+               flex: 0 0 auto !important overrides inline flex values (e.g. flex:1)
+               which in column-direction inflate group height. */
+            .filter-bar .filter-group {
+                flex: 0 0 auto !important;
+                flex-direction: row !important;
+                align-items: center;
+                gap: 8px;
+                min-width: unset;
+                width: 100%;
+            }
+            .filter-bar .filter-group > label {
+                min-width: 8em;
+                font-size: 12px;
+                flex-shrink: 0;
+                white-space: nowrap;
+            }
+            .filter-bar .filter-group > input,
+            .filter-bar .filter-group > select,
+            .filter-bar .filter-group > div { flex: 1; min-width: 0; }
+            /* Date filter groups: stack label above inputs so the two date pickers get full width */
+            .filter-bar .filter-group-date {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 4px;
+            }
+            .filter-bar .filter-group-date > label { min-width: unset; }
+            .filter-bar .date-range-container { flex-direction: row !important; align-items: center; gap: 6px; width: 100%; }
+            .filter-bar .date-range-container .filter-date { width: auto !important; flex: 1 !important; min-width: 0; }
+            .filter-bar .filter-actions { flex-direction: row; justify-content: flex-end; gap: 8px; }
         }
     </style>
 </head>
@@ -122,45 +144,91 @@
     <div class="container">
         <h1 id="pageHeader" class="text-center" style="margin-top:0;">Published Surveys</h1>
 
-        <div class="filter-bar">
-            <div class="filter-group" style="flex: 1; min-width: 200px;">
-                <label>Survey Name</label>
-                <input type="text" id="filterName" placeholder="Contains...">
-            </div>
-            <div class="filter-group">
-                <label>Status</label>
-                <select id="filterStatus" style="width: 120px;">
-                    <option value="all">All</option>
-                    <option value="active" selected>Active</option>
-                    <option value="archived">Archived</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Published Between</label>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="date" id="filterDateFrom" class="date-input">
-                    <span style="color: var(--text-muted);">to</span>
-                    <input type="date" id="filterDateTo" class="date-input">
+        <!-- Filter section: accordion on mobile, always-visible on desktop -->
+        <div class="filter-section">
+            <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilters()" title="Show or hide filters">
+                <span style="display:flex; align-items:center; gap:8px;">
+                    Filters
+                    <span id="filterActiveCount" style="display:none; background:var(--primary); color:#fff; border-radius:10px; padding:1px 8px; font-size:0.78em; font-weight:700;"></span>
+                </span>
+                <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+
+            <div class="filter-bar" id="filterBar">
+                <div class="filter-group" style="flex: 1; min-width: 200px;">
+                    <label>Survey Name</label>
+                    <input type="text" id="filterName" placeholder="Contains..."
+                        title="Filter by survey name (partial match)" oninput="updateFilterHighlights()">
                 </div>
-            </div>
-            <div class="filter-group" style="flex-direction: row; gap: 10px; align-items: flex-end;">
-                <button onclick="applyFilters()" class="btn-sm btn-primary">Apply</button>
-                <button onclick="resetFilters()" class="btn-sm btn-secondary">Reset</button>
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="filterStatus" style="width: 120px;" title="Filter by archive status"
+                        onchange="updateFilterHighlights()">
+                        <option value="all">All</option>
+                        <option value="active" selected>Active</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+                <div class="filter-group filter-group-date">
+                    <label>Published Between</label>
+                    <div class="date-range-container">
+                        <input type="date" id="filterDateFrom" class="date-input filter-date" title="Published date from"
+                            onchange="updateFilterHighlights()">
+                        <input type="date" id="filterDateTo" class="date-input filter-date" title="Published date to"
+                            onchange="updateFilterHighlights()">
+                    </div>
+                </div>
+                <div class="filter-group filter-actions" style="flex-direction: row; gap: 10px; align-items: flex-end;">
+                    <button onclick="applyFilters()" class="btn-sm btn-primary" title="Apply selected filters">Apply</button>
+                    <button onclick="resetFilters()" class="btn-sm btn-secondary" title="Clear all filters">Reset</button>
+                </div>
             </div>
         </div>
 
-        <div style="overflow-x:auto;">
+        <!-- Mobile sort accordion -->
+        <div class="sort-section">
+            <button class="sort-toggle-btn" id="sortToggleBtn" onclick="toggleSortBar()"
+                title="Show or hide sort options">
+                <span>Sort by</span>
+                <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+            <div id="ls-sort-bar" class="sort-bar-container">
+                <span class="sort-bar-label">Sort:</span>
+                <button class="sort-bar-btn" id="sortBtn-published_at" onclick="handleMobileSort('published_at')"
+                    title="Sort by published date">Published <span id="msort-published_at"></span></button>
+                <button class="sort-bar-btn" id="sortBtn-name" onclick="handleMobileSort('name')"
+                    title="Sort by survey name">Name <span id="msort-name"></span></button>
+                <button class="sort-bar-btn" id="sortBtn-is_archived" onclick="handleMobileSort('is_archived')"
+                    title="Sort by status">Status <span id="msort-is_archived"></span></button>
+            </div>
+        </div>
+
+        <!-- Desktop table -->
+        <div class="table-wrapper" id="tableWrapper">
             <table class="data-table" style="width: 100%;">
                 <thead>
                     <tr>
-                        <th onclick="setSort('published_at')" style="cursor:pointer; width: 120px;">Published <span
-                                id="sort_published_at"></span></th>
-                        <th onclick="setSort('name')" style="cursor:pointer;">Survey Instance <span
-                                id="sort_name"></span></th>
-                        <th onclick="setSort('is_archived')" style="cursor:pointer; width: 100px;">Status <span
-                                id="sort_is_archived"></span></th>
+                        <th class="sortable" data-sort="published_at" onclick="setSort('published_at')"
+                            style="width: 120px;">
+                            <div class="th-content">Published <span id="sort_published_at" class="sort-icon">⇅</span></div>
+                        </th>
+                        <th class="sortable" data-sort="name" onclick="setSort('name')">
+                            <div class="th-content">Survey Instance <span id="sort_name" class="sort-icon">⇅</span></div>
+                        </th>
+                        <th class="sortable" data-sort="is_archived" onclick="setSort('is_archived')"
+                            style="width: 100px;">
+                            <div class="th-content">Status <span id="sort_is_archived" class="sort-icon">⇅</span></div>
+                        </th>
                         <th style="width: 200px;">Completion Status</th>
-                        <th style="text-align:center; width: 250px;">Actions</th>
+                        <th class="text-center" style="width: 250px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -169,57 +237,85 @@
                     </tr>
                 </tbody>
             </table>
+
+            <div class="pagination-container" id="paginationControls">
+                <div class="page-limit-selector">
+                    <label>Rows per page:</label>
+                    <select id="rowsPerPage" onchange="changeRowsPerPage()"
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                        title="Number of rows to display per page">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:0;">
+                    <button onclick="goToFirstPage()" id="btnFirst" class="btn-page" title="First page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
+                    <button onclick="changePage(-1)" id="btnPrev" class="btn-page" title="Previous page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <span class="pagination-info" id="pageInfo" style="margin:0 4px;">0-0 of 0</span>
+                    <button onclick="changePage(1)" id="btnNext" class="btn-page" title="Next page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    <button onclick="goToLastPage()" id="btnLast" class="btn-page" title="Last page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
+            </div>
         </div>
 
-        <div class="pagination-container">
-            <div class="bulk-actions">
-                <button onclick="downloadFilteredJson()" class="btn-sm btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg> Download JSON
-                </button>
-                <button onclick="purgeFiltered()" class="btn-sm btn-danger">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg> Purge Filtered
-                </button>
-            </div>
-
-            <div class="page-limit-selector">
-                <label>Rows per page:</label>
-                <select id="rowsPerPage" onchange="changeRowsPerPage()"
-                    style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
-                    <option value="10">10</option>
-                    <option value="25" selected>25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                    <option value="all">All</option>
-                </select>
-            </div>
-            <span class="pagination-info" id="pageInfo">Showing 0-0 of 0</span>
-            <div style="display:flex; gap:5px;">
-                <button onclick="changePage(-1)" id="btnPrev" class="btn-page">Previous</button>
-                <button onclick="changePage(1)" id="btnNext" class="btn-page">Next</button>
+        <!-- Mobile card list -->
+        <div class="card-list" id="cardList">
+            <div id="cardContainer"></div>
+            <div class="pagination-container" id="paginationControlsMobile" style="display:none;">
+                <div class="page-limit-selector">
+                    <label>Rows per page:</label>
+                    <select id="rowsPerPageMobile" onchange="changeLimit(this.value)"
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                        title="Number of rows to display per page">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:0;">
+                    <button onclick="goToFirstPage()" id="btnFirstMobile" class="btn-page" title="First page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
+                    <button onclick="changePage(-1)" id="btnPrevMobile" class="btn-page" title="Previous page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <span class="pagination-info" id="pageInfoMobile" style="margin:0 4px;">0-0 of 0</span>
+                    <button onclick="changePage(1)" id="btnNextMobile" class="btn-page" title="Next page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    <button onclick="goToLastPage()" id="btnLastMobile" class="btn-page" title="Last page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
             </div>
         </div>
     </div>
-
-    <div id="helpModal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <span class="close-btn" onclick="closeModal('helpModal')">&times;</span>
-            <h2 style="margin-top:0;">Dashboard Help</h2>
-            <p>This dashboard tracks the live engagement of your published surveys.</p>
-            <ul style="color:var(--text-main); margin-left:20px; line-height:1.6;">
-                <li><b>Results:</b> View anonymous aggregated responses and charts.</li>
-                <li><b>Tracking:</b> View which specific members have or haven't submitted the survey yet.</li>
-                <li><b>Purge:</b> Use the filter to isolate surveys, then click "Purge Filtered" to bulk-delete them.
-                </li>
-            </ul>
+    <br>
+    <div class="tools-bar" style="justify-content:flex-end;">
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button onclick="downloadFilteredJson()" class="btn-sm btn-primary toolbar-btn-desktop"
+                title="Download filtered surveys as JSON">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg> Download JSON
+            </button>
+            <button onclick="downloadFilteredJson()" class="btn-sm btn-primary toolbar-btn-mobile"
+                title="Download filtered surveys as JSON">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+            </button>
+            <button onclick="purgeFiltered()" class="btn-sm btn-danger"
+                title="Permanently delete all filtered survey instances">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:5px;">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg> Purge Filtered
+            </button>
         </div>
     </div>
 
@@ -230,7 +326,6 @@
             <polyline points="5 12 12 5 19 12"></polyline>
         </svg>
     </button>
-    
 
     <script src="utils.js"></script>
     <script src="toast.js"></script>
@@ -239,15 +334,42 @@
     <script src="/js/sidebar.js"></script>
     <script src="js/live-surveys.js"></script>
     <script>
-        fetch('/ui-config').then(r => r.json()).then(c => {
-            if (c.loginTitle) {
-                document.title = "Published Surveys - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "Published Surveys - " + c.loginTitle;
+        function toggleFilters() {
+            const bar = document.getElementById('filterBar');
+            const btn = document.getElementById('filterToggleBtn');
+            const expanded = bar.classList.toggle('filter-expanded');
+            btn.classList.toggle('expanded', expanded);
+        }
+
+        function toggleSortBar() {
+            const bar = document.getElementById('ls-sort-bar');
+            const btn = document.getElementById('sortToggleBtn');
+            const expanded = bar.classList.toggle('sort-expanded');
+            btn.classList.toggle('expanded', expanded);
+        }
+
+        function updateFilterHighlights() {
+            const filterIds = ['filterName', 'filterDateFrom', 'filterDateTo'];
+            let activeCount = 0;
+            const statusEl = document.getElementById('filterStatus');
+            if (statusEl && statusEl.value !== 'all') activeCount++;
+            filterIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const active = el.value && el.value.trim() !== '';
+                    el.classList.toggle('filter-active', active);
+                    if (active) activeCount++;
+                }
+            });
+            const badge = document.getElementById('filterActiveCount');
+            if (badge) {
+                badge.textContent = activeCount > 0 ? activeCount : '';
+                badge.style.display = activeCount > 0 ? 'inline-block' : 'none';
             }
-            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
-        });
+        }
     </script>
+    <script src="/js/pwa.js"></script>
+
 </body>
 
 </html>

@@ -130,6 +130,7 @@ When implementing **any** new feature or modifying an existing one, work through
 | 12 | **UI smoke tests** — run `npm run test:ui` and confirm all pages load without JS errors | Any change to a frontend HTML page or the JS it loads |
 | 13 | **README.md** — update the relevant section to reflect the change | New feature, new npm script, new config variable, changed workflow, new deployment option, or anything a developer or operator would need to know |
 | 14 | **UAT Testing Plan** — update both `UAT-TESTING-PLAN.md` and `UAT-TESTING-PLAN.csv` to reflect the change | New page, new feature, renamed feature, removed feature, changed operation, or changed expected behaviour |
+| 15 | **Scripts index** — update `scripts/scripts.md` to document the script's purpose, invocation, prerequisites, and options | Any script added to or modified in `scripts/` |
 
 ---
 
@@ -498,6 +499,37 @@ const helpContent = {
 
 ---
 
+## ⚠️ Scripts Mandate
+
+`scripts/scripts.md` is the **single source of truth** for all standalone utility scripts in the `scripts/` directory. It must be kept in sync with the actual scripts present in that directory.
+
+### When to update `scripts/scripts.md`
+
+| Trigger | Required action |
+|---------|----------------|
+| New script added to `scripts/` | Add a new `## <filename>` section documenting purpose, npm shortcut (if any), direct invocation, prerequisites, environment variables, and expected output |
+| Existing script modified | Update the relevant section to match the new behaviour, options, or output |
+| Script deleted | Remove its section from the file |
+| npm shortcut added or renamed | Update both the script section and any `npm shortcut` code block |
+
+### Required section structure
+
+Every script entry must include at minimum:
+
+```markdown
+## script-name.js
+
+One-sentence description of what the script does.
+
+**npm shortcut** (if one exists in package.json)
+**Direct invocation**
+**Prerequisites** — what must be in place before running
+**What it does** or **Environment variables** — whichever is relevant
+**Output** — what the script produces or modifies
+```
+
+---
+
 ## Database Conventions
 
 ### Migration Pattern
@@ -570,12 +602,18 @@ Every new page or feature **must** follow the existing UI conventions without ex
 | **Role access** | Clearly specify which roles can access the page; redirect on `fetch('/api/user-session')` if access denied |
 | **Demo mode** | Page must respect demo-mode flag; disable destructive actions in demo |
 | **UI customisation** | Honour app name, page background, locale/date formatting, and timezone from `/ui-config` |
-| **Mobile optimisation** | Responsive layout; test at 375 px and 768 px breakpoints |
+| **Mobile optimisation** | Responsive layout; test at 375 px and 768 px breakpoints. Every data table **must** have a companion mobile card layout — see the Mobile Card Layout convention below. Filter bars and sort bars **must** collapse into accordion sections on mobile — see the Mobile Accordion Convention below |
 | **No native dialogs** | Never use `alert()` or `confirm()`; use `confirmAction()` from `utils.js` and `showToast()` from `toast.js` |
-| **Table sorting** | For any data table, implement sortable column headers; persist sort preference per user |
-| **Pagination** | Every paginated table must use the standard pagination bar (see convention below); persist rows-per-page per user |
+| **Table sorting** | For any data table, implement sortable column headers with visual indicators (▲/▼/⇅); persist sort column + direction together per user — see Column Sorting convention below |
+| **Pagination** | Every paginated table must use the standard pagination bar; persist rows-per-page per user. The mobile card layout must include an identical pagination bar — see Table Convention below |
+| **Mobile table cards** | Every page that adds or modifies a data table must also implement a card layout for mobile (≤ 768 px); cards must expose all row-level actions, the same pagination bar, and sort controls |
+| **Mobile accordion sections** | Every filter bar and every sort bar **must** be wrapped in a collapsible accordion on mobile (≤ 768 px). Both are hidden by default and expand via a toggle button with a chevron indicator. Filter accordion shows an active-count badge when filters are set. Desktop layout is unaffected — see Mobile Accordion Convention below |
 | **System card layout** | New sections in `system-tools.html` use the `<div class="system-card">` pattern |
 | **Button colours** | Follow the colour convention table below — never use inline `background` styles on buttons |
+| **Tooltips** | Every button and input field must have a `title` attribute providing a short descriptive tooltip — see Tooltip Convention below |
+| **Mobile icon buttons** | On mobile (≤ 768 px), replace labelled toolbar buttons with compact SVG icon buttons — see Mobile Icon Button Convention below |
+| **Modals** | All modals must render above every floating element (`z-index: 10500`) and be centred both horizontally and vertically — see Modal Convention below |
+| **Destructive confirmation** | Mass-destructive, irreversible operations must use `promptAction()` requiring the user to type a keyword — see Destructive Confirmation Convention below |
 
 ### Button Colour Convention
 
@@ -591,18 +629,247 @@ Every new page or feature **must** follow the existing UI conventions without ex
 
 ---
 
-## Pagination Convention
+### Tooltip Convention
 
-Every page with a paginated table **must** follow this pattern exactly. Use `event-log.html` as the canonical reference.
+Every interactive element — buttons, icon-only buttons, and input fields — **must** carry a `title` attribute with a short, plain-English description of what it does or what value it expects. This is mandatory, not optional.
 
-### HTML structure
+#### Rules
+
+| Element | Required `title` content |
+|---|---|
+| Text button | Action phrase matching the label — e.g. `title="Export skills to CSV"` |
+| Icon-only button (`btn-icon`) | Action phrase since there is no visible label — e.g. `title="Edit skill"`, `title="Delete skill"` |
+| Toggle / switch | Current-state description — e.g. `title="Toggle skill enabled state"` |
+| Text input | What value is expected — e.g. `title="Exact skill name as it appears in OSM"` |
+| Select / dropdown | What the control does — e.g. `title="Filter by status"` |
+| Checkbox | What checking it means — e.g. `title="Mark this skill as critical"` |
+
+#### Pattern
+
+```html
+<!-- Text button -->
+<button class="btn-success" onclick="openModal()" title="Add a new skill">Add Skill</button>
+
+<!-- Icon-only button -->
+<button class="btn-icon edit" onclick="editSkill(${s.id})" title="Edit skill">
+    <svg ...></svg>
+</button>
+
+<!-- Input -->
+<input type="text" id="name" required placeholder="e.g. OI (IS1) - Operational Safety"
+    title="Exact skill name as it appears in the OSM dashboard">
+
+<!-- Toggle switch — put title on the wrapping label -->
+<label class="switch" title="Toggle skill enabled state">
+    <input type="checkbox" ...><span class="slider"></span>
+</label>
+```
+
+#### Rules
+- Keep tooltips short (3–8 words) and action-oriented.
+- Do not repeat the visible label verbatim — add meaning, e.g. `title="Export skills to CSV"` not `title="Export CSV"`.
+- For destructive actions, be explicit: `title="Permanently delete this skill"`.
+- Never leave `title=""` (empty string) — omit the attribute entirely if you have nothing meaningful to say, but that should be rare.
+
+---
+
+### Mobile Icon Button Convention
+
+On mobile viewports (≤ 768 px), text-labelled toolbar buttons waste horizontal space and force multi-row wrapping. Replace them with compact SVG icon buttons at the 768 px breakpoint. Common actions have standard icons — use them consistently.
+
+#### Standard icon mapping
+
+| Action | Icon description | SVG path hint |
+|---|---|---|
+| Add / New | Plus `+` | `M12 5v14M5 12h14` |
+| Import (file/CSV) | Upload arrow | `M21 15v4a2 2 0 0 1-2 2H5… M17 8l-5-5-5 5` |
+| Import from OSM | Cloud download | `M8 17l4 4 4-4M12 12v9` + cloud arc |
+| Export / Download | Download arrow | `M21 15v4… M7 10l5 5 5-5M12 15V3` |
+| Save | Floppy disk | `M19 21H5a2 2 0 0 1-2-2V5… M17 21v-8H7v8M7 3v4h8` |
+| Delete / Remove | Trash | existing trash SVG used throughout the codebase |
+| Edit | Pencil | existing edit SVG used throughout the codebase |
+| Filter | Funnel | `M22 3H2l8 9.46V19l4 2v-8.54L22 3z` |
+| Search | Magnifier | existing search SVG |
+| Refresh / Reload | Circular arrows | `M23 4v6h-6M1 20v-6h6… path` |
+| Settings | Gear / cog | existing settings SVG |
+
+#### HTML pattern
+
+Use a `<style>` block scoped to the page (or a shared class in `styles.css` when added globally). Show the text label on desktop; swap to the icon-only button on mobile.
+
+```html
+<!-- Desktop: text button -->
+<button class="btn-success toolbar-btn-desktop" onclick="openModal()" title="Add a new skill">
+    Add Skill
+</button>
+
+<!-- Mobile: icon-only button (hidden on desktop) -->
+<button class="btn-success toolbar-btn-mobile" onclick="openModal()" title="Add a new skill">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="2.5"
+         stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+</button>
+```
+
+```css
+/* In the page <style> block */
+.toolbar-btn-mobile { display: none; }
+
+@media (max-width: 768px) {
+    .toolbar-btn-desktop { display: none; }
+    .toolbar-btn-mobile  {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border-radius: 6px;
+    }
+}
+```
+
+#### Rules
+
+| Rule | Detail |
+|---|---|
+| **Always pair with `title`** | Icon-only buttons have no visible label — the `title` tooltip is the only description; it is mandatory |
+| **Preserve colour class** | Keep the same `btn-danger` / `btn-success` / `btn-primary` class as the desktop button |
+| **Size** | Icon buttons must be 36 × 36 px minimum for touch targets |
+| **SVG stroke width** | Use `stroke-width="2"` or `stroke-width="2.5"` to match the rest of the codebase; never `fill` icons |
+| **Group order** | Maintain the same left-to-right order as the desktop toolbar |
+| **Destructive actions** | Keep a short visible label on mobile for destructive actions (e.g. "Delete") — icon alone is not enough for irreversible operations |
+| **Bulk-delete button** | This button is dynamically shown/hidden by JS — keep it as a text button even on mobile so the count is visible |
+| **Modal buttons** | Buttons inside modal windows (`<div class="modal-content">`) must remain as full text buttons on all screen sizes — never swap them for icon-only buttons |
+
+---
+
+## ⚠️ Modal Convention
+
+Every custom modal **must** render on top of all page chrome and be centred both horizontally and vertically. Follow these rules without exception.
+
+### Z-index and stacking
+
+The global `styles.css` rule `.modal { z-index: 10500 }` is the baseline. This value exceeds every floating element in the app:
+
+| Element | z-index |
+|---|---|
+| Floating home / help buttons | 2000 |
+| Help modal overlay | 3000 |
+| Toast container | 9999 |
+| Processing overlay | 9999 |
+| PWA install banner | 10000 |
+| **Custom modals (`.modal` class)** | **10500** |
+| `confirmAction` / `promptAction` utility modals | 10500 |
+
+Never set a lower `z-index` on any modal element. If a new floating element is added with a `z-index` higher than 10500, raise the modal baseline to exceed it — do not leave modals beneath floating UI.
+
+### Centering
+
+The CSS uses an attribute selector to switch `.modal` to `display: flex` when JS sets `style.display = 'block'`, giving true V+H centering without requiring every page's JS to be updated:
+
+```css
+/* In styles.css — do not duplicate this in page <style> blocks */
+.modal[style*="display: block"],
+.modal[style*="display:block"] {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+```
+
+`.modal-content` uses `margin: 0` — the flex parent handles all centering. Never restore `margin: 10% auto` or `margin: 15% auto`.
+
+### Utility modals (`confirmAction`, `promptAction`)
+
+These are injected by `utils.js` and do **not** carry the `modal` CSS class. They are shown with `modal.style.display = 'flex'` (not `'block'`) and their injected CSS includes `align-items: center; justify-content: center` so they self-centre. Their `z-index` is also set to `10500`. Do not change these values.
+
+### Rules summary
+
+| Rule | Detail |
+|---|---|
+| **Never use `z-index` below 10500** | All modal overlays must exceed every floating element |
+| **Never use `margin: N% auto`** | Flex centering replaces percentage-margin vertical positioning |
+| **Page `<style>` blocks** | Do not re-declare `z-index` or `margin` on `.modal` or `.modal-content` in per-page style blocks — the global CSS applies |
+| **Showing a modal** | Always use `element.style.display = 'block'` for `.modal`-classed elements (CSS converts to flex automatically); use `'flex'` directly for the confirm/prompt utility modals |
+| **Hiding a modal** | Always `element.style.display = 'none'` |
+| **Mobile** | On ≤ 480 px the global CSS anchors modals to the bottom of the screen — this is intentional and must not be overridden |
+
+---
+
+## ⚠️ Destructive Confirmation Convention
+
+Any action that is **mass-destructive and irreversible** must use `promptAction()` instead of `confirmAction()`. This forces the user to deliberately type a keyword before the action proceeds — a simple "Are you sure?" click-through is not sufficient for these operations.
+
+### When to use `promptAction` vs `confirmAction`
+
+| Operation type | Function to use |
+|---|---|
+| Purge ALL records (log, forms, surveys) | `promptAction` — keyword `"PURGE"` |
+| Prune records by age (e.g. delete events older than N days) | `promptAction` — keyword `"DELETE"` |
+| Bulk delete of multiple records (members, skills, users) | `promptAction` — keyword `"DELETE"` |
+| Restore database (overwrites all data) | `promptAction` — keyword `"RESTORE"` |
+| Bulk import that replaces all existing data | `promptAction` — keyword `"IMPORT"` |
+| Single record delete | `confirmAction` |
+| Archive / toggle / disable (reversible) | `confirmAction` |
+| Unsaved-changes guard | `confirmAction` |
+| Send notification / trigger action | `confirmAction` |
+
+### Keyword convention
+
+| Operation | Keyword |
+|---|---|
+| Purge entire dataset | `"PURGE"` |
+| Bulk delete selected records | `"DELETE"` |
+| Database restore | `"RESTORE"` |
+| Replace-all import | `"IMPORT"` |
+
+Use uppercase single-word keywords only. Never use "CONFIRM" as a keyword — it provides no friction.
+
+### Message format
+
+The `message` argument supports HTML. Always include:
+1. A plain description of what will be destroyed and the scope (bold the scope)
+2. "This cannot be undone."
+3. The typing instruction: `Type <strong>KEYWORD</strong> to confirm.`
+
+```js
+await promptAction(
+    "Purge Records",
+    `This will permanently delete ALL <strong>${count} records</strong> matching the current filters. This cannot be undone.<br><br>Type <strong>PURGE</strong> to confirm.`,
+    "PURGE"
+);
+```
+
+### Where `promptAction` is defined
+
+`window.promptAction(title, message, requiredText)` lives in `public/utils.js`. It returns a `Promise<boolean>`. The confirm button stays disabled until the user types the exact keyword. On match, the button gains `btn-danger` styling to signal the action is irreversible.
+
+---
+
+## ⚠️ Table Convention
+
+Every data table **must** implement all three of: a footer pagination bar, column header sorting, and a mobile card layout. All three user choices — rows-per-page, sort column, and sort direction — must be persisted to user preferences via `/api/user-preferences`. No table is exempt unless it contains fewer than 10 rows and will never grow beyond that.
+
+---
+
+### Table Pagination
+
+Every page with a paginated table **must** follow this pattern exactly. Use `skills.html` as the canonical reference.
+
+#### HTML structure
 
 ```html
 <div class="pagination-container" id="paginationControls" style="display:none;">
     <div class="page-limit-selector">
         <label>Rows per page:</label>
         <select id="rowsPerPage" onchange="changeLimit(this.value)"
-            style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+            style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+            title="Number of rows to display per page">
             <option value="10">10</option>
             <option value="25" selected>25</option>
             <option value="50">50</option>
@@ -610,27 +877,34 @@ Every page with a paginated table **must** follow this pattern exactly. Use `eve
             <option value="all">All</option>
         </select>
     </div>
-    <span class="pagination-info" id="pageInfo">Showing 0-0 of 0</span>
-    <div style="display:flex; gap:5px;">
-        <button class="btn-page" id="btnPrev" onclick="changePage(-1)">Previous</button>
-        <button class="btn-page" id="btnNext" onclick="changePage(1)">Next</button>
+    <div style="display:flex; align-items:center; gap:0;">
+        <button class="btn-page" id="btnFirst" onclick="goToFirstPage()" title="First page" style="margin:0 1px;"><!-- first-page SVG --></button>
+        <button class="btn-page" id="btnPrev"  onclick="changePage(-1)"  title="Previous page" style="margin:0 1px;"><!-- prev SVG --></button>
+        <button id="pageInfo" class="btn-page"
+            style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">
+            1 of 1
+        </button>
+        <button class="btn-page" id="btnNext" onclick="changePage(1)"   title="Next page"  style="margin:0 1px;"><!-- next SVG --></button>
+        <button class="btn-page" id="btnLast" onclick="goToLastPage()"  title="Last page"  style="margin:0 1px;"><!-- last-page SVG --></button>
     </div>
 </div>
 ```
 
-### Rules
+#### Rules
 
 | Rule | Detail |
 |---|---|
 | **Label** | Always `"Rows per page:"` — never "Items per page", "Rows:", or "Per Page:" |
 | **Select style** | Always `padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);` — no `height`, no shorthand `background` |
 | **Button class** | Always `btn-page` — never `btn-sm btn-secondary` or inline styles |
-| **Info text format** | Always `"Showing X-Y of Z"` — never "Page X of Y" or "X-Y / Z" |
+| **Button spacing** | Set `margin:0 1px` on every element in the button group (including the page indicator); use `gap:0` on the wrapper div |
+| **Page indicator** | A non-interactive `btn-page` button placed between Prev and Next. Text format: `"X of Y"` (current page of total pages). Override: `width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none;` — never use a `<span>` |
+| **Navigation buttons** | Always provide First / Prev / Next / Last — never Prev/Next only |
 | **Position** | Place the `pagination-container` immediately after the `<table>` (inside the same `table-wrapper`). If pagination lives outside a `table-wrapper`, override `border-radius: 8px` via inline style |
 | **Options** | Always `10 / 25 / 50 / 100 / All` in that order. `25` is the `selected` default. Use `value="all"` for the All option |
 | **Default** | Honour the saved user preference on load; fall back to 25 if no preference is stored |
 
-### Preference save/load pattern
+#### Preference save/load pattern
 
 `"all"` is stored as the literal string `"all"` in preferences. `TableController.setLimit("all")` maps it to `99999` internally; the same applies when passing `initialLimit: 'all'` to the constructor. Always restore the raw string to the `<select>` element so the dropdown matches the saved choice.
 
@@ -660,15 +934,465 @@ async function changeLimit(newLimit) {
 }
 ```
 
-### Per-page preference keys in use
+#### Per-page preference keys in use
 
 | Page | Preference key |
 |---|---|
+| `skills.html` | `skillsPageLimit` |
+| `members.html` | `membersPageLimit` |
 | `event-log.html` | `eventLogLimit` |
 | `reports.html` | `rptPageSize` |
 | `live-forms.html` | `liveFormsLimit` |
 | `live-surveys.html` | `liveSurveyItemsPerPage` |
 | `training-planner.html` | `trainingListLimit` (via Socket.IO) |
+
+---
+
+### Column Sorting
+
+Every data table must have sortable column headers. Columns that contain only action buttons or static icons are exempt; all data columns must be sortable.
+
+#### HTML — sortable `<th>`
+
+```html
+<thead>
+  <tr>
+    <th data-sort="name" class="sortable sort-asc">Name <span class="sort-icon">▲</span></th>
+    <th data-sort="status" class="sortable">Status <span class="sort-icon">⇅</span></th>
+    <th data-sort="expires_at" class="sortable">Expires <span class="sort-icon">⇅</span></th>
+    <th>Actions</th>
+  </tr>
+</thead>
+```
+
+#### JS — sort state and preference pattern
+
+```js
+let sortCol = 'name';   // default column
+let sortDir = 'asc';    // 'asc' | 'desc'
+
+// On init — restore saved sort before rendering
+try {
+    const res = await fetch('/api/user-preferences/myPageSort');
+    const data = await res.json();
+    if (data.value) {
+        const [col, dir] = data.value.split(':');
+        sortCol = col;
+        sortDir = dir;
+    }
+} catch (e) {}
+updateSortHeaders();
+
+// Click handler — attach once after DOM ready
+document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', async () => {
+        const col = th.dataset.sort;
+        if (sortCol === col) {
+            sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortCol = col;
+            sortDir = 'asc';
+        }
+        updateSortHeaders();
+        await fetch('/api/user-preferences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'myPageSort', value: `${sortCol}:${sortDir}` })
+        });
+        loadData();
+    });
+});
+
+function updateSortHeaders() {
+    document.querySelectorAll('th.sortable').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        const icon = th.querySelector('.sort-icon');
+        if (th.dataset.sort === sortCol) {
+            th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+            if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+        } else {
+            if (icon) icon.textContent = '⇅';
+        }
+    });
+}
+```
+
+#### Rules
+
+| Rule | Detail |
+|---|---|
+| **Preference key format** | Store column + direction as `"col:dir"` in a **single** key — never two separate keys |
+| **Preference key naming** | `<pageKey>Sort` — e.g. `membersSort`, `skillsSort`, `liveFormsSort`, `apiKeysSort` |
+| **Default sort** | Choose the column most useful on first load (`name` asc for lists; `expires_at` asc for expiry tables) |
+| **Client-side sort** | When all data is loaded at once, sort in JS before rendering: `arr.sort((a, b) => a[sortCol].localeCompare(b[sortCol], undefined, { sensitivity: 'base' }))` |
+| **Server-side sort** | When the API supports pagination, pass `sortCol` and `sortDir` as query params and let the backend sort |
+| **Case-insensitive** | String comparisons must use `localeCompare` with `{ sensitivity: 'base' }` — never `<` / `>` on raw strings |
+| **Mobile sync** | The same `sortCol`/`sortDir` variables drive both the desktop table and the mobile card list — never fork state |
+
+#### Per-page sort preference keys in use
+
+| Page | Preference key |
+|---|---|
+| `members.html` | `membersSort` |
+| `skills.html` | `skillsSort` |
+| `live-forms.html` | `liveFormsSort` |
+| `event-log.html` | `eventLogSort` |
+
+---
+
+### Mobile Card Layout
+
+Every page that contains a data table **must** also render a card list for mobile viewports (≤ 768 px). The table is hidden via CSS at that breakpoint; the card list is shown. Both share the same JS state. Use `skills.html` (v3.1.1+) as the canonical reference.
+
+#### Structure rules
+
+- The `<table>` wrapper and the `.card-list` container both exist in the DOM simultaneously — only CSS controls which is visible.
+- Cards are generated from the same data array as the table rows; the same `currentPage`, `limit`, `sortCol`, and `sortDir` variables apply.
+- A **duplicate** pagination bar (same HTML structure) must appear inside the `.card-list` container so it is visible on mobile.
+- The mobile pagination bar shares the same limit and page state as the desktop bar — changing one changes both.
+
+#### HTML pattern
+
+```html
+<!-- Desktop table (hidden on mobile via CSS) -->
+<div class="table-wrapper" id="tableWrapper">
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th data-sort="name" class="sortable sort-asc">Name <span class="sort-icon">▲</span></th>
+                <!-- ... -->
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <div class="pagination-container" id="paginationControls" style="display:none;">
+        <!-- standard pagination bar -->
+    </div>
+</div>
+
+<!-- Mobile card list (hidden on desktop via CSS) -->
+<div class="card-list" id="cardList">
+    <!-- Sort controls — visible only on mobile -->
+    <div class="mobile-sort-bar">
+        <label>Sort by:</label>
+        <select id="mobileSortCol" onchange="applyMobileSort()">
+            <option value="name">Name</option>
+            <option value="status">Status</option>
+            <option value="expires_at">Expiry Date</option>
+        </select>
+        <button class="btn-secondary btn-sm" id="mobileSortDirBtn" onclick="toggleMobileSortDir()">▲ Asc</button>
+    </div>
+    <!-- Cards injected by JS -->
+    <div id="cardContainer"></div>
+    <!-- Duplicate pagination bar for mobile -->
+    <div class="pagination-container" id="paginationControlsMobile" style="display:none;">
+        <div class="page-limit-selector">
+            <label>Rows per page:</label>
+            <select id="rowsPerPageMobile" onchange="changeLimit(this.value)"
+                style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);">
+                <option value="10">10</option>
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="all">All</option>
+            </select>
+        </div>
+        <span class="pagination-info" id="pageInfoMobile">Showing 0-0 of 0</span>
+        <div style="display:flex; gap:5px;">
+            <button class="btn-page" id="btnPrevMobile" onclick="changePage(-1)">Previous</button>
+            <button class="btn-page" id="btnNextMobile" onclick="changePage(1)">Next</button>
+        </div>
+    </div>
+</div>
+```
+
+#### CSS (add to the page `<style>` block)
+
+```css
+@media (max-width: 768px) {
+    #tableWrapper { display: none; }
+    #cardList      { display: block; }
+    .mobile-sort-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+}
+@media (min-width: 769px) {
+    #cardList      { display: none; }
+    .mobile-sort-bar { display: none; }
+}
+```
+
+#### Card HTML (one per row, rendered by JS)
+
+Every card has three sections: **header** (primary identifier + optional status toggle), **body** (fields), and **footer** (actions).
+
+```html
+<div class="table-card">
+    <!-- Header: optional rank, primary identifier, optional status toggle — all inline -->
+    <div class="card-header">
+        <!-- Include .card-rank only when the record has a rank/badge field; omit entirely when absent -->
+        <div class="card-rank"><!-- formatRankCell(rank) output, or rank badge --></div>
+        <span class="card-title">Record Name or Title</span>
+        <!-- Include .switch only when the record has an enabled/disabled field; omit entirely when absent -->
+        <label class="switch" title="Toggle enabled state">
+            <input type="checkbox" checked onchange="toggleRecord(id, this.checked)">
+            <span class="slider"></span>
+        </label>
+    </div>
+    <!-- Body: one .card-row per field — label left, value right -->
+    <div class="card-body">
+        <div class="card-row">
+            <span class="card-label">Field:</span>
+            <span>Plain text value</span>
+        </div>
+        <div class="card-row">
+            <span class="card-label">Status:</span>
+            <span class="badge badge-success">Active</span>
+        </div>
+        <div class="card-row">
+            <span class="card-label">Expires:</span>
+            <span>2025-09-01</span>
+        </div>
+    </div>
+    <!-- Footer: all row-level action buttons, right-aligned -->
+    <div class="card-actions">
+        <button class="btn-primary btn-sm" onclick="editRecord(id)" title="Edit this record">Edit</button>
+        <button class="btn-danger btn-sm" onclick="deleteRecord(id)" title="Permanently delete this record">Delete</button>
+    </div>
+</div>
+```
+
+#### Mobile sort JS helpers
+
+```js
+function applyMobileSort() {
+    const col = document.getElementById('mobileSortCol').value;
+    if (sortCol !== col) { sortCol = col; sortDir = 'asc'; }
+    saveSortPref();
+    renderPage();
+}
+
+function toggleMobileSortDir() {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    const btn = document.getElementById('mobileSortDirBtn');
+    btn.textContent = sortDir === 'asc' ? '▲ Asc' : '▼ Desc';
+    saveSortPref();
+    renderPage();
+}
+
+async function saveSortPref() {
+    await fetch('/api/user-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'myPageSort', value: `${sortCol}:${sortDir}` })
+    });
+}
+
+// Call on init to sync mobile dropdown with restored pref
+function syncMobileSortControls() {
+    const sel = document.getElementById('mobileSortCol');
+    if (sel) sel.value = sortCol;
+    const btn = document.getElementById('mobileSortDirBtn');
+    if (btn) btn.textContent = sortDir === 'asc' ? '▲ Asc' : '▼ Desc';
+}
+```
+
+#### Rules
+
+| Rule | Detail |
+|---|---|
+| **Always implement** | Every page that adds or modifies a data table must implement the card layout in the same task — never defer mobile to a follow-up |
+| **Shared state** | Desktop and mobile share `currentPage`, `limit`, `sortCol`, `sortDir` — never fork these variables |
+| **Action parity** | Every row-level action in the desktop table (edit, delete, view, toggle, etc.) must also appear on the card |
+| **Pagination parity** | Both pagination bars must show and hide together; `changeLimit()` and `changePage()` update both simultaneously |
+| **Card header** | Contains `.card-title` with the record's primary identifier (name, title, or most meaningful field). If the record has a rank or badge field, place a `.card-rank` div as the **first** element before `.card-title` — it renders inline thanks to the header's `display: flex`. If the record has an enabled/disabled state, place a `.switch` toggle as the **last** element. Omit `.card-rank` and/or `.switch` entirely when the record has no such fields |
+| **Card body** | Each field occupies one `.card-row`. The `.card-label` span (muted text, left side) and the value `<span>` (right side) are separated by `justify-content: space-between` — defined in `styles.css`. Label text ends with a colon (`Field:`). Status and enum values should use a `<span class="badge ...">` or an SVG icon rather than plain text where the desktop table uses a badge or icon |
+| **Card footer** | `.card-actions` contains all row-level action buttons. Use the same colour class (`btn-danger`, `btn-primary`, etc.) and `title` attribute as the desktop table equivalents. Buttons are right-aligned (`justify-content: flex-end` defined in `styles.css`) |
+| **CSS classes** | Use `table-card`, `card-header`, `card-title`, `card-body`, `card-row`, `card-label`, `card-actions` — defined in `styles.css`; do not invent alternatives |
+| **Banded rows** | Banding is applied only to the **header and footer** of each card, not the body. Odd cards use `var(--card-band-odd)` (light sand); even cards use `var(--card-band-even)` (light gray). Both variables are defined in `styles.css` for light and dark modes. The rules `.table-card .card-header/.card-actions` (odd default) and `.table-card:nth-child(even) .card-header/.card-actions` (even override) are global — no per-page CSS or JS needed |
+| **Breakpoint** | Always `768px` — match the existing rules in `styles.css`; do not introduce a second breakpoint value |
+| **No native dialogs** | Same rule as desktop — `confirmAction()` and `showToast()` only |
+
+---
+
+## ⚠️ Mobile Accordion Convention
+
+Every **filter bar** and every **sort bar** on a page must be wrapped in a collapsible accordion section for mobile viewports (≤ 768 px). On desktop the toggle button is hidden and the content is always visible. Use `live-forms.html` as the canonical reference.
+
+### Global CSS (already in `styles.css`)
+
+`.filter-toggle-btn` and `.sort-toggle-btn` are defined globally in `styles.css`:
+- Outside any media query: `display: none` (hidden on desktop)
+- Inside `@media (max-width: 768px)`: styled as full-width pill buttons with chevron, chevron rotates 180° when `.expanded` class is present
+
+### Filter accordion
+
+```html
+<div class="filter-section">
+    <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilters()" title="Show or hide filters">
+        <span style="display:flex; align-items:center; gap:8px;">
+            Filters
+            <span id="filterActiveCount" style="display:none; background:var(--primary); color:#fff; border-radius:10px; padding:1px 8px; font-size:0.78em; font-weight:700;"></span>
+        </span>
+        <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    </button>
+    <div class="filter-bar" id="filterBar">
+        <!-- filter inputs -->
+    </div>
+</div>
+```
+
+Page `<style>` block additions:
+```css
+@media (max-width: 768px) {
+    .filter-bar { display: none; flex-direction: column; gap: 10px; padding: 12px;
+        background: var(--bg-card); border: 1px solid var(--border-color);
+        border-radius: 8px; margin-bottom: 10px; }
+    .filter-bar.filter-expanded { display: flex; }
+    .filter-bar .filter-group { min-width: unset; flex: unset; width: 100%; }
+    /* ... date-range and actions overrides */
+}
+```
+
+JS:
+```js
+function toggleFilters() {
+    const bar = document.getElementById('filterBar');
+    const btn = document.getElementById('filterToggleBtn');
+    const expanded = bar.classList.toggle('filter-expanded');
+    btn.classList.toggle('expanded', expanded);
+}
+```
+
+Active-count badge — call `updateFilterHighlights()` after any filter change; count non-empty filter values and show the badge number.
+
+### Sort accordion
+
+```html
+<div class="sort-section">
+    <button class="sort-toggle-btn" id="sortToggleBtn" onclick="toggleSortBar()" title="Show or hide sort options">
+        <span>Sort by</span>
+        <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    </button>
+    <div id="PAGE-sort-bar" class="sort-bar-container">
+        <!-- sort-bar-btn buttons -->
+    </div>
+</div>
+```
+
+Page `<style>` block additions:
+```css
+@media (max-width: 768px) {
+    /* Override the global .sort-bar-container show rule for this specific bar */
+    #PAGE-sort-bar { display: none; }
+    #PAGE-sort-bar.sort-expanded { display: flex; }
+}
+```
+
+JS:
+```js
+function toggleSortBar() {
+    const bar = document.getElementById('PAGE-sort-bar');
+    const btn = document.getElementById('sortToggleBtn');
+    const expanded = bar.classList.toggle('sort-expanded');
+    btn.classList.toggle('expanded', expanded);
+}
+```
+
+### Rules
+
+| Rule | Detail |
+|---|---|
+| **Both required** | Every page with a filter bar must have a filter accordion; every page with a sort bar must have a sort accordion |
+| **Desktop unaffected** | Toggle buttons (`filter-toggle-btn`, `sort-toggle-btn`) have `display:none` globally — the accordion never appears on desktop |
+| **Collapsed by default** | Both sections start collapsed on mobile; the user expands them on demand |
+| **Solid teal tint** | Toggle buttons use `background: var(--toggle-btn-bg)` and `border: 1px solid var(--toggle-btn-border)` when collapsed — solid colors defined in `:root` (`#e8f6f8` / `#a2dae3`) and `body.dark-mode` (`#1d2b2d` / `#1b535c`), applied globally in `styles.css`. Never use `rgba` (semi-transparent) or `var(--bg-card)` on individual pages |
+| **Active-count badge** | Filter accordion only — show a badge with the count of active filters; hide it when all filters are cleared |
+| **Global CSS** | `.filter-toggle-btn` and `.sort-toggle-btn` base styles live in `styles.css`; page-specific ID overrides (show/hide the sort bar ID) live in the page `<style>` block |
+| **Chevron class** | Always use `class="filter-chevron"` on the SVG inside both toggle buttons — the global CSS handles the rotation transition |
+
+---
+
+## ⚠️ Mobile Top Navigation Banner
+
+Every page that includes `help.js` automatically receives an Android-style fixed top banner on mobile (≤ 768 px). The banner is injected by the `help.js` IIFE and styled globally in `styles.css`. No per-page work is needed unless a new page is added or a page's back-navigation target differs from the dashboard.
+
+### How it works
+
+| Layer | File | Responsibility |
+|---|---|---|
+| Banner injection | `public/help.js` (end of IIFE) | Injects `#mobilePageBanner`, adds `has-mobile-banner` and optionally `is-home-page` to `<body>` |
+| Shared title utility | `public/utils.js` — `window.initPageTitle()` | Sets `document.title`, `#pageHeader`/`#mainHeader`, and `#mobileBannerTitle` in one call |
+| Global CSS | `public/styles.css` — `/* Mobile Top Navigation Banner */` section | Banner layout, colour, button styles, floating-button suppression |
+
+### Banner structure
+
+```
+[ ≡ hamburger (#osm-open-btn, fixed z:99999) ] [ ‹ back ] [ Page Title ] [ ? help ]
+```
+
+- The sidebar hamburger (`#osm-open-btn` from `sidebar.js`) is `position:fixed; left:10px; top:10px; z-index:99999`. The banner has `padding-left:58px` to clear it — never remove this padding.
+- The back chevron (`#mobileBannerBack`) and help button (`#mobileBannerHelp`) are injected inside `#mobilePageBanner`.
+- On the **dashboard** (`key === 'index'`): no back button is rendered and `is-home-page` class is added to `<body>`.
+- On **all other pages**: a white chevron SVG links to the page's back destination.
+
+### Banner colour
+
+Background: `#0d8a9e` — a darker teal than the sidebar icon buttons (`#17a2b8`). Never replace this with `var(--bg-header)` or a gray value.
+
+### Page title management
+
+All pages call `window.initPageTitle(tabPrefix, headingText, headerId?)` instead of setting titles directly. The function:
+- Fetches `/ui-config` once (module-level cached promise — no double fetch)
+- Sets `document.title = tabPrefix + ' - ' + appName`
+- Sets `#pageHeader` (or `headerId`) innerText to `headingText + ' - ' + appName`
+- Updates `#mobileBannerTitle` to `headingText` (no app-name suffix on mobile)
+
+On the dashboard (`app.js`) the title is set directly to the app name — `initPageTitle` is not used there.
+
+### In-page `<h1>` visibility on mobile
+
+| Page | Element | Visible on mobile? |
+|---|---|---|
+| Dashboard (`index.html`) | `#mainHeader` | **Yes** — kept visible; only `#pageHeader` is suppressed |
+| All other pages | `#pageHeader` | **No** — hidden by `body.has-mobile-banner #pageHeader { display: none }` |
+
+### Back-navigation targets (`backUrls` map in `help.js`)
+
+Most pages navigate back to `/` (dashboard). Exceptions are declared in the `backUrls` map:
+
+| Page key | Back destination |
+|---|---|
+| `surveys-results` | `/live-surveys.html` |
+| `surveys-tracking` | `/live-surveys.html` |
+| *(all others)* | `/` |
+
+To add a new exception, insert an entry in the `backUrls` object inside the banner-injection block of `help.js`.
+
+### Adding a new page to the banner
+
+1. Add the page's `key` string to the `bannerKeys` array in `help.js`.
+2. Add a short display title to the `bannerTitles` map.
+3. If the page needs a non-dashboard back destination, add it to `backUrls`.
+4. Ensure the page calls `initPageTitle(tabPrefix, headingText)` in its JS (inline or controller file).
+5. If `utils.js` is not already included on the page, add `<script src="utils.js"></script>` before the inline script.
+
+### Rules
+
+| Rule | Detail |
+|---|---|
+| **Never hardcode `document.title` or `#pageHeader`** | Always use `initPageTitle()` so the banner stays in sync |
+| **Never set `background` on `#mobilePageBanner` per-page** | The global `#0d8a9e` rule in `styles.css` is authoritative |
+| **Never remove `padding-left: 58px` from the banner** | It is load-bearing — required to clear the sidebar hamburger |
+| **SVG stroke on back chevron** | Always `stroke="#ffffff"` (explicit hex) — never `stroke="currentColor"`, which can be overridden by global `a { color }` rules |
+| **Dashboard has no back button** | Omit the `<a>` element entirely (`noBack = true`) — do not use `visibility:hidden` (leaves dead space in the flex layout) |
+| **`#pageHeader` hidden on mobile, `#mainHeader` shown** | These are separate elements; suppressing both is wrong — keep the rule targeting only `#pageHeader` |
 
 ---
 

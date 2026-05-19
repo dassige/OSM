@@ -2,15 +2,36 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     // SVG Icons
-    const iconMenu = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
+    const iconMenu  = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
     const iconClose = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
-  
+    const iconUser  = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+
     // Sidebar HTML Structure with memory IDs and role attributes
     const sidebarHTML = `
           <button id="osm-open-btn" class="osm-icon-btn" title="Open Menu">${iconMenu}</button>
           <div id="osm-sidebar-container">
               <div class="sidebar-header">
-                  <button id="osm-close-btn" class="osm-icon-btn">${iconClose}</button>
+                  <div id="osm-header-actions" class="sidebar-header-actions">
+                      <button id="osm-close-btn" class="osm-icon-btn" title="Close menu">${iconClose}</button>
+                      <button id="osm-profile-btn" class="osm-icon-btn" title="User profile and settings">${iconUser}<span id="osm-profile-name">User</span></button>
+                  </div>
+              </div>
+              <div id="osm-profile-dropdown" class="osm-profile-dropdown">
+                  <div class="osm-profile-name-row">
+                      ${iconUser}
+                      <span id="userNameDisplay">User</span>
+                  </div>
+                  <a href="profile.html">User Settings</a>
+                  <div class="osm-dark-mode-row" onclick="document.getElementById('darkModeToggle').click()">
+                      <span>Dark Mode</span>
+                      <label class="switch" style="margin:0; pointer-events:none;">
+                          <input type="checkbox" id="darkModeToggle"
+                              onchange="toggleDarkMode(this.checked); event.stopPropagation();"
+                              style="pointer-events:auto;">
+                          <span class="slider"></span>
+                      </label>
+                  </div>
+                  <a href="#" class="osm-logout" id="osm-logout-link">Logout</a>
               </div>
               <nav id="osm-sidebar-nav">
                   <ul class="osm-menu">
@@ -66,27 +87,109 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
   
     document.body.insertAdjacentHTML("afterbegin", sidebarHTML);
-  
-    const sidebar = document.getElementById("osm-sidebar-container");
-    const openBtn = document.getElementById("osm-open-btn");
-    const closeBtn = document.getElementById("osm-close-btn");
-  
-    // Sidebar Toggle
-    const toggleSidebar = (isCollapsed) => {
-      if (isCollapsed) {
-        sidebar.classList.add("collapsed");
-        document.body.classList.add("osm-no-margin");
-        openBtn.style.display = "flex";
-      } else {
-        sidebar.classList.remove("collapsed");
-        document.body.classList.remove("osm-no-margin");
-        openBtn.style.display = "none";
-      }
-      localStorage.setItem("sidebar-collapsed", isCollapsed);
+
+    // Inject backdrop element (used only on mobile)
+    const backdrop = document.createElement("div");
+    backdrop.id = "osm-backdrop";
+    document.body.appendChild(backdrop);
+
+    const sidebar        = document.getElementById("osm-sidebar-container");
+    const openBtn        = document.getElementById("osm-open-btn");
+    const closeBtn       = document.getElementById("osm-close-btn");
+    const profileBtn     = document.getElementById("osm-profile-btn");
+    const profileDropdown = document.getElementById("osm-profile-dropdown");
+
+    const isMobile = () => window.innerWidth <= 768;
+
+    // Populate sidebar-header app title (mobile only — hidden on desktop via CSS)
+    const titleEl = document.createElement("span");
+    titleEl.className = "sidebar-title";
+    titleEl.textContent = "OpReady";
+    fetch("/ui-config").then(r => r.json())
+        .then(c => { if (c.loginTitle) titleEl.textContent = c.loginTitle; })
+        .catch(() => {});
+    // Insert title before the header-actions group so layout is [title] [close|profile]
+    document.querySelector(".sidebar-header").insertBefore(titleEl, document.getElementById("osm-header-actions"));
+
+    // ── Profile dropdown ──────────────────────────────────────────────────────
+    profileBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        profileDropdown.classList.toggle("show");
+    });
+
+    document.getElementById("osm-logout-link").addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.href = "/logout";
+    });
+
+    // Close profile dropdown on outside click
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest("#osm-profile-btn") && !e.target.closest("#osm-profile-dropdown")) {
+            profileDropdown.classList.remove("show");
+        }
+    });
+
+    // ── Backdrop helpers ──────────────────────────────────────────────────────
+    const showBackdrop = () => {
+        backdrop.classList.remove("hiding");
+        backdrop.classList.add("visible");
     };
-  
+    const hideBackdrop = () => {
+        backdrop.classList.add("hiding");
+        setTimeout(() => {
+            backdrop.classList.remove("visible", "hiding");
+        }, 250);
+    };
+
+    // ── Sidebar Toggle ────────────────────────────────────────────────────────
+    const toggleSidebar = (isCollapsed) => {
+        if (isCollapsed) {
+            sidebar.classList.add("collapsed");
+            profileDropdown.classList.remove("show");
+            hideBackdrop();
+            document.body.style.overflow = "";
+            // Desktop only: restore push-layout margin
+            if (!isMobile()) {
+                document.body.classList.add("osm-no-margin");
+                openBtn.style.display = "flex";
+            }
+        } else {
+            sidebar.classList.remove("collapsed");
+            if (isMobile()) {
+                // Overlay mode: show backdrop, lock body scroll
+                showBackdrop();
+                document.body.style.overflow = "hidden";
+            } else {
+                // Desktop push mode
+                document.body.classList.remove("osm-no-margin");
+                openBtn.style.display = "none";
+            }
+        }
+        // Only persist collapsed state for desktop (mobile always starts closed)
+        if (!isMobile()) {
+            localStorage.setItem("sidebar-collapsed", isCollapsed);
+        }
+    };
+
     openBtn.addEventListener("click", () => toggleSidebar(false));
     closeBtn.addEventListener("click", () => toggleSidebar(true));
+    backdrop.addEventListener("click", () => toggleSidebar(true));
+
+    // Close sidebar when navigating on mobile (link tap)
+    document.getElementById("osm-sidebar-nav").addEventListener("click", e => {
+        if (isMobile() && e.target.tagName === "A" && e.target.href) {
+            toggleSidebar(true);
+        }
+    });
+
+    // On resize: clean up overlay state if switching desktop↔mobile
+    window.addEventListener("resize", () => {
+        if (!isMobile()) {
+            // Restore desktop state
+            backdrop.classList.remove("visible", "hiding");
+            document.body.style.overflow = "";
+        }
+    });
   
     // Toggle Submenu Logic with Memory
     window.toggleSubmenu = function(event, menuId) {
@@ -127,9 +230,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const role = user.role || 'guest';
             document.body.setAttribute("data-user-role", role);
 
-            // Update user name if the element exists
+            // Update user name in the dropdown and the profile button
             const nameDisplay = document.getElementById("userNameDisplay");
             if (nameDisplay) nameDisplay.textContent = user.name || "User";
+            const profileName = document.getElementById("osm-profile-name");
+            if (profileName) profileName.textContent = user.name || "User";
 
             // Define Role Hierarchy
             const roleLevels = {
@@ -161,8 +266,15 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Initialize state
-    const wasCollapsed = localStorage.getItem("sidebar-collapsed") === "true";
-    toggleSidebar(wasCollapsed);
+    // Mobile always starts with sidebar closed and hamburger visible.
+    // Desktop restores the last saved preference.
+    if (isMobile()) {
+        sidebar.classList.add("collapsed");
+        openBtn.style.display = "flex";
+    } else {
+        const wasCollapsed = localStorage.getItem("sidebar-collapsed") === "true";
+        toggleSidebar(wasCollapsed);
+    }
     
     applyRoleBasedAccess().then(() => {
         restoreSidebarState();

@@ -310,6 +310,14 @@ const helpContent = {
 
             <h3>4. AI Evaluator Test Lab</h3>
             <p>An ad-hoc sandbox for testing the AI grading logic against custom question/answer pairs before enabling it for live forms. Settings auto-save to your user profile.</p>
+
+            <h3>5. Install as App (PWA)</h3>
+            <p>OpReady is a <strong>Progressive Web App</strong>. When supported by your browser, an <em>Install OpReady</em> banner will appear at the top of the page. Installing adds OpReady to your device's home screen or taskbar for one-tap access, works offline for recently visited pages, and removes browser chrome for a native app feel.</p>
+            <ul>
+                <li>The install banner appears automatically when the browser detects the app is installable. Dismiss it and it won't reappear until the next session.</li>
+                <li>On iOS (Safari): use the Share button → <strong>Add to Home Screen</strong>.</li>
+                <li>On Android (Chrome) or desktop (Chrome/Edge): accept the Install banner or use the browser menu → <strong>Install OpReady</strong>.</li>
+            </ul>
         `
     },
 
@@ -532,8 +540,8 @@ const helpContent = {
     // Force inline styles to guarantee visibility and position
     const helpHtml = `
         <button id="globalHelpBtn" title="Get Help" 
-                style="position: fixed; top: 20px; right: 20px; z-index: 9999; 
-                       width: 45px; height: 45px; border-radius: 50%; 
+                style="position: fixed; top: 7px; right: 20px; z-index: 9999;
+                       width: 45px; height: 45px; border-radius: 50%;
                        background-color: #17a2b8; color: white; border: none; 
                        cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
                        display: flex; align-items: center; justify-content: center;">
@@ -546,9 +554,17 @@ const helpContent = {
 
         <div id="globalHelpModal" class="help-modal-overlay">
             <div class="help-modal-content">
-                <span class="help-close-btn">&times;</span>
-                <h2 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px; color:var(--primary);">${content.title}</h2>
+                <button class="help-close-btn" title="Close help">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2 style="margin-top:0; padding-right:32px; border-bottom:1px solid var(--border-color); padding-bottom:10px; color:var(--primary);">${content.title}</h2>
                 <div class="help-body">${content.body}</div>
+                <div class="help-modal-footer">
+                    <button class="btn-secondary help-close-footer-btn" title="Close help">Close</button>
+                </div>
             </div>
         </div>
     `;
@@ -565,12 +581,17 @@ const helpContent = {
     }
 
     const modal = document.getElementById('globalHelpModal');
-    const close = document.querySelector('.help-close-btn');
+    const closeModal = () => modal.classList.remove('show');
 
-    btn.addEventListener('click', () => { modal.classList.add('show'); });
-    close.addEventListener('click', () => { modal.classList.remove('show'); });
+    btn.addEventListener('click', () => modal.classList.add('show'));
+    document.querySelectorAll('.help-close-btn, .help-close-footer-btn').forEach(el => {
+        el.addEventListener('click', closeModal);
+    });
     window.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.remove('show');
+        if (e.target === modal) closeModal();
+    });
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
     });
 
     // Patch {{appname}} placeholder with the configured app title
@@ -579,4 +600,81 @@ const helpContent = {
         const body = document.querySelector('#globalHelpModal .help-body');
         if (body) body.innerHTML = body.innerHTML.replace(/\{\{appname\}\}/g, appName);
     }).catch(() => {});
+
+    // --- MOBILE TOP BANNER ---
+    // Pages that get the Android-style top navigation banner
+    const bannerKeys = [
+        'index', 'members', 'skills', 'templates', 'system-tools',
+        'event-log', 'users', 'profile', 'third-parties', 'training-planner',
+        'forms-manage', 'reports', 'live-forms', 'statistics', 'surveys-manage',
+        'live-surveys', 'surveys-tracking', 'surveys-results',
+        'forms-view-review', 'forms-view-preview', 'surveys-view-preview'
+    ];
+
+    // Short display titles for the banner (no app-name suffix)
+    const bannerTitles = {
+        'index': 'Dashboard',
+        'members': 'Members',
+        'skills': 'Skills',
+        'templates': 'Templates',
+        'system-tools': 'System Tools',
+        'event-log': 'Event Log',
+        'users': 'Users',
+        'profile': 'My Profile',
+        'third-parties': 'Third Party Services',
+        'training-planner': 'Training Planner',
+        'forms-manage': 'Forms Manager',
+        'reports': 'Reports',
+        'live-forms': 'Live Forms',
+        'statistics': 'Statistics',
+        'surveys-manage': 'Surveys Manager',
+        'live-surveys': 'Published Surveys',
+        'surveys-tracking': 'Survey Tracking',
+        'surveys-results': 'Survey Results',
+        'forms-view-review': 'Form Review',
+        'forms-view-preview': 'Form Preview',
+        'surveys-view-preview': 'Survey Preview'
+    };
+
+    if (bannerKeys.indexOf(key) !== -1) {
+        document.body.classList.add('has-mobile-banner');
+        if (key === 'index') document.body.classList.add('is-home-page');
+
+        const bannerLabel = bannerTitles[key] || content.title;
+        const noBack = (key === 'index');
+        const backUrls = {
+            'surveys-results':  '/live-surveys.html',
+            'surveys-tracking': '/live-surveys.html'
+        };
+        const backUrl = backUrls[key] || '/';
+        const backTitle = backUrl === '/' ? 'Back to Dashboard' : 'Back to Live Surveys';
+
+        const bannerEl = document.createElement('div');
+        bannerEl.id = 'mobilePageBanner';
+        bannerEl.innerHTML = `
+            ${noBack ? '' : `<a href="${backUrl}" id="mobileBannerBack" title="${backTitle}"
+               style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;text-decoration:none;border-radius:50%;flex-shrink:0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                     fill="none" stroke="#ffffff" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </a>`}
+            <span id="mobileBannerTitle">${bannerLabel}</span>
+            <button id="mobileBannerHelp" title="Get Help">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </button>
+        `;
+        document.body.insertBefore(bannerEl, document.body.firstChild);
+
+        document.getElementById('mobileBannerHelp').addEventListener('click', () => {
+            modal.classList.add('show');
+        });
+    }
 })();

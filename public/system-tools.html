@@ -1,14 +1,46 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#17A2B8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OpReady">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <title id="pageTitle">System Tools - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
+    <style>
+        /* ── API Key section: desktop shows table, mobile shows cards ── */
+        #apiKeyCardList { display: none; }
+
+        /* ── AI Test button: fixed width on desktop, full-width on mobile ── */
+        #btnRunAiTest { min-width: 280px; }
+
+        @media (max-width: 768px) {
+            /* Table ↔ card swap */
+            #apiKeyTableWrap { display: none; }
+            #apiKeyCardList  { display: block; }
+
+            /* API key sort bar (hidden until expanded) */
+            #apiKeys-sort-bar { display: none; }
+            #apiKeys-sort-bar.sort-expanded { display: flex; }
+
+            /* AI Test button full-width */
+            #btnRunAiTest { width: 100%; min-width: 0; }
+
+            /* Modal inner panels — override inline max-width/padding */
+            .st-modal-inner {
+                max-width: calc(100% - 32px) !important;
+                padding: 20px !important;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -28,12 +60,14 @@
     <div class="container" style="max-width: 1000px;">
         <h1 id="pageHeader" class="text-center" style="margin-bottom: 30px;">System Tools</h1>
 
+        <!-- ── Backup ── -->
         <div class="system-card">
             <h2>Backup Database</h2>
             <p>Download a snapshot of the current system database (<code>fenz.db</code>). This file contains all
                 the data and structure of the database.</p>
             <div style="margin-top: 20px;">
                 <a href="/api/system/backup" class="btn-primary" target="_blank"
+                    title="Download a snapshot of the current database"
                     style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 12px 24px; font-size: 16px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -46,6 +80,7 @@
             </div>
         </div>
 
+        <!-- ── Restore ── -->
         <div class="system-card">
             <h2>Restore Database</h2>
             <p style="color: var(--danger); font-weight: bold;">⚠️ Warning: This will overwrite the current database!
@@ -56,10 +91,12 @@
             <form id="restoreForm">
                 <div class="file-input-wrapper">
                     <input type="file" id="dbFile" name="databaseFile" accept=".sql" required
+                        title="Select a .sql backup file to restore"
                         style="background: transparent; border: none; color: var(--text-main);">
                 </div>
 
                 <button type="submit" class="btn-danger" id="restoreBtn"
+                    title="Upload the selected .sql file and restore the database"
                     style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; font-size: 16px;">
                     <span class="spinner" id="restoreSpinner"></span>
                     <svg id="restoreIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -76,9 +113,9 @@
             <div id="statusMsg" class="status-msg"></div>
         </div>
 
+        <!-- ── AI Evaluator Test Lab ── -->
         <div class="system-card">
-            <h2 style="border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;">AI Evaluator
-                Test Lab</h2>
+            <h2>AI Evaluator Test Lab</h2>
             <p style="margin-bottom: 20px; font-style: italic;">Ad-hoc testing for AI grading logic. Fields auto-save to
                 your user profile.</p>
 
@@ -86,7 +123,8 @@
                 style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; background: var(--bg-hover); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 25px;">
                 <div class="form-group" style="margin:0;">
                     <label>AI Provider</label>
-                    <select id="testAiProvider" class="save-pref" data-key="ai_test_provider" style="width:100%;">
+                    <select id="testAiProvider" class="save-pref" data-key="ai_test_provider" style="width:100%;"
+                        title="Select the AI provider to use for evaluation">
                         <option value="gemini">Google Gemini</option>
                         <option value="ollama">Ollama (Local)</option>
                     </select>
@@ -96,9 +134,11 @@
                     <label>Model Name</label>
                     <div id="modelInputContainer">
                         <input type="text" id="testAiModel" class="save-pref" data-key="ai_test_model"
-                            placeholder="e.g. gemini-1.5-pro" style="width:100%;">
+                            placeholder="e.g. gemini-1.5-pro" style="width:100%;"
+                            title="AI model name to use for evaluation, e.g. gemini-1.5-pro">
                         <select id="testOllamaModelSelect" class="save-pref" data-key="ai_test_model_ollama"
-                            style="width:100%; display:none;">
+                            style="width:100%; display:none;"
+                            title="Select a locally available Ollama model">
                             <option value="">-- Refresh to load models --</option>
                         </select>
                     </div>
@@ -108,9 +148,10 @@
                     <label>Ollama Base URL</label>
                     <div style="display:flex; gap:5px;">
                         <input type="text" id="testOllamaUrl" class="save-pref" data-key="ai_test_ollama_url"
-                            placeholder="http://localhost:11434" style="flex:1;">
+                            placeholder="http://localhost:11434" style="flex:1;"
+                            title="Base URL of your local Ollama server, e.g. http://localhost:11434">
                         <button type="button" onclick="refreshOllamaModels()" class="btn-primary"
-                            style="padding:0 10px; margin: 0;" title="Refresh Local Models">
+                            style="padding:0 10px; margin: 0;" title="Refresh the list of locally available Ollama models">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2">
                                 <path
@@ -123,7 +164,8 @@
                 <div class="form-group" style="margin:0;">
                     <label>Max Points</label>
                     <input type="number" id="testMaxPoints" class="save-pref" data-key="ai_test_max_points" value="5"
-                        min="1" step="0.5" style="width:100%;">
+                        min="1" step="0.5" style="width:100%;"
+                        title="Maximum score the AI can award for this answer">
                 </div>
             </div>
 
@@ -133,7 +175,8 @@
                         Description</label>
                     <textarea id="testQuestion" class="save-pref" data-key="ai_test_question" rows="4"
                         style="width:100%; min-height: 70px;"
-                        placeholder="The question text shown to the member..."></textarea>
+                        placeholder="The question text shown to the member..."
+                        title="The question text shown to the member"></textarea>
                 </div>
 
                 <div class="form-group" style="margin:0;">
@@ -141,7 +184,8 @@
                         (The Rubric)</label>
                     <textarea id="testReference" class="save-pref" data-key="ai_test_reference" rows="6"
                         style="width:100%; min-height: 70px;"
-                        placeholder="Technical source or ideal answer..."></textarea>
+                        placeholder="Technical source or ideal answer..."
+                        title="The rubric or ideal answer used to evaluate the member's response"></textarea>
                 </div>
 
                 <div class="form-group" style="margin:0;">
@@ -149,14 +193,16 @@
                         Answer</label>
                     <textarea id="testAnswer" class="save-pref" data-key="ai_test_answer" rows="6"
                         style="width:100%; min-height: 70px;"
-                        placeholder="Text provided by the volunteer..."></textarea>
+                        placeholder="Text provided by the volunteer..."
+                        title="The member's written answer to evaluate"></textarea>
                 </div>
             </div>
 
             <div
                 style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
                 <button onclick="runAiTest()" class="btn-primary" id="btnRunAiTest"
-                    style="min-width: 280px; display: inline-flex; align-items: center; justify-content: center; height: 50px; font-size: 1.1em; margin: 0;">
+                    title="Run the AI evaluation test with the current configuration"
+                    style="display: inline-flex; align-items: center; justify-content: center; height: 50px; font-size: 1.1em; margin: 0;">
                     <div class="spinner" id="aiTestSpinner"
                         style="border-top-color: #fff; margin-right: 12px; width: 18px; height: 18px;">
                     </div>
@@ -174,27 +220,51 @@
             <div id="aiTestLog" class="terminal-log">
             </div>
         </div>
+
+        <!-- ── API Key Management ── -->
         <div class="system-card">
-            <h2 style="border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;">API Key Management</h2>
-            <p style="margin-bottom: 16px;">API keys allow external systems to authenticate to the REST API using the <code>X-API-Key</code> request header. Keys are never shown again after creation.</p>
+            <h2>API Key Management</h2>
+            <p style="margin-bottom: 16px;">API keys allow external systems to authenticate to the REST API using the
+                <code>X-API-Key</code> request header. Keys are never shown again after creation.</p>
 
             <div style="margin-bottom: 20px;">
-                <button id="btnNewApiKey" class="btn-success" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    Create New API Key
+                <button id="btnNewApiKey" class="btn-success"
+                    title="Create a new API key for external system access"
+                    style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
                 </button>
             </div>
 
+            <!-- Desktop table -->
             <div id="apiKeyTableWrap" style="overflow-x: auto;">
                 <table id="apiKeyTable" style="width:100%; border-collapse: collapse; font-size: 14px;">
                     <thead>
                         <tr style="border-bottom: 1px solid var(--border-color); text-align: left;">
-                            <th style="padding: 8px 12px;">Name</th>
+                            <th data-sort="name" class="sortable sort-asc" onclick="handleApiKeySort('name')"
+                                style="padding: 8px 12px; cursor:pointer;">
+                                Name <span class="sort-icon">▲</span>
+                            </th>
                             <th style="padding: 8px 12px;">Prefix</th>
-                            <th style="padding: 8px 12px;">Role</th>
-                            <th style="padding: 8px 12px;">Created By</th>
-                            <th style="padding: 8px 12px;">Last Used</th>
-                            <th style="padding: 8px 12px;">Status</th>
+                            <th data-sort="role" class="sortable" onclick="handleApiKeySort('role')"
+                                style="padding: 8px 12px; cursor:pointer;">
+                                Role <span class="sort-icon">⇅</span>
+                            </th>
+                            <th data-sort="created_by" class="sortable" onclick="handleApiKeySort('created_by')"
+                                style="padding: 8px 12px; cursor:pointer;">
+                                Created By <span class="sort-icon">⇅</span>
+                            </th>
+                            <th data-sort="last_used_at" class="sortable" onclick="handleApiKeySort('last_used_at')"
+                                style="padding: 8px 12px; cursor:pointer;">
+                                Last Used <span class="sort-icon">⇅</span>
+                            </th>
+                            <th data-sort="active" class="sortable" onclick="handleApiKeySort('active')"
+                                style="padding: 8px 12px; cursor:pointer;">
+                                Status <span class="sort-icon">⇅</span>
+                            </th>
                             <th style="padding: 8px 12px;">Actions</th>
                         </tr>
                     </thead>
@@ -203,20 +273,56 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Mobile card list -->
+            <div id="apiKeyCardList">
+                <div class="sort-section">
+                    <button class="sort-toggle-btn" id="sortToggleBtnApiKeys" onclick="toggleApiKeySortBar()"
+                        title="Show or hide sort options">
+                        <span>Sort by</span>
+                        <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div id="apiKeys-sort-bar" class="sort-bar-container">
+                        <span class="sort-bar-label">Sort:</span>
+                        <button class="sort-bar-btn active" data-sort="name" onclick="handleApiKeySort('name')"
+                            title="Sort by name">
+                            Name <span class="sort-icon">▲</span>
+                        </button>
+                        <button class="sort-bar-btn" data-sort="role" onclick="handleApiKeySort('role')"
+                            title="Sort by role">
+                            Role <span class="sort-icon">⇅</span>
+                        </button>
+                        <button class="sort-bar-btn" data-sort="last_used_at"
+                            onclick="handleApiKeySort('last_used_at')" title="Sort by last used date">
+                            Last Used <span class="sort-icon">⇅</span>
+                        </button>
+                        <button class="sort-bar-btn" data-sort="active" onclick="handleApiKeySort('active')"
+                            title="Sort by status">
+                            Status <span class="sort-icon">⇅</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="apiKeyCardContainer"></div>
+            </div>
         </div>
     </div>
 
     <!-- Create API Key Modal -->
     <div id="apiKeyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:32px; width:100%; max-width:440px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div class="st-modal-inner" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:32px; width:100%; max-width:440px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
             <h3 style="margin:0 0 20px;">Create API Key</h3>
             <div class="form-group">
                 <label>Key Name <span style="color:var(--danger)">*</span></label>
-                <input type="text" id="apiKeyName" placeholder="e.g. External Integration" style="width:100%;">
+                <input type="text" id="apiKeyName" placeholder="e.g. External Integration" style="width:100%;"
+                    title="A descriptive name for this API key">
             </div>
             <div class="form-group" style="margin-top:14px;">
                 <label>Role</label>
-                <select id="apiKeyRole" style="width:100%;">
+                <select id="apiKeyRole" style="width:100%;" title="Permission level granted to this API key">
                     <option value="superadmin">superadmin — full access including user &amp; key management</option>
                     <option value="admin" selected>admin — full read/write access</option>
                     <option value="simple">simple — read-only statistics/reports</option>
@@ -224,26 +330,34 @@
                 </select>
             </div>
             <div style="display:flex; gap:12px; margin-top:24px; justify-content:flex-end;">
-                <button id="btnCancelApiKey" class="btn-secondary" style="padding:10px 20px;">Cancel</button>
-                <button id="btnCreateApiKey" class="btn-success" style="padding:10px 20px;">Create</button>
+                <button id="btnCancelApiKey" class="btn-secondary" style="padding:10px 20px;"
+                    title="Cancel and close without creating a key">Cancel</button>
+                <button id="btnCreateApiKey" class="btn-success" style="padding:10px 20px;"
+                    title="Create the new API key">Create</button>
             </div>
         </div>
     </div>
 
     <!-- Reveal API Key Modal -->
     <div id="apiKeyRevealModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:32px; width:100%; max-width:520px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div class="st-modal-inner" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:32px; width:100%; max-width:520px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
             <h3 style="margin:0 0 8px;">API Key Created</h3>
             <p style="color:var(--danger); font-weight:600; margin-bottom:16px;">⚠️ Copy this key now — it will never be shown again.</p>
             <div style="display:flex; gap:8px; align-items:center;">
                 <code id="apiKeyRevealValue" style="flex:1; background:var(--bg-hover); padding:10px 14px; border-radius:6px; font-size:13px; word-break:break-all; border:1px solid var(--border-color);"></code>
-                <button id="btnCopyApiKey" class="btn-secondary" style="padding:10px 14px; white-space:nowrap;" title="Copy to clipboard">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <button id="btnCopyApiKey" class="btn-secondary" style="padding:10px 14px; white-space:nowrap;"
+                    title="Copy the API key to clipboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
                     Copy
                 </button>
             </div>
             <div style="margin-top:24px; text-align:right;">
-                <button id="btnDismissReveal" class="btn-secondary" style="padding:10px 20px;">Done</button>
+                <button id="btnDismissReveal" class="btn-secondary" style="padding:10px 20px;"
+                    title="Close this window — make sure you have copied the key first">Done</button>
             </div>
         </div>
     </div>
@@ -257,7 +371,7 @@
     </button>
 
     <script>
-        // Global to hold preferences for the session
+        // ── AI Lab ──────────────────────────────────────────────────────────────
         let currentAiPrefs = {};
 
         async function initAiLab() {
@@ -278,7 +392,6 @@
                         if (key === 'ai_test_provider') toggleOllamaField(input.value);
                     });
 
-                    // Debounced listener for textareas to avoid too many DB writes
                     if (input.tagName === 'TEXTAREA' || input.id === 'testAiModel') {
                         let timeout;
                         input.addEventListener('input', () => {
@@ -305,7 +418,6 @@
             if (isOllama) {
                 geminiInput.style.display = 'none';
                 ollamaSelect.style.display = 'block';
-                // Only refresh if we haven't loaded models yet
                 if (ollamaSelect.options.length <= 1) refreshOllamaModels();
             } else {
                 geminiInput.style.display = 'block';
@@ -360,10 +472,7 @@
             .then(r => r.json())
             .then(c => {
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-                if (c.loginTitle) {
-                    document.title = "System Tools - " + c.loginTitle;
-                    document.getElementById('pageHeader').innerText = "System Tools - " + c.loginTitle;
-                }
+                initPageTitle("System Tools", "System Tools");
                 if (c.appMode === 'demo') {
                     document.getElementById('demoBanner').style.display = 'block';
                 }
@@ -382,7 +491,7 @@
         document.getElementById('restoreForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (!await confirmAction("Restore Database", "Are you sure you want to restore the database? Current data will be lost.")) return;
+            if (!await promptAction("Restore Database", "This will <strong>overwrite all current data</strong> with the selected backup. The server will restart. This cannot be undone.<br><br>Type <strong>RESTORE</strong> to confirm.", "RESTORE")) return;
 
             const btn = document.getElementById('restoreBtn');
             const spinner = document.getElementById('restoreSpinner');
@@ -503,51 +612,217 @@
             }
         }
 
+        // ── API Key Management ──────────────────────────────────────────────────
+
+        let apiKeysSortCol = 'name';
+        let apiKeysSortDir = 'asc';
+        let allApiKeys = [];
+
+        async function initApiKeySection() {
+            try {
+                const res = await fetch('/api/user-preferences/apiKeysSort');
+                const data = await res.json();
+                if (data.value) {
+                    const [col, dir] = data.value.split(':');
+                    apiKeysSortCol = col;
+                    apiKeysSortDir = dir;
+                }
+            } catch (e) {}
+            updateApiKeySortHeaders();
+            syncMobileApiKeySort();
+            loadApiKeys();
+        }
+
+        function sortApiKeyData(keys) {
+            return [...keys].sort((a, b) => {
+                let valA, valB;
+                if (apiKeysSortCol === 'active') {
+                    valA = a.active ? 'active' : 'revoked';
+                    valB = b.active ? 'active' : 'revoked';
+                } else if (apiKeysSortCol === 'last_used_at') {
+                    valA = a.last_used_at || '';
+                    valB = b.last_used_at || '';
+                } else {
+                    valA = (a[apiKeysSortCol] || '').toString().toLowerCase();
+                    valB = (b[apiKeysSortCol] || '').toString().toLowerCase();
+                }
+                if (valA < valB) return apiKeysSortDir === 'asc' ? -1 : 1;
+                if (valA > valB) return apiKeysSortDir === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        async function handleApiKeySort(col) {
+            if (apiKeysSortCol === col) {
+                apiKeysSortDir = apiKeysSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                apiKeysSortCol = col;
+                apiKeysSortDir = 'asc';
+            }
+            updateApiKeySortHeaders();
+            syncMobileApiKeySort();
+            try {
+                await fetch('/api/user-preferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: 'apiKeysSort', value: `${apiKeysSortCol}:${apiKeysSortDir}` })
+                });
+            } catch (e) {}
+            renderApiKeyData();
+        }
+
+        function updateApiKeySortHeaders() {
+            document.querySelectorAll('#apiKeyTable th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                const icon = th.querySelector('.sort-icon');
+                if (th.dataset.sort === apiKeysSortCol) {
+                    th.classList.add(apiKeysSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+                    if (icon) icon.textContent = apiKeysSortDir === 'asc' ? '▲' : '▼';
+                } else {
+                    if (icon) icon.textContent = '⇅';
+                }
+            });
+        }
+
+        function syncMobileApiKeySort() {
+            document.querySelectorAll('#apiKeys-sort-bar .sort-bar-btn').forEach(btn => {
+                const col = btn.dataset.sort;
+                btn.classList.toggle('active', col === apiKeysSortCol);
+                const icon = btn.querySelector('.sort-icon');
+                if (icon) {
+                    icon.textContent = col === apiKeysSortCol
+                        ? (apiKeysSortDir === 'asc' ? '▲' : '▼')
+                        : '⇅';
+                }
+            });
+        }
+
+        function toggleApiKeySortBar() {
+            const bar = document.getElementById('apiKeys-sort-bar');
+            const btn = document.getElementById('sortToggleBtnApiKeys');
+            const expanded = bar.classList.toggle('sort-expanded');
+            btn.classList.toggle('expanded', expanded);
+        }
+
         async function loadApiKeys() {
             const tbody = document.getElementById('apiKeyBody');
+            const container = document.getElementById('apiKeyCardContainer');
             try {
                 const res = await fetch('/api/api-keys');
-                const keys = await res.json();
-                if (!keys.length) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="padding:16px 12px; color:var(--text-muted);">No API keys yet.</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = keys.map(k => `
-                    <tr style="border-bottom:1px solid var(--border-color);">
-                        <td style="padding:10px 12px;">${escapeHtml(k.name)}</td>
-                        <td style="padding:10px 12px;"><code>${escapeHtml(k.key_prefix)}…</code></td>
-                        <td style="padding:10px 12px;"><span style="background:var(--bg-hover);padding:2px 8px;border-radius:4px;font-size:12px;">${escapeHtml(k.role)}</span></td>
-                        <td style="padding:10px 12px;">${escapeHtml(k.created_by || '—')}</td>
-                        <td style="padding:10px 12px;">${k.last_used_at ? new Date(k.last_used_at + 'Z').toLocaleString() : '—'}</td>
-                        <td style="padding:10px 12px;">
-                            <span style="color:${k.active ? 'var(--success, #4caf50)' : 'var(--danger)'}; font-weight:600;">
-                                ${k.active ? 'Active' : 'Revoked'}
-                            </span>
-                        </td>
-                        <td style="padding:10px 12px; white-space:nowrap; display:flex; gap:8px;">
-                            <button class="${k.active ? 'btn-danger' : 'btn-success'}" style="padding:5px 12px; font-size:13px;" onclick="toggleKey(${k.id}, ${k.active})">${k.active ? 'Revoke' : 'Enable'}</button>
-                            <button class="btn-danger" style="padding:5px 12px; font-size:13px;" onclick="deleteKey(${k.id}, '${escapeHtml(k.name)}')">Delete</button>
-                        </td>
-                    </tr>`).join('');
+                allApiKeys = await res.json();
+                renderApiKeyData();
             } catch (e) {
                 tbody.innerHTML = `<tr><td colspan="7" style="padding:16px 12px; color:var(--danger);">Failed to load keys: ${e.message}</td></tr>`;
+                if (container) container.innerHTML = '';
+            }
+        }
+
+        function renderApiKeyData() {
+            const tbody = document.getElementById('apiKeyBody');
+            const container = document.getElementById('apiKeyCardContainer');
+            const sorted = sortApiKeyData(allApiKeys);
+
+            if (!sorted.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="padding:16px 12px; color:var(--text-muted);">No API keys yet.</td></tr>';
+                if (container) container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No API keys yet.</p>';
+                return;
+            }
+
+            tbody.innerHTML = sorted.map(k => `
+                <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:10px 12px;">${escapeHtml(k.name)}</td>
+                    <td style="padding:10px 12px;"><code>${escapeHtml(k.key_prefix)}…</code></td>
+                    <td style="padding:10px 12px;"><span style="background:var(--bg-hover);padding:2px 8px;border-radius:4px;font-size:12px;">${escapeHtml(k.role)}</span></td>
+                    <td style="padding:10px 12px;">${escapeHtml(k.created_by || '—')}</td>
+                    <td style="padding:10px 12px;">${k.last_used_at ? new Date(k.last_used_at + 'Z').toLocaleString() : '—'}</td>
+                    <td style="padding:10px 12px;">
+                        <span style="color:${k.active ? 'var(--success, #4caf50)' : 'var(--danger)'}; font-weight:600;">
+                            ${k.active ? 'Active' : 'Revoked'}
+                        </span>
+                    </td>
+                    <td style="padding:10px 12px;">
+                        <div style="display:flex; gap:8px;">
+                            <button class="${k.active ? 'btn-danger' : 'btn-success'}"
+                                style="padding:5px 12px; font-size:13px;"
+                                onclick="toggleKey(${k.id}, ${k.active})"
+                                title="${k.active ? 'Revoke this API key' : 'Enable this API key'}">
+                                ${k.active ? 'Revoke' : 'Enable'}
+                            </button>
+                            <button class="btn-danger"
+                                style="padding:5px 12px; font-size:13px;"
+                                onclick="deleteKey(${k.id}, '${escapeHtml(k.name)}')"
+                                title="Permanently delete this API key">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>`).join('');
+
+            if (container) {
+                container.innerHTML = sorted.map(k => `
+                    <div class="table-card">
+                        <div class="card-header">
+                            <span class="card-title">${escapeHtml(k.name)}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-row">
+                                <span class="card-label">Prefix:</span>
+                                <span><code>${escapeHtml(k.key_prefix)}…</code></span>
+                            </div>
+                            <div class="card-row">
+                                <span class="card-label">Role:</span>
+                                <span style="background:var(--bg-hover);padding:2px 8px;border-radius:4px;font-size:12px;">${escapeHtml(k.role)}</span>
+                            </div>
+                            <div class="card-row">
+                                <span class="card-label">Created By:</span>
+                                <span>${escapeHtml(k.created_by || '—')}</span>
+                            </div>
+                            <div class="card-row">
+                                <span class="card-label">Last Used:</span>
+                                <span>${k.last_used_at ? new Date(k.last_used_at + 'Z').toLocaleString() : '—'}</span>
+                            </div>
+                            <div class="card-row">
+                                <span class="card-label">Status:</span>
+                                <span style="color:${k.active ? 'var(--success, #4caf50)' : 'var(--danger)'}; font-weight:600;">
+                                    ${k.active ? 'Active' : 'Revoked'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <button class="${k.active ? 'btn-danger' : 'btn-success'} btn-sm"
+                                onclick="toggleKey(${k.id}, ${k.active})"
+                                title="${k.active ? 'Revoke this API key' : 'Enable this API key'}">
+                                ${k.active ? 'Revoke' : 'Enable'}
+                            </button>
+                            <button class="btn-danger btn-sm"
+                                onclick="deleteKey(${k.id}, '${escapeHtml(k.name)}')"
+                                title="Permanently delete this API key">
+                                Delete
+                            </button>
+                        </div>
+                    </div>`).join('');
             }
         }
 
         function escapeHtml(str) {
-            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
         function showModal(id) { document.getElementById(id).style.display = 'flex'; }
         function hideModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        document.getElementById('btnNewApiKey').addEventListener('click', () => {
+        function openCreateKeyModal() {
             document.getElementById('apiKeyName').value = '';
             document.getElementById('apiKeyRole').value = 'admin';
             showModal('apiKeyModal');
-        });
+        }
+
+        document.getElementById('btnNewApiKey').addEventListener('click', openCreateKeyModal);
         document.getElementById('btnCancelApiKey').addEventListener('click', () => hideModal('apiKeyModal'));
-        document.getElementById('btnDismissReveal').addEventListener('click', () => { hideModal('apiKeyRevealModal'); loadApiKeys(); });
+        document.getElementById('btnDismissReveal').addEventListener('click', () => {
+            hideModal('apiKeyRevealModal');
+            loadApiKeys();
+        });
 
         document.getElementById('btnCreateApiKey').addEventListener('click', async () => {
             const name = document.getElementById('apiKeyName').value.trim();
@@ -572,7 +847,9 @@
 
         document.getElementById('btnCopyApiKey').addEventListener('click', () => {
             const val = document.getElementById('apiKeyRevealValue').textContent;
-            navigator.clipboard.writeText(val).then(() => { if (window.showToast) showToast('Copied to clipboard', 'success'); });
+            navigator.clipboard.writeText(val).then(() => {
+                if (window.showToast) showToast('Copied to clipboard', 'success');
+            });
         });
 
         async function toggleKey(id, currentlyActive) {
@@ -589,8 +866,9 @@
             loadApiKeys();
         }
 
-        loadApiKeys();
+        initApiKeySection();
 
+        // ── Scroll to top ───────────────────────────────────────────────────────
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {
             if (scrollTopBtn) {
@@ -606,6 +884,8 @@
     <script src="theme.js"></script>
     <script src="toast.js"></script>
     <script src="utils.js"></script>
+    <script src="/js/pwa.js"></script>
+
 </body>
 
 </html>

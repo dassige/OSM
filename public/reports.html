@@ -3,8 +3,15 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reports - OpReady</title>
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#17A2B8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OpReady">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
@@ -38,7 +45,6 @@
                     <option value="verification-history">Forms Verification History</option>
                     <option value="compliance-matrix">Brigade Compliance Matrix</option>
                     <option value="planned-sessions">Planned Sessions (Overview)</option>
-                    <option value="planned-sessions">Planned Sessions (By Date)</option>
                     <option value="training-attendance">Training Attendance Sheet</option>
                     <optgroup label="── Survey Reports ──" disabled></optgroup>
                     <option value="survey-participation">Survey Participation Overview</option>
@@ -46,9 +52,9 @@
                 </select>
 
                 <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button onclick="window.print()" class="btn-sm btn-primary" style="margin:0;">Print</button>
-                    <button onclick="downloadPdf()" class="btn-sm btn-primary" style="margin:0;">Export PDF</button>
-                    <button onclick="runReport()" class="btn-sm btn-primary" style="flex-grow:1; margin:0;">Run Report</button>
+                    <button onclick="window.print()" class="btn-sm btn-primary" style="margin:0;" title="Print this report">Print</button>
+                    <button onclick="downloadPdf()" class="btn-sm btn-primary" style="margin:0;" title="Export this report as a PDF file">Export PDF</button>
+                    <button onclick="runReport()" class="btn-sm btn-primary" style="flex-grow:1; margin:0;" title="Fetch data and render the selected report">Run Report</button>
                 </div>
             </div>
 
@@ -76,10 +82,12 @@
                     <option value="all">All</option>
                 </select>
             </div>
-            <span class="pagination-info" id="rptPageInfo">Showing 0-0 of 0</span>
-            <div style="display:flex; gap:5px;">
-                <button class="btn-page" id="btnRptPrev" onclick="changePage(-1)">Previous</button>
-                <button class="btn-page" id="btnRptNext" onclick="changePage(1)">Next</button>
+            <div style="display:flex; align-items:center; gap:0;">
+                <button class="btn-page" id="btnRptFirst" onclick="goToFirstPage()" title="First page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
+                <button class="btn-page" id="btnRptPrev" onclick="changePage(-1)" title="Previous page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                <button id="rptPageInfo" class="btn-page" style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1 of 1</button>
+                <button class="btn-page" id="btnRptNext" onclick="changePage(1)" title="Next page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                <button class="btn-page" id="btnRptLast" onclick="goToLastPage()" title="Last page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
         </div>
     </div>
@@ -111,14 +119,6 @@
     <script src="js/reports-controller.js"></script>
 
     <script>
-        fetch('/ui-config').then(r => r.json()).then(c => {
-            if (c.loginTitle) {
-                document.title = "Reports - " + c.loginTitle;
-                document.getElementById('pageHeader').innerText = "Reports Console - " + c.loginTitle;
-            }
-            if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
-            if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
-        });
         const scrollTopBtn = document.getElementById("scrollTopBtn");
         window.onscroll = function () {
             if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
@@ -128,6 +128,8 @@
             }
         };
     </script>
+    <script src="/js/pwa.js"></script>
+
 </body>
 
 </html>

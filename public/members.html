@@ -1,14 +1,45 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#17A2B8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OpReady">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <title id="pageTitle">Member Management - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
+    <style>
+        .toolbar-btn-mobile { display: none; }
+        #membersCardView { display: none; }
+
+        @media (max-width: 768px) {
+            .toolbar-btn-desktop { display: none; }
+            .toolbar-btn-mobile {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                border-radius: 6px;
+            }
+            #membersTable { display: none !important; }
+            #membersCardView { display: block; }
+
+            /* Sort bar: hidden by default, shown when expanded (accordion) */
+            #members-sort-bar { display: none; }
+            #members-sort-bar.sort-expanded { display: flex; }
+            /* Hide desktop pagination bar on mobile — mobile pagination is inside #membersCardView */
+            #membersPaginationControls { display: none !important; }
+            }
+    </style>
 </head>
 
 <body>
@@ -33,10 +64,41 @@
             <div class="table-toolbar">
                 <button id="bulkDeleteBtn" onclick="deleteSelected()" class="btn-danger"
                     style="display: none; margin-right: auto;">Delete Selected</button>
-                <button onclick="exportToCSV()" class="btn-secondary">Export CSV</button>
-                <button onclick="openOsmImportModal()" class="btn-success">Import from OSM</button>
-                <button onclick="document.getElementById('csvInput').click()" class="btn-success">Import CSV</button>
-                <button onclick="openModal()" class="btn-success">Add Member</button>
+
+                <button onclick="exportToCSV()" class="btn-secondary toolbar-btn-desktop" title="Export all members to a CSV file">Export CSV</button>
+                <button onclick="exportToCSV()" class="btn-secondary toolbar-btn-mobile" title="Export all members to a CSV file">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
+
+                <button onclick="openOsmImportModal()" class="btn-success toolbar-btn-desktop" title="Discover and import new members from the OSM dashboard">Import from OSM</button>
+                <button onclick="openOsmImportModal()" class="btn-success toolbar-btn-mobile" title="Discover and import new members from the OSM dashboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="8 17 12 21 16 17"></polyline>
+                        <line x1="12" y1="12" x2="12" y2="21"></line>
+                        <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"></path>
+                    </svg>
+                </button>
+
+                <button onclick="document.getElementById('csvInput').click()" class="btn-success toolbar-btn-desktop" title="Import members from a CSV file">Import CSV</button>
+                <button onclick="document.getElementById('csvInput').click()" class="btn-success toolbar-btn-mobile" title="Import members from a CSV file">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                </button>
+
+                <button onclick="openModal()" class="btn-success toolbar-btn-desktop" title="Add a new member">Add Member</button>
+                <button onclick="openModal()" class="btn-success toolbar-btn-mobile" title="Add a new member">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
             </div>
 
             <div class="help-bar">
@@ -53,7 +115,35 @@
                 </div>
             </div>
 
-            <table>
+            <!-- Mobile sort accordion -->
+            <div class="sort-section">
+                <button class="sort-toggle-btn" id="sortToggleBtn" onclick="toggleSortBar()" title="Show or hide sort options">
+                    <span>Sort by</span>
+                    <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div id="members-sort-bar" class="sort-bar-container">
+                    <span class="sort-bar-label">Sort:</span>
+                    <button class="sort-bar-btn" id="mobileSortBtn-rank" onclick="handleSort('rank')" title="Sort by rank">
+                        Rank <span id="mobile-icon-rank"></span>
+                    </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-name" onclick="handleSort('name')" title="Sort by name">
+                        Name <span id="mobile-icon-name"></span>
+                    </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-email" onclick="handleSort('email')" title="Sort by email">
+                        Email <span id="mobile-icon-email"></span>
+                    </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-mobile" onclick="handleSort('mobile')" title="Sort by mobile number">
+                        Mobile <span id="mobile-icon-mobile"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Desktop table (hidden on mobile via CSS) -->
+            <table id="membersTable">
                 <thead>
                     <tr>
                         <th class="cb-col"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
@@ -81,6 +171,54 @@
                 </thead>
                 <tbody id="membersTableBody"></tbody>
             </table>
+
+            <div class="pagination-container" id="membersPaginationControls" style="display:none;">
+                <div class="page-limit-selector">
+                    <label>Rows per page:</label>
+                    <select id="membersRowsPerPage" onchange="changeLimit(this.value)"
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                        title="Number of rows to display per page">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:0;">
+                    <button class="btn-page" id="membersBtnFirst" onclick="goToFirstPage()" title="First page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
+                    <button class="btn-page" id="membersBtnPrev" onclick="changePage(-1)" title="Previous page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <button id="membersPageInfo" class="btn-page" style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1 of 1</button>
+                    <button class="btn-page" id="membersBtnNext" onclick="changePage(1)" title="Next page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    <button class="btn-page" id="membersBtnLast" onclick="goToLastPage()" title="Last page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
+            </div>
+
+            <!-- Mobile card view (hidden on desktop via CSS) -->
+            <div id="membersCardView">
+                <div id="membersCardContainer"></div>
+                <div class="pagination-container" id="membersPaginationControlsMobile" style="display:none;">
+                    <div class="page-limit-selector">
+                        <label>Rows per page:</label>
+                        <select id="membersRowsPerPageMobile" onchange="changeLimit(this.value)"
+                            style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                            title="Number of rows to display per page">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0;">
+                        <button class="btn-page" id="membersBtnFirstMobile" onclick="goToFirstPage()" title="First page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline><line x1="6" y1="6" x2="6" y2="18"></line></svg></button>
+                        <button class="btn-page" id="membersBtnPrevMobile" onclick="changePage(-1)" title="Previous page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                        <button id="membersPageInfoMobile" class="btn-page" style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">1 of 1</button>
+                        <button class="btn-page" id="membersBtnNextMobile" onclick="changePage(1)" title="Next page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                        <button class="btn-page" id="membersBtnLastMobile" onclick="goToLastPage()" title="Last page" style="margin:0 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline><line x1="18" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -91,8 +229,9 @@
             <form id="memberForm">
                 <input type="hidden" id="memberId">
                 <div class="form-group"><label>Full Name</label><input type="text" id="name" required
-                        placeholder="Exact name as seen in OSM"></div>
-                <div class="form-group"><label>Email Address</label><input type="email" id="email" required></div>
+                        placeholder="Exact name as seen in OSM" title="Member's full name exactly as it appears in the OSM dashboard"></div>
+                <div class="form-group"><label>Email Address</label><input type="email" id="email" required
+                        title="Member's email address for notifications"></div>
                 <div class="form-group"><label>Mobile (Optional)</label><input type="text" id="mobile"
                         pattern="^02[0-9][\d\s\-]{6,9}$"
                         title="NZ mobile number starting with 02 (e.g. 021 234 5678)"></div>
@@ -131,7 +270,7 @@
     </div>
 
     <div id="osmImportModal" class="modal">
-        <div class="modal-content" style="width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
+        <div class="modal-content" style="max-width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
             <span class="close-btn" onclick="closeModal('osmImportModal')">&times;</span>
             <h2 id="osmModalTitle">Import Members from OSM</h2>
             <div
@@ -173,10 +312,11 @@
 
         let memberTable;
         let currentMembers = [];
-        // Helper to parse "Rank" and "Display Name" from the OSM string
+        let membersPage = 1;
+        let membersLimit = 25;
+
         function parseRankAndName(fullName) {
             const parts = (fullName || '').trim().split(' ');
-            // Match 2 to 4 letter words at the start (e.g., FF, QFF, SO, CFO, DCFO)
             if (parts.length > 1 && /^[A-Za-z]{2,4}$/.test(parts[0])) {
                 return { rank: parts[0], displayName: parts.slice(1).join(' ') };
             }
@@ -188,20 +328,32 @@
                 const uiRes = await fetch('/ui-config');
                 if (uiRes.ok) {
                     const uiConfig = await uiRes.json();
-                    if (uiConfig.loginTitle) {
-                        document.getElementById('pageTitle').innerText = "Member Management - " + uiConfig.loginTitle;
-                        document.getElementById('pageHeader').innerText = "Manage Members - " + uiConfig.loginTitle;
-                    }
+                    initPageTitle("Member Management", "Manage Members");
                     if (uiConfig.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
                     if (uiConfig.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
                 }
 
                 let initialSort = { column: 'name', order: 'asc' };
-                const prefRes = await fetch('/api/user-preferences');
-                if (prefRes.ok) {
-                    const prefs = await prefRes.json();
-                    if (prefs.sortMembers) initialSort = prefs.sortMembers;
-                }
+                try {
+                    const sortRes = await fetch('/api/user-preferences/membersSort');
+                    const sortData = await sortRes.json();
+                    if (sortData.value) {
+                        const [col, dir] = sortData.value.split(':');
+                        initialSort = { column: col, order: dir };
+                    }
+                } catch (e) {}
+
+                let membersLimitRaw = '25';
+                try {
+                    const limRes = await fetch('/api/user-preferences/membersPageLimit');
+                    const limData = await limRes.json();
+                    if (limData.value) {
+                        membersLimitRaw = limData.value;
+                        membersLimit = limData.value === 'all' ? 99999 : parseInt(limData.value);
+                    }
+                } catch (e) {}
+                document.getElementById('membersRowsPerPage').value = membersLimitRaw;
+                document.getElementById('membersRowsPerPageMobile').value = membersLimitRaw;
 
                 memberTable = new TableController({
                     tbodyId: 'membersTableBody',
@@ -211,7 +363,7 @@
                         fetch('/api/user-preferences', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ key: 'sortMembers', value: newSort })
+                            body: JSON.stringify({ key: 'membersSort', value: `${newSort.column}:${newSort.order}` })
                         });
                     },
                     sortFunction: (a, b, sortState) => {
@@ -235,8 +387,7 @@
                         return 0;
                     },
                     onRenderComplete: () => {
-                        document.getElementById('selectAllCheckbox').checked = false;
-                        updateBulkDeleteButton();
+                        applyMembersPagination();
                     },
                     renderRow: (m, index) => {
                         const tr = document.createElement('tr');
@@ -249,9 +400,9 @@
                         const { rank, displayName } = parseRankAndName(m.name);
 
                         tr.innerHTML = `
-                    <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()"></td>
-                    <td class="text-center">
-                        <label class="switch">
+                    <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()" title="Select this member for bulk actions"></td>
+                    <td data-label="Enabled" class="text-center">
+                        <label class="switch" title="Toggle enabled state for this member">
                             <input type="checkbox" ${m.enabled ? 'checked' : ''} onchange="toggleMemberEnabled(${m.id}, this.checked)">
                             <span class="slider"></span>
                         </label>
@@ -263,16 +414,16 @@
                     <td data-label="Email">${m.email}</td>
                     <td data-label="Mobile">${m.mobile || ''}</td>
                     <td data-label="Prefs" class="text-center ws-nowrap">
-                        <span class="pref-icon bg-email ${hasEmail}" title="Email">
+                        <span class="pref-icon bg-email ${hasEmail}" title="Email notifications enabled">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                         </span>
-                        <span class="pref-icon bg-wa ${hasWa}" title="WhatsApp">
+                        <span class="pref-icon bg-wa ${hasWa}" title="WhatsApp notifications enabled">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg>
                         </span>
                     </td>
                     <td data-label="Actions" class="text-center">
-                        <button class="btn-icon edit" onclick="editMemberByIndex(${index})" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
-                        <button class="btn-icon delete" onclick="deleteMember(${m.id})" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                        <button class="btn-icon edit" onclick="editMemberByIndex(${index})" title="Edit this member"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
+                        <button class="btn-icon delete" onclick="deleteMember(${m.id})" title="Permanently delete this member"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
                     </td>
                 `;
                         return tr;
@@ -289,22 +440,177 @@
                 if (!res.ok) throw new Error(res.status);
                 const data = await res.json();
                 currentMembers = data;
+                membersPage = 1;
                 memberTable.setData(data);
             } catch (err) {
                 document.getElementById('membersTableBody').innerHTML = `<tr><td colspan="8" class="text-center" style="color:var(--danger);">Error: ${err.message}</td></tr>`;
             }
         }
 
-        // Expose to global scope so inline onclick handlers in the table header can call it
         function handleSort(column) {
             memberTable.handleSort(column);
+        }
+
+        function toggleSortBar() {
+            const bar = document.getElementById('members-sort-bar');
+            const btn = document.getElementById('sortToggleBtn');
+            const expanded = bar.classList.toggle('sort-expanded');
+            btn.classList.toggle('expanded', expanded);
+        }
+
+        function applyMembersPagination() {
+            const allData = memberTable.data;
+            const total = allData.length;
+            const effectiveLimit = membersLimit === 99999 ? total : membersLimit;
+
+            document.getElementById('selectAllCheckbox').checked = false;
+            updateBulkDeleteButton();
+
+            if (total === 0) { updateMembersPaginationUI(0, 0, 0); return; }
+
+            const totalPages = Math.ceil(total / effectiveLimit);
+            if (membersPage > totalPages) membersPage = 1;
+
+            const start = (membersPage - 1) * effectiveLimit;
+            const end = Math.min(start + effectiveLimit, total);
+            const pageData = allData.slice(start, end);
+
+            // Desktop table rows
+            const tbody = document.getElementById('membersTableBody');
+            tbody.innerHTML = '';
+            pageData.forEach((m, i) => {
+                tbody.appendChild(memberTable.renderRow(m, start + i));
+            });
+
+            // Mobile cards
+            renderMemberCards(pageData, start);
+
+            updateMembersPaginationUI(total, start + 1, end);
+        }
+
+        function renderMemberCards(data, startIndex) {
+            const container = document.getElementById('membersCardContainer');
+            container.innerHTML = '';
+            if (data.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px;">No members found.</p>';
+                return;
+            }
+            data.forEach((m, i) => {
+                const idx = startIndex + i;
+                const { rank, displayName } = parseRankAndName(m.name);
+                const prefs = (m.notificationPreference || '').split(',');
+                const hasEmail = prefs.includes('email') ? 'active' : '';
+                const hasWa = prefs.includes('whatsapp') ? 'active' : '';
+
+                const rankHtml = (rank && rank !== '-') ? `<div class="card-rank">${formatRankCell(rank)}</div>` : '';
+                const card = document.createElement('div');
+                card.className = 'table-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        ${rankHtml}
+                        <span class="card-title">${displayName}</span>
+                        <label class="switch" title="Toggle enabled state for this member">
+                            <input type="checkbox" ${m.enabled ? 'checked' : ''} onchange="toggleMemberEnabled(${m.id}, this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-row">
+                            <span class="card-label">Email:</span>
+                            <span style="word-break:break-all;">${m.email}</span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label">Mobile:</span>
+                            <span>${m.mobile || '—'}</span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label">Notifications:</span>
+                            <span style="display:flex; gap:6px; align-items:center;">
+                                <span class="pref-icon bg-email ${hasEmail}" title="Email notifications enabled">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                </span>
+                                <span class="pref-icon bg-wa ${hasWa}" title="WhatsApp notifications enabled">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg>
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-primary btn-sm" onclick="editMemberByIndex(${idx})" title="Edit this member">Edit</button>
+                        <button class="btn-danger btn-sm" onclick="deleteMember(${m.id})" title="Permanently delete this member">Delete</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateMembersPaginationUI(total, start, end) {
+            const effectiveLimit = membersLimit === 99999 ? total : membersLimit;
+            const totalPages = membersLimit === 99999 ? 1 : Math.ceil(total / (effectiveLimit || 1));
+            const show = total > 0;
+
+            // Desktop pagination
+            document.getElementById('membersPaginationControls').style.display = show ? 'flex' : 'none';
+            document.getElementById('membersPageInfo').textContent = `${membersPage} of ${totalPages}`;
+            document.getElementById('membersBtnFirst').disabled = membersPage <= 1;
+            document.getElementById('membersBtnPrev').disabled = membersPage <= 1;
+            document.getElementById('membersBtnNext').disabled = membersPage >= totalPages;
+            document.getElementById('membersBtnLast').disabled = membersPage >= totalPages;
+
+            // Mobile pagination
+            document.getElementById('membersPaginationControlsMobile').style.display = show ? 'flex' : 'none';
+            document.getElementById('membersPageInfoMobile').textContent = `${membersPage} of ${totalPages}`;
+            document.getElementById('membersBtnFirstMobile').disabled = membersPage <= 1;
+            document.getElementById('membersBtnPrevMobile').disabled = membersPage <= 1;
+            document.getElementById('membersBtnNextMobile').disabled = membersPage >= totalPages;
+            document.getElementById('membersBtnLastMobile').disabled = membersPage >= totalPages;
+        }
+
+        function goToFirstPage() {
+            if (membersPage !== 1) {
+                membersPage = 1;
+                applyMembersPagination();
+            }
+        }
+
+        function goToLastPage() {
+            const total = memberTable.data.length;
+            const effectiveLimit = membersLimit === 99999 ? total : membersLimit;
+            const totalPages = membersLimit === 99999 ? 1 : Math.ceil(total / (effectiveLimit || 1));
+            if (membersPage !== totalPages) {
+                membersPage = totalPages;
+                applyMembersPagination();
+            }
+        }
+
+        async function changeLimit(newLimit) {
+            membersLimit = newLimit === 'all' ? 99999 : parseInt(newLimit);
+            membersPage = 1;
+            document.getElementById('membersRowsPerPage').value = newLimit;
+            document.getElementById('membersRowsPerPageMobile').value = newLimit;
+            applyMembersPagination();
+            await fetch('/api/user-preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'membersPageLimit', value: newLimit })
+            });
+        }
+
+        function changePage(delta) {
+            const total = memberTable.data.length;
+            const effectiveLimit = membersLimit === 99999 ? total : membersLimit;
+            const totalPages = membersLimit === 99999 ? 1 : Math.ceil(total / (effectiveLimit || 1));
+            const newPage = membersPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                membersPage = newPage;
+                applyMembersPagination();
+            }
         }
 
         function editMemberByIndex(index) {
             const m = memberTable.data[index];
             document.getElementById('modalTitle').textContent = "Edit Member";
             document.getElementById('memberId').value = m.id;
-            // Preserve full OSM name (including rank prefix) so the server stores it as-is
             document.getElementById('name').value = m.name;
             document.getElementById('email').value = m.email;
             document.getElementById('mobile').value = m.mobile;
@@ -315,78 +621,17 @@
             document.getElementById('memberModal').style.display = 'block';
         }
 
-
-        function applySort() {
-            currentMembers.sort((a, b) => {
-                const valA = (a[currentSort.column] || '').toString().toLowerCase();
-                const valB = (b[currentSort.column] || '').toString().toLowerCase();
-                if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
-                if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
-                return 0;
-            });
-            ['name', 'email', 'mobile'].forEach(col => {
-                const icon = document.getElementById(`icon-${col}`);
-                if (icon) { icon.innerHTML = ICON_NONE; icon.classList.remove('active'); }
-            });
-            const active = document.getElementById(`icon-${currentSort.column}`);
-            if (active) { active.innerHTML = currentSort.order === 'asc' ? ICON_ASC : ICON_DESC; active.classList.add('active'); }
-            renderTable();
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('membersTableBody');
-            tbody.innerHTML = '';
-            document.getElementById('selectAllCheckbox').checked = false;
-            updateBulkDeleteButton();
-            if (currentMembers.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color:var(--text-muted);">No members found.</td></tr>`;
-                return;
-            }
-            currentMembers.forEach((m, index) => {
-                const tr = document.createElement('tr');
-                tr.className = m.enabled ? 'row-even' : 'row-disabled';
-
-                const prefs = (m.notificationPreference || '').split(',');
-                const hasEmail = prefs.includes('email') ? 'active' : '';
-                const hasWa = prefs.includes('whatsapp') ? 'active' : '';
-                const { rank, displayName } = parseRankAndName(m.name);
-                tr.innerHTML = `
-                    <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()"></td>
-                    <td class="text-center">
-                        <label class="switch">
-                            <input type="checkbox" ${m.enabled ? 'checked' : ''} onchange="toggleMemberEnabled(${m.id}, this.checked)">
-                            <span class="slider"></span>
-                        </label>
-                    </td>
-                    <td data-label="Rank" class="text-center">${formatRankCell(rank)}</td>
-                    <td data-label="Name">${m.name}</td><td data-label="Email">${m.email}</td><td data-label="Mobile">${m.mobile || ''}</td>
-                    <td data-label="Prefs" class="text-center ws-nowrap">
-                        <span class="pref-icon bg-email ${hasEmail}" title="Email">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                        </span>
-                        <span class="pref-icon bg-wa ${hasWa}" title="WhatsApp">
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg>
-                        </span>
-                    </td>
-                    <td data-label="Actions" class="text-center">
-                        <button class="btn-icon edit" onclick="editMemberByIndex(${index})" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
-                        <button class="btn-icon delete" onclick="deleteMember(${m.id})" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
-                    </td>`;
-                tbody.appendChild(tr);
-            });
-        }
-
         async function toggleMemberEnabled(id, newState) {
             const member = currentMembers.find(m => m.id == id);
             if (!member) return;
             member.enabled = newState;
             try {
                 await fetch(`/api/members/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(member) });
-                renderTable();
+                applyMembersPagination();
             } catch (e) {
                 showToast('Failed to update status', 'error');
                 member.enabled = !newState;
-                renderTable();
+                applyMembersPagination();
             }
         }
 
@@ -406,7 +651,7 @@
         async function deleteSelected() {
             const ids = Array.from(document.querySelectorAll('.member-checkbox:checked')).map(cb => cb.value);
             if (!ids.length) return;
-            if (await confirmAction('Delete Members', `Are you sure you want to delete ${ids.length} members?`)) {
+            if (await promptAction('Delete Members', `This will permanently delete <strong>${ids.length} member${ids.length !== 1 ? 's' : ''}</strong>. This cannot be undone.<br><br>Type <strong>DELETE</strong> to confirm.`, 'DELETE')) {
                 await fetch('/api/members/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
                 reloadMembers();
             }
@@ -424,7 +669,6 @@
             document.getElementById('prefWa').checked = false;
             memberModal.style.display = 'block';
         }
-
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function openHelpModal() { document.getElementById('helpModal').style.display = 'block'; }
@@ -450,14 +694,15 @@
             reloadMembers();
         });
 
-async function deleteMember(id) {
-    const member = memberTable.data.find(m => m.id == id);
-    const name = member ? member.name : 'this member';
-    if (await confirmAction('Delete Member', `Are you sure you want to delete ${name}?`)) {
-        await fetch(`/api/members/${id}`, { method: 'DELETE' });
-        reloadMembers();
-    }
-}
+        async function deleteMember(id) {
+            const member = memberTable.data.find(m => m.id == id);
+            const name = member ? member.name : 'this member';
+            if (await confirmAction('Delete Member', `Are you sure you want to delete ${name}?`)) {
+                await fetch(`/api/members/${id}`, { method: 'DELETE' });
+                reloadMembers();
+            }
+        }
+
         function handleFileUpload(input) {
             const file = input.files[0];
             if (!file) return;
@@ -586,6 +831,8 @@ async function deleteMember(id) {
         window.onscroll = function () { document.getElementById("scrollTopBtn").style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
     </script>
+    <script src="/js/pwa.js"></script>
+
 </body>
 
 </html>

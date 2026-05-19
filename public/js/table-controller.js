@@ -65,28 +65,49 @@ class TableController {
             icon.innerHTML = this.ICON_NONE;
             icon.classList.remove('active');
         });
-        
+        document.querySelectorAll('.sort-bar-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
         const activeIcon = document.getElementById(`icon-${this.sortState.column}`);
         if (activeIcon) {
             activeIcon.innerHTML = this.sortState.order === 'asc' ? this.ICON_ASC : this.ICON_DESC;
             activeIcon.classList.add('active');
         }
+        const activeMobileBtn = document.getElementById(`mobileSortBtn-${this.sortState.column}`);
+        if (activeMobileBtn) activeMobileBtn.classList.add('active');
+        const activeMobileIcon = document.getElementById(`mobile-icon-${this.sortState.column}`);
+        if (activeMobileIcon) activeMobileIcon.innerHTML = this.sortState.order === 'asc' ? this.ICON_ASC : this.ICON_DESC;
     }
 
     // --- Pagination Logic ---
     setupPaginationListeners() {
-        const { prevId, nextId } = this.paginationConfig;
+        const { prevId, nextId, firstId, lastId } = this.paginationConfig;
         const btnPrev = document.getElementById(prevId);
         const btnNext = document.getElementById(nextId);
-        
+        const btnFirst = firstId ? document.getElementById(firstId) : null;
+        const btnLast = lastId ? document.getElementById(lastId) : null;
+
+        if (btnFirst) btnFirst.addEventListener('click', () => this.goToPage(1));
         if (btnPrev) btnPrev.addEventListener('click', () => this.changePage(-1));
         if (btnNext) btnNext.addEventListener('click', () => this.changePage(1));
+        if (btnLast) btnLast.addEventListener('click', () => this.goToPage(Math.ceil(this.total / this.limit)));
+    }
+
+    goToPage(pageNum) {
+        const totalPages = Math.ceil(this.total / this.limit);
+        if (pageNum >= 1 && pageNum <= totalPages && pageNum !== this.page) {
+            this.page = pageNum;
+            if (this.paginationConfig.onPageChange) {
+                this.paginationConfig.onPageChange(this.page, this.limit);
+            }
+        }
     }
 
     changePage(delta) {
         const totalPages = Math.ceil(this.total / this.limit);
         const newPage = this.page + delta;
-        
+
         if (newPage >= 1 && newPage <= totalPages) {
             this.page = newPage;
             if (this.paginationConfig.onPageChange) {
@@ -97,7 +118,7 @@ class TableController {
 
     setLimit(newLimit) {
         this.limit = newLimit === 'all' ? 99999 : parseInt(newLimit);
-        this.page = 1; // Reset to first page
+        this.page = 1;
         if (this.paginationConfig.onPageChange) {
             this.paginationConfig.onPageChange(this.page, this.limit);
         }
@@ -105,24 +126,26 @@ class TableController {
 
     updatePaginationUI() {
         if (!this.paginationConfig) return;
-        const { containerId, infoId, prevId, nextId } = this.paginationConfig;
-        
+        const { containerId, infoId, prevId, nextId, firstId, lastId } = this.paginationConfig;
+
         const container = document.getElementById(containerId);
         const info = document.getElementById(infoId);
         const btnPrev = document.getElementById(prevId);
         const btnNext = document.getElementById(nextId);
-        
+        const btnFirst = firstId ? document.getElementById(firstId) : null;
+        const btnLast = lastId ? document.getElementById(lastId) : null;
+
         if (!container || !info || !btnPrev || !btnNext) return;
 
-        const totalPages = Math.ceil(this.total / this.limit);
-        const start = this.total === 0 ? 0 : ((this.page - 1) * this.limit) + 1;
-        const end = Math.min(this.page * this.limit, this.total);
+        const totalPages = Math.max(1, Math.ceil(this.total / this.limit));
 
         container.style.display = this.total > 0 ? 'flex' : 'none';
-        info.textContent = `Showing ${start}-${end} of ${this.total}`;
-        
+        info.textContent = `${this.page} of ${totalPages}`;
+
         btnPrev.disabled = this.page <= 1;
         btnNext.disabled = this.page >= totalPages;
+        if (btnFirst) btnFirst.disabled = this.page <= 1;
+        if (btnLast) btnLast.disabled = this.page >= totalPages;
     }
 
     render() {

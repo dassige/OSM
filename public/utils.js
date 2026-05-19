@@ -10,23 +10,29 @@
     const style = document.createElement('style');
     style.innerHTML = `
         #customConfirmModal {
-            display: none; 
-            position: fixed; 
-            z-index: 10001; 
-            left: 0; 
+            display: none;
+            position: fixed;
+            z-index: 10500;
+            left: 0;
             top: 0;
-            width: 100%; 
-            height: 100%; 
+            width: 100%;
+            height: 100%;
             background-color: rgba(0,0,0,0.5);
             backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+        }
+        #customConfirmModal[style*="display: flex"],
+        #customConfirmModal[style*="display:flex"] {
+            display: flex !important;
         }
         #customConfirmModal .modal-content {
-            background-color: var(--bg-card, #fff); 
+            background-color: var(--bg-card, #fff);
             color: var(--text-main, #333);
-            margin: 15% auto; 
-            padding: 25px; 
+            margin: 0;
+            padding: 25px;
             border: 1px solid var(--border-color, #ddd);
-            width: 90%; 
+            width: 90%;
             max-width: 400px;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
@@ -65,12 +71,15 @@
     const style = document.createElement('style');
     style.innerHTML = `
         #customPromptModal {
-            display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; 
+            display: none; position: fixed; z-index: 10500; left: 0; top: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+            align-items: center; justify-content: center;
         }
+        #customPromptModal[style*="display: flex"],
+        #customPromptModal[style*="display:flex"] { display: flex !important; }
         #customPromptModal .modal-content {
             background-color: var(--bg-card, #fff); color: var(--text-main, #333);
-            margin: 15% auto; padding: 25px; border: 1px solid var(--border-color, #ddd); width: 90%; max-width: 400px;
+            margin: 0; padding: 25px; border: 1px solid var(--border-color, #ddd); width: 90%; max-width: 400px;
             border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease-out;
         }
         .prompt-input {
@@ -121,7 +130,7 @@ window.promptAction = function(title, message, requiredText) {
         btnYes.disabled = true;
         btnYes.style.opacity = '0.5';
 
-        modal.style.display = 'block';
+        modal.style.display = 'flex';
         inputEl.focus();
 
         const validateInput = () => {
@@ -175,7 +184,7 @@ window.confirmAction = function(title, message) {
 
         titleEl.textContent = title || 'Confirm Action';
         msgEl.textContent = message || 'Are you sure you want to proceed?';
-        modal.style.display = 'block';
+        modal.style.display = 'flex';
 
         // Focus the confirm button for accessibility/keyboard usage
         btnYes.focus();
@@ -271,14 +280,36 @@ window.showAboutModal = async function() {
                         <li><strong>Icons:</strong> Feather Icons</li>
                     </ul>
                 </div>
-                <div class="modal-actions-center">
+                <div class="modal-actions-center" style="gap:10px; flex-wrap:wrap;">
+                    <button id="pwa-about-install-btn" class="btn-primary"
+                        style="display:none; align-items:center; gap:6px;"
+                        onclick="triggerPwaInstall(function(){ document.getElementById('pwa-about-install-btn').style.display='none'; })"
+                        title="Install ${config.loginTitle} as an app on this device">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Install App
+                    </button>
                     <button onclick="closeModal('globalAboutModal')" class="btn-secondary">Close</button>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
     }
-    
+
+    // Show Install button only when the browser has a pending install prompt and app isn't installed
+    var installBtn = document.getElementById('pwa-about-install-btn');
+    if (installBtn) {
+        var alreadyInstalled = window.matchMedia('(display-mode: standalone)').matches ||
+                               window.navigator.standalone === true;
+        installBtn.style.display =
+            (!alreadyInstalled && window.__pwaInstallPrompt) ? 'inline-flex' : 'none';
+    }
+
     modal.style.display = 'block';
 };
 
@@ -363,3 +394,37 @@ window.hideGlobalSpinner = function() {
         spinnerOverlay.style.display = 'none';
     }
 };
+
+// --- PAGE TITLE UTILITY ---
+(function() {
+    // Single cached fetch shared across all callers on a page
+    let _configPromise = null;
+    function _getConfig() {
+        if (!_configPromise) {
+            _configPromise = fetch('/ui-config').then(r => r.json()).catch(() => ({}));
+        }
+        return _configPromise;
+    }
+
+    /**
+     * Sets both the browser tab title and the visible page heading, then syncs
+     * the mobile top banner (if present).
+     *
+     * @param {string} tabPrefix   - Prefix for document.title, e.g. "Skills Management"
+     * @param {string} headingText - Text for the <h1>, e.g. "Manage Skills"
+     *                               Defaults to tabPrefix when omitted.
+     * @param {string} headerId    - ID of the heading element (default: "pageHeader")
+     */
+    window.initPageTitle = async function(tabPrefix, headingText, headerId) {
+        headerId = headerId || 'pageHeader';
+        const displayText = headingText || tabPrefix;
+        const cfg = await _getConfig();
+        const appName = cfg.loginTitle || 'OpReady';
+        document.title = tabPrefix + ' - ' + appName;
+        const el = document.getElementById(headerId);
+        if (el) el.innerText = displayText + ' - ' + appName;
+        // Sync the mobile banner title (shows only the section name, no app suffix)
+        const bannerTitle = document.getElementById('mobileBannerTitle');
+        if (bannerTitle) bannerTitle.textContent = displayText;
+    };
+})();

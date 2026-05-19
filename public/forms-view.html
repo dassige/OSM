@@ -5,6 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#17A2B8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OpReady">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <title>Form Viewer - OpReady</title>
     <link rel="stylesheet" href="styles.css">
     <style>
@@ -68,7 +74,7 @@
 
         .option-label:hover {
             border-color: var(--primary);
-            background: #f0f8ff;
+            background: var(--bg-hover);
         }
 
         /* --- REVIEW MODE STYLES --- */
@@ -97,12 +103,12 @@
         }
 
         .reference-box {
-            background: #e8f0fe;
-            border-left: 4px solid #007bff;
+            background: var(--bg-hover);
+            border-left: 4px solid var(--primary);
             padding: 12px;
             margin-top: 10px;
             font-size: 0.9em;
-            color: #0d47a1;
+            color: var(--primary);
         }
 
         .preview-banner {
@@ -132,38 +138,6 @@
             font-weight: bold;
         }
 
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-        }
-
-        .modal-content {
-            background: var(--bg-card);
-            margin: 10% auto;
-            padding: 25px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            color: var(--text-main);
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            color: #aaa;
-        }
 
         .fab-container {
             position: fixed;
@@ -241,6 +215,63 @@
             color: var(--text-main);
             text-align: center;
         }
+
+        .review-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .review-info-grid-right {
+            border-left: 1px solid var(--border-color);
+            padding-left: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .review-info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .review-info-grid-right {
+                border-left: none;
+                padding-left: 0;
+                border-top: 1px solid var(--border-color);
+                padding-top: 12px;
+            }
+        }
+
+        .public-member-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .public-member-header > div {
+            flex: 1;
+            min-width: 130px;
+        }
+
+        .public-member-header-last {
+            text-align: right;
+        }
+
+        @media (max-width: 600px) {
+            .public-member-header-last {
+                text-align: left;
+            }
+        }
+
+        .ai-feedback-box {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-hover);
+            color: var(--primary);
+        }
     </style>
 </head>
 
@@ -258,11 +289,8 @@
     <div id="reviewActions"
         style="display:none; background:#343a40; color:white; padding:15px; position:sticky; top:0; z-index:100; box-shadow:0 2px 5px rgba(0,0,0,0.2); text-align:center;">
         <span style="margin-right:15px; font-weight:bold; font-size:1.1em;">Review Automated Result:</span>
-        <button id="btnArchive" onclick="archiveSubmission()"
-            style="background:#6c757d; border:none; padding:8px 20px; color:white; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:10px;">Archive</button>
-        <button id="btnResend" onclick="openReviewModal('reject')"
-            style="background:#dc3545; border:none; padding:8px 20px; color:white; border-radius:4px; font-weight:bold; cursor:pointer; display:none;">Resend
-            New Attempt</button>
+        <button id="btnArchive" onclick="archiveSubmission()" class="btn-secondary" style="margin-right:10px;" title="Archive this submission">Archive</button>
+        <button id="btnResend" onclick="openReviewModal('reject')" class="btn-danger" style="display:none;" title="Reject and issue a new attempt to the member">Resend New Attempt</button>
     </div>
 
     <div class="container">
@@ -329,10 +357,8 @@
                     style="width:100%; box-sizing:border-box; padding:10px; border-radius:4px; border:1px solid #ccc; font-family:inherit;"></textarea>
             </div>
             <div style="text-align:right; margin-top:25px; border-top:1px solid #eee; padding-top:15px;">
-                <button onclick="document.getElementById('reviewModal').style.display='none'"
-                    style="background:#6c757d; border:none; padding:10px 20px; color:white; border-radius:4px; cursor:pointer; margin-right:10px;">Cancel</button>
-                <button id="btnConfirmReview" onclick="submitReviewAction()"
-                    style="background:#007bff; border:none; padding:10px 20px; color:white; border-radius:4px; cursor:pointer;">Confirm</button>
+                <button onclick="document.getElementById('reviewModal').style.display='none'" class="btn-secondary" style="margin-right:10px;" title="Cancel and close">Cancel</button>
+                <button id="btnConfirmReview" onclick="submitReviewAction()" class="btn-primary" title="Confirm this review action">Confirm</button>
             </div>
         </div>
     </div>
@@ -455,13 +481,13 @@
                     else if (st === 'submitted') statusColor = 'var(--primary)';
 
                     headerPanel.innerHTML = `
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 14px;">
+                        <div class="review-info-grid">
                             <div>
                                 <p style="margin:5px 0;"><strong>Member:</strong> ${data.member}</p>
                                 <p style="margin:5px 0;"><strong>Skill:</strong> ${data.skill}</p>
                                 <p style="margin:5px 0;"><strong>Status:</strong> <span style="color:${statusColor}; font-weight:bold; text-transform:uppercase;">${st}</span></p>
                             </div>
-                            <div style="border-left: 1px solid var(--border-color); padding-left: 20px;">
+                            <div class="review-info-grid-right">
                                 <p style="margin:5px 0;"><strong>Achieved:</strong> ${data.achieved_score} / ${data.max_score} points (${scorePct}%)</p>
                                 <p style="margin:5px 0;"><strong>Required:</strong> ${reqPoints} pts (${reqPct}%)</p>
                                 <p style="margin:5px 0;"><strong>Attempt:</strong> ${data.tries} of ${data.max_tries}</p>
@@ -486,12 +512,6 @@
                     renderForm(data);
                     fillForm(data.submittedData);
                     disableForm();
-                                if (!data.is_archived && ['accepted', 'rejected'].includes(data.form_status)) {
-                        document.getElementById('reviewActions').style.display = 'block';
-                        document.body.style.paddingTop = '0';
-                        if (data.form_status === 'rejected') document.getElementById('btnResend').style.display = 'inline-block';
-                    }
-
 
                 } catch (e) { showError(e.message); }
             } else if (code) {
@@ -505,7 +525,7 @@
                     publicHeader.style.cssText = "background:var(--bg-hover); border:1px solid var(--border-color); border-radius:8px; padding:20px; margin-bottom:25px; box-shadow: 0 2px 8px var(--shadow);";
 
                     publicHeader.innerHTML = `
-                                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:15px;">
+                                <div class="public-member-header">
                                     <div>
                                         <p style="margin:0; font-size:0.9em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Member Required</p>
                                         <p style="margin:2px 0 0 0; font-size:1.2em; font-weight:bold; color:var(--primary);">${data.member}</p>
@@ -514,7 +534,7 @@
                                         <p style="margin:0; font-size:0.9em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Skill Verification</p>
                                         <p style="margin:2px 0 0 0; font-size:1.1em; font-weight:600;">${data.skill}</p>
                                     </div>
-                                    <div style="text-align:right;">
+                                    <div class="public-member-header-last">
                                         <p style="margin:0; font-size:0.9em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Max Attempts Allowed</p>
                                         <p style="margin:2px 0 0 0; font-size:1.1em; font-weight:600;">${data.maxTries || 'N/A'}</p>
                                     </div>
@@ -567,7 +587,7 @@
                     case 'text_multi':
                         inputHtml = `<textarea name="${field.id}" rows="4" style="width:100%; box-sizing: border-box; padding:12px;" ${reqAttr}></textarea>`;
                         if (isPreview && correct) {
-                            inputHtml += `<div class="reference-box" style="background:#e8f0fe; border-left:4px solid #007bff; padding:12px; margin-top:10px;"><strong>Correct Answer (Reference):</strong><br>${correct}</div>`;
+                            inputHtml += `<div class="reference-box"><strong>Correct Answer (Reference):</strong><br>${correct}</div>`;
                         }
                         break;
                     case 'radio':
@@ -654,7 +674,7 @@
                         if (reviewData.ai_feedback && reviewData.ai_feedback[field.id]) {
                             const aiData = reviewData.ai_feedback[field.id];
                             const aiBox = document.createElement('div');
-                            aiBox.style.cssText = "margin-top:10px; padding:10px; border-radius:4px; border:1px solid #cce5ff; background-color:#e8f4fd; color:#004085;";
+                            aiBox.className = 'ai-feedback-box';
 
                             aiBox.innerHTML = `
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
@@ -890,6 +910,8 @@
             });
         }
     </script>
+    <script src="/js/pwa.js"></script>
+
 </body>
 
 </html>

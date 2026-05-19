@@ -20,13 +20,13 @@ test.describe.serial('T04 — Skills CRUD', () => {
     const resp = await respPromise;
 
     expect(resp.status()).toBe(200);
-    await showAllRows(page);
+    await showAllRows(page, '#skillsRowsPerPage');
     await expect(page.locator(`tr:has-text("${NAME}")`).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('T04-03 | Mark skill as critical', async ({ page }) => {
     await goTo(page, '/skills.html');
-    await showAllRows(page);
+    await showAllRows(page, '#skillsRowsPerPage');
 
     await page.locator(`tr:has-text("${NAME}")`).first().locator('.btn-icon.edit').click();
     await page.locator('#skillModal').waitFor({ state: 'visible' });
@@ -43,7 +43,7 @@ test.describe.serial('T04 — Skills CRUD', () => {
 
   test('T04-04 | Link skill to external URL', async ({ page }) => {
     await goTo(page, '/skills.html');
-    await showAllRows(page);
+    await showAllRows(page, '#skillsRowsPerPage');
 
     await page.locator(`tr:has-text("${NAME}")`).first().locator('.btn-icon.edit').click();
     await page.locator('#skillModal').waitFor({ state: 'visible' });
@@ -60,7 +60,7 @@ test.describe.serial('T04 — Skills CRUD', () => {
 
   test('T04-06 | Disable a skill', async ({ page }) => {
     await goTo(page, '/skills.html');
-    await showAllRows(page);
+    await showAllRows(page, '#skillsRowsPerPage');
 
     await page.locator(`tr:has-text("${NAME}")`).first().locator('.btn-icon.edit').click();
     await page.locator('#skillModal').waitFor({ state: 'visible' });
@@ -77,7 +77,7 @@ test.describe.serial('T04 — Skills CRUD', () => {
 
   test('T04-08 | Delete the test skill', async ({ page }) => {
     await goTo(page, '/skills.html');
-    await showAllRows(page);
+    await showAllRows(page, '#skillsRowsPerPage');
 
     await page.locator(`tr:has-text("${NAME}")`).first().locator('.btn-icon.delete').click();
 

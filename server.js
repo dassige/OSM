@@ -39,6 +39,52 @@ const app = express();
 const server = http.createServer(app);
 // Trust first proxy hop so rate limiting reads the real client IP from X-Forwarded-For
 app.set('trust proxy', 1);
+
+// Service worker must be served with no-cache and the correct SW-Allowed scope
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(path.join(__dirname, 'public', 'sw.js'));
+});
+
+// Web app manifest — built dynamically so app name reflects UI_LOGIN_TITLE config
+app.get('/manifest.json', (req, res) => {
+  const appName = config.ui?.loginTitle || 'OpReady';
+  const manifest = {
+    name: appName,
+    short_name: appName,
+    description: `${appName} — Operational Readiness Manager`,
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#17A2B8',
+    theme_color: '#17A2B8',
+    orientation: 'any',
+    scope: '/',
+    lang: 'en-NZ',
+    categories: ['business', 'productivity'],
+    icons: [
+      { src: '/icons/icon-72.png',          sizes: '72x72',   type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-96.png',          sizes: '96x96',   type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-128.png',         sizes: '128x128', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-144.png',         sizes: '144x144', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-152.png',         sizes: '152x152', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-192.png',         sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-384.png',         sizes: '384x384', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-512.png',         sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-512-maskable.png',sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+    shortcuts: [
+      { name: 'Dashboard',   url: '/',                 icons: [{ src: '/icons/icon-96.png', sizes: '96x96' }] },
+      { name: 'Live Forms',  url: '/live-forms.html',  icons: [{ src: '/icons/icon-96.png', sizes: '96x96' }] },
+      { name: 'Members',     url: '/members.html',     icons: [{ src: '/icons/icon-96.png', sizes: '96x96' }] },
+    ],
+  };
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.json(manifest);
+});
+
 app.use(express.static("public"));
 
 const io = new Server(server, {

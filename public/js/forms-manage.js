@@ -1,5 +1,17 @@
 // public/js/forms-manage.js
 
+// --- Mobile two-screen navigation ---
+function openMobileEditor() {
+  document.querySelector('.manager-container')?.classList.add('mobile-editor-open');
+}
+function closeMobileEditor() {
+  document.querySelector('.manager-container')?.classList.remove('mobile-editor-open');
+}
+async function mobileBackToList() {
+  if (!(await checkDirty())) return;
+  closeMobileEditor();
+}
+
 let forms = [];
 let currentForm = null;
 let currentFields = [];
@@ -38,11 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((r) => r.json())
     .then((c) => {
       uiConfig = c;
-      if (c.loginTitle) {
-        document.title = "Forms Manager - " + c.loginTitle;
-        document.getElementById("pageHeader").innerText =
-          "Forms Manager - " + c.loginTitle;
-      }
+      initPageTitle("Forms Manager", "Forms Manager");
       if (c.appBackground)
         document.body.style.backgroundImage = `url('${c.appBackground}')`;
       if (c.appMode === "demo")
@@ -335,6 +343,7 @@ async function deleteForm() {
     originalFormState = null;
     document.getElementById("builderPanel").style.display = "none";
     document.getElementById("emptyPanel").style.display = "flex";
+    closeMobileEditor();
     loadForms();
   } catch (e) {
     showToast(e.message, "error");
@@ -432,9 +441,10 @@ async function importAllForms(input) {
 
   // --- [CONFIRMATION MODAL] ---
   if (
-    !(await confirmAction(
+    !(await promptAction(
       "Bulk Import",
-      "WARNING: This will DELETE ALL existing forms and replace them with the imported file.\n\nAre you sure?",
+      "This will <strong>DELETE ALL existing forms</strong> and replace them with the imported file. This cannot be undone.<br><br>Type <strong>IMPORT</strong> to confirm.",
+      "IMPORT",
     ))
   ) {
     input.value = ""; // Clear input if user cancels
@@ -457,6 +467,7 @@ async function importAllForms(input) {
       currentForm = null;
       document.getElementById("builderPanel").style.display = "none";
       document.getElementById("emptyPanel").style.display = "flex";
+      closeMobileEditor();
       loadForms();
     } else {
       throw new Error(result.error);
@@ -581,6 +592,7 @@ function loadEditor(form) {
   renderFields();
   renderFormList();
 
+  openMobileEditor();
   setTimeout(() => {
     originalFormState = getFormData();
   }, 500);
