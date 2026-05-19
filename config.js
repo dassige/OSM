@@ -95,6 +95,14 @@ const rateLimits = {
   api:           { windowMin: parseInt(process.env.RATE_LIMIT_API_WINDOW_MIN)    || 1,   max: parseInt(process.env.RATE_LIMIT_API_MAX)           || 300 },
 };
 
+// Default true so production (always behind HTTPS proxy) works out of the box.
+// Set COOKIE_SECURE=false only for local HTTP development.
+const cookieSecure = process.env.COOKIE_SECURE !== 'false';
+
+// Restrict Socket.IO CORS to a specific origin when the frontend is served from
+// a separate domain. Leave unset for the typical same-origin deployment.
+const corsOrigin = process.env.CORS_ORIGIN || null;
+
 const aiConfig = {
   enabled: process.env.ENABLE_AI_EVALUATION === "true",
   provider: process.env.AI_PROVIDER || "gemini",
@@ -123,4 +131,6 @@ module.exports = {
   aiConfig,
   gcsConfig,
   rateLimits,
+  cookieSecure,
+  corsOrigin,
 };

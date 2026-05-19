@@ -6,7 +6,9 @@
       "Bash(Select-Object -First 50)",
       "Bash(Format-Table -Property Name, FullName)",
       "Bash(awk '{printf \"Logo.png: %d bytes = %.1f KB\\\\n\", $1, $1/1024}')",
-      "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\\\\public\\\\\" -Recurse -Filter \"*.js\" -File | Select-Object -ExpandProperty FullName | Sort-Object)"
+      "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\\\\public\\\\\" -Recurse -Filter \"*.js\" -File | Select-Object -ExpandProperty FullName | Sort-Object)",
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -30 {}')",
+      "Bash(xargs grep -l \"integration\\\\|real.*db\\\\|sqlite\")"
     ]
   }
 }

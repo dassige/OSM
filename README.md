@@ -109,8 +109,10 @@ Open the `.env` file and configure the following parameters:
 
   * `APP_USERNAME`: The username for the immutable Super Admin (e.g., `admin`).
   * `APP_PASSWORD`: A strong password for the Super Admin.
-  * `SESSION_SECRET`: A long, random string used to encrypt session cookies.
+  * `SESSION_SECRET`: **Required in production.** A random string of 32+ characters used to sign session cookies. Startup will abort if this is missing in production mode. Generate one with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
   * `MAX_LOGIN_ATTEMPTS`: Maximum number of failing login attempt before a user is blocked and a notification is sent to the super user (default 5).
+  * `COOKIE_SECURE`: Set to `false` for local HTTP development. Leave unset (defaults to `true`) in production — session cookies will only be sent over HTTPS. Your deployment must run behind a TLS-terminating reverse proxy (e.g., Cloudflare Tunnel, nginx) for this to work correctly.
+  * `CORS_ORIGIN`: Leave unset for the standard same-origin deployment (the frontend and API are served from the same host). Set to your frontend's full origin (e.g., `https://app.yourdomain.com`) only if the frontend is hosted on a separate domain.
 
 #### **Operation Mode**
 

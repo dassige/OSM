@@ -17,6 +17,7 @@ const { runValidation } = require("./services/env-validator");
 const { ROLES } = require("./middleware/auth");
 const { apiLimiter } = require("./middleware/rate-limiter");
 const logger = require("./services/logger");
+const helmet = require("helmet");
 
 const memberRoutes = require("./routes/api/members");
 const skillRoutes = require("./routes/api/skills");
@@ -39,6 +40,13 @@ const app = express();
 const server = http.createServer(app);
 // Trust first proxy hop so rate limiting reads the real client IP from X-Forwarded-For
 app.set('trust proxy', 1);
+
+// Security headers — CSP and COEP disabled: extensive inline scripts in static HTML pages
+// and PWA icon loading require a dedicated CSP audit before enabling.
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 
 // Service worker must be served with no-cache and the correct SW-Allowed scope
 app.get('/sw.js', (req, res) => {
@@ -88,15 +96,23 @@ app.get('/manifest.json', (req, res) => {
 app.use(express.static("public"));
 
 const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST"], credentials: true },
+  // Same-origin deployment: origin: false. Set CORS_ORIGIN env var only when the
+  // frontend is served from a separate domain (rare for this self-hosted app).
+  cors: config.corsOrigin
+    ? { origin: config.corsOrigin, methods: ["GET", "POST"], credentials: true }
+    : { origin: false },
 });
 
 
 const sessionMiddleware = session({
-  secret: config.auth?.sessionSecret || "fallback_secret_key",
+  secret: config.auth?.sessionSecret || "demo-only-insecure-fallback",
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false },
+  cookie: {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: config.cookieSecure,
+  },
   store: new SQLiteStore({
     db: "sessions.db",
     dir: path.dirname(db.getDbPath()),

@@ -30,14 +30,26 @@ function validateEnv(config) {
       "GEMINI_API_KEY is required when ENABLE_AI_EVALUATION=true and AI_PROVIDER=gemini"
     );
 
-  // --- Warn: session secret ---
-  if (!process.env.SESSION_SECRET)
-    warnings.push(
-      "SESSION_SECRET is not set — using an insecure fallback. Set a strong random string (32+ chars)."
-    );
-  else if (process.env.SESSION_SECRET.length < 32)
+  // --- SESSION_SECRET: fatal in production, warning in demo ---
+  if (!process.env.SESSION_SECRET) {
+    if (isProduction)
+      errors.push(
+        "SESSION_SECRET is required in production mode. Set a strong random string (32+ chars)."
+      );
+    else
+      warnings.push(
+        "SESSION_SECRET is not set — using an insecure fallback. Acceptable for demo only."
+      );
+  } else if (process.env.SESSION_SECRET.length < 32) {
     warnings.push(
       "SESSION_SECRET is shorter than 32 characters. Use a longer random string for security."
+    );
+  }
+
+  // --- Warn: insecure cookies in production ---
+  if (isProduction && process.env.COOKIE_SECURE === 'false')
+    warnings.push(
+      "COOKIE_SECURE=false in production — session cookies will be sent over HTTP. Only use this behind a TLS-terminating proxy."
     );
 
   // --- Warn: SMTP credentials ---
