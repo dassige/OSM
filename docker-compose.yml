@@ -15,11 +15,7 @@ services:
       - .env  
     networks:
       - opready 
-# CHANGED: Use nodemon with legacy watch for better file change detection to avoid crashing SQLlite on journal refreshing- 
-# USE it in PRODUCTION         
-    command: npx nodemon -L server.js
-# use this in development   
-#    command: npx nodemon  server.js
+    command: node server.js
     restart: unless-stopped
 networks:
   opready:

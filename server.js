@@ -406,6 +406,16 @@ async function shutdown(signal) {
 }
 
 if (require.main === module) {
+  process.on('uncaughtException', (err) => {
+    logger.error('[System] Uncaught exception', { error: err.message, stack: err.stack });
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    logger.error('[System] Unhandled promise rejection', { reason: String(reason) });
+    process.exit(1);
+  });
+
   (async () => {
     try {
       runValidation(config);
