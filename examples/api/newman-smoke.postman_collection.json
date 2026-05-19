@@ -190,6 +190,40 @@
               }
             }
           ]
+        },
+        {
+          "name": "List Members — Paginated",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/members?limit=10&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "members"],
+              "query": [
+                { "key": "limit",  "value": "10" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List Members Paginated | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('List Members Paginated | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('List Members Paginated | Returns paginated wrapper', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('items').that.is.an('array');",
+                  "  pm.expect(body).to.have.property('total').that.is.a('number');",
+                  "  pm.expect(body).to.have.property('limit').that.eql(10);",
+                  "  pm.expect(body).to.have.property('offset').that.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -218,6 +252,40 @@
                   "pm.test('List Skills | Returns an array', () => {",
                   "  pm.response.to.be.json;",
                   "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Skills — Paginated",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/skills?limit=10&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "skills"],
+              "query": [
+                { "key": "limit",  "value": "10" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List Skills Paginated | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('List Skills Paginated | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('List Skills Paginated | Returns paginated wrapper', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('items').that.is.an('array');",
+                  "  pm.expect(body).to.have.property('total').that.is.a('number');",
+                  "  pm.expect(body).to.have.property('limit').that.eql(10);",
+                  "  pm.expect(body).to.have.property('offset').that.eql(0);",
                   "});"
                 ]
               }

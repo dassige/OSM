@@ -86,4 +86,31 @@ async function bulkDeleteSkills(ids) {
   }
 }
 
-module.exports = { getSkills, getSkillById, addSkill, bulkAddSkills, updateSkill, deleteSkill, bulkDeleteSkills };
+const SKILL_SORT_COLS = new Set(['name', 'url_type', 'enabled', 'critical_skill']);
+
+async function getSkillsPage({ limit, offset = 0, search, sortBy = 'name', sortDir = 'asc' }) {
+  const db = await initDB();
+  const col = SKILL_SORT_COLS.has(sortBy) ? sortBy : 'name';
+  const dir = sortDir === 'desc' ? 'DESC' : 'ASC';
+  const whereClause = search ? 'WHERE name LIKE ?' : '';
+  const filterParams = search ? [`%${search}%`] : [];
+
+  const { n: total } = await db.get(`SELECT COUNT(*) as n FROM skills ${whereClause}`, ...filterParams);
+  const rows = await db.all(
+    `SELECT * FROM skills ${whereClause} ORDER BY ${col} ${dir} LIMIT ? OFFSET ?`,
+    ...filterParams, Number(limit), Number(offset),
+  );
+  return {
+    items: rows.map((s) => ({
+      ...s,
+      critical_skill: !!s.critical_skill,
+      enabled: s.enabled !== 0,
+      url_type: s.url_type || 'external',
+    })),
+    total,
+    limit: Number(limit),
+    offset: Number(offset),
+  };
+}
+
+module.exports = { getSkills, getSkillsPage, getSkillById, addSkill, bulkAddSkills, updateSkill, deleteSkill, bulkDeleteSkills };

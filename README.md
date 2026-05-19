@@ -425,6 +425,18 @@ API keys **cannot** access HTML pages — those remain session-only. Endpoints r
 | `GET` | `/api/health` | Health check (no key required) |
 | `GET` | `/api/ready` | Readiness probe — DB + WhatsApp state (no key required) |
 
+**Pagination** — `GET /api/members` and `GET /api/skills` support optional pagination query parameters. Without them the full list is returned as a plain array (backward-compatible). With `limit` the response is a paginated wrapper:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `limit` | integer | Max records to return. Activates paginated mode. |
+| `offset` | integer | Records to skip (default `0`). |
+| `search` | string | Case-insensitive substring filter on `name`. |
+| `sortBy` | string | Column to sort by (see `/api/docs` for allowed values). |
+| `sortDir` | `asc` \| `desc` | Sort direction (default `asc`). |
+
+Paginated response shape: `{ "items": [...], "total": 150, "limit": 25, "offset": 0 }`
+
 Every response includes an `X-Request-Id` header. Pass the same header in your request to propagate a trace ID through the logs; if omitted, the server generates a UUID automatically.
 
 See `/api/docs` for the complete endpoint reference including request/response schemas.

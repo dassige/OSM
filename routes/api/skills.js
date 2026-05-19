@@ -10,7 +10,18 @@ const logger = require('../../services/logger');
 
 router.get('/', hasRole('admin'), async (req, res) => {
   try {
-    res.json(await db.getSkills());
+    const { limit, offset, search, sortBy, sortDir } = req.query;
+    if (limit !== undefined) {
+      res.json(await db.getSkillsPage({
+        limit: parseInt(limit, 10),
+        offset: parseInt(offset, 10) || 0,
+        search,
+        sortBy,
+        sortDir,
+      }));
+    } else {
+      res.json(await db.getSkills());
+    }
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

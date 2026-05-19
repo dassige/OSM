@@ -437,6 +437,10 @@
 | T20-04 | API key role enforcement | Create a `simple`-role API key → call `POST /api/system/restore` using that key (e.g. via Postman or curl). | HTTP 403. Access denied based on key role. | Manual |
 | T20-05 | Readiness probe | Run `npm run test:api` — or open `/api/ready` in a browser (no login required). | HTTP 200. JSON `{ "status": "ready", "db": "ok", "whatsapp": "disabled" }` (or `{ "status": "...", "queueSize": N }` if WhatsApp is enabled). | ✅ Newman |
 | T20-06 | Correlation ID header | Using Postman or curl, call any authenticated endpoint (e.g. `GET /api/health`) without an `X-Request-Id` header. Then repeat with `X-Request-Id: my-trace-123`. | First call: response includes `X-Request-Id` header containing a UUID. Second call: response echoes back `X-Request-Id: my-trace-123`. | Manual |
+| T20-07 | Members pagination | Call `GET /api/members` with no params. Then call `GET /api/members?limit=5&offset=0&sortBy=name&sortDir=asc`. | First call: plain JSON array. Second call: JSON object `{ items: [...], total: N, limit: 5, offset: 0 }`. `items` contains ≤ 5 members sorted by name ascending. | ✅ Newman |
+| T20-08 | Members search filter | Call `GET /api/members?limit=100&search=<partial-name>` where `<partial-name>` is a known substring of at least one member's name. | Response `{ items, total }` where every item's `name` contains the search string (case-insensitive) and `total` equals `items.length`. | Manual |
+| T20-09 | Skills pagination | Call `GET /api/skills` with no params. Then call `GET /api/skills?limit=5&offset=0&sortBy=name&sortDir=asc`. | First call: plain JSON array. Second call: JSON object `{ items: [...], total: N, limit: 5, offset: 0 }`. `items` contains ≤ 5 skills sorted by name ascending. | ✅ Newman |
+| T20-10 | Skills search filter | Call `GET /api/skills?limit=100&search=<partial-name>` where `<partial-name>` is a known substring of at least one skill's name. | Response `{ items, total }` where every item's `name` contains the search string (case-insensitive) and `total` equals `items.length`. | Manual |
 
 ---
 

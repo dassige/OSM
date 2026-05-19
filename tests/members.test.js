@@ -3,6 +3,7 @@ const { createTestApp } = require('./test-utils');
 
 jest.mock('../services/db', () => ({
     getMembers: jest.fn(),
+    getMembersPage: jest.fn(),
     addMember: jest.fn(),
     getMemberById: jest.fn().mockResolvedValue({ name: 'Test Member' }),
     deleteMember: jest.fn(),
@@ -29,7 +30,7 @@ describe('Members API Endpoints (Isolated)', () => {
     });
 
     describe('GET /api/members', () => {
-        it('should return 200 and an array of members', async () => {
+        it('should return 200 and a plain array when no limit param is given', async () => {
             const mockData = [
                 { id: 1, name: 'CFO John Doe', email: 'john@fenz.osm' },
                 { id: 2, name: 'FF Jane Smith', email: 'jane@fenz.osm' }
@@ -41,6 +42,27 @@ describe('Members API Endpoints (Isolated)', () => {
             expect(response.status).toBe(200);
             expect(response.body).toEqual(mockData);
             expect(db.getMembers).toHaveBeenCalledTimes(1);
+            expect(db.getMembersPage).not.toHaveBeenCalled();
+        });
+
+        it('should return a paginated wrapper when limit param is provided', async () => {
+            const mockPage = { items: [{ id: 1, name: 'CFO John Doe' }], total: 10, limit: 5, offset: 0 };
+            db.getMembersPage.mockResolvedValue(mockPage);
+
+            const response = await request(app).get('/api/members?limit=5&offset=0');
+
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual(mockPage);
+            expect(db.getMembersPage).toHaveBeenCalledWith({ limit: 5, offset: 0, search: undefined, sortBy: undefined, sortDir: undefined });
+            expect(db.getMembers).not.toHaveBeenCalled();
+        });
+
+        it('should pass search and sort params to getMembersPage', async () => {
+            db.getMembersPage.mockResolvedValue({ items: [], total: 0, limit: 10, offset: 0 });
+
+            await request(app).get('/api/members?limit=10&search=John&sortBy=email&sortDir=desc');
+
+            expect(db.getMembersPage).toHaveBeenCalledWith({ limit: 10, offset: 0, search: 'John', sortBy: 'email', sortDir: 'desc' });
         });
     });
 

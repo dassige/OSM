@@ -3,6 +3,7 @@ const { createTestApp } = require('./test-utils');
 
 jest.mock('../services/db', () => ({
     getSkills: jest.fn(),
+    getSkillsPage: jest.fn(),
     addSkill: jest.fn(),
     updateSkill: jest.fn(),
     getSkillById: jest.fn().mockResolvedValue({ name: 'Test Skill' }),
@@ -29,7 +30,7 @@ describe('Skills API Endpoints (Isolated)', () => {
     });
 
     describe('GET /api/skills', () => {
-        it('should return 200 and an array of skills', async () => {
+        it('should return 200 and a plain array when no limit param is given', async () => {
             const mockData = [
                 { id: 1, name: 'First Aid', url_type: 'internal', url: 'http://form.local/fa' },
                 { id: 2, name: 'Driving', url_type: 'none', url: null }
@@ -41,6 +42,27 @@ describe('Skills API Endpoints (Isolated)', () => {
             expect(response.status).toBe(200);
             expect(response.body).toEqual(mockData);
             expect(db.getSkills).toHaveBeenCalledTimes(1);
+            expect(db.getSkillsPage).not.toHaveBeenCalled();
+        });
+
+        it('should return a paginated wrapper when limit param is provided', async () => {
+            const mockPage = { items: [{ id: 1, name: 'First Aid' }], total: 8, limit: 5, offset: 0 };
+            db.getSkillsPage.mockResolvedValue(mockPage);
+
+            const response = await request(app).get('/api/skills?limit=5&offset=0');
+
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual(mockPage);
+            expect(db.getSkillsPage).toHaveBeenCalledWith({ limit: 5, offset: 0, search: undefined, sortBy: undefined, sortDir: undefined });
+            expect(db.getSkills).not.toHaveBeenCalled();
+        });
+
+        it('should pass search and sort params to getSkillsPage', async () => {
+            db.getSkillsPage.mockResolvedValue({ items: [], total: 0, limit: 10, offset: 0 });
+
+            await request(app).get('/api/skills?limit=10&search=Aid&sortBy=url_type&sortDir=asc');
+
+            expect(db.getSkillsPage).toHaveBeenCalledWith({ limit: 10, offset: 0, search: 'Aid', sortBy: 'url_type', sortDir: 'asc' });
         });
     });
 

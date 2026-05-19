@@ -93,7 +93,26 @@
           "request": {
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/api/members", "host": ["{{baseUrl}}"], "path": ["api", "members"] },
-            "description": "Returns all members."
+            "description": "Returns all members as a plain array (no pagination params)."
+          }
+        },
+        {
+          "name": "List Members — Paginated",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/members?limit=25&offset=0&sortBy=name&sortDir=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "members"],
+              "query": [
+                { "key": "limit",   "value": "25" },
+                { "key": "offset",  "value": "0" },
+                { "key": "search",  "value": "", "disabled": true },
+                { "key": "sortBy",  "value": "name" },
+                { "key": "sortDir", "value": "asc" }
+              ]
+            },
+            "description": "Returns `{ items, total, limit, offset }`. Add `search=<text>` to filter by member name."
           }
         },
         {
@@ -180,7 +199,27 @@
           "name": "List Skills",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/skills", "host": ["{{baseUrl}}"], "path": ["api", "skills"] }
+            "url": { "raw": "{{baseUrl}}/api/skills", "host": ["{{baseUrl}}"], "path": ["api", "skills"] },
+            "description": "Returns all skills as a plain array (no pagination params)."
+          }
+        },
+        {
+          "name": "List Skills — Paginated",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/skills?limit=25&offset=0&sortBy=name&sortDir=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "skills"],
+              "query": [
+                { "key": "limit",   "value": "25" },
+                { "key": "offset",  "value": "0" },
+                { "key": "search",  "value": "", "disabled": true },
+                { "key": "sortBy",  "value": "name" },
+                { "key": "sortDir", "value": "asc" }
+              ]
+            },
+            "description": "Returns `{ items, total, limit, offset }`. Add `search=<text>` to filter by skill name."
           }
         },
         {

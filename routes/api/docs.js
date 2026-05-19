@@ -127,6 +127,24 @@ const spec = {
                     db: { type: 'string', enum: ['ok', 'unreachable'] }
                 }
             },
+            PaginatedMembers: {
+                type: 'object',
+                properties: {
+                    items: { type: 'array', items: { $ref: '#/components/schemas/Member' } },
+                    total: { type: 'integer', description: 'Total matching records' },
+                    limit: { type: 'integer' },
+                    offset: { type: 'integer' }
+                }
+            },
+            PaginatedSkills: {
+                type: 'object',
+                properties: {
+                    items: { type: 'array', items: { $ref: '#/components/schemas/Skill' } },
+                    total: { type: 'integer', description: 'Total matching records' },
+                    limit: { type: 'integer' },
+                    offset: { type: 'integer' }
+                }
+            },
             ReadyResponse: {
                 type: 'object',
                 properties: {
@@ -295,8 +313,22 @@ const spec = {
             get: {
                 tags: ['Members'],
                 summary: 'List all members',
+                description: 'Without `limit`: returns a plain array (backward-compatible). With `limit`: returns a paginated wrapper `{ items, total, limit, offset }`.',
+                parameters: [
+                    { name: 'limit',   in: 'query', schema: { type: 'integer', minimum: 1 }, description: 'Max records to return. Required to activate paginated mode.' },
+                    { name: 'offset',  in: 'query', schema: { type: 'integer', minimum: 0, default: 0 }, description: 'Number of records to skip.' },
+                    { name: 'search',  in: 'query', schema: { type: 'string' }, description: 'Case-insensitive substring filter on member name.' },
+                    { name: 'sortBy',  in: 'query', schema: { type: 'string', enum: ['name','email','mobile','enabled','notificationPreference'], default: 'name' } },
+                    { name: 'sortDir', in: 'query', schema: { type: 'string', enum: ['asc','desc'], default: 'asc' } }
+                ],
                 responses: {
-                    200: { description: 'Array of members', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/Member' } } } } }
+                    200: {
+                        description: 'Array of members (no `limit` param) or paginated result (with `limit`)',
+                        content: { 'application/json': { schema: { oneOf: [
+                            { type: 'array', items: { $ref: '#/components/schemas/Member' } },
+                            { $ref: '#/components/schemas/PaginatedMembers' }
+                        ] } } }
+                    }
                 }
             },
             post: {
@@ -378,8 +410,22 @@ const spec = {
             get: {
                 tags: ['Skills'],
                 summary: 'List all skills',
+                description: 'Without `limit`: returns a plain array (backward-compatible). With `limit`: returns a paginated wrapper `{ items, total, limit, offset }`.',
+                parameters: [
+                    { name: 'limit',   in: 'query', schema: { type: 'integer', minimum: 1 }, description: 'Max records to return. Required to activate paginated mode.' },
+                    { name: 'offset',  in: 'query', schema: { type: 'integer', minimum: 0, default: 0 }, description: 'Number of records to skip.' },
+                    { name: 'search',  in: 'query', schema: { type: 'string' }, description: 'Case-insensitive substring filter on skill name.' },
+                    { name: 'sortBy',  in: 'query', schema: { type: 'string', enum: ['name','url_type','enabled','critical_skill'], default: 'name' } },
+                    { name: 'sortDir', in: 'query', schema: { type: 'string', enum: ['asc','desc'], default: 'asc' } }
+                ],
                 responses: {
-                    200: { description: 'Array of skills', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/Skill' } } } } }
+                    200: {
+                        description: 'Array of skills (no `limit` param) or paginated result (with `limit`)',
+                        content: { 'application/json': { schema: { oneOf: [
+                            { type: 'array', items: { $ref: '#/components/schemas/Skill' } },
+                            { $ref: '#/components/schemas/PaginatedSkills' }
+                        ] } } }
+                    }
                 }
             },
             post: {

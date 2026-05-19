@@ -78,4 +78,26 @@ async function bulkDeleteMembers(ids) {
   }
 }
 
-module.exports = { getMembers, getMemberById, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers };
+const MEMBER_SORT_COLS = new Set(['name', 'email', 'mobile', 'enabled', 'notificationPreference']);
+
+async function getMembersPage({ limit, offset = 0, search, sortBy = 'name', sortDir = 'asc' }) {
+  const db = await initDB();
+  const col = MEMBER_SORT_COLS.has(sortBy) ? sortBy : 'name';
+  const dir = sortDir === 'desc' ? 'DESC' : 'ASC';
+  const whereClause = search ? 'WHERE name LIKE ?' : '';
+  const filterParams = search ? [`%${search}%`] : [];
+
+  const { n: total } = await db.get(`SELECT COUNT(*) as n FROM members ${whereClause}`, ...filterParams);
+  const rows = await db.all(
+    `SELECT * FROM members ${whereClause} ORDER BY ${col} ${dir} LIMIT ? OFFSET ?`,
+    ...filterParams, Number(limit), Number(offset),
+  );
+  return {
+    items: rows.map((m) => ({ ...m, enabled: m.enabled !== 0 })),
+    total,
+    limit: Number(limit),
+    offset: Number(offset),
+  };
+}
+
+module.exports = { getMembers, getMembersPage, getMemberById, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers };
