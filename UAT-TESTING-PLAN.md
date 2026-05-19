@@ -441,6 +441,7 @@
 | T20-08 | Members search filter | Call `GET /api/members?limit=100&search=<partial-name>` where `<partial-name>` is a known substring of at least one member's name. | Response `{ items, total }` where every item's `name` contains the search string (case-insensitive) and `total` equals `items.length`. | Manual |
 | T20-09 | Skills pagination | Call `GET /api/skills` with no params. Then call `GET /api/skills?limit=5&offset=0&sortBy=name&sortDir=asc`. | First call: plain JSON array. Second call: JSON object `{ items: [...], total: N, limit: 5, offset: 0 }`. `items` contains ≤ 5 skills sorted by name ascending. | ✅ Newman |
 | T20-10 | Skills search filter | Call `GET /api/skills?limit=100&search=<partial-name>` where `<partial-name>` is a known substring of at least one skill's name. | Response `{ items, total }` where every item's `name` contains the search string (case-insensitive) and `total` equals `items.length`. | Manual |
+| T20-11 | Public submission rate limit | Using curl or Postman, send more than 30 requests in 5 minutes to `GET /api/live-surveys/<any-code>` (no auth needed). | After the 30th request within the window the server responds with HTTP 429. The `RateLimit-*` headers are present on all responses. Prior requests return normal responses. | Manual |
 
 ---
 

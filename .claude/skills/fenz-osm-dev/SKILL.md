@@ -129,8 +129,9 @@ When implementing **any** new feature or modifying an existing one, work through
 | 11 | **Tests** — update or create Jest test suites; run `npm test` and confirm all pass before finishing | Any new or changed route handler, DB function, or middleware |
 | 12 | **UI smoke tests** — run `npm run test:ui` and confirm all pages load without JS errors | Any change to a frontend HTML page or the JS it loads |
 | 13 | **README.md** — update the relevant section to reflect the change | New feature, new npm script, new config variable, changed workflow, new deployment option, or anything a developer or operator would need to know |
-| 14 | **UAT Testing Plan** — update both `UAT-TESTING-PLAN.md` and `UAT-TESTING-PLAN.csv` to reflect the change | New page, new feature, renamed feature, removed feature, changed operation, or changed expected behaviour |
-| 15 | **Scripts index** — update `scripts/scripts.md` to document the script's purpose, invocation, prerequisites, and options | Any script added to or modified in `scripts/` |
+| 14 | **.example.env** — add the new variable with a descriptive comment explaining its purpose and default value | Any new environment variable added to `config.js` |
+| 15 | **UAT Testing Plan** — update both `UAT-TESTING-PLAN.md` and `UAT-TESTING-PLAN.csv` to reflect the change | New page, new feature, renamed feature, removed feature, changed operation, or changed expected behaviour |
+| 16 | **Scripts index** — update `scripts/scripts.md` to document the script's purpose, invocation, prerequisites, and options | Any script added to or modified in `scripts/` |
 
 ---
 
@@ -309,6 +310,7 @@ jest.mock('../config', () => ({
         mfa:           { windowMin: 5,  max: 5   },
         forgotPassword:{ windowMin: 30, max: 3   },
         api:           { windowMin: 1,  max: 300 },
+        publicSubmit:  { windowMin: 5,  max: 30  },
     },
 }));
 ```

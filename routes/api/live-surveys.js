@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../../services/db");
 const { hasRole } = require("../../middleware/auth");
+const { publicSubmitLimiter } = require("../../middleware/rate-limiter");
 const logger = require("../../services/logger");
 
 router.get("/preview/:publicId", hasRole("admin"), async (req, res) => {
@@ -31,7 +32,7 @@ router.get("/preview/:publicId", hasRole("admin"), async (req, res) => {
   }
 });
 
-router.get("/:accessCode", async (req, res) => {
+router.get("/:accessCode", publicSubmitLimiter, async (req, res) => {
   try {
     const accessCode = req.params.accessCode;
 
@@ -77,7 +78,7 @@ router.get("/:accessCode", async (req, res) => {
   }
 });
 
-router.post("/:accessCode/submit", async (req, res) => {
+router.post("/:accessCode/submit", publicSubmitLimiter, async (req, res) => {
   try {
     const accessCode = req.params.accessCode;
     const { answers } = req.body;

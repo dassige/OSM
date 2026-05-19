@@ -4,6 +4,11 @@ services:
   app:
     container_name: opready
     build: .
+    # Override the Dockerfile's USER node for local bind-mount deployments.
+    # The host directory is mounted at /app, so the container needs root to write
+    # fenz.db, sessions.db, and .wwebjs_auth. Cloud Run deployments (no bind mount)
+    # use the image's USER node automatically.
+    user: "0"
     ports:
       - "3000:3000"
     volumes:

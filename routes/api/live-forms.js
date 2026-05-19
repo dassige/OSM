@@ -7,6 +7,7 @@ const config = require("../../config");
 const logger = require("../../services/logger");
 const whatsappService = require("../../services/whatsapp-service");
 const { hasRole } = require("../../middleware/auth");
+const { publicSubmitLimiter } = require("../../middleware/rate-limiter");
 
 function convertHtmlToText(html) {
   if (!html) return "";
@@ -132,7 +133,7 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
   }
 });
 
-router.get("/access/:code", async (req, res) => {
+router.get("/access/:code", publicSubmitLimiter, async (req, res) => {
   try {
     const result = await formsService.getLiveFormByCode(req.params.code);
     if (!result) return res.status(404).json({ error: "Form link invalid or expired." });
@@ -166,7 +167,7 @@ router.get("/access/:code", async (req, res) => {
   }
 });
 
-router.post("/submit/:code", async (req, res) => {
+router.post("/submit/:code", publicSubmitLimiter, async (req, res) => {
   try {
     const form = await formsService.getLiveFormByCode(req.params.code);
     if (!form || form.form_status !== "sent") {

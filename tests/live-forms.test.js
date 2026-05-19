@@ -32,6 +32,10 @@ jest.mock('../middleware/auth', () => ({
     hasRole: () => (req, res, next) => next()
 }));
 
+jest.mock('../middleware/rate-limiter', () => ({
+    publicSubmitLimiter: (req, res, next) => next()
+}));
+
 jest.mock('../services/whatsapp-service', () => ({
     sendMessage: jest.fn().mockResolvedValue()
 }));

@@ -162,6 +162,16 @@ Open the `.env` file and configure the following parameters:
 #### **WhatsApp Integration**
   * `ENABLE_WHATSAPP`: Set to `true` to enable the WhatsApp service and menu items.
 
+#### **Rate Limiting**
+
+All rate limits are per-IP and configurable via environment variables. Defaults are suitable for most brigades.
+
+  * `RATE_LIMIT_LOGIN_MAX` / `RATE_LIMIT_LOGIN_WINDOW_MIN`: Max login attempts per window before the IP is blocked (default: max=10, window=15 min).
+  * `RATE_LIMIT_MFA_MAX` / `RATE_LIMIT_MFA_WINDOW_MIN`: MFA code verification attempts (default: max=5, window=5 min).
+  * `RATE_LIMIT_FORGOT_MAX` / `RATE_LIMIT_FORGOT_WINDOW_MIN`: Password-reset requests (default: max=3, window=30 min).
+  * `RATE_LIMIT_API_MAX` / `RATE_LIMIT_API_WINDOW_MIN`: Authenticated API requests (default: max=300, window=1 min).
+  * `RATE_LIMIT_PUBLIC_SUBMIT_MAX` / `RATE_LIMIT_PUBLIC_SUBMIT_WINDOW_MIN`: Unauthenticated live-form access and survey submission endpoints. Applied per IP to member-facing routes (`/api/live-forms/access/`, `/api/live-forms/submit/`, `/api/live-surveys/`). Set high enough to allow a whole crew to submit simultaneously. (default: max=30, window=5 min).
+
 ## Demo Mode
 
 You can run the application in **Demo Mode** to test features or demonstrate the workflow without accessing live private data.
@@ -593,6 +603,8 @@ Newman prints a summary table: requests run, assertions passed/failed, average r
 3.  **Health check:** The image includes a `HEALTHCHECK` that polls `GET /api/health` every 30 seconds (40-second start period, 3 retries). Docker marks the container `unhealthy` after three consecutive failures — use `docker ps` or `docker inspect` to check status.
 4.  **Graceful shutdown:** Sending `SIGTERM` or `SIGINT` to the process (e.g. `docker stop`) drains Socket.IO connections, disconnects the WhatsApp client if enabled, and closes the database cleanly before the process exits. The default `docker stop` timeout is 10 seconds — sufficient for normal shutdown.
 5.  **Database WAL mode:** The SQLite database runs in WAL (Write-Ahead Logging) mode. This creates two additional files alongside `fenz.db` (`fenz.db-wal` and `fenz.db-shm`) while the server is running. These are normal and should be included in any backup. They are automatically checkpointed and removed on clean shutdown.
+6.  **Multi-stage build:** The `Dockerfile` uses a two-stage build. The `builder` stage installs `python3`, `make`, and `g++` to compile native Node.js addons (e.g. `better-sqlite3`). The `runtime` stage copies only the pre-built `node_modules` and the app source — no build tooling is present in the final image, reducing the attack surface.
+7.  **Non-root execution:** The runtime image runs as the built-in `node` user (UID 1000) rather than root. This applies to Cloud Run and any deployment where the image runs without a bind mount — the `chown -R node:node /app` layer in the Dockerfile is effective in that case. The provided `docker-compose.yml` overrides this with `user: "0"` because it bind-mounts the host directory at `/app`, meaning host-file ownership governs write access rather than the image layer. The `USER node` instruction still appears in the Dockerfile so that production image deployments (no bind mount) benefit from non-root execution automatically.
 
 ## Cloudflare Tunnel
 

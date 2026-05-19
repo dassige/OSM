@@ -26,7 +26,7 @@ const forgotPasswordLimiter = rateLimit({
     message: { error: `Too many password reset requests. Please try again in ${rateLimits.forgotPassword.windowMin} minutes.` },
 });
 
-// Public member-facing endpoints are excluded — they can see legitimate submission bursts from many members at once
+// Applies to all authenticated /api/* routes
 const apiLimiter = rateLimit({
     windowMs: rateLimits.api.windowMin * 60 * 1000,
     max: rateLimits.api.max,
@@ -39,4 +39,13 @@ const apiLimiter = rateLimit({
     message: { error: 'Too many requests. Please slow down.' },
 });
 
-module.exports = { loginLimiter, mfaLimiter, forgotPasswordLimiter, apiLimiter };
+// Separate, tighter limit for unauthenticated public submission endpoints
+const publicSubmitLimiter = rateLimit({
+    windowMs: rateLimits.publicSubmit.windowMin * 60 * 1000,
+    max: rateLimits.publicSubmit.max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many submission attempts. Please try again later.' },
+});
+
+module.exports = { loginLimiter, mfaLimiter, forgotPasswordLimiter, apiLimiter, publicSubmitLimiter };
