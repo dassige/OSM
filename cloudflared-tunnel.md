@@ -191,6 +191,134 @@ If the banner does not appear on the first visit, try a hard reload (`Ctrl+Shift
 
 ---
 
+## Docker / docker-compose Deployment
+
+If you are running OpReady via `docker compose`, add `cloudflared` as a **sidecar service** instead of installing it on the host. The tunnel connects outward from inside the Docker network — no host-level installation, no inbound firewall ports needed.
+
+> **Key difference from bare-metal:** the `service` URL (in a config file) or the **Public Hostname URL** (in the Cloudflare dashboard) must use the Docker **service name** (`app`), not `localhost`. Containers in the same Compose network reach each other by service name.
+
+---
+
+### Option A — Token-Based (Recommended for Docker)
+
+This is the simplest method. The tunnel is created and configured entirely in the Cloudflare Zero Trust dashboard; no config file is required on the server.
+
+#### 1. Create the tunnel in Cloudflare Zero Trust
+
+1. Go to **[Cloudflare Zero Trust](https://one.cloudflare.com)** → **Networks → Tunnels → Create a tunnel**.
+2. Choose **Cloudflared** as the connector type and give the tunnel a name (e.g. `opready`).
+3. On the **Install connector** screen, select the **Docker** tab — Cloudflare shows a full `docker run` command. Copy only the long token string after `--token`.
+4. On the **Route traffic** screen, add a **Public Hostname**:
+   - **Subdomain / Domain:** your public hostname (e.g. `opready.example.com`)
+   - **Type:** `HTTP`
+   - **URL:** `app:3000` ← the Compose *service name* and internal port (not `localhost`)
+5. Save the tunnel.
+
+#### 2. Add `CLOUDFLARE_TUNNEL_TOKEN` to `.env`
+
+```env
+CLOUDFLARE_TUNNEL_TOKEN=eyJhIjoiMTIzNDU2Nzg5...
+```
+
+#### 3. Add the `cloudflared` service to `docker-compose.yml`
+
+```yaml
+services:
+  app:
+    # ... existing OpReady service — unchanged ...
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - app
+    networks:
+      - opready
+
+networks:
+  opready:
+```
+
+#### 4. Start the stack
+
+```bash
+docker compose up -d
+```
+
+Verify `cloudflared` connected:
+
+```bash
+docker compose logs cloudflared
+```
+
+Look for `Connection established connIndex=0` in the output. Open your public hostname in a browser to confirm OpReady loads over HTTPS.
+
+---
+
+### Option B — Named Tunnel with Credentials File
+
+Use this approach if you have already created a named tunnel via the CLI (sections 1–5 of this guide) and want to reuse the same credentials file rather than a dashboard token.
+
+#### 1. Update `~/.cloudflared/config.yml` on the host
+
+Change the `service` URL to the Docker service name:
+
+```yaml
+tunnel: <your-tunnel-id>
+credentials-file: /etc/cloudflared/<your-tunnel-id>.json
+
+ingress:
+  - hostname: opready.example.com
+    service: http://app:3000
+  - service: http_status:404
+```
+
+#### 2. Add the `cloudflared` service to `docker-compose.yml`
+
+```yaml
+services:
+  app:
+    # ... existing OpReady service — unchanged ...
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - ${HOME}/.cloudflared:/etc/cloudflared:ro
+    depends_on:
+      - app
+    networks:
+      - opready
+
+networks:
+  opready:
+```
+
+The volume mount makes the host `~/.cloudflared/` directory available read-only inside the container.
+
+#### 3. Start the stack
+
+```bash
+docker compose up -d
+```
+
+---
+
+### Updating `cloudflared` in Docker
+
+The `cloudflare/cloudflared:latest` image is updated frequently. To upgrade without rebuilding OpReady:
+
+```bash
+docker compose pull cloudflared
+docker compose up -d cloudflared
+```
+
+---
+
 ## Troubleshooting
 
 ### Tunnel not connecting

@@ -62,6 +62,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * [API Access](#api-access)
   * [Testing](#testing)
   * [Docker Deployment](#docker-deployment)
+  * [Cloudflare Tunnel](#cloudflare-tunnel)
   * [Google Cloud Run Deployment](#google-cloud-run-deployment)
   * [Project Structure](#project-structure)
   * [Troubleshooting](#troubleshooting)
@@ -572,6 +573,21 @@ Newman prints a summary table: requests run, assertions passed/failed, average r
     ```
 2.  **Persistence:** The `docker-compose.yml` mounts the local directory to `/app`, ensuring your `fenz.db` persists restarts.
 
+## Cloudflare Tunnel
+
+Expose OpReady over **HTTPS** from a local or on-premise server — no inbound firewall ports, no SSL certificates to manage — using a Cloudflare Tunnel (`cloudflared`). HTTPS is also required for PWA installation on Android devices and for the service worker to register on non-localhost origins.
+
+Two deployment styles are covered in the guide:
+
+| Style | When to use |
+|---|---|
+| **Bare-metal (systemd service)** | Running OpReady directly on a Linux server with `node server.js` |
+| **Docker sidecar (docker-compose)** | Running OpReady via `docker compose up` |
+
+See the full [Cloudflare Tunnel Guide](cloudflared-tunnel.md) for step-by-step instructions.
+
+---
+
 ## Google Cloud Run Deployment
 
 Supports stateless deployment using **Litestream** to replicate the database to Google Cloud Storage.
@@ -621,7 +637,7 @@ Icons are written to `public/icons/`. The manifest references them at `/icons/ic
 ## Integrations
 
   * [**WhatsApp Feature Guide**](whatsapp-feature.md): Detailed instructions on connecting your WhatsApp account, managing sessions, and sending mobile notifications.
-  * [**Cloudflare Tunnel Guide**](cloudflared-tunnel.md): Step-by-step instructions for exposing OpReady over HTTPS using a Cloudflare Tunnel — required for PWA installation on Android and other non-localhost devices.
+  * [**Cloudflare Tunnel Guide**](cloudflared-tunnel.md): Step-by-step instructions for exposing OpReady over HTTPS using a Cloudflare Tunnel — covers both bare-metal (systemd service) and Dockerized (docker-compose sidecar) deployments. Required for PWA installation on Android and other non-localhost devices.
 
 ### WhatsApp Resilience
 
