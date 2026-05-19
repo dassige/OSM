@@ -63,15 +63,16 @@
           ]
         },
         {
-          "name": "API Docs (Swagger UI)",
+          "name": "Readiness Probe",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/docs",
+              "raw": "{{baseUrl}}/api/ready",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "docs"]
+              "path": ["api", "ready"]
             },
-            "description": "T20-02: Verifies the Swagger UI is served."
+            "description": "T20-02: Verifies the server reports ready (DB connected, WhatsApp initialised if enabled)."
           },
           "event": [
             {
@@ -80,7 +81,40 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('T20-02 | Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('T20-02 | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                  "pm.test('T20-02 | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('T20-02 | Valid JSON', () => pm.response.to.be.json);",
+                  "pm.test('T20-02 | Status is ready', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('ready');",
+                  "});",
+                  "pm.test('T20-02 | DB is connected', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.db).to.eql('ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API Docs (Swagger UI)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/docs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "docs"]
+            },
+            "description": "T20-03: Verifies the Swagger UI is served."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T20-03 | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('T20-03 | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
                 ]
               }
             }

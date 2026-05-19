@@ -22,6 +22,7 @@ const globalAuthGuard = async (req, res, next) => {
       '/ui-config',
       '/login/mfa',
       '/api/health',
+      '/api/ready',
       '/api/demo-credentials',
       '/forms-view.html',
       '/theme.js',

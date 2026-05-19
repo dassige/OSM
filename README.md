@@ -423,6 +423,9 @@ API keys **cannot** access HTML pages — those remain session-only. Endpoints r
 | `GET` | `/api/statistics/data/compliance-overview` | Dashboard compliance stats |
 | `GET` | `/api/live-forms` | Live form submission records |
 | `GET` | `/api/health` | Health check (no key required) |
+| `GET` | `/api/ready` | Readiness probe — DB + WhatsApp state (no key required) |
+
+Every response includes an `X-Request-Id` header. Pass the same header in your request to propagate a trace ID through the logs; if omitted, the server generates a UUID automatically.
 
 See `/api/docs` for the complete endpoint reference including request/response schemas.
 
@@ -433,6 +436,7 @@ See `/api/docs` for the complete endpoint reference including request/response s
 | Command | When to run | Requires |
 |---------|-------------|---------|
 | `npm test` | Before every commit | Nothing — runs in-process |
+| `npm run test:coverage` | CI coverage gate | Nothing — runs Jest with `--coverage`; fails if line coverage drops below 70% |
 | `npm run test:ui` | Before every frontend change | Nothing — spins up its own demo server |
 | `npm run test:all` | Pre-merge / CI | Nothing — combines the two above |
 | `npm run test:api` | Pre-UAT deploy | Live instance + admin API key |
@@ -574,6 +578,9 @@ Newman prints a summary table: requests run, assertions passed/failed, average r
     docker compose up -d --build
     ```
 2.  **Persistence:** The `docker-compose.yml` mounts the local directory to `/app`, ensuring your `fenz.db` persists restarts.
+3.  **Health check:** The image includes a `HEALTHCHECK` that polls `GET /api/health` every 30 seconds (40-second start period, 3 retries). Docker marks the container `unhealthy` after three consecutive failures — use `docker ps` or `docker inspect` to check status.
+4.  **Graceful shutdown:** Sending `SIGTERM` or `SIGINT` to the process (e.g. `docker stop`) drains Socket.IO connections, disconnects the WhatsApp client if enabled, and closes the database cleanly before the process exits. The default `docker stop` timeout is 10 seconds — sufficient for normal shutdown.
+5.  **Database WAL mode:** The SQLite database runs in WAL (Write-Ahead Logging) mode. This creates two additional files alongside `fenz.db` (`fenz.db-wal` and `fenz.db-shm`) while the server is running. These are normal and should be included in any backup. They are automatically checkpointed and removed on clean shutdown.
 
 ## Cloudflare Tunnel
 

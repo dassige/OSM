@@ -18,6 +18,7 @@ const { ROLES } = require("./middleware/auth");
 const { apiLimiter } = require("./middleware/rate-limiter");
 const logger = require("./services/logger");
 const helmet = require("helmet");
+const correlationId = require("./middleware/correlation-id");
 
 const memberRoutes = require("./routes/api/members");
 const skillRoutes = require("./routes/api/skills");
@@ -47,6 +48,8 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
 }));
+
+app.use(correlationId);
 
 // Service worker must be served with no-cache and the correct SW-Allowed scope
 app.get('/sw.js', (req, res) => {

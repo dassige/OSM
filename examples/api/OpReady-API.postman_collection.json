@@ -783,6 +783,15 @@
           }
         },
         {
+          "name": "Readiness Probe",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/ready", "host": ["{{baseUrl}}"], "path": ["api", "ready"] },
+            "description": "Public — no authentication required. Returns 200 when fully ready (DB ok, WhatsApp client ready if enabled). Returns 503 while initialising. Use as a Docker/Kubernetes readiness probe."
+          }
+        },
+        {
           "name": "Get System Preferences",
           "request": {
             "method": "GET",

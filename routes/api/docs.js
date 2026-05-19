@@ -127,6 +127,25 @@ const spec = {
                     db: { type: 'string', enum: ['ok', 'unreachable'] }
                 }
             },
+            ReadyResponse: {
+                type: 'object',
+                properties: {
+                    status: { type: 'string', enum: ['ready', 'starting', 'error'] },
+                    db: { type: 'string', enum: ['ok'] },
+                    whatsapp: {
+                        oneOf: [
+                            { type: 'string', enum: ['disabled'] },
+                            {
+                                type: 'object',
+                                properties: {
+                                    status: { type: 'string' },
+                                    queueSize: { type: 'integer' }
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
             Preference: {
                 type: 'object',
                 properties: {
@@ -870,6 +889,18 @@ const spec = {
                 responses: {
                     200: { description: 'Healthy', content: { 'application/json': { schema: { $ref: '#/components/schemas/HealthResponse' } } } },
                     503: { description: 'DB unreachable', content: { 'application/json': { schema: { $ref: '#/components/schemas/HealthResponse' } } } }
+                }
+            }
+        },
+        '/api/ready': {
+            get: {
+                tags: ['System'],
+                summary: 'Readiness probe — DB + WhatsApp client state',
+                description: 'Returns 200 when the server is fully ready to serve traffic. Returns 503 while the WhatsApp client (if enabled) is still initialising. Safe to use as a Kubernetes/Docker readiness probe.',
+                security: [],
+                responses: {
+                    200: { description: 'Ready', content: { 'application/json': { schema: { $ref: '#/components/schemas/ReadyResponse' } } } },
+                    503: { description: 'Not yet ready or DB unreachable', content: { 'application/json': { schema: { $ref: '#/components/schemas/ReadyResponse' } } } }
                 }
             }
         },

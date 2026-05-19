@@ -8,6 +8,7 @@ const axios = require("axios");
 const db = require("../../services/db");
 const config = require("../../config");
 const aiService = require("../../services/ai-service");
+const whatsappService = require("../../services/whatsapp-service");
 const { hasRole } = require("../../middleware/auth");
 const { version } = require("../../package.json");
 
@@ -22,6 +23,24 @@ router.get("/health", async (req, res) => {
     res.json({ status: "ok", version, uptime: Math.floor(process.uptime()), db: "ok" });
   } catch (e) {
     res.status(503).json({ status: "error", version, uptime: Math.floor(process.uptime()), db: "unreachable", error: e.message });
+  }
+});
+
+router.get("/ready", async (req, res) => {
+  try {
+    const database = await db.initDB();
+    await database.get("SELECT 1");
+    const waStatus = config.enableWhatsApp ? whatsappService.getStatus() : null;
+    const waReady = !config.enableWhatsApp || waStatus?.status === "ready";
+    res.status(waReady ? 200 : 503).json({
+      status: waReady ? "ready" : "starting",
+      db: "ok",
+      whatsapp: waStatus
+        ? { status: waStatus.status, queueSize: waStatus.queueSize }
+        : "disabled",
+    });
+  } catch (e) {
+    res.status(503).json({ status: "error", error: e.message });
   }
 });
 

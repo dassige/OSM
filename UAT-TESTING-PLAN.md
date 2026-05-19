@@ -435,6 +435,8 @@
 | T20-02 | API docs accessible | Run `npm run test:api` — or navigate to `/api/docs` and verify Swagger UI loads with all endpoint groups. | HTTP 200. All endpoint groups visible and expandable. | ✅ Newman |
 | T20-03 | Unauthenticated access blocked | Run `npm run test:api` — or in a logged-out browser navigate to `/api/members`. | HTTP 401/302/403. No member data exposed. | ✅ Newman |
 | T20-04 | API key role enforcement | Create a `simple`-role API key → call `POST /api/system/restore` using that key (e.g. via Postman or curl). | HTTP 403. Access denied based on key role. | Manual |
+| T20-05 | Readiness probe | Run `npm run test:api` — or open `/api/ready` in a browser (no login required). | HTTP 200. JSON `{ "status": "ready", "db": "ok", "whatsapp": "disabled" }` (or `{ "status": "...", "queueSize": N }` if WhatsApp is enabled). | ✅ Newman |
+| T20-06 | Correlation ID header | Using Postman or curl, call any authenticated endpoint (e.g. `GET /api/health`) without an `X-Request-Id` header. Then repeat with `X-Request-Id: my-trace-123`. | First call: response includes `X-Request-Id` header containing a UUID. Second call: response echoes back `X-Request-Id: my-trace-123`. | Manual |
 
 ---
 
