@@ -1,4 +1,12 @@
 // public/js/surveys-results.js
+function parseRankAndName(fullName) {
+  const parts = (fullName || "").trim().split(" ");
+  if (parts.length > 1 && /^[A-Za-z]{2,4}$/.test(parts[0])) {
+    return { rank: parts[0], displayName: parts.slice(1).join(" ") };
+  }
+  return { rank: "-", displayName: fullName || "" };
+}
+
 const urlParams = new URLSearchParams(window.location.search);
 const liveSurveyId = urlParams.get("id");
 let uiConfig = null;
@@ -151,9 +159,12 @@ function updateDetailedSortHeaders() {
 function getSortedResponses() {
   return [...surveyData.responses].sort((a, b) => {
     let valA, valB;
-    if (detailedSortCol === "name") {
-      valA = a.respondent?.name || "";
-      valB = b.respondent?.name || "";
+    if (detailedSortCol === "rank") {
+      valA = parseRankAndName(a.respondent?.name || a.member_name || "").rank.toLowerCase();
+      valB = parseRankAndName(b.respondent?.name || b.member_name || "").rank.toLowerCase();
+    } else if (detailedSortCol === "name") {
+      valA = parseRankAndName(a.respondent?.name || a.member_name || "").displayName.toLowerCase();
+      valB = parseRankAndName(b.respondent?.name || b.member_name || "").displayName.toLowerCase();
     } else {
       valA = a.submittedAt || "";
       valB = b.submittedAt || "";
@@ -172,7 +183,7 @@ function renderDetailedTable() {
   const total = sorted.length;
 
   if (total === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);">No responses found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">No responses found.</td></tr>`;
     updateDetailedPaginationUI(0, 0);
     return;
   }
@@ -185,9 +196,11 @@ function renderDetailedTable() {
   const end = Math.min(start + effectiveLimit, total);
 
   sorted.slice(start, end).forEach((r) => {
+    const { rank, displayName } = parseRankAndName(r.respondent?.name || r.member_name || "");
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><strong>${r.respondent?.name || "N/A"}</strong></td>
+      <td data-label="Rank" class="text-center">${formatRankCell(rank)}</td>
+      <td><strong>${displayName || "N/A"}</strong></td>
       <td style="font-size:12px;">${new Date(r.submittedAt).toLocaleString()}</td>
       <td style="text-align:center;">
         <button onclick="viewSpecificResponse(${r.id})" class="btn-sm btn-informative"
@@ -229,11 +242,14 @@ function renderDetailedCards() {
   const end = Math.min(start + effectiveLimit, total);
 
   sorted.slice(start, end).forEach((r) => {
+    const { rank, displayName } = parseRankAndName(r.respondent?.name || r.member_name || "");
+    const rankHtml = (rank && rank !== "-") ? `<div class="card-rank">${formatRankCell(rank)}</div>` : "";
     const card = document.createElement("div");
     card.className = "table-card";
     card.innerHTML = `
       <div class="card-header">
-        <span class="card-title">${r.respondent?.name || "N/A"}</span>
+        ${rankHtml}
+        <span class="card-title">${displayName || "N/A"}</span>
       </div>
       <div class="card-body">
         <div class="card-row">

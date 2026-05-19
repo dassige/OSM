@@ -1,3 +1,11 @@
+function parseRankAndName(fullName) {
+  const parts = (fullName || "").trim().split(" ");
+  if (parts.length > 1 && /^[A-Za-z]{2,4}$/.test(parts[0])) {
+    return { rank: parts[0], displayName: parts.slice(1).join(" ") };
+  }
+  return { rank: "-", displayName: fullName || "" };
+}
+
 let surveyGuid = null;
 const urlParams = new URLSearchParams(window.location.search);
 const liveSurveyId = urlParams.get("id");
@@ -186,15 +194,22 @@ function handleSort(col) {
 
 function sortFilteredData() {
   filteredData.sort((a, b) => {
-    let valA = a[sortCol];
-    let valB = b[sortCol];
+    const parsedA = parseRankAndName(a.member_name);
+    const parsedB = parseRankAndName(b.member_name);
+    let valA, valB;
 
-    if (sortCol === "completed_at") {
-      valA = valA || "0000";
-      valB = valB || "0000";
+    if (sortCol === "rank") {
+      valA = parsedA.rank.toLowerCase();
+      valB = parsedB.rank.toLowerCase();
+    } else if (sortCol === "member_name") {
+      valA = parsedA.displayName.toLowerCase();
+      valB = parsedB.displayName.toLowerCase();
+    } else if (sortCol === "completed_at") {
+      valA = a.completed_at || "0000";
+      valB = b.completed_at || "0000";
     } else {
-      valA = (valA || "").toString().toLowerCase();
-      valB = (valB || "").toString().toLowerCase();
+      valA = (a[sortCol] || "").toString().toLowerCase();
+      valB = (b[sortCol] || "").toString().toLowerCase();
     }
 
     if (valA < valB) return sortDir === "asc" ? -1 : 1;
@@ -220,7 +235,7 @@ function updateSortHeaders() {
   });
 
   // Mobile sort bar icons
-  ["member_name", "status", "completed_at"].forEach((col) => {
+  ["rank", "member_name", "status", "completed_at"].forEach((col) => {
     const el = document.getElementById(`mobile-icon-${col}`);
     if (el) el.textContent = col === sortCol ? (sortDir === "asc" ? " ▲" : " ▼") : "";
   });
@@ -315,7 +330,7 @@ function renderTable() {
   const total = filteredData.length;
 
   if (total === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">No tracking records match your filter.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">No tracking records match your filter.</td></tr>`;
     updatePaginationUI(0, 0);
     return;
   }
@@ -330,11 +345,13 @@ function renderTable() {
 
   pageData.forEach((item) => {
     const { dateStr, statusBadge, url, remindBtnHtml } = buildRowParts(item);
+    const { rank, displayName } = parseRankAndName(item.member_name);
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
+      <td data-label="Rank" class="text-center">${formatRankCell(rank)}</td>
       <td style="font-weight:500;">
-        ${item.member_name}
+        ${displayName}
         <div style="font-size:12px; color:var(--text-muted); font-weight:normal;">${item.email || "No email provided"}</div>
       </td>
       <td>${statusBadge}</td>
@@ -380,12 +397,15 @@ function renderCards() {
 
   pageData.forEach((item) => {
     const { dateStr, statusBadge, url } = buildRowParts(item);
+    const { rank, displayName } = parseRankAndName(item.member_name);
+    const rankHtml = (rank && rank !== "-") ? `<div class="card-rank">${formatRankCell(rank)}</div>` : "";
 
     const card = document.createElement("div");
     card.className = "table-card";
     card.innerHTML = `
       <div class="card-header">
-        <span class="card-title">${item.member_name}</span>
+        ${rankHtml}
+        <span class="card-title">${displayName}</span>
         ${statusBadge}
       </div>
       <div class="card-body">
