@@ -44,7 +44,7 @@ async function getSurveyById(id) {
 async function getSurveyByPublicId(publicId) {
   const db = await initDB();
   return await db.get(
-    "SELECT id, name, intro_text, structure, status, is_anonymous FROM surveys WHERE public_id = ? AND status = 1",
+    "SELECT id, name, intro_text, structure, status, is_anonymous FROM surveys WHERE public_id = ?",
     publicId,
   );
 }
@@ -207,12 +207,13 @@ async function importAllSurveys(surveysData, createdByUserId) {
   await db.exec("BEGIN TRANSACTION");
   try {
     const stmt = await db.prepare(
-      "INSERT INTO surveys (public_id, name, intro_text, status, structure, created_by) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO surveys (public_id, name, intro_text, status, structure, created_by, is_anonymous) VALUES (?, ?, ?, ?, ?, ?, ?)",
     );
     for (const s of surveysData) {
       const structure = typeof s.structure === "object" ? JSON.stringify(s.structure) : s.structure;
       const newPublicId = crypto.randomUUID();
-      await stmt.run(newPublicId, s.name, s.intro_text || s.intro || "", s.status || 0, structure, createdByUserId);
+      const isAnonymous = s.is_anonymous != null ? s.is_anonymous : 1;
+      await stmt.run(newPublicId, s.name, s.intro_text || s.intro || "", s.status || 0, structure, createdByUserId, isAnonymous);
     }
     await stmt.finalize();
     await db.exec("COMMIT");

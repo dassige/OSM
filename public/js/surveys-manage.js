@@ -394,6 +394,7 @@ function importSingleSurvey(input) {
         name: data.name,
         intro: data.intro || "",
         status: data.status || 0,
+        is_anonymous: data.is_anonymous != null ? data.is_anonymous : 1,
         structure: data.structure,
       });
       showToast(
