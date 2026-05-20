@@ -280,7 +280,7 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
         if (parsed.whatsapp && parsed.whatsapp.body) {
           tplWa.body = parsed.whatsapp.body;
         }
-      } catch (e) { logger.warn("Template parse error", { error: e.message }); }
+      } catch (e) { logger.warn("Template parse error", e); }
     }
 
     const applyVars = (text) => {
@@ -372,7 +372,7 @@ router.post("/reject/:id", hasRole("admin"), async (req, res) => {
           if (parsed.whatsapp.bodyRetry) tplWa.bodyRetry = parsed.whatsapp.bodyRetry;
           if (parsed.whatsapp.bodySimple) tplWa.bodySimple = parsed.whatsapp.bodySimple;
         }
-      } catch (e) { logger.warn("Template parse error", { error: e.message }); }
+      } catch (e) { logger.warn("Template parse error", e); }
     }
 
     const applyVars = (text) => {

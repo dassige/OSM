@@ -4,7 +4,8 @@ const { createTestApp } = require('./test-utils');
 jest.mock('../services/db', () => ({
     generateSqlDump: jest.fn(),
     restoreFromSqlDump: jest.fn().mockResolvedValue(),
-    logEvent: jest.fn().mockResolvedValue()
+    logEvent: jest.fn().mockResolvedValue(),
+    getDbPath: jest.fn().mockReturnValue('/tmp/test.db'),
 }));
 
 // We already verified Role checks in security.test.js, so we bypass them here

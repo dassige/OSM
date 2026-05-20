@@ -12,8 +12,9 @@ module.exports = {
     url: BASE_URL,
     reuseExistingServer: true,
     env: {
-      APP_MODE: 'demo',
       PORT: String(TEST_PORT),
+      APP_USERNAME: 'demo',
+      APP_PASSWORD: 'demo',
     },
     timeout: 30_000,
   },

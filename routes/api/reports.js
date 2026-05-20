@@ -36,7 +36,7 @@ router.get("/data/:type", async (req, res) => {
     else
       res.status(400).json({ error: "Unknown report type" });
   } catch (e) {
-    logger.error("Report Error", { error: e.message });
+    logger.error("Report Error", e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -69,7 +69,7 @@ router.post("/pdf", async (req, res) => {
     res.contentType("application/pdf");
     res.send(pdf);
   } catch (e) {
-    logger.error("[PDF Export Error]", { error: e.message });
+    logger.error("[PDF Export Error]", e);
     res.status(500).json({ error: e.message });
   }
 });

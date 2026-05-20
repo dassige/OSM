@@ -142,7 +142,7 @@ router.get("/logout", async (req, res) => {
       }
     }
   } catch (e) {
-    logger.error("Logout cleanup error", { error: e.message });
+    logger.error("Logout cleanup error", e);
   }
   req.session.destroy();
   res.redirect("/login.html");

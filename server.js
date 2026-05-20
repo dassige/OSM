@@ -185,20 +185,20 @@ io.on("connection", (socket) => {
   socket.on("get-preferences", async () => {
     try {
       socket.emit("preferences-data", await db.getAllUserPreferences(socket.request.session.user.id || 0));
-    } catch (e) { logger.error("[Socket] get-preferences", { error: e.message }); }
+    } catch (e) { logger.error("[Socket] get-preferences", e); }
   });
 
   socket.on("update-preference", async ({ key, value }) => {
     if (userLevel < ROLES.simple) return logger("Unauthorized: Guest cannot save preferences.");
     try {
       await db.saveUserPreference(socket.request.session.user.id || 0, key, value);
-    } catch (e) { logger.error("[Socket] update-preference", { error: e.message }); }
+    } catch (e) { logger.error("[Socket] update-preference", e); }
   });
 
   socket.on("wa-get-status", () => {
     try {
       if (userLevel >= ROLES.simple) socket.emit("wa-status-data", whatsappService.getStatus());
-    } catch (e) { logger.error("[Socket] wa-get-status", { error: e.message }); }
+    } catch (e) { logger.error("[Socket] wa-get-status", e); }
   });
 
   socket.on("wa-control", (action) => {
@@ -206,7 +206,7 @@ io.on("connection", (socket) => {
     try {
       if (action === "start") whatsappService.startClient();
       if (action === "stop") whatsappService.logout();
-    } catch (e) { logger.error("[Socket] wa-control", { error: e.message }); }
+    } catch (e) { logger.error("[Socket] wa-control", e); }
   });
 
   socket.on("wa-send-test", async (data) => {
@@ -399,13 +399,13 @@ async function shutdown(signal) {
     try {
       await whatsappService.logout();
     } catch (e) {
-      logger.warn('[System] WhatsApp logout error during shutdown', { error: e.message });
+      logger.warn('[System] WhatsApp logout error during shutdown', e);
     }
   }
   try {
     await db.closeDB();
   } catch (e) {
-    logger.warn('[System] DB close error during shutdown', { error: e.message });
+    logger.warn('[System] DB close error during shutdown', e);
   }
   process.exit(0);
 }

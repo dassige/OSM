@@ -8,7 +8,9 @@ const devFormat = format.combine(
     format.timestamp({ format: 'HH:mm:ss' }),
     format.errors({ stack: true }),
     format.printf(({ level, message, timestamp, stack }) =>
-        `${timestamp} ${level}: ${stack || message}`)
+        stack
+            ? `${timestamp} ${level}: ${message}\n${stack}`
+            : `${timestamp} ${level}: ${message}`)
 );
 
 const prodFormat = format.combine(

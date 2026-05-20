@@ -182,17 +182,22 @@ router.get("/system/backup", hasRole("superadmin"), async (req, res) => {
 router.post("/system/restore", hasRole("superadmin"), upload.single("databaseFile"), async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   if (!req.file) return res.status(400).json({ error: "No file uploaded." });
-  
+
   try {
     const sqlContent = fs.readFileSync(req.file.path, "utf8");
-    await db.restoreFromSqlDump(sqlContent);
-    
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+
+    await db.restoreFromSqlDump(sqlContent);
+
     await db.logEvent(actor, "System", "Database Restored via SQL", {
       sourceFile: req.file.originalname
     });
-    
-    res.json({ message: "Database reconstructed successfully from SQL script." });
+
+    // Destroy the caller's own session last so the event log write above succeeds.
+    // All other sessions were already cleared inside restoreFromSqlDump().
+    req.session?.destroy?.(() => {});
+
+    res.json({ message: "Database reconstructed successfully. Please log in again." });
   } catch (e) {
     res.status(500).json({ error: e.message });
   } finally {

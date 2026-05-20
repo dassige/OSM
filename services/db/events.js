@@ -13,7 +13,7 @@ async function logEvent(user, type, title, payload) {
       new Date().toISOString(),
     );
   } catch (e) {
-    logger.error("Failed to write to event log", { error: e.message });
+    logger.error("Failed to write to event log", e);
   }
 }
 

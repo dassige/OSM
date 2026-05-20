@@ -30,7 +30,7 @@ async function systemLog(title, payload = {}) {
         try {
             await logEvent('System', 'WhatsApp', title, payload);
         } catch (e) {
-            logger.error("[WhatsApp] Logging failed", { error: e.message });
+            logger.error("[WhatsApp] Logging failed", e);
         }
     }
 }
@@ -141,7 +141,7 @@ async function logout() {
             await client.logout();
             systemLog('Client Logged Out (Manual)', {});
         } catch (e) {
-            logger.warn('[WhatsApp] Logout error', { error: e.message });
+            logger.warn('[WhatsApp] Logout error', e);
         }
         try {
             await client.destroy();

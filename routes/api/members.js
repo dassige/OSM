@@ -75,7 +75,7 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
     });
     res.json({ success: true });
   } catch (error) {
-    logger.error("Delete Member Error", { error: error.message });
+    logger.error("Delete Member Error", error);
     res.status(500).json({
       error: "Could not delete member. They may have active survey records or other dependencies.",
     });

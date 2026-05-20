@@ -1,6 +1,7 @@
 const sqlite3 = require("sqlite3");
 const { open } = require("sqlite");
 const fs = require("fs");
+const path = require("path");
 const { initDB, closeDB, getDbPath } = require("./connection");
 const logger = require("../logger");
 
@@ -31,6 +32,21 @@ async function generateSqlDump() {
   return dump;
 }
 
+async function clearSessions() {
+  const sessionsDbPath = path.join(path.dirname(getDbPath()), "sessions.db");
+  let sessDb;
+  try {
+    sessDb = await open({ filename: sessionsDbPath, driver: sqlite3.Database });
+    await sessDb.run("DELETE FROM sessions");
+    logger.info("[DB] All sessions cleared after restore.");
+  } catch (e) {
+    // sessions.db may not exist (first boot, or non-persistent env) — not fatal
+    logger.warn("[DB] Could not clear sessions (may not exist yet):", e.message);
+  } finally {
+    if (sessDb) await sessDb.close();
+  }
+}
+
 async function restoreFromSqlDump(sqlContent) {
   const db = await initDB();
   try {
@@ -39,7 +55,7 @@ async function restoreFromSqlDump(sqlContent) {
     await db.run("PRAGMA wal_checkpoint(TRUNCATE);");
     logger.info("[DB] Logical restore complete.");
   } catch (e) {
-    logger.error("[DB] SQL Restore failed", { error: e.message });
+    logger.error("[DB] SQL Restore failed", e);
     throw new Error(`SQL Restore Failed: ${e.message}`);
   }
 
@@ -48,6 +64,12 @@ async function restoreFromSqlDump(sqlContent) {
   await closeDB();
   await initDB();
   logger.info("[DB] Post-restore migration check complete.");
+
+  // Clear all sessions so users must re-authenticate against the restored
+  // users table.  Using DELETE (not fs.unlinkSync) so the change is visible
+  // to the open connect-sqlite3 handle — required on Linux / Cloud Run.
+  await clearSessions();
+
   return true;
 }
 
@@ -99,10 +121,10 @@ async function verifyAndReplaceDb(newDbPath) {
     logger.info("[DB] Restore complete and connection re-established.");
     return true;
   } catch (e) {
-    logger.error("[DB] Restore failed", { error: e.message });
+    logger.error("[DB] Restore failed", e);
     await initDB().catch(() => {});
     throw e;
   }
 }
 
-module.exports = { generateSqlDump, restoreFromSqlDump, verifyAndReplaceDb };
+module.exports = { generateSqlDump, restoreFromSqlDump, verifyAndReplaceDb, clearSessions };

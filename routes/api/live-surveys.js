@@ -27,7 +27,7 @@ router.get("/preview/:publicId", hasRole("admin"), async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error("[API] Error fetching preview", { error: error.message });
+    logger.error("[API] Error fetching preview", error);
     res.status(500).json({ error: "Internal server error." });
   }
 });
@@ -73,7 +73,7 @@ router.get("/:accessCode", publicSubmitLimiter, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error("[API] Error fetching live survey", { error: error.message });
+    logger.error("[API] Error fetching live survey", error);
     res.status(500).json({ error: "Internal server error." });
   }
 });
@@ -121,7 +121,7 @@ router.post("/:accessCode/submit", publicSubmitLimiter, async (req, res) => {
     });
     res.json({ success: true, message: "Response recorded securely." });
   } catch (error) {
-    logger.error("[API] Error submitting survey", { error: error.message });
+    logger.error("[API] Error submitting survey", error);
     res.status(500).json({ error: "Failed to submit response." });
   }
 });
