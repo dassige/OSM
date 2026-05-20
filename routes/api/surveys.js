@@ -70,7 +70,7 @@ router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error("[API] Error fetching survey results", { error: error.message });
+    logger.error("[API] Error fetching survey results", error);
     res.status(500).json({ error: "Failed to retrieve survey results." });
   }
 });
@@ -94,7 +94,7 @@ router.get("/export/all", hasRole("admin"), async (req, res) => {
     res.setHeader("Content-type", "application/json");
     res.send(JSON.stringify(surveys, null, 2));
   } catch (error) {
-    logger.error("[API] Error exporting all surveys", { error: error.message });
+    logger.error("[API] Error exporting all surveys", error);
     res.status(500).json({ error: "Failed to export surveys." });
   }
 });
@@ -125,7 +125,7 @@ router.post(
       });
       res.json({ success: true, count: importedSurveys.length });
     } catch (error) {
-      logger.error("[API] Error importing surveys", { error: error.message });
+      logger.error("[API] Error importing surveys", error);
       res.status(500).json({ error: "Failed to import surveys." });
     }
   },
@@ -156,7 +156,7 @@ router.get(
         tracking: trackingData,
       });
     } catch (error) {
-      logger.error("[API] Error fetching survey tracking", { error: error.message });
+      logger.error("[API] Error fetching survey tracking", error);
       res.status(500).json({ error: "Failed to retrieve tracking data." });
     }
   },
@@ -167,7 +167,7 @@ router.get("/", async (req, res) => {
     const surveys = await db.getAllSurveys();
     res.json(surveys);
   } catch (error) {
-    logger.error("[API] Error fetching surveys", { error: error.message });
+    logger.error("[API] Error fetching surveys", error);
     res.status(500).json({ error: "Failed to retrieve surveys." });
   }
 });
@@ -199,7 +199,7 @@ router.post("/", hasRole("admin"), async (req, res) => {
     });
     res.status(201).json(result);
   } catch (error) {
-    logger.error("[API] Error creating survey", { error: error.message });
+    logger.error("[API] Error creating survey", error);
     res.status(500).json({ error: "Failed to create survey." });
   }
 });
@@ -209,7 +209,7 @@ router.get("/instances", hasRole("admin"), async (req, res) => {
     const instances = await db.getLiveSurveyInstances();
     res.json(instances || []);
   } catch (error) {
-    logger.error("[API] Error fetching live instances", { error: error.message });
+    logger.error("[API] Error fetching live instances", error);
     res.status(500).json({ error: "Failed to retrieve published surveys." });
   }
 });
@@ -266,7 +266,7 @@ router.get("/:id/export", hasRole("admin"), async (req, res) => {
     res.setHeader("Content-type", "application/json");
     res.send(JSON.stringify(survey, null, 2));
   } catch (error) {
-    logger.error("[API] Error exporting survey", { error: error.message });
+    logger.error("[API] Error exporting survey", error);
     res.status(500).json({ error: "Failed to export survey." });
   }
 });
@@ -280,7 +280,7 @@ router.get("/:id", async (req, res) => {
     }
     res.json(survey);
   } catch (error) {
-    logger.error("[API] Error fetching survey", { error: error.message });
+    logger.error("[API] Error fetching survey", error);
     res.status(500).json({ error: "Failed to retrieve survey." });
   }
 });
@@ -331,7 +331,7 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
     });
     res.json({ success: true, message: "Survey updated successfully." });
   } catch (error) {
-    logger.error("[API] Error updating survey", { error: error.message });
+    logger.error("[API] Error updating survey", error);
     res.status(500).json({ error: "Failed to update survey." });
   }
 });
@@ -349,7 +349,7 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
     });
     res.json({ success: true, message: "Survey deleted successfully." });
   } catch (error) {
-    logger.error("[API] Error deleting survey", { error: error.message });
+    logger.error("[API] Error deleting survey", error);
     res.status(500).json({ error: "Failed to delete survey." });
   }
 });
@@ -397,7 +397,7 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
             isAnon,
           );
         } catch (err) {
-          logger.error(`[SMTP ERROR] Failed to send survey link to ${data.email}`, { error: err.message });
+          logger.error(`[SMTP ERROR] Failed to send survey link to ${data.email}`, err);
         }
       }
     }
@@ -410,7 +410,7 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
       message: `Survey published successfully! Links generated for ${trackingData.length} members.`,
     });
   } catch (error) {
-    logger.error("[API] Error publishing survey", { error: error.message });
+    logger.error("[API] Error publishing survey", error);
     res.status(500).json({ error: "Failed to publish survey." });
   }
 });
@@ -451,7 +451,7 @@ router.post(
             );
             sentCount++;
           } catch (err) {
-            logger.error(`[SMTP ERROR] Remind-All failed for ${item.email}`, { error: err.message });
+            logger.error(`[SMTP ERROR] Remind-All failed for ${item.email}`, err);
           }
         }
       }
@@ -465,7 +465,7 @@ router.post(
         message: `Reminder emails triggered for ${sentCount} out of ${pending.length} pending members.`,
       });
     } catch (error) {
-      logger.error("[API] Error sending bulk reminders", { error: error.message });
+      logger.error("[API] Error sending bulk reminders", error);
       res.status(500).json({ error: "Failed to send reminders." });
     }
   },
@@ -515,7 +515,7 @@ router.post(
         message: `Reminder email successfully sent to ${record.member_name}.`,
       });
     } catch (error) {
-      logger.error("[API] Error sending reminder", { error: error.message });
+      logger.error("[API] Error sending reminder", error);
       res.status(500).json({ error: "Failed to send reminder." });
     }
   },

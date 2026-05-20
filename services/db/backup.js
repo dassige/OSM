@@ -38,11 +38,17 @@ async function restoreFromSqlDump(sqlContent) {
     await db.exec(sqlContent);
     await db.run("PRAGMA wal_checkpoint(TRUNCATE);");
     logger.info("[DB] Logical restore complete.");
-    return true;
   } catch (e) {
     logger.error("[DB] SQL Restore failed", { error: e.message });
     throw new Error(`SQL Restore Failed: ${e.message}`);
   }
+
+  // Close and reopen so runMigrations() applies any migrations the backup may
+  // be missing (e.g. a backup taken before a new feature was shipped).
+  await closeDB();
+  await initDB();
+  logger.info("[DB] Post-restore migration check complete.");
+  return true;
 }
 
 async function verifyAndReplaceDb(newDbPath) {
