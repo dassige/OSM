@@ -4,6 +4,61 @@ Standalone utility scripts for the OpReady project. Run from the project root un
 
 ---
 
+## setup-env.js
+
+Parses `.example.env` and serves a local web form for configuring environment variables. Variables are grouped by section, each showing the key name, a value input, an enable/disable checkbox, and the description from `.example.env`. Clicking **Generate .env File** writes the configured result to `.generated.env` in the project root.
+
+**npm shortcut**
+
+```powershell
+npm run setup-env
+```
+
+**Direct invocation**
+
+```powershell
+node scripts/setup-env.js
+```
+
+**Prerequisites**
+
+- `.example.env` must exist in the project root (it is committed to the repository).
+- No npm dependencies beyond Node.js built-ins (`http`, `fs`, `path`, `child_process`).
+- No running server needed — the tool starts its own HTTP server.
+
+**What it does**
+
+1. Parses `.example.env` into sections and variables (key, default value, enabled/disabled state, description).
+2. If `.generated.env` already exists, pre-fills the form with those values. Falls back to `.env` if present, then to `.example.env` defaults.
+3. Starts a local HTTP server on port **3088** and opens the form in your default browser automatically.
+4. On submission, writes `.generated.env` to the project root, preserving the section structure and all descriptions as comments.
+
+**Activating the generated file**
+
+```powershell
+# PowerShell
+Copy-Item .generated.env .env
+
+# Bash
+cp .generated.env .env
+```
+
+Then restart the server for changes to take effect.
+
+**Output**
+
+`.generated.env` in the project root — a fully structured `.env`-format file with:
+- Section headers matching `.example.env`
+- Description comments above each variable
+- Enabled variables as `KEY=value`
+- Disabled variables as `# KEY=value`
+
+**Port conflict**
+
+If port 3088 is already in use the script exits with an error message. Stop the conflicting process and retry, or change `PORT` at the top of `scripts/setup-env.js`.
+
+---
+
 ## take-screenshots.js
 
 Launches a headless Chromium browser, logs in, visits every page of the app, and saves full-page PNG screenshots to an output folder.

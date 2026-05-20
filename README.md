@@ -91,15 +91,55 @@ It automates the process of checking a dashboard for expiring skills, persists d
     ```
 
 3.  **Prepare Configuration Files:**
-    The application uses environment variables for sensitive data. Create your `.env` file from the example template:
+    The application uses environment variables for sensitive data. Choose one of the two methods below.
+
+    **Option A — Interactive Setup Tool (recommended for first-time setup):**
+
+    ```powershell
+    npm run setup-env
+    ```
+
+    This opens a web form at `http://localhost:3088` where you can enable/disable variables, enter values, and read descriptions — all in a single view. Click **Generate .env File** to write `.generated.env`, then copy it:
+
+    ```powershell
+    # PowerShell
+    Copy-Item .generated.env .env
+
+    # Bash / macOS
+    cp .generated.env .env
+    ```
+
+    **Option B — Manual:**
 
     ```bash
     cp .example.env .env
+    # then open .env in your editor
     ```
 
 ## Configuration
 
 The application is configured primarily via the **`.env`** file.
+
+### Environment Setup Tool
+
+The interactive setup tool (`npm run setup-env`) is the easiest way to create or update your `.env` file. It reads `.example.env` — the authoritative source of all supported variables — and presents a web UI at `http://localhost:3088`:
+
+| Feature | Detail |
+|---|---|
+| **Sections** | Variables grouped by category (Security, Email, AI Evaluation, etc.) |
+| **Descriptions** | Inline explanation for every variable, sourced directly from `.example.env` comments |
+| **Enable/disable** | Checkbox per variable; disabled variables are written as `# KEY=value` (commented out) |
+| **Sensitive fields** | Password-type inputs with a Show/Hide toggle for keys containing `PASSWORD`, `SECRET`, `PASS`, `KEY` |
+| **Pre-fill** | Form loads with values from `.generated.env` (if it exists), then `.env`, then template defaults |
+| **Output** | Writes `.generated.env`; copy to `.env` to activate |
+
+```powershell
+npm run setup-env          # open the form
+Copy-Item .generated.env .env   # activate (PowerShell)
+cp .generated.env .env          # activate (Bash)
+```
+
+The tool uses only Node.js built-ins — no additional install required.
 
 ### Environment Variables (`.env`)
 
@@ -291,7 +331,7 @@ The application includes a self-contained form system designed to replace extern
 
 To speed up the creation of new verification questionnaires, you can use AI to analyze technical documents and generate compatible JSON definitions.
 
-See the [AI Form Generation Guide](https://www.google.com/search?q=AI_FORM_GENERATION.md) for a ready-to-use prompt and detailed instructions.
+See the [AI Form Generation Guide](AI_FORM_GENERATION.md) for a ready-to-use prompt and detailed instructions.
 
 ### 6\. Anonymous Surveys Workflow
 
@@ -633,7 +673,7 @@ See the full [Cloudflare Tunnel Guide](cloudflared-tunnel.md) for step-by-step i
 
 Supports stateless deployment using **Litestream** to replicate the database to Google Cloud Storage.
 
-See [Installation on Google Cloud Run](https://www.google.com/search?q=Installation_google_run.md) for details.
+See [Installation on Google Cloud Run](Installation_google_run.md) for details.
 
 ## Progressive Web App (PWA)
 

@@ -129,9 +129,115 @@ When implementing **any** new feature or modifying an existing one, work through
 | 11 | **Tests** — update or create Jest test suites; run `npm test` and confirm all pass before finishing | Any new or changed route handler, DB function, or middleware |
 | 12 | **UI smoke tests** — run `npm run test:ui` and confirm all pages load without JS errors | Any change to a frontend HTML page or the JS it loads |
 | 13 | **README.md** — update the relevant section to reflect the change | New feature, new npm script, new config variable, changed workflow, new deployment option, or anything a developer or operator would need to know |
-| 14 | **.example.env** — add the new variable with a descriptive comment explaining its purpose and default value | Any new environment variable added to `config.js` |
+| 14 | **.example.env** — add the new variable with a descriptive comment explaining its purpose and default value. The `npm run setup-env` tool parses this file dynamically — keeping it updated keeps the setup tool current automatically. | Any new environment variable added to `config.js` |
 | 15 | **UAT Testing Plan** — update both `UAT-TESTING-PLAN.md` and `UAT-TESTING-PLAN.csv` to reflect the change | New page, new feature, renamed feature, removed feature, changed operation, or changed expected behaviour |
 | 16 | **Scripts index** — update `scripts/scripts.md` to document the script's purpose, invocation, prerequisites, and options | Any script added to or modified in `scripts/` |
+
+---
+
+## ⚠️ Environment Setup Tool Mandate
+
+`scripts/setup-env.js` (`npm run setup-env`) is the interactive tool for generating `.env` files. It parses `.example.env` at runtime — no hardcoded variable list — so **keeping `.example.env` up to date (checklist item #14) is the primary way to keep the tool current**.
+
+### How the tool works
+
+1. Parses `.example.env` into sections and variables (key, default value, enabled/disabled state, description text from comments).
+2. Pre-fills the form from the first file found in this priority order: `.generated.env` → `.env` → `.example.env` defaults.
+3. Serves a local web UI on port **3088** and auto-opens the browser.
+4. On submission, writes `.generated.env` preserving section structure and descriptions as comments. **Never overwrites `.env` directly.**
+
+### Input type rendering rules
+
+The tool renders three distinct input types. When adding new variables, decide which applies and update accordingly:
+
+| Condition | Rendered as | Where to update |
+|-----------|------------|-----------------|
+| Variable name matches `/PASSWORD\|_SECRET$\|_PASS$\|_KEY$\|_TOKEN$/` | `<input type="password">` with Show/Hide toggle | No change needed — regex-driven |
+| Variable key is present in the `OPTIONS` map | `<select>` dropdown | Add/update entry in `OPTIONS` in `scripts/setup-env.js` |
+| All other variables | `<input type="text">` | No change needed |
+
+Sensitive and dropdown classifications are mutually exclusive by design — no variable in the `OPTIONS` map matches the secret regex.
+
+### The `OPTIONS` map — dropdown variables
+
+The `OPTIONS` constant at the top of `scripts/setup-env.js` maps variable names to their allowed values. It must be kept in sync with `.example.env`.
+
+**Current entries:**
+
+| Variable | Options |
+|----------|---------|
+| `APP_MODE` | `production`, `demo` |
+| `NODE_ENV` | `development`, `production` |
+| `LOG_LEVEL` | `info`, `error`, `warn`, `debug` |
+| `PROXY_MODE` | `none`, `fixed`, `dynamic` |
+| `AI_PROVIDER` | `gemini`, `ollama` |
+| `DEFAULT_MIN_SCORE_TYPE` | `percentage`, `number` |
+| `TRAINING_DAY_OF_WEEK` | `Monday` … `Sunday` |
+| `COOKIE_SECURE` | `false`, `true` |
+| `ENABLE_AI_EVALUATION` | `false`, `true` |
+| `ENABLE_WHATSAPP` | `false`, `true` |
+
+**When to add a new entry:** any new variable whose valid values form a closed, enumerable set (booleans, named modes, day names, provider names, etc.). Order options with the recommended/default value first.
+
+**When to remove or rename an entry:** when the variable is removed from `.example.env` or its allowed values change.
+
+### When to update `scripts/setup-env.js` directly
+
+| Trigger | Required action |
+|---------|----------------|
+| New enum-style variable added to `.example.env` | Add the variable and its options to the `OPTIONS` map |
+| Existing enum variable's allowed values change | Update its entry in `OPTIONS` |
+| Variable removed from `.example.env` | Remove its entry from `OPTIONS` (if present) |
+| Section separator format changes (`# ===` → something else) | Update `isSep()` |
+| Disabled variable convention changes (`# KEY=` → something else) | Update the disabled-variable regex in `parse()` |
+| A new input type is needed (e.g. file-path picker, textarea) | Extend `buildHtml()` and the POST `/generate` handler |
+
+### Disabled-variable behaviour
+
+When the enable checkbox is unchecked:
+- The input (text, password, or select) gains the `disabled` HTML attribute — the user cannot edit the value.
+- The row is visually dimmed via the `is-disabled` CSS class.
+- On generate, the variable is written as `# KEY=value` (commented out) in `.generated.env`.
+
+Checking the box re-enables the input and removes the dimming.
+
+### Design constraints — never break these
+
+| Rule | Rationale |
+|------|-----------|
+| No inline `onclick`/`onchange` handlers in generated HTML | Inline handlers reference functions by name at event time; if the `<script>` block at the bottom of `<body>` hasn't been parsed yet, the function is undefined and the handler throws. All events are wired via `addEventListener` at the bottom of the script block instead. |
+| No external npm dependencies | The tool must run with Node.js built-ins only (`http`, `fs`, `path`, `child_process`). No `npm install` step. |
+| Always write `.generated.env`, never `.env` | Prevents accidental overwrite of a working config. |
+| No JavaScript string literals containing literal newline characters | Inside a Node.js template literal, `\n` becomes a real newline in the output HTML. A real newline inside a `"..."` JS string is a SyntaxError in the browser. Use `\\n` in the template source to output the JS escape sequence `\n`. |
+| No variable names or defaults hardcoded in the tool | All variable data comes from `.example.env` at runtime. Only the `OPTIONS` map and the secret-detection regex are hardcoded. |
+
+### Verification after any `.example.env` change
+
+Run the tool and confirm:
+
+```powershell
+npm run setup-env
+```
+
+- New/modified variable appears in the correct section with the right description and default value.
+- Enum variables render as dropdowns with the correct options and correct pre-selected value.
+- Sensitive variables render as password fields with the Show/Hide toggle.
+- Disabled-by-default variables start with the checkbox unchecked and the input disabled.
+
+### `config.js` safety — always provide a startup default
+
+Every environment variable consumed in `config.js` must either:
+- Have a `|| default` fallback so the server starts without it, **or**
+- Cause `process.exit(1)` in `env-validator.js` before `express-session` or any other crashing module is initialised.
+
+**`SESSION_SECRET` special case:** in demo mode the validator only warns (not exits), so `config.js` supplies a hardcoded insecure fallback to prevent `express-session` from throwing:
+
+```js
+sessionSecret: process.env.SESSION_SECRET ||
+  (appMode === 'demo' ? 'opready-demo-insecure-fallback-do-not-use-in-production' : undefined),
+```
+
+When adding a new required variable, apply the same pattern: either add a safe `|| default` in `config.js`, or add a `process.exit(1)` error in `env-validator.js` for the cases where absence would crash startup.
 
 ---
 

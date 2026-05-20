@@ -19,7 +19,8 @@
     "test:api:report": "newman run examples/api/newman-smoke.postman_collection.json --environment examples/api/newman-environment.local.json --reporters cli,json --reporter-json-export newman-report.json",
     "test:all": "jest --detectOpenHandles --forceExit && playwright test",
     "screenshots": "node scripts/take-screenshots.js",
-    "generate-demo-db": "node scripts/generate-demo-db.js"
+    "generate-demo-db": "node scripts/generate-demo-db.js",
+    "setup-env": "node scripts/setup-env.js"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.7.0",

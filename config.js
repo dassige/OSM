@@ -9,7 +9,11 @@ const locale = process.env.APP_LOCALE || "en-NZ";
 const appMode = process.env.APP_MODE || "production";
 
 const auth = {
-  sessionSecret: process.env.SESSION_SECRET,
+  // Demo fallback keeps the server running without a SESSION_SECRET; the
+  // validator already warns when this branch is taken. Production requires a
+  // real secret — the validator exits(1) before express-session is reached.
+  sessionSecret: process.env.SESSION_SECRET ||
+    (appMode === 'demo' ? 'opready-demo-insecure-fallback-do-not-use-in-production' : undefined),
   maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5,
   superuserEmail: process.env.SMTP_USER // Alert recipient
 };
