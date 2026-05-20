@@ -378,7 +378,7 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
     const prefs = await db.getPreferences();
     const tpl = prefs.tpl_surveys ? JSON.parse(prefs.tpl_surveys) : null;
     const allTracking = await db.getSurveyTracking(liveInstanceId);
-    const pending = allTracking.filter((t) => t.status === "pending");
+    const pending = allTracking.filter((t) => t.status === "sent");
     const instance = await db.getLiveSurveyInstanceById(liveInstanceId);
     const isAnon = instance.is_anonymous !== 0; // SQLite stores booleans as 1/0; strict comparison needed
     for (const data of pending) {
@@ -423,7 +423,7 @@ router.post(
     try {
       const liveId = req.params.liveId;
       const allTracking = await db.getSurveyTracking(liveId);
-      const pending = allTracking.filter((t) => t.status === "pending");
+      const pending = allTracking.filter((t) => t.status === "sent");
 
       if (pending.length === 0) {
         return res.status(400).json({ error: "No pending members found." });
@@ -483,7 +483,7 @@ router.post(
 
       if (!record)
         return res.status(404).json({ error: "Tracking record not found." });
-      if (record.status !== "pending")
+      if (record.status !== "sent")
         return res
           .status(400)
           .json({ error: "Member has already submitted the survey." });

@@ -12,7 +12,8 @@
       "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\\\\scripts\" -ErrorAction SilentlyContinue)",
       "Bash(Select-Object Name)",
       "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\" -Directory)",
-      "Bash(Select-String '\"version\"')"
+      "Bash(Select-String '\"version\"')",
+      "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\\\\routes\" -Recurse -Name *.js)"
     ]
   }
 }

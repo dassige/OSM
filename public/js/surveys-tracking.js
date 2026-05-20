@@ -421,7 +421,7 @@ function renderCards() {
       <div class="card-actions">
         <button onclick="copyToClipboard('${url}')" class="btn-primary btn-sm"
           title="Copy survey link to clipboard">Copy Link</button>
-        ${item.status === "pending"
+        ${item.status === "sent"
           ? `<button onclick="remindMember(${item.tracking_id})" class="btn-success btn-sm"
                title="Resend email reminder to this member">Remind</button>`
           : ""}
@@ -459,7 +459,7 @@ function buildRowParts(item) {
   const url = `${appBaseUrl}/surveys-view.html?id=${surveyGuid}&code=${item.access_code}`;
 
   const remindBtnHtml =
-    item.status === "pending"
+    item.status === "sent"
       ? `<button onclick="remindMember(${item.tracking_id})" class="btn-icon"
            title="Resend email reminder to this member">
            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
@@ -505,7 +505,7 @@ async function remindAllPending() {
   if (uiConfig?.appMode === "demo")
     return showToast("Emails disabled in Demo Mode", "warning");
 
-  const pendingCount = rawData.filter((i) => i.status === "pending").length;
+  const pendingCount = rawData.filter((i) => i.status === "sent").length;
   if (pendingCount === 0)
     return showToast("There are no pending members to remind.", "warning");
 

@@ -66,7 +66,7 @@ async function publishSurvey(templateId, memberIds, publishedByUserId) {
 
     const trackingData = [];
     const stmt = await db.prepare(
-      "INSERT INTO survey_tracking (survey_live_id, member_id, access_code) VALUES (?, ?, ?)",
+      "INSERT INTO survey_tracking (survey_live_id, member_id, access_code, status) VALUES (?, ?, ?, 'sent')",
     );
     for (const memberId of memberIds) {
       const accessCode = crypto.randomUUID();

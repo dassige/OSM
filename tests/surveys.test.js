@@ -91,8 +91,8 @@ describe('Surveys API Endpoints (Isolated)', () => {
             db.getSurveyById.mockResolvedValue({ public_id: 'guid-123', name: 'Annual Check' });
             db.getPreferences.mockResolvedValue({ tpl_surveys: '{}' });
             db.getSurveyTracking.mockResolvedValue([
-                { status: 'pending', email: 'firefighter1@fireandemergency.nz', access_code: 'ABC', member_name: 'FF One' },
-                { status: 'pending', email: 'firefighter2@fireandemergency.nz', access_code: 'DEF', member_name: 'FF Two' }
+                { status: 'sent', email: 'firefighter1@fireandemergency.nz', access_code: 'ABC', member_name: 'FF One' },
+                { status: 'sent', email: 'firefighter2@fireandemergency.nz', access_code: 'DEF', member_name: 'FF Two' }
             ]);
             db.getLiveSurveyInstanceById.mockResolvedValue({ name: 'Annual Check - 2026' });
 
@@ -120,8 +120,8 @@ describe('Surveys API Endpoints (Isolated)', () => {
     describe('POST /api/surveys/instances/:liveId/remind-all', () => {
         it('should trigger reminder emails for all pending members', async () => {
             db.getSurveyTracking.mockResolvedValue([
-                { status: 'pending', email: 'ff1@test.com', access_code: '123' },
-                { status: 'completed', email: 'ff2@test.com', access_code: '456' } // Should be ignored
+                { status: 'sent', email: 'ff1@test.com', access_code: '123' },
+                { status: 'submitted', email: 'ff2@test.com', access_code: '456' } // Should be ignored
             ]);
             db.getLiveSurveyInstanceById.mockResolvedValue({ name: 'Live Survey', template_id: 1 });
             db.getPreferences.mockResolvedValue({});
