@@ -11,7 +11,8 @@
       "Bash(xargs grep -l \"integration\\\\|real.*db\\\\|sqlite\")",
       "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\\\\scripts\" -ErrorAction SilentlyContinue)",
       "Bash(Select-Object Name)",
-      "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\" -Directory)"
+      "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\" -Directory)",
+      "Bash(Select-String '\"version\"')"
     ]
   }
 }

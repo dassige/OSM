@@ -77,6 +77,12 @@ function init() {
         document.getElementById("disp-version").textContent = config.version;
       if (config.deployDate)
         document.getElementById("disp-date").textContent = config.deployDate;
+      if (config.version && window.resolveReleaseUrl) {
+        window.resolveReleaseUrl(config.version).then(function(url) {
+            const link = document.getElementById('disp-release-link');
+            if (link) window.applyReleaseLink(link, url, config.version);
+        });
+      }
       if (config.appMode === "demo") {
         document.getElementById("demoBanner").style.display = "block";
       }

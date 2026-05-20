@@ -239,14 +239,40 @@ window.addEventListener('click', (event) => {
         event.target.style.display = 'none';
     }
 });
-// public/utils.js - Add the following logic
+const _GITHUB_REPO = 'https://github.com/dassige/OSM';
+let _cachedReleaseUrl = null;
+
+window.resolveReleaseUrl = async function(version) {
+    if (_cachedReleaseUrl !== null) return _cachedReleaseUrl;
+    try {
+        const res = await fetch(
+            `https://api.github.com/repos/dassige/OSM/releases/tags/v${version}`,
+            { headers: { Accept: 'application/vnd.github+json' } }
+        );
+        _cachedReleaseUrl = res.ok
+            ? `${_GITHUB_REPO}/releases/tag/v${version}`
+            : `${_GITHUB_REPO}/releases`;
+    } catch (_) {
+        _cachedReleaseUrl = `${_GITHUB_REPO}/releases`;
+    }
+    return _cachedReleaseUrl;
+};
+
+window.applyReleaseLink = function(linkEl, url, version) {
+    const isSpecific = url.includes('/tag/');
+    linkEl.href = url;
+    linkEl.textContent = isSpecific ? 'View Release Notes' : 'View All Releases';
+    linkEl.title = isSpecific
+        ? `View release notes for v${version} on GitHub`
+        : `No specific release found for v${version} — view all releases on GitHub`;
+};
 
 /**
  * Injects and opens a centralized About Modal
  */
 window.showAboutModal = async function() {
     let modal = document.getElementById('globalAboutModal');
-    
+
     // Create modal if it doesn't exist in DOM
     if (!modal) {
         const config = await (await fetch('/ui-config')).json();
@@ -271,6 +297,7 @@ window.showAboutModal = async function() {
                 <div style="margin: 20px 0; font-size: 0.9em;">
                     <p><strong>Version:</strong> ${config.version}</p>
                     <p><strong>Version Date:</strong> ${config.deployDate}</p>
+                    <p><strong>Release Notes:</strong> <a id="globalAboutReleaseLink" href="${_GITHUB_REPO}/releases" target="_blank" rel="noopener" title="View release notes on GitHub">Loading…</a></p>
                 </div>
                 <div class="modal-credits">
                     <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">Credits</p>
@@ -299,6 +326,11 @@ window.showAboutModal = async function() {
             </div>
         `;
         document.body.appendChild(modal);
+
+        window.resolveReleaseUrl(config.version).then(function(url) {
+            const link = document.getElementById('globalAboutReleaseLink');
+            if (link) window.applyReleaseLink(link, url, config.version);
+        });
     }
 
     // Show Install button only when the browser has a pending install prompt and app isn't installed

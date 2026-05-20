@@ -4,6 +4,79 @@ Standalone utility scripts for the OpReady project. Run from the project root un
 
 ---
 
+## release.js
+
+Reads the current version from `package.json`, creates a Git tag, pushes it to origin, and creates a GitHub Release. Version and `versionDate` are managed by the developer in `package.json` before running this script.
+
+**npm shortcut**
+
+```powershell
+npm run release
+```
+
+**Direct invocation**
+
+```powershell
+node scripts/release.js
+```
+
+**Prerequisites**
+
+- `package.json` must already contain the correct `version` (e.g. `3.2.9`) — update it and commit before running.
+- Working tree must be clean (no uncommitted changes).
+- You must have `git push` rights to origin.
+- [GitHub CLI (`gh`)](https://cli.github.com/) must be installed and authenticated (`gh auth login`) for the GitHub Release step. If `gh` is not available the script still tags and pushes; it prints the manual release URL instead.
+- No npm dependencies beyond Node.js built-ins (`readline`, `fs`, `path`, `child_process`).
+
+**What it does**
+
+1. Reads `version` from `package.json` and derives the tag name (`v3.2.9`).
+2. Checks that the working tree is clean and the tag does not already exist.
+3. Asks for confirmation before making any changes.
+4. Optionally accepts custom release notes (press Enter to auto-generate from commits via `gh --generate-notes`).
+5. Creates the Git tag locally.
+6. Pushes the tag to origin (rolls back the local tag if the push fails).
+7. Runs `gh release create vX.Y.Z --generate-notes` (or `--notes-file` if custom notes were entered).
+8. Prints the GitHub Release URL on success.
+
+**Tag format**
+
+Tags are created as `v{major}.{minor}.{patch}` (e.g. `v3.2.9`). The GitHub Releases API used by the About modal looks up this exact tag, so the format must not be changed.
+
+**Output**
+
+```
+──────────────────────────────────
+ OpReady Release Script
+──────────────────────────────────
+Version : 3.2.9  →  tag: v3.2.9
+
+Release v3.2.9? (y/N): y
+
+Release notes (press Enter to auto-generate from commits):
+>
+
+Creating tag v3.2.9 ...
+Pushing tag to origin ...
+Creating GitHub release ...
+
+✔  Release published: https://github.com/dassige/OSM/releases/tag/v3.2.9
+
+Done.
+```
+
+**Error cases**
+
+| Condition | Behaviour |
+|---|---|
+| Dirty working tree | Aborts before touching anything |
+| Tag already exists | Aborts before touching anything |
+| `git push` fails | Removes the local tag and aborts with the git error |
+| `gh` not installed | Skips GitHub Release, prints the manual creation URL |
+| `gh release create` fails | Warns and prints the manual creation URL; tag is already pushed |
+
+---
+
 ## setup-env.js
 
 Parses `.example.env` and serves a local web form for configuring environment variables. Variables are grouped by section, each showing the key name, a value input, an enable/disable checkbox, and the description from `.example.env`. Clicking **Generate .env File** writes the configured result to `.generated.env` in the project root.

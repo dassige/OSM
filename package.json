@@ -1,8 +1,8 @@
 {
   "name": "opready",
-  "version": "3.2.8",
+  "version": "3.2.9",
   "description": "OpReady — Operational Readiness Manager",
-  "versionDate": "2026/05/20 14:58",
+  "versionDate": "2026/05/20 15:24",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -20,7 +20,8 @@
     "test:all": "jest --detectOpenHandles --forceExit && playwright test",
     "screenshots": "node scripts/take-screenshots.js",
     "generate-demo-db": "node scripts/generate-demo-db.js",
-    "setup-env": "node scripts/setup-env.js"
+    "setup-env": "node scripts/setup-env.js",
+    "release": "node scripts/release.js"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.7.0",
