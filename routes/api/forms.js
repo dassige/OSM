@@ -6,6 +6,7 @@ const multer = require("multer");
 const crypto = require("crypto");
 
 const db = require("../../services/db");
+const config = require("../../config");
 const formsService = require("../../services/forms-service");
 const { hasRole } = require("../../middleware/auth");
 const { validateForm, validateBulkData } = require("../../middleware/validation");
@@ -33,6 +34,7 @@ router.get("/export/all", hasRole("admin"), async (req, res) => {
 });
 
 router.post("/import/all", hasRole("admin"), upload.single("formsFile"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   if (!req.file) return res.status(400).json({ error: "No file uploaded." });
   try {
     const fileContent = fs.readFileSync(req.file.path, "utf8");
@@ -73,6 +75,7 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", hasRole("admin"), validateForm, async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const { name, status, intro, structure } = req.body;
     const id = await formsService.createForm(name, status, intro, structure);
@@ -91,6 +94,7 @@ router.post("/", hasRole("admin"), validateForm, async (req, res) => {
 });
 
 router.put("/:id", hasRole("admin"), validateForm, async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     await formsService.updateForm(req.params.id, req.body);
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
@@ -107,6 +111,7 @@ router.put("/:id", hasRole("admin"), validateForm, async (req, res) => {
 });
 
 router.delete("/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const formToDelete = await formsService.getFormById(req.params.id);
     if (formToDelete) {
@@ -144,6 +149,7 @@ router.get("/:id/export", hasRole("admin"), async (req, res) => {
 });
 
 router.post("/import", hasRole("admin"), upload.single("formFile"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   if (!req.file) return res.status(400).json({ error: "No file uploaded." });
   try {
     const fileContent = fs.readFileSync(req.file.path, "utf8");

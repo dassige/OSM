@@ -4,6 +4,7 @@ const socket = io();
 
 // ── Global State ──────────────────────────────────────────────────────────────
 let appTimezone      = 'Pacific/Auckland';
+let isDemo           = false;
 let currentStartDate = null;
 let trainingDayIndex = null;
 let skillMembersMap  = {};
@@ -749,6 +750,7 @@ async function loadSessions() {
 }
 
 async function saveSession(date, skillName) {
+    if (isDemo) { if (window.showToast) window.showToast('Disabled in demo mode.', 'warning'); return; }
     try {
         const res = await fetch('/api/training-sessions', {
             method:  'POST',
@@ -765,6 +767,7 @@ async function saveSession(date, skillName) {
 }
 
 async function deleteSession(id, skillName, date) {
+    if (isDemo) { if (window.showToast) window.showToast('Disabled in demo mode.', 'warning'); return; }
     if (!await confirmAction('Remove Session', `Remove '${skillName}' on ${date}?`)) return;
     try {
         await fetch(`/api/training-sessions/${id}`, { method: 'DELETE' });

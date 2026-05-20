@@ -388,6 +388,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
         let currentSkills = [];
         let skillsPage = 1;
         let skillsLimit = 25;
+        let isDemo = false;
 
         async function initPage() {
             try {
@@ -396,6 +397,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
                 initPageTitle("Skills Management", "Manage Skills");
                 if (uiConfig.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
                 if (uiConfig.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+                isDemo = uiConfig.appMode === 'demo';
             } catch (e) { }
 
             let skillsLimitRaw = '25';
@@ -729,6 +731,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
 
 
         async function toggleSkillEnabled(id, newState) {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const skill = skillTable.data.find(s => s.id == id);
             if (!skill) return;
 
@@ -785,6 +788,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
 
         document.getElementById('skillForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); closeModal('skillModal'); return; }
             const id = document.getElementById('skillId').value;
             const type = document.getElementById('urlType').value;
 
@@ -841,6 +845,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
             btn.textContent = `Delete Selected (${count})`;
         }
         async function deleteSelected() {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const ids = Array.from(document.querySelectorAll('.skill-checkbox:checked')).map(cb => cb.value);
             if (!ids.length) return;
             if (await promptAction('Delete Skills', `This will permanently delete <strong>${ids.length} skill${ids.length !== 1 ? 's' : ''}</strong>. This cannot be undone.<br><br>Type <strong>DELETE</strong> to confirm.`, 'DELETE')) {
@@ -849,6 +854,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
             }
         }
         async function deleteSkill(id) {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const skill = currentSkills.find(s => s.id == id);
             const name = skill ? skill.name : 'this skill';
             if (await confirmAction('Delete Skill', `Delete skill '${name}'?`)) {
@@ -873,6 +879,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
             document.body.removeChild(link);
         }
         function handleFileUpload(input) {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); input.value = ''; return; }
             const file = input.files[0];
             if (!file) return;
             const reader = new FileReader();
@@ -905,6 +912,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
 
         let discoveredSkills = [];
         async function openOsmImportModal() {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const modal = document.getElementById('osmImportModal');
             const loading = document.getElementById('osmLoading');
             const listContainer = document.getElementById('osmListContainer');

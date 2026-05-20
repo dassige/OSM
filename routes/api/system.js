@@ -54,6 +54,7 @@ router.get("/preferences", async (req, res) => {
 });
 
 router.post("/preferences", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   await db.savePreference(req.body.key, req.body.value);
   res.json({ success: true });
 });
@@ -97,6 +98,7 @@ router.get("/events/export", hasRole("admin"), async (req, res) => {
 });
 
 router.delete("/events/all", hasRole("superadmin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   await db.purgeEventLog();
   const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
   await db.logEvent(actor, "System", "Event Log Purged", {
@@ -107,6 +109,7 @@ router.delete("/events/all", hasRole("superadmin"), async (req, res) => {
 });
 
 router.post("/events/prune", hasRole("superadmin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   await db.pruneEventLog(parseInt(req.body.days) || 90);
   const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
   await db.logEvent(actor, "System", "Event Log Pruned", {
@@ -177,6 +180,7 @@ router.get("/system/backup", hasRole("superadmin"), async (req, res) => {
 });
 
 router.post("/system/restore", hasRole("superadmin"), upload.single("databaseFile"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   if (!req.file) return res.status(400).json({ error: "No file uploaded." });
   
   try {

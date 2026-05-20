@@ -104,6 +104,7 @@ router.post(
   hasRole("admin"),
   upload.single("surveysFile"),
   async (req, res) => {
+    if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
     try {
       if (!req.file)
         return res.status(400).json({ error: "No file uploaded." });
@@ -172,6 +173,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const { name, intro, status, structure , is_anonymous} = req.body;
 
@@ -213,6 +215,7 @@ router.get("/instances", hasRole("admin"), async (req, res) => {
 });
 
 router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const instance = await db.getLiveSurveyInstanceById(req.params.id);
     await db.updateSurveyArchiveStatus(req.params.id, req.body.is_archived);
@@ -229,6 +232,7 @@ router.put("/instances/:id/archive", hasRole("admin"), async (req, res) => {
 });
 
 router.delete("/instances/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const instance = await db.getLiveSurveyInstanceById(req.params.id);
     await db.deleteSurveyInstance(req.params.id);
@@ -282,6 +286,7 @@ router.get("/:id", async (req, res) => {
 });
 
 router.put("/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const surveyId = req.params.id;
     const { name, intro, status, structure, is_anonymous } = req.body;
@@ -332,6 +337,7 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
 });
 
 router.delete("/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const surveyId = req.params.id;
     const survey = await db.getSurveyById(surveyId);
@@ -349,6 +355,7 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
 });
 
 router.post("/:id/publish", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const surveyId = req.params.id;
     const { memberIds } = req.body;
@@ -412,6 +419,7 @@ router.post(
   "/instances/:liveId/remind-all",
   hasRole("admin"),
   async (req, res) => {
+    if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
     try {
       const liveId = req.params.liveId;
       const allTracking = await db.getSurveyTracking(liveId);
@@ -467,6 +475,7 @@ router.post(
   "/instances/:liveId/remind/:trackingId",
   hasRole("admin"),
   async (req, res) => {
+    if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
     try {
       const { liveId, trackingId } = req.params;
       const allTracking = await db.getSurveyTracking(liveId);

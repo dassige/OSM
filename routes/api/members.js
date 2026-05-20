@@ -29,6 +29,7 @@ router.get("/", hasRole("admin"), async (req, res) => {
 });
 
 router.post("/", hasRole("admin"), validateMember, async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const id = await db.addMember(req.body);
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
@@ -45,6 +46,7 @@ router.post("/", hasRole("admin"), validateMember, async (req, res) => {
 });
 
 router.put("/:id", hasRole("admin"), validateMember, async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     await db.updateMember(req.params.id, req.body);
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
@@ -62,6 +64,7 @@ router.put("/:id", hasRole("admin"), validateMember, async (req, res) => {
 });
 
 router.delete("/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const member = await db.getMemberById(req.params.id);
     await db.deleteMember(req.params.id);
@@ -80,6 +83,7 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
 });
 
 router.post("/bulk-delete", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     await db.bulkDeleteMembers(req.body.ids);
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
@@ -108,6 +112,7 @@ router.get("/discover", hasRole("admin"), async (req, res) => {
 });
 
 router.post("/import", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     await db.bulkAddMembers(req.body);
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';

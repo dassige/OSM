@@ -373,6 +373,7 @@
     <script>
         // ── AI Lab ──────────────────────────────────────────────────────────────
         let currentAiPrefs = {};
+        let isDemo = false;
 
         async function initAiLab() {
             const inputs = document.querySelectorAll('.save-pref');
@@ -475,6 +476,7 @@
                 initPageTitle("System Tools", "System Tools");
                 if (c.appMode === 'demo') {
                     document.getElementById('demoBanner').style.display = 'block';
+                    isDemo = true;
                 }
             });
 
@@ -490,7 +492,7 @@
 
         document.getElementById('restoreForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             if (!await promptAction("Restore Database", "This will <strong>overwrite all current data</strong> with the selected backup. The server will restart. This cannot be undone.<br><br>Type <strong>RESTORE</strong> to confirm.", "RESTORE")) return;
 
             const btn = document.getElementById('restoreBtn');
@@ -825,6 +827,7 @@
         });
 
         document.getElementById('btnCreateApiKey').addEventListener('click', async () => {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const name = document.getElementById('apiKeyName').value.trim();
             const role = document.getElementById('apiKeyRole').value;
             if (!name) { if (window.showToast) showToast('Name is required.', 'warning'); return; }
@@ -853,6 +856,7 @@
         });
 
         async function toggleKey(id, currentlyActive) {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const action = currentlyActive ? 'revoke' : 'enable';
             if (!await confirmAction('API Key', `Are you sure you want to ${action} this key?`)) return;
             await fetch(`/api/api-keys/${id}/toggle`, { method: 'PATCH' });
@@ -860,6 +864,7 @@
         }
 
         async function deleteKey(id, name) {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             if (!await confirmAction('Delete API Key', `Permanently delete the key "${name}"? This cannot be undone.`)) return;
             await fetch(`/api/api-keys/${id}`, { method: 'DELETE' });
             if (window.showToast) showToast('API key deleted', 'success');

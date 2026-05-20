@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../services/db');
+const config = require('../../config');
 const { hasRole } = require('../../middleware/auth');
 
 router.get('/', hasRole('admin'), async (req, res) => {
@@ -9,6 +10,7 @@ router.get('/', hasRole('admin'), async (req, res) => {
 });
 
 router.post('/', hasRole('admin'), async (req, res) => {
+    if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
     const { name, role } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required.' });
     if (!['superadmin', 'admin', 'simple', 'guest'].includes(role)) return res.status(400).json({ error: 'Role must be one of: superadmin, admin, simple, guest.' });
@@ -21,6 +23,7 @@ router.post('/', hasRole('admin'), async (req, res) => {
 });
 
 router.patch('/:id/toggle', hasRole('admin'), async (req, res) => {
+    if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
     try {
         const key = await db.getApiKeyById(Number(req.params.id));
         await db.toggleApiKey(Number(req.params.id));
@@ -38,6 +41,7 @@ router.patch('/:id/toggle', hasRole('admin'), async (req, res) => {
 });
 
 router.delete('/:id', hasRole('admin'), async (req, res) => {
+    if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
     try {
         const key = await db.getApiKeyById(Number(req.params.id));
         await db.deleteApiKey(Number(req.params.id));

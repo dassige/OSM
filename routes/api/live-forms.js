@@ -77,6 +77,7 @@ router.get("/export", hasRole("admin"), async (req, res) => {
 });
 
 router.delete("/all", hasRole("superadmin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const filters = {
       memberId: req.query.memberId || req.body.memberId,
@@ -103,6 +104,7 @@ router.delete("/all", hasRole("superadmin"), async (req, res) => {
 });
 
 router.put("/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const { status, isArchived } = req.body;
     const id = req.params.id;
@@ -123,6 +125,7 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
 });
 
 router.delete("/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     await formsService.deleteLiveForm(req.params.id);
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';

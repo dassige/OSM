@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const db = require("../../services/db");
+const config = require("../../config");
 const { hasRole } = require("../../middleware/auth");
 
 router.get("/", async (req, res) => {
@@ -18,6 +19,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const id = await db.addTrainingSession(req.body.date, req.body.skillName);
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
@@ -33,6 +35,7 @@ router.post("/", hasRole("admin"), async (req, res) => {
 });
 
 router.delete("/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const session = await db.getTrainingSessionById(req.params.id);
     await db.deleteTrainingSession(req.params.id);

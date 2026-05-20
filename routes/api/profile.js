@@ -8,6 +8,7 @@ const db = require("../../services/db");
 const config = require("../../config");
 
 router.put("/", async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const userId = req.session.user.id;
     const oldName = req.session.user.name;
@@ -29,6 +30,7 @@ router.put("/", async (req, res) => {
 });
 
 router.post("/mfa/setup", async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   if (!req.session.user || !req.session.user.id) return res.status(401).json({ error: "Unauthorized" });
 
   const secret = speakeasy.generateSecret({ name: `${config.ui.loginTitle} (${req.session.user.email})` });
@@ -71,6 +73,7 @@ router.post("/mfa/verify", async (req, res) => {
 });
 
 router.post("/mfa/disable", async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   const userId = req.session.user.id;
   const userName = req.session.user.name;
   await db.setMfaStatus(userId, false);

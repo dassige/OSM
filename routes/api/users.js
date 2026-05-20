@@ -17,6 +17,7 @@ router.get("/", hasRole("admin"), async (req, res) => {
 });
 
 router.post("/", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const tempPassword = crypto.randomBytes(4).toString("hex");
     const id = await db.addUser(
@@ -50,6 +51,7 @@ router.post("/", hasRole("admin"), async (req, res) => {
 });
 
 router.put("/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const { name, email, role, enabled, blocked } = req.body;
     
@@ -81,6 +83,7 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
 });
 
 router.delete("/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const user = await db.getUserById(req.params.id);
     if (user) {
@@ -110,6 +113,7 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
 });
 
 router.post("/:id/reset", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const user = await db.getUserById(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });

@@ -10,7 +10,8 @@
       "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -30 {}')",
       "Bash(xargs grep -l \"integration\\\\|real.*db\\\\|sqlite\")",
       "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\\\\scripts\" -ErrorAction SilentlyContinue)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\" -Directory)"
     ]
   }
 }

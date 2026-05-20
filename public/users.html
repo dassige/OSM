@@ -238,6 +238,7 @@
     <script src="js/table-controller.js"></script>
     <script>
         let userTable;
+        let isDemo = false;
 
         window.addEventListener('DOMContentLoaded', async () => {
             // Load sort preference
@@ -340,11 +341,13 @@
 
             if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
             if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+            isDemo = c.appMode === 'demo';
         });
 
 
         document.getElementById('addUserForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); closeModal('userModal'); return; }
             const name = document.getElementById('newName').value;
             const email = document.getElementById('newEmail').value;
             const role = document.getElementById('newRole').value;
@@ -377,6 +380,7 @@
         }
         document.getElementById('editUserForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); closeModal('editModal'); return; }
             const id = document.getElementById('editUserId').value;
 
             const payload = {
@@ -412,6 +416,7 @@
         }
         document.getElementById('resetForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); closeModal('resetModal'); return; }
             const id = document.getElementById('resetUserId').value;
             const name = document.getElementById('resetUserName').innerText;
             const btn = document.getElementById('resetBtn');
@@ -430,6 +435,7 @@
         });
 
         async function deleteUser(id, name) {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             if (await confirmAction('Delete User', `Delete user '${name}'?\n\nThis cannot be undone.`)) {
                 const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
                 if (res.ok) loadUsers();

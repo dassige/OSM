@@ -418,6 +418,7 @@
         let liveFormsTable;
         let appLocale = 'en-NZ';
         let appTimezone = 'Pacific/Auckland';
+        let isDemo = false;
 
         function parseRankAndName(fullName) {
             const parts = (fullName || '').trim().split(' ');
@@ -433,6 +434,7 @@
                 initPageTitle("Live Forms", "Live Forms Management");
                 if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
                 if (c.appMode === 'demo') document.getElementById('demoBanner').style.display = 'block';
+                isDemo = c.appMode === 'demo';
                 if (c.locale) appLocale = c.locale;
                 if (c.timezone) appTimezone = c.timezone;
             } catch (e) { }
@@ -803,6 +805,7 @@
         }
 
         async function purgeFiltered() {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const isArchived = document.getElementById('archiveToggle').checked;
             const viewLabel = isArchived ? "ARCHIVED" : "ACTIVE";
 
@@ -878,6 +881,7 @@
         }
 
         async function saveStatus() {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const id = document.getElementById('editId').value;
             const status = document.getElementById('editStatusSelect').value;
             try {
@@ -895,6 +899,7 @@
         }
 
         async function deleteRecord(id) {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             if (!await confirmAction("Delete Record", "Are you sure you want to delete this record? This cannot be undone.")) return;
             try {
                 await fetch(`/api/live-forms/${id}`, { method: 'DELETE' });
