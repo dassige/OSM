@@ -116,7 +116,7 @@ router.post(
           .json({ error: "Invalid format. Expected an array of surveys." });
       }
 
-      const authorId = req.user?.id || req.session?.user?.id || 1;
+      const authorId = req.apiKeyUser?.id || (req.session?.user?.id > 0 ? req.session.user.id : null);
 
       await db.importAllSurveys(importedSurveys, authorId);
       const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
@@ -183,7 +183,7 @@ router.post("/", hasRole("admin"), async (req, res) => {
         .json({ error: "Survey name and structure are required." });
     }
 
-    const authorId = req.user?.id || req.session?.user?.id || 1;
+    const authorId = req.apiKeyUser?.id || (req.session?.user?.id > 0 ? req.session.user.id : null);
 
     const result = await db.createSurvey(
       name,
@@ -366,7 +366,7 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
         .json({ error: "At least one member must be selected." });
     }
 
-    const authorId = req.user?.id || req.session?.user?.id || 1;
+    const authorId = req.apiKeyUser?.id || (req.session?.user?.id > 0 ? req.session.user.id : null);
 
     const { liveInstanceId, trackingData } = await db.publishSurvey(
       surveyId,
