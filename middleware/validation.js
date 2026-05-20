@@ -56,4 +56,45 @@ const validateBulkData = (data) => {
   });
 };
 
-module.exports = { validateForm, validateBulkData };
+// ── Member ──────────────────────────────────────────────────────────────────
+
+const memberSchema = Joi.object({
+    name: Joi.string().required().trim().max(255),
+    email: Joi.string().email({ tlds: { allow: false } }).allow('', null).optional(),
+    mobile: Joi.string().allow('', null).max(30).optional(),
+    messengerId: Joi.string().allow('', null).optional(),
+    notificationPreference: Joi.string().valid('email', 'whatsapp', 'email,whatsapp', 'whatsapp,email', 'both', 'none').default('email'),
+    enabled: Joi.alternatives().try(Joi.boolean(), Joi.number().valid(0, 1)).optional(),
+});
+
+const validateMember = (req, res, next) => {
+    const schema = req.method === 'PUT'
+        ? memberSchema.fork(['name'], s => s.optional())
+        : memberSchema;
+    const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
+    if (error) return res.status(400).json({ error: 'Validation Failed', details: error.details.map(d => d.message) });
+    req.body = value;
+    next();
+};
+
+// ── Skill ───────────────────────────────────────────────────────────────────
+
+const skillSchema = Joi.object({
+    name: Joi.string().required().trim().max(255),
+    url_type: Joi.string().valid('internal', 'external', 'none').required(),
+    url: Joi.string().allow('', null).optional(),
+    critical_skill: Joi.alternatives().try(Joi.boolean(), Joi.number().valid(0, 1)).optional(),
+    enabled: Joi.alternatives().try(Joi.boolean(), Joi.number().valid(0, 1)).optional(),
+});
+
+const validateSkill = (req, res, next) => {
+    const schema = req.method === 'PUT'
+        ? skillSchema.fork(['name', 'url_type'], s => s.optional())
+        : skillSchema;
+    const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
+    if (error) return res.status(400).json({ error: 'Validation Failed', details: error.details.map(d => d.message) });
+    req.body = value;
+    next();
+};
+
+module.exports = { validateForm, validateBulkData, validateMember, validateSkill };

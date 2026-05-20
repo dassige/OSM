@@ -428,3 +428,42 @@ window.hideGlobalSpinner = function() {
         if (bannerTitle) bannerTitle.textContent = displayText;
     };
 })();
+
+// CSRF token auto-attachment — intercepts all same-origin mutating fetch calls
+// and adds the X-CSRF-Token header. Skipped when the token endpoint returns
+// non-200 (e.g. on the login page where no session exists yet).
+(function setupCsrfFetch() {
+    let _token = null;
+    let _pending = null;
+    const _orig = window.fetch.bind(window);
+
+    function getCsrfToken() {
+        if (_token) return Promise.resolve(_token);
+        if (_pending) return _pending;
+        _pending = _orig('/api/csrf-token')
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(d) { _token = d ? d.token : null; _pending = null; return _token; })
+            .catch(function() { _pending = null; return null; });
+        return _pending;
+    }
+
+    window.fetch = function(input, init) {
+        init = init || {};
+        var method = (init.method || 'GET').toUpperCase();
+        var url = typeof input === 'string' ? input : (input instanceof Request ? input.url : '');
+        var mutating = ['POST', 'PUT', 'PATCH', 'DELETE'].indexOf(method) !== -1;
+        var sameOrigin = url.charAt(0) === '/' || url.indexOf('http') !== 0;
+
+        if (mutating && sameOrigin) {
+            return getCsrfToken().then(function(token) {
+                if (token) {
+                    init = Object.assign({}, init, {
+                        headers: Object.assign({}, init.headers, { 'X-CSRF-Token': token })
+                    });
+                }
+                return _orig(input, init);
+            });
+        }
+        return _orig(input, init);
+    };
+})();

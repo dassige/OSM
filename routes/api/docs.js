@@ -60,10 +60,23 @@ const spec = {
                 properties: {
                     id: { type: 'integer' },
                     name: { type: 'string', example: 'Jane Smith' },
-                    email: { type: 'string', format: 'email' },
-                    mobile: { type: 'string', example: '0211234567' },
-                    station: { type: 'string' },
-                    active: { type: 'integer', enum: [0, 1] }
+                    email: { type: 'string', format: 'email', nullable: true },
+                    mobile: { type: 'string', example: '0211234567', nullable: true },
+                    messengerId: { type: 'string', nullable: true },
+                    notificationPreference: { type: 'string', enum: ['email', 'whatsapp', 'email,whatsapp', 'both', 'none'] },
+                    enabled: { type: 'integer', enum: [0, 1] }
+                }
+            },
+            MemberInput: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                    name: { type: 'string', example: 'Jane Smith', maxLength: 255 },
+                    email: { type: 'string', format: 'email', nullable: true },
+                    mobile: { type: 'string', example: '0211234567', nullable: true, maxLength: 30 },
+                    messengerId: { type: 'string', nullable: true },
+                    notificationPreference: { type: 'string', enum: ['email', 'whatsapp', 'email,whatsapp', 'both', 'none'], default: 'email' },
+                    enabled: { type: 'integer', enum: [0, 1] }
                 }
             },
             Skill: {
@@ -71,9 +84,27 @@ const spec = {
                 properties: {
                     id: { type: 'integer' },
                     name: { type: 'string', example: 'BA Renewal' },
-                    code: { type: 'string' },
-                    expiry_months: { type: 'integer', example: 12 },
-                    active: { type: 'integer', enum: [0, 1] }
+                    url_type: { type: 'string', enum: ['internal', 'external', 'none'] },
+                    url: { type: 'string', nullable: true },
+                    critical_skill: { type: 'integer', enum: [0, 1] },
+                    enabled: { type: 'integer', enum: [0, 1] }
+                }
+            },
+            SkillInput: {
+                type: 'object',
+                required: ['name', 'url_type'],
+                properties: {
+                    name: { type: 'string', example: 'BA Renewal', maxLength: 255 },
+                    url_type: { type: 'string', enum: ['internal', 'external', 'none'] },
+                    url: { type: 'string', nullable: true },
+                    critical_skill: { type: 'integer', enum: [0, 1] },
+                    enabled: { type: 'integer', enum: [0, 1] }
+                }
+            },
+            CsrfTokenResponse: {
+                type: 'object',
+                properties: {
+                    token: { type: 'string', description: '64-character hex CSRF token. Include as `X-CSRF-Token` header on all mutating requests.', example: 'a3f8b1...' }
                 }
             },
             Form: {
@@ -336,21 +367,22 @@ const spec = {
                 summary: 'Create a member',
                 requestBody: {
                     required: true,
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Member' } } }
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/MemberInput' } } }
                 },
                 responses: {
-                    200: { description: 'New member ID', content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' } } } } } }
+                    200: { description: 'New member ID', content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' } } } } } },
+                    400: { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }
         },
         '/api/members/{id}': {
             put: {
                 tags: ['Members'],
-                summary: 'Update a member',
+                summary: 'Update a member (all fields optional)',
                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
                 requestBody: {
                     required: true,
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Member' } } }
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/MemberInput' } } }
                 },
                 responses: {
                     200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
@@ -433,21 +465,22 @@ const spec = {
                 summary: 'Create a skill',
                 requestBody: {
                     required: true,
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Skill' } } }
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/SkillInput' } } }
                 },
                 responses: {
-                    200: { description: 'New skill ID', content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' } } } } } }
+                    200: { description: 'New skill ID', content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' } } } } } },
+                    400: { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }
         },
         '/api/skills/{id}': {
             put: {
                 tags: ['Skills'],
-                summary: 'Update a skill',
+                summary: 'Update a skill (all fields optional)',
                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
                 requestBody: {
                     required: true,
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Skill' } } }
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/SkillInput' } } }
                 },
                 responses: {
                     200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
@@ -927,6 +960,17 @@ const spec = {
         // -------------------------------------------------------------------------
         // SYSTEM
         // -------------------------------------------------------------------------
+        '/api/csrf-token': {
+            get: {
+                tags: ['System'],
+                summary: 'Get a CSRF token for the current session',
+                description: 'Returns a 64-character hex token tied to the current session. Include it as the `X-CSRF-Token` header on all POST, PUT, PATCH, and DELETE requests made by a logged-in user. The `utils.js` fetch interceptor on authenticated pages handles this automatically.',
+                security: [{ sessionCookie: [] }],
+                responses: {
+                    200: { description: 'CSRF token', content: { 'application/json': { schema: { $ref: '#/components/schemas/CsrfTokenResponse' } } } }
+                }
+            }
+        },
         '/api/health': {
             get: {
                 tags: ['System'],

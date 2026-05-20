@@ -27,6 +27,15 @@ const whatsappService = require('../services/whatsapp-service');
 const systemRoutes = require('../routes/api/system');
 const app = createTestApp({ path: '/api', router: systemRoutes });
 
+describe('GET /api/csrf-token', () => {
+    it('returns 200 with a 64-char hex CSRF token', async () => {
+        const response = await request(app).get('/api/csrf-token');
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('token');
+        expect(response.body.token).toMatch(/^[0-9a-f]{64}$/);
+    });
+});
+
 describe('GET /api/health', () => {
     beforeEach(() => jest.clearAllMocks());
 

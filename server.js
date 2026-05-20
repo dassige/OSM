@@ -16,6 +16,7 @@ const { globalAuthGuard } = require("./middleware/auth");
 const { runValidation } = require("./services/env-validator");
 const { ROLES } = require("./middleware/auth");
 const { apiLimiter } = require("./middleware/rate-limiter");
+const { csrfProtection } = require("./middleware/csrf");
 const logger = require("./services/logger");
 const helmet = require("helmet");
 const correlationId = require("./middleware/correlation-id");
@@ -128,6 +129,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Guard must be registered before route mounts
 app.use(globalAuthGuard);
+app.use(csrfProtection);
 app.use('/api', apiLimiter);
 
 async function initializeProxy() {

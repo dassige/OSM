@@ -571,6 +571,36 @@
       "name": "System",
       "item": [
         {
+          "name": "Get CSRF Token",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/csrf-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "csrf-token"]
+            },
+            "description": "Returns a session-bound CSRF token. Used by the frontend fetch interceptor for all mutating requests."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Get CSRF Token | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Get CSRF Token | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('Get CSRF Token | Valid JSON with token', () => {",
+                  "  pm.response.to.be.json;",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('token');",
+                  "  pm.expect(body.token).to.match(/^[0-9a-f]{64}$/);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Get Preferences",
           "request": {
             "method": "GET",

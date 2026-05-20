@@ -813,6 +813,14 @@
       "description": "Health check, preferences, event logs, and diagnostics.",
       "item": [
         {
+          "name": "Get CSRF Token",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/csrf-token", "host": ["{{baseUrl}}"], "path": ["api", "csrf-token"] },
+            "description": "Returns a 64-character hex CSRF token tied to the current session. Include as `X-CSRF-Token` header on all POST/PUT/DELETE requests when authenticating with session cookies. The frontend fetch interceptor in utils.js handles this automatically."
+          }
+        },
+        {
           "name": "Health Check",
           "request": {
             "auth": { "type": "noauth" },

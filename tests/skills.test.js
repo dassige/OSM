@@ -70,20 +70,35 @@ describe('Skills API Endpoints (Isolated)', () => {
         it('should add a new skill and return 200 with the new ID', async () => {
             db.addSkill.mockResolvedValue(5);
 
-            const newSkillPayload = {
-                name: 'Breathing Apparatus',
-                url_type: 'internal',
-                url: 'http://fenz.osm/ba-form',
-                is_critical: 1
-            };
-
             const response = await request(app)
                 .post('/api/skills')
-                .send(newSkillPayload);
+                .send({
+                    name: 'Breathing Apparatus',
+                    url_type: 'internal',
+                    url: 'http://fenz.osm/ba-form',
+                    critical_skill: 1,
+                });
 
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty('id', 5);
-            expect(db.addSkill).toHaveBeenCalledWith(newSkillPayload);
+            // Joi.alternatives().try() uses strict matching; number 1 stays as 1 (not coerced to boolean)
+            expect(db.addSkill).toHaveBeenCalledWith({
+                name: 'Breathing Apparatus',
+                url_type: 'internal',
+                url: 'http://fenz.osm/ba-form',
+                critical_skill: 1,
+            });
+        });
+
+        it('should return 400 when required fields are missing', async () => {
+            const response = await request(app)
+                .post('/api/skills')
+                .send({ name: 'Missing URL Type' });
+
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('error', 'Validation Failed');
+            expect(response.body).toHaveProperty('details');
+            expect(db.addSkill).not.toHaveBeenCalled();
         });
     });
 

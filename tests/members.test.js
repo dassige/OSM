@@ -70,21 +70,36 @@ describe('Members API Endpoints (Isolated)', () => {
         it('should add a member and return 200 with the new ID', async () => {
             db.addMember.mockResolvedValue(3);
 
-            const newMemberPayload = {
+            const response = await request(app)
+                .post('/api/members')
+                .send({
+                    name: 'SO Bob Builder',
+                    email: 'bob@fenz.osm',
+                    mobile: '021123456',
+                    notificationPreference: 'email',
+                    enabled: true,
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('id', 3);
+            expect(db.addMember).toHaveBeenCalledWith({
                 name: 'SO Bob Builder',
                 email: 'bob@fenz.osm',
                 mobile: '021123456',
                 notificationPreference: 'email',
-                enabled: true
-            };
+                enabled: true,
+            });
+        });
 
+        it('should return 400 when name is missing', async () => {
             const response = await request(app)
                 .post('/api/members')
-                .send(newMemberPayload);
+                .send({ email: 'noname@test.com', notificationPreference: 'email' });
 
-            expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty('id', 3);
-            expect(db.addMember).toHaveBeenCalledWith(newMemberPayload);
+            expect(response.status).toBe(400);
+            expect(response.body).toHaveProperty('error', 'Validation Failed');
+            expect(response.body).toHaveProperty('details');
+            expect(db.addMember).not.toHaveBeenCalled();
         });
     });
 

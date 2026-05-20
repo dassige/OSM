@@ -10,11 +10,16 @@ const config = require("../../config");
 const aiService = require("../../services/ai-service");
 const whatsappService = require("../../services/whatsapp-service");
 const { hasRole } = require("../../middleware/auth");
+const { generateCsrfToken } = require("../../middleware/csrf");
 const { version } = require("../../package.json");
 
 const upload = multer({ dest: "uploads/" });
 
 
+
+router.get("/csrf-token", (req, res) => {
+  res.json({ token: generateCsrfToken(req) });
+});
 
 router.get("/health", async (req, res) => {
   try {

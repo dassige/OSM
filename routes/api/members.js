@@ -6,6 +6,7 @@ const { getOIData } = require("../../services/scraper");
 const { getActiveProxy } = require("../../services/proxy-manager");
 const config = require("../../config");
 const { hasRole } = require("../../middleware/auth");
+const { validateMember } = require("../../middleware/validation");
 const logger = require("../../services/logger");
 
 router.get("/", hasRole("admin"), async (req, res) => {
@@ -27,7 +28,7 @@ router.get("/", hasRole("admin"), async (req, res) => {
   }
 });
 
-router.post("/", hasRole("admin"), async (req, res) => {
+router.post("/", hasRole("admin"), validateMember, async (req, res) => {
   try {
     const id = await db.addMember(req.body);
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
@@ -43,7 +44,7 @@ router.post("/", hasRole("admin"), async (req, res) => {
   }
 });
 
-router.put("/:id", hasRole("admin"), async (req, res) => {
+router.put("/:id", hasRole("admin"), validateMember, async (req, res) => {
   try {
     await db.updateMember(req.params.id, req.body);
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';

@@ -172,6 +172,14 @@ All rate limits are per-IP and configurable via environment variables. Defaults 
   * `RATE_LIMIT_API_MAX` / `RATE_LIMIT_API_WINDOW_MIN`: Authenticated API requests (default: max=300, window=1 min).
   * `RATE_LIMIT_PUBLIC_SUBMIT_MAX` / `RATE_LIMIT_PUBLIC_SUBMIT_WINDOW_MIN`: Unauthenticated live-form access and survey submission endpoints. Applied per IP to member-facing routes (`/api/live-forms/access/`, `/api/live-forms/submit/`, `/api/live-surveys/`). Set high enough to allow a whole crew to submit simultaneously. (default: max=30, window=5 min).
 
+#### **CSRF Protection**
+
+All state-changing requests (POST, PUT, DELETE) made by a logged-in browser session require a `X-CSRF-Token` header. The token is obtained from `GET /api/csrf-token` and is stable for the life of the session. The `utils.js` fetch interceptor bundled into every authenticated page handles this automatically — no frontend changes are needed for new pages that use the standard `fetch` API. API key-authenticated requests and unauthenticated public endpoints (form/survey submissions) are exempt.
+
+#### **Input Validation**
+
+Member and skill create/update endpoints are validated with [Joi](https://joi.dev/). Invalid or unexpected fields return HTTP 400 with a `{ "error": "Validation Failed", "details": [...] }` response listing each failing constraint. Unknown fields are stripped before they reach the database.
+
 ## Demo Mode
 
 You can run the application in **Demo Mode** to test features or demonstrate the workflow without accessing live private data.
