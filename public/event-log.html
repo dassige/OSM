@@ -453,6 +453,8 @@
         function exportLog() {
             const activeTypes = Array.from(document.querySelectorAll('.type-badge.active')).map(b => b.getAttribute('data-type'));
             const user = document.getElementById('userFilter').value;
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
 
             const params = new URLSearchParams();
             if (activeTypes.length > 0) params.append('types', activeTypes.join(','));
