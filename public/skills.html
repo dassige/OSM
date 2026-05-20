@@ -304,12 +304,53 @@
     </div>
 
     <div id="helpModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width:560px;">
             <span class="close-btn" onclick="closeModal('helpModal')">&times;</span>
-            <h2>CSV File Format</h2>
-            <p><strong>Required:</strong> <code>name</code></p>
-            <p><strong>Optional:</strong> <code>url</code>, <code>critical_skill</code>, <code>enabled</code></p>
-            <br><button onclick="closeModal('helpModal')" class="btn-secondary w-100">Close</button>
+            <h2 style="margin-bottom:4px;">CSV Import — Skills</h2>
+            <p style="color:var(--text-muted); font-size:0.88em; margin-top:0; margin-bottom:16px;">
+                Comma-separated (.csv) file with a header row. Column order does not matter.
+                Wrap any value containing a comma in double quotes.
+            </p>
+            <table style="width:100%; border-collapse:collapse; font-size:0.87em; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:var(--bg-hover);">
+                        <th style="padding:8px 10px; text-align:left; border-bottom:2px solid var(--border-color);">Column</th>
+                        <th style="padding:8px 10px; text-align:left; border-bottom:2px solid var(--border-color);">Status</th>
+                        <th style="padding:8px 10px; text-align:left; border-bottom:2px solid var(--border-color);">Values / Default</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color);"><code>name</code></td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color);"><span class="badge badge-danger" style="font-size:0.8em;">Required</span></td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted);">Exact skill name as it appears in the OSM dashboard.</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color);"><code>url</code></td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted); font-size:0.85em;">Optional</td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted);">Link to skill resource or verification form</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color);"><code>url_type</code></td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted); font-size:0.85em;">Optional</td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted);"><code>external</code> or <code>embedded</code> — default: <code>external</code></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color);"><code>critical_skill</code></td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted); font-size:0.85em;">Optional</td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted);"><code>true</code> or <code>false</code> — default: <code>false</code></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:7px 10px;"><code>enabled</code></td>
+                        <td style="padding:7px 10px; color:var(--text-muted); font-size:0.85em;">Optional</td>
+                        <td style="padding:7px 10px; color:var(--text-muted);"><code>true</code> or <code>false</code> — default: <code>true</code></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="font-size:0.82em; font-weight:600; color:var(--text-muted); margin-bottom:5px;">Example</p>
+            <div class="code-block" style="font-size:0.82em; white-space:pre-wrap; word-break:break-all;">name,url,url_type,critical_skill,enabled
+OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div>
+            <button onclick="closeModal('helpModal')" class="btn-secondary w-100" style="margin-top:16px;">Close</button>
         </div>
     </div>
 

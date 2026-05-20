@@ -258,14 +258,58 @@
     </div>
 
     <div id="helpModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width:580px;">
             <span class="close-btn" onclick="closeModal('helpModal')">&times;</span>
-            <h2>CSV File Format</h2>
-            <p><strong>Required:</strong> <code>name</code>, <code>email</code></p>
-            <p><strong>Optional:</strong> <code>mobile</code>, <code>messengerId</code>, <code>enabled</code></p>
-            <div class="code-block">name,email,mobile,messengerId,enabled
-                "Doe, John",john@example.com,021123,fb_123,true</div>
-            <br><button onclick="closeModal('helpModal')" class="btn-secondary w-100">Close</button>
+            <h2 style="margin-bottom:4px;">CSV Import — Members</h2>
+            <p style="color:var(--text-muted); font-size:0.88em; margin-top:0; margin-bottom:16px;">
+                Comma-separated (.csv) file with a header row. Column order does not matter.
+                Wrap any value containing a comma in double quotes.
+            </p>
+            <table style="width:100%; border-collapse:collapse; font-size:0.87em; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:var(--bg-hover);">
+                        <th style="padding:8px 10px; text-align:left; border-bottom:2px solid var(--border-color);">Column</th>
+                        <th style="padding:8px 10px; text-align:left; border-bottom:2px solid var(--border-color);">Status</th>
+                        <th style="padding:8px 10px; text-align:left; border-bottom:2px solid var(--border-color);">Values / Default</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color);"><code>name</code></td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color);"><span class="badge badge-danger" style="font-size:0.8em;">Required</span></td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted);">Full name. Use quotes if it contains a comma.</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color);"><code>email</code></td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted); font-size:0.85em;">Optional</td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted);">Email address</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color);"><code>mobile</code></td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted); font-size:0.85em;">Optional</td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted);">Mobile number (e.g. <code>0211234567</code>)</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color);"><code>messengerId</code></td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted); font-size:0.85em;">Optional</td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted);">WhatsApp phone number or identifier</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color);"><code>enabled</code></td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted); font-size:0.85em;">Optional</td>
+                        <td style="padding:7px 10px; border-bottom:1px solid var(--border-color); color:var(--text-muted);"><code>true</code> or <code>false</code> — default: <code>true</code></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:7px 10px;"><code>notificationPreference</code></td>
+                        <td style="padding:7px 10px; color:var(--text-muted); font-size:0.85em;">Optional</td>
+                        <td style="padding:7px 10px; color:var(--text-muted);"><code>email</code>, <code>whatsapp</code>, or <code>both</code> — default: <code>email</code></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="font-size:0.82em; font-weight:600; color:var(--text-muted); margin-bottom:5px;">Example</p>
+            <div class="code-block" style="font-size:0.82em; white-space:pre-wrap; word-break:break-all;">name,email,mobile,messengerId,enabled,notificationPreference
+"Doe, John",john@example.com,0211234567,fb_123,true,email</div>
+            <button onclick="closeModal('helpModal')" class="btn-secondary w-100" style="margin-top:16px;">Close</button>
         </div>
     </div>
 
