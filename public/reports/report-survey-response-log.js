@@ -43,7 +43,7 @@
             }
 
             rows.forEach(function (row) {
-                const date = new Date(row.submitted_at).toLocaleDateString(locale);
+                const date = new Date(row.submitted_at).toLocaleDateString(locale, { timeZone: (uiConfig && uiConfig.timezone) || undefined });
                 const typeLabel = row.is_anonymous
                     ? '<em style="color:#999;">Anonymous</em>'
                     : 'Identified';

@@ -201,7 +201,7 @@ function renderDetailedTable() {
     tr.innerHTML = `
       <td data-label="Rank" class="text-center">${formatRankCell(rank)}</td>
       <td><strong>${displayName || "N/A"}</strong></td>
-      <td style="font-size:12px;">${new Date(r.submittedAt).toLocaleString()}</td>
+      <td style="font-size:12px;">${new Date(r.submittedAt).toLocaleString((uiConfig && uiConfig.locale) || 'en-NZ', { timeZone: (uiConfig && uiConfig.timezone) || undefined })}</td>
       <td style="text-align:center;">
         <button onclick="viewSpecificResponse(${r.id})" class="btn-sm btn-informative"
           title="View this respondent's individual answers (opens in new tab)">
@@ -254,7 +254,7 @@ function renderDetailedCards() {
       <div class="card-body">
         <div class="card-row">
           <span class="card-label">Submitted:</span>
-          <span style="font-size:0.88em;">${new Date(r.submittedAt).toLocaleString()}</span>
+          <span style="font-size:0.88em;">${new Date(r.submittedAt).toLocaleString((uiConfig && uiConfig.locale) || 'en-NZ', { timeZone: (uiConfig && uiConfig.timezone) || undefined })}</span>
         </div>
       </div>
       <div class="card-actions">
@@ -470,9 +470,9 @@ function exportCSV() {
       ? [
           `"${r.member_name}"`,
           `"${r.rank}"`,
-          `"${new Date(r.submittedAt).toLocaleString()}"`,
+          `"${new Date(r.submittedAt).toLocaleString((uiConfig && uiConfig.locale) || 'en-NZ', { timeZone: (uiConfig && uiConfig.timezone) || undefined })}"`,
         ]
-      : [`"${r.id}"`, `"${new Date(r.submittedAt).toLocaleString()}"`];
+      : [`"${r.id}"`, `"${new Date(r.submittedAt).toLocaleString((uiConfig && uiConfig.locale) || 'en-NZ', { timeZone: (uiConfig && uiConfig.timezone) || undefined })}"`];
 
     surveyData.structure.forEach((q) => {
       let ans = r.answers[q.id] || "";

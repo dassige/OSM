@@ -13,6 +13,7 @@
             
             const appName = uiConfig.loginTitle || "OpReady";
             const locale = uiConfig.locale || 'en-NZ';
+            const tz = (uiConfig && uiConfig.timezone) || undefined;
 
             let html = `
                 <div class="rpt-header">
@@ -30,8 +31,8 @@
             data.forEach(dayGroup => {
                 // Format Date nicely (e.g. "Monday, 12 December 2025")
                 const dateObj = new Date(dayGroup.date);
-                const dateStr = dateObj.toLocaleDateString(locale, { 
-                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+                const dateStr = dateObj.toLocaleDateString(locale, {
+                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: tz
                 });
 
                 html += `
@@ -67,7 +68,7 @@
 
                         session.members.forEach(m => {
                             const dObj = new Date(m.dueDate);
-                            const dStr = isNaN(dObj) ? m.dueDate : dObj.toLocaleDateString(locale);
+                            const dStr = isNaN(dObj) ? m.dueDate : dObj.toLocaleDateString(locale, { timeZone: tz });
                             const critStyle = m.isCritical ? 'color:#dc3545; font-weight:bold;' : '';
                             
                             html += `

@@ -37,7 +37,7 @@
 
             items.forEach(function (row) {
                 const published = row.published_at
-                    ? new Date(row.published_at).toLocaleDateString(locale)
+                    ? new Date(row.published_at).toLocaleDateString(locale, { timeZone: (uiConfig && uiConfig.timezone) || undefined })
                     : '-';
                 const sent = row.total_sent || 0;
                 const submitted = row.total_submitted || 0;

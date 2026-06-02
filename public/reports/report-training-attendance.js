@@ -7,6 +7,8 @@
         
         render: function(dataWrapper, uiConfig) {
             const data = dataWrapper.items || [];
+            const locale = (uiConfig && uiConfig.locale) || 'en-NZ';
+            const tz = (uiConfig && uiConfig.timezone) || undefined;
             
             let html = `
                 <div class="rpt-header">
@@ -17,7 +19,7 @@
             if(data.length === 0) return html + "<p>No planned sessions found.</p>";
 
             data.forEach(day => {
-                const dateStr = new Date(day.date).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
+                const dateStr = new Date(day.date).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: tz });
                 
                 day.sessions.forEach(session => {
                     html += `

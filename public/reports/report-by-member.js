@@ -45,7 +45,8 @@
           const criticalClass = skill.isCritical ? "critical" : "";
           const criticalText = skill.isCritical ? " (CRITICAL)" : "";
           const dateObj = new Date(skill.dueDate);
-          const formattedDate = isNaN(dateObj) ? skill.dueDate : dateObj.toLocaleDateString(locale);
+          const tz = (uiConfig && uiConfig.timezone) || undefined;
+          const formattedDate = isNaN(dateObj) ? skill.dueDate : dateObj.toLocaleDateString(locale, { timeZone: tz });
           html += `<tr><td class="${criticalClass}">${skill.skill}${criticalText}</td><td>${formattedDate}</td></tr>`;
         });
         html += `</tbody></table></div>`;

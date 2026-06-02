@@ -317,7 +317,7 @@ async function sendSecurityAlert(details, transporter, appName, superEmail) {
         <p>A user has been blocked after exceeding the maximum number of failed login attempts.</p>
         <ul>
             <li><strong>User Email:</strong> ${escapeHtml(details.email)}</li>
-            <li><strong>Date/Time:</strong> ${new Date().toLocaleString()}</li>
+            <li><strong>Date/Time:</strong> ${new Date().toLocaleString(config.locale, { timeZone: config.timezone })}</li>
             <li><strong>Failed Attempts:</strong> ${details.attempts}</li>
             <li><strong>IP Address:</strong> ${escapeHtml(details.ip)}</li>
         </ul>

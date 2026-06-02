@@ -25,7 +25,7 @@
           <p>Period: Last ${meta.filterDays || 30} Days • Generated: ${meta.generated}</p>
         </div>`;
     },
-    renderItems: function (rows) {
+    renderItems: function (rows, dataWrapper, uiConfig) {
       let html = `
         <table class="rpt-table">
           <thead>
@@ -42,7 +42,9 @@
       if (rows.length === 0)
         return html + "<tr><td colspan='6' style='text-align:center'>No activity recorded.</td></tr></tbody></table>";
       rows.forEach((row) => {
-        const date = new Date(row.form_reviewed_datetime).toLocaleDateString("en-NZ");
+        const locale = (uiConfig && uiConfig.locale) || 'en-NZ';
+        const tz = (uiConfig && uiConfig.timezone) || undefined;
+        const date = new Date(row.form_reviewed_datetime).toLocaleDateString(locale, { timeZone: tz });
         const statusColor = row.form_status === "accepted" ? "green" : "red";
         const score = row.current_score ? parseFloat(row.current_score).toFixed(1) : "-";
         let aiNote = "";
@@ -64,7 +66,7 @@
       return html + `</tbody></table>`;
     },
     render: function (dataWrapper, uiConfig) {
-      return this.renderHeader(dataWrapper, uiConfig) + this.renderItems(this.getItems(dataWrapper));
+      return this.renderHeader(dataWrapper, uiConfig) + this.renderItems(this.getItems(dataWrapper), dataWrapper, uiConfig);
     },
   };
 })();

@@ -35,7 +35,8 @@
                       <tbody>`;
                 skillGroup.members.forEach(item => {
                     const dateObj = new Date(item.dueDate);
-                    const formattedDate = isNaN(dateObj) ? item.dueDate : dateObj.toLocaleDateString(locale);
+                    const tz = (uiConfig && uiConfig.timezone) || undefined;
+                    const formattedDate = isNaN(dateObj) ? item.dueDate : dateObj.toLocaleDateString(locale, { timeZone: tz });
                     html += `<tr><td>${item.member}</td><td>${formattedDate}</td></tr>`;
                 });
                 html += `</tbody></table></div>`;
