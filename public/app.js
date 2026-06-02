@@ -26,8 +26,6 @@ const btnHideNoSkills = document.getElementById("btnHideNoSkills");
 const btnHideNoUrl = document.getElementById("btnHideNoUrl");
 const btnExpiredOnly = document.getElementById("btnExpiredOnly");
 const btnHideWithUrl = document.getElementById("btnHideWithUrl");
-const progressContainer = document.getElementById("progressContainer");
-const progressBar = document.getElementById("progressBar");
 const skillsCardView = document.getElementById("skillsCardView");
 
 function init() {
@@ -52,8 +50,6 @@ function init() {
     } else if (isLoadingData) {
       isLoadingData = false;
       if (viewBtn) { viewBtn.disabled = false; (viewBtn.querySelector('.btn-text') || viewBtn).textContent = "Reload Expiring Skills"; }
-      const overlay = document.getElementById("loadingOverlay");
-      if (overlay) overlay.style.display = "none";
       if (window.showToast) showToast("Reconnected. Please reload the data.", "info");
     }
 
@@ -115,46 +111,29 @@ function setRunningState() {
 
   sendEmailsBtn.disabled = true;
   viewBtn.disabled = true;
-  document
-    .querySelectorAll(".header-checkbox-label input")
-    .forEach((cb) => (cb.disabled = true));
-  document
-    .querySelectorAll(".btn-round")
-    .forEach((btn) => (btn.disabled = true));
+  document.querySelectorAll(".header-checkbox-label input").forEach((cb) => (cb.disabled = true));
+  document.querySelectorAll(".btn-round").forEach((btn) => (btn.disabled = true));
 
-  if (window.showToast) window.showToast("Starting process...", "info");
-  progressContainer.style.display = "block";
-  progressBar.style.width = "0%";
-  progressBar.textContent = "Starting...";
+  if (window.showGlobalSpinner) showGlobalSpinner("Sending notifications...");
 }
 
 function setIdleState(code) {
   isJobRunning = false;
   if (jobTimeoutId) { clearTimeout(jobTimeoutId); jobTimeoutId = null; }
-  const isTableVisible = tableContainer.style.display !== "none";
-  document
-    .querySelectorAll(".header-checkbox-label input")
-    .forEach((cb) => (cb.disabled = !isTableVisible));
-  document
-    .querySelectorAll(".btn-round")
-    .forEach((btn) => (btn.disabled = false));
+  document.querySelectorAll(".header-checkbox-label input").forEach((cb) => (cb.disabled = false));
+  document.querySelectorAll(".btn-round").forEach((btn) => (btn.disabled = false));
   viewBtn.disabled = false;
   updateSendButtonState();
 
+  if (window.hideGlobalSpinner) hideGlobalSpinner();
+
   if (code === 0) {
-    if (showCompletionToast && window.showToast) {
-      window.showToast("Completed Successfully", "success");
-    }
+    if (showCompletionToast && window.showToast) window.showToast("Completed Successfully", "success");
     fetchData(false);
-    progressBar.style.width = "100%";
-    progressBar.textContent = "Completed";
   } else {
     if (window.showToast) window.showToast("Process Failed", "error");
   }
   showCompletionToast = false;
-  setTimeout(() => {
-    progressContainer.style.display = "none";
-  }, 3000);
 }
 
 function updateSendButtonState() {
@@ -188,10 +167,7 @@ function fetchData(forceRefresh = false) {
     (viewBtn.querySelector('.btn-text') || viewBtn).textContent = "Loading...";
   }
 
-  const overlay = document.getElementById("loadingOverlay");
-
-  if (tableContainer) tableContainer.style.display = "none";
-  if (overlay) overlay.style.display = "block";
+  if (window.showContainerLoader) showContainerLoader(skillsTableBody, 'Fetching expiring skills...');
 
   isLoadingData = true;
   socket.emit("view-expiring-skills", days, forceRefresh);
@@ -737,14 +713,12 @@ socket.on("wa-status", (status) => {
 
 socket.on("script-complete", (code) => setIdleState(code));
 socket.on("progress-update", (data) => {
-  if (data.type === "progress-start") {
-    progressBar.style.width = "0%";
-    progressBar.textContent = "0%";
-  } else if (data.type === "progress-tick") {
-    const pct =
-      data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
-    progressBar.style.width = pct + "%";
-    progressBar.textContent = `${pct}% - Processed ${data.member}`;
+  if (data.type === "progress-tick" && window.updateGlobalSpinnerMessage) {
+    const pct = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
+    updateGlobalSpinnerMessage(
+      `Sending notifications... ${pct}%`,
+      data.member ? `Processing: ${data.member}` : ''
+    );
   }
 });
 
@@ -754,12 +728,6 @@ socket.on("expiring-skills-data", (data) => {
     viewBtn.disabled = false;
     (viewBtn.querySelector('.btn-text') || viewBtn).textContent = "Reload Expiring Skills";
   }
-
-  const tableContainer = document.getElementById("tableContainer");
-  const overlay = document.getElementById("loadingOverlay");
-
-  if (overlay) overlay.style.display = "none";
-  if (tableContainer) tableContainer.style.display = "block";
 
   currentOsmData = data;
 

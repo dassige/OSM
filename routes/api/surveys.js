@@ -374,40 +374,20 @@ router.post("/:id/publish", hasRole("admin"), async (req, res) => {
       authorId,
     );
 
-    const survey = await db.getSurveyById(surveyId);
-    const prefs = await db.getPreferences();
-    const tpl = prefs.tpl_surveys ? JSON.parse(prefs.tpl_surveys) : null;
     const allTracking = await db.getSurveyTracking(liveInstanceId);
     const pending = allTracking.filter((t) => t.status === "sent");
     const instance = await db.getLiveSurveyInstanceById(liveInstanceId);
-    const isAnon = instance.is_anonymous !== 0; // SQLite stores booleans as 1/0; strict comparison needed
-    for (const data of pending) {
-      if (data.email) {
-        const surveyUrl = `${req.protocol}://${req.get("host")}/surveys-view.html?code=${data.access_code}&id=${survey.public_id}`;
 
-        try {
-          await mailer.sendSurveyInvitation(
-            data.email,
-            data.member_name,
-            instance.name,
-            surveyUrl,
-            config.transporter,
-            config.ui.loginTitle,
-            tpl,
-            isAnon,
-          );
-        } catch (err) {
-          logger.error(`[SMTP ERROR] Failed to send survey link to ${data.email}`, err);
-        }
-      }
-    }
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
     await db.logEvent(actor, "Surveys", "Published Survey", {
       surveyName: instance.name,
       membersInvited: trackingData.length,
     });
+
     res.json({
-      message: `Survey published successfully! Links generated for ${trackingData.length} members.`,
+      message: `Survey published. Sending invitations to ${pending.filter(t => t.email).length} member${pending.filter(t => t.email).length !== 1 ? 's' : ''}.`,
+      liveInstanceId,
+      tracking: pending,
     });
   } catch (error) {
     logger.error("[API] Error publishing survey", error);

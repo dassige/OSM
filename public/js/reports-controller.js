@@ -126,8 +126,8 @@ async function runReport() {
     return;
   }
 
-  reportPanel.innerHTML =
-    '<div class="spinner" style="margin:50px auto; display:block; border-top-color:#333;"></div><p style="text-align:center">Loading Data...</p>';
+  if (window.showContainerLoader) showContainerLoader(reportPanel, 'Loading report data...');
+  else reportPanel.innerHTML = '<div style="text-align:center;padding:30px;">Loading...</div>';
 
   // [NEW] Gather Parameters
   const reportDef = registry[key];

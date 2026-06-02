@@ -722,8 +722,10 @@
             params.append('page', liveFormsTable.page);
             params.append('limit', liveFormsTable.limit);
 
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="text-center">Loading...</td></tr>';
-            document.getElementById('cardContainer').innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px;">Loading...</p>';
+            if (window.showContainerLoader) {
+                showContainerLoader(document.getElementById('tableBody'));
+                showContainerLoader(document.getElementById('cardContainer'));
+            }
 
             try {
                 const res = await fetch(`/api/live-forms?${params.toString()}`);

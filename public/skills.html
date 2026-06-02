@@ -358,7 +358,6 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
         <div class="modal-content" style="width: 500px;">
             <span class="close-btn" onclick="closeModal('osmImportModal')">&times;</span>
             <h2 id="osmModalTitle">Import Skills from OSM</h2>
-            <div id="osmLoading" class="text-center" style="padding: 20px; display: none;">Scanning Dashboard...</div>
             <div id="osmListContainer"
                 style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; display: none;">
                 <ul id="osmSkillList" style="list-style: none; padding: 0;"></ul>
@@ -691,7 +690,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
             const modal = document.getElementById('formSelectionModal');
             const list = document.getElementById('formSelectionList');
             modal.style.display = 'block';
-            list.innerHTML = '<div class="spinner" style="margin:20px auto; display:block; border-top-color:var(--primary);"></div>';
+            if (window.showContainerLoader) showContainerLoader(list); else list.innerHTML = '<div style="text-align:center;padding:20px;">Loading...</div>';
 
             try {
                 const res = await fetch('/api/forms');
@@ -914,27 +913,23 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
         async function openOsmImportModal() {
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const modal = document.getElementById('osmImportModal');
-            const loading = document.getElementById('osmLoading');
             const listContainer = document.getElementById('osmListContainer');
             const actions = document.getElementById('osmActions');
             const list = document.getElementById('osmSkillList');
-            list.innerHTML = '';
-            listContainer.style.display = 'none';
+            list.innerHTML = '<li style="text-align:center; padding:20px; color:var(--text-muted);"><div class="spinner" style="margin:0 auto 8px; display:block; border-top-color:var(--primary);"></div>Scanning Dashboard...</li>';
             actions.style.display = 'none';
-            loading.style.display = 'block';
+            listContainer.style.display = 'block';
             modal.style.display = 'block';
             try {
                 const res = await fetch('/api/skills/discover');
                 if (!res.ok) throw new Error((await res.json()).error || "Failed to scan");
                 discoveredSkills = await res.json();
-                loading.style.display = 'none';
+                list.innerHTML = '';
                 if (discoveredSkills.length === 0) {
-                    listContainer.style.display = 'block';
-                    listContainer.innerHTML = '<p class="text-center" style="color:var(--text-muted); padding-top:20px;">No new unique skills found.</p>';
+                    list.innerHTML = '<li style="text-align:center; padding:20px; color:var(--text-muted);">No new unique skills found.</li>';
                     actions.style.display = 'flex';
                     actions.querySelector('.btn-success').disabled = true;
                 } else {
-                    listContainer.style.display = 'block';
                     actions.style.display = 'flex';
                     actions.querySelector('.btn-success').disabled = false;
                     discoveredSkills.forEach(skillName => {
@@ -946,7 +941,6 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
                     });
                 }
             } catch (e) {
-                loading.style.display = 'none';
                 showToast("Error scanning OSM: " + e.message, "error");
                 closeModal('osmImportModal');
             }

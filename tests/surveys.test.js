@@ -79,31 +79,29 @@ describe('Surveys API Endpoints (Isolated)', () => {
     });
 
     describe('POST /api/surveys/:id/publish', () => {
-        it('should successfully publish a survey and dispatch emails to pending members', async () => {
-            // Mock the complex chain of DB calls required for publishing
+        it('should successfully publish a survey and return tracking data for frontend-driven invitations', async () => {
             db.publishSurvey.mockResolvedValue({
                 liveInstanceId: 99,
                 trackingData: [
-                    { status: 'pending', email: 'firefighter1@fireandemergency.nz', access_code: 'ABC', member_name: 'FF One' },
-                    { status: 'pending', email: 'firefighter2@fireandemergency.nz', access_code: 'DEF', member_name: 'FF Two' }
+                    { tracking_id: 1, status: 'sent', email: 'ff1@fireandemergency.nz', access_code: 'ABC', member_name: 'FF One' },
+                    { tracking_id: 2, status: 'sent', email: 'ff2@fireandemergency.nz', access_code: 'DEF', member_name: 'FF Two' }
                 ]
             });
-            db.getSurveyById.mockResolvedValue({ public_id: 'guid-123', name: 'Annual Check' });
-            db.getPreferences.mockResolvedValue({ tpl_surveys: '{}' });
             db.getSurveyTracking.mockResolvedValue([
-                { status: 'sent', email: 'firefighter1@fireandemergency.nz', access_code: 'ABC', member_name: 'FF One' },
-                { status: 'sent', email: 'firefighter2@fireandemergency.nz', access_code: 'DEF', member_name: 'FF Two' }
+                { tracking_id: 1, status: 'sent', email: 'ff1@fireandemergency.nz', access_code: 'ABC', member_name: 'FF One' },
+                { tracking_id: 2, status: 'sent', email: 'ff2@fireandemergency.nz', access_code: 'DEF', member_name: 'FF Two' }
             ]);
-            db.getLiveSurveyInstanceById.mockResolvedValue({ name: 'Annual Check - 2026' });
+            db.getLiveSurveyInstanceById.mockResolvedValue({ name: 'Annual Check - 2026', is_anonymous: 0 });
 
             const response = await request(app)
                 .post('/api/surveys/1/publish')
                 .send({ memberIds: [101, 102] });
 
             expect(response.status).toBe(200);
-            expect(response.body.message).toMatch(/published successfully/);
-            
-            expect(mailer.sendSurveyInvitation).toHaveBeenCalledTimes(2);
+            expect(response.body.message).toMatch(/published/);
+            expect(response.body.liveInstanceId).toBe(99);
+            expect(response.body.tracking).toHaveLength(2);
+            expect(mailer.sendSurveyInvitation).not.toHaveBeenCalled();
             expect(db.logEvent).toHaveBeenCalledWith('Admin', 'Surveys', 'Published Survey', expect.any(Object));
         });
 

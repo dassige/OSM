@@ -377,53 +377,59 @@ window.formatRankCell = function(rank) {
     // Fallback if the rank doesn't match a known helmet
     return `<span class="badge" style="background:var(--border-color); color:var(--text-main);">${rank}</span>`;
 };
-/**
- * Injects and manages a global loading spinner overlay
- * @param {string} message - The text to display below the spinner
- */
 window.showGlobalSpinner = function(message = "Processing...") {
-    let spinnerOverlay = document.getElementById('globalSpinnerOverlay');
-    
-    // Create the overlay if it doesn't exist in the DOM
-    if (!spinnerOverlay) {
-        const style = document.createElement('style');
-        style.innerHTML = `
-            #globalSpinnerOverlay {
-                display: none; position: fixed; z-index: 10005; left: 0; top: 0;
-                width: 100%; height: 100%; background-color: rgba(0,0,0,0.6);
-                backdrop-filter: blur(3px); align-items: center; justify-content: center;
-                flex-direction: column; color: white; font-family: sans-serif;
-            }
-            .custom-spinner {
-                width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3);
-                border-radius: 50%; border-top-color: #fff;
-                animation: spin 1s ease-in-out infinite; margin-bottom: 15px;
-            }
-            @keyframes spin { to { transform: rotate(360deg); } }
-        `;
-        document.head.appendChild(style);
-
-        spinnerOverlay = document.createElement('div');
-        spinnerOverlay.id = 'globalSpinnerOverlay';
-        spinnerOverlay.innerHTML = `
+    let overlay = document.getElementById('globalSpinnerOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'globalSpinnerOverlay';
+        overlay.innerHTML = `
             <div class="custom-spinner"></div>
-            <div id="globalSpinnerText" style="font-size: 1.2rem; font-weight: 500;"></div>
+            <div id="globalSpinnerText"></div>
+            <div id="globalSpinnerSub"></div>
         `;
-        document.body.appendChild(spinnerOverlay);
+        document.body.appendChild(overlay);
     }
-    
-    // Set message and display
-    document.getElementById('globalSpinnerText').innerText = message;
-    spinnerOverlay.style.display = 'flex';
+    document.getElementById('globalSpinnerText').textContent = message;
+    document.getElementById('globalSpinnerSub').textContent = '';
+    overlay.style.display = 'flex';
+};
+
+window.updateGlobalSpinnerMessage = function(message, subMessage) {
+    const textEl = document.getElementById('globalSpinnerText');
+    const subEl = document.getElementById('globalSpinnerSub');
+    if (textEl) textEl.textContent = message;
+    if (subEl) subEl.textContent = subMessage || '';
+};
+
+window.hideGlobalSpinner = function() {
+    const overlay = document.getElementById('globalSpinnerOverlay');
+    if (overlay) overlay.style.display = 'none';
 };
 
 /**
- * Hides the global loading spinner
+ * Shows a loading indicator inside a container element.
+ * For <tbody> targets a spanning <tr> is injected; for all others a centred div.
+ * @param {string|Element} target - element ID or element reference
+ * @param {string} [message] - optional text below the spinner
  */
-window.hideGlobalSpinner = function() {
-    const spinnerOverlay = document.getElementById('globalSpinnerOverlay');
-    if (spinnerOverlay) {
-        spinnerOverlay.style.display = 'none';
+window.showContainerLoader = function(target, message) {
+    const el = typeof target === 'string' ? document.getElementById(target) : target;
+    if (!el) return;
+    const msg = message
+        ? `<div style="font-size:0.88em; margin-top:8px;">${message}</div>`
+        : '';
+    if (el.tagName === 'TBODY') {
+        let cols = 6;
+        const table = el.closest('table');
+        if (table) { const ths = table.querySelectorAll('thead th'); if (ths.length) cols = ths.length; }
+        el.innerHTML = `<tr><td colspan="${cols}" style="text-align:center; padding:28px; color:var(--text-muted);">
+            <div class="spinner" style="margin:0 auto 0; display:block; border-top-color:var(--primary);"></div>${msg}
+        </td></tr>`;
+    } else {
+        el.innerHTML = `<div style="text-align:center; padding:28px; color:var(--text-muted);">
+            <div class="spinner" style="margin:0 auto 0; display:block; border-top-color:var(--primary);"></div>${msg}
+        </div>`;
+        el.style.display = 'block';
     }
 };
 

@@ -203,11 +203,7 @@
                             Info</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody">
-                    <tr>
-                        <td colspan="5" class="text-center" style="padding: 20px;">Loading events...</td>
-                    </tr>
-                </tbody>
+                <tbody id="tableBody"></tbody>
             </table>
 
             <div class="pagination-container" id="paginationControls" style="display:none;">
@@ -540,7 +536,7 @@
             eventTableCtrl.page = page;
 
             const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Loading...</td></tr>';
+            if (window.showContainerLoader) showContainerLoader(tbody);
 
             const activeTypes = Array.from(document.querySelectorAll('.type-badge.active')).map(b => b.getAttribute('data-type'));
             const user = document.getElementById('userFilter').value;

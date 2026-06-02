@@ -151,10 +151,8 @@
                     style="background-color: var(--bg-hover); padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 0.9em; color: var(--text-muted); border: 1px solid var(--border-color);">
                     <p style="margin: 0;">A random password will be generated automatically and emailed to the user.</p>
                 </div>
-                <button type="submit" class="btn-success w-100" id="createBtn">
-                    <div class="btn-content">
-                        <div class="spinner" id="createSpinner"></div><span id="btnText">Create User & Send Email</span>
-                    </div>
+                <button type="submit" class="btn-success w-100" id="createBtn" title="Create user account and send welcome email with temporary password">
+                    Create User & Send Email
                 </button>
             </form>
         </div>
@@ -212,11 +210,8 @@
                 </div>
                 <div class="modal-actions-right">
                     <button type="button" onclick="closeModal('resetModal')" class="btn-secondary">Cancel</button>
-                    <button type="submit" class="btn-warning" id="resetBtn" style="border:none;">
-                        <div class="btn-content">
-                            <div class="spinner" id="resetSpinner"></div><span id="resetBtnText">Reset & Email
-                                Password</span>
-                        </div>
+                    <button type="submit" class="btn-warning" id="resetBtn" style="border:none;" title="Generate a new temporary password and email it to the user">
+                        Reset & Email Password
                     </button>
                 </div>
             </form>
@@ -351,13 +346,9 @@
             const name = document.getElementById('newName').value;
             const email = document.getElementById('newEmail').value;
             const role = document.getElementById('newRole').value;
-            const btn = document.getElementById('createBtn');
-            const spinner = document.getElementById('createSpinner');
-            const btnText = document.getElementById('btnText');
-
             if (!await confirmAction('Create User', `Create user ${name} (${role})?\nA password will be emailed.`)) return;
 
-            btn.disabled = true; spinner.style.display = 'inline-block'; btnText.innerText = 'Creating...';
+            if (window.showGlobalSpinner) showGlobalSpinner('Creating user and sending welcome email...');
             try {
                 const res = await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, role }) });
                 if (res.ok) {
@@ -366,7 +357,7 @@
                     const err = await res.json(); showToast('Error: ' + (err.error || 'Unknown error'), 'error');
                 }
             } catch (error) { showToast('Network Error', 'error'); }
-            finally { btn.disabled = false; spinner.style.display = 'none'; btnText.innerText = 'Create User & Send Email'; }
+            finally { if (window.hideGlobalSpinner) hideGlobalSpinner(); }
         });
 
         function openEditModal(u) {
@@ -419,28 +410,27 @@
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); closeModal('resetModal'); return; }
             const id = document.getElementById('resetUserId').value;
             const name = document.getElementById('resetUserName').innerText;
-            const btn = document.getElementById('resetBtn');
-            const spinner = document.getElementById('resetSpinner');
-            const btnText = document.getElementById('resetBtnText');
-
             if (!await confirmAction('Reset Password', `Reset password for ${name}? A new one will be emailed.`)) return;
 
-            btn.disabled = true; spinner.style.display = 'inline-block'; btnText.innerText = 'Resetting...';
+            if (window.showGlobalSpinner) showGlobalSpinner('Resetting password and sending email...');
             try {
                 const res = await fetch(`/api/users/${id}/reset`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
                 if (res.ok) { closeModal('resetModal'); showToast('Success! Password emailed.', 'success'); }
                 else { const err = await res.json(); showToast('Error: ' + (err.error || 'Failed'), 'error'); }
             } catch (err) { showToast('Network error', 'error'); }
-            finally { btn.disabled = false; spinner.style.display = 'none'; btnText.innerText = 'Reset & Email Password'; }
+            finally { if (window.hideGlobalSpinner) hideGlobalSpinner(); }
         });
 
         async function deleteUser(id, name) {
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
-            if (await confirmAction('Delete User', `Delete user '${name}'?\n\nThis cannot be undone.`)) {
+            if (!await promptAction('Delete User', `This will permanently delete <strong>${name}</strong> and send them an account deletion notification email. This cannot be undone.<br><br>Type <strong>DELETE</strong> to confirm.`, 'DELETE')) return;
+            if (window.showGlobalSpinner) showGlobalSpinner(`Deleting ${name} and sending notification...`);
+            try {
                 const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-                if (res.ok) loadUsers();
-                else showToast("Failed to delete user.", "error");
-            }
+                if (res.ok) { loadUsers(); showToast('User deleted.', 'success'); }
+                else { const err = await res.json(); showToast('Error: ' + (err.error || 'Failed to delete user.'), 'error'); }
+            } catch (e) { showToast('Network error', 'error'); }
+            finally { if (window.hideGlobalSpinner) hideGlobalSpinner(); }
         }
 
         function openAddModal() { document.getElementById('userModal').style.display = 'block'; }

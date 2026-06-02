@@ -485,8 +485,11 @@ function copyToClipboard(text) {
 async function remindMember(trackingId) {
   if (uiConfig?.appMode === "demo")
     return showToast("Emails disabled in Demo Mode", "warning");
+  const item = rawData.find((i) => i.tracking_id == trackingId);
+  const name = item?.member_name || "member";
   try {
     showGlobalSpinner("Sending reminder email...");
+    updateGlobalSpinnerMessage("Sending reminder email...", name);
     const res = await fetch(
       `/api/surveys/instances/${liveSurveyId}/remind/${trackingId}`,
       { method: "POST" }
@@ -505,30 +508,48 @@ async function remindAllPending() {
   if (uiConfig?.appMode === "demo")
     return showToast("Emails disabled in Demo Mode", "warning");
 
-  const pendingCount = rawData.filter((i) => i.status === "sent").length;
-  if (pendingCount === 0)
+  const pending = rawData.filter((i) => i.status === "sent");
+  if (pending.length === 0)
     return showToast("There are no pending members to remind.", "warning");
 
   if (
     !(await confirmAction(
       "Remind All Pending",
-      `Are you sure you want to trigger a reminder email to all ${pendingCount} pending members?`
+      `Send a reminder email to all ${pending.length} pending members?`
     ))
   )
     return;
 
-  try {
-    showGlobalSpinner("Sending reminder emails...");
-    const res = await fetch(
-      `/api/surveys/instances/${liveSurveyId}/remind-all`,
-      { method: "POST" }
+  let successCount = 0;
+  let failCount = 0;
+
+  showGlobalSpinner(`Sending reminders... 0%`);
+
+  for (let i = 0; i < pending.length; i++) {
+    const item = pending[i];
+    updateGlobalSpinnerMessage(
+      `Sending reminders... ${i + 1} of ${pending.length}`,
+      `Sending to: ${item.member_name}`
     );
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Failed to send bulk reminders");
-    showToast(data.message, "success");
-  } catch (e) {
-    showToast(e.message, "error");
-  } finally {
-    hideGlobalSpinner();
+    await new Promise(r => requestAnimationFrame(r));
+    try {
+      const res = await fetch(
+        `/api/surveys/instances/${liveSurveyId}/remind/${item.tracking_id}`,
+        { method: "POST" }
+      );
+      if (res.ok) successCount++;
+      else failCount++;
+    } catch (_) {
+      failCount++;
+    }
   }
+
+  hideGlobalSpinner();
+
+  if (failCount === 0)
+    showToast(`Reminders sent to ${successCount} member${successCount !== 1 ? "s" : ""}.`, "success");
+  else
+    showToast(`Sent: ${successCount}, failed: ${failCount}.`, "warning");
+
+  loadData();
 }

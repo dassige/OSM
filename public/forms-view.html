@@ -294,14 +294,6 @@
     </div>
 
     <div class="container">
-        <div id="aiProcessing" class="processing-overlay">
-            <div class="spinner-large"></div>
-            <h2 style="color: var(--primary); margin: 0 0 10px 0;">Analyzing Response...</h2>
-            <p style="font-size: 1.1em; color: #666; max-width: 500px; line-height: 1.5;">
-                The automated AI evaluation is in progress.<br>
-                <strong>Please do not close this window.</strong>
-            </p>
-        </div>
         <div id="loading" class="spinner" style="margin: 50px auto; display:block;"></div>
         <div id="formContent" class="form-container" style="display:none;">
             <div id="retryAlert"
@@ -722,17 +714,13 @@
             const originalText = btn.innerText;
             const retryAlert = document.getElementById('retryAlert');
 
-            if (isAiEnabled && hasParagraphQuestions) {
-                // Hide form and show big spinner
-                document.getElementById('formContent').style.display = 'none';
-                document.getElementById('aiProcessing').style.display = 'flex';
-                window.scrollTo(0, 0);
-            } else {
-                // Standard loading state
-                btn.disabled = true;
-                btn.innerText = "Processing...";
+            btn.disabled = true;
+            if (window.showGlobalSpinner) {
+                const msg = isAiEnabled && hasParagraphQuestions
+                    ? "Analyzing response with AI. Please do not close this window."
+                    : "Submitting...";
+                showGlobalSpinner(msg);
             }
-
 
             if (retryAlert) retryAlert.style.display = 'none';
 
@@ -744,7 +732,7 @@
                 });
 
                 const result = await res.json();
-                document.getElementById('aiProcessing').style.display = 'none';
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
 
                 if (res.ok) {
                     const isSuccess = result.status === 'accepted';
@@ -778,7 +766,7 @@
                     throw new Error(result.error || "Submission failed");
                 }
             } catch (err) {
-                document.getElementById('aiProcessing').style.display = 'none';
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
                 document.getElementById('formContent').style.display = 'block';
                 if (window.showToast) showToast(err.message, "error");
                 btn.disabled = false;
@@ -807,18 +795,14 @@
         async function submitReviewAction() {
             const modal = document.getElementById('reviewModal');
             const btnConfirm = document.getElementById('btnConfirmReview');
-            const inputs = modal.querySelectorAll('input, textarea, button');
-
-            //  Prevent multiple clicks and field changes during processing
-            inputs.forEach(el => el.disabled = true);
-            btnConfirm.innerText = "Processing...";
-
             const payload = {
                 notifyEmail: document.getElementById('revEmailCb').checked,
                 notifyWa: document.getElementById('revWaCb').checked,
                 customComment: document.getElementById('revCustomComment').value,
                 generateNew: document.getElementById('revGenerateNew').checked
             };
+
+            if (window.showGlobalSpinner) showGlobalSpinner("Processing review and sending notification...");
 
             try {
                 const res = await fetch(`/api/live-forms/${currentAction}/${reviewData.id}`, {
@@ -828,18 +812,17 @@
                 });
 
                 if (res.ok) {
+                    if (window.hideGlobalSpinner) hideGlobalSpinner();
+                    document.getElementById('reviewModal').style.display = 'none';
                     if (window.showToast) showToast("Submission processed successfully", "success");
-                    // Allow time for the toast to be seen before closing
                     setTimeout(() => window.close(), 1000);
                 } else {
                     const err = await res.json();
                     throw new Error(err.error || "Failed to process review");
                 }
             } catch (e) {
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
                 if (window.showToast) showToast(e.message, "error");
-                // Re-enable if there's an error so the admin can try again
-                inputs.forEach(el => el.disabled = false);
-                btnConfirm.innerText = "Confirm";
             }
         }
         async function archiveSubmission() {

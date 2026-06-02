@@ -847,7 +847,7 @@ async function confirmPublish() {
   btn.innerText = "Publishing...";
 
   try {
-    showGlobalSpinner("Publishing survey and sending invitations...");
+    showGlobalSpinner("Publishing survey...");
     const res = await fetch(`/api/surveys/${currentSurvey.id}/publish`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -857,14 +857,49 @@ async function confirmPublish() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Failed to publish survey.");
 
-    showToast(data.message, "success");
     closeModal("publishModal");
+    btn.disabled = false;
+    btn.innerText = "Confirm & Send";
+
+    const tracking = (data.tracking || []).filter((t) => t.email);
+    if (tracking.length === 0) {
+      hideGlobalSpinner();
+      showToast(data.message, "success");
+      return;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < tracking.length; i++) {
+      const item = tracking[i];
+      updateGlobalSpinnerMessage(
+        `Sending invitations... ${i + 1} of ${tracking.length}`,
+        `Sending to: ${item.member_name}`
+      );
+      await new Promise(r => requestAnimationFrame(r));
+      try {
+        const r = await fetch(
+          `/api/surveys/instances/${data.liveInstanceId}/remind/${item.tracking_id}`,
+          { method: "POST" }
+        );
+        if (r.ok) successCount++;
+        else failCount++;
+      } catch (_) {
+        failCount++;
+      }
+    }
+
+    hideGlobalSpinner();
+    if (failCount === 0)
+      showToast(`Survey published and ${successCount} invitation${successCount !== 1 ? "s" : ""} sent.`, "success");
+    else
+      showToast(`Published. Sent: ${successCount}, failed: ${failCount}.`, "warning");
+
   } catch (e) {
     showToast(e.message, "error");
     btn.disabled = false;
     btn.innerText = "Confirm & Send";
-  } finally {
-    // --- REMOVE SPINNER ---
     hideGlobalSpinner();
   }
 }

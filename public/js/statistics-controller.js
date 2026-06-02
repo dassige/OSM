@@ -43,8 +43,8 @@ async function runStat() {
   const key = statSelect.value;
   if (!key) return;
 
-  statPanel.innerHTML =
-    '<div class="spinner" style="margin:50px auto; display:block; border-top-color:#333;"></div>';
+  if (window.showContainerLoader) showContainerLoader(statPanel);
+  else statPanel.innerHTML = '<div style="text-align:center;padding:30px;">Loading...</div>';
 
   try {
     const res = await fetch(`/api/statistics/data/${key}`);

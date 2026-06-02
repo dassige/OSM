@@ -322,11 +322,6 @@
                 <strong>Note:</strong> This operation scans the OSM Dashboard and will import only the members that are
                 <u>not yet in your table</u>.
             </div>
-            <div id="osmLoading" class="text-center" style="padding: 20px; display: none;">
-                <div class="spinner-large"
-                    style="display:inline-block; border-top-color:var(--primary); margin-bottom: 10px;"></div>
-                <div>Scanning Dashboard...</div>
-            </div>
             <div id="osmListContainer"
                 style="flex: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; padding: 10px; margin-bottom: 20px; min-height: 100px; display: none;">
                 <ul id="osmMemberList" style="list-style: none; padding: 0; margin: 0;"></ul>
@@ -820,27 +815,23 @@
         async function openOsmImportModal() {
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const modal = document.getElementById('osmImportModal');
-            const loading = document.getElementById('osmLoading');
             const listContainer = document.getElementById('osmListContainer');
             const actions = document.getElementById('osmActions');
             const list = document.getElementById('osmMemberList');
-            list.innerHTML = '';
-            listContainer.style.display = 'none';
+            list.innerHTML = '<li style="text-align:center; padding:20px; color:var(--text-muted);"><div class="spinner" style="margin:0 auto 8px; display:block; border-top-color:var(--primary);"></div>Scanning Dashboard...</li>';
             actions.style.display = 'none';
-            loading.style.display = 'block';
+            listContainer.style.display = 'block';
             modal.style.display = 'block';
             try {
                 const res = await fetch('/api/members/discover');
                 if (!res.ok) throw new Error((await res.json()).error || "Failed to scan");
                 discoveredMembers = await res.json();
-                loading.style.display = 'none';
+                list.innerHTML = '';
                 if (discoveredMembers.length === 0) {
-                    listContainer.style.display = 'block';
-                    listContainer.innerHTML = '<p class="text-center" style="color:var(--text-muted); padding-top:20px;">No new unique members found.</p>';
+                    list.innerHTML = '<li style="text-align:center; padding:20px; color:var(--text-muted);">No new unique members found.</li>';
                     actions.style.display = 'flex';
                     actions.querySelector('.btn-success').disabled = true;
                 } else {
-                    listContainer.style.display = 'block';
                     actions.style.display = 'flex';
                     actions.querySelector('.btn-success').disabled = false;
                     discoveredMembers.forEach(memberName => {
@@ -852,7 +843,6 @@
                     });
                 }
             } catch (e) {
-                loading.style.display = 'none';
                 showToast("Error scanning OSM: " + e.message, "error");
                 closeModal('osmImportModal');
             }

@@ -65,6 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function loadData() {
+  if (window.showContainerLoader) showContainerLoader(document.getElementById('tableBody'));
   try {
     const res = await fetch("/api/surveys/instances");
     if (!res.ok) throw new Error("Failed to fetch surveys");

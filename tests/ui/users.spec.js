@@ -90,8 +90,11 @@ test.describe.serial('T14 — Users CRUD', () => {
 
     await page.locator(`tr:has-text("${NAME2}")`).first().locator('.btn-icon.delete').click();
 
+    // Delete user now uses promptAction — type the required keyword then confirm
+    await page.locator('#btnPromptYes').waitFor({ state: 'visible' });
+    await page.locator('#promptInput').fill('DELETE');
     const respPromise = waitForAPI(page, '/api/users/', 'DELETE');
-    await confirmDialog(page);
+    await page.locator('#btnPromptYes').click();
     const resp = await respPromise;
 
     expect(resp.status()).toBe(200);
