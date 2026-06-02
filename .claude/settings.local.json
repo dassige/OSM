@@ -13,7 +13,10 @@
       "Bash(Select-Object Name)",
       "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\" -Directory)",
       "Bash(Select-String '\"version\"')",
-      "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\\\\routes\" -Recurse -Name *.js)"
+      "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\\\\routes\" -Recurse -Name *.js)",
+      "Bash(Get-ChildItem -Path \"c:\\\\sviluppo\\\\~codeRepo\\\\OSM\" -Recurse -Filter \"*.js\")",
+      "Bash(Measure-Object)",
+      "Bash(Select-Object -ExpandProperty Count)"
     ]
   }
 }

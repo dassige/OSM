@@ -218,6 +218,8 @@ async function loadForms() {
 }
 
 async function saveForm() {
+  if (uiConfig?.appMode === "demo")
+    return showToast("Saving is disabled in Demo Mode", "warning");
   const data = getFormData();
   const status = currentForm ? currentForm.status : 0;
   const payload = { ...data, status };
@@ -280,6 +282,11 @@ async function saveForm() {
 }
 
 async function updateStatus(id, enabled) {
+  if (uiConfig?.appMode === "demo") {
+    const toggle = document.getElementById("formStatusToggle");
+    if (toggle) toggle.checked = !enabled;
+    return showToast("Status changes disabled in Demo Mode", "warning");
+  }
   try {
     const res = await fetch(`/api/forms/${id}`, {
       method: "PUT",
@@ -312,6 +319,8 @@ async function updateStatus(id, enabled) {
 
 async function deleteForm() {
   if (!currentForm || !currentForm.id) return;
+  if (uiConfig?.appMode === "demo")
+    return showToast("Deletion disabled in Demo Mode", "warning");
 
   try {
     // 1. Check if form is used by any skills
