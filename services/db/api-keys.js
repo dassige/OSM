@@ -42,7 +42,7 @@ async function getApiKeyByHash(hash) {
 async function touchApiKey(id) {
     const db = await initDB();
     await db.run(
-        `UPDATE api_keys SET last_used_at = datetime('now') WHERE id = ?`, id
+        `UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?`, id
     );
 }
 

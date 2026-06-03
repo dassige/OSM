@@ -51,13 +51,12 @@ async function getSurveyByPublicId(publicId) {
 
 async function publishSurvey(templateId, memberIds, publishedByUserId) {
   const db = await initDB();
-  await db.exec("BEGIN TRANSACTION");
-  try {
-    const template = await db.get("SELECT * FROM surveys WHERE id = ?", templateId);
+  return db.transaction(async (tx) => {
+    const template = await tx.get("SELECT * FROM surveys WHERE id = ?", templateId);
     if (!template) throw new Error("Survey template not found.");
 
     const instanceName = `${template.name} - ${new Date().toISOString().split("T")[0]}`;
-    const instanceResult = await db.run(
+    const instanceResult = await tx.run(
       `INSERT INTO survey_live (template_id, name, intro_text, structure, published_by, is_anonymous)
        VALUES (?, ?, ?, ?, ?, ?)`,
       template.id, instanceName, template.intro_text, template.structure, publishedByUserId, template.is_anonymous,
@@ -65,7 +64,7 @@ async function publishSurvey(templateId, memberIds, publishedByUserId) {
     const liveInstanceId = instanceResult.lastID;
 
     const trackingData = [];
-    const stmt = await db.prepare(
+    const stmt = await tx.prepare(
       "INSERT INTO survey_tracking (survey_live_id, member_id, access_code, status) VALUES (?, ?, ?, 'sent')",
     );
     for (const memberId of memberIds) {
@@ -74,41 +73,32 @@ async function publishSurvey(templateId, memberIds, publishedByUserId) {
       trackingData.push({ memberId, accessCode });
     }
     await stmt.finalize();
-    await db.exec("COMMIT");
     return { liveInstanceId, trackingData };
-  } catch (error) {
-    await db.exec("ROLLBACK");
-    throw error;
-  }
+  });
 }
 
 async function submitSurveyResponse(liveSurveyId, accessCode, submittedDataJson) {
   const db = await initDB();
-  await db.exec("BEGIN TRANSACTION");
-  try {
-    const trackingRecord = await db.get(
+  await db.transaction(async (tx) => {
+    const trackingRecord = await tx.get(
       "SELECT id, member_id, status FROM survey_tracking WHERE survey_live_id = ? AND access_code = ?",
       liveSurveyId, accessCode,
     );
     if (!trackingRecord) throw new Error("Invalid access code.");
     if (trackingRecord.status === "submitted") throw new Error("Survey already submitted.");
 
-    const liveInstance = await db.get("SELECT is_anonymous FROM survey_live WHERE id = ?", liveSurveyId);
+    const liveInstance = await tx.get("SELECT is_anonymous FROM survey_live WHERE id = ?", liveSurveyId);
     const memberIdToLink = liveInstance.is_anonymous === 0 ? trackingRecord.member_id : null;
 
-    await db.run(
+    await tx.run(
       "UPDATE survey_tracking SET status = 'submitted', completed_at = CURRENT_TIMESTAMP WHERE id = ?",
       trackingRecord.id,
     );
-    await db.run(
+    await tx.run(
       "INSERT INTO survey_responses (survey_live_id, member_id, submitted_data) VALUES (?, ?, ?)",
       liveSurveyId, memberIdToLink, submittedDataJson,
     );
-    await db.exec("COMMIT");
-  } catch (error) {
-    await db.exec("ROLLBACK");
-    throw error;
-  }
+  });
 }
 
 async function getSurveyInstanceResults(liveSurveyId) {
@@ -151,17 +141,12 @@ async function updateSurveyArchiveStatus(id, isArchived) {
 
 async function deleteSurveyInstance(id) {
   const db = await initDB();
-  await db.exec("BEGIN TRANSACTION");
-  try {
-    await db.run("DELETE FROM survey_responses WHERE survey_live_id = ?", id);
-    await db.run("DELETE FROM survey_tracking WHERE survey_live_id = ?", id);
-    await db.run("DELETE FROM survey_live WHERE id = ?", id);
-    await db.exec("COMMIT");
-    return true;
-  } catch (error) {
-    await db.exec("ROLLBACK");
-    throw error;
-  }
+  await db.transaction(async (tx) => {
+    await tx.run("DELETE FROM survey_responses WHERE survey_live_id = ?", id);
+    await tx.run("DELETE FROM survey_tracking WHERE survey_live_id = ?", id);
+    await tx.run("DELETE FROM survey_live WHERE id = ?", id);
+  });
+  return true;
 }
 
 async function getSurveyTracking(liveId) {
@@ -207,9 +192,8 @@ async function getTrackingRecordWithMember(accessCode) {
 
 async function importAllSurveys(surveysData, createdByUserId) {
   const db = await initDB();
-  await db.exec("BEGIN TRANSACTION");
-  try {
-    const stmt = await db.prepare(
+  await db.transaction(async (tx) => {
+    const stmt = await tx.prepare(
       "INSERT INTO surveys (public_id, name, intro_text, status, structure, created_by, is_anonymous) VALUES (?, ?, ?, ?, ?, ?, ?)",
     );
     for (const s of surveysData) {
@@ -219,11 +203,7 @@ async function importAllSurveys(surveysData, createdByUserId) {
       await stmt.run(newPublicId, s.name, s.intro_text || s.intro || "", s.status || 0, structure, createdByUserId, isAnonymous);
     }
     await stmt.finalize();
-    await db.exec("COMMIT");
-  } catch (error) {
-    await db.exec("ROLLBACK");
-    throw error;
-  }
+  });
 }
 
 async function getSurveyResponses(liveSurveyId) {

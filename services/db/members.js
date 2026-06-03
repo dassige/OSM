@@ -27,9 +27,8 @@ async function addMember(member) {
 
 async function bulkAddMembers(members) {
   const db = await initDB();
-  await db.exec("BEGIN TRANSACTION");
-  try {
-    const stmt = await db.prepare(
+  await db.transaction(async (tx) => {
+    const stmt = await tx.prepare(
       "INSERT INTO members (name, email, mobile, messengerId, enabled, notificationPreference) VALUES (?, ?, ?, ?, ?, ?)",
     );
     for (const member of members) {
@@ -40,11 +39,7 @@ async function bulkAddMembers(members) {
       );
     }
     await stmt.finalize();
-    await db.exec("COMMIT");
-  } catch (error) {
-    await db.exec("ROLLBACK");
-    throw error;
-  }
+  });
 }
 
 async function updateMember(id, member) {
@@ -83,18 +78,13 @@ async function deleteMember(id) {
 async function bulkDeleteMembers(ids) {
   const db = await initDB();
   if (!ids || ids.length === 0) return;
-  await db.exec("BEGIN TRANSACTION");
-  try {
-    const stmt = await db.prepare("DELETE FROM members WHERE id = ?");
+  await db.transaction(async (tx) => {
+    const stmt = await tx.prepare("DELETE FROM members WHERE id = ?");
     for (const id of ids) {
       await stmt.run(id);
     }
     await stmt.finalize();
-    await db.exec("COMMIT");
-  } catch (error) {
-    await db.exec("ROLLBACK");
-    throw error;
-  }
+  });
 }
 
 const MEMBER_SORT_COLS = new Set(['name', 'email', 'mobile', 'enabled', 'notificationPreference']);
@@ -130,9 +120,8 @@ async function updateMemberEtlFields(id, { rank, firstName, lastName, memberOsmI
 // Bulk-insert members that came from the OSM extraction — includes ETL fields.
 async function bulkAddMembersWithEtl(members) {
   const db = await initDB();
-  await db.exec('BEGIN TRANSACTION');
-  try {
-    const stmt = await db.prepare(
+  await db.transaction(async (tx) => {
+    const stmt = await tx.prepare(
       `INSERT INTO members
          (name, email, mobile, messengerId, enabled, notificationPreference,
           rank, first_name, last_name, member_osm_id)
@@ -145,11 +134,7 @@ async function bulkAddMembersWithEtl(members) {
       );
     }
     await stmt.finalize();
-    await db.exec('COMMIT');
-  } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
-  }
+  });
 }
 
 module.exports = { getMembers, getMembersPage, getMemberById, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers, updateMemberEtlFields, bulkAddMembersWithEtl };

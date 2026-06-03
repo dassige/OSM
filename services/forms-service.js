@@ -27,10 +27,9 @@ async function getAllFormsFull() {
 
 async function importBulkForms(formsArray) {
   const database = await db.initDB();
-  await database.exec("BEGIN TRANSACTION");
-  try {
-    await database.run("DELETE FROM forms");
-    const stmt = await database.prepare(
+  await database.transaction(async (tx) => {
+    await tx.run("DELETE FROM forms");
+    const stmt = await tx.prepare(
       `INSERT INTO forms (public_id, name, status, intro, structure, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
     );
     for (const f of formsArray) {
@@ -51,12 +50,8 @@ async function importBulkForms(formsArray) {
       );
     }
     await stmt.finalize();
-    await database.exec("COMMIT");
-    return true;
-  } catch (e) {
-    await database.exec("ROLLBACK");
-    throw e;
-  }
+  });
+  return true;
 }
 
 async function getFormByPublicId(publicId) {
@@ -176,19 +171,13 @@ async function deleteForm(id) {
   );
   if (!form) return;
 
-  await database.exec("BEGIN TRANSACTION");
-  try {
-    await database.run(
+  await database.transaction(async (tx) => {
+    await tx.run(
       "UPDATE skills SET url = '', url_type = 'external' WHERE url = ? AND url_type = 'internal'",
       form.public_id,
     );
-    await database.run("DELETE FROM forms WHERE id = ?", id);
-
-    await database.exec("COMMIT");
-  } catch (e) {
-    await database.exec("ROLLBACK");
-    throw e;
-  }
+    await tx.run("DELETE FROM forms WHERE id = ?", id);
+  });
 }
 async function ensureLiveForm(
   memberId,

@@ -293,10 +293,15 @@ const helpContent = {
         title: "System Tools",
         body: `
             <h3>1. Database Backup</h3>
-            <p>Downloads a complete snapshot of the <code>fenz.db</code> SQLite file. This includes all members, skills, live forms, history, and configuration.</p>
+            <p>Downloads a complete SQL dump of the current database (SQLite or PostgreSQL). The file includes all members, skills, live forms, history, and configuration as portable <code>INSERT</code> statements and can be used as a point-in-time restore.</p>
 
             <h3>2. Database Restore</h3>
-            <p>Uploads a <code>.db</code> file to replace the current system state. <strong style="color:red;">Warning:</strong> This completely overwrites the current database and cannot be undone. The uploaded file must match the current application version.</p>
+            <p>Uploads a <code>.db</code> file (SQLite physical restore) or a <code>.sql</code> dump file (logical restore for both SQLite and PostgreSQL) to replace the current system state.</p>
+            <ul>
+                <li><strong>SQLite:</strong> Supports both physical <code>.db</code> file upload and SQL dump restore.</li>
+                <li><strong>PostgreSQL:</strong> SQL dump restore only — physical file upload is not applicable.</li>
+            </ul>
+            <p><strong style="color:red;">Warning:</strong> Restore completely overwrites the current data and cannot be undone. A PostgreSQL dump cannot be restored into a SQLite instance and vice versa.</p>
             <p><em>Note:</em> In <strong>Demo Mode</strong>, these operations apply only to the sandboxed <code>demo.db</code>.</p>
 
             <h3>3. API Key Management</h3>

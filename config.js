@@ -120,6 +120,23 @@ const aiConfig = {
   ollamaUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
 };
 
+// Database — DB_TYPE selects the backend; remaining vars apply to PostgreSQL only.
+// Both Google Cloud SQL (PostgreSQL) and AWS RDS (PostgreSQL) are supported when
+// DB_TYPE=postgresql.  Defaults to SQLite for local / single-container installs.
+const database = {
+  type:     process.env.DB_TYPE     || 'sqlite',
+  host:     process.env.DB_HOST     || 'localhost',
+  port:     parseInt(process.env.DB_PORT) || 5432,
+  name:     process.env.DB_NAME     || 'opready',
+  user:     process.env.DB_USER     || '',
+  password: process.env.DB_PASSWORD || '',
+  // 'false' = no SSL, 'true' = require SSL (skip cert verify, e.g. Cloud SQL proxy),
+  // 'verify' = require SSL with server certificate verification (AWS RDS + RDS CA bundle)
+  ssl:      process.env.DB_SSL      || 'false',
+  poolMin:  parseInt(process.env.DB_POOL_MIN) || 2,
+  poolMax:  parseInt(process.env.DB_POOL_MAX) || 10,
+};
+
 module.exports = {
   appMode,
   auth,
@@ -143,4 +160,5 @@ module.exports = {
   rateLimits,
   cookieSecure,
   corsOrigin,
+  database,
 };

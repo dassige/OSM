@@ -333,30 +333,35 @@
 | ID | Action | Steps | Expected Result |
 |----|--------|-------|----------------|
 | T17-01 | Page load | Navigate to `system-tools.html`. | Backup, Restore, API Keys, and AI Lab sections are all visible. |
-| T17-02 | Create a database backup | Click `[Download Backup]`. | A `.sql` file is downloaded containing a complete SQL dump of the application database. File size is non-zero. |
-| T17-03 | Restore from backup | Create a test member. Download a new backup. Delete the test member. Click `[Restore]` → upload the backup file → confirm. | Application restores to the backed-up state. The test member reappears. Event log records "Database Restored". |
-| T17-04 | Demo mode blocks restore | If testing on a demo-mode instance, click `[Restore]`. | Action is blocked with an error: "Disabled in demo mode." No data is changed. |
+| T17-02 | Create a database backup (SQLite) | On a SQLite instance, click `[Download Backup]`. | A `.sql` file is downloaded. Open it and confirm it starts with `-- DB Type: sqlite` and contains `DROP TABLE IF EXISTS` + `INSERT` statements. File size is non-zero. |
+| T17-03 | Create a database backup (PostgreSQL) | On a PostgreSQL instance, click `[Download Backup]`. | A `.sql` file is downloaded. Open it and confirm it starts with `-- DB Type: postgresql` and contains `TRUNCATE TABLE` + `INSERT` statements. |
+| T17-04 | Restore from SQL dump (SQLite) | Create a test member. Download a new backup. Delete the test member. Click `[Restore]` → upload the `.sql` backup file → confirm. | Application restores to the backed-up state. The test member reappears. Event log records "Database Restored". |
+| T17-05 | Restore from SQL dump (PostgreSQL) | Repeat T17-04 on a PostgreSQL instance using the PostgreSQL `.sql` dump. | Same result — member reappears; event log records restore. |
+| T17-06 | Cross-type restore rejected | On a PostgreSQL instance, attempt to restore a SQLite dump (file starts with `-- DB Type: sqlite`). | Restore is rejected with an error message explaining the dump type mismatch. No data is changed. |
+| T17-07 | Physical file restore (SQLite) | On a SQLite instance, click `[Upload .db File]` → upload a valid `.db` file → confirm. | Application restores from the physical file. Members and skills from the uploaded database are present. |
+| T17-08 | Physical file restore blocked (PostgreSQL) | On a PostgreSQL instance, attempt to use the physical file restore option. | Option is either hidden or returns an error: "Physical file restore not supported for PostgreSQL." |
+| T17-09 | Demo mode blocks restore | If testing on a demo-mode instance, click `[Restore]`. | Action is blocked with an error: "Disabled in demo mode." No data is changed. |
 
 ### T17-B — API Key Management
 
 | ID | Action | Steps | Expected Result |
 |----|--------|-------|----------------|
-| T17-05 | Create an API key for each role | Click `[Create API Key]` → enter a name, select Role = `superadmin` → click `[Generate]`. Repeat for roles `admin`, `simple`, and `guest`. | For each creation: the full API key (`osm_...`) is displayed once; the key appears in the list with the correct role label. Event log records "API Key Created" for each. |
-| T17-06 | Copy the API key | Click `[Copy]` next to the displayed key. | Key is copied to the clipboard. The full key value is NOT shown again after closing this dialog. |
-| T17-07 | Verify API key works | Use the copied `admin` key in a REST client (e.g., Postman): `GET /api/members` with header `X-API-Key: {copied_key}`. | HTTP 200 response with member data is returned. |
-| T17-08 | Disable (toggle) an API key | Click `[Toggle]` on the active API key. | Key status changes to Disabled. Event log records "API Key Toggled" with `newState: disabled`. |
-| T17-09 | Verify disabled key is rejected | Retry the API request from T17-07 with the now-disabled key. | HTTP 403 response. Request is rejected. |
-| T17-10 | Re-enable an API key | Click `[Toggle]` again. | Key status returns to Active. Event log records "API Key Toggled" with `newState: enabled`. |
-| T17-11 | Delete an API key | Click `[Delete]` → confirm. | Key is removed from the list. Event log records "API Key Deleted". Subsequent requests with that key return 403. |
+| T17-10 | Create an API key for each role | Click `[Create API Key]` → enter a name, select Role = `superadmin` → click `[Generate]`. Repeat for roles `admin`, `simple`, and `guest`. | For each creation: the full API key (`osm_...`) is displayed once; the key appears in the list with the correct role label. Event log records "API Key Created" for each. |
+| T17-11 | Copy the API key | Click `[Copy]` next to the displayed key. | Key is copied to the clipboard. The full key value is NOT shown again after closing this dialog. |
+| T17-12 | Verify API key works | Use the copied `admin` key in a REST client (e.g., Postman): `GET /api/members` with header `X-API-Key: {copied_key}`. | HTTP 200 response with member data is returned. |
+| T17-13 | Disable (toggle) an API key | Click `[Toggle]` on the active API key. | Key status changes to Disabled. Event log records "API Key Toggled" with `newState: disabled`. |
+| T17-14 | Verify disabled key is rejected | Retry the API request from T17-12 with the now-disabled key. | HTTP 403 response. Request is rejected. |
+| T17-15 | Re-enable an API key | Click `[Toggle]` again. | Key status returns to Active. Event log records "API Key Toggled" with `newState: enabled`. |
+| T17-16 | Delete an API key | Click `[Delete]` → confirm. | Key is removed from the list. Event log records "API Key Deleted". Subsequent requests with that key return 403. |
 
 ### T17-C — AI Evaluator Sandbox
 
 | ID | Action | Steps | Expected Result |
 |----|--------|-------|----------------|
-| T17-12 | Open AI test lab | Scroll to the AI Evaluator section. | Input fields for Question, Reference Answer, Candidate Answer, and AI Provider are visible. |
-| T17-13 | Run an AI evaluation (Gemini) | Select Provider = Gemini → fill in a question, reference answer, and candidate answer → click `[Evaluate]`. | An AI-generated score and feedback is returned and displayed. No error is shown. |
-| T17-14 | Run an AI evaluation (Ollama) | If Ollama is configured, switch Provider = Ollama → select a model → run evaluation. | Score and feedback returned from the local Ollama model. |
-| T17-15 | Ollama model list | If Ollama is connected, observe the model dropdown. | Available models are listed and selectable. |
+| T17-17 | Open AI test lab | Scroll to the AI Evaluator section. | Input fields for Question, Reference Answer, Candidate Answer, and AI Provider are visible. |
+| T17-18 | Run an AI evaluation (Gemini) | Select Provider = Gemini → fill in a question, reference answer, and candidate answer → click `[Evaluate]`. | An AI-generated score and feedback is returned and displayed. No error is shown. |
+| T17-19 | Run an AI evaluation (Ollama) | If Ollama is configured, switch Provider = Ollama → select a model → run evaluation. | Score and feedback returned from the local Ollama model. |
+| T17-20 | Ollama model list | If Ollama is connected, observe the model dropdown. | Available models are listed and selectable. |
 
 ---
 

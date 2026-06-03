@@ -32,6 +32,8 @@ const EXISTING_ENV = path.join(ROOT, '.env');
 
 const OPTIONS = {
     APP_MODE:               ['production', 'demo'],
+    DB_TYPE:                ['sqlite', 'postgresql'],
+    DB_SSL:                 ['false', 'true', 'verify'],
     EXTRACTION_PLUGIN:      ['html-scraper', 'rest-api'],
     NODE_ENV:               ['development', 'production'],
     LOG_LEVEL:              ['info', 'error', 'warn', 'debug'],

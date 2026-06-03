@@ -29,9 +29,8 @@ async function addSkill(skill) {
 
 async function bulkAddSkills(skills) {
   const db = await initDB();
-  await db.exec("BEGIN TRANSACTION");
-  try {
-    const stmt = await db.prepare(
+  await db.transaction(async (tx) => {
+    const stmt = await tx.prepare(
       "INSERT INTO skills (name, url, critical_skill, enabled, url_type) VALUES (?, ?, ?, ?, ?)",
     );
     for (const skill of skills) {
@@ -43,11 +42,7 @@ async function bulkAddSkills(skills) {
       );
     }
     await stmt.finalize();
-    await db.exec("COMMIT");
-  } catch (error) {
-    await db.exec("ROLLBACK");
-    throw error;
-  }
+  });
 }
 
 async function updateSkill(id, skill) {
@@ -83,18 +78,13 @@ async function deleteSkill(id) {
 async function bulkDeleteSkills(ids) {
   const db = await initDB();
   if (!ids || ids.length === 0) return;
-  await db.exec("BEGIN TRANSACTION");
-  try {
-    const stmt = await db.prepare("DELETE FROM skills WHERE id = ?");
+  await db.transaction(async (tx) => {
+    const stmt = await tx.prepare("DELETE FROM skills WHERE id = ?");
     for (const id of ids) {
       await stmt.run(id);
     }
     await stmt.finalize();
-    await db.exec("COMMIT");
-  } catch (error) {
-    await db.exec("ROLLBACK");
-    throw error;
-  }
+  });
 }
 
 const SKILL_SORT_COLS = new Set(['name', 'url_type', 'enabled', 'critical_skill']);
@@ -135,9 +125,8 @@ async function updateSkillEtlFields(id, { skillOsmId, skillCategory }) {
 // Bulk-insert skills that came from the OSM extraction — includes ETL fields.
 async function bulkAddSkillsWithEtl(skills) {
   const db = await initDB();
-  await db.exec('BEGIN TRANSACTION');
-  try {
-    const stmt = await db.prepare(
+  await db.transaction(async (tx) => {
+    const stmt = await tx.prepare(
       `INSERT INTO skills
          (name, url, critical_skill, enabled, url_type, skill_osm_id, skill_category)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -149,11 +138,7 @@ async function bulkAddSkillsWithEtl(skills) {
       );
     }
     await stmt.finalize();
-    await db.exec('COMMIT');
-  } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
-  }
+  });
 }
 
 module.exports = { getSkills, getSkillsPage, getSkillById, addSkill, bulkAddSkills, updateSkill, deleteSkill, bulkDeleteSkills, updateSkillEtlFields, bulkAddSkillsWithEtl };
