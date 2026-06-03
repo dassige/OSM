@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../services/db');
-const { getOIData } = require('../../services/scraper');
+const extractionEngine = require('../../services/extraction-engine');
 const { getActiveProxy } = require('../../services/proxy-manager');
 const config = require('../../config');
 const { hasRole } = require('../../middleware/auth');
@@ -95,13 +95,16 @@ router.post('/bulk-delete', hasRole('admin'), async (req, res) => {
 
 router.get('/discover', hasRole('admin'), async (req, res) => {
   try {
-    const currentProxy = getActiveProxy();
-    const rawData = await getOIData(config.url, 0, currentProxy);
+    const rawData = await extractionEngine.extractData({ forceRefresh: true, proxyUrl: getActiveProxy() });
     const existing = await db.getSkills();
     const existingNames = new Set(existing.map((s) => s.name));
-    const newSkills = [...new Set(rawData.map((r) => r.skill))].filter(
-      (n) => !existingNames.has(n),
-    );
+    const newSkills = [
+      ...new Set(
+        rawData
+          .map((r) => r.skill)
+          .filter((n) => typeof n === 'string' && n.trim().length > 0) // guard: skill names must be non-empty strings
+      ),
+    ].filter((n) => !existingNames.has(n));
     res.json(newSkills.sort());
   } catch (e) {
     res.status(500).json({ error: e.message });

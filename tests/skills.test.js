@@ -1,6 +1,16 @@
 const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 
+jest.mock('../services/extraction-engine', () => ({
+    extractData:     jest.fn().mockResolvedValue([]),
+    clearCache:      jest.fn(),
+    getActivePlugin: jest.fn().mockReturnValue({ name: 'html-scraper', description: 'Test' }),
+}));
+
+jest.mock('../services/proxy-manager', () => ({
+    getActiveProxy: jest.fn().mockReturnValue(null),
+}));
+
 jest.mock('../services/db', () => ({
     getSkills: jest.fn(),
     getSkillsPage: jest.fn(),

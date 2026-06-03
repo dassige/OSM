@@ -6,7 +6,7 @@ const session = require("express-session");
 const SQLiteStore = require("connect-sqlite3")(session);
 const config = require("./config.js");
 const db = require("./services/db");
-const { getOIData } = require("./services/scraper");
+const extractionEngine = require("./services/extraction-engine");
 const { processMemberSkills } = require("./services/member-manager");
 const whatsappService = require("./services/whatsapp-service");
 const formsService = require("./services/forms-service");
@@ -232,13 +232,12 @@ io.on("connection", (socket) => {
     const dynamicBaseUrl = `${protocol}://${host}`;
     try {
       const daysThreshold = parseInt(days) || 30;
-      const interval = forceRefresh ? 0 : config.scrapingInterval;
 
       logger(`> Fetching View Data (Threshold: ${daysThreshold} days${forceRefresh ? ", Force Refresh" : ", Cached OK"})...`);
 
       const dbMembers = await db.getMembers();
       const dbSkills = await db.getSkills();
-      const rawData = await getOIData(config.url, interval, getActiveProxy(), logger);
+      const rawData = await extractionEngine.extractData({ forceRefresh, proxyUrl: getActiveProxy(), logFn: logger });
       const trainingMap = await getTrainingMap();
       const liveForms = await formsService.getAllActiveStatuses(config.acceptedFormVisibilityDays);
       const liveFormsMap = {};
@@ -289,7 +288,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
   try {
     const dbMembers = await db.getMembers();
     const dbSkills = await db.getSkills();
-    const rawData = await getOIData(config.url, config.scrapingInterval, null, logger);
+    const rawData = await extractionEngine.extractData({ logFn: logger });
     const prefs = await db.getPreferences();
     const membersToProcess = dbMembers.filter((m) => targets.some((t) => t.name === m.name && m.enabled));
     const trainingMap = await getTrainingMap();

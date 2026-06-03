@@ -1,5 +1,5 @@
 // main.js
-const { getOIData } = require('./services/scraper'); 
+const extractionEngine = require('./services/extraction-engine');
 const config = require('./config'); 
 
 // Import resources (Legacy support for CLI)
@@ -245,7 +245,7 @@ const main = async () => {
     try {
         if (!isViewMode) console.log(`[${getTime()}] Initializing Scraper (Target: ${config.url})`);
         
-        const scrapedData = await getOIData(config.url, 0, config.fixedProxyUrl);
+        const scrapedData = await extractionEngine.extractData({ forceRefresh: true, proxyUrl: config.fixedProxyUrl });
         
         if (scrapedData && scrapedData.length > 0) {
             members.forEach((member) => {

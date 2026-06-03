@@ -1,5 +1,5 @@
 // services/report-service.js
-const { getOIData } = require('./scraper');
+const extractionEngine = require('./extraction-engine');
 const db = require('./db');
 const config = require('../config');
 const { isExpiring, isExpired } = require('./member-manager');
@@ -50,7 +50,7 @@ async function getFreshData(userId, proxyUrl, daysOverride) {
         } catch (e) {}
     }
 
-    const scrapeData = await getOIData(config.url, config.scrapingInterval, proxyUrl);
+    const scrapeData = await extractionEngine.extractData({ proxyUrl });
     const activeMembers = dbMembers.filter(m => m.enabled);
     const enabledSkills = dbSkills.filter(s => s.enabled);
     
@@ -189,7 +189,7 @@ async function getCriticalOverdue(userId, proxyUrl, days) {
 async function getComplianceMatrix(userId, proxyUrl, days) {
     const dbMembers = await db.getMembers();
     const dbSkills = await db.getSkills();
-    const scrapeData = await getOIData(config.url, config.scrapingInterval, proxyUrl);
+    const scrapeData = await extractionEngine.extractData({ proxyUrl });
 
     // Priority: explicit days param → saved user preference → hard-coded default (30)
     let daysThreshold = 30;

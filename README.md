@@ -182,11 +182,15 @@ Open the `.env` file and configure the following parameters:
   * `AI_MODEL`: E.g., `gemini-1.5-pro` or `llama3`.
   * `GEMINI_API_KEY`: Required if provider is Gemini.
 
-#### **OSM Dashboard Connection**
+#### **Extraction Engine**
+
+  * `EXTRACTION_PLUGIN`: Which ETL plugin to use for fetching member skill expiry data. `html-scraper` (default) scrapes the OI HTML dashboard. Additional plugins can be added as `services/plugins/<name>.plugin.js`.
+
+#### **OSM Dashboard Connection** *(html-scraper plugin)*
 
   * `OSM_BU_ID`: **Crucial.** Your unique Business Unit ID (GUID) for the dashboard (e.g., `87FF646A-FCBC-49A1-9BAC-XXXXXXXXXXX`). The system will automatically construct the correct URL.
   * `DASHBOARD_URL`: (Optional) Override the automatic URL construction if you have a custom link.
-  * `SCRAPING_INTERVAL`: Minutes to cache data before scraping the live site again (Default: `60`).
+  * `SCRAPING_INTERVAL`: Minutes to cache extracted data before the next live fetch (Default: `60`).
 
 #### **Email Configuration (SMTP)**
 
@@ -759,7 +763,11 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── mailer.js             # SMTP Service
 │   ├── whatsapp-service.js   # WhatsApp client (w/ reconnect & message queue)
 │   ├── report-service.js     # Reporting Logic
-│   ├── scraper.js            # Dashboard Scraper
+│   ├── extraction-engine.js  # ETL orchestrator — plugin loader, cache, unified entry point
+│   ├── plugins/
+│   │   ├── name-parser.js          # Parses raw OI name strings → rank/lastName/firstName
+│   │   ├── html-scraper.plugin.js  # Default plugin — scrapes the OI HTML dashboard
+│   │   └── rest-api.plugin.js      # Stub — future REST API data source
 │   └── ...
 └── Dockerfile                # Container definition
 ```

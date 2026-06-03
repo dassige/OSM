@@ -1,5 +1,5 @@
 // services/statistics-service.js
-const { getOIData } = require('./scraper');
+const extractionEngine = require('./extraction-engine');
 const db = require('./db');
 const config = require('../config');
 const { isExpiring, isExpired } = require('./member-manager');
@@ -19,7 +19,7 @@ async function getComplianceOverview(userId) {
     // Per-user preference so the overview matches the threshold the user set on their dashboard
     const daysThreshold = await db.getUserPreference(userId, 'daysToExpiry') || 30;
 
-    const scrapeData = await getOIData(config.url, config.scrapingInterval);
+    const scrapeData = await extractionEngine.extractData();
     
     const activeMembers = dbMembers.filter(m => m.enabled);
     const trackedSkillNames = new Set(dbSkills.filter(s => s.enabled).map(s => s.name));

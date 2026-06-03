@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../../services/db");
-const { getOIData } = require("../../services/scraper");
+const extractionEngine = require("../../services/extraction-engine");
 const { getActiveProxy } = require("../../services/proxy-manager");
 const config = require("../../config");
 const { hasRole } = require("../../middleware/auth");
@@ -98,13 +98,16 @@ router.post("/bulk-delete", hasRole("admin"), async (req, res) => {
 
 router.get("/discover", hasRole("admin"), async (req, res) => {
   try {
-    const currentProxy = getActiveProxy();
-    const rawData = await getOIData(config.url, 0, currentProxy);
+    const rawData = await extractionEngine.extractData({ forceRefresh: true, proxyUrl: getActiveProxy() });
     const existing = await db.getMembers();
     const existingNames = new Set(existing.map((m) => m.name));
-    const newMembers = [...new Set(rawData.map((r) => r.name))].filter(
-      (n) => !existingNames.has(n),
-    );
+    const newMembers = [
+      ...new Set(
+        rawData
+          .map((r) => r.name)
+          .filter((n) => typeof n === 'string' && n.trim().length > 0) // guard: names must be non-empty strings
+      ),
+    ].filter((n) => !existingNames.has(n));
     res.json(newMembers.sort());
   } catch (e) {
     res.status(500).json({ error: e.message });

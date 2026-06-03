@@ -21,7 +21,8 @@
     "screenshots": "node scripts/take-screenshots.js",
     "generate-demo-db": "node scripts/generate-demo-db.js",
     "setup-env": "node scripts/setup-env.js",
-    "release": "node scripts/release.js"
+    "release": "node scripts/release.js",
+    "backfill-etl-fields": "node scripts/backfill-etl-fields.js"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.7.0",
@@ -67,6 +68,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "docx": "^9.7.1",
     "jest": "^30.3.0",
     "newman": "^6.2.2",
     "sharp": "^0.34.5",

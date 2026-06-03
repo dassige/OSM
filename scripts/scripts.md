@@ -2,6 +2,29 @@
 
 Standalone utility scripts for the OpReady project. Run from the project root unless stated otherwise.
 
+## ⚠️ Docker users — WAL mode conflicts
+
+When the app runs via Docker Compose it holds `fenz.db` open in WAL mode from within Linux. **Any external process that opens the same file from Windows** leaves an incompatible WAL shared-memory (`.shm`) state behind, causing `SQLITE_IOERR: disk I/O error` on the next Docker startup.
+
+**Two common sources of this conflict:**
+
+| Source | How it conflicts |
+|---|---|
+| Running scripts directly (`node scripts/...`) on the Windows host | Opens the DB with the Windows SQLite3 binding — different WAL context from Linux |
+| Database GUI tools (DBeaver, DB Browser for SQLite, TablePlus, etc.) | Keep a persistent SQLite connection open; close the connection or disconnect before restarting Docker |
+
+**Always run scripts through the container:**
+
+```powershell
+docker-compose exec opready node scripts/<script-name>.js
+# or
+docker-compose exec opready npm run <script-name>
+```
+
+**If Docker fails to start with `SQLITE_IOERR` after using a DB tool:**
+1. Close / disconnect the DB tool from `fenz.db`
+2. Restart Docker Compose — the server's WAL mode guard will recover automatically
+
 ---
 
 ## release.js
@@ -208,6 +231,69 @@ screenshots/
 ```
 
 The script exits with code `1` if any page fails; all other pages are still attempted.
+
+---
+
+## backfill-etl-fields.js
+
+Populates the ETL enrichment columns (`rank`, `first_name`, `last_name`, `member_osm_id`, `skill_osm_id`, `skill_category`) added in migration 010 for all existing members and skills rows. Uses the same parsing and categorisation logic as the html-scraper plugin.
+
+**npm shortcut**
+
+```powershell
+npm run backfill-etl-fields
+```
+
+**Direct invocation**
+
+```powershell
+# Fill only rows where member_osm_id / skill_osm_id are still NULL (default, safe to re-run)
+node scripts/backfill-etl-fields.js
+
+# Re-derive all rows — use after a categorisation rule change
+node scripts/backfill-etl-fields.js --force
+```
+
+**Prerequisites**
+
+- Migration `010-etl-plugin-fields.sql` must already be applied (happens automatically on server start).
+- The server does not need to be running — the script opens the database directly.
+- `sqlite` and `sqlite3` npm packages must be installed (regular project dependencies).
+
+**What it does**
+
+| Table | Columns written | Source |
+|---|---|---|
+| `members` | `rank`, `first_name`, `last_name` | Parsed from `name` via `parseMemberName()` |
+| `members` | `member_osm_id` | Set to `name` exactly — this is the stable matching key between the extraction plugin and DB rows |
+| `skills` | `skill_osm_id` | Set to `name` exactly — same matching-key principle |
+| `skills` | `skill_category` | Derived from `name` via `categoriseSkill()` (html-scraper plugin rules) |
+
+The original `name` column in both tables is not modified.
+
+**Matching key note**
+
+`member_osm_id` and `skill_osm_id` must exactly match the values the active extraction plugin produces as `memberOsmId` / `skillOsmId`. For the html-scraper plugin those values are always the raw name strings. This equivalence is what allows future "Import from OSM" sync operations to correctly match incoming extracted records to existing DB rows.
+
+**Idempotency**
+
+By default the script only processes rows where `member_osm_id IS NULL` (members) or `skill_osm_id IS NULL` (skills), making it safe to run multiple times. Pass `--force` to re-derive every row — useful after updating the categorisation rules in `html-scraper.plugin.js`.
+
+**Output**
+
+```
+[backfill-etl-fields] default -- filling NULL rows only (use --force to re-derive all)
+
+Members:
+  [1   ] QFF Skywalker, L               rank=QFF    last=Skywalker      first=L
+  [2   ] FF Kenobi, O                   rank=FF     last=Kenobi         first=O
+
+Skills:
+  [1   ] OI (IS1) - Operational Safety                         category=Operational Integrity
+  [2   ] Pumps - Appliance Pump Operation from Pressure Fed    category=Pumps
+
+[backfill-etl-fields] Done -- updated 2 member(s), 2 skill(s).
+```
 
 ---
 
