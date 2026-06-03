@@ -12,12 +12,16 @@ jest.mock('../services/proxy-manager', () => ({
 }));
 
 jest.mock('../services/db', () => ({
-    getMembers: jest.fn(),
-    getMembersPage: jest.fn(),
-    addMember: jest.fn(),
-    getMemberById: jest.fn().mockResolvedValue({ name: 'Test Member' }),
-    deleteMember: jest.fn(),
-    logEvent: jest.fn().mockResolvedValue()
+    getMembers:             jest.fn(),
+    getMembersPage:         jest.fn(),
+    addMember:              jest.fn(),
+    getMemberById:          jest.fn().mockResolvedValue({ name: 'Test Member' }),
+    deleteMember:           jest.fn(),
+    bulkDeleteMembers:      jest.fn(),
+    bulkAddMembers:         jest.fn(),
+    bulkAddMembersWithEtl:  jest.fn().mockResolvedValue(),
+    updateMemberEtlFields:  jest.fn().mockResolvedValue(),
+    logEvent:               jest.fn().mockResolvedValue(),
 }));
 
 jest.mock('../middleware/auth', () => ({
@@ -121,7 +125,64 @@ describe('Members API Endpoints (Isolated)', () => {
 
             expect(response.status).toBe(200);
             expect(response.body).toEqual({ success: true });
-            expect(db.deleteMember).toHaveBeenCalledWith("1"); 
+            expect(db.deleteMember).toHaveBeenCalledWith("1");
+        });
+    });
+
+    describe('GET /api/members/discover', () => {
+        const extractionEngine = require('../services/extraction-engine');
+
+        it('returns new and changed members with correct shape', async () => {
+            extractionEngine.extractData.mockResolvedValue([
+                { name: 'QFF Smith, J',  rank: 'QFF', lastName: 'Smith',  firstName: 'J', memberOsmId: 'QFF Smith, J',  skill: 'First Aid', skillOsmId: 'First Aid', skillCategory: 'First Aid', dueDate: '2026-01-01' },
+                { name: 'FF Jones, T',   rank: 'FF',  lastName: 'Jones',  firstName: 'T', memberOsmId: 'FF Jones, T',   skill: 'Driving',   skillOsmId: 'Driving',    skillCategory: 'Vehicle & Appliance', dueDate: '2026-01-01' },
+            ]);
+            // Smith is in DB but ETL fields are null (changed); Jones is new
+            db.getMembers.mockResolvedValue([
+                { id: 1, name: 'QFF Smith, J', member_osm_id: 'QFF Smith, J', rank: null, first_name: null, last_name: null },
+            ]);
+
+            const response = await request(app).get('/api/members/discover');
+
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('new');
+            expect(response.body).toHaveProperty('changed');
+            expect(response.body.new).toHaveLength(1);
+            expect(response.body.new[0].name).toBe('FF Jones, T');
+            expect(response.body.changed).toHaveLength(1);
+            expect(response.body.changed[0].dbId).toBe(1);
+            expect(response.body.changed[0].rank).toBe('QFF');
+        });
+
+        it('returns empty new and changed when everything matches', async () => {
+            extractionEngine.extractData.mockResolvedValue([
+                { name: 'QFF Smith, J', rank: 'QFF', lastName: 'Smith', firstName: 'J', memberOsmId: 'QFF Smith, J', skill: 'First Aid', skillOsmId: 'First Aid', skillCategory: 'First Aid', dueDate: '2026-01-01' },
+            ]);
+            db.getMembers.mockResolvedValue([
+                { id: 1, name: 'QFF Smith, J', member_osm_id: 'QFF Smith, J', rank: 'QFF', first_name: 'J', last_name: 'Smith' },
+            ]);
+
+            const response = await request(app).get('/api/members/discover');
+
+            expect(response.status).toBe(200);
+            expect(response.body.new).toHaveLength(0);
+            expect(response.body.changed).toHaveLength(0);
+        });
+    });
+
+    describe('POST /api/members/sync', () => {
+        it('adds new and updates changed members, returns counts', async () => {
+            const response = await request(app)
+                .post('/api/members/sync')
+                .send({
+                    add:    [{ name: 'FF Jones, T', rank: 'FF', lastName: 'Jones', firstName: 'T', memberOsmId: 'FF Jones, T' }],
+                    update: [{ dbId: 1, rank: 'QFF', lastName: 'Smith', firstName: 'J', memberOsmId: 'QFF Smith, J' }],
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body).toMatchObject({ success: true, added: 1, updated: 1 });
+            expect(db.bulkAddMembersWithEtl).toHaveBeenCalledTimes(1);
+            expect(db.updateMemberEtlFields).toHaveBeenCalledWith(1, expect.objectContaining({ rank: 'QFF' }));
         });
     });
 });

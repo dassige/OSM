@@ -183,7 +183,7 @@ window.confirmAction = function(title, message) {
         const btnCancel = document.getElementById('btnConfirmCancel');
 
         titleEl.textContent = title || 'Confirm Action';
-        msgEl.textContent = message || 'Are you sure you want to proceed?';
+        msgEl.innerHTML = message || 'Are you sure you want to proceed?';
         modal.style.display = 'flex';
 
         // Focus the confirm button for accessibility/keyboard usage

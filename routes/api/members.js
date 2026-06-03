@@ -100,15 +100,62 @@ router.get("/discover", hasRole("admin"), async (req, res) => {
   try {
     const rawData = await extractionEngine.extractData({ forceRefresh: true, proxyUrl: getActiveProxy() });
     const existing = await db.getMembers();
-    const existingNames = new Set(existing.map((m) => m.name));
-    const newMembers = [
-      ...new Set(
-        rawData
-          .map((r) => r.name)
-          .filter((n) => typeof n === 'string' && n.trim().length > 0) // guard: names must be non-empty strings
-      ),
-    ].filter((n) => !existingNames.has(n));
-    res.json(newMembers.sort());
+
+    // Build lookup maps — prefer member_osm_id match, fall back to name
+    const byOsmId = new Map(existing.filter((m) => m.member_osm_id).map((m) => [m.member_osm_id, m]));
+    const byName  = new Map(existing.map((m) => [m.name, m]));
+
+    // Deduplicate extracted records by memberOsmId (one entry per unique member)
+    const seen = new Set();
+    const uniqueExtracted = [];
+    for (const r of rawData) {
+      if (typeof r.name !== 'string' || !r.name.trim()) continue;
+      if (seen.has(r.memberOsmId)) continue;
+      seen.add(r.memberOsmId);
+      uniqueExtracted.push(r);
+    }
+
+    const newMembers     = [];
+    const changedMembers = [];
+
+    for (const r of uniqueExtracted) {
+      const dbRow = byOsmId.get(r.memberOsmId) || byName.get(r.name);
+
+      if (!dbRow) {
+        newMembers.push({ name: r.name, rank: r.rank || null, lastName: r.lastName || null, firstName: r.firstName || null, memberOsmId: r.memberOsmId });
+      } else {
+        const rankChanged      = (r.rank      || null) !== (dbRow.rank       || null);
+        const firstNameChanged = (r.firstName || null) !== (dbRow.first_name || null);
+        const lastNameChanged  = (r.lastName  || null) !== (dbRow.last_name  || null);
+        const osmIdChanged     = r.memberOsmId !== (dbRow.member_osm_id || null);
+        if (rankChanged || firstNameChanged || lastNameChanged || osmIdChanged) {
+          changedMembers.push({
+            dbId: dbRow.id, name: r.name,
+            rank: r.rank || null, lastName: r.lastName || null, firstName: r.firstName || null, memberOsmId: r.memberOsmId,
+            currentRank: dbRow.rank || null, currentFirstName: dbRow.first_name || null, currentLastName: dbRow.last_name || null,
+          });
+        }
+      }
+    }
+
+    res.json({ new: newMembers, changed: changedMembers });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post("/sync", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
+  try {
+    const { add = [], update = [] } = req.body;
+    if (add.length > 0) await db.bulkAddMembersWithEtl(add);
+    for (const m of update) {
+      await db.updateMemberEtlFields(m.dbId, { rank: m.rank, firstName: m.firstName, lastName: m.lastName, memberOsmId: m.memberOsmId });
+    }
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, 'Member', 'Members Synced from OSM', { addedCount: add.length, updatedCount: update.length });
+    logger.info('[Members] OSM sync complete', { added: add.length, updated: update.length, actor });
+    res.json({ success: true, added: add.length, updated: update.length });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

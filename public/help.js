@@ -192,7 +192,7 @@ const helpContent = {
             <p>Map the skill names from the FENZ Dashboard to your verification methods.</p>
             
             <h3>1. Import & Sync</h3>
-            <p>Click <strong>Import from OSM</strong> to scan the dashboard for new skill names. The system auto-detects "Critical" skills (usually marked with <code>(C)</code>) and flags them.</p>
+            <p>Click <strong>Import from OSM</strong> to scan the dashboard. The dialog shows <strong>New</strong> skills not yet configured and <strong>Changed</strong> skills whose category has been updated. Select any combination and click <strong>Apply Selected</strong>. Critical skills (marked <code>(C)</code>) are flagged automatically.</p>
 
             <h3>2. Linking Forms</h3>
             <p>Each skill can be linked to a verification method:</p>
@@ -212,7 +212,7 @@ const helpContent = {
         body: `
             <p>Manage your brigade roster and their communication preferences.</p>
             <ul>
-                <li><strong>Import from OSM:</strong> Scans the live dashboard for names not yet in your database.</li>
+                <li><strong>Import from OSM:</strong> Scans the live dashboard and shows two lists — <strong>New</strong> members not yet in your roster, and <strong>Changed</strong> members whose rank or name data differs. Select any combination and click <strong>Apply Selected</strong> to add or update them.</li>
                 <li><strong>Notification Preferences:</strong> For each member, you can define if they should receive <strong>Email</strong>, <strong>WhatsApp</strong>, or both by default. This controls the pre-selected checkboxes on the main Dashboard.</li>
                 <li><strong>Enabled Status:</strong> Disabled members are hidden from the dashboard and reports, preserving their data history without cluttering the view.</li>
             </ul>

@@ -226,24 +226,46 @@
     </div>
 
     <div id="skillModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal('skillModal')">&times;</span>
+        <div class="modal-content" style="max-width:580px;">
+            <span class="close-btn" onclick="closeModal('skillModal')" title="Close">&times;</span>
             <h2 id="modalTitle">Add Skill</h2>
             <form id="skillForm">
                 <input type="hidden" id="skillId">
                 <input type="hidden" id="urlType" value="external">
 
+                <!-- OSM matching key fields — locked in edit mode -->
+                <div style="font-size:0.78em; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">OSM Source</div>
                 <div class="form-group">
-                    <label>Skill Name (Exact Match)</label>
+                    <label style="display:flex; align-items:center; justify-content:space-between;">
+                        <span>Skill Name <span style="font-size:0.8em; color:var(--text-muted);">(raw OSM name · matching key)</span></span>
+                        <button type="button" id="lockSkillName" onclick="skillToggleLock('name','lockSkillName')" title="Unlock for editing" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:2px 4px;border-radius:3px;display:inline-flex;line-height:1;" tabindex="-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </button>
+                    </label>
                     <input type="text" id="name" required placeholder="e.g. OI (IS1) - Operational Safety"
                         title="Exact skill name as it appears in the OSM dashboard">
                 </div>
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; justify-content:space-between;">
+                        <span>OSM Skill ID <span style="font-size:0.8em; color:var(--text-muted);">(matching key)</span></span>
+                        <button type="button" id="lockSkillOsmId" onclick="skillToggleLock('skill_osm_id','lockSkillOsmId')" title="Unlock for editing" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:2px 4px;border-radius:3px;display:inline-flex;line-height:1;" tabindex="-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </button>
+                    </label>
+                    <input type="text" id="skill_osm_id" placeholder="Populated automatically from OSM"
+                        title="Unique OSM identifier used to match this skill to extraction data">
+                </div>
+                <div class="form-group">
+                    <label>Category <span style="font-size:0.8em; color:var(--text-muted);">(auto-derived)</span></label>
+                    <input type="text" id="skill_category" placeholder="e.g. Pumps, Line Rescue, Operational Integrity"
+                        title="Skill category derived from the skill name by the extraction plugin">
+                </div>
 
+                <!-- Verification -->
+                <div style="font-size:0.78em; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin:12px 0 6px;">Verification</div>
                 <div class="modal-tabs">
-                    <div class="modal-tab active" id="tab-external" onclick="switchModalTab('external', true)">External
-                        URL</div>
-                    <div class="modal-tab" id="tab-internal" onclick="switchModalTab('internal', true)">App Hosted Form
-                    </div>
+                    <div class="modal-tab active" id="tab-external" onclick="switchModalTab('external', true)">External URL</div>
+                    <div class="modal-tab" id="tab-internal" onclick="switchModalTab('internal', true)">App Hosted Form</div>
                 </div>
 
                 <div id="externalUrlContainer" class="form-group">
@@ -253,9 +275,9 @@
                         <div class="draggable-item" draggable="true" data-val="member-name">Member Name</div>
                         <div class="draggable-item" draggable="true" data-val="member-email">Member Email</div>
                     </div>
-                    <textarea id="url" rows="4"
+                    <textarea id="url" rows="3"
                         placeholder="https://docs.google.com/forms/...?entry.123={{member-name}}"
-                        style="resize:vertical; width: 100%;"
+                        style="resize:vertical; width:100%;"
                         title="Online form URL sent to members for skill verification. Use {{member-name}} and {{member-email}} as placeholders."></textarea>
                 </div>
 
@@ -271,17 +293,15 @@
                     </p>
                 </div>
 
-                <div style="display:flex; gap:20px; margin-top: 15px;">
+                <div style="display:flex; gap:20px; margin-top:15px;">
                     <div class="form-group"><label style="display:flex; align-items:center; cursor:pointer;" title="Enable or disable this skill for use in the system"><input
-                                type="checkbox" id="enabled" checked style="width:auto; margin-right:10px;">
-                            Enabled</label></div>
-                    <div class="form-group"><label style="display:flex; align-items:center; cursor:pointer;" title="Mark this skill as critical — critical skills are highlighted in compliance reports"><input
-                                type="checkbox" id="critical_skill" style="width:auto; margin-right:10px;"> Critical
-                            Skill</label></div>
+                                type="checkbox" id="enabled" checked style="width:auto; margin-right:10px;"> Enabled</label></div>
+                    <div class="form-group"><label style="display:flex; align-items:center; cursor:pointer;" title="Mark this skill as critical — highlighted in compliance reports"><input
+                                type="checkbox" id="critical_skill" style="width:auto; margin-right:10px;"> Critical Skill</label></div>
                 </div>
                 <div class="modal-actions-right">
-                    <button type="button" onclick="closeModal('skillModal')" class="btn-secondary">Cancel</button>
-                    <button type="submit" class="btn-success">Save</button>
+                    <button type="button" onclick="closeModal('skillModal')" class="btn-secondary" title="Cancel without saving">Cancel</button>
+                    <button type="submit" class="btn-success" title="Save skill">Save</button>
                 </div>
             </form>
         </div>
@@ -355,15 +375,38 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
     </div>
 
     <div id="osmImportModal" class="modal">
-        <div class="modal-content" style="width: 500px;">
-            <span class="close-btn" onclick="closeModal('osmImportModal')">&times;</span>
-            <h2 id="osmModalTitle">Import Skills from OSM</h2>
-            <div id="osmListContainer"
-                style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; display: none;">
-                <ul id="osmSkillList" style="list-style: none; padding: 0;"></ul>
+        <div class="modal-content" style="max-width: 660px; max-height: 85vh; display: flex; flex-direction: column;">
+            <span class="close-btn" onclick="closeModal('osmImportModal')" title="Close">&times;</span>
+            <h2>Sync Skills from OSM</h2>
+            <div style="background-color:var(--bg-hover); padding:10px; border-radius:4px; margin-bottom:14px; font-size:0.88em; color:var(--text-muted); border:1px solid var(--border-color);">
+                Scans the OSM Dashboard for <strong>new skills</strong> and existing skills whose <strong>category has changed</strong>. Select the records you want to apply, then click <strong>Apply Selected</strong>.
             </div>
-            <div id="osmActions" class="modal-actions-right" style="display: none;">
-                <button onclick="confirmOsmImport()" class="btn-success">Confirm Import</button>
+            <div id="osmListContainer" style="flex:1; overflow-y:auto; display:none; margin-bottom:16px;">
+                <div id="osmNewSection" style="margin-bottom:14px; display:none;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <span class="badge badge-success" style="font-size:0.78em;">NEW</span>
+                        <strong id="osmNewHeading">New Skills (0)</strong>
+                        <button type="button" class="btn-secondary btn-sm" onclick="osmToggleSection('new', true)" title="Select all new skills" style="margin-left:auto;">Select All</button>
+                        <button type="button" class="btn-secondary btn-sm" onclick="osmToggleSection('new', false)" title="Clear all new skill selections">Clear All</button>
+                    </div>
+                    <ul id="osmNewList" style="list-style:none; padding:0; margin:0;"></ul>
+                </div>
+                <div id="osmChangedSection" style="display:none;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <span class="badge badge-warning" style="font-size:0.78em; background:var(--warning-color,#f0ad4e); color:#fff;">CHANGED</span>
+                        <strong id="osmChangedHeading">Changed Skills (0)</strong>
+                        <button type="button" class="btn-secondary btn-sm" onclick="osmToggleSection('changed', true)" title="Select all changed skills" style="margin-left:auto;">Select All</button>
+                        <button type="button" class="btn-secondary btn-sm" onclick="osmToggleSection('changed', false)" title="Clear all changed skill selections">Clear All</button>
+                    </div>
+                    <ul id="osmChangedList" style="list-style:none; padding:0; margin:0;"></ul>
+                </div>
+                <div id="osmEmptyMsg" style="display:none; text-align:center; padding:24px; color:var(--text-muted);">
+                    All skills are up to date — nothing to sync.
+                </div>
+            </div>
+            <div id="osmActions" class="modal-actions-right" style="display:none;">
+                <button type="button" onclick="closeModal('osmImportModal')" class="btn-secondary" title="Cancel without making changes">Cancel</button>
+                <button type="button" id="osmApplyBtn" onclick="confirmOsmSync()" class="btn-success" title="Apply selected additions and updates">Apply Selected (<span id="osmSelectedCount">0</span>)</button>
             </div>
         </div>
     </div>
@@ -749,13 +792,37 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
                 applySkillsPagination();
             }
         }
+        // ── Lock / unlock helper ────────────────────────────────────────────────
+        const SKILL_LOCK_SVG   = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+        const SKILL_UNLOCK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>';
+
+        function skillSetLocked(fieldId, btnId, locked) {
+            const f = document.getElementById(fieldId);
+            const btn = document.getElementById(btnId);
+            if (!f || !btn) return;
+            f.readOnly = locked;
+            f.style.background = locked ? 'var(--bg-hover)' : '';
+            f.style.cursor     = locked ? 'not-allowed'     : '';
+            btn.innerHTML = locked ? SKILL_LOCK_SVG : SKILL_UNLOCK_SVG;
+            btn.title     = locked ? 'Unlock for editing'  : 'Lock field';
+        }
+
+        function skillToggleLock(fieldId, btnId) {
+            const f = document.getElementById(fieldId);
+            const nowLocked = !f.readOnly;
+            skillSetLocked(fieldId, btnId, nowLocked);
+            if (!nowLocked) f.focus();
+        }
+
         window.editSkillByIndex = function (index) {
             const s = currentSkills[index];
             document.getElementById('modalTitle').textContent = "Edit Skill";
-            document.getElementById('skillId').value = s.id;
-            document.getElementById('name').value = s.name;
+            document.getElementById('skillId').value          = s.id;
+            document.getElementById('name').value             = s.name          || '';
+            document.getElementById('skill_osm_id').value     = s.skill_osm_id  || '';
+            document.getElementById('skill_category').value   = s.skill_category || '';
             document.getElementById('critical_skill').checked = s.critical_skill;
-            document.getElementById('enabled').checked = s.enabled;
+            document.getElementById('enabled').checked        = s.enabled;
 
             const type = s.url_type || 'external';
             switchModalTab(type, false);
@@ -769,6 +836,9 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
             } else {
                 document.getElementById('url').value = s.url || "";
             }
+            // Lock matching-key fields by default in edit mode
+            skillSetLocked('name',         'lockSkillName',  true);
+            skillSetLocked('skill_osm_id', 'lockSkillOsmId', true);
 
             document.getElementById('skillModal').style.display = 'block';
         }
@@ -780,7 +850,9 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
             document.getElementById('selectedFormId').value = "";
             document.getElementById('selectedFormName').textContent = "No form selected";
             document.getElementById('selectedFormName').classList.remove('active');
-
+            // Add mode: matching-key fields are editable
+            skillSetLocked('name',         'lockSkillName',  false);
+            skillSetLocked('skill_osm_id', 'lockSkillOsmId', false);
             switchModalTab('external', true);
             document.getElementById('skillModal').style.display = 'block';
         }
@@ -807,11 +879,13 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
             }
 
             const data = {
-                name: document.getElementById('name').value,
+                name:           document.getElementById('name').value,
+                skill_osm_id:   document.getElementById('skill_osm_id').value   || null,
+                skill_category: document.getElementById('skill_category').value  || null,
                 critical_skill: document.getElementById('critical_skill').checked,
-                enabled: document.getElementById('enabled').checked,
+                enabled:        document.getElementById('enabled').checked,
                 url_type: type,
-                url: urlVal
+                url: urlVal,
             };
 
             const url = id ? `/api/skills/${id}` : '/api/skills';
@@ -909,57 +983,128 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
             }
         }
 
-        let discoveredSkills = [];
+        let osmDiscoveredSkills = { new: [], changed: [] };
+
+        function osmUpdateSelectedCount() {
+            const checked = document.querySelectorAll('#osmNewList .osm-check:checked, #osmChangedList .osm-check:checked').length;
+            const span = document.getElementById('osmSelectedCount');
+            if (span) span.textContent = checked;
+            const btn = document.getElementById('osmApplyBtn');
+            if (btn) btn.disabled = checked === 0;
+        }
+
+        function osmToggleSection(section, state) {
+            const listId = section === 'new' ? 'osmNewList' : 'osmChangedList';
+            document.querySelectorAll(`#${listId} .osm-check`).forEach(cb => { cb.checked = state; });
+            osmUpdateSelectedCount();
+        }
+
         async function openOsmImportModal() {
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
-            const modal = document.getElementById('osmImportModal');
-            const listContainer = document.getElementById('osmListContainer');
-            const actions = document.getElementById('osmActions');
-            const list = document.getElementById('osmSkillList');
-            list.innerHTML = '<li style="text-align:center; padding:20px; color:var(--text-muted);"><div class="spinner" style="margin:0 auto 8px; display:block; border-top-color:var(--primary);"></div>Scanning Dashboard...</li>';
+            const modal      = document.getElementById('osmImportModal');
+            const container  = document.getElementById('osmListContainer');
+            const actions    = document.getElementById('osmActions');
+            const newSection = document.getElementById('osmNewSection');
+            const chgSection = document.getElementById('osmChangedSection');
+            const emptyMsg   = document.getElementById('osmEmptyMsg');
+            const newList    = document.getElementById('osmNewList');
+            const chgList    = document.getElementById('osmChangedList');
+
+            [newSection, chgSection, emptyMsg].forEach(el => el.style.display = 'none');
+            newList.innerHTML = chgList.innerHTML = '';
+            container.style.display = 'block';
+            container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><div class="spinner" style="margin:0 auto 10px;display:block;border-top-color:var(--primary);"></div>Scanning OSM Dashboard…</div>';
             actions.style.display = 'none';
-            listContainer.style.display = 'block';
             modal.style.display = 'block';
+
             try {
                 const res = await fetch('/api/skills/discover');
-                if (!res.ok) throw new Error((await res.json()).error || "Failed to scan");
-                discoveredSkills = await res.json();
-                list.innerHTML = '';
-                if (discoveredSkills.length === 0) {
-                    list.innerHTML = '<li style="text-align:center; padding:20px; color:var(--text-muted);">No new unique skills found.</li>';
-                    actions.style.display = 'flex';
-                    actions.querySelector('.btn-success').disabled = true;
+                if (!res.ok) throw new Error((await res.json()).error || 'Failed to scan');
+                osmDiscoveredSkills = await res.json();
+
+                container.innerHTML = '';
+                container.appendChild(newSection);
+                container.appendChild(chgSection);
+                container.appendChild(emptyMsg);
+
+                const hasNew     = osmDiscoveredSkills.new.length > 0;
+                const hasChanged = osmDiscoveredSkills.changed.length > 0;
+
+                if (!hasNew && !hasChanged) {
+                    emptyMsg.style.display = 'block';
                 } else {
-                    actions.style.display = 'flex';
-                    actions.querySelector('.btn-success').disabled = false;
-                    discoveredSkills.forEach(skillName => {
-                        const li = document.createElement('li');
-                        li.style.padding = "5px 0";
-                        li.style.borderBottom = "1px solid var(--border-color)";
-                        li.innerHTML = `<span style="color:var(--text-main);">${skillName}</span>`;
-                        list.appendChild(li);
-                    });
+                    if (hasNew) {
+                        document.getElementById('osmNewHeading').textContent = 'New Skills (' + osmDiscoveredSkills.new.length + ')';
+                        osmDiscoveredSkills.new.forEach((s, i) => {
+                            const li = document.createElement('li');
+                            li.style.cssText = 'padding:6px 4px; border-bottom:1px solid var(--border-color); display:flex; align-items:flex-start; gap:8px;';
+                            const isCritical = s.skill.trim().endsWith('(C)');
+                            li.innerHTML =
+                                '<input type="checkbox" class="osm-check" id="osmNew-' + i + '" checked onchange="osmUpdateSelectedCount()" title="Include this skill in the sync" style="margin-top:3px; flex-shrink:0;">' +
+                                '<label for="osmNew-' + i + '" style="cursor:pointer; flex:1;">' +
+                                '<span style="font-weight:600;">' + s.skill + '</span>' +
+                                '<span style="font-size:0.82em; color:var(--text-muted); margin-left:8px;">category: ' + (s.skillCategory || '—') + '</span>' +
+                                (isCritical ? '<span class="badge badge-danger" style="font-size:0.75em; margin-left:4px;">Critical</span>' : '') +
+                                '</label>';
+                            newList.appendChild(li);
+                        });
+                        newSection.style.display = 'block';
+                    }
+                    if (hasChanged) {
+                        document.getElementById('osmChangedHeading').textContent = 'Changed Skills (' + osmDiscoveredSkills.changed.length + ')';
+                        osmDiscoveredSkills.changed.forEach((s, i) => {
+                            const from = s.currentSkillCategory || '—';
+                            const to   = s.skillCategory        || '—';
+                            const li = document.createElement('li');
+                            li.style.cssText = 'padding:6px 4px; border-bottom:1px solid var(--border-color); display:flex; align-items:flex-start; gap:8px;';
+                            li.innerHTML =
+                                '<input type="checkbox" class="osm-check" id="osmChanged-' + i + '" checked onchange="osmUpdateSelectedCount()" title="Apply this category update" style="margin-top:3px; flex-shrink:0;">' +
+                                '<label for="osmChanged-' + i + '" style="cursor:pointer; flex:1;">' +
+                                '<span style="font-weight:600;">' + s.skill + '</span><br>' +
+                                '<span style="font-size:0.82em; color:var(--text-muted);">category: <s style="color:var(--danger-color,#dc3545);">' + from + '</s> → <strong style="color:var(--success-color,#28a745);">' + to + '</strong></span>' +
+                                '</label>';
+                            chgList.appendChild(li);
+                        });
+                        chgSection.style.display = 'block';
+                    }
                 }
+
+                actions.style.display = 'flex';
+                osmUpdateSelectedCount();
             } catch (e) {
-                showToast("Error scanning OSM: " + e.message, "error");
+                showToast('Error scanning OSM: ' + e.message, 'error');
                 closeModal('osmImportModal');
             }
         }
-        async function confirmOsmImport() {
-            if (!discoveredSkills || discoveredSkills.length === 0) return;
-            if (!await confirmAction('Import OSM Skills', `Import ${discoveredSkills.length} new skills?`)) return;
-            const importPayload = discoveredSkills.map(name => ({ name: name, url: "", critical_skill: name.trim().endsWith('(C)'), enabled: true }));
+
+        async function confirmOsmSync() {
+            const toAdd = osmDiscoveredSkills.new.filter((_, i) => {
+                const cb = document.getElementById('osmNew-' + i);
+                return cb && cb.checked;
+            });
+            const toUpdate = osmDiscoveredSkills.changed.filter((_, i) => {
+                const cb = document.getElementById('osmChanged-' + i);
+                return cb && cb.checked;
+            });
+            if (toAdd.length === 0 && toUpdate.length === 0) { showToast('No items selected.', 'warning'); return; }
+            const parts = [];
+            if (toAdd.length)    parts.push('Add <strong>' + toAdd.length + '</strong> new skill(s)');
+            if (toUpdate.length) parts.push('Update <strong>' + toUpdate.length + '</strong> existing skill(s)');
+            if (!await confirmAction('Sync from OSM', parts.join(' and ') + '.')) return;
             try {
-                const res = await fetch('/api/skills/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(importPayload) });
-                if (res.ok) {
-                    closeModal('osmImportModal');
-                    await reloadSkills();
-                    showToast(`Successfully imported ${importPayload.length} skills.`, 'success');
-                } else {
-                    throw new Error("Server rejected import.");
-                }
-            } catch (e) { showToast("Import failed: " + e.message, "error"); }
+                const res = await fetch('/api/skills/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ add: toAdd, update: toUpdate }),
+                });
+                if (!res.ok) throw new Error((await res.json()).error || 'Server rejected sync.');
+                closeModal('osmImportModal');
+                await reloadSkills();
+                showToast('Synced: ' + toAdd.length + ' added, ' + toUpdate.length + ' updated.', 'success');
+            } catch (e) { showToast('Sync failed: ' + e.message, 'error'); }
         }
+
+        const confirmOsmImport = confirmOsmSync;
 
         function openHelpModal() { document.getElementById('helpModal').style.display = 'block'; }
 
