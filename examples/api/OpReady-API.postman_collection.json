@@ -955,6 +955,29 @@
               "raw": "{\n  \"type\": \"External Integration\",\n  \"title\": \"Sync Completed\",\n  \"payload\": { \"records\": 42 }\n}"
             }
           }
+        },
+        {
+          "name": "Download SQL Backup",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/system/backup", "host": ["{{baseUrl}}"], "path": ["api", "system", "backup"] },
+            "description": "Superadmin only — generates a full SQL dump of the database and returns it as a downloadable `.sql` file. Safe to call from external schedulers (e.g. cron on a Raspberry Pi or a Cloud Scheduler job) using an API key to wake the Cloud Run instance and retrieve a backup. The response is streamed as `Content-Type: text/plain` with `Content-Disposition: attachment`."
+          }
+        },
+        {
+          "name": "Restore from SQL Backup",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/system/restore", "host": ["{{baseUrl}}"], "path": ["api", "system", "restore"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "databaseFile", "type": "file", "src": "/path/to/fenz_backup_YYYY-MM-DD.sql", "description": "The .sql dump file to restore from" }
+              ]
+            },
+            "description": "Superadmin only — uploads a `.sql` dump file and replaces the entire database. Disabled in demo mode. All active sessions are invalidated after restore. Use with extreme caution — this is irreversible."
+          }
         }
       ]
     }

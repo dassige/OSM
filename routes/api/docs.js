@@ -1101,6 +1101,50 @@ const spec = {
                 }
             }
         },
+        '/api/system/backup': {
+            get: {
+                tags: ['System'],
+                summary: 'Download SQL backup (superadmin)',
+                description: 'Generates a full SQL dump of the database and returns it as a downloadable `.sql` file. Callable externally with an API key — suitable for automated backup scripts (cron, Cloud Scheduler, etc.) that wake a Cloud Run instance on demand.',
+                responses: {
+                    200: {
+                        description: 'SQL dump file download',
+                        content: { 'text/plain': { schema: { type: 'string', format: 'binary' } } },
+                        headers: {
+                            'Content-Disposition': { schema: { type: 'string', example: 'attachment; filename="fenz_backup_2025-01-15.sql"' } }
+                        }
+                    },
+                    403: { description: 'Insufficient role' }
+                }
+            }
+        },
+        '/api/system/restore': {
+            post: {
+                tags: ['System'],
+                summary: 'Restore from SQL backup (superadmin)',
+                description: 'Uploads a `.sql` dump file and fully replaces the database. All active sessions are invalidated after restore. Disabled in demo mode. Irreversible.',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'multipart/form-data': {
+                            schema: {
+                                type: 'object',
+                                required: ['databaseFile'],
+                                properties: {
+                                    databaseFile: { type: 'string', format: 'binary', description: 'SQL dump file (.sql) to restore from' }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Restored', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'No file provided or invalid SQL' },
+                    403: { description: 'Insufficient role or demo mode' },
+                    500: { description: 'Restore failed' }
+                }
+            }
+        },
         // -------------------------------------------------------------------------
         // API KEYS
         // -------------------------------------------------------------------------

@@ -647,6 +647,33 @@
               }
             }
           ]
+        },
+        {
+          "name": "Download SQL Backup",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/system/backup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "system", "backup"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Download SQL Backup | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Download SQL Backup | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('Download SQL Backup | Content-Disposition attachment', () => {",
+                  "  const cd = pm.response.headers.get('Content-Disposition') || '';",
+                  "  pm.expect(cd).to.include('attachment');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

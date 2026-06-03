@@ -724,6 +724,107 @@ Icons are written to `public/icons/`. The manifest references them at `/icons/ic
   * [**WhatsApp Feature Guide**](whatsapp-feature.md): Detailed instructions on connecting your WhatsApp account, managing sessions, and sending mobile notifications.
   * [**Cloudflare Tunnel Guide**](cloudflared-tunnel.md): Step-by-step instructions for exposing OpReady over HTTPS using a Cloudflare Tunnel — covers both bare-metal (systemd service) and Dockerized (docker-compose sidecar) deployments. Required for PWA installation on Android and other non-localhost devices.
 
+### Scheduled External Backup
+
+OpReady exposes a `GET /api/system/backup` endpoint that generates a full SQL dump and returns it as a downloadable `.sql` file. Because it accepts API key authentication (`X-API-Key` header), it can be called from any external scheduler — no browser session required.
+
+This is the recommended backup strategy for Cloud Run deployments, where keeping the instance running continuously just to run scheduled jobs would incur unnecessary cost. The HTTP request wakes the instance, the dump is streamed back, and the instance returns to idle.
+
+#### Step 1 — Create a superadmin API key
+
+In the app UI go to **System Tools → API Key Management**, create a key with the `superadmin` role, and copy the value. Store it securely on the machine that will run the backup.
+
+#### Step 2 — Write the backup script
+
+A ready-to-use script is provided at [`examples/system/backup-opready.sh`](examples/system/backup-opready.sh). Copy it to your backup machine (Raspberry Pi, VPS, or similar) and fill in the variables at the top:
+
+```bash
+#!/bin/bash
+# backup-opready.sh — downloads a full SQL backup from OpReady
+# Recommended schedule: daily via cron
+
+API_KEY="osm_your64hexkeyhere"
+BASE_URL="https://your-cloud-run-url.run.app"
+BACKUP_DIR="/home/pi/opready-backups"
+DATE=$(date +%Y-%m-%d)
+
+# Retention policy — choose one or both:
+KEEP_DAYS=30    # delete backups older than this many days (0 = disabled)
+KEEP_COUNT=10   # keep only the N most recent files     (0 = disabled)
+
+mkdir -p "$BACKUP_DIR"
+
+HTTP_STATUS=$(curl -s -w "%{http_code}" \
+  -H "X-API-Key: $API_KEY" \
+  -o "$BACKUP_DIR/fenz_backup_${DATE}.sql" \
+  "${BASE_URL}/api/system/backup")
+
+if [ "$HTTP_STATUS" -eq 200 ]; then
+  echo "[$(date)] Backup saved: fenz_backup_${DATE}.sql"
+else
+  echo "[$(date)] Backup FAILED — HTTP $HTTP_STATUS" >&2
+  rm -f "$BACKUP_DIR/fenz_backup_${DATE}.sql"
+  exit 1
+fi
+
+# Retention: remove files older than KEEP_DAYS days
+if [ "$KEEP_DAYS" -gt 0 ]; then
+  find "$BACKUP_DIR" -name "fenz_backup_*.sql" -mtime +"$KEEP_DAYS" -delete
+fi
+
+# Retention: keep only the KEEP_COUNT most recent files
+if [ "$KEEP_COUNT" -gt 0 ]; then
+  ls -1t "$BACKUP_DIR"/fenz_backup_*.sql 2>/dev/null | tail -n +"$((KEEP_COUNT + 1))" | xargs -r rm --
+fi
+```
+
+Make it executable:
+
+```bash
+chmod +x backup-opready.sh
+```
+
+#### Step 3 — Schedule with cron
+
+```bash
+crontab -e
+```
+
+Add a daily job (example: 2:00 AM):
+
+```
+0 2 * * * /home/pi/backup-opready.sh >> /home/pi/opready-backups/backup.log 2>&1
+```
+
+#### Restoring from a backup
+
+To restore, upload the `.sql` file via the UI (**System Tools → Database → Restore**), or call the restore endpoint directly:
+
+```bash
+curl -X POST \
+  -H "X-API-Key: $API_KEY" \
+  -F "databaseFile=@/home/pi/opready-backups/fenz_backup_2025-01-15.sql" \
+  "${BASE_URL}/api/system/restore"
+```
+
+> **Warning:** restore replaces the entire database and invalidates all active sessions.
+
+#### Using Google Cloud Scheduler instead of a local machine
+
+If you prefer a fully cloud-native solution, create a Cloud Scheduler job targeting the same endpoint:
+
+| Field | Value |
+|---|---|
+| **Frequency** | `0 2 * * *` (daily at 2 AM) |
+| **Target type** | HTTP |
+| **URL** | `https://your-cloud-run-url.run.app/api/system/backup` |
+| **HTTP method** | GET |
+| **Auth header** | Add header `X-API-Key` with your superadmin key value |
+
+The response body (the `.sql` file) can be captured by routing the job through a Cloud Function or Workflow that writes it to a Cloud Storage bucket.
+
+---
+
 ### WhatsApp Resilience
 
 The WhatsApp service includes built-in fault tolerance:
