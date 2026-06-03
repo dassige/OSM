@@ -4,6 +4,7 @@ const db = require("../../services/db");
 const { hasRole } = require("../../middleware/auth");
 const { publicSubmitLimiter } = require("../../middleware/rate-limiter");
 const logger = require("../../services/logger");
+const { formatMemberName } = require("../../services/rank-config");
 
 router.get("/preview/:publicId", hasRole("admin"), async (req, res) => {
   try {
@@ -69,7 +70,7 @@ router.get("/:accessCode", publicSubmitLimiter, async (req, res) => {
         intro: liveInstance.intro_text,
         structure: liveInstance.structure,
         is_anonymous: liveInstance.is_anonymous, 
-        respondentName: trackingRecord.member_name 
+        respondentName: formatMemberName(trackingRecord.member_rank, trackingRecord.member_last_name, trackingRecord.member_first_name, trackingRecord.member_name)
       },
     });
   } catch (error) {

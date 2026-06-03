@@ -65,6 +65,11 @@ const memberSchema = Joi.object({
     messengerId: Joi.string().allow('', null).optional(),
     notificationPreference: Joi.string().valid('email', 'whatsapp', 'email,whatsapp', 'whatsapp,email', 'both', 'none').default('email'),
     enabled: Joi.alternatives().try(Joi.boolean(), Joi.number().valid(0, 1)).optional(),
+    // ETL enrichment fields
+    rank:          Joi.string().allow('', null).max(10).optional(),
+    first_name:    Joi.string().allow('', null).max(100).optional(),
+    last_name:     Joi.string().allow('', null).max(100).optional(),
+    member_osm_id: Joi.string().allow('', null).max(255).optional(),
 });
 
 const validateMember = (req, res, next) => {
@@ -85,6 +90,9 @@ const skillSchema = Joi.object({
     url: Joi.string().allow('', null).optional(),
     critical_skill: Joi.alternatives().try(Joi.boolean(), Joi.number().valid(0, 1)).optional(),
     enabled: Joi.alternatives().try(Joi.boolean(), Joi.number().valid(0, 1)).optional(),
+    // ETL enrichment fields
+    skill_osm_id:  Joi.string().allow('', null).max(255).optional(),
+    skill_category: Joi.string().allow('', null).max(100).optional(),
 });
 
 const validateSkill = (req, res, next) => {

@@ -51,6 +51,10 @@ if (appMode === "demo") {
 
 const scrapingInterval = parseInt(process.env.SCRAPING_INTERVAL) || 60;
 
+// ETL plugin selection — determines which services/plugins/<name>.plugin.js is loaded.
+// Available: html-scraper (default) | rest-api (stub, not yet implemented)
+const extractionPlugin = process.env.EXTRACTION_PLUGIN || 'html-scraper';
+
 const transporter = nodemailer.createTransport({
   service: process.env.SMTP_SERVICE || "gmail",
   auth: {
@@ -124,6 +128,7 @@ module.exports = {
   locale,
   url,
   scrapingInterval,
+  extractionPlugin,
   transporter,
   proxyMode,
   fixedProxyUrl,

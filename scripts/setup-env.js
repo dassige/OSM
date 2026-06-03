@@ -32,6 +32,7 @@ const EXISTING_ENV = path.join(ROOT, '.env');
 
 const OPTIONS = {
     APP_MODE:               ['production', 'demo'],
+    EXTRACTION_PLUGIN:      ['html-scraper', 'rest-api'],
     NODE_ENV:               ['development', 'production'],
     LOG_LEVEL:              ['info', 'error', 'warn', 'debug'],
     PROXY_MODE:             ['none', 'fixed', 'dynamic'],

@@ -223,35 +223,69 @@
     </div>
 
     <div id="memberModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal('memberModal')">&times;</span>
+        <div class="modal-content" style="max-width:560px;">
+            <span class="close-btn" onclick="closeModal('memberModal')" title="Close">&times;</span>
             <h2 id="modalTitle">Add Member</h2>
             <form id="memberForm">
                 <input type="hidden" id="memberId">
-                <div class="form-group"><label>Full Name</label><input type="text" id="name" required
-                        placeholder="Exact name as seen in OSM" title="Member's full name exactly as it appears in the OSM dashboard"></div>
-                <div class="form-group"><label>Email Address</label><input type="email" id="email" required
-                        title="Member's email address for notifications"></div>
+
+                <!-- OSM matching key fields — locked in edit mode -->
+                <div style="font-size:0.78em; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">OSM Source</div>
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; justify-content:space-between;">
+                        <span>Full Name <span style="font-size:0.8em; color:var(--text-muted);">(raw OSM name · matching key)</span></span>
+                        <button type="button" id="lockName" onclick="memberToggleLock('name','lockName')" title="Unlock for editing" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:2px 4px;border-radius:3px;display:inline-flex;line-height:1;" tabindex="-1">
+                            <svg id="lockNameIcon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </button>
+                    </label>
+                    <input type="text" id="name" required placeholder="e.g. QFF Smith, J" title="Member's full name exactly as it appears in the OSM dashboard">
+                </div>
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; justify-content:space-between;">
+                        <span>OSM Member ID <span style="font-size:0.8em; color:var(--text-muted);">(matching key)</span></span>
+                        <button type="button" id="lockOsmId" onclick="memberToggleLock('member_osm_id','lockOsmId')" title="Unlock for editing" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:2px 4px;border-radius:3px;display:inline-flex;line-height:1;" tabindex="-1">
+                            <svg id="lockOsmIdIcon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </button>
+                    </label>
+                    <input type="text" id="member_osm_id" placeholder="Populated automatically from OSM" title="Unique OSM identifier used to match this member to extraction data">
+                </div>
+
+                <!-- ETL-derived fields -->
+                <div style="font-size:0.78em; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin:12px 0 6px;">Parsed Fields</div>
+                <div style="display:grid; grid-template-columns:80px 1fr 1fr; gap:10px;">
+                    <div class="form-group" style="margin:0;">
+                        <label>Rank</label>
+                        <input type="text" id="rank" maxlength="10" placeholder="e.g. QFF" title="Rank abbreviation parsed from the OSM name">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Last Name</label>
+                        <input type="text" id="last_name" placeholder="e.g. Smith" title="Last name parsed from the OSM name">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>First Name</label>
+                        <input type="text" id="first_name" placeholder="e.g. J" title="First name or initial parsed from the OSM name">
+                    </div>
+                </div>
+
+                <!-- Contact -->
+                <div style="font-size:0.78em; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin:12px 0 6px;">Contact</div>
+                <div class="form-group"><label>Email Address</label><input type="email" id="email" title="Member's email address for notifications"></div>
                 <div class="form-group"><label>Mobile (Optional)</label><input type="text" id="mobile"
                         pattern="^02[0-9][\d\s\-]{6,9}$"
                         title="NZ mobile number starting with 02 (e.g. 021 234 5678)"></div>
                 <div class="form-group">
                     <label>Notification Preference</label>
                     <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                        <label
-                            style="font-weight:normal; display:flex; align-items:center; gap:5px; cursor:pointer;"><input
-                                type="checkbox" id="prefEmail" value="email"> Email</label>
-                        <label
-                            style="font-weight:normal; display:flex; align-items:center; gap:5px; cursor:pointer;"><input
-                                type="checkbox" id="prefWa" value="whatsapp"> WhatsApp</label>
+                        <label style="font-weight:normal; display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="prefEmail" value="email"> Email</label>
+                        <label style="font-weight:normal; display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="prefWa" value="whatsapp"> WhatsApp</label>
                     </div>
                 </div>
                 <div class="form-group"><label style="display:flex; align-items:center; cursor:pointer;"><input
                             type="checkbox" id="enabled" checked style="width:auto; margin-right:10px;"> Enabled</label>
                 </div>
                 <div class="modal-actions-right">
-                    <button type="button" onclick="closeModal('memberModal')" class="btn-secondary">Cancel</button>
-                    <button type="submit" class="btn-success">Save</button>
+                    <button type="button" onclick="closeModal('memberModal')" class="btn-secondary" title="Cancel without saving">Cancel</button>
+                    <button type="submit" class="btn-success" title="Save member">Save</button>
                 </div>
             </form>
         </div>
@@ -314,21 +348,40 @@
     </div>
 
     <div id="osmImportModal" class="modal">
-        <div class="modal-content" style="max-width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
-            <span class="close-btn" onclick="closeModal('osmImportModal')">&times;</span>
-            <h2 id="osmModalTitle">Import Members from OSM</h2>
-            <div
-                style="background-color: var(--bg-hover); padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9em; color: var(--text-muted); border: 1px solid var(--border-color);">
-                <strong>Note:</strong> This operation scans the OSM Dashboard and will import only the members that are
-                <u>not yet in your table</u>.
+        <div class="modal-content" style="max-width: 660px; max-height: 85vh; display: flex; flex-direction: column;">
+            <span class="close-btn" onclick="closeModal('osmImportModal')" title="Close">&times;</span>
+            <h2>Sync Members from OSM</h2>
+            <div style="background-color:var(--bg-hover); padding:10px; border-radius:4px; margin-bottom:14px; font-size:0.88em; color:var(--text-muted); border:1px solid var(--border-color);">
+                Scans the OSM Dashboard for <strong>new members</strong> and existing members whose <strong>rank or name data has changed</strong>. Select the records you want to apply, then click <strong>Apply Selected</strong>.
             </div>
-            <div id="osmListContainer"
-                style="flex: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; padding: 10px; margin-bottom: 20px; min-height: 100px; display: none;">
-                <ul id="osmMemberList" style="list-style: none; padding: 0; margin: 0;"></ul>
+            <div id="osmListContainer" style="flex:1; overflow-y:auto; display:none; margin-bottom:16px;">
+                <!-- New section -->
+                <div id="osmNewSection" style="margin-bottom:14px; display:none;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <span class="badge badge-success" style="font-size:0.78em;">NEW</span>
+                        <strong id="osmNewHeading">New Members (0)</strong>
+                        <button type="button" class="btn-secondary btn-sm" onclick="osmToggleSection('new', true)" title="Select all new members" style="margin-left:auto;">Select All</button>
+                        <button type="button" class="btn-secondary btn-sm" onclick="osmToggleSection('new', false)" title="Clear all new member selections">Clear All</button>
+                    </div>
+                    <ul id="osmNewList" style="list-style:none; padding:0; margin:0;"></ul>
+                </div>
+                <!-- Changed section -->
+                <div id="osmChangedSection" style="display:none;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <span class="badge badge-warning" style="font-size:0.78em; background:var(--warning-color,#f0ad4e); color:#fff;">CHANGED</span>
+                        <strong id="osmChangedHeading">Changed Members (0)</strong>
+                        <button type="button" class="btn-secondary btn-sm" onclick="osmToggleSection('changed', true)" title="Select all changed members" style="margin-left:auto;">Select All</button>
+                        <button type="button" class="btn-secondary btn-sm" onclick="osmToggleSection('changed', false)" title="Clear all changed member selections">Clear All</button>
+                    </div>
+                    <ul id="osmChangedList" style="list-style:none; padding:0; margin:0;"></ul>
+                </div>
+                <div id="osmEmptyMsg" style="display:none; text-align:center; padding:24px; color:var(--text-muted);">
+                    All members are up to date — nothing to sync.
+                </div>
             </div>
-            <div id="osmActions" class="modal-actions-right" style="display: none;">
-                <button type="button" onclick="closeModal('osmImportModal')" class="btn-secondary">Cancel</button>
-                <button type="button" onclick="confirmOsmImport()" class="btn-success">Confirm Import</button>
+            <div id="osmActions" class="modal-actions-right" style="display:none;">
+                <button type="button" onclick="closeModal('osmImportModal')" class="btn-secondary" title="Cancel without making changes">Cancel</button>
+                <button type="button" id="osmApplyBtn" onclick="confirmOsmSync()" class="btn-success" title="Apply selected additions and updates">Apply Selected (<span id="osmSelectedCount">0</span>)</button>
             </div>
         </div>
     </div>
@@ -355,12 +408,27 @@
         let membersLimit = 25;
         let isDemo = false;
 
-        function parseRankAndName(fullName) {
-            const parts = (fullName || '').trim().split(' ');
-            if (parts.length > 1 && /^[A-Za-z]{2,4}$/.test(parts[0])) {
+        // Use DB structured fields when available; fall back to parsing the raw name.
+        function parseRankAndName(memberOrName) {
+            if (memberOrName && typeof memberOrName === 'object') {
+                const rank = memberOrName.rank || '-';
+                let displayName;
+                if (memberOrName.last_name) {
+                    // Structured fields available — build from last+first (rank shown in separate column)
+                    displayName = window.formatMemberName
+                        ? window.formatMemberName(null, memberOrName.last_name, memberOrName.first_name, memberOrName.name)
+                        : memberOrName.last_name;
+                } else {
+                    // No structured fields — show raw name as-is (never strip, avoids false rank matches)
+                    displayName = memberOrName.name || '';
+                }
+                return { rank, displayName: displayName || memberOrName.name || '' };
+            }
+            const parts = (memberOrName || '').trim().split(' ');
+            if (parts.length > 1 && /^[A-Za-z]{2,5}$/.test(parts[0])) {
                 return { rank: parts[0], displayName: parts.slice(1).join(' ') };
             }
-            return { rank: "-", displayName: fullName || '' };
+            return { rank: '-', displayName: memberOrName || '' };
         }
 
         async function initPage() {
@@ -408,14 +476,19 @@
                         });
                     },
                     sortFunction: (a, b, sortState) => {
-                        const parsedA = parseRankAndName(a.name);
-                        const parsedB = parseRankAndName(b.name);
+                        const parsedA = parseRankAndName(a);
+                        const parsedB = parseRankAndName(b);
+
+                        if (sortState.column === 'rank') {
+                            // Priority order (CFO=1 first), not alphabetical
+                            const pA = window.getRankPriority ? window.getRankPriority(a.rank || parsedA.rank) : 99;
+                            const pB = window.getRankPriority ? window.getRankPriority(b.rank || parsedB.rank) : 99;
+                            if (pA !== pB) return sortState.order === 'asc' ? pA - pB : pB - pA;
+                            return parsedA.displayName.localeCompare(parsedB.displayName);
+                        }
 
                         let valA, valB;
-                        if (sortState.column === 'rank') {
-                            valA = parsedA.rank.toLowerCase();
-                            valB = parsedB.rank.toLowerCase();
-                        } else if (sortState.column === 'name') {
+                        if (sortState.column === 'name') {
                             valA = parsedA.displayName.toLowerCase();
                             valB = parsedB.displayName.toLowerCase();
                         } else {
@@ -438,7 +511,7 @@
                         const hasEmail = prefs.includes('email') ? 'active' : '';
                         const hasWa = prefs.includes('whatsapp') ? 'active' : '';
 
-                        const { rank, displayName } = parseRankAndName(m.name);
+                        const { rank, displayName } = parseRankAndName(m);
 
                         tr.innerHTML = `
                     <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()" title="Select this member for bulk actions"></td>
@@ -648,17 +721,46 @@
             }
         }
 
+        // ── Lock / unlock helper ────────────────────────────────────────────────
+        const LOCK_SVG   = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+        const UNLOCK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>';
+
+        function memberSetLocked(fieldId, btnId, locked) {
+            const f = document.getElementById(fieldId);
+            const btn = document.getElementById(btnId);
+            if (!f || !btn) return;
+            f.readOnly = locked;
+            f.style.background = locked ? 'var(--bg-hover)' : '';
+            f.style.cursor     = locked ? 'not-allowed'     : '';
+            btn.innerHTML = locked ? LOCK_SVG : UNLOCK_SVG;
+            btn.title     = locked ? 'Unlock for editing'  : 'Lock field';
+        }
+
+        function memberToggleLock(fieldId, btnId) {
+            const f = document.getElementById(fieldId);
+            const nowLocked = !f.readOnly;
+            memberSetLocked(fieldId, btnId, nowLocked);
+            if (!nowLocked) f.focus();
+        }
+
         function editMemberByIndex(index) {
             const m = memberTable.data[index];
             document.getElementById('modalTitle').textContent = "Edit Member";
-            document.getElementById('memberId').value = m.id;
-            document.getElementById('name').value = m.name;
-            document.getElementById('email').value = m.email;
-            document.getElementById('mobile').value = m.mobile;
-            document.getElementById('enabled').checked = m.enabled;
+            document.getElementById('memberId').value       = m.id;
+            document.getElementById('name').value           = m.name || '';
+            document.getElementById('member_osm_id').value  = m.member_osm_id || '';
+            document.getElementById('rank').value           = m.rank      || '';
+            document.getElementById('last_name').value      = m.last_name  || '';
+            document.getElementById('first_name').value     = m.first_name || '';
+            document.getElementById('email').value          = m.email  || '';
+            document.getElementById('mobile').value         = m.mobile || '';
+            document.getElementById('enabled').checked      = m.enabled;
             const prefs = (m.notificationPreference || 'email').split(',');
             document.getElementById('prefEmail').checked = prefs.includes('email');
-            document.getElementById('prefWa').checked = prefs.includes('whatsapp');
+            document.getElementById('prefWa').checked    = prefs.includes('whatsapp');
+            // Lock matching-key fields by default in edit mode
+            memberSetLocked('name',          'lockName',  true);
+            memberSetLocked('member_osm_id', 'lockOsmId', true);
             document.getElementById('memberModal').style.display = 'block';
         }
 
@@ -695,8 +797,15 @@
             const ids = Array.from(document.querySelectorAll('.member-checkbox:checked')).map(cb => cb.value);
             if (!ids.length) return;
             if (await promptAction('Delete Members', `This will permanently delete <strong>${ids.length} member${ids.length !== 1 ? 's' : ''}</strong>. This cannot be undone.<br><br>Type <strong>DELETE</strong> to confirm.`, 'DELETE')) {
-                await fetch('/api/members/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
-                reloadMembers();
+                try {
+                    const res = await fetch('/api/members/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        showToast(data.error || 'Delete failed.', 'error');
+                        return;
+                    }
+                    reloadMembers();
+                } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
             }
         }
 
@@ -707,9 +816,12 @@
             document.getElementById('modalTitle').textContent = "Add Member";
             document.getElementById('memberId').value = "";
             form.reset();
-            document.getElementById('enabled').checked = true;
-            document.getElementById('prefEmail').checked = true;
-            document.getElementById('prefWa').checked = false;
+            document.getElementById('enabled').checked    = true;
+            document.getElementById('prefEmail').checked  = true;
+            document.getElementById('prefWa').checked     = false;
+            // Add mode: matching-key fields are editable (no lock applied)
+            memberSetLocked('name',          'lockName',  false);
+            memberSetLocked('member_osm_id', 'lockOsmId', false);
             memberModal.style.display = 'block';
         }
 
@@ -725,11 +837,15 @@
             if (document.getElementById('prefWa').checked) selectedPrefs.push('whatsapp');
 
             const data = {
-                name: document.getElementById('name').value,
-                email: document.getElementById('email').value,
-                mobile: document.getElementById('mobile').value,
-                enabled: document.getElementById('enabled').checked,
-                notificationPreference: selectedPrefs.join(',')
+                name:                   document.getElementById('name').value,
+                member_osm_id:          document.getElementById('member_osm_id').value || null,
+                rank:                   document.getElementById('rank').value      || null,
+                last_name:              document.getElementById('last_name').value  || null,
+                first_name:             document.getElementById('first_name').value || null,
+                email:                  document.getElementById('email').value,
+                mobile:                 document.getElementById('mobile').value,
+                enabled:                document.getElementById('enabled').checked,
+                notificationPreference: selectedPrefs.join(','),
             };
             const method = id ? 'PUT' : 'POST';
             const url = id ? `/api/members/${id}` : '/api/members';
@@ -741,10 +857,21 @@
         async function deleteMember(id) {
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const member = memberTable.data.find(m => m.id == id);
-            const name = member ? member.name : 'this member';
-            if (await confirmAction('Delete Member', `Are you sure you want to delete ${name}?`)) {
-                await fetch(`/api/members/${id}`, { method: 'DELETE' });
-                reloadMembers();
+            const displayName = member
+                ? (window.formatMemberName
+                    ? window.formatMemberName(member.rank, member.last_name, member.first_name, member.name)
+                    : member.name)
+                : 'this member';
+            if (await confirmAction('Delete Member', `Are you sure you want to delete <strong>${displayName}</strong>?`)) {
+                try {
+                    const res = await fetch(`/api/members/${id}`, { method: 'DELETE' });
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        showToast(data.error || 'Delete failed.', 'error');
+                        return;
+                    }
+                    reloadMembers();
+                } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
             }
         }
 
@@ -811,58 +938,139 @@
             } catch (e) { }
         }
 
-        let discoveredMembers = [];
+        let osmDiscoveredMembers = { new: [], changed: [] };
+
+        function osmUpdateSelectedCount() {
+            const checked = document.querySelectorAll('#osmNewList .osm-check:checked, #osmChangedList .osm-check:checked').length;
+            const span = document.getElementById('osmSelectedCount');
+            if (span) span.textContent = checked;
+            const btn = document.getElementById('osmApplyBtn');
+            if (btn) btn.disabled = checked === 0;
+        }
+
+        function osmToggleSection(section, state) {
+            const listId = section === 'new' ? 'osmNewList' : 'osmChangedList';
+            document.querySelectorAll(`#${listId} .osm-check`).forEach(cb => { cb.checked = state; });
+            osmUpdateSelectedCount();
+        }
+
+        function osmDiffLabel(field, from, to) {
+            const f = from || '—';
+            const t = to   || '—';
+            return f === t ? '' : `<span style="font-size:0.82em; color:var(--text-muted);">${field}: <s style="color:var(--danger-color,#dc3545);">${f}</s> → <strong style="color:var(--success-color,#28a745);">${t}</strong></span>`;
+        }
+
         async function openOsmImportModal() {
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
-            const modal = document.getElementById('osmImportModal');
-            const listContainer = document.getElementById('osmListContainer');
-            const actions = document.getElementById('osmActions');
-            const list = document.getElementById('osmMemberList');
-            list.innerHTML = '<li style="text-align:center; padding:20px; color:var(--text-muted);"><div class="spinner" style="margin:0 auto 8px; display:block; border-top-color:var(--primary);"></div>Scanning Dashboard...</li>';
+            const modal       = document.getElementById('osmImportModal');
+            const container   = document.getElementById('osmListContainer');
+            const actions     = document.getElementById('osmActions');
+            const newSection  = document.getElementById('osmNewSection');
+            const chgSection  = document.getElementById('osmChangedSection');
+            const emptyMsg    = document.getElementById('osmEmptyMsg');
+            const newList     = document.getElementById('osmNewList');
+            const chgList     = document.getElementById('osmChangedList');
+
+            // Reset
+            [newSection, chgSection, emptyMsg].forEach(el => el.style.display = 'none');
+            newList.innerHTML = chgList.innerHTML = '';
+            container.style.display = 'block';
+            container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);"><div class="spinner" style="margin:0 auto 10px;display:block;border-top-color:var(--primary);"></div>Scanning OSM Dashboard…</div>';
             actions.style.display = 'none';
-            listContainer.style.display = 'block';
             modal.style.display = 'block';
+
             try {
                 const res = await fetch('/api/members/discover');
-                if (!res.ok) throw new Error((await res.json()).error || "Failed to scan");
-                discoveredMembers = await res.json();
-                list.innerHTML = '';
-                if (discoveredMembers.length === 0) {
-                    list.innerHTML = '<li style="text-align:center; padding:20px; color:var(--text-muted);">No new unique members found.</li>';
-                    actions.style.display = 'flex';
-                    actions.querySelector('.btn-success').disabled = true;
+                if (!res.ok) throw new Error((await res.json()).error || 'Failed to scan');
+                osmDiscoveredMembers = await res.json();
+
+                // Restore real DOM content
+                container.innerHTML = '';
+                container.appendChild(newSection);
+                container.appendChild(chgSection);
+                container.appendChild(emptyMsg);
+
+                const hasNew     = osmDiscoveredMembers.new.length > 0;
+                const hasChanged = osmDiscoveredMembers.changed.length > 0;
+
+                if (!hasNew && !hasChanged) {
+                    emptyMsg.style.display = 'block';
                 } else {
-                    actions.style.display = 'flex';
-                    actions.querySelector('.btn-success').disabled = false;
-                    discoveredMembers.forEach(memberName => {
-                        const li = document.createElement('li');
-                        li.style.padding = "5px 0";
-                        li.style.borderBottom = "1px solid var(--border-color)";
-                        li.innerHTML = `<span style="color:var(--text-main);">${memberName}</span>`;
-                        list.appendChild(li);
-                    });
+                    if (hasNew) {
+                        document.getElementById('osmNewHeading').textContent = `New Members (${osmDiscoveredMembers.new.length})`;
+                        osmDiscoveredMembers.new.forEach((m, i) => {
+                            const li = document.createElement('li');
+                            li.style.cssText = 'padding:6px 4px; border-bottom:1px solid var(--border-color); display:flex; align-items:flex-start; gap:8px;';
+                            li.innerHTML = `
+                                <input type="checkbox" class="osm-check" id="osmNew-${i}" checked onchange="osmUpdateSelectedCount()" title="Include this member in the sync" style="margin-top:3px; flex-shrink:0;">
+                                <label for="osmNew-${i}" style="cursor:pointer; flex:1;">
+                                    <span style="font-weight:600;">${window.formatMemberName ? window.formatMemberName(m.rank, m.lastName, m.firstName, m.name) : m.name}</span>
+                                    <span style="font-size:0.82em; color:var(--text-muted); margin-left:8px;">${m.rank||'—'} · ${m.lastName||'—'}, ${m.firstName||'—'}</span>
+                                </label>`;
+                            newList.appendChild(li);
+                        });
+                        newSection.style.display = 'block';
+                    }
+                    if (hasChanged) {
+                        document.getElementById('osmChangedHeading').textContent = `Changed Members (${osmDiscoveredMembers.changed.length})`;
+                        osmDiscoveredMembers.changed.forEach((m, i) => {
+                            const diffs = [
+                                osmDiffLabel('rank',      m.currentRank,      m.rank),
+                                osmDiffLabel('firstName', m.currentFirstName, m.firstName),
+                                osmDiffLabel('lastName',  m.currentLastName,  m.lastName),
+                            ].filter(Boolean).join(' &nbsp;');
+                            const li = document.createElement('li');
+                            li.style.cssText = 'padding:6px 4px; border-bottom:1px solid var(--border-color); display:flex; align-items:flex-start; gap:8px;';
+                            li.innerHTML = `
+                                <input type="checkbox" class="osm-check" id="osmChanged-${i}" checked onchange="osmUpdateSelectedCount()" title="Apply this update" style="margin-top:3px; flex-shrink:0;">
+                                <label for="osmChanged-${i}" style="cursor:pointer; flex:1;">
+                                    <span style="font-weight:600;">${window.formatMemberName ? window.formatMemberName(m.rank, m.lastName, m.firstName, m.name) : m.name}</span><br>
+                                    <span>${diffs || '<em style="color:var(--text-muted);">OSM ID needs setting</em>'}</span>
+                                </label>`;
+                            chgList.appendChild(li);
+                        });
+                        chgSection.style.display = 'block';
+                    }
                 }
+
+                actions.style.display = 'flex';
+                osmUpdateSelectedCount();
             } catch (e) {
-                showToast("Error scanning OSM: " + e.message, "error");
+                showToast('Error scanning OSM: ' + e.message, 'error');
                 closeModal('osmImportModal');
             }
         }
 
-        async function confirmOsmImport() {
-            if (!discoveredMembers || discoveredMembers.length === 0) return;
-            if (!await confirmAction('Import from OSM', `Import ${discoveredMembers.length} new members?`)) return;
-            const importPayload = discoveredMembers.map(name => ({ name: name, email: "", mobile: "", enabled: true }));
+        async function confirmOsmSync() {
+            const toAdd = osmDiscoveredMembers.new.filter((_, i) => {
+                const cb = document.getElementById(`osmNew-${i}`);
+                return cb && cb.checked;
+            });
+            const toUpdate = osmDiscoveredMembers.changed.filter((_, i) => {
+                const cb = document.getElementById(`osmChanged-${i}`);
+                return cb && cb.checked;
+            });
+            if (toAdd.length === 0 && toUpdate.length === 0) { showToast('No items selected.', 'warning'); return; }
+            const msg = [
+                toAdd.length    ? `Add <strong>${toAdd.length}</strong> new member(s)` : '',
+                toUpdate.length ? `Update <strong>${toUpdate.length}</strong> existing member(s)` : '',
+            ].filter(Boolean).join(' and ') + '.';
+            if (!await confirmAction('Sync from OSM', msg)) return;
             try {
-                const res = await fetch('/api/members/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(importPayload) });
-                if (res.ok) {
-                    closeModal('osmImportModal');
-                    await reloadMembers();
-                    showToast(`Successfully imported ${importPayload.length} members.`, 'success');
-                } else {
-                    throw new Error("Server rejected import.");
-                }
-            } catch (e) { showToast("Import failed: " + e.message, "error"); }
+                const res = await fetch('/api/members/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ add: toAdd, update: toUpdate }),
+                });
+                if (!res.ok) throw new Error((await res.json()).error || 'Server rejected sync.');
+                closeModal('osmImportModal');
+                await reloadMembers();
+                showToast(`Synced: ${toAdd.length} added, ${toUpdate.length} updated.`, 'success');
+            } catch (e) { showToast('Sync failed: ' + e.message, 'error'); }
         }
+
+        // Keep legacy name so any other inline callers still work
+        const confirmOsmImport = confirmOsmSync;
 
         initPage();
         window.onclick = (e) => {

@@ -33,6 +33,8 @@ test.describe.serial('T03 — Members CRUD', () => {
 
     await page.locator(`tr:has-text("${NAME}")`).first().locator('.btn-icon.edit').click();
     await page.locator('#memberModal').waitFor({ state: 'visible' });
+    // #name is locked in edit mode — unlock it before editing
+    await page.locator('#lockName').click();
     await page.fill('#name', NAME2);
 
     const respPromise = waitForAPI(page, '/api/members/', 'PUT');

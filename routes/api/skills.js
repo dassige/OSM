@@ -2,12 +2,17 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../services/db');
-const { getOIData } = require('../../services/scraper');
+const extractionEngine = require('../../services/extraction-engine');
 const { getActiveProxy } = require('../../services/proxy-manager');
 const config = require('../../config');
 const { hasRole } = require('../../middleware/auth');
 const { validateSkill } = require('../../middleware/validation');
 const logger = require('../../services/logger');
+
+// Returns true when SQLite throws a FOREIGN KEY constraint violation
+function isForeignKeyError(err) {
+  return err && err.message && err.message.toLowerCase().includes('foreign key');
+}
 
 router.get('/', hasRole('admin'), async (req, res) => {
   try {
@@ -75,7 +80,13 @@ router.delete('/:id', hasRole('admin'), async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    logger.error('Delete Skill Error', e);
+    if (isForeignKeyError(e)) {
+      return res.status(409).json({
+        error: 'Cannot delete this skill — it is linked to existing live form records. Delete those forms first, or disable the skill instead.',
+      });
+    }
+    res.status(500).json({ error: 'Could not delete skill.' });
   }
 });
 
@@ -89,20 +100,74 @@ router.post('/bulk-delete', hasRole('admin'), async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    logger.error('Bulk Delete Skills Error', e);
+    if (isForeignKeyError(e)) {
+      return res.status(409).json({
+        error: 'One or more skills could not be deleted — they are linked to existing live form records. Delete those forms first, or disable the skills instead.',
+      });
+    }
+    res.status(500).json({ error: 'Could not delete skills.' });
   }
 });
 
 router.get('/discover', hasRole('admin'), async (req, res) => {
   try {
-    const currentProxy = getActiveProxy();
-    const rawData = await getOIData(config.url, 0, currentProxy);
+    const rawData = await extractionEngine.extractData({ forceRefresh: true, proxyUrl: getActiveProxy() });
     const existing = await db.getSkills();
-    const existingNames = new Set(existing.map((s) => s.name));
-    const newSkills = [...new Set(rawData.map((r) => r.skill))].filter(
-      (n) => !existingNames.has(n),
-    );
-    res.json(newSkills.sort());
+
+    // Build lookup maps — prefer skill_osm_id match, fall back to name
+    const byOsmId = new Map(existing.filter((s) => s.skill_osm_id).map((s) => [s.skill_osm_id, s]));
+    const byName  = new Map(existing.map((s) => [s.name, s]));
+
+    // Deduplicate extracted records by skillOsmId (one entry per unique skill)
+    const seen = new Set();
+    const uniqueExtracted = [];
+    for (const r of rawData) {
+      if (typeof r.skill !== 'string' || !r.skill.trim()) continue;
+      if (seen.has(r.skillOsmId)) continue;
+      seen.add(r.skillOsmId);
+      uniqueExtracted.push(r);
+    }
+
+    const newSkills     = [];
+    const changedSkills = [];
+
+    for (const r of uniqueExtracted) {
+      const dbRow = byOsmId.get(r.skillOsmId) || byName.get(r.skill);
+
+      if (!dbRow) {
+        newSkills.push({ skill: r.skill, skillOsmId: r.skillOsmId, skillCategory: r.skillCategory || null });
+      } else {
+        const categoryChanged = (r.skillCategory || null) !== (dbRow.skill_category || null);
+        const osmIdChanged    = r.skillOsmId !== (dbRow.skill_osm_id || null);
+        if (categoryChanged || osmIdChanged) {
+          changedSkills.push({
+            dbId: dbRow.id, skill: r.skill,
+            skillOsmId: r.skillOsmId, skillCategory: r.skillCategory || null,
+            currentSkillCategory: dbRow.skill_category || null,
+          });
+        }
+      }
+    }
+
+    res.json({ new: newSkills, changed: changedSkills });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/sync', hasRole('admin'), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
+  try {
+    const { add = [], update = [] } = req.body;
+    if (add.length > 0) await db.bulkAddSkillsWithEtl(add);
+    for (const s of update) {
+      await db.updateSkillEtlFields(s.dbId, { skillOsmId: s.skillOsmId, skillCategory: s.skillCategory });
+    }
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, 'Skill', 'Skills Synced from OSM', { addedCount: add.length, updatedCount: update.length });
+    logger.info('[Skills] OSM sync complete', { added: add.length, updated: update.length, actor });
+    res.json({ success: true, added: add.length, updated: update.length });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

@@ -1,10 +1,23 @@
 // public/js/surveys-results.js
-function parseRankAndName(fullName) {
-  const parts = (fullName || "").trim().split(" ");
-  if (parts.length > 1 && /^[A-Za-z]{2,4}$/.test(parts[0])) {
+// Accepts a response object (uses respondent.rank/lastName/firstName) or a plain name string.
+function parseRankAndName(respondentOrName) {
+  if (respondentOrName && typeof respondentOrName === "object") {
+    const rank = respondentOrName.rank || "-";
+    let displayName;
+    if (respondentOrName.lastName) {
+      displayName = window.formatMemberName
+        ? window.formatMemberName(null, respondentOrName.lastName, respondentOrName.firstName, respondentOrName.name)
+        : respondentOrName.lastName;
+    } else {
+      displayName = respondentOrName.name || "";
+    }
+    return { rank, displayName: displayName || respondentOrName.name || "" };
+  }
+  const parts = (respondentOrName || "").trim().split(" ");
+  if (parts.length > 1 && /^[A-Za-z]{2,5}$/.test(parts[0])) {
     return { rank: parts[0], displayName: parts.slice(1).join(" ") };
   }
-  return { rank: "-", displayName: fullName || "" };
+  return { rank: "-", displayName: respondentOrName || "" };
 }
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -158,13 +171,19 @@ function updateDetailedSortHeaders() {
 
 function getSortedResponses() {
   return [...surveyData.responses].sort((a, b) => {
-    let valA, valB;
+    // Use respondent object (structured fields) when available, fall back to member_name string
+    const srcA = a.respondent || { name: a.member_name, rank: a.member_rank, lastName: a.member_last_name, firstName: a.member_first_name };
+    const srcB = b.respondent || { name: b.member_name, rank: b.member_rank, lastName: b.member_last_name, firstName: b.member_first_name };
     if (detailedSortCol === "rank") {
-      valA = parseRankAndName(a.respondent?.name || a.member_name || "").rank.toLowerCase();
-      valB = parseRankAndName(b.respondent?.name || b.member_name || "").rank.toLowerCase();
-    } else if (detailedSortCol === "name") {
-      valA = parseRankAndName(a.respondent?.name || a.member_name || "").displayName.toLowerCase();
-      valB = parseRankAndName(b.respondent?.name || b.member_name || "").displayName.toLowerCase();
+      const pA = window.getRankPriority ? window.getRankPriority(srcA.rank || parseRankAndName(srcA).rank) : 99;
+      const pB = window.getRankPriority ? window.getRankPriority(srcB.rank || parseRankAndName(srcB).rank) : 99;
+      if (pA !== pB) return detailedSortDir === "asc" ? pA - pB : pB - pA;
+      return parseRankAndName(srcA).displayName.localeCompare(parseRankAndName(srcB).displayName);
+    }
+    let valA, valB;
+    if (detailedSortCol === "name") {
+      valA = parseRankAndName(srcA).displayName.toLowerCase();
+      valB = parseRankAndName(srcB).displayName.toLowerCase();
     } else {
       valA = a.submittedAt || "";
       valB = b.submittedAt || "";
@@ -196,7 +215,8 @@ function renderDetailedTable() {
   const end = Math.min(start + effectiveLimit, total);
 
   sorted.slice(start, end).forEach((r) => {
-    const { rank, displayName } = parseRankAndName(r.respondent?.name || r.member_name || "");
+    const respondentSrc = r.respondent || { name: r.member_name, rank: r.member_rank, lastName: r.member_last_name, firstName: r.member_first_name };
+    const { rank, displayName } = parseRankAndName(respondentSrc);
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td data-label="Rank" class="text-center">${formatRankCell(rank)}</td>
@@ -242,7 +262,8 @@ function renderDetailedCards() {
   const end = Math.min(start + effectiveLimit, total);
 
   sorted.slice(start, end).forEach((r) => {
-    const { rank, displayName } = parseRankAndName(r.respondent?.name || r.member_name || "");
+    const respondentSrc = r.respondent || { name: r.member_name, rank: r.member_rank, lastName: r.member_last_name, firstName: r.member_first_name };
+    const { rank, displayName } = parseRankAndName(respondentSrc);
     const rankHtml = (rank && rank !== "-") ? `<div class="card-rank">${formatRankCell(rank)}</div>` : "";
     const card = document.createElement("div");
     card.className = "table-card";
@@ -466,10 +487,15 @@ function exportCSV() {
   csvContent += headers.join(",") + "\n";
 
   surveyData.responses.forEach((r) => {
+    const csvSrc = r.respondent || { name: r.member_name, rank: r.member_rank, lastName: r.member_last_name, firstName: r.member_first_name };
+    const csvDisplayName = window.formatMemberName
+      ? window.formatMemberName(csvSrc.rank, csvSrc.lastName, csvSrc.firstName, csvSrc.name)
+      : csvSrc.name || r.member_name || "";
+    const csvRank = csvSrc.rank || parseRankAndName(csvSrc).rank || "";
     let row = isNamed
       ? [
-          `"${r.member_name}"`,
-          `"${r.rank}"`,
+          `"${csvDisplayName.replace(/"/g, '""')}"`,
+          `"${csvRank}"`,
           `"${new Date(r.submittedAt).toLocaleString((uiConfig && uiConfig.locale) || 'en-NZ', { timeZone: (uiConfig && uiConfig.timezone) || undefined })}"`,
         ]
       : [`"${r.id}"`, `"${new Date(r.submittedAt).toLocaleString((uiConfig && uiConfig.locale) || 'en-NZ', { timeZone: (uiConfig && uiConfig.timezone) || undefined })}"`];

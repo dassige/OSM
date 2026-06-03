@@ -1,14 +1,28 @@
 const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 
+jest.mock('../services/extraction-engine', () => ({
+    extractData:     jest.fn().mockResolvedValue([]),
+    clearCache:      jest.fn(),
+    getActivePlugin: jest.fn().mockReturnValue({ name: 'html-scraper', description: 'Test' }),
+}));
+
+jest.mock('../services/proxy-manager', () => ({
+    getActiveProxy: jest.fn().mockReturnValue(null),
+}));
+
 jest.mock('../services/db', () => ({
-    getSkills: jest.fn(),
-    getSkillsPage: jest.fn(),
-    addSkill: jest.fn(),
-    updateSkill: jest.fn(),
-    getSkillById: jest.fn().mockResolvedValue({ name: 'Test Skill' }),
-    deleteSkill: jest.fn(),
-    logEvent: jest.fn().mockResolvedValue()
+    getSkills:             jest.fn(),
+    getSkillsPage:         jest.fn(),
+    addSkill:              jest.fn(),
+    updateSkill:           jest.fn(),
+    getSkillById:          jest.fn().mockResolvedValue({ name: 'Test Skill' }),
+    deleteSkill:           jest.fn(),
+    bulkDeleteSkills:      jest.fn(),
+    bulkAddSkills:         jest.fn(),
+    bulkAddSkillsWithEtl:  jest.fn().mockResolvedValue(),
+    updateSkillEtlFields:  jest.fn().mockResolvedValue(),
+    logEvent:              jest.fn().mockResolvedValue(),
 }));
 
 // Bypass RBAC for functional testing (we already proved RBAC works in security.test.js!)
@@ -132,6 +146,49 @@ describe('Skills API Endpoints (Isolated)', () => {
             expect(response.status).toBe(200);
             expect(response.body).toEqual({ success: true });
             expect(db.deleteSkill).toHaveBeenCalledWith("2");
+        });
+    });
+
+    describe('GET /api/skills/discover', () => {
+        const extractionEngine = require('../services/extraction-engine');
+
+        it('returns new and changed skills with correct shape', async () => {
+            extractionEngine.extractData.mockResolvedValue([
+                { name: 'FF Solo, H', rank: 'FF', lastName: 'Solo', firstName: 'H', memberOsmId: 'FF Solo, H', skill: 'First Aid',   skillOsmId: 'First Aid',   skillCategory: 'First Aid', dueDate: '2026-01-01' },
+                { name: 'FF Solo, H', rank: 'FF', lastName: 'Solo', firstName: 'H', memberOsmId: 'FF Solo, H', skill: 'New Skill X', skillOsmId: 'New Skill X', skillCategory: 'General',   dueDate: '2026-01-01' },
+            ]);
+            // First Aid is in DB with wrong category; New Skill X is genuinely new
+            db.getSkills.mockResolvedValue([
+                { id: 1, name: 'First Aid', skill_osm_id: 'First Aid', skill_category: 'Medical' },
+            ]);
+
+            const response = await request(app).get('/api/skills/discover');
+
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('new');
+            expect(response.body).toHaveProperty('changed');
+            expect(response.body.new).toHaveLength(1);
+            expect(response.body.new[0].skill).toBe('New Skill X');
+            expect(response.body.changed).toHaveLength(1);
+            expect(response.body.changed[0].dbId).toBe(1);
+            expect(response.body.changed[0].skillCategory).toBe('First Aid');
+            expect(response.body.changed[0].currentSkillCategory).toBe('Medical');
+        });
+    });
+
+    describe('POST /api/skills/sync', () => {
+        it('adds new and updates changed skills, returns counts', async () => {
+            const response = await request(app)
+                .post('/api/skills/sync')
+                .send({
+                    add:    [{ skill: 'New Skill X', skillOsmId: 'New Skill X', skillCategory: 'General' }],
+                    update: [{ dbId: 1, skillOsmId: 'First Aid', skillCategory: 'First Aid' }],
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body).toMatchObject({ success: true, added: 1, updated: 1 });
+            expect(db.bulkAddSkillsWithEtl).toHaveBeenCalledTimes(1);
+            expect(db.updateSkillEtlFields).toHaveBeenCalledWith(1, expect.objectContaining({ skillCategory: 'First Aid' }));
         });
     });
 });

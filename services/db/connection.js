@@ -13,7 +13,17 @@ async function initDB() {
   const dbPath = getDbPath();
   db = await open({ filename: dbPath, driver: sqlite3.Database });
   await db.exec("PRAGMA foreign_keys = ON;");
-  await db.exec("PRAGMA journal_mode=WAL;");
+  // WAL mode is required for Litestream (production). On Windows bind mounts
+  // inside Docker the shared-memory (.shm) file creation can fail — fall back
+  // gracefully so local development still works.
+  try {
+    const result = await db.get("PRAGMA journal_mode=WAL;");
+    if (result?.journal_mode && result.journal_mode !== "wal") {
+      logger.warn(`[DB] WAL mode could not be enabled (current: ${result.journal_mode}). Litestream requires WAL in production.`);
+    }
+  } catch (walErr) {
+    logger.warn(`[DB] WAL mode failed: ${walErr.message} — continuing without it. Ensure a Linux-native filesystem path in production.`);
+  }
   await runMigrations(db);
   await db.run(
     "INSERT INTO preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING",

@@ -10,10 +10,17 @@ async function addMember(member) {
   const db = await initDB();
   return (
     await db.run(
-      "INSERT INTO members (name, email, mobile, messengerId, enabled, notificationPreference) VALUES (?, ?, ?, ?, ?, ?)",
-      member.name, member.email, member.mobile, member.messengerId,
+      `INSERT INTO members
+         (name, email, mobile, messengerId, enabled, notificationPreference,
+          rank, first_name, last_name, member_osm_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      member.name, member.email || '', member.mobile || '', member.messengerId || null,
       member.enabled !== false ? 1 : 0,
-      member.notificationPreference || "email",
+      member.notificationPreference || 'email',
+      member.rank         || null,
+      member.first_name   || null,
+      member.last_name    || null,
+      member.member_osm_id || null,
     )
   ).lastID;
 }
@@ -42,11 +49,23 @@ async function bulkAddMembers(members) {
 
 async function updateMember(id, member) {
   const db = await initDB();
+  // ETL fields are only written when explicitly present in the body.
+  // Partial PUTs (e.g. enable-toggle) won't carry these fields, so they are
+  // preserved as-is in the database rather than being overwritten with null.
+  const etlCols = [];
+  const etlVals = [];
+  if ('rank'          in member) { etlCols.push('rank = ?');          etlVals.push(member.rank          || null); }
+  if ('first_name'    in member) { etlCols.push('first_name = ?');    etlVals.push(member.first_name    || null); }
+  if ('last_name'     in member) { etlCols.push('last_name = ?');     etlVals.push(member.last_name     || null); }
+  if ('member_osm_id' in member) { etlCols.push('member_osm_id = ?'); etlVals.push(member.member_osm_id || null); }
+  const etlClause = etlCols.length ? ', ' + etlCols.join(', ') : '';
+
   await db.run(
-    "UPDATE members SET name = ?, email = ?, mobile = ?, messengerId = ?, enabled = ?, notificationPreference = ? WHERE id = ?",
+    `UPDATE members SET name = ?, email = ?, mobile = ?, messengerId = ?, enabled = ?, notificationPreference = ?${etlClause} WHERE id = ?`,
     member.name, member.email, member.mobile, member.messengerId,
     member.enabled ? 1 : 0,
-    member.notificationPreference || "email",
+    member.notificationPreference || 'email',
+    ...etlVals,
     id,
   );
 }
@@ -100,4 +119,37 @@ async function getMembersPage({ limit, offset = 0, search, sortBy = 'name', sort
   };
 }
 
-module.exports = { getMembers, getMembersPage, getMemberById, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers };
+async function updateMemberEtlFields(id, { rank, firstName, lastName, memberOsmId }) {
+  const db = await initDB();
+  await db.run(
+    'UPDATE members SET rank = ?, first_name = ?, last_name = ?, member_osm_id = ? WHERE id = ?',
+    rank || null, firstName || null, lastName || null, memberOsmId || null, id,
+  );
+}
+
+// Bulk-insert members that came from the OSM extraction — includes ETL fields.
+async function bulkAddMembersWithEtl(members) {
+  const db = await initDB();
+  await db.exec('BEGIN TRANSACTION');
+  try {
+    const stmt = await db.prepare(
+      `INSERT INTO members
+         (name, email, mobile, messengerId, enabled, notificationPreference,
+          rank, first_name, last_name, member_osm_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    for (const m of members) {
+      await stmt.run(
+        m.name, '', '', null, 1, 'email',
+        m.rank || null, m.firstName || null, m.lastName || null, m.memberOsmId || null,
+      );
+    }
+    await stmt.finalize();
+    await db.exec('COMMIT');
+  } catch (err) {
+    await db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
+module.exports = { getMembers, getMembersPage, getMemberById, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers, updateMemberEtlFields, bulkAddMembersWithEtl };

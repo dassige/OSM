@@ -6,7 +6,8 @@ const session = require("express-session");
 const SQLiteStore = require("connect-sqlite3")(session);
 const config = require("./config.js");
 const db = require("./services/db");
-const { getOIData } = require("./services/scraper");
+const extractionEngine = require("./services/extraction-engine");
+const { formatMemberName } = require("./services/rank-config");
 const { processMemberSkills } = require("./services/member-manager");
 const whatsappService = require("./services/whatsapp-service");
 const formsService = require("./services/forms-service");
@@ -232,13 +233,12 @@ io.on("connection", (socket) => {
     const dynamicBaseUrl = `${protocol}://${host}`;
     try {
       const daysThreshold = parseInt(days) || 30;
-      const interval = forceRefresh ? 0 : config.scrapingInterval;
 
       logger(`> Fetching View Data (Threshold: ${daysThreshold} days${forceRefresh ? ", Force Refresh" : ", Cached OK"})...`);
 
       const dbMembers = await db.getMembers();
       const dbSkills = await db.getSkills();
-      const rawData = await getOIData(config.url, interval, getActiveProxy(), logger);
+      const rawData = await extractionEngine.extractData({ forceRefresh, proxyUrl: getActiveProxy(), logFn: logger });
       const trainingMap = await getTrainingMap();
       const liveForms = await formsService.getAllActiveStatuses(config.acceptedFormVisibilityDays);
       const liveFormsMap = {};
@@ -250,6 +250,9 @@ io.on("connection", (socket) => {
       const results = processedMembers.map((m) => ({
         id: m.id,
         name: m.name,
+        rank:      m.rank       || null,
+        lastName:  m.last_name  || null,
+        firstName: m.first_name || null,
         email: m.email,
         mobile: m.mobile,
         notificationPreference: m.notificationPreference,
@@ -289,19 +292,36 @@ async function handleQueueProcessing(socket, targets, days, logger) {
   try {
     const dbMembers = await db.getMembers();
     const dbSkills = await db.getSkills();
-    const rawData = await getOIData(config.url, config.scrapingInterval, null, logger);
+    const rawData = await extractionEngine.extractData({ logFn: logger });
     const prefs = await db.getPreferences();
     const membersToProcess = dbMembers.filter((m) => targets.some((t) => t.name === m.name && m.enabled));
     const trainingMap = await getTrainingMap();
     const processedMembers = processMemberSkills(membersToProcess, rawData, dbSkills, days, trainingMap, {}, dynamicBaseUrl);
     
     let totalSent = 0;
+    // Count of members that will actually receive a notification (have expiring skills + send flags)
+    const totalToSend = processedMembers.filter((m) => {
+      const t = targets.find((x) => x.name === m.name);
+      return t && (t.sendEmail || t.sendWa) && m.expiringSkills && m.expiringSkills.length > 0;
+    }).length;
 
     for (const member of processedMembers) {
       const targetInfo = targets.find((t) => t.name === member.name);
       if (!targetInfo || (!targetInfo.sendEmail && !targetInfo.sendWa)) continue;
       if (!member.expiringSkills || member.expiringSkills.length === 0) continue;
-      
+
+      const memberDisplayName = formatMemberName(member.rank, member.last_name, member.first_name, member.name);
+
+      // Emit "processing" BEFORE sending so the spinner updates immediately and the user
+      // sees each member's name before their notification is dispatched.
+      if (socket.connected) socket.emit("progress-update", {
+        type:    "progress-tick",
+        current: totalSent,
+        total:   totalToSend,
+        member:  memberDisplayName,
+        status:  "processing",
+      });
+
       logger(`> Processing: ${member.name}`);
 
       for (const skill of member.expiringSkills) {
@@ -337,7 +357,10 @@ async function handleQueueProcessing(socket, targets, days, logger) {
       if (targetInfo.sendWa && member.mobile && config.enableWhatsApp) {
         try {
           const waTemplate = { intro: prefs.waIntro, row: prefs.waRow, rowNoUrl: prefs.waRowNoUrl, filterOnlyWithUrl: prefs.waOnlyWithUrl };
-          let msg = (waTemplate.intro || "").replace("{{name}}", member.name).replace("{{appname}}", config.ui.loginTitle);
+          // {{name}} renders the properly formatted name from structured fields, consistent with the UI
+          let msg = (waTemplate.intro || "")
+            .replace("{{name}}",    formatMemberName(member.rank, member.last_name, member.first_name, member.name))
+            .replace("{{appname}}", config.ui.loginTitle);
           let hasSkills = false;
 
           member.expiringSkills.forEach((s) => {
@@ -361,7 +384,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
               logger(`  - WhatsApp sent to ${member.mobile}`);
             }
             await db.logEvent(currentUser, "WhatsApp", isDemo ? "Notification Simulated" : "Notification Sent", {
-              memberName: member.name,
+              memberName: formatMemberName(member.rank, member.last_name, member.first_name, member.name),
               mobile: member.mobile,
               skillCount: member.expiringSkills.length,
               skills: member.expiringSkills.map((s) => s.skill),
@@ -371,7 +394,14 @@ async function handleQueueProcessing(socket, targets, days, logger) {
         } catch (e) { logger(`  X WhatsApp Failed: ${e.message}`); }
       }
       totalSent++;
-      if (socket.connected) socket.emit("progress-update", { type: "progress-tick", current: totalSent, total: targets.length, member: member.name });
+      // Emit "sent" AFTER the notification is dispatched so the % ticks forward correctly.
+      if (socket.connected) socket.emit("progress-update", {
+        type:    "progress-tick",
+        current: totalSent,
+        total:   totalToSend,
+        member:  memberDisplayName,
+        status:  "sent",
+      });
     }
     logger(`\n> Finished. Processed ${totalSent} members.`);
     socket.emit("script-complete", 0);

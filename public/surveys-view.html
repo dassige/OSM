@@ -309,7 +309,9 @@
 
                 if (isReview) {
                     surveyData.answers = data.answers;
-                    surveyData.respondentName = data.member_name;
+                    surveyData.respondentName = window.formatMemberName
+                        ? window.formatMemberName(data.member_rank, data.member_last_name, data.member_first_name, data.member_name)
+                        : data.member_name;
                     // Review responses come from a non-anonymous context; set explicitly to avoid relying on template default
                     surveyData.is_anonymous = 0;
                 } else if (data.respondentName) {
