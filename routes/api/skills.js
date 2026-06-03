@@ -9,6 +9,11 @@ const { hasRole } = require('../../middleware/auth');
 const { validateSkill } = require('../../middleware/validation');
 const logger = require('../../services/logger');
 
+// Returns true when SQLite throws a FOREIGN KEY constraint violation
+function isForeignKeyError(err) {
+  return err && err.message && err.message.toLowerCase().includes('foreign key');
+}
+
 router.get('/', hasRole('admin'), async (req, res) => {
   try {
     const { limit, offset, search, sortBy, sortDir } = req.query;
@@ -75,7 +80,13 @@ router.delete('/:id', hasRole('admin'), async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    logger.error('Delete Skill Error', e);
+    if (isForeignKeyError(e)) {
+      return res.status(409).json({
+        error: 'Cannot delete this skill — it is linked to existing live form records. Delete those forms first, or disable the skill instead.',
+      });
+    }
+    res.status(500).json({ error: 'Could not delete skill.' });
   }
 });
 
@@ -89,7 +100,13 @@ router.post('/bulk-delete', hasRole('admin'), async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    logger.error('Bulk Delete Skills Error', e);
+    if (isForeignKeyError(e)) {
+      return res.status(409).json({
+        error: 'One or more skills could not be deleted — they are linked to existing live form records. Delete those forms first, or disable the skills instead.',
+      });
+    }
+    res.status(500).json({ error: 'Could not delete skills.' });
   }
 });
 

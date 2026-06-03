@@ -922,17 +922,31 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
             const ids = Array.from(document.querySelectorAll('.skill-checkbox:checked')).map(cb => cb.value);
             if (!ids.length) return;
             if (await promptAction('Delete Skills', `This will permanently delete <strong>${ids.length} skill${ids.length !== 1 ? 's' : ''}</strong>. This cannot be undone.<br><br>Type <strong>DELETE</strong> to confirm.`, 'DELETE')) {
-                await fetch('/api/skills/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
-                reloadSkills();
+                try {
+                    const res = await fetch('/api/skills/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        showToast(data.error || 'Delete failed.', 'error');
+                        return;
+                    }
+                    reloadSkills();
+                } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
             }
         }
         async function deleteSkill(id) {
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const skill = currentSkills.find(s => s.id == id);
             const name = skill ? skill.name : 'this skill';
-            if (await confirmAction('Delete Skill', `Delete skill '${name}'?`)) {
-                await fetch(`/api/skills/${id}`, { method: 'DELETE' });
-                reloadSkills();
+            if (await confirmAction('Delete Skill', `Delete skill '<strong>${name}</strong>'?`)) {
+                try {
+                    const res = await fetch(`/api/skills/${id}`, { method: 'DELETE' });
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        showToast(data.error || 'Delete failed.', 'error');
+                        return;
+                    }
+                    reloadSkills();
+                } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
             }
         }
         function exportToCSV() {

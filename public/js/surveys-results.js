@@ -3,9 +3,14 @@
 function parseRankAndName(respondentOrName) {
   if (respondentOrName && typeof respondentOrName === "object") {
     const rank = respondentOrName.rank || "-";
-    const displayName = window.formatMemberName
-      ? window.formatMemberName(null, respondentOrName.lastName, respondentOrName.firstName, respondentOrName.name).replace(/^[A-Z]{2,5}\s+/, "")
-      : (respondentOrName.lastName || respondentOrName.name || "");
+    let displayName;
+    if (respondentOrName.lastName) {
+      displayName = window.formatMemberName
+        ? window.formatMemberName(null, respondentOrName.lastName, respondentOrName.firstName, respondentOrName.name)
+        : respondentOrName.lastName;
+    } else {
+      displayName = respondentOrName.name || "";
+    }
     return { rank, displayName: displayName || respondentOrName.name || "" };
   }
   const parts = (respondentOrName || "").trim().split(" ");

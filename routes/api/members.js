@@ -10,6 +10,11 @@ const { validateMember } = require("../../middleware/validation");
 const logger = require("../../services/logger");
 const { formatMemberName } = require("../../services/rank-config");
 
+// Returns true when SQLite throws a FOREIGN KEY constraint violation
+function isForeignKeyError(err) {
+  return err && err.message && err.message.toLowerCase().includes('foreign key');
+}
+
 router.get("/", hasRole("admin"), async (req, res) => {
   try {
     const { limit, offset, search, sortBy, sortDir } = req.query;
@@ -77,9 +82,12 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     logger.error("Delete Member Error", error);
-    res.status(500).json({
-      error: "Could not delete member. They may have active survey records or other dependencies.",
-    });
+    if (isForeignKeyError(error)) {
+      return res.status(409).json({
+        error: 'Cannot delete this member — they have linked records (live forms, survey activity, or email history). Remove those linked records first, or disable the member instead.',
+      });
+    }
+    res.status(500).json({ error: 'Could not delete member.' });
   }
 });
 
@@ -93,7 +101,13 @@ router.post("/bulk-delete", hasRole("admin"), async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    logger.error("Bulk Delete Members Error", e);
+    if (isForeignKeyError(e)) {
+      return res.status(409).json({
+        error: 'One or more members could not be deleted — they have linked records (live forms, survey activity, or email history). Remove those linked records first, or disable the members instead.',
+      });
+    }
+    res.status(500).json({ error: 'Could not delete members.' });
   }
 });
 

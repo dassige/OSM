@@ -96,11 +96,16 @@ function init() {
 // Prefers DB-backed rank/lastName/firstName when available (richer data source).
 function parseRankAndName(memberOrName) {
   if (memberOrName && typeof memberOrName === 'object') {
-    const rank = memberOrName.rank || null;
-    const display = window.formatMemberName
-      ? window.formatMemberName(null, memberOrName.lastName, memberOrName.firstName, memberOrName.name).replace(/^[A-Z]{2,5}\s+/, '')
-      : (memberOrName.lastName || memberOrName.name || '');
-    return { rank: rank || '-', displayName: display || memberOrName.name || '' };
+    const rank = memberOrName.rank || '-';
+    let display;
+    if (memberOrName.lastName) {
+      display = window.formatMemberName
+        ? window.formatMemberName(null, memberOrName.lastName, memberOrName.firstName, memberOrName.name)
+        : memberOrName.lastName;
+    } else {
+      display = memberOrName.name || '';
+    }
+    return { rank, displayName: display || memberOrName.name || '' };
   }
   const parts = (memberOrName || "").trim().split(" ");
   if (parts.length > 1 && /^[A-Za-z]{2,5}$/.test(parts[0])) {

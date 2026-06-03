@@ -412,9 +412,16 @@
         function parseRankAndName(memberOrName) {
             if (memberOrName && typeof memberOrName === 'object') {
                 const rank = memberOrName.rank || '-';
-                const displayName = window.formatMemberName
-                    ? window.formatMemberName(null, memberOrName.last_name, memberOrName.first_name, memberOrName.name).replace(/^[A-Z]{2,5}\s+/, '')
-                    : (memberOrName.last_name || memberOrName.name || '');
+                let displayName;
+                if (memberOrName.last_name) {
+                    // Structured fields available — build from last+first (rank shown in separate column)
+                    displayName = window.formatMemberName
+                        ? window.formatMemberName(null, memberOrName.last_name, memberOrName.first_name, memberOrName.name)
+                        : memberOrName.last_name;
+                } else {
+                    // No structured fields — show raw name as-is (never strip, avoids false rank matches)
+                    displayName = memberOrName.name || '';
+                }
                 return { rank, displayName: displayName || memberOrName.name || '' };
             }
             const parts = (memberOrName || '').trim().split(' ');
@@ -790,8 +797,15 @@
             const ids = Array.from(document.querySelectorAll('.member-checkbox:checked')).map(cb => cb.value);
             if (!ids.length) return;
             if (await promptAction('Delete Members', `This will permanently delete <strong>${ids.length} member${ids.length !== 1 ? 's' : ''}</strong>. This cannot be undone.<br><br>Type <strong>DELETE</strong> to confirm.`, 'DELETE')) {
-                await fetch('/api/members/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
-                reloadMembers();
+                try {
+                    const res = await fetch('/api/members/bulk-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) });
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        showToast(data.error || 'Delete failed.', 'error');
+                        return;
+                    }
+                    reloadMembers();
+                } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
             }
         }
 
@@ -849,8 +863,15 @@
                     : member.name)
                 : 'this member';
             if (await confirmAction('Delete Member', `Are you sure you want to delete <strong>${displayName}</strong>?`)) {
-                await fetch(`/api/members/${id}`, { method: 'DELETE' });
-                reloadMembers();
+                try {
+                    const res = await fetch(`/api/members/${id}`, { method: 'DELETE' });
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        showToast(data.error || 'Delete failed.', 'error');
+                        return;
+                    }
+                    reloadMembers();
+                } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
             }
         }
 

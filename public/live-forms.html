@@ -424,9 +424,14 @@
         function parseRankAndName(rowOrName) {
             if (rowOrName && typeof rowOrName === 'object') {
                 const rank = rowOrName.member_rank || '-';
-                const displayName = window.formatMemberName
-                    ? window.formatMemberName(null, rowOrName.member_last_name, rowOrName.member_first_name, rowOrName.member_name).replace(/^[A-Z]{2,5}\s+/, '')
-                    : (rowOrName.member_last_name || rowOrName.member_name || '');
+                let displayName;
+                if (rowOrName.member_last_name) {
+                    displayName = window.formatMemberName
+                        ? window.formatMemberName(null, rowOrName.member_last_name, rowOrName.member_first_name, rowOrName.member_name)
+                        : rowOrName.member_last_name;
+                } else {
+                    displayName = rowOrName.member_name || '';
+                }
                 return { rank, displayName: displayName || rowOrName.member_name || '' };
             }
             const parts = (rowOrName || '').trim().split(' ');
