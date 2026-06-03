@@ -340,10 +340,12 @@ async function getLiveForms(filters = {}, pagination = null) {
   const total = countResult.total;
 
   let query = `
-        SELECT lf.*, m.name as member_name, s.name as skill_name 
-        FROM live_forms lf 
-        LEFT JOIN members m ON lf.member_id = m.id 
-        LEFT JOIN skills s ON lf.skill_id = s.id 
+        SELECT lf.*, m.name as member_name,
+               m.rank as member_rank, m.first_name as member_first_name, m.last_name as member_last_name,
+               s.name as skill_name
+        FROM live_forms lf
+        LEFT JOIN members m ON lf.member_id = m.id
+        LEFT JOIN skills s ON lf.skill_id = s.id
         WHERE ${where}
         ORDER BY lf.form_sent_datetime DESC
     `;
@@ -390,6 +392,7 @@ async function getLiveFormByCode(code) {
                f.name as form_name, f.intro, f.structure, 
                f.max_tries, f.min_score, f.min_score_type,
                m.name as member_name, m.email as member_email,
+               m.rank as member_rank, m.first_name as member_first_name, m.last_name as member_last_name,
                s.name as skill_name
         FROM live_forms lf
         LEFT JOIN forms f ON lf.skill_form_public_id = f.public_id
@@ -447,6 +450,7 @@ async function getLiveFormSubmission(id) {
                f.name as form_name, f.intro, f.structure, 
                f.max_tries, f.min_score, f.min_score_type, lf.ai_feedback,
                m.name as member_name, m.email as member_email, m.mobile as member_mobile, m.notificationPreference as member_prefs,
+               m.rank as member_rank, m.first_name as member_first_name, m.last_name as member_last_name,
                s.name as skill_name
         FROM live_forms lf
         LEFT JOIN forms f ON lf.skill_form_public_id = f.public_id

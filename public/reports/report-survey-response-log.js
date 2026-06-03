@@ -51,7 +51,7 @@
                 html += `<tr>
                     <td>${date}</td>
                     <td>${row.survey_name}</td>
-                    <td>${row.member_name || '-'}</td>
+                    <td>${window.formatMemberName ? window.formatMemberName(row.member_rank, row.member_last_name, row.member_first_name, row.member_name) : (row.member_name || '-')}</td>
                     <td>${typeLabel}</td>
                 </tr>`;
             });

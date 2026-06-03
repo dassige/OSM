@@ -6,6 +6,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const db = require("../../services/db");
 const { hasRole } = require("../../middleware/auth");
 const nodemailer = require("nodemailer");
+const { formatMemberName } = require("../../services/rank-config");
 const mailer = require("../../services/mailer");
 const config = require("../../config");
 const logger = require("../../services/logger");
@@ -47,10 +48,17 @@ router.get("/instances/:liveId/results", hasRole("admin"), async (req, res) => {
       respondent:
         instance.is_anonymous === 0
           ? {
-              name: r.member_name,
-
+              name:      r.member_name,
+              rank:      r.member_rank       || null,
+              lastName:  r.member_last_name  || null,
+              firstName: r.member_first_name || null,
             }
           : null,
+      // member_name always available for non-anonymous CSV export
+      member_name:       r.member_name,
+      member_rank:       r.member_rank       || null,
+      member_first_name: r.member_first_name || null,
+      member_last_name:  r.member_last_name  || null,
     }));
     const tracking = await db.getSurveyTracking(liveId);
 
@@ -421,7 +429,7 @@ router.post(
           try {
             await mailer.sendSurveyInvitation(
               item.email,
-              item.member_name,
+              item,          // full tracking record — mailer extracts name/rank/firstName/lastName
               instance.name,
               surveyUrl,
               config.transporter,
@@ -482,7 +490,7 @@ router.post(
       const tpl = prefs.tpl_surveys ? JSON.parse(prefs.tpl_surveys) : null;
       await mailer.sendSurveyInvitation(
         record.email,
-        record.member_name,
+        record,        // full tracking record — mailer extracts name/rank/firstName/lastName
         instance.name,
         surveyUrl,
         config.transporter,
@@ -492,7 +500,7 @@ router.post(
       );
 
       res.json({
-        message: `Reminder email successfully sent to ${record.member_name}.`,
+        message: `Reminder email successfully sent to ${formatMemberName(record.member_rank, record.member_last_name, record.member_first_name, record.member_name)}.`,
       });
     } catch (error) {
       logger.error("[API] Error sending reminder", error);

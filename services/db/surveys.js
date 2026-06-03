@@ -169,7 +169,8 @@ async function getSurveyTracking(liveId) {
   return await db.all(
     `SELECT
       st.id as tracking_id, st.access_code, st.status, st.completed_at,
-      m.name as member_name, m.email
+      m.name as member_name, m.email,
+      m.rank as member_rank, m.first_name as member_first_name, m.last_name as member_last_name
      FROM survey_tracking st
      JOIN members m ON st.member_id = m.id
      WHERE st.survey_live_id = ?
@@ -194,7 +195,9 @@ async function getTrackingRecordByAccessCode(accessCode) {
 async function getTrackingRecordWithMember(accessCode) {
   const db = await initDB();
   return await db.get(
-    `SELECT st.id, st.survey_live_id, st.status, st.member_id, m.name as member_name
+    `SELECT st.id, st.survey_live_id, st.status, st.member_id,
+            m.name as member_name,
+            m.rank as member_rank, m.first_name as member_first_name, m.last_name as member_last_name
      FROM survey_tracking st
      JOIN members m ON st.member_id = m.id
      WHERE st.access_code = ?`,
@@ -226,7 +229,9 @@ async function importAllSurveys(surveysData, createdByUserId) {
 async function getSurveyResponses(liveSurveyId) {
   const db = await initDB();
   return await db.all(
-    `SELECT sr.id, sr.submitted_data, sr.submitted_at, m.name as member_name
+    `SELECT sr.id, sr.submitted_data, sr.submitted_at,
+            m.name as member_name,
+            m.rank as member_rank, m.first_name as member_first_name, m.last_name as member_last_name
      FROM survey_responses sr
      LEFT JOIN members m ON sr.member_id = m.id
      WHERE sr.survey_live_id = ?

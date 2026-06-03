@@ -1,9 +1,17 @@
-function parseRankAndName(fullName) {
-  const parts = (fullName || "").trim().split(" ");
-  if (parts.length > 1 && /^[A-Za-z]{2,4}$/.test(parts[0])) {
+// Accepts a tracking row object (uses member_rank/first/last) or a plain name string.
+function parseRankAndName(rowOrName) {
+  if (rowOrName && typeof rowOrName === "object") {
+    const rank = rowOrName.member_rank || "-";
+    const displayName = window.formatMemberName
+      ? window.formatMemberName(null, rowOrName.member_last_name, rowOrName.member_first_name, rowOrName.member_name).replace(/^[A-Z]{2,5}\s+/, "")
+      : (rowOrName.member_last_name || rowOrName.member_name || "");
+    return { rank, displayName: displayName || rowOrName.member_name || "" };
+  }
+  const parts = (rowOrName || "").trim().split(" ");
+  if (parts.length > 1 && /^[A-Za-z]{2,5}$/.test(parts[0])) {
     return { rank: parts[0], displayName: parts.slice(1).join(" ") };
   }
-  return { rank: "-", displayName: fullName || "" };
+  return { rank: "-", displayName: rowOrName || "" };
 }
 
 let surveyGuid = null;
@@ -194,14 +202,18 @@ function handleSort(col) {
 
 function sortFilteredData() {
   filteredData.sort((a, b) => {
-    const parsedA = parseRankAndName(a.member_name);
-    const parsedB = parseRankAndName(b.member_name);
-    let valA, valB;
+    const parsedA = parseRankAndName(a);
+    const parsedB = parseRankAndName(b);
 
     if (sortCol === "rank") {
-      valA = parsedA.rank.toLowerCase();
-      valB = parsedB.rank.toLowerCase();
-    } else if (sortCol === "member_name") {
+      const pA = window.getRankPriority ? window.getRankPriority(parsedA.rank) : 99;
+      const pB = window.getRankPriority ? window.getRankPriority(parsedB.rank) : 99;
+      if (pA !== pB) return sortDir === "asc" ? pA - pB : pB - pA;
+      return parsedA.displayName.localeCompare(parsedB.displayName);
+    }
+
+    let valA, valB;
+    if (sortCol === "member_name") {
       valA = parsedA.displayName.toLowerCase();
       valB = parsedB.displayName.toLowerCase();
     } else if (sortCol === "completed_at") {
@@ -345,7 +357,7 @@ function renderTable() {
 
   pageData.forEach((item) => {
     const { dateStr, statusBadge, url, remindBtnHtml } = buildRowParts(item);
-    const { rank, displayName } = parseRankAndName(item.member_name);
+    const { rank, displayName } = parseRankAndName(item);
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -397,7 +409,7 @@ function renderCards() {
 
   pageData.forEach((item) => {
     const { dateStr, statusBadge, url } = buildRowParts(item);
-    const { rank, displayName } = parseRankAndName(item.member_name);
+    const { rank, displayName } = parseRankAndName(item);
     const rankHtml = (rank && rank !== "-") ? `<div class="card-rank">${formatRankCell(rank)}</div>` : "";
 
     const card = document.createElement("div");

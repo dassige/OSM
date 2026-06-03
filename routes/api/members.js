@@ -8,6 +8,7 @@ const config = require("../../config");
 const { hasRole } = require("../../middleware/auth");
 const { validateMember } = require("../../middleware/validation");
 const logger = require("../../services/logger");
+const { formatMemberName } = require("../../services/rank-config");
 
 router.get("/", hasRole("admin"), async (req, res) => {
   try {
@@ -35,7 +36,7 @@ router.post("/", hasRole("admin"), validateMember, async (req, res) => {
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
     await db.logEvent(actor, 'Member', 'Member Created', {
       memberId: id,
-      memberName: req.body.name,
+      memberName: formatMemberName(req.body.rank, req.body.last_name, req.body.first_name, req.body.name),
       email: req.body.email,
       notificationPreference: req.body.notificationPreference || 'email',
     });
@@ -52,7 +53,7 @@ router.put("/:id", hasRole("admin"), validateMember, async (req, res) => {
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
     await db.logEvent(actor, 'Member', 'Member Updated', {
       memberId: req.params.id,
-      memberName: req.body.name,
+      memberName: formatMemberName(req.body.rank, req.body.last_name, req.body.first_name, req.body.name),
       email: req.body.email,
       enabled: req.body.enabled,
       notificationPreference: req.body.notificationPreference,
@@ -71,7 +72,7 @@ router.delete("/:id", hasRole("admin"), async (req, res) => {
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
     await db.logEvent(actor, 'Member', 'Member Deleted', {
       memberId: req.params.id,
-      memberName: member?.name,
+      memberName: member ? formatMemberName(member.rank, member.last_name, member.first_name, member.name) : undefined,
     });
     res.json({ success: true });
   } catch (error) {

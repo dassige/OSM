@@ -420,12 +420,20 @@
         let appTimezone = 'Pacific/Auckland';
         let isDemo = false;
 
-        function parseRankAndName(fullName) {
-            const parts = (fullName || '').trim().split(' ');
-            if (parts.length > 1 && /^[A-Za-z]{2,4}$/.test(parts[0])) {
+        // Accepts a live-form row object (uses member_rank/first/last) or a plain name string.
+        function parseRankAndName(rowOrName) {
+            if (rowOrName && typeof rowOrName === 'object') {
+                const rank = rowOrName.member_rank || '-';
+                const displayName = window.formatMemberName
+                    ? window.formatMemberName(null, rowOrName.member_last_name, rowOrName.member_first_name, rowOrName.member_name).replace(/^[A-Z]{2,5}\s+/, '')
+                    : (rowOrName.member_last_name || rowOrName.member_name || '');
+                return { rank, displayName: displayName || rowOrName.member_name || '' };
+            }
+            const parts = (rowOrName || '').trim().split(' ');
+            if (parts.length > 1 && /^[A-Za-z]{2,5}$/.test(parts[0])) {
                 return { rank: parts[0], displayName: parts.slice(1).join(' ') };
             }
-            return { rank: "-", displayName: fullName || '' };
+            return { rank: '-', displayName: rowOrName || '' };
         }
 
         async function init() {
@@ -459,7 +467,21 @@
                 const members = await mRes.json();
                 const mSel = document.getElementById('filterMember');
                 mSel.innerHTML = '<option value="">All Members</option>';
-                members.forEach(m => mSel.innerHTML += `<option value="${m.id}">${m.name}</option>`);
+                // Sort by rank authority then surname, display formatted name
+                members.sort((a, b) => {
+                    const pA = window.getRankPriority ? window.getRankPriority(a.rank || a.name) : 99;
+                    const pB = window.getRankPriority ? window.getRankPriority(b.rank || b.name) : 99;
+                    if (pA !== pB) return pA - pB;
+                    return (a.last_name || a.name || '').localeCompare(b.last_name || b.name || '');
+                });
+                members.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = window.formatMemberName
+                        ? window.formatMemberName(m.rank, m.last_name, m.first_name, m.name)
+                        : m.name;
+                    mSel.appendChild(opt);
+                });
 
                 const sRes = await fetch('/api/skills');
                 const skills = await sRes.json();
@@ -494,13 +516,16 @@
                     renderCards();
                 },
                 sortFunction: (a, b, sortState) => {
-                    const parsedA = parseRankAndName(a.member_name);
-                    const parsedB = parseRankAndName(b.member_name);
-                    let valA, valB;
+                    const parsedA = parseRankAndName(a);
+                    const parsedB = parseRankAndName(b);
                     if (sortState.column === 'member_rank') {
-                        valA = parsedA.rank.toLowerCase();
-                        valB = parsedB.rank.toLowerCase();
-                    } else if (sortState.column === 'member_name') {
+                        const pA = window.getRankPriority ? window.getRankPriority(parsedA.rank) : 99;
+                        const pB = window.getRankPriority ? window.getRankPriority(parsedB.rank) : 99;
+                        if (pA !== pB) return sortState.order === 'asc' ? pA - pB : pB - pA;
+                        return parsedA.displayName.localeCompare(parsedB.displayName);
+                    }
+                    let valA, valB;
+                    if (sortState.column === 'member_name') {
                         valA = parsedA.displayName.toLowerCase();
                         valB = parsedB.displayName.toLowerCase();
                     } else if (sortState.column === 'tries') {
@@ -520,7 +545,7 @@
                     const isArchivedMode = document.getElementById('archiveToggle').checked;
                     const scoreDisplay = buildScoreDisplay(row);
                     const actionHtml = buildActionHtml(row, isArchivedMode);
-                    const { rank, displayName } = parseRankAndName(row.member_name);
+                    const { rank, displayName } = parseRankAndName(row);
 
                     const tr = document.createElement('tr');
                     tr.className = rowClass;
@@ -631,7 +656,7 @@
             }
 
             data.forEach(row => {
-                const { rank, displayName } = parseRankAndName(row.member_name);
+                const { rank, displayName } = parseRankAndName(row);
                 const rankHtml = (rank && rank !== '-') ? `<div class="card-rank">${formatRankCell(rank)}</div>` : '';
                 const scoreDisplay = buildScoreDisplay(row);
                 const canReview = ['submitted', 'accepted', 'rejected'].includes(row.form_status);

@@ -377,6 +377,61 @@ window.formatRankCell = function(rank) {
     // Fallback if the rank doesn't match a known helmet
     return `<span class="badge" style="background:var(--border-color); color:var(--text-main);">${rank}</span>`;
 };
+/**
+ * FENZ rank list ordered by authority (highest first).
+ * Mirrors services/rank-config.js — update both if the list changes.
+ */
+window.FENZ_RANKS = [
+    { abbreviation: 'CFO',  fullName: 'Chief Fire Officer',       priority: 1 },
+    { abbreviation: 'DCFO', fullName: 'Deputy Chief Fire Officer', priority: 2 },
+    { abbreviation: 'SSO',  fullName: 'Senior Station Officer',    priority: 3 },
+    { abbreviation: 'SO',   fullName: 'Station Officer',           priority: 4 },
+    { abbreviation: 'SFF',  fullName: 'Senior Firefighter',        priority: 5 },
+    { abbreviation: 'QFF',  fullName: 'Qualified Firefighter',     priority: 6 },
+    { abbreviation: 'FF',   fullName: 'Firefighter',               priority: 7 },
+    { abbreviation: 'RFF',  fullName: 'Recruit Firefighter',       priority: 8 },
+];
+
+(function buildRankPriorityMap() {
+    const map = new Map(window.FENZ_RANKS.map(r => [r.abbreviation, r.priority]));
+    /**
+     * Return the numeric priority for a rank abbreviation or a raw member name string.
+     * Lower number = higher authority. Unknown ranks return 99.
+     * Use this for sorting rank columns (compare by number, not alphabetically).
+     *
+     * @param {string} rankOrName  e.g. "QFF" or "QFF Smith, J"
+     * @returns {number}
+     */
+    window.getRankPriority = function(rankOrName) {
+        if (!rankOrName || rankOrName === '-') return 99;
+        const upper = String(rankOrName).trim().toUpperCase();
+        if (map.has(upper)) return map.get(upper);
+        for (const [abbr, priority] of map) {
+            if (upper.startsWith(abbr + ' ') || upper.startsWith(abbr + ',')) return priority;
+        }
+        return 99;
+    };
+
+    /**
+     * Build a display name from structured ETL fields, falling back to rawName.
+     * Format: "RANK LastName, FirstName"
+     *
+     * @param {string} rank
+     * @param {string} lastName
+     * @param {string} firstName
+     * @param {string} rawName  Fallback when structured fields are absent
+     * @returns {string}
+     */
+    window.formatMemberName = function(rank, lastName, firstName, rawName) {
+        if (lastName) {
+            const r  = rank      ? rank.trim() + ' '       : '';
+            const fn = firstName ? ', ' + firstName.trim() : '';
+            return `${r}${lastName.trim()}${fn}`;
+        }
+        return rawName || '';
+    };
+})();
+
 window.showGlobalSpinner = function(message = "Processing...") {
     let overlay = document.getElementById('globalSpinnerOverlay');
     if (!overlay) {

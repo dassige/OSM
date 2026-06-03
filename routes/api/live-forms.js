@@ -8,6 +8,7 @@ const logger = require("../../services/logger");
 const whatsappService = require("../../services/whatsapp-service");
 const { hasRole } = require("../../middleware/auth");
 const { publicSubmitLimiter } = require("../../middleware/rate-limiter");
+const { formatMemberName } = require("../../services/rank-config");
 
 function convertHtmlToText(html) {
   if (!html) return "";
@@ -142,7 +143,7 @@ router.get("/access/:code", publicSubmitLimiter, async (req, res) => {
     if (!result) return res.status(404).json({ error: "Form link invalid or expired." });
 
     await db.logEvent("System", "Live Forms", "Form Link Accessed", {
-      memberName: result.member_name,
+      memberName: formatMemberName(result.member_rank, result.member_last_name, result.member_first_name, result.member_name),
       skillName: result.skill_name,
       attemptNumber: result.tries || 1,
       accessCode: req.params.code,
@@ -160,7 +161,7 @@ router.get("/access/:code", publicSubmitLimiter, async (req, res) => {
       name: result.form_name,
       intro: result.intro,
       structure: result.structure,
-      member: result.member_name,
+      member: formatMemberName(result.member_rank, result.member_last_name, result.member_first_name, result.member_name),
       skill: result.skill_name,
       tries: result.tries || 1,
       maxTries: result.max_tries,
@@ -193,7 +194,7 @@ router.post("/submit/:code", publicSubmitLimiter, async (req, res) => {
 
     await db.logEvent("System", "Live Forms", "Form Submitted & Scored", {
       formId: form.id,
-      memberName: form.member_name,
+      memberName: formatMemberName(form.member_rank, form.member_last_name, form.member_first_name, form.member_name),
       skillName: form.skill_name,
       score: achieved,
       maxScore: maximum,
@@ -237,7 +238,7 @@ router.get("/review/:id", hasRole("admin"), async (req, res) => {
       name: result.form_name,
       intro: result.intro,
       structure: result.structure,
-      member: result.member_name,
+      member: formatMemberName(result.member_rank, result.member_last_name, result.member_first_name, result.member_name),
       member_email: result.member_email,
       member_mobile: result.member_mobile,
       member_prefs: result.member_prefs,
@@ -263,7 +264,11 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
 
     await formsService.updateLiveFormStatus(id, "accepted");
     const form = await formsService.getLiveFormSubmission(id);
-    const member = { name: form.member_name, email: form.member_email, mobile: form.member_mobile };
+    const member = {
+      name:   formatMemberName(form.member_rank, form.member_last_name, form.member_first_name, form.member_name),
+      email:  form.member_email,
+      mobile: form.member_mobile,
+    };
 
     const prefs = await db.getPreferences();
     let tplEmail = { from: null, subject: "Skill Verification Approved", body: null };
@@ -324,7 +329,7 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
 
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
     await db.logEvent(actor, "Live Forms", "Submission Approved", {
-      memberName: form.member_name,
+      memberName: formatMemberName(form.member_rank, form.member_last_name, form.member_first_name, form.member_name),
       skillName: form.skill_name,
       notifiedVia: { email: notifyEmail, whatsapp: notifyWa },
       adminComment: customComment || "No comment provided",
@@ -346,7 +351,11 @@ router.post("/reject/:id", hasRole("admin"), async (req, res) => {
       await formsService.setArchiveStatus(id, true);
     }
     const form = await formsService.getLiveFormSubmission(id);
-    const member = { name: form.member_name, email: form.member_email, mobile: form.member_mobile };
+    const member = {
+      name:   formatMemberName(form.member_rank, form.member_last_name, form.member_first_name, form.member_name),
+      email:  form.member_email,
+      mobile: form.member_mobile,
+    };
 
     let newLink = "";
     if (generateNew) {
@@ -418,7 +427,7 @@ router.post("/reject/:id", hasRole("admin"), async (req, res) => {
 
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
     await db.logEvent(actor, "Live Forms", "Submission Rejected", {
-      memberName: form.member_name,
+      memberName: formatMemberName(form.member_rank, form.member_last_name, form.member_first_name, form.member_name),
       skillName: form.skill_name,
       retryGenerated: generateNew,
       notifiedVia: { email: notifyEmail, whatsapp: notifyWa },

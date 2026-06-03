@@ -3,36 +3,25 @@ const extractionEngine = require('./extraction-engine');
 const db = require('./db');
 const config = require('../config');
 const { isExpiring, isExpired } = require('./member-manager');
-
-// Strips the rank prefix (e.g. "QFF") from a name so it can be sorted alphabetically by surname
-function getNameWithoutRank(fullName) {
-    if (!fullName) return "";
-    const parts = fullName.split(' ');
-    if (parts.length > 1) {
-        return parts.slice(1).join(' ');
-    }
-    return fullName;
-}
+const { getRankPriority, formatMemberName } = require('./rank-config');
 
 function getGeneratedDate() {
-    return new Date().toLocaleDateString(config.locale || 'en-NZ', { 
+    return new Date().toLocaleDateString(config.locale || 'en-NZ', {
         timeZone: config.timezone,
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
 }
 
-function getRankPriority(name) {
-    const n = name.toUpperCase();
-    if (n.startsWith('CFO')) return 1;
-    if (n.startsWith('DCFO')) return 2;
-    if (n.startsWith('SSO')) return 3;
-    if (n.startsWith('SO')) return 4;
-    if (n.startsWith('SFF')) return 5;
-    if (n.startsWith('QFF')) return 6;
-    if (n.startsWith('FF')) return 7;
-    if (n.startsWith('RFF')) return 8;
-    if (n.startsWith('R')) return 9; // Recruit (must be checked after RFF)
-    return 99; // Civilians / Others
+// Build display name from structured DB fields, falling back to raw name
+function getMemberDisplayName(member) {
+    return formatMemberName(member.rank, member.last_name, member.first_name, member.name);
+}
+
+// Sort key for alphabetical-by-surname ordering (last_name when available, else name-without-rank)
+function getSortName(member) {
+    if (member.last_name) return member.last_name.trim().toLowerCase();
+    const parts = (member.name || '').split(' ');
+    return (parts.length > 1 ? parts.slice(1).join(' ') : member.name || '').toLowerCase();
 }
 
 async function getFreshData(userId, proxyUrl, daysOverride) {
@@ -67,8 +56,8 @@ async function getFreshData(userId, proxyUrl, daysOverride) {
             
             if (isDue) {
                 reportData.push({
-                    member: member.name,
-                    sortName: getNameWithoutRank(member.name),
+                    member: getMemberDisplayName(member),
+                    sortName: getSortName(member),
                     skill: s.skill,
                     dueDate: s.dueDate,
                     isCritical: !!skillConfig.critical_skill
@@ -94,9 +83,8 @@ async function getGroupedByMember(userId, proxyUrl, days) {
     const sortedMembers = Object.values(grouped).sort((a, b) => {
         const rankA = getRankPriority(a.name);
         const rankB = getRankPriority(b.name);
-        
-        if (rankA !== rankB) return rankA - rankB; // Rank priority
-        return a.sortName.localeCompare(b.sortName); // Alphabetical fallback
+        if (rankA !== rankB) return rankA - rankB;
+        return a.sortName.localeCompare(b.sortName);
     });
 
     sortedMembers.forEach(m => {
@@ -125,9 +113,8 @@ async function getGroupedBySkill(userId, proxyUrl, days) {
         s.members.sort((a, b) => {
             const rankA = getRankPriority(a.member);
             const rankB = getRankPriority(b.member);
-            
-            if (rankA !== rankB) return rankA - rankB; // Rank priority
-            return a.sortName.localeCompare(b.sortName); // Alphabetical fallback
+            if (rankA !== rankB) return rankA - rankB;
+            return a.sortName.localeCompare(b.sortName);
         });
     });
 
@@ -200,10 +187,10 @@ async function getComplianceMatrix(userId, proxyUrl, days) {
     }
     
     const activeMembers = dbMembers.filter(m => m.enabled).sort((a, b) => {
-        const rankA = getRankPriority(a.name);
-        const rankB = getRankPriority(b.name);
-        if (rankA !== rankB) return rankA - rankB; 
-        return a.name.localeCompare(b.name); 
+        const rankA = getRankPriority(a.rank || a.name);
+        const rankB = getRankPriority(b.rank || b.name);
+        if (rankA !== rankB) return rankA - rankB;
+        return getSortName(a).localeCompare(getSortName(b));
     });
 
     const trackedSkills = dbSkills.filter(s => s.enabled).sort((a, b) => a.name.localeCompare(b.name));
@@ -222,7 +209,7 @@ async function getComplianceMatrix(userId, proxyUrl, days) {
             }
             return { id: skill.id, name: skill.name, status, date };
         });
-        return { member: member.name, skills: skillStatuses };
+        return { member: getMemberDisplayName(member), skills: skillStatuses };
     });
 
     return {
@@ -235,11 +222,13 @@ async function getComplianceMatrix(userId, proxyUrl, days) {
 async function getVerificationHistory(days = 30) {
     const database = await db.initDB();
     const rows = await database.all(`
-        SELECT lf.*, m.name as member_name, s.name as skill_name 
+        SELECT lf.*, m.name as member_name,
+               m.rank as member_rank, m.first_name as member_first_name, m.last_name as member_last_name,
+               s.name as skill_name
         FROM live_forms lf
         LEFT JOIN members m ON lf.member_id = m.id
         LEFT JOIN skills s ON lf.skill_id = s.id
-        WHERE lf.form_status IN ('accepted', 'rejected') 
+        WHERE lf.form_status IN ('accepted', 'rejected')
         AND lf.form_reviewed_datetime >= datetime('now', '-' || ? || ' days')
         ORDER BY lf.form_reviewed_datetime DESC
     `, days);
@@ -280,7 +269,8 @@ async function getSurveyResponseLog(days = 30) {
             st.completed_at as submitted_at,
             sl.name as survey_name,
             sl.is_anonymous,
-            m.name as member_name
+            m.name as member_name,
+            m.rank as member_rank, m.first_name as member_first_name, m.last_name as member_last_name
         FROM survey_tracking st
         JOIN survey_live sl ON st.survey_live_id = sl.id
         JOIN members m ON st.member_id = m.id

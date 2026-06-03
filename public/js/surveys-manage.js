@@ -787,27 +787,37 @@ async function openPublishModal() {
       // FIXED: Using the correct 'enabled' boolean property from your database
       allActiveMembers = members.filter((m) => m.enabled === true);
 
-      // Sort alphabetically by their name string
-      allActiveMembers.sort((a, b) =>
-        (a.name || "").localeCompare(b.name || ""),
-      );
+      allActiveMembers = members.filter((m) => m.enabled === true);
+
+      // Sort by FENZ rank authority (CFO first), then by surname
+      allActiveMembers.sort((a, b) => {
+        const pA = window.getRankPriority ? window.getRankPriority(a.rank || a.name) : 99;
+        const pB = window.getRankPriority ? window.getRankPriority(b.rank || b.name) : 99;
+        if (pA !== pB) return pA - pB;
+        const sA = (a.last_name || a.name || '').toLowerCase();
+        const sB = (b.last_name || b.name || '').toLowerCase();
+        return sA.localeCompare(sB);
+      });
     } catch (e) {
       console.error("Failed to load members", e);
     }
   }
 
-  // Populate checkboxes
+  // Populate checkboxes using structured ETL fields when available
   const container = document.getElementById("publishSelectionContainer");
   container.innerHTML = "";
 
-  // FIXED: Simplified the display name to match your database schema
   allActiveMembers.forEach((m) => {
-    container.innerHTML += `
-            <label style="display: flex; align-items: center; gap: 10px; padding: 6px; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                <input type="checkbox" class="member-checkbox" value="${m.id}" checked>
-                <span style="font-weight:500;">${m.name}</span>
-            </label>
-        `;
+    const displayName = window.formatMemberName
+      ? window.formatMemberName(m.rank, m.last_name, m.first_name, m.name)
+      : m.name;
+    const rankSpan = m.rank
+      ? `<span style="min-width:38px; font-size:0.78em; font-weight:700; color:var(--primary-purple,#4b0082); flex-shrink:0;">${m.rank}</span>`
+      : '';
+    const li = document.createElement('label');
+    li.style.cssText = 'display:flex; align-items:center; gap:10px; padding:6px; cursor:pointer; border-bottom:1px solid rgba(0,0,0,0.05);';
+    li.innerHTML = `<input type="checkbox" class="member-checkbox" value="${m.id}" checked title="Include ${displayName} in this survey">${rankSpan}<span style="font-weight:500;">${displayName}</span>`;
+    container.appendChild(li);
   });
 }
 function togglePublishSelection() {

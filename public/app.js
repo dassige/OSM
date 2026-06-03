@@ -92,13 +92,21 @@ function init() {
       updateRoleUI(user.role || "guest");
     });
 }
-// Helper to parse "Rank" and "Display Name"
-function parseRankAndName(fullName) {
-  const parts = (fullName || "").trim().split(" ");
-  if (parts.length > 1 && /^[A-Za-z]{2,4}$/.test(parts[0])) {
+// Parse rank and display name from either structured fields or raw name string.
+// Prefers DB-backed rank/lastName/firstName when available (richer data source).
+function parseRankAndName(memberOrName) {
+  if (memberOrName && typeof memberOrName === 'object') {
+    const rank = memberOrName.rank || null;
+    const display = window.formatMemberName
+      ? window.formatMemberName(null, memberOrName.lastName, memberOrName.firstName, memberOrName.name).replace(/^[A-Z]{2,5}\s+/, '')
+      : (memberOrName.lastName || memberOrName.name || '');
+    return { rank: rank || '-', displayName: display || memberOrName.name || '' };
+  }
+  const parts = (memberOrName || "").trim().split(" ");
+  if (parts.length > 1 && /^[A-Za-z]{2,5}$/.test(parts[0])) {
     return { rank: parts[0], displayName: parts.slice(1).join(" ") };
   }
-  return { rank: "-", displayName: fullName || "" };
+  return { rank: "-", displayName: memberOrName || "" };
 }
 function setRunningState() {
   isJobRunning = true;
@@ -201,18 +209,20 @@ function handleSort(column) {
 
 function applySort() {
   currentOsmData.sort((a, b) => {
-    const parsedA = parseRankAndName(a.name);
-    const parsedB = parseRankAndName(b.name);
+    const parsedA = parseRankAndName(a);
+    const parsedB = parseRankAndName(b);
 
-    let valA, valB;
     if (currentSort.column === "rank") {
-      valA = parsedA.rank.toLowerCase();
-      valB = parsedB.rank.toLowerCase();
-    } else {
-      valA = parsedA.displayName.toLowerCase();
-      valB = parsedB.displayName.toLowerCase();
+      // Sort by authority order (CFO first = priority 1), not alphabetically
+      const pA = window.getRankPriority ? window.getRankPriority(parsedA.rank) : 99;
+      const pB = window.getRankPriority ? window.getRankPriority(parsedB.rank) : 99;
+      if (pA !== pB) return currentSort.order === "asc" ? pA - pB : pB - pA;
+      // Tie-break by surname
+      return parsedA.displayName.localeCompare(parsedB.displayName);
     }
 
+    const valA = parsedA.displayName.toLowerCase();
+    const valB = parsedB.displayName.toLowerCase();
     if (valA < valB) return currentSort.order === "asc" ? -1 : 1;
     if (valA > valB) return currentSort.order === "asc" ? 1 : -1;
     return 0;
@@ -269,7 +279,7 @@ function renderTable() {
     tr.className = rowClass + " member-header-row";
     if (!hasVisibleSkills) tr.classList.add("no-skills-row");
 
-    const { rank, displayName } = parseRankAndName(member.name);
+    const { rank, displayName } = parseRankAndName(member);
 
     const rankTd = document.createElement("td");
     rankTd.className = "member-cell text-center";
@@ -451,7 +461,7 @@ function renderCardView() {
     if (hideNoSkills && !hasVisibleSkills) return;
 
     visibleCount++;
-    const { rank, displayName } = parseRankAndName(member.name);
+    const { rank, displayName } = parseRankAndName(member);
 
     const card = document.createElement("div");
     card.className = "member-card";
@@ -600,10 +610,16 @@ async function sendSingleAction(name, type) {
   const days = parseInt(daysInput.value) || 30;
   const label = type === "email" ? "Email" : "WhatsApp";
 
+  // Resolve display name from structured fields when available
+  const m = currentOsmData.find((x) => x.name === name);
+  const displayName = (m && window.formatMemberName)
+    ? window.formatMemberName(m.rank, m.lastName, m.firstName, m.name)
+    : name;
+
   if (
     await confirmAction(
       "Send Immediate Reminder",
-      `Send immediate ${label} reminder to ${name}?`,
+      `Send immediate ${label} reminder to <strong>${displayName}</strong>?`,
     )
   ) {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -714,11 +730,25 @@ socket.on("wa-status", (status) => {
 socket.on("script-complete", (code) => setIdleState(code));
 socket.on("progress-update", (data) => {
   if (data.type === "progress-tick" && window.updateGlobalSpinnerMessage) {
-    const pct = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
-    updateGlobalSpinnerMessage(
-      `Sending notifications... ${pct}%`,
-      data.member ? `Processing: ${data.member}` : ''
-    );
+    const total   = data.total   || 1;
+    const current = data.current || 0;
+
+    if (data.status === "processing") {
+      // Before sending — show who is up next
+      const next = current + 1;
+      const pct  = total > 1 ? Math.round((current / total) * 100) : 0;
+      updateGlobalSpinnerMessage(
+        `Sending notifications… ${next} of ${total} (${pct}%)`,
+        data.member ? `Preparing: ${data.member}` : '',
+      );
+    } else {
+      // After sending — tick the counter forward
+      const pct = Math.round((current / total) * 100);
+      updateGlobalSpinnerMessage(
+        `Sending notifications… ${current} of ${total} (${pct}%)`,
+        data.member ? `✓ Sent: ${data.member}` : '',
+      );
+    }
   }
 });
 

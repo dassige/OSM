@@ -1,6 +1,7 @@
 // services/mailer.js
 const config = require("../config");
 const logger = require("./logger");
+const { formatMemberName } = require("./rank-config");
 const getTime = () =>
   new Date().toLocaleTimeString(config.locale, { timeZone: config.timezone });
 
@@ -73,8 +74,9 @@ async function sendNotification(
 
   const globalVars = {
     appname: appName || "OpReady",
-    name: member.name,
-    email: member.email,
+    // {{name}} renders the properly formatted name from structured fields, consistent with the UI
+    name:    formatMemberName(member.rank, member.last_name, member.first_name, member.name),
+    email:   member.email,
   };
 
   const defaults = {
@@ -143,6 +145,7 @@ async function sendNotification(
     return { html: messageHtml, text: messageText };
   }
 
+  const memberDisplayName = formatMemberName(member.rank, member.last_name, member.first_name, member.name);
   try {
     const info = await transporter.sendMail({
       from,
@@ -152,12 +155,12 @@ async function sendNotification(
       html: messageHtml,
     });
     logger(
-      `[${getTime()}] [SMTP] Email sent to ${member.name} (ID: ${info.messageId})`,
+      `[${getTime()}] [SMTP] Email sent to ${memberDisplayName} (ID: ${info.messageId})`,
     );
     return { info, html: messageHtml, text: messageText };
   } catch (error) {
     logger(
-      `[${getTime()}] [SMTP ERROR] Failed to send to ${member.name}: ${error.message}`,
+      `[${getTime()}] [SMTP ERROR] Failed to send to ${memberDisplayName}: ${error.message}`,
     );
     throw error;
   }
@@ -261,9 +264,11 @@ async function sendAccountDeletionNotification(
   logger.info(`[SMTP] Deletion notification sent to ${email}`);
 }
 
+// `member` can be a tracking row object (with member_name, member_rank, member_first_name,
+// member_last_name) OR a plain name string (backward-compatible).
 async function sendSurveyInvitation(
   email,
-  name,
+  member,
   surveyName,
   surveyLink,
   transporter,
@@ -271,9 +276,16 @@ async function sendSurveyInvitation(
   templatePref,
   isAnonymous = true,
 ) {
+  const memberName = typeof member === 'object' && member ? member.member_name || '' : member || 'Member';
+  const memberRank      = typeof member === 'object' && member ? member.member_rank       || '' : '';
+  const memberFirstName = typeof member === 'object' && member ? member.member_first_name || '' : '';
+  const memberLastName  = typeof member === 'object' && member ? member.member_last_name  || '' : '';
+  const displayName     = formatMemberName(memberRank, memberLastName, memberFirstName, memberName);
+
   const variables = {
-    appname: appName || "OpReady",
-    name: name || "Member",
+    appname:    appName || "OpReady",
+    // {{name}} renders the properly formatted name from structured fields, consistent with the UI
+    name:       displayName || memberName || "Member",
     surveyName,
     surveyLink,
   };

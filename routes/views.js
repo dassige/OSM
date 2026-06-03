@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const config = require("../config");
+const { RANKS } = require("../services/rank-config");
 /**
  * Middleware to handle HTML page role checks.
  * Redirects unauthorized users to the dashboard instead of sending a JSON error.
@@ -31,6 +32,7 @@ router.get("/ui-config", (req, res) => {
     defaultMinScoreType: config.defaultMinScoreType,
     defaultMaxTries: config.defaultMaxTries,
     aiEnabled: config.aiConfig.enabled,
+    ranks: RANKS,
   });
 });
 

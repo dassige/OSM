@@ -415,10 +415,13 @@ socket.on('expiring-skills-data', (data) => {
     skillMembersMap = {};
 
     data.forEach(member => {
+        const displayName = window.formatMemberName
+            ? window.formatMemberName(member.rank, member.lastName, member.firstName, member.name)
+            : member.name;
         member.skills.forEach(skill => {
             if (!skill.hasUrl) {
                 if (!skillMembersMap[skill.skill]) skillMembersMap[skill.skill] = [];
-                skillMembersMap[skill.skill].push(member.name);
+                skillMembersMap[skill.skill].push(displayName);
             }
         });
     });
@@ -473,7 +476,14 @@ function showMemberPopup(skillName) {
     if (members.length === 0) {
         listEl.innerHTML = '<li style="color:var(--text-muted);">No members found.</li>';
     } else {
-        members.sort().forEach(member => {
+        // Sort by rank authority order (CFO first), then by display name
+        const sorted = [...members].sort((a, b) => {
+            const pA = window.getRankPriority ? window.getRankPriority(a) : 99;
+            const pB = window.getRankPriority ? window.getRankPriority(b) : 99;
+            if (pA !== pB) return pA - pB;
+            return a.localeCompare(b);
+        });
+        sorted.forEach(member => {
             const li = document.createElement('li');
             li.textContent = member;
             listEl.appendChild(li);

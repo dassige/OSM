@@ -56,7 +56,7 @@
         }
         html += `<tr>
           <td>${date}</td>
-          <td>${row.member_name}</td>
+          <td>${window.formatMemberName ? window.formatMemberName(row.member_rank, row.member_last_name, row.member_first_name, row.member_name) : row.member_name}</td>
           <td>${row.skill_name}</td>
           <td style="color:${statusColor}; font-weight:bold; text-transform:uppercase;">${row.form_status}</td>
           <td>${score}</td>

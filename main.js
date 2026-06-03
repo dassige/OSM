@@ -1,6 +1,7 @@
 // main.js
 const extractionEngine = require('./services/extraction-engine');
-const config = require('./config'); 
+const config = require('./config');
+const { formatMemberName } = require('./services/rank-config');
 
 // Import resources (Legacy support for CLI)
 const { members, skillsConfig, transporter, emailInfo } = require('./resources.js');
@@ -77,7 +78,7 @@ async function sendMessage(member) {
     
     if (!isViewMode) {
         console.log(`\n=============================================================`);
-        console.log(`PROCESSING MEMBER: ${member.name}`);
+        console.log(`PROCESSING MEMBER: ${formatMemberName(member.rank, member.last_name, member.first_name, member.name)}`);
         console.log(`=============================================================`);
     }
 
@@ -191,7 +192,7 @@ async function checkExpiringSkills(member) {
         } else {
             const isEmailEligible = member.expiringSkills.some(s => skillsConfig.some(conf => conf.name === s.skill));
             allResults.push({
-                name: member.name,
+                name: formatMemberName(member.rank, member.last_name, member.first_name, member.name),
                 skills: member.expiringSkills.map(s => ({
                     skill: s.skill,
                     dueDate: s.dueDate,
@@ -204,7 +205,7 @@ async function checkExpiringSkills(member) {
     } else {
         if (isViewMode) {
              allResults.push({
-                name: member.name,
+                name: formatMemberName(member.rank, member.last_name, member.first_name, member.name),
                 skills: [],
                 emailEligible: false
             });
@@ -230,7 +231,7 @@ async function processOIData() {
                 type: 'progress-tick', 
                 current: current, 
                 total: targets.length, 
-                member: member.name 
+                member: formatMemberName(member.rank, member.last_name, member.first_name, member.name)
             });
         }
         

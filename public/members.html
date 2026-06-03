@@ -408,12 +408,20 @@
         let membersLimit = 25;
         let isDemo = false;
 
-        function parseRankAndName(fullName) {
-            const parts = (fullName || '').trim().split(' ');
-            if (parts.length > 1 && /^[A-Za-z]{2,4}$/.test(parts[0])) {
+        // Use DB structured fields when available; fall back to parsing the raw name.
+        function parseRankAndName(memberOrName) {
+            if (memberOrName && typeof memberOrName === 'object') {
+                const rank = memberOrName.rank || '-';
+                const displayName = window.formatMemberName
+                    ? window.formatMemberName(null, memberOrName.last_name, memberOrName.first_name, memberOrName.name).replace(/^[A-Z]{2,5}\s+/, '')
+                    : (memberOrName.last_name || memberOrName.name || '');
+                return { rank, displayName: displayName || memberOrName.name || '' };
+            }
+            const parts = (memberOrName || '').trim().split(' ');
+            if (parts.length > 1 && /^[A-Za-z]{2,5}$/.test(parts[0])) {
                 return { rank: parts[0], displayName: parts.slice(1).join(' ') };
             }
-            return { rank: "-", displayName: fullName || '' };
+            return { rank: '-', displayName: memberOrName || '' };
         }
 
         async function initPage() {
@@ -461,14 +469,19 @@
                         });
                     },
                     sortFunction: (a, b, sortState) => {
-                        const parsedA = parseRankAndName(a.name);
-                        const parsedB = parseRankAndName(b.name);
+                        const parsedA = parseRankAndName(a);
+                        const parsedB = parseRankAndName(b);
+
+                        if (sortState.column === 'rank') {
+                            // Priority order (CFO=1 first), not alphabetical
+                            const pA = window.getRankPriority ? window.getRankPriority(a.rank || parsedA.rank) : 99;
+                            const pB = window.getRankPriority ? window.getRankPriority(b.rank || parsedB.rank) : 99;
+                            if (pA !== pB) return sortState.order === 'asc' ? pA - pB : pB - pA;
+                            return parsedA.displayName.localeCompare(parsedB.displayName);
+                        }
 
                         let valA, valB;
-                        if (sortState.column === 'rank') {
-                            valA = parsedA.rank.toLowerCase();
-                            valB = parsedB.rank.toLowerCase();
-                        } else if (sortState.column === 'name') {
+                        if (sortState.column === 'name') {
                             valA = parsedA.displayName.toLowerCase();
                             valB = parsedB.displayName.toLowerCase();
                         } else {
@@ -491,7 +504,7 @@
                         const hasEmail = prefs.includes('email') ? 'active' : '';
                         const hasWa = prefs.includes('whatsapp') ? 'active' : '';
 
-                        const { rank, displayName } = parseRankAndName(m.name);
+                        const { rank, displayName } = parseRankAndName(m);
 
                         tr.innerHTML = `
                     <td class="cb-col"><input type="checkbox" class="member-checkbox" value="${m.id}" onchange="updateBulkDeleteButton()" title="Select this member for bulk actions"></td>
@@ -830,8 +843,12 @@
         async function deleteMember(id) {
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const member = memberTable.data.find(m => m.id == id);
-            const name = member ? member.name : 'this member';
-            if (await confirmAction('Delete Member', `Are you sure you want to delete ${name}?`)) {
+            const displayName = member
+                ? (window.formatMemberName
+                    ? window.formatMemberName(member.rank, member.last_name, member.first_name, member.name)
+                    : member.name)
+                : 'this member';
+            if (await confirmAction('Delete Member', `Are you sure you want to delete <strong>${displayName}</strong>?`)) {
                 await fetch(`/api/members/${id}`, { method: 'DELETE' });
                 reloadMembers();
             }
@@ -966,8 +983,8 @@
                             li.innerHTML = `
                                 <input type="checkbox" class="osm-check" id="osmNew-${i}" checked onchange="osmUpdateSelectedCount()" title="Include this member in the sync" style="margin-top:3px; flex-shrink:0;">
                                 <label for="osmNew-${i}" style="cursor:pointer; flex:1;">
-                                    <span style="font-weight:600;">${m.name}</span>
-                                    <span style="font-size:0.82em; color:var(--text-muted); margin-left:8px;">rank=${m.rank||'—'} · ${m.lastName||'—'}, ${m.firstName||'—'}</span>
+                                    <span style="font-weight:600;">${window.formatMemberName ? window.formatMemberName(m.rank, m.lastName, m.firstName, m.name) : m.name}</span>
+                                    <span style="font-size:0.82em; color:var(--text-muted); margin-left:8px;">${m.rank||'—'} · ${m.lastName||'—'}, ${m.firstName||'—'}</span>
                                 </label>`;
                             newList.appendChild(li);
                         });
@@ -986,7 +1003,7 @@
                             li.innerHTML = `
                                 <input type="checkbox" class="osm-check" id="osmChanged-${i}" checked onchange="osmUpdateSelectedCount()" title="Apply this update" style="margin-top:3px; flex-shrink:0;">
                                 <label for="osmChanged-${i}" style="cursor:pointer; flex:1;">
-                                    <span style="font-weight:600;">${m.name}</span><br>
+                                    <span style="font-weight:600;">${window.formatMemberName ? window.formatMemberName(m.rank, m.lastName, m.firstName, m.name) : m.name}</span><br>
                                     <span>${diffs || '<em style="color:var(--text-muted);">OSM ID needs setting</em>'}</span>
                                 </label>`;
                             chgList.appendChild(li);
