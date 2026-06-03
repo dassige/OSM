@@ -24,7 +24,10 @@ router.get("/responses/:id", hasRole("admin"), async (req, res) => {
                 structure: JSON.parse(response.structure)
             },
             answers: JSON.parse(response.submitted_data),
-            member_name: response.member_name
+            member_name:       response.member_name,
+            member_rank:       response.member_rank       || null,
+            member_first_name: response.member_first_name || null,
+            member_last_name:  response.member_last_name  || null
         });
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch response details." });

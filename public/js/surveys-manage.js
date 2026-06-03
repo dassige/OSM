@@ -885,7 +885,7 @@ async function confirmPublish() {
       const item = tracking[i];
       updateGlobalSpinnerMessage(
         `Sending invitations... ${i + 1} of ${tracking.length}`,
-        `Sending to: ${item.member_name}`
+        `Sending to: ${window.formatMemberName ? window.formatMemberName(item.member_rank, item.member_last_name, item.member_first_name, item.member_name) : item.member_name}`
       );
       await new Promise(r => requestAnimationFrame(r));
       try {

@@ -246,7 +246,8 @@ async function getSurveyResponseById(responseId) {
     `SELECT
       sr.submitted_data, sr.submitted_at,
       sl.name as survey_name, sl.structure, sl.intro_text,
-      m.name as member_name
+      m.name as member_name,
+      m.rank as member_rank, m.first_name as member_first_name, m.last_name as member_last_name
      FROM survey_responses sr
      JOIN survey_live sl ON sr.survey_live_id = sl.id
      LEFT JOIN members m ON sr.member_id = m.id
