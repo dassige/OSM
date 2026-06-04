@@ -88,8 +88,8 @@ async function createKbDocument(data) {
     const db = await initDB();
     const result = await db.run(
         `INSERT INTO knowledgebase_documents
-           (slug, title, description, category_id, original_filename, file_size, mime_type, storage_type, storage_path, is_active, uploaded_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+           (slug, title, description, category_id, original_filename, file_size, mime_type, storage_type, storage_path, is_active, uploaded_by, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
         data.slug,
         data.title,
         data.description || null,
@@ -100,6 +100,7 @@ async function createKbDocument(data) {
         data.storage_type,
         data.storage_path,
         data.uploaded_by || null,
+        data.expires_at || null,
     );
     return result.lastID;
 }
@@ -108,13 +109,37 @@ async function updateKbDocument(id, data) {
     const db = await initDB();
     await db.run(
         `UPDATE knowledgebase_documents
-            SET title = ?, description = ?, category_id = ?, updated_at = CURRENT_TIMESTAMP
+            SET title = ?, description = ?, category_id = ?, expires_at = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?`,
         data.title,
         data.description || null,
         data.category_id || null,
+        data.expires_at || null,
         id,
     );
+}
+
+async function updateKbDocumentFile(id, fileData) {
+    const db = await initDB();
+    await db.run(
+        `UPDATE knowledgebase_documents
+            SET original_filename = ?, file_size = ?, mime_type = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?`,
+        fileData.original_filename,
+        fileData.file_size,
+        fileData.mime_type,
+        id,
+    );
+}
+
+async function rotateKbDocumentSlug(id) {
+    const db = await initDB();
+    const newSlug = crypto.randomUUID().toUpperCase();
+    await db.run(
+        'UPDATE knowledgebase_documents SET slug = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        newSlug, id,
+    );
+    return newSlug;
 }
 
 async function toggleKbDocument(id) {
@@ -163,5 +188,7 @@ module.exports = {
     updateKbDocument,
     toggleKbDocument,
     deleteKbDocument,
+    updateKbDocumentFile,
+    rotateKbDocumentSlug,
     rotateAllKbSlugs,
 };

@@ -2330,6 +2330,67 @@
               ]
             }
           }
+        },
+        {
+          "name": "Replace Document File",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents/:id/replace-file",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "documents",
+                ":id",
+                "replace-file"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/replacement.pdf",
+                  "description": "New file content — same link and ID, only bytes change"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rotate Single Document Slug",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents/:id/rotate-slug",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "documents",
+                ":id",
+                "rotate-slug"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
         }
       ]
     }

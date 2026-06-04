@@ -521,8 +521,9 @@ const helpContent = {
 
             <h3>3. Uploading Documents</h3>
             <ul>
-                <li>Click <strong>Upload Document</strong> and fill in the title, optional description, and category.</li>
+                <li>Click <strong>Upload Document</strong> and fill in the title, optional description, category, and expiry date.</li>
                 <li>Supported types: <strong>PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF</strong> · maximum 50 MB per upload.</li>
+                <li>The <strong>Expiry date</strong> defaults to today + the configured number of days (set via <code>KB_DEFAULT_EXPIRY_DAYS</code> in <code>.env</code>, default 365). Expired documents are flagged in red for admin review — they remain publicly accessible until explicitly disabled or deleted.</li>
                 <li>A unique GUID link is generated automatically — share it with members so they can view or download the document without logging in.</li>
                 <li>The category field pre-selects the category currently active in the left tree.</li>
             </ul>
@@ -534,23 +535,32 @@ const helpContent = {
                 <li>The link looks like: <code>/knowledgebase/4A04912E-...</code> — only someone who has the link can access the document.</li>
             </ul>
 
-            <h3>5. Managing Documents</h3>
+            <h3>5. Expiry &amp; Review</h3>
+            <ul>
+                <li>Documents flagged as expired show a red <strong>EXPIRED</strong> badge in the document table and a red <code>!N</code> count in the category tree.</li>
+                <li>Open the <strong>Edit</strong> modal to extend the expiry date, replace the file content, or renew the public link.</li>
+                <li>Expiry does <em>not</em> automatically disable a document — it is a visual reminder for admin review.</li>
+            </ul>
+
+            <h3>6. Managing Documents</h3>
             <ul>
                 <li><strong>Active toggle:</strong> Disable a document to make it temporarily inaccessible without deleting it.</li>
-                <li><strong>Edit:</strong> Update the title, description, or category. The file and link remain unchanged.</li>
+                <li><strong>Edit:</strong> Update the title, description, category, or expiry date.</li>
+                <li><strong>Replace File:</strong> Inside the Edit modal, attach a new file to overwrite the stored content. The document's ID, public link, and storage key remain unchanged — only the bytes are replaced.</li>
+                <li><strong>Renew Link:</strong> Inside the Edit modal, click <em>Renew Link</em> to rotate this document's GUID. Its current public link stops working immediately; a new URL is generated. Use this when a link has been shared with unintended recipients.</li>
                 <li><strong>Delete:</strong> Permanently removes the document and its file. The link will stop working immediately.</li>
             </ul>
 
-            <h3>6. Embedding Links in Forms &amp; Surveys</h3>
+            <h3>7. Embedding Links in Forms &amp; Surveys</h3>
             <ul>
                 <li>When editing a form or survey, use the green <strong>KB Link</strong> button at the start of any TinyMCE toolbar to insert a link to a Knowledge Base document.</li>
-                <li>The link is stored as a placeholder (not a raw URL) so it automatically updates if the document's public link is rotated for security reasons.</li>
+                <li>The link is stored as a placeholder using the document's integer ID — not the slug — so it automatically updates if the document's public link is rotated.</li>
             </ul>
 
-            <h3>7. Rotating Links (Security)</h3>
+            <h3>8. Rotating Links (Security)</h3>
             <ul>
-                <li>To invalidate all existing public links at once, go to <strong>System Tools → Rotate Document Links</strong>.</li>
-                <li>This assigns a new GUID to every document immediately. Links embedded in forms and surveys are <em>not</em> affected — they resolve dynamically.</li>
+                <li><strong>Per-document:</strong> Use the <em>Renew Link</em> button in the Edit modal to rotate one document's link.</li>
+                <li><strong>All documents at once:</strong> Go to <strong>System Tools → Rotate Document Links</strong> and type <code>ROTATE</code> to confirm. Every document is assigned a new GUID immediately. Links embedded in forms and surveys are <em>not</em> affected — they resolve dynamically via document ID.</li>
             </ul>
         `
     },

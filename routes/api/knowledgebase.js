@@ -1,6 +1,7 @@
 const express  = require('express');
 const multer   = require('multer');
 const { v4: uuidv4 } = require('uuid');
+const crypto   = require('crypto');
 const router   = express.Router();
 const db       = require('../../services/db');
 const storage  = require('../../services/knowledgebase-storage');
@@ -196,6 +197,7 @@ router.post('/documents', hasRole('admin'), upload.single('file'), async (req, r
             storage_type: storageType,
             storage_path: storagePath,
             uploaded_by: actor,
+            expires_at: req.body.expires_at || null,
         });
 
         await db.logEvent(actor, 'Knowledge Base', 'Document Uploaded', {
@@ -216,16 +218,69 @@ router.post('/documents', hasRole('admin'), upload.single('file'), async (req, r
 router.patch('/documents/:id', hasRole('admin'), async (req, res) => {
     if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
     try {
-        const { title, description, category_id } = req.body;
+        const { title, description, category_id, expires_at } = req.body;
         if (!title || !title.trim()) return res.status(400).json({ error: 'Document title is required.' });
         await db.updateKbDocument(req.params.id, {
             title: title.trim(),
             description: description || null,
             category_id: category_id ? parseInt(category_id, 10) : null,
+            expires_at: expires_at || null,
         });
         const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
         await db.logEvent(actor, 'Knowledge Base', 'Document Updated', { documentId: req.params.id, documentTitle: title.trim() });
         res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Replace the stored file — same id, slug, storage path; only the bytes and file metadata change.
+router.post('/documents/:id/replace-file', hasRole('admin'), upload.single('file'), async (req, res) => {
+    if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
+    try {
+        if (!req.file) return res.status(400).json({ error: 'A replacement file is required.' });
+        const doc = await db.getKbDocumentById(req.params.id);
+        if (!doc) return res.status(404).json({ error: 'Document not found.' });
+
+        await storage.replaceFile(doc.storage_type, doc.storage_path, req.file.buffer, req.file.mimetype);
+        await db.updateKbDocumentFile(req.params.id, {
+            original_filename: req.file.originalname,
+            file_size:         req.file.size,
+            mime_type:         req.file.mimetype,
+        });
+
+        const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+        await db.logEvent(actor, 'Knowledge Base', 'Document File Replaced', {
+            documentId:       req.params.id,
+            documentTitle:    doc.title,
+            newFilename:      req.file.originalname,
+            newFileSize:      req.file.size,
+        });
+        res.json({ success: true });
+    } catch (e) {
+        logger.error('[KB] Replace file error', { id: req.params.id, error: e.message });
+        res.status(500).json({ error: e.message });
+    } finally {
+        // multer memoryStorage — no temp file to clean up
+    }
+});
+
+// Rotate the slug for a single document — invalidates its current public link only.
+router.patch('/documents/:id/rotate-slug', hasRole('admin'), async (req, res) => {
+    if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
+    try {
+        const doc = await db.getKbDocumentById(req.params.id);
+        if (!doc) return res.status(404).json({ error: 'Document not found.' });
+
+        const newSlug = await db.rotateKbDocumentSlug(req.params.id);
+        const actor   = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+        await db.logEvent(actor, 'Knowledge Base', 'Document Slug Rotated', {
+            documentId:    req.params.id,
+            documentTitle: doc.title,
+            oldSlug:       doc.slug,
+            newSlug,
+        });
+        res.json({ success: true, slug: newSlug });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

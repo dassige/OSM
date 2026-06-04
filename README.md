@@ -50,7 +50,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **WhatsApp Integration:** Send expiring skill notifications directly to members' WhatsApp accounts using a headless client. Includes support for bulk sending, test messages, session management, **automatic reconnection with exponential backoff**, and a **message queue** that retries delivery once the connection is restored.
   * **REST API with API Key Authentication:** Every `/api/*` endpoint can be called by external systems using an `X-API-Key` request header. Keys are managed (create, revoke, delete) through the System Tools page without restarting the server.
   * **API Reference (Swagger UI):** Interactive OpenAPI 3.0 documentation is available at `/api/docs` for authenticated admin users.
-  * **Knowledge Base:** A built-in document library for storing and sharing documents (PDF, Word, Excel, RTF) with brigade members — no login required. Documents are organised in a collapsible folder/category tree with live document counts. Each document gets a unique GUID-secured public URL (`/knowledgebase/<guid>`); PDFs display inline, Office documents open via Google Docs Viewer or download. Files are stored on the local filesystem, AWS S3, or GCS. A **KB Link** button in every TinyMCE editor lets admins embed persistent document links inside forms and surveys using a stable ID placeholder that survives link rotation. Admins can rotate all public GUIDs at once via System Tools to invalidate previously shared links.
+  * **Knowledge Base:** A built-in document library for storing and sharing documents (PDF, Word, Excel, RTF) with brigade members — no login required. Documents are organised in a collapsible folder/category tree with live document counts and red expiry badges. Each document has a configurable expiry date; expired documents are flagged for admin review but remain accessible until explicitly disabled. The Edit modal supports replacing a document's file content without changing its public link. Admins can rotate GUIDs per-document or in bulk (System Tools) to invalidate shared links. A **KB Link** button in every TinyMCE editor embeds persistent document links inside forms and surveys using a stable integer ID that survives slug rotation.
 
 ## Table of Contents
 
@@ -547,6 +547,30 @@ Documents are organised in a collapsible folder/category tree with unlimited nes
 ### Filters
 
 The filter bar (collapsible on mobile) lets admins filter the document list by **title**, **description**, or **active/disabled status**. Category tree counts update to reflect the filtered set, so admins can see at a glance which categories contain matching documents.
+
+### Document expiry
+
+Every document has an optional **expiry date**. The default is *today + `KB_DEFAULT_EXPIRY_DAYS`* (default: 365). Set a different default in `.env`:
+
+```env
+KB_DEFAULT_EXPIRY_DAYS=365
+```
+
+Expiry is a **soft warning** only — expired documents remain publicly accessible until an admin acts. Expired documents are highlighted with a red `EXPIRED` badge in the document table and a red `!N` count in the category tree. Admins can then:
+
+- **Extend the expiry** — update the date in the Edit modal and save
+- **Replace the file** — upload new content in the Edit modal (same link, same ID, bytes replaced)
+- **Disable the document** — use the active toggle to immediately block public access
+
+### Replacing a document file
+
+The Edit modal includes an optional **Replace Document File** section. Uploading a new file overwrites the stored bytes at the same storage path. The document's **id, public GUID slug, and all metadata are preserved** — only the file content changes. Use this to publish an updated version of a document while all existing shared links continue to work.
+
+### Per-document link rotation
+
+The Edit modal includes a **Renew Link** button that generates a new GUID for that specific document, invalidating its current public URL. This is useful when a single link has been shared with unintended recipients without rotating all other document links.
+
+For bulk rotation of all documents at once, see [Rotating slugs (security)](#rotating-slugs-security).
 
 ### Embedding links in forms and surveys
 

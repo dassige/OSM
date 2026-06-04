@@ -33,6 +33,7 @@ router.get("/ui-config", (req, res) => {
     defaultMinScoreType: config.defaultMinScoreType,
     defaultMaxTries: config.defaultMaxTries,
     aiEnabled: config.aiConfig.enabled,
+    kbDefaultExpiryDays: config.kbDefaultExpiryDays || 365,
     ranks: RANKS,
   });
 });

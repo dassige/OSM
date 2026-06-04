@@ -1314,10 +1314,11 @@ const spec = {
                         type: 'object',
                         required: ['file', 'title'],
                         properties: {
-                            file: { type: 'string', format: 'binary', description: 'PDF file (max 50 MB)' },
+                            file: { type: 'string', format: 'binary', description: 'Document file — PDF, Word, Excel or RTF (max 50 MB)' },
                             title: { type: 'string', example: 'Fire Attack Procedures' },
                             description: { type: 'string', nullable: true },
-                            category_id: { type: 'integer', nullable: true }
+                            category_id: { type: 'integer', nullable: true },
+                            expires_at: { type: 'string', format: 'date', nullable: true, example: '2027-06-04', description: 'ISO date after which the document is flagged as expired' }
                         }
                     }}}
                 },
@@ -1339,7 +1340,7 @@ const spec = {
                 summary: 'Update document title, description, or category',
                 security: [{ sessionCookie: [] }, { xApiKey: [] }],
                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
-                requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string', nullable: true }, category_id: { type: 'integer', nullable: true } } } } } },
+                requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string', nullable: true }, category_id: { type: 'integer', nullable: true }, expires_at: { type: 'string', format: 'date', nullable: true, description: 'ISO date after which the document is flagged as expired' } } } } } },
                 responses: { 200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } } }
             },
             delete: {
@@ -1357,6 +1358,41 @@ const spec = {
                 security: [{ sessionCookie: [] }, { xApiKey: [] }],
                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
                 responses: { 200: { description: 'Toggled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } } }
+            }
+        },
+        '/api/knowledgebase/documents/{id}/replace-file': {
+            post: {
+                tags: ['Knowledge Base'],
+                summary: 'Replace the stored file — same id, slug and storage path; only the bytes change',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: { 'multipart/form-data': { schema: {
+                        type: 'object',
+                        required: ['file'],
+                        properties: {
+                            file: { type: 'string', format: 'binary', description: 'Replacement file — PDF, Word, Excel or RTF (max 50 MB)' }
+                        }
+                    }}}
+                },
+                responses: {
+                    200: { description: 'File replaced', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'No file provided' },
+                    404: { description: 'Document not found' }
+                }
+            }
+        },
+        '/api/knowledgebase/documents/{id}/rotate-slug': {
+            patch: {
+                tags: ['Knowledge Base'],
+                summary: 'Rotate the public slug for a single document — invalidates its current public link only',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Slug rotated', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, slug: { type: 'string', example: 'NEW-UUID-HERE' } } } } } },
+                    404: { description: 'Document not found' }
+                }
             }
         },
         '/api/knowledgebase/rotate-slugs': {

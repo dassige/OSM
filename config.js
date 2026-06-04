@@ -75,6 +75,8 @@ const gcsConfig = {
   dataFilename: process.env.GCS_DATA_FILENAME || "osm_dashboard_export.html",
 };
 
+const kbDefaultExpiryDays = parseInt(process.env.KB_DEFAULT_EXPIRY_DAYS) || 365;
+
 const kbStorage = {
   type:      process.env.KB_STORAGE_TYPE || 'local',
   localPath: process.env.KB_LOCAL_PATH   || path.join(__dirname, 'storage', 'knowledgebase'),
@@ -157,6 +159,7 @@ module.exports = {
   aiConfig,
   gcsConfig,
   kbStorage,
+  kbDefaultExpiryDays,
   rateLimits,
   cookieSecure,
   corsOrigin,

@@ -235,11 +235,13 @@
                 </div>
                 <div class="filter-group" style="flex: 0 1 160px; min-width: 140px;">
                     <label>Status</label>
-                    <select id="filterStatus" title="Filter by active / disabled state"
+                    <select id="filterStatus" title="Filter by active, expired, or disabled state"
                         onchange="updateFilterHighlights()">
                         <option value="all">All</option>
                         <option value="active">Active</option>
                         <option value="disabled">Disabled</option>
+                        <option value="expired">Expired</option>
+                        <option value="not-expired">Not Expired</option>
                     </select>
                 </div>
                 <div class="filter-group filter-actions"
@@ -282,6 +284,10 @@
                             style="font-size:0.75em; font-weight:600; color:var(--text-muted);
                                    background:var(--hover-bg, rgba(0,0,0,0.07)); border-radius:10px;
                                    padding:1px 6px; margin-left:auto; flex-shrink:0;"></span>
+                        <span id="allDocsExpiredCount"
+                            style="display:none; font-size:0.75em; font-weight:700; color:#fff;
+                                   background:#dc3545; border-radius:10px;
+                                   padding:1px 6px; flex-shrink:0;"></span>
                     </div>
                     <ul class="cat-tree" id="categoryTree"></ul>
                 </div>
@@ -412,6 +418,14 @@
                         <option value="">— Uncategorized —</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="docExpiry">Expiry Date</label>
+                    <input type="date" id="docExpiry"
+                        title="Date after which this document should be reviewed or replaced">
+                    <small style="color:var(--text-muted);">Document will be flagged for review after this date.</small>
+                </div>
+
+                <!-- Upload field (create only) -->
                 <div class="form-group" id="fileGroup">
                     <label for="docFile">Document <span style="color:#dc3545;">*</span></label>
                     <input type="file" id="docFile"
@@ -419,6 +433,31 @@
                         title="Select a document to upload — PDF, Word (.doc/.docx), Excel (.xls/.xlsx), or RTF (max 50 MB)">
                     <small style="color:var(--text-muted);">PDF · Word · Excel · RTF &nbsp;·&nbsp; max 50 MB</small>
                 </div>
+
+                <!-- Replace file (edit only) -->
+                <div id="replaceFileGroup" style="display:none; border-top:1px solid var(--border-color); padding-top:12px; margin-top:4px;">
+                    <div class="form-group" style="margin-bottom:4px;">
+                        <label for="replaceFile">Replace Document File</label>
+                        <input type="file" id="replaceFile"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/rtf,text/rtf"
+                            title="Select a new file to replace the current document — same link and ID, new content">
+                        <small style="color:var(--text-muted);">Leave empty to keep the current file. Same link and ID — only the file content is replaced.</small>
+                    </div>
+                </div>
+
+                <!-- Rotate slug (edit only) -->
+                <div id="rotateSlugGroup" style="display:none; border-top:1px solid var(--border-color); padding-top:12px; margin-top:4px;">
+                    <label style="font-size:0.88rem; font-weight:600; color:var(--text-main);">Document Link</label>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap;">
+                        <code id="currentSlugDisplay" style="font-size:0.8em; color:var(--text-muted); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></code>
+                        <button type="button" class="btn-warning btn-sm" id="rotateSlugBtn" onclick="rotateSingleSlug()"
+                            title="Generate a new GUID for this document — the current public link will stop working">
+                            Renew Link
+                        </button>
+                    </div>
+                    <small style="color:var(--text-muted);">The current public link will immediately stop working.</small>
+                </div>
+
                 <div id="uploadProgress" style="display:none; margin:8px 0;">
                     <progress id="uploadBar" value="0" max="100" style="width:100%;"></progress>
                     <span id="uploadPct" style="font-size:0.82em; color:var(--text-muted);">0%</span>
@@ -474,6 +513,9 @@
     let sortDir = 'asc';
     // Active filter values (applied on Apply click)
     let activeFilters = { title: '', description: '', status: 'all' };
+    // Default expiry days and app config loaded from /ui-config
+    let kbDefaultExpiryDays = 365;
+    let uiCfg = {};
 
     // ── Scroll to top ──────────────────────────────────────────────────────────
     function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -538,10 +580,11 @@
     // ── Init ───────────────────────────────────────────────────────────────────
     (async () => {
         try {
-            const cfg = await fetch('/ui-config').then(r => r.json());
-            const name = cfg.loginTitle || 'OpReady';
+            uiCfg = await fetch('/ui-config').then(r => r.json());
+            const name = uiCfg.loginTitle || 'OpReady';
             document.getElementById('pageTitle').textContent   = `Knowledge Base - ${name}`;
             document.getElementById('pageHeader').textContent  = `Knowledge Base - ${name}`;
+            if (uiCfg.kbDefaultExpiryDays) kbDefaultExpiryDays = uiCfg.kbDefaultExpiryDays;
         } catch {}
 
         // Restore per-page limit
@@ -602,6 +645,17 @@
             allCount.textContent = filteredDocs.length;
             allCount.title = `${filteredDocs.length} document${filteredDocs.length !== 1 ? 's' : ''} total`;
         }
+        const allExpiredCount   = filteredDocs.filter(d => isExpired(d)).length;
+        const allExpiredBadge   = document.getElementById('allDocsExpiredCount');
+        if (allExpiredBadge) {
+            if (allExpiredCount > 0) {
+                allExpiredBadge.textContent = String(allExpiredCount);
+                allExpiredBadge.title = `${allExpiredCount} expired document${allExpiredCount !== 1 ? 's' : ''}`;
+                allExpiredBadge.style.display = '';
+            } else {
+                allExpiredBadge.style.display = 'none';
+            }
+        }
         buildTree(categories, null).forEach(cat => ul.appendChild(renderCatNode(cat, filteredDocs)));
     }
 
@@ -611,7 +665,9 @@
         const li = document.createElement('li');
         li.className = 'cat-item';
         li.id = `cat-li-${cat.id}`;
-        const docCount = filteredDocs.filter(d => d.category_id === cat.id).length;
+        const catDocs    = filteredDocs.filter(d => d.category_id === cat.id);
+        const docCount   = catDocs.length;
+        const expiredCount = catDocs.filter(d => isExpired(d)).length;
         li.innerHTML = `
             <div class="cat-row${selectedCategoryId === cat.id ? ' selected' : ''}" id="cat-row-${cat.id}"
                 onclick="selectCategory(${cat.id})">
@@ -633,6 +689,10 @@
                                      background:var(--hover-bg, rgba(0,0,0,0.07)); border-radius:10px;
                                      padding:1px 6px; flex-shrink:0;"
                               title="${docCount} document${docCount !== 1 ? 's' : ''} in this category">${docCount}</span>
+                        ${expiredCount > 0 ? `<span style="font-size:0.75em; font-weight:700; color:#fff;
+                                     background:#dc3545; border-radius:10px;
+                                     padding:1px 6px; flex-shrink:0;"
+                              title="${expiredCount} expired document${expiredCount !== 1 ? 's' : ''} in this category">${expiredCount}</span>` : ''}
                     </span>
                 </span>
                 <div class="cat-actions-row">
@@ -728,8 +788,10 @@
             const q = description.toLowerCase();
             docs = docs.filter(d => (d.description || '').toLowerCase().includes(q));
         }
-        if (status === 'active')   docs = docs.filter(d =>  d.is_active);
-        if (status === 'disabled') docs = docs.filter(d => !d.is_active);
+        if (status === 'active')      docs = docs.filter(d =>  d.is_active);
+        if (status === 'disabled')    docs = docs.filter(d => !d.is_active);
+        if (status === 'expired')     docs = docs.filter(d =>  isExpired(d));
+        if (status === 'not-expired') docs = docs.filter(d => !isExpired(d));
         return docs;
     }
 
@@ -784,9 +846,12 @@
 
     function renderTableRows(docs) {
         document.getElementById('docTableBody').innerHTML = docs.map(d => `
-            <tr>
+            <tr style="${isExpired(d) ? 'background:rgba(220,53,69,0.06);' : ''}">
                 <td>
-                    <div style="font-weight:600; line-height:1.3;">${escHtml(d.title)}</div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span style="font-weight:600; line-height:1.3;">${escHtml(d.title)}</span>
+                        ${expiryBadge(d)}
+                    </div>
                     ${d.description ? `<div style="font-size:0.78em; color:var(--text-muted); margin-top:3px; font-style:italic; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escHtml(d.description)}">${escHtml(d.description)}</div>` : ''}
                 </td>
                 <td>${escHtml(d.category_name || '<span style="color:var(--text-muted)">Uncategorized</span>')}</td>
@@ -856,9 +921,9 @@
 
     function renderCards(docs) {
         document.getElementById('cardContainer').innerHTML = docs.map((d) => `
-            <div class="table-card">
+            <div class="table-card" style="${isExpired(d) ? 'border-color:#dc3545;' : ''}">
                 <div class="card-header">
-                    <span class="card-title">${escHtml(d.title)}</span>
+                    <span class="card-title" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${escHtml(d.title)}${expiryBadge(d)}</span>
                     <label class="switch" title="Toggle document visibility">
                         <input type="checkbox" ${d.is_active ? 'checked' : ''}
                             onchange="toggleDoc(${d.id}, this.checked)">
@@ -870,6 +935,7 @@
                     <div class="card-row"><span class="card-label">Category:</span><span>${escHtml(d.category_name || '—')}</span></div>
                     <div class="card-row"><span class="card-label">File:</span><span style="font-size:0.85em; min-width:0; overflow-wrap:break-word; word-break:break-all; text-align:right; display:flex; align-items:center; gap:5px; flex-wrap:wrap; justify-content:flex-end;">${fileTypeBadge(d.original_filename)}<span>${formatBytes(d.file_size)} &middot; ${escHtml(d.original_filename)}</span></span></div>
                     <div class="card-row"><span class="card-label">Uploaded:</span><span style="font-size:0.85em; min-width:0; overflow-wrap:break-word; word-break:break-word; text-align:right;">${formatDate(d.created_at)}${d.uploaded_by ? ' by ' + escHtml(d.uploaded_by) : ''}</span></div>
+                    ${d.expires_at ? `<div class="card-row"><span class="card-label">Expires:</span><span style="font-size:0.85em; min-width:0; text-align:right; ${isExpired(d) ? 'color:#dc3545;font-weight:700;' : ''}">${formatDate(d.expires_at)}${isExpired(d) ? ' — EXPIRED' : ''}</span></div>` : ''}
                 </div>
                 <div class="card-actions">
                     <button class="btn-round" onclick="viewDoc('${d.slug}')"
@@ -1009,15 +1075,30 @@
     }
 
     // ── Upload / Edit modal ────────────────────────────────────────────────────
+    // Returns today's date as YYYY-MM-DD in the app's configured timezone
+    function todayInTz() {
+        const tz = (typeof uiCfg !== 'undefined' && uiCfg.timezone) || Intl.DateTimeFormat().resolvedOptions().timeZone;
+        return new Date().toLocaleDateString('en-CA', { timeZone: tz }); // en-CA = YYYY-MM-DD
+    }
+
+    function defaultExpiryDate() {
+        const d = new Date();
+        d.setDate(d.getDate() + kbDefaultExpiryDays);
+        const tz = (typeof uiCfg !== 'undefined' && uiCfg.timezone) || Intl.DateTimeFormat().resolvedOptions().timeZone;
+        return d.toLocaleDateString('en-CA', { timeZone: tz });
+    }
+
     function openUploadModal() {
         document.getElementById('docModalTitle').textContent = 'Upload Document';
         document.getElementById('docId').value = '';
         document.getElementById('docForm').reset();
-        // Pre-select current category
         if (selectedCategoryId !== null) {
             document.getElementById('docCategory').value = selectedCategoryId;
         }
+        document.getElementById('docExpiry').value = defaultExpiryDate();
         document.getElementById('fileGroup').style.display = '';
+        document.getElementById('replaceFileGroup').style.display = 'none';
+        document.getElementById('rotateSlugGroup').style.display = 'none';
         document.getElementById('uploadProgress').style.display = 'none';
         document.getElementById('docModal').style.display = 'block';
         document.getElementById('docTitle').focus();
@@ -1031,7 +1112,16 @@
             document.getElementById('docTitle').value = doc.title;
             document.getElementById('docDescription').value = doc.description || '';
             document.getElementById('docCategory').value = doc.category_id || '';
+            document.getElementById('docExpiry').value = doc.expires_at ? doc.expires_at.slice(0, 10) : '';
             document.getElementById('fileGroup').style.display = 'none';
+            document.getElementById('replaceFileGroup').style.display = '';
+            document.getElementById('replaceFile').value = '';
+            // Rotate slug section
+            document.getElementById('rotateSlugGroup').style.display = '';
+            document.getElementById('currentSlugDisplay').textContent =
+                `${window.location.origin}/knowledgebase/${doc.slug}`;
+            document.getElementById('rotateSlugGroup').dataset.docId   = id;
+            document.getElementById('rotateSlugGroup').dataset.docSlug = doc.slug;
             document.getElementById('uploadProgress').style.display = 'none';
             document.getElementById('docModal').style.display = 'block';
             document.getElementById('docTitle').focus();
@@ -1046,31 +1136,43 @@
         const title       = document.getElementById('docTitle').value.trim();
         const description = document.getElementById('docDescription').value.trim();
         const categoryId  = document.getElementById('docCategory').value;
+        const expiresAt   = document.getElementById('docExpiry').value || null;
         const submitBtn   = document.getElementById('docSubmitBtn');
         submitBtn.disabled = true;
 
         try {
             if (id) {
-                // Edit — fetch handles CSRF automatically via utils.js
+                // 1. Update metadata
                 const res = await fetch(`/api/knowledgebase/documents/${id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, description, category_id: categoryId || null }),
+                    body: JSON.stringify({ title, description, category_id: categoryId || null, expires_at: expiresAt }),
                 });
                 if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+
+                // 2. Optionally replace file
+                const replaceFile = document.getElementById('replaceFile').files[0];
+                if (replaceFile) {
+                    const fd = new FormData();
+                    fd.append('file', replaceFile);
+                    document.getElementById('uploadProgress').style.display = '';
+                    const tokenData = await fetch('/api/csrf-token').then(r => r.ok ? r.json() : null);
+                    const csrfToken = tokenData ? tokenData.token : '';
+                    await uploadWithProgress(`/api/knowledgebase/documents/${id}/replace-file`, fd, csrfToken);
+                }
                 showToast('Document updated.', 'success');
             } else {
-                // Upload — XHR for progress; must carry CSRF token manually
+                // New upload — XHR for progress; must carry CSRF token manually
                 const file = document.getElementById('docFile').files[0];
-                if (!file) { showToast('Please select a PDF file.', 'error'); return; }
+                if (!file) { showToast('Please select a document file.', 'error'); return; }
                 const fd = new FormData();
                 fd.append('file', file);
                 fd.append('title', title);
                 fd.append('description', description);
                 if (categoryId) fd.append('category_id', categoryId);
+                if (expiresAt)  fd.append('expires_at', expiresAt);
 
                 document.getElementById('uploadProgress').style.display = '';
-                // Fetch CSRF token (reusing utils.js cached value via the same endpoint)
                 const tokenData = await fetch('/api/csrf-token').then(r => r.ok ? r.json() : null);
                 const csrfToken = tokenData ? tokenData.token : '';
                 await uploadWithProgress('/api/knowledgebase/documents', fd, csrfToken);
@@ -1084,6 +1186,25 @@
         } finally {
             submitBtn.disabled = false;
         }
+    }
+
+    async function rotateSingleSlug() {
+        const grp = document.getElementById('rotateSlugGroup');
+        const id  = grp.dataset.docId;
+        const confirmed = await confirmAction(
+            'Renew Document Link',
+            'The current public link will <strong>immediately stop working</strong>. A new link will be generated.');
+        if (!confirmed) return;
+        try {
+            const res = await fetch(`/api/knowledgebase/documents/${id}/rotate-slug`, { method: 'PATCH' });
+            if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+            const data   = await res.json();
+            const newUrl = `${window.location.origin}/knowledgebase/${data.slug}`;
+            document.getElementById('currentSlugDisplay').textContent = newUrl;
+            grp.dataset.docSlug = data.slug;
+            if (typeof window.clearKbPickerCache === 'function') window.clearKbPickerCache();
+            showToast('Document link renewed. Old link is now invalid.', 'success');
+        } catch (err) { showToast(err.message, 'error'); }
     }
 
     function uploadWithProgress(url, formData, csrfToken) {
@@ -1177,6 +1298,22 @@
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
+    function isExpired(doc) {
+        if (!doc.expires_at) return false;
+        // Compare date strings (YYYY-MM-DD) in the configured timezone — avoids UTC midnight shift
+        return doc.expires_at.slice(0, 10) < todayInTz();
+    }
+
+    function expiryBadge(doc) {
+        if (!doc.expires_at) return '';
+        const expired = isExpired(doc);
+        const label   = expired ? 'EXPIRED' : 'Exp: ' + formatDate(doc.expires_at);
+        const color   = expired ? '#dc3545' : '#6c757d';
+        return `<span style="display:inline-block;font-size:0.7em;font-weight:700;background:${color};color:#fff;
+                             border-radius:4px;padding:1px 5px;vertical-align:middle;white-space:nowrap;flex-shrink:0;"
+                      title="Expires: ${escHtml(doc.expires_at)}">${label}</span>`;
+    }
+
     function escHtml(s) {
         return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
             .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1205,7 +1342,13 @@
     }
     function formatDate(s) {
         if (!s) return '—';
-        try { return new Date(s).toLocaleDateString(); } catch { return s; }
+        try {
+            const locale = (uiCfg && uiCfg.locale) || undefined;
+            const tz     = (uiCfg && uiCfg.timezone) || undefined;
+            // For DATE-only strings (YYYY-MM-DD), append T00:00 so JS treats them as local not UTC
+            const dateStr = /^\d{4}-\d{2}-\d{2}$/.test(s) ? s + 'T00:00:00' : s;
+            return new Date(dateStr).toLocaleDateString(locale, tz ? { timeZone: tz } : {});
+        } catch { return s; }
     }
     </script>
 </body>

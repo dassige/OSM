@@ -3,26 +3,29 @@ const path    = require('path');
 const { createTestApp } = require('./test-utils');
 
 jest.mock('../services/db', () => ({
-    getKbCategories:     jest.fn(),
-    createKbCategory:    jest.fn(),
-    updateKbCategory:    jest.fn(),
-    getKbCategoryById:   jest.fn().mockResolvedValue({ id: 1, name: 'Operational' }),
-    deleteKbCategory:    jest.fn(),
-    getKbDocuments:      jest.fn(),
-    getKbDocumentById:   jest.fn().mockResolvedValue({ id: 1, title: 'Test Doc', slug: 'SLUG-001', is_active: 1, storage_type: 'local', storage_path: 'SLUG-001.pdf', original_filename: 'test.pdf', mime_type: 'application/pdf', file_size: 1024 }),
-    getKbDocumentBySlug: jest.fn(),
-    createKbDocument:    jest.fn(),
-    updateKbDocument:    jest.fn(),
-    toggleKbDocument:    jest.fn(),
-    deleteKbDocument:    jest.fn(),
-    rotateAllKbSlugs:    jest.fn(),
-    logEvent:            jest.fn().mockResolvedValue(),
+    getKbCategories:       jest.fn(),
+    createKbCategory:      jest.fn(),
+    updateKbCategory:      jest.fn(),
+    getKbCategoryById:     jest.fn().mockResolvedValue({ id: 1, name: 'Operational' }),
+    deleteKbCategory:      jest.fn(),
+    getKbDocuments:        jest.fn(),
+    getKbDocumentById:     jest.fn().mockResolvedValue({ id: 1, title: 'Test Doc', slug: 'SLUG-001', is_active: 1, storage_type: 'local', storage_path: 'SLUG-001.pdf', original_filename: 'test.pdf', mime_type: 'application/pdf', file_size: 1024 }),
+    getKbDocumentBySlug:   jest.fn(),
+    createKbDocument:      jest.fn(),
+    updateKbDocument:      jest.fn(),
+    updateKbDocumentFile:  jest.fn(),
+    toggleKbDocument:      jest.fn(),
+    deleteKbDocument:      jest.fn(),
+    rotateKbDocumentSlug:  jest.fn(),
+    rotateAllKbSlugs:      jest.fn(),
+    logEvent:              jest.fn().mockResolvedValue(),
 }));
 
 jest.mock('../services/knowledgebase-storage', () => ({
-    upload:        jest.fn().mockResolvedValue({ storageType: 'local', storagePath: 'test-slug.pdf', fileSize: 1024 }),
+    upload:      jest.fn().mockResolvedValue({ storageType: 'local', storagePath: 'test-slug.pdf', fileSize: 1024 }),
     getFileStream: jest.fn(),
-    deleteFile:    jest.fn().mockResolvedValue(),
+    deleteFile:  jest.fn().mockResolvedValue(),
+    replaceFile: jest.fn().mockResolvedValue(),
 }));
 
 jest.mock('../middleware/auth', () => ({
@@ -229,6 +232,56 @@ describe('DELETE /api/knowledgebase/documents/:id', () => {
     it('returns 404 when doc not found', async () => {
         db.getKbDocumentById.mockResolvedValue(null);
         const res = await request(app).delete('/api/knowledgebase/documents/999');
+        expect(res.status).toBe(404);
+    });
+});
+
+// ── Replace file ──────────────────────────────────────────────────────────────
+
+describe('POST /api/knowledgebase/documents/:id/replace-file', () => {
+    it('replaces the file and updates metadata', async () => {
+        db.getKbDocumentById.mockResolvedValue({ id: 1, title: 'Test Doc', slug: 'SLUG-001', is_active: 1, storage_type: 'local', storage_path: 'SLUG-001.pdf', original_filename: 'test.pdf', mime_type: 'application/pdf', file_size: 1024 });
+        db.updateKbDocumentFile.mockResolvedValue();
+        const res = await request(app)
+            .post('/api/knowledgebase/documents/1/replace-file')
+            .attach('file', Buffer.from('%PDF-1.4'), { filename: 'new.pdf', contentType: 'application/pdf' });
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(storage.replaceFile).toHaveBeenCalledWith('local', 'SLUG-001.pdf', expect.any(Buffer), 'application/pdf');
+        expect(db.updateKbDocumentFile).toHaveBeenCalled();
+        expect(db.logEvent).toHaveBeenCalledWith(expect.any(String), 'Knowledge Base', 'Document File Replaced', expect.any(Object));
+    });
+
+    it('returns 400 when no file attached', async () => {
+        const res = await request(app).post('/api/knowledgebase/documents/1/replace-file');
+        expect(res.status).toBe(400);
+    });
+
+    it('returns 404 when document not found', async () => {
+        db.getKbDocumentById.mockResolvedValue(null);
+        const res = await request(app)
+            .post('/api/knowledgebase/documents/999/replace-file')
+            .attach('file', Buffer.from('%PDF-1.4'), { filename: 'new.pdf', contentType: 'application/pdf' });
+        expect(res.status).toBe(404);
+    });
+});
+
+// ── Single slug rotation ───────────────────────────────────────────────────────
+
+describe('PATCH /api/knowledgebase/documents/:id/rotate-slug', () => {
+    it('rotates the slug and returns new slug', async () => {
+        db.getKbDocumentById.mockResolvedValue({ id: 1, title: 'Test Doc', slug: 'OLD-SLUG', is_active: 1, storage_type: 'local', storage_path: 'key.pdf', original_filename: 'test.pdf', mime_type: 'application/pdf', file_size: 100 });
+        db.rotateKbDocumentSlug.mockResolvedValue('NEW-SLUG-UUID');
+        const res = await request(app).patch('/api/knowledgebase/documents/1/rotate-slug');
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.slug).toBe('NEW-SLUG-UUID');
+        expect(db.logEvent).toHaveBeenCalledWith(expect.any(String), 'Knowledge Base', 'Document Slug Rotated', expect.objectContaining({ oldSlug: 'OLD-SLUG', newSlug: 'NEW-SLUG-UUID' }));
+    });
+
+    it('returns 404 when document not found', async () => {
+        db.getKbDocumentById.mockResolvedValue(null);
+        const res = await request(app).patch('/api/knowledgebase/documents/999/rotate-slug');
         expect(res.status).toBe(404);
     });
 });

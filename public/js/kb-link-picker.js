@@ -179,6 +179,10 @@
         }
     };
 
+    // Clears the document cache so the next openKbLinkPicker call fetches fresh data.
+    // Call this after rotating a single document's slug so the picker reflects the change.
+    window.clearKbPickerCache = function () { cachedDocs = null; };
+
     window.closeKbPicker = function () {
         const modal = document.getElementById('kbPickerModal');
         if (modal) modal.style.display = 'none';

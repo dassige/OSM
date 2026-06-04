@@ -134,4 +134,28 @@ async function deleteFile(storageType, storagePath) {
     return deleteLocal(storagePath);
 }
 
-module.exports = { upload, getFileStream, deleteFile };
+// Overwrites the file at an existing storage path with new content.
+// Used when an admin replaces a document — the storage key and path stay the same.
+async function replaceFile(storageType, storagePath, buffer, mimeType) {
+    if (storageType === 's3') {
+        const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+        const s3Cfg = config.kbStorage.s3;
+        const client = new S3Client({
+            region: s3Cfg.region,
+            credentials: { accessKeyId: s3Cfg.accessKeyId, secretAccessKey: s3Cfg.secretAccessKey },
+            ...(s3Cfg.endpoint ? { endpoint: s3Cfg.endpoint } : {}),
+        });
+        await client.send(new PutObjectCommand({ Bucket: s3Cfg.bucket, Key: storagePath, Body: buffer, ContentType: mimeType }));
+    } else if (storageType === 'gcs') {
+        const { Storage } = require('@google-cloud/storage');
+        const gcsCfg = config.kbStorage.gcs;
+        const storage = new Storage(gcsCfg.keyFilename ? { keyFilename: gcsCfg.keyFilename } : {});
+        await storage.bucket(gcsCfg.bucket).file(storagePath).save(buffer, { contentType: mimeType });
+    } else {
+        const filePath = path.join(getLocalDir(), storagePath);
+        fs.writeFileSync(filePath, buffer);
+    }
+    logger.info('[KB Storage] File replaced', { storagePath, storageType, bytes: buffer.length });
+}
+
+module.exports = { upload, getFileStream, deleteFile, replaceFile };
