@@ -37,6 +37,22 @@ async function deleteLocal(storagePath) {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 }
 
+// ── Shared bucket config parser ───────────────────────────────────────────────
+
+// KB_S3_BUCKET and KB_GCS_BUCKET both support "bucketname/optional/prefix".
+// The prefix, if present, is prepended to object keys at upload time so the
+// full path is stored in the DB. Stream/delete operations use the stored
+// storagePath directly and only need the clean bucket name.
+function parseBucketConfig(raw) {
+    const idx = (raw || '').indexOf('/');
+    if (idx < 0) return { bucketName: raw || '', prefix: '' };
+    return { bucketName: raw.slice(0, idx), prefix: raw.slice(idx + 1) };
+}
+
+function buildKey(prefix, objectPath) {
+    return prefix ? `${prefix}/${objectPath}` : objectPath;
+}
+
 // ── AWS S3 ───────────────────────────────────────────────────────────────────
 
 function s3Client() {
@@ -52,9 +68,10 @@ function s3Client() {
 
 async function uploadS3(slug, ext, buffer, mimeType) {
     const { PutObjectCommand } = require('@aws-sdk/client-s3');
-    const key = `knowledgebase/${slug}${ext}`;
+    const { bucketName, prefix } = parseBucketConfig(config.kbStorage.s3.bucket);
+    const key = buildKey(prefix, `knowledgebase/${slug}${ext}`);
     await s3Client().send(new PutObjectCommand({
-        Bucket:      config.kbStorage.s3.bucket,
+        Bucket:      bucketName,
         Key:         key,
         Body:        buffer,
         ContentType: mimeType,
@@ -64,8 +81,9 @@ async function uploadS3(slug, ext, buffer, mimeType) {
 
 async function streamS3(storagePath) {
     const { GetObjectCommand } = require('@aws-sdk/client-s3');
+    const { bucketName } = parseBucketConfig(config.kbStorage.s3.bucket);
     const response = await s3Client().send(new GetObjectCommand({
-        Bucket: config.kbStorage.s3.bucket,
+        Bucket: bucketName,
         Key:    storagePath,
     }));
     return response.Body; // web-streams Readable — pipe-compatible in Node 18+
@@ -73,8 +91,9 @@ async function streamS3(storagePath) {
 
 async function deleteS3(storagePath) {
     const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
+    const { bucketName } = parseBucketConfig(config.kbStorage.s3.bucket);
     await s3Client().send(new DeleteObjectCommand({
-        Bucket: config.kbStorage.s3.bucket,
+        Bucket: bucketName,
         Key:    storagePath,
     }));
 }
@@ -86,11 +105,12 @@ function gcsBucket() {
     const cfg = config.kbStorage.gcs;
     const opts = {};
     if (cfg.keyFilename) opts.keyFilename = cfg.keyFilename;
-    return new Storage(opts).bucket(cfg.bucket);
+    return new Storage(opts).bucket(parseBucketConfig(cfg.bucket).bucketName);
 }
 
 async function uploadGCS(slug, ext, buffer, mimeType) {
-    const key = `knowledgebase/${slug}${ext}`;
+    const { prefix } = parseBucketConfig(config.kbStorage.gcs.bucket);
+    const key = buildKey(prefix, `knowledgebase/${slug}${ext}`);
     await gcsBucket().file(key).save(buffer, { contentType: mimeType });
     return key;
 }
@@ -145,12 +165,12 @@ async function replaceFile(storageType, storagePath, buffer, mimeType) {
             credentials: { accessKeyId: s3Cfg.accessKeyId, secretAccessKey: s3Cfg.secretAccessKey },
             ...(s3Cfg.endpoint ? { endpoint: s3Cfg.endpoint } : {}),
         });
-        await client.send(new PutObjectCommand({ Bucket: s3Cfg.bucket, Key: storagePath, Body: buffer, ContentType: mimeType }));
+        await client.send(new PutObjectCommand({ Bucket: parseBucketConfig(s3Cfg.bucket).bucketName, Key: storagePath, Body: buffer, ContentType: mimeType }));
     } else if (storageType === 'gcs') {
         const { Storage } = require('@google-cloud/storage');
         const gcsCfg = config.kbStorage.gcs;
         const storage = new Storage(gcsCfg.keyFilename ? { keyFilename: gcsCfg.keyFilename } : {});
-        await storage.bucket(gcsCfg.bucket).file(storagePath).save(buffer, { contentType: mimeType });
+        await storage.bucket(gcsParts().bucketName).file(storagePath).save(buffer, { contentType: mimeType });
     } else {
         const filePath = path.join(getLocalDir(), storagePath);
         fs.writeFileSync(filePath, buffer);

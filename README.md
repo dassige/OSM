@@ -213,8 +213,8 @@ Open the `.env` file and configure the following parameters:
   * `KB_STORAGE_TYPE`: Storage backend for uploaded documents. Options: `local` (default, filesystem), `s3` (AWS S3 or compatible), `gcs` (Google Cloud Storage).
   * `KB_LOCAL_PATH`: Path *inside the container* where files are stored when `KB_STORAGE_TYPE=local` (default: `./storage/knowledgebase`). Created automatically. In Docker, control the *host* path via `KB_STORAGE_HOST_PATH` instead.
   * `KB_STORAGE_HOST_PATH`: *Docker only.* Host path mounted into the container at `/app/storage/knowledgebase`. Defaults to `./storage/knowledgebase` (inside the project directory, gitignored). Set this to redirect storage to an external disk or NAS.
-  * **AWS S3:** Set `KB_S3_BUCKET`, `KB_S3_REGION`, `KB_S3_ACCESS_KEY_ID`, `KB_S3_SECRET_ACCESS_KEY`. Set `KB_S3_ENDPOINT` to use S3-compatible stores (MinIO, Cloudflare R2, etc.).
-  * **Google Cloud Storage:** Set `KB_GCS_BUCKET`. Optionally set `KB_GCS_KEY_FILE` to a service-account JSON path; leave unset to use Application Default Credentials.
+  * **AWS S3:** Set `KB_S3_BUCKET` (supports `bucket/subfolder` prefix), `KB_S3_REGION`, `KB_S3_ACCESS_KEY_ID`, `KB_S3_SECRET_ACCESS_KEY`. Set `KB_S3_ENDPOINT` to use S3-compatible stores (MinIO, Cloudflare R2, etc.).
+  * **Google Cloud Storage:** Set `KB_GCS_BUCKET` to the bucket name, or `bucketname/subfolder/prefix` to store files under a specific path within the bucket. Optionally set `KB_GCS_KEY_FILE` to a service-account JSON path; leave unset to use Application Default Credentials.
 
 #### **Rate Limiting**
 
@@ -593,8 +593,8 @@ Controlled by `KB_STORAGE_TYPE` in `.env`:
 | Value | Storage | Notes |
 |---|---|---|
 | `local` (default) | `./storage/knowledgebase/` on the server filesystem | Mounted as a Docker volume via `KB_STORAGE_HOST_PATH` |
-| `s3` | AWS S3 (or any S3-compatible store) | Set `KB_S3_BUCKET`, `KB_S3_REGION`, `KB_S3_ACCESS_KEY_ID`, `KB_S3_SECRET_ACCESS_KEY`; optionally `KB_S3_ENDPOINT` for MinIO/R2 |
-| `gcs` | Google Cloud Storage | Set `KB_GCS_BUCKET`; optionally `KB_GCS_KEY_FILE` for explicit credentials |
+| `s3` | AWS S3 (or any S3-compatible store) | Set `KB_S3_BUCKET` (supports `bucket/subfolder` prefix), `KB_S3_REGION`, `KB_S3_ACCESS_KEY_ID`, `KB_S3_SECRET_ACCESS_KEY`; optionally `KB_S3_ENDPOINT` for MinIO/R2 |
+| `gcs` | Google Cloud Storage | Set `KB_GCS_BUCKET` (supports `bucket/subfolder` prefix); optionally `KB_GCS_KEY_FILE` for explicit credentials |
 
 The public GUID slug and the internal storage key are **separate UUIDs** generated at upload time. Rotating slugs never touches stored files.
 
