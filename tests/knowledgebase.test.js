@@ -234,6 +234,30 @@ describe('DELETE /api/knowledgebase/documents/:id', () => {
 
 // ── Public endpoints ──────────────────────────────────────────────────────────
 
+describe('GET /api/knowledgebase/resolve/:id (public)', () => {
+    it('returns id, slug, title for active document', async () => {
+        db.getKbDocumentById.mockResolvedValue({
+            id: 5, slug: 'SOME-GUID', title: 'Fire SOP', is_active: 1,
+            storage_type: 'local', storage_path: 'key.pdf', original_filename: 'fire.pdf', mime_type: 'application/pdf', file_size: 100,
+        });
+        const res = await request(app).get('/api/knowledgebase/resolve/5');
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ id: 5, slug: 'SOME-GUID', title: 'Fire SOP' });
+    });
+
+    it('returns 404 for inactive document', async () => {
+        db.getKbDocumentById.mockResolvedValue({ id: 5, is_active: 0 });
+        const res = await request(app).get('/api/knowledgebase/resolve/5');
+        expect(res.status).toBe(404);
+    });
+
+    it('returns 404 when not found', async () => {
+        db.getKbDocumentById.mockResolvedValue(null);
+        const res = await request(app).get('/api/knowledgebase/resolve/999');
+        expect(res.status).toBe(404);
+    });
+});
+
 describe('GET /api/knowledgebase/doc/:slug (public)', () => {
     it('returns metadata for active document', async () => {
         db.getKbDocumentBySlug.mockResolvedValue({

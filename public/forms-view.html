@@ -604,6 +604,11 @@
                 div.innerHTML = labelHtml + inputHtml;
                 container.appendChild(div);
             });
+
+            // Resolve {{kb:N}} placeholders inserted by the KB Link button
+            if (typeof window.resolveKbLinks === 'function') {
+                window.resolveKbLinks(document.getElementById('formContent'));
+            }
         }
         function fillForm(submittedData) {
             if (!reviewData || !submittedData) return;
@@ -893,6 +898,7 @@
             });
         }
     </script>
+    <script src="/js/kb-resolver.js"></script>
     <script src="/js/pwa.js"></script>
 
 </body>

@@ -45,6 +45,18 @@ router.get('/file/:slug', async (req, res) => {
     }
 });
 
+// ── Public: resolve document id → slug (used by viewer pages to expand {{kb:N}} placeholders) ──
+
+router.get('/resolve/:id', async (req, res) => {
+    try {
+        const doc = await db.getKbDocumentById(req.params.id);
+        if (!doc || !doc.is_active) return res.status(404).json({ error: 'Document not found.' });
+        res.json({ id: doc.id, slug: doc.slug, title: doc.title });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // ── Public: get document metadata by slug (used by the viewer page) ───────────
 
 router.get('/doc/:slug', async (req, res) => {

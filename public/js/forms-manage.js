@@ -81,6 +81,39 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+// Registers the "KB Link" toolbar button on a TinyMCE editor instance.
+// Shared by initMainEditor and initFieldEditor so both editors carry the button.
+function kbLinkSetup(editor) {
+  editor.ui.registry.addButton('kblink', {
+    text: 'KB Link',
+    tooltip: 'Insert a link to a Knowledge Base document',
+    onAction: function () {
+      if (typeof window.openKbLinkPicker !== 'function') return;
+      window.openKbLinkPicker(function (doc) {
+        var title = doc.title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        editor.insertContent(
+          '<a href="{{kb:' + doc.id + '}}" data-kb-id="' + doc.id + '" class="kb-doc-link">' + title + '</a>'
+        );
+      });
+    }
+  });
+  editor.on('init', function () {
+    if (document.getElementById('kb-link-btn-style')) return;
+    var s = document.createElement('style');
+    s.id = 'kb-link-btn-style';
+    s.textContent =
+      '.tox .tox-tbtn[aria-label="Insert a link to a Knowledge Base document"],' +
+      '.tox .tox-tbtn[title="Insert a link to a Knowledge Base document"]{' +
+        'background:#28a745!important;color:#fff!important;font-weight:700!important;border-radius:3px!important;}' +
+      '.tox .tox-tbtn[aria-label="Insert a link to a Knowledge Base document"]:hover,' +
+      '.tox .tox-tbtn[title="Insert a link to a Knowledge Base document"]:hover,' +
+      '.tox .tox-tbtn[aria-label="Insert a link to a Knowledge Base document"]:focus,' +
+      '.tox .tox-tbtn[title="Insert a link to a Knowledge Base document"]:focus{' +
+        'background:#218838!important;color:#fff!important;}';
+    document.head.appendChild(s);
+  });
+}
+
 function initMainEditor() {
   tinymce.init({
     selector: "#formIntro",
@@ -89,9 +122,12 @@ function initMainEditor() {
     plugins:
       "link lists autolink image preview searchreplace visualblocks code fullscreen table help wordcount",
     toolbar:
-      "undo redo | styles | bold italic underline forecolor | alignleft aligncenter alignright | bullist numlist | link image | table | removeformat code",
+      "kblink | undo redo | styles | bold italic underline forecolor | alignleft aligncenter alignright | bullist numlist | link image | table | removeformat code",
     content_style:
-      "body { font-family:Helvetica,Arial,sans-serif; font-size:14px; margin: 8px; } body.dark-mode { background: #333; color: #fff; }",
+      "body { font-family:Helvetica,Arial,sans-serif; font-size:14px; margin: 8px; } body.dark-mode { background: #333; color: #fff; } .kb-doc-link { color: #17a2b8; font-style: italic; }",
+    convert_urls: false,
+    extended_valid_elements: "a[href|data-kb-id|class|target|rel|title]",
+    setup: kbLinkSetup,
   });
 }
 
@@ -103,9 +139,12 @@ function initFieldEditor(id) {
     plugins:
       "link lists autolink image preview searchreplace visualblocks code fullscreen table help wordcount",
     toolbar:
-      "undo redo | styles | bold italic underline forecolor | alignleft aligncenter alignright | bullist numlist | link image | table | removeformat code",
+      "kblink | undo redo | styles | bold italic underline forecolor | alignleft aligncenter alignright | bullist numlist | link image | table | removeformat code",
     content_style:
-      "body { font-family:Helvetica,Arial,sans-serif; font-size:14px; margin: 8px; } body.dark-mode { background: #333; color: #fff; }",
+      "body { font-family:Helvetica,Arial,sans-serif; font-size:14px; margin: 8px; } body.dark-mode { background: #333; color: #fff; } .kb-doc-link { color: #17a2b8; font-style: italic; }",
+    convert_urls: false,
+    extended_valid_elements: "a[href|data-kb-id|class|target|rel|title]",
+    setup: kbLinkSetup,
   });
 }
 
