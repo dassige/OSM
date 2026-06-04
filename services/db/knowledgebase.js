@@ -1,4 +1,5 @@
 const { initDB } = require('./connection');
+const crypto = require('crypto');
 
 // ── Categories ────────────────────────────────────────────────────────────────
 
@@ -129,6 +130,26 @@ async function deleteKbDocument(id) {
     await db.run('DELETE FROM knowledgebase_documents WHERE id = ?', id);
 }
 
+async function rotateAllKbSlugs() {
+    const db = await initDB();
+    const docs = await db.all('SELECT id FROM knowledgebase_documents');
+    await db.exec('BEGIN TRANSACTION');
+    try {
+        for (const doc of docs) {
+            const newSlug = crypto.randomUUID().toUpperCase();
+            await db.run(
+                'UPDATE knowledgebase_documents SET slug = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                newSlug, doc.id,
+            );
+        }
+        await db.exec('COMMIT');
+        return docs.length;
+    } catch (e) {
+        await db.exec('ROLLBACK');
+        throw e;
+    }
+}
+
 module.exports = {
     getKbCategories,
     createKbCategory,
@@ -142,4 +163,5 @@ module.exports = {
     updateKbDocument,
     toggleKbDocument,
     deleteKbDocument,
+    rotateAllKbSlugs,
 };

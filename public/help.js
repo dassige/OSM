@@ -307,7 +307,15 @@ const helpContent = {
             </ul>
             <p>The backup must have been created by the same or an earlier version of OpReady. All active sessions are cleared after restore — everyone must log in again.</p>
 
-            <h3>3. API Key Management</h3>
+            <h3>3. Knowledge Base — Rotate Document Links</h3>
+            <p>Assigns a new GUID to every Knowledge Base document, immediately invalidating all previously shared public links. Use this periodically or when a link may have been shared with unintended recipients.</p>
+            <ul>
+                <li>All existing <code>/knowledgebase/&lt;guid&gt;</code> URLs stop working instantly.</li>
+                <li>Documents themselves are not affected — only their access URLs change.</li>
+                <li>Links embedded in forms and surveys update automatically because they are stored as document IDs, not raw URLs.</li>
+            </ul>
+
+        <h3>4. API Key Management</h3>
             <p>Create and manage API keys that allow external systems to authenticate to the REST API without a browser session.</p>
             <ul>
                 <li><strong>Create:</strong> Give the key a name and assign a role — <em>superadmin</em> (full access including user &amp; key management), <em>admin</em> (full read/write), <em>simple</em> (read-only statistics/reports), or <em>guest</em> (read-only public data). The full key is shown <strong>once</strong> — copy it immediately as it cannot be retrieved again.</li>
@@ -316,10 +324,10 @@ const helpContent = {
             </ul>
             <p>External systems authenticate by adding the header <code>X-API-Key: osm_…</code> to any <code>/api/*</code> request. See the interactive API reference at <code>/api/docs</code> for the full endpoint list.</p>
 
-            <h3>4. AI Evaluator Test Lab</h3>
+            <h3>5. AI Evaluator Test Lab</h3>
             <p>An ad-hoc sandbox for testing the AI grading logic against custom question/answer pairs before enabling it for live forms. Settings auto-save to your user profile.</p>
 
-            <h3>5. Install as App (PWA)</h3>
+            <h3>6. Install as App (PWA)</h3>
             <p>OpReady is a <strong>Progressive Web App</strong>. When supported by your browser, an <em>Install OpReady</em> banner will appear at the top of the page. Installing adds OpReady to your device's home screen or taskbar for one-tap access, works offline for recently visited pages, and removes browser chrome for a native app feel.</p>
             <ul>
                 <li>The install banner appears automatically when the browser detects the app is installable. Dismiss it and it won't reappear until the next session.</li>
@@ -494,35 +502,55 @@ const helpContent = {
     "knowledgebase": {
         title: "Knowledge Base",
         body: `
-            <p>The <strong>Knowledge Base</strong> lets you upload, organise, and share PDF documents with brigade members — no login required to view them.</p>
+            <p>The <strong>Knowledge Base</strong> lets you upload, organise, and share documents with brigade members — no login required to view them.</p>
 
             <h3>1. Categories</h3>
             <ul>
-                <li><strong>Add:</strong> Click <em>+ Add</em> in the Categories panel to create a new category or sub-category.</li>
+                <li><strong>Add:</strong> Click <em>+ Add</em> in the Categories panel to create a root or sub-category. The document count badge next to each folder reflects the current filter.</li>
                 <li><strong>Select:</strong> Click any category to filter the document list on the right. Click <em>All Documents</em> to see everything.</li>
-                <li><strong>Edit / Delete:</strong> Hover over a category name to reveal the edit and delete buttons.</li>
+                <li><strong>Edit / Delete:</strong> Hover over a category name to reveal the edit and delete icons. On mobile, they are always visible.</li>
                 <li>Deleting a category re-parents its sub-categories and leaves its documents as <em>Uncategorized</em>.</li>
             </ul>
 
-            <h3>2. Uploading Documents</h3>
+            <h3>2. Filtering</h3>
             <ul>
-                <li>Click <strong>Upload PDF</strong> and fill in the title, optional description, and category.</li>
-                <li>PDF files only · maximum 50 MB per upload.</li>
-                <li>A unique GUID link is generated automatically — share it with members so they can view the document without logging in.</li>
+                <li>Use the <strong>Filters</strong> bar to narrow the document list by title, description, or active/disabled status.</li>
+                <li>Click <strong>Apply</strong> to activate the filters. The category tree document counts update to reflect the filtered set.</li>
+                <li>Click <strong>Reset</strong> to clear all filters and restore the full list.</li>
             </ul>
 
-            <h3>3. Sharing with Members</h3>
+            <h3>3. Uploading Documents</h3>
+            <ul>
+                <li>Click <strong>Upload Document</strong> and fill in the title, optional description, and category.</li>
+                <li>Supported types: <strong>PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF</strong> · maximum 50 MB per upload.</li>
+                <li>A unique GUID link is generated automatically — share it with members so they can view or download the document without logging in.</li>
+                <li>The category field pre-selects the category currently active in the left tree.</li>
+            </ul>
+
+            <h3>4. Sharing with Members</h3>
             <ul>
                 <li>Click <strong>Copy Link</strong> on any document to copy the public URL to your clipboard.</li>
-                <li>Click <strong>View</strong> to preview the document as members will see it.</li>
+                <li>Click <strong>View</strong> to preview the document as members will see it. PDFs display inline; Word and Excel open via Google Docs Viewer (on public servers) or as a download on mobile/iOS.</li>
                 <li>The link looks like: <code>/knowledgebase/4A04912E-...</code> — only someone who has the link can access the document.</li>
             </ul>
 
-            <h3>4. Managing Documents</h3>
+            <h3>5. Managing Documents</h3>
             <ul>
                 <li><strong>Active toggle:</strong> Disable a document to make it temporarily inaccessible without deleting it.</li>
                 <li><strong>Edit:</strong> Update the title, description, or category. The file and link remain unchanged.</li>
                 <li><strong>Delete:</strong> Permanently removes the document and its file. The link will stop working immediately.</li>
+            </ul>
+
+            <h3>6. Embedding Links in Forms &amp; Surveys</h3>
+            <ul>
+                <li>When editing a form or survey, use the green <strong>KB Link</strong> button at the start of any TinyMCE toolbar to insert a link to a Knowledge Base document.</li>
+                <li>The link is stored as a placeholder (not a raw URL) so it automatically updates if the document's public link is rotated for security reasons.</li>
+            </ul>
+
+            <h3>7. Rotating Links (Security)</h3>
+            <ul>
+                <li>To invalidate all existing public links at once, go to <strong>System Tools → Rotate Document Links</strong>.</li>
+                <li>This assigns a new GUID to every document immediately. Links embedded in forms and surveys are <em>not</em> affected — they resolve dynamically.</li>
             </ul>
         `
     },

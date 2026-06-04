@@ -1359,6 +1359,17 @@ const spec = {
                 responses: { 200: { description: 'Toggled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } } }
             }
         },
+        '/api/knowledgebase/rotate-slugs': {
+            post: {
+                tags: ['Knowledge Base'],
+                summary: 'Rotate all document slugs — invalidates every existing public link (superadmin only)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                responses: {
+                    200: { description: 'Rotation complete', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, rotated: { type: 'integer', example: 12 } } } } } },
+                    403: { description: 'Forbidden or demo mode' }
+                }
+            }
+        },
         '/api/knowledgebase/doc/{slug}': {
             get: {
                 tags: ['Knowledge Base'],

@@ -2312,6 +2312,24 @@
               ]
             }
           }
+        },
+        {
+          "name": "Rotate All Document Slugs",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/rotate-slugs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "rotate-slugs"
+              ]
+            }
+          }
         }
       ]
     }

@@ -15,6 +15,7 @@ jest.mock('../services/db', () => ({
     updateKbDocument:    jest.fn(),
     toggleKbDocument:    jest.fn(),
     deleteKbDocument:    jest.fn(),
+    rotateAllKbSlugs:    jest.fn(),
     logEvent:            jest.fn().mockResolvedValue(),
 }));
 
@@ -229,6 +230,44 @@ describe('DELETE /api/knowledgebase/documents/:id', () => {
         db.getKbDocumentById.mockResolvedValue(null);
         const res = await request(app).delete('/api/knowledgebase/documents/999');
         expect(res.status).toBe(404);
+    });
+});
+
+// ── Slug rotation ─────────────────────────────────────────────────────────────
+
+describe('POST /api/knowledgebase/rotate-slugs', () => {
+    it('rotates all slugs and returns count', async () => {
+        db.rotateAllKbSlugs.mockResolvedValue(7);
+        const res = await request(app).post('/api/knowledgebase/rotate-slugs');
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.rotated).toBe(7);
+        expect(db.rotateAllKbSlugs).toHaveBeenCalledTimes(1);
+        expect(db.logEvent).toHaveBeenCalledWith(
+            expect.any(String), 'Knowledge Base', 'All Document Slugs Rotated',
+            expect.objectContaining({ documentCount: 7 }),
+        );
+    });
+
+    it('returns 403 in demo mode', async () => {
+        jest.resetModules();
+        jest.doMock('../config', () => ({
+            appMode: 'demo',
+            rateLimits: { login:{windowMin:15,max:10}, mfa:{windowMin:5,max:5}, forgotPassword:{windowMin:30,max:3}, api:{windowMin:1,max:300}, publicSubmit:{windowMin:5,max:30} },
+            kbStorage: { type: 'local', localPath: '/tmp/kb-test' },
+        }));
+        const demoRoutes = require('../routes/api/knowledgebase');
+        const demoApp    = require('./test-utils').createTestApp({ path: '/api/knowledgebase', router: demoRoutes });
+        const res = await request(demoApp).post('/api/knowledgebase/rotate-slugs');
+        expect(res.status).toBe(403);
+        jest.resetModules();
+    });
+
+    it('returns 500 on DB error', async () => {
+        db.rotateAllKbSlugs.mockRejectedValue(new Error('DB fail'));
+        const res = await request(app).post('/api/knowledgebase/rotate-slugs');
+        expect(res.status).toBe(500);
+        expect(res.body.error).toBe('DB fail');
     });
 });
 

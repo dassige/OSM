@@ -50,7 +50,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **WhatsApp Integration:** Send expiring skill notifications directly to members' WhatsApp accounts using a headless client. Includes support for bulk sending, test messages, session management, **automatic reconnection with exponential backoff**, and a **message queue** that retries delivery once the connection is restored.
   * **REST API with API Key Authentication:** Every `/api/*` endpoint can be called by external systems using an `X-API-Key` request header. Keys are managed (create, revoke, delete) through the System Tools page without restarting the server.
   * **API Reference (Swagger UI):** Interactive OpenAPI 3.0 documentation is available at `/api/docs` for authenticated admin users.
-  * **Knowledge Base:** A built-in document library for storing and sharing PDF documents with brigade members. Documents are organised in a collapsible folder/category tree. Each document gets a unique GUID-secured public URL (`/knowledgebase/<guid>`) that members can open without logging in — the same approach used for live forms and surveys. Files are stored on the local filesystem (`local`) or in a cloud bucket (`s3` / `gcs`) depending on `KB_STORAGE_TYPE`. Admins upload, edit, disable, and delete documents through a dedicated admin page under the System menu.
+  * **Knowledge Base:** A built-in document library for storing and sharing documents (PDF, Word, Excel, RTF) with brigade members — no login required. Documents are organised in a collapsible folder/category tree with live document counts. Each document gets a unique GUID-secured public URL (`/knowledgebase/<guid>`); PDFs display inline, Office documents open via Google Docs Viewer or download. Files are stored on the local filesystem, AWS S3, or GCS. A **KB Link** button in every TinyMCE editor lets admins embed persistent document links inside forms and surveys using a stable ID placeholder that survives link rotation. Admins can rotate all public GUIDs at once via System Tools to invalidate previously shared links.
 
 ## Table of Contents
 
@@ -210,8 +210,9 @@ Open the `.env` file and configure the following parameters:
   * `ENABLE_WHATSAPP`: Set to `true` to enable the WhatsApp service and menu items.
 
 #### **Knowledge Base Document Storage**
-  * `KB_STORAGE_TYPE`: Where uploaded PDF documents are stored. Options: `local` (default, filesystem), `s3` (AWS S3 or compatible), `gcs` (Google Cloud Storage).
-  * `KB_LOCAL_PATH`: Filesystem path for local storage (default: `./storage/knowledgebase`). Created automatically.
+  * `KB_STORAGE_TYPE`: Storage backend for uploaded documents. Options: `local` (default, filesystem), `s3` (AWS S3 or compatible), `gcs` (Google Cloud Storage).
+  * `KB_LOCAL_PATH`: Path *inside the container* where files are stored when `KB_STORAGE_TYPE=local` (default: `./storage/knowledgebase`). Created automatically. In Docker, control the *host* path via `KB_STORAGE_HOST_PATH` instead.
+  * `KB_STORAGE_HOST_PATH`: *Docker only.* Host path mounted into the container at `/app/storage/knowledgebase`. Defaults to `./storage/knowledgebase` (inside the project directory, gitignored). Set this to redirect storage to an external disk or NAS.
   * **AWS S3:** Set `KB_S3_BUCKET`, `KB_S3_REGION`, `KB_S3_ACCESS_KEY_ID`, `KB_S3_SECRET_ACCESS_KEY`. Set `KB_S3_ENDPOINT` to use S3-compatible stores (MinIO, Cloudflare R2, etc.).
   * **Google Cloud Storage:** Set `KB_GCS_BUCKET`. Optionally set `KB_GCS_KEY_FILE` to a service-account JSON path; leave unset to use Application Default Credentials.
 
@@ -511,6 +512,67 @@ Paginated response shape: `{ "items": [...], "total": 150, "limit": 25, "offset"
 Every response includes an `X-Request-Id` header. Pass the same header in your request to propagate a trace ID through the logs; if omitted, the server generates a UUID automatically.
 
 See `/api/docs` for the complete endpoint reference including request/response schemas.
+
+---
+
+## Knowledge Base
+
+The Knowledge Base is a built-in document library that lets brigade administrators upload, organise, and share documents with members without requiring a login.
+
+### Supported file types
+
+| Type | Format | Member viewer |
+|---|---|---|
+| PDF | `.pdf` | Inline browser viewer (iframe) |
+| Word | `.doc`, `.docx` | Google Docs Viewer (public URLs) / Download card |
+| Excel | `.xls`, `.xlsx` | Google Docs Viewer (public URLs) / Download card |
+| RTF | `.rtf` | Download only |
+
+Maximum file size: **50 MB**.
+
+### Public access — GUID links
+
+Each document receives a unique UUID slug. The public URL is:
+
+```
+https://your-server.com/knowledgebase/4A04912E-F5C3-4CA6-91FC-8CBB3527AD81
+```
+
+No login is required. The UUID is the only access control — keep links confidential if the document is sensitive. On iOS Safari, PDFs and Office documents open via a download/open card because inline PDF embedding is not supported.
+
+### Categories
+
+Documents are organised in a collapsible folder/category tree with unlimited nesting depth. The document count badge next to each folder reflects the active filter state. Admins can create, rename, and delete categories; deleting a category re-parents its children and leaves documents as *Uncategorized*.
+
+### Filters
+
+The filter bar (collapsible on mobile) lets admins filter the document list by **title**, **description**, or **active/disabled status**. Category tree counts update to reflect the filtered set, so admins can see at a glance which categories contain matching documents.
+
+### Embedding links in forms and surveys
+
+When editing a form or survey in the TinyMCE editor, the green **KB Link** button at the start of the toolbar opens a searchable document picker. Selecting a document inserts a placeholder link:
+
+```html
+<a href="{{kb:42}}" data-kb-id="42" class="kb-doc-link">Document Title</a>
+```
+
+The integer `id` (`42`) is the stable anchor — not the slug. When the form or survey is rendered for a member, the placeholder is resolved to the current public URL automatically. This means **rotating slugs does not break embedded links**.
+
+### Rotating slugs (security)
+
+Go to **System Tools → Rotate Document Links** and confirm with the keyword `ROTATE`. Every document is assigned a new UUID immediately. All previously shared `/knowledgebase/<guid>` URLs stop working. Embedded links in forms and surveys are unaffected.
+
+### Storage backends
+
+Controlled by `KB_STORAGE_TYPE` in `.env`:
+
+| Value | Storage | Notes |
+|---|---|---|
+| `local` (default) | `./storage/knowledgebase/` on the server filesystem | Mounted as a Docker volume via `KB_STORAGE_HOST_PATH` |
+| `s3` | AWS S3 (or any S3-compatible store) | Set `KB_S3_BUCKET`, `KB_S3_REGION`, `KB_S3_ACCESS_KEY_ID`, `KB_S3_SECRET_ACCESS_KEY`; optionally `KB_S3_ENDPOINT` for MinIO/R2 |
+| `gcs` | Google Cloud Storage | Set `KB_GCS_BUCKET`; optionally `KB_GCS_KEY_FILE` for explicit credentials |
+
+The public GUID slug and the internal storage key are **separate UUIDs** generated at upload time. Rotating slugs never touches stored files.
 
 ---
 

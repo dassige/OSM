@@ -76,6 +76,26 @@ router.get('/doc/:slug', async (req, res) => {
     }
 });
 
+// ── Security: rotate all public slugs ────────────────────────────────────────
+// Invalidates every existing public link by assigning each document a brand-new UUID.
+// The stored file (storage_path / storage_key) is not touched.
+router.post('/rotate-slugs', hasRole('superadmin'), async (req, res) => {
+    if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
+    try {
+        const count = await db.rotateAllKbSlugs();
+        const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+        await db.logEvent(actor, 'Knowledge Base', 'All Document Slugs Rotated', {
+            documentCount: count,
+            note: 'All previous public Knowledge Base links are now invalid.',
+        });
+        logger.info('[KB] All document slugs rotated', { count, actor });
+        res.json({ success: true, rotated: count });
+    } catch (e) {
+        logger.error('[KB] Slug rotation failed', { error: e.message });
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // ── Categories ────────────────────────────────────────────────────────────────
 
 router.get('/categories', hasRole('admin'), async (req, res) => {
