@@ -34,7 +34,8 @@ const globalAuthGuard = async (req, res, next) => {
       '/surveys-view.html',
       '/live-surveys.html',
       '/surveys-tracking.html',
-      '/surveys-results.html'
+      '/surveys-results.html',
+      '/knowledgebase-view.html'
     ];
 
     if (
@@ -44,7 +45,9 @@ const globalAuthGuard = async (req, res, next) => {
       req.path.startsWith('/demo/') ||
       req.path.startsWith('/api/live-forms/access/') ||
       req.path.startsWith('/api/live-forms/submit/') ||
-      req.path.startsWith('/api/live-surveys/')
+      req.path.startsWith('/api/live-surveys/') ||
+      req.path.startsWith('/api/knowledgebase/file/') ||
+      req.path.startsWith('/knowledgebase/')
     ) {
       return next();
     }

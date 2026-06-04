@@ -1,8 +1,8 @@
 {
   "name": "opready",
-  "version": "3.4.3",
+  "version": "3.5.0",
   "description": "OpReady — Operational Readiness Manager",
-  "versionDate": "2026/06/04 11:01",
+  "versionDate": "2026/06/04 14:56",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -26,8 +26,10 @@
     "generate-uat-etl-fields": "node scripts/generate-uat-etl-fields.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1061.0",
     "@google-cloud/storage": "^7.7.0",
     "@google/generative-ai": "^0.21.0",
+    "archiver": "^5.3.2",
     "axios": "^1.12.2",
     "cheerio": "^1.1.2",
     "connect-sqlite3": "^0.9.16",
@@ -52,6 +54,7 @@
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "swagger-ui-express": "^5.0.1",
+    "unzipper": "^0.12.3",
     "uuid": "^9.0.0",
     "whatsapp-web.js": "^1.20.3",
     "winston": "^3.19.0"

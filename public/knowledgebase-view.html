@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f4f6f8; color: #333; min-height: 100vh;
+            display: flex; flex-direction: column;
+        }
+
+        /* ── Header ── */
+        .kb-header {
+            background: #17a2b8; color: #fff;
+            padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15); flex-shrink: 0; flex-wrap: wrap;
+        }
+        .kb-header .app-name  { font-weight: 700; font-size: 0.95rem; white-space: nowrap; }
+        .kb-header .separator { opacity: 0.5; flex-shrink: 0; }
+        .kb-header .doc-title {
+            font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap; flex: 1; min-width: 0;
+        }
+        .kb-header .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .btn-header {
+            background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4);
+            padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+            transition: background 0.15s; white-space: nowrap;
+        }
+        .btn-header:hover { background: rgba(255,255,255,0.35); }
+
+        /* ── Meta ── */
+        .kb-meta {
+            background: #fff; border-bottom: 1px solid #e0e0e0;
+            padding: 12px 16px; flex-shrink: 0;
+        }
+        .kb-meta h1         { margin: 0 0 6px; font-size: 1.1rem; color: #222; line-height: 1.3; }
+        .kb-meta .meta-row  { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.8rem; color: #777; }
+        .kb-meta .description { margin-top: 6px; font-size: 0.88rem; color: #555; }
+
+        /* ── PDF viewer ── */
+        .kb-viewer { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        .kb-embed  {
+            flex: 1; width: 100%; border: none;
+            height: calc(100dvh - 120px); min-height: 400px;
+            background: #525659;
+        }
+
+        /* ── Download card (non-PDF / iOS) ── */
+        .kb-download-card {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 20px; padding: 40px 20px; text-align: center;
+        }
+        .kb-doc-icon {
+            width: 72px; height: 88px; border-radius: 8px; display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-end; padding-bottom: 10px;
+            position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .kb-doc-icon::before {
+            content: ''; position: absolute; top: 0; right: 0;
+            width: 0; height: 0;
+            border-style: solid; border-width: 0 18px 18px 0;
+            border-color: transparent rgba(255,255,255,0.35) transparent transparent;
+        }
+        .kb-doc-icon .type-label {
+            font-size: 0.82rem; font-weight: 800; letter-spacing: 0.04em;
+            color: rgba(255,255,255,0.95);
+        }
+        .kb-download-card h2  { margin: 0; font-size: 1.15rem; color: #333; max-width: 400px; }
+        .kb-download-card p   { margin: 0; font-size: 0.88rem; color: #666; max-width: 360px; }
+        .kb-btn-group { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        .kb-btn-primary {
+            background: #17a2b8; color: #fff; border: none; border-radius: 8px;
+            padding: 12px 24px; font-size: 0.95rem; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+            text-decoration: none; transition: background 0.15s;
+        }
+        .kb-btn-primary:hover { background: #138a9e; }
+        .kb-btn-secondary {
+            background: #fff; color: #17a2b8; border: 2px solid #17a2b8; border-radius: 8px;
+            padding: 11px 22px; font-size: 0.95rem; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+            text-decoration: none; transition: all 0.15s;
+        }
+        .kb-btn-secondary:hover { background: #e8f6f8; }
+        .kb-gdocs-note { font-size: 0.75rem; color: #aaa; max-width: 340px; }
+
+        /* ── iOS fallback ── */
+        .kb-ios-fallback {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 16px; padding: 32px 20px; text-align: center;
+            background: #f4f6f8;
+        }
+        .kb-ios-fallback h2 { margin: 0; font-size: 1.1rem; color: #333; }
+        .kb-ios-fallback p  { margin: 0; font-size: 0.88rem; color: #666; max-width: 320px; }
+
+        /* ── Loading / error ── */
+        .kb-message {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; color: #666; gap: 12px; padding: 40px; text-align: center;
+        }
+        .kb-message h2 { margin: 0; color: #444; }
+        .kb-message p  { margin: 0; }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #ddd;
+            border-top-color: #17a2b8; border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Footer ── */
+        .kb-footer {
+            background: #fff; border-top: 1px solid #e0e0e0;
+            padding: 8px 16px; font-size: 0.76rem; color: #999;
+            text-align: center; flex-shrink: 0;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 480px) {
+            .kb-header .separator { display: none; }
+            .kb-header .doc-title { width: 100%; order: 3; white-space: normal; font-size: 0.82rem; }
+            .kb-header .header-actions { margin-left: auto; }
+            .kb-meta h1 { font-size: 1rem; }
+            .kb-meta .meta-row { font-size: 0.75rem; gap: 8px; }
+            .kb-embed { height: calc(100dvh - 160px); min-height: 300px; }
+            .kb-btn-group { flex-direction: column; align-items: stretch; }
+            .kb-btn-primary, .kb-btn-secondary { justify-content: center; }
+        }
+        @media (max-height: 500px) and (orientation: landscape) {
+            .kb-embed { height: calc(100dvh - 80px); min-height: 200px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="kb-header" id="kbHeader">
+        <span class="app-name" id="headerAppName">OpReady</span>
+        <span class="separator">|</span>
+        <span class="doc-title" id="headerDocTitle">Loading...</span>
+        <div class="header-actions" id="headerActions"></div>
+    </div>
+
+    <!-- Meta -->
+    <div class="kb-meta" id="kbMeta" style="display:none;">
+        <h1 id="metaTitle"></h1>
+        <div class="meta-row">
+            <span id="metaCategory"></span>
+            <span id="metaSize"></span>
+            <span id="metaDate"></span>
+        </div>
+        <p class="description" id="metaDescription"></p>
+    </div>
+
+    <!-- Content — replaced by JS -->
+    <div class="kb-viewer" id="kbViewer">
+        <div class="kb-message">
+            <div class="spinner"></div>
+            <p>Loading document...</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="kb-footer">
+        Powered by <span id="footerAppName">OpReady</span>
+    </div>
+
+    <script>
+    // ── File type helpers ──────────────────────────────────────────────────────
+    const TYPE_META = {
+        pdf:  { label: 'PDF',  bg: '#dc3545', canEmbed: true  },
+        doc:  { label: 'DOC',  bg: '#2b579a', canEmbed: false },
+        docx: { label: 'DOCX', bg: '#2b579a', canEmbed: false },
+        xls:  { label: 'XLS',  bg: '#217346', canEmbed: false },
+        xlsx: { label: 'XLSX', bg: '#217346', canEmbed: false },
+        rtf:  { label: 'RTF',  bg: '#6c757d', canEmbed: false },
+    };
+
+    function getExt(filename) {
+        return (filename || '').split('.').pop().toLowerCase();
+    }
+    function getTypeMeta(filename, mimeType) {
+        const ext = getExt(filename);
+        if (TYPE_META[ext]) return { ext, ...TYPE_META[ext] };
+        if (mimeType === 'application/pdf') return { ext: 'pdf', ...TYPE_META.pdf };
+        return { ext, label: ext.toUpperCase() || '?', bg: '#6c757d', canEmbed: false };
+    }
+
+    // ── Main ──────────────────────────────────────────────────────────────────
+    (async () => {
+        const slug = location.pathname.split('/').pop();
+        if (!slug) return showError('Invalid document link.');
+
+        try {
+            const cfg = await fetch('/ui-config').then(r => r.json());
+            const name = cfg.loginTitle || 'OpReady';
+            document.getElementById('headerAppName').textContent = name;
+            document.getElementById('footerAppName').textContent  = name;
+        } catch {}
+
+        let docMeta;
+        try {
+            docMeta = await fetch(`/api/knowledgebase/doc/${slug}`).then(async r => {
+                if (!r.ok) throw new Error((await r.json()).error || 'Not found');
+                return r.json();
+            });
+        } catch (err) {
+            return showError(err.message === 'Document not found.'
+                ? 'This document is not available.' : err.message);
+        }
+
+        document.title = docMeta.title;
+        document.getElementById('headerDocTitle').textContent = docMeta.title;
+        document.getElementById('metaTitle').textContent      = docMeta.title;
+
+        if (docMeta.category_name)
+            document.getElementById('metaCategory').textContent = 'Category: ' + docMeta.category_name;
+        if (docMeta.file_size)
+            document.getElementById('metaSize').textContent = formatBytes(docMeta.file_size);
+        if (docMeta.created_at)
+            document.getElementById('metaDate').textContent =
+                'Uploaded ' + new Date(docMeta.created_at).toLocaleDateString();
+        const metaDesc = document.getElementById('metaDescription');
+        if (docMeta.description) metaDesc.textContent = docMeta.description;
+        else metaDesc.style.display = 'none';
+        document.getElementById('kbMeta').style.display = '';
+
+        const fileUrl  = `/api/knowledgebase/file/${slug}`;
+        const typeMeta = getTypeMeta(docMeta.original_filename, docMeta.mime_type);
+
+        // ── Header actions ────────────────────────────────────────────────────
+        const dlIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+        const dlLink = Object.assign(document.createElement('a'), {
+            className: 'btn-header', href: fileUrl,
+            download: docMeta.original_filename || slug,
+            title: 'Download this document',
+            innerHTML: dlIcon + ' Download',
+        });
+        document.getElementById('headerActions').appendChild(dlLink);
+
+        // ── Viewer ────────────────────────────────────────────────────────────
+        const viewer = document.getElementById('kbViewer');
+        const isIOS  = /ipad|iphone|ipod/i.test(navigator.userAgent) ||
+                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (typeMeta.canEmbed && !isIOS) {
+            // PDF on desktop / Android — inline iframe
+            const frame = document.createElement('iframe');
+            frame.className = 'kb-embed';
+            frame.src   = fileUrl;
+            frame.title = 'PDF document viewer';
+            frame.setAttribute('allow', 'fullscreen');
+            viewer.innerHTML = '';
+            viewer.appendChild(frame);
+
+        } else if (typeMeta.canEmbed && isIOS) {
+            // PDF on iOS — iframe doesn't work either; show open card
+            viewer.innerHTML = buildDownloadCard(docMeta, fileUrl, typeMeta, true);
+
+        } else {
+            // Word / Excel / RTF — always show download card
+            viewer.innerHTML = buildDownloadCard(docMeta, fileUrl, typeMeta, false);
+        }
+    })();
+
+    // ── Download card builder ─────────────────────────────────────────────────
+    function buildDownloadCard(doc, fileUrl, typeMeta, isIOS) {
+        const canGDocs = !isIOS && isPublicUrl() && ['doc','docx','xls','xlsx'].includes(typeMeta.ext);
+        const gdocsUrl = canGDocs
+            ? `https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(location.origin + fileUrl)}`
+            : null;
+
+        const gDocsBtn = gdocsUrl ? `
+            <a class="kb-btn-secondary" href="${escHtml(gdocsUrl)}" target="_blank" rel="noopener"
+                title="Open in Google Docs Viewer (requires internet access)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                Open in Google Docs
+            </a>
+            <p class="kb-gdocs-note">Google Docs Viewer opens in a new tab and requires an internet connection.</p>` : '';
+
+        const iosNote = isIOS
+            ? '<p>Inline viewing is not supported on iOS. Tap Download to open the file.</p>'
+            : typeMeta.ext === 'rtf'
+                ? '<p>RTF documents cannot be displayed inline in the browser.</p>'
+                : '<p>This document type cannot be displayed inline.<br>Download it to open in the appropriate app.</p>';
+
+        return `
+            <div class="kb-download-card">
+                <div class="kb-doc-icon" style="background:${typeMeta.bg};">
+                    <span class="type-label">${typeMeta.label}</span>
+                </div>
+                <h2>${escHtml(doc.title)}</h2>
+                ${iosNote}
+                <div class="kb-btn-group">
+                    <a class="kb-btn-primary" href="${escHtml(fileUrl)}"
+                        download="${escHtml(doc.original_filename)}"
+                        title="Download ${escHtml(doc.original_filename)}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download ${escHtml(doc.original_filename)}
+                    </a>
+                    ${gDocsBtn}
+                </div>
+            </div>`;
+    }
+
+    function isPublicUrl() {
+        const h = location.hostname;
+        return h !== 'localhost' && h !== '127.0.0.1' && !h.startsWith('192.168.') && !h.startsWith('10.');
+    }
+
+    function showError(msg) {
+        document.getElementById('headerDocTitle').textContent = 'Not Found';
+        document.getElementById('kbViewer').innerHTML = `
+            <div class="kb-message">
+                <h2>Document Unavailable</h2>
+                <p>${escHtml(msg)}</p>
+                <p style="font-size:0.82em; color:#aaa;">
+                    If you received this link from your brigade, please contact them for an updated link.
+                </p>
+            </div>`;
+    }
+
+    function escHtml(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function formatBytes(b) {
+        if (!b) return '';
+        if (b < 1024)    return b + ' B';
+        if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+        return (b / 1048576).toFixed(1) + ' MB';
+    }
+    </script>
+</body>
+</html>

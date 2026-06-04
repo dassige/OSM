@@ -72,11 +72,12 @@ document.addEventListener("DOMContentLoaded", () => {
                           </ul>
                       </li>
   
-                      <li class="has-children" id="groupSystem" data-role="superadmin">
+                      <li class="has-children" id="groupSystem" data-role="admin">
                           <div class="menu-label" onclick="toggleSubmenu(event, 'submenuSystem')">System Admin</div>
                           <ul id="submenuSystem" class="submenu">
                               <li><a href="users.html" id="navManageUsers">Manage Users</a></li>
-                              <li><a href="system-tools.html" id="navSystemTools">System Tools</a></li>
+                              <li><a href="knowledgebase.html" id="navKnowledgeBase">Knowledge Base</a></li>
+                              <li data-role="superadmin"><a href="system-tools.html" id="navSystemTools">System Tools</a></li>
                           </ul>
                       </li>
                       <li><a href="profile.html">User Preferences</a></li>

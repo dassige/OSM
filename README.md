@@ -40,7 +40,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Smart Filtering:** A "Show Training Day Only" toggle that hides irrelevant days and expands the calendar to fill the screen.
       * **Training Day Highlight:** Define your brigade's standard training day in `.env` to have it automatically highlighted.
   * **System Maintenance & Auditing:**
-      * **Database Backup & Restore:** Download full database snapshots and restore them with strict version compatibility checks.
+      * **Backup & Restore:** Two backup modes — **Full Backup** (database + all local Knowledge Base documents, as a `.zip`) and **Database Only** (SQL dump, as a `.sql`). Restore accepts both formats and automatically restores KB documents when a full backup is uploaded.
       * **Event Log:** A comprehensive audit trail recording all major actions.
       * **Log Maintenance:** Super Admins can prune old events, purge the entire log, or export it to JSON.
   * **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies.
@@ -50,6 +50,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **WhatsApp Integration:** Send expiring skill notifications directly to members' WhatsApp accounts using a headless client. Includes support for bulk sending, test messages, session management, **automatic reconnection with exponential backoff**, and a **message queue** that retries delivery once the connection is restored.
   * **REST API with API Key Authentication:** Every `/api/*` endpoint can be called by external systems using an `X-API-Key` request header. Keys are managed (create, revoke, delete) through the System Tools page without restarting the server.
   * **API Reference (Swagger UI):** Interactive OpenAPI 3.0 documentation is available at `/api/docs` for authenticated admin users.
+  * **Knowledge Base:** A built-in document library for storing and sharing PDF documents with brigade members. Documents are organised in a collapsible folder/category tree. Each document gets a unique GUID-secured public URL (`/knowledgebase/<guid>`) that members can open without logging in — the same approach used for live forms and surveys. Files are stored on the local filesystem (`local`) or in a cloud bucket (`s3` / `gcs`) depending on `KB_STORAGE_TYPE`. Admins upload, edit, disable, and delete documents through a dedicated admin page under the System menu.
 
 ## Table of Contents
 
@@ -207,6 +208,12 @@ Open the `.env` file and configure the following parameters:
 
 #### **WhatsApp Integration**
   * `ENABLE_WHATSAPP`: Set to `true` to enable the WhatsApp service and menu items.
+
+#### **Knowledge Base Document Storage**
+  * `KB_STORAGE_TYPE`: Where uploaded PDF documents are stored. Options: `local` (default, filesystem), `s3` (AWS S3 or compatible), `gcs` (Google Cloud Storage).
+  * `KB_LOCAL_PATH`: Filesystem path for local storage (default: `./storage/knowledgebase`). Created automatically.
+  * **AWS S3:** Set `KB_S3_BUCKET`, `KB_S3_REGION`, `KB_S3_ACCESS_KEY_ID`, `KB_S3_SECRET_ACCESS_KEY`. Set `KB_S3_ENDPOINT` to use S3-compatible stores (MinIO, Cloudflare R2, etc.).
+  * **Google Cloud Storage:** Set `KB_GCS_BUCKET`. Optionally set `KB_GCS_KEY_FILE` to a service-account JSON path; leave unset to use Application Default Credentials.
 
 #### **Rate Limiting**
 
@@ -659,6 +666,29 @@ Newman prints a summary table: requests run, assertions passed/failed, average r
 5.  **Database WAL mode:** The SQLite database runs in WAL (Write-Ahead Logging) mode. This creates two additional files alongside `fenz.db` (`fenz.db-wal` and `fenz.db-shm`) while the server is running. These are normal and should be included in any backup. They are automatically checkpointed and removed on clean shutdown.
 6.  **Multi-stage build:** The `Dockerfile` uses a two-stage build. The `builder` stage installs `python3`, `make`, and `g++` to compile native Node.js addons (e.g. `better-sqlite3`). The `runtime` stage copies only the pre-built `node_modules` and the app source — no build tooling is present in the final image, reducing the attack surface.
 7.  **Non-root execution:** The runtime image runs as the built-in `node` user (UID 1000) rather than root. This applies to Cloud Run and any deployment where the image runs without a bind mount — the `chown -R node:node /app` layer in the Dockerfile is effective in that case. The provided `docker-compose.yml` overrides this with `user: "0"` because it bind-mounts the host directory at `/app`, meaning host-file ownership governs write access rather than the image layer. The `USER node` instruction still appears in the Dockerfile so that production image deployments (no bind mount) benefit from non-root execution automatically.
+8.  **Knowledge Base document storage:** Uploaded PDFs are stored at `./storage/knowledgebase` on the host (the directory is gitignored and created automatically on first upload). The `docker-compose.yml` mounts this path explicitly at `/app/storage/knowledgebase` inside the container so files survive container recreation:
+
+    ```yaml
+    - ${KB_STORAGE_HOST_PATH:-./storage/knowledgebase}:/app/storage/knowledgebase
+    ```
+
+    To redirect storage to a different host path — for example an external disk or NAS mount — set `KB_STORAGE_HOST_PATH` in your `.env`:
+
+    ```env
+    KB_STORAGE_HOST_PATH=/mnt/nas/opready-kb
+    ```
+
+    For **cloud or server deployments** where local disk is not suitable, switch to S3 or GCS instead and remove the volume entry:
+
+    ```env
+    KB_STORAGE_TYPE=s3
+    KB_S3_BUCKET=my-bucket
+    KB_S3_REGION=ap-southeast-2
+    KB_S3_ACCESS_KEY_ID=...
+    KB_S3_SECRET_ACCESS_KEY=...
+    ```
+
+    When `KB_STORAGE_TYPE` is `s3` or `gcs`, no local directory or volume mount is needed for document storage.
 
 ## Cloudflare Tunnel
 
@@ -728,7 +758,14 @@ Icons are written to `public/icons/`. The manifest references them at `/icons/ic
 
 ### Scheduled External Backup
 
-OpReady exposes a `GET /api/system/backup` endpoint that generates a full SQL dump and returns it as a downloadable `.sql` file. Because it accepts API key authentication (`X-API-Key` header), it can be called from any external scheduler — no browser session required.
+The backup endpoint accepts API key authentication (`X-API-Key` header) so it can be called from any external scheduler — no browser session required. Two modes are available:
+
+| Endpoint | Output | Contains |
+|---|---|---|
+| `GET /api/system/backup?type=db` | `.sql` | Database only |
+| `GET /api/system/backup?type=full` | `.zip` | Database + local KB documents |
+
+Use `type=db` for Cloud Run / S3/GCS deployments where documents live in the cloud. Use `type=full` for local/Docker deployments to capture everything in one file.
 
 This is the recommended backup strategy for Cloud Run deployments, where keeping the instance running continuously just to run scheduled jobs would incur unnecessary cost. The HTTP request wakes the instance, the dump is streamed back, and the instance returns to idle.
 
@@ -742,7 +779,9 @@ A ready-to-use script is provided at [`examples/system/backup-opready.sh`](examp
 
 ```bash
 #!/bin/bash
-# backup-opready.sh — downloads a full SQL backup from OpReady
+# backup-opready.sh — downloads a database-only SQL backup from OpReady
+# For a full backup (DB + KB documents) change ?type=db to ?type=full
+# and update the filename extension to .zip.
 # Recommended schedule: daily via cron
 
 API_KEY="osm_your64hexkeyhere"
@@ -758,25 +797,25 @@ mkdir -p "$BACKUP_DIR"
 
 HTTP_STATUS=$(curl -s -w "%{http_code}" \
   -H "X-API-Key: $API_KEY" \
-  -o "$BACKUP_DIR/fenz_backup_${DATE}.sql" \
-  "${BASE_URL}/api/system/backup")
+  -o "$BACKUP_DIR/opready-db-backup-${DATE}.sql" \
+  "${BASE_URL}/api/system/backup?type=db")
 
 if [ "$HTTP_STATUS" -eq 200 ]; then
-  echo "[$(date)] Backup saved: fenz_backup_${DATE}.sql"
+  echo "[$(date)] Backup saved: opready-db-backup-${DATE}.sql"
 else
   echo "[$(date)] Backup FAILED — HTTP $HTTP_STATUS" >&2
-  rm -f "$BACKUP_DIR/fenz_backup_${DATE}.sql"
+  rm -f "$BACKUP_DIR/opready-db-backup-${DATE}.sql"
   exit 1
 fi
 
 # Retention: remove files older than KEEP_DAYS days
 if [ "$KEEP_DAYS" -gt 0 ]; then
-  find "$BACKUP_DIR" -name "fenz_backup_*.sql" -mtime +"$KEEP_DAYS" -delete
+  find "$BACKUP_DIR" -name "opready-db-backup-*.sql" -mtime +"$KEEP_DAYS" -delete
 fi
 
 # Retention: keep only the KEEP_COUNT most recent files
 if [ "$KEEP_COUNT" -gt 0 ]; then
-  ls -1t "$BACKUP_DIR"/fenz_backup_*.sql 2>/dev/null | tail -n +"$((KEEP_COUNT + 1))" | xargs -r rm --
+  ls -1t "$BACKUP_DIR"/opready-db-backup-*.sql 2>/dev/null | tail -n +"$((KEEP_COUNT + 1))" | xargs -r rm --
 fi
 ```
 

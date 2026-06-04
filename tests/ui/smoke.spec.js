@@ -21,6 +21,7 @@ const AUTH_PAGES = [
   { url: '/users.html',             name: 'Users' },
   { url: '/system-tools.html',      name: 'System Tools' },
   { url: '/profile.html',           name: 'Profile' },
+  { url: '/knowledgebase.html',     name: 'Knowledge Base' },
 ];
 
 function attachErrorListeners(page) {

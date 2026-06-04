@@ -1,9 +1,12 @@
 // routes/api/system.js
-const express = require("express");
-const router = express.Router();
-const multer = require("multer");
-const fs = require("fs");
-const axios = require("axios");
+const express  = require("express");
+const router   = express.Router();
+const multer   = require("multer");
+const fs       = require("fs");
+const path     = require("path");
+const archiver = require("archiver");
+const unzipper = require("unzipper");
+const axios    = require("axios");
 
 const db = require("../../services/db");
 const config = require("../../config");
@@ -12,8 +15,9 @@ const whatsappService = require("../../services/whatsapp-service");
 const { hasRole } = require("../../middleware/auth");
 const { generateCsrfToken } = require("../../middleware/csrf");
 const { version } = require("../../package.json");
+const logger = require("../../services/logger");
 
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ dest: "uploads/", limits: { fileSize: 500 * 1024 * 1024 } });
 
 
 
@@ -163,45 +167,157 @@ router.post("/system/ai-test", hasRole("superadmin"), async (req, res) => {
   }
 });
 
+// ── Backup ────────────────────────────────────────────────────────────────────
+// ?type=db   (default) → SQL dump only
+// ?type=full           → ZIP: manifest.json + database.sql + storage/knowledgebase/*
 router.get("/system/backup", hasRole("superadmin"), async (req, res) => {
-  try {
-    const dump = await db.generateSqlDump();
-    const filename = `fenz_backup_${new Date().toISOString().split('T')[0]}.sql`;
-    
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    res.setHeader("Content-Type", "text/plain");
-    res.send(dump);
+  const actor     = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+  const backupType = req.query.type === 'full' ? 'full' : 'db';
+  const stamp      = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 
-    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
-    await db.logEvent(actor, "System", "SQL Dump Exported", { filename });
+  try {
+    if (backupType === 'db') {
+      // ── DB-only: SQL dump ──────────────────────────────────────────────
+      const dump     = await db.generateSqlDump();
+      const filename = `opready-db-backup-${stamp}.sql`;
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.send(dump);
+      await db.logEvent(actor, "System", "SQL Dump Exported", { filename, type: 'db' });
+
+    } else {
+      // ── Full backup: ZIP with DB + local KB storage ────────────────────
+      const kbType  = config.kbStorage?.type || 'local';
+      const kbPath  = config.kbStorage?.localPath;
+      const filename = `opready-full-backup-${stamp}.zip`;
+
+      const dump = await db.generateSqlDump();
+
+      // Count KB files for the manifest (local only)
+      let kbFileCount = 0;
+      if (kbType === 'local' && kbPath && fs.existsSync(kbPath)) {
+        kbFileCount = fs.readdirSync(kbPath).filter(f =>
+          fs.statSync(path.join(kbPath, f)).isFile()
+        ).length;
+      }
+
+      const manifest = {
+        appVersion:  version,
+        date:        new Date().toISOString(),
+        backupType:  'full',
+        storageType: kbType,
+        kbFileCount,
+        note:        kbType !== 'local'
+          ? 'Cloud-stored KB documents are not included — manage them via your cloud provider.'
+          : undefined,
+      };
+
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Type", "application/zip");
+
+      const archive = archiver('zip', { zlib: { level: 6 } });
+      archive.on('error', err => { logger.error('[Backup] ZIP error', { error: err.message }); });
+      archive.pipe(res);
+
+      archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' });
+      archive.append(dump, { name: 'database.sql' });
+
+      if (kbType === 'local' && kbPath && fs.existsSync(kbPath)) {
+        archive.directory(kbPath, 'storage/knowledgebase');
+      }
+
+      await archive.finalize();
+      await db.logEvent(actor, "System", "Full Backup Exported", { filename, kbFileCount, storageType: kbType });
+    }
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    logger.error('[Backup] Failed', { error: e.message });
+    if (!res.headersSent) res.status(500).json({ error: e.message });
   }
 });
 
+// ── Restore ───────────────────────────────────────────────────────────────────
+// Accepts: .sql (DB-only restore) or .zip (full restore — DB + KB files)
 router.post("/system/restore", hasRole("superadmin"), upload.single("databaseFile"), async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
-  if (!req.file) return res.status(400).json({ error: "No file uploaded." });
+  if (!req.file)                return res.status(400).json({ error: "No file uploaded." });
+
+  const actor    = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+  const ext      = path.extname(req.file.originalname).toLowerCase();
+  const isZip    = ext === '.zip' || req.file.mimetype === 'application/zip';
 
   try {
-    const sqlContent = fs.readFileSync(req.file.path, "utf8");
-    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    if (!isZip) {
+      // ── SQL-only restore (existing behaviour) ──────────────────────────
+      if (ext !== '.sql') throw new Error('Unsupported file type. Upload a .sql or .zip backup file.');
+      const sqlContent = fs.readFileSync(req.file.path, 'utf8');
+      await db.restoreFromSqlDump(sqlContent);
+      await db.logEvent(actor, "System", "Database Restored via SQL", { sourceFile: req.file.originalname });
+      req.session?.destroy?.(() => {});
+      return res.json({ message: "Database reconstructed successfully. Please log in again." });
+    }
 
+    // ── Full ZIP restore ───────────────────────────────────────────────
+    const directory  = await unzipper.Open.file(req.file.path);
+    const manifestEntry = directory.files.find(f => f.path === 'manifest.json');
+    const sqlEntry      = directory.files.find(f => f.path === 'database.sql');
+
+    if (!sqlEntry) throw new Error('Invalid backup file: database.sql not found in ZIP.');
+
+    // Parse manifest (optional — older zips may not have it)
+    let manifest = {};
+    if (manifestEntry) {
+      try { manifest = JSON.parse((await manifestEntry.buffer()).toString('utf8')); }
+      catch { /* ignore malformed manifest */ }
+    }
+
+    // Restore database
+    const sqlContent = (await sqlEntry.buffer()).toString('utf8');
     await db.restoreFromSqlDump(sqlContent);
 
-    await db.logEvent(actor, "System", "Database Restored via SQL", {
-      sourceFile: req.file.originalname
+    // Restore local KB files (only when our storage is also local)
+    const kbType  = config.kbStorage?.type || 'local';
+    const kbPath  = config.kbStorage?.localPath;
+    let   kbRestored = 0;
+
+    if (kbType === 'local' && kbPath) {
+      fs.mkdirSync(kbPath, { recursive: true });
+      const kbFiles = directory.files.filter(f =>
+        f.path.startsWith('storage/knowledgebase/') && f.type === 'File'
+      );
+      for (const entry of kbFiles) {
+        const dest = path.join(kbPath, path.basename(entry.path));
+        await new Promise((resolve, reject) => {
+          entry.stream()
+            .pipe(fs.createWriteStream(dest))
+            .on('finish', resolve)
+            .on('error', reject);
+        });
+        kbRestored++;
+      }
+    }
+
+    await db.logEvent(actor, "System", "Full Backup Restored", {
+      sourceFile:     req.file.originalname,
+      backupVersion:  manifest.appVersion,
+      backupDate:     manifest.date,
+      kbFilesRestored: kbRestored,
     });
 
-    // Destroy the caller's own session last so the event log write above succeeds.
-    // All other sessions were already cleared inside restoreFromSqlDump().
     req.session?.destroy?.(() => {});
 
-    res.json({ message: "Database reconstructed successfully. Please log in again." });
+    const kbNote = kbType !== 'local' && (manifest.kbFileCount > 0)
+      ? ` Knowledge Base documents were not restored (cloud storage — manage via your provider).`
+      : kbRestored > 0
+        ? ` ${kbRestored} Knowledge Base document${kbRestored !== 1 ? 's' : ''} restored.`
+        : '';
+
+    res.json({ message: `Database reconstructed successfully.${kbNote} Please log in again.` });
+
   } catch (e) {
+    logger.error('[Restore] Failed', { error: e.message });
     res.status(500).json({ error: e.message });
   } finally {
-    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
   }
 });
 

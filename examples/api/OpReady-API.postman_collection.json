@@ -1,4 +1,4 @@
-﻿{
+{
   "info": {
     "name": "OpReady API",
     "_postman_id": "opready-api-v1",
@@ -8,17 +8,37 @@
   "auth": {
     "type": "apikey",
     "apikey": [
-      { "key": "key",   "value": "X-API-Key", "type": "string" },
-      { "key": "value", "value": "{{apiKey}}", "type": "string" },
-      { "key": "in",    "value": "header",     "type": "string" }
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{apiKey}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
     ]
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
-    { "key": "apiKey",  "value": "",                      "type": "string", "description": "Paste your API key here (generated in System Tools → API Key Management)" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "",
+      "type": "string",
+      "description": "Paste your API key here (generated in System Tools → API Key Management)"
+    }
   ],
   "item": [
-
     {
       "name": "Auth",
       "description": "Login, MFA, logout, and session info.",
@@ -26,10 +46,25 @@
         {
           "name": "Login",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"your-password\"\n}"
@@ -40,10 +75,26 @@
         {
           "name": "Login - MFA",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/login/mfa", "host": ["{{baseUrl}}"], "path": ["login", "mfa"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login/mfa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login",
+                "mfa"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"token\": \"123456\"\n}"
@@ -54,10 +105,25 @@
         {
           "name": "Forgot Password",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/forgot-password", "host": ["{{baseUrl}}"], "path": ["forgot-password"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "forgot-password"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"user@example.com\"\n}"
@@ -69,7 +135,15 @@
           "name": "Logout",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/logout", "host": ["{{baseUrl}}"], "path": ["logout"] },
+            "url": {
+              "raw": "{{baseUrl}}/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            },
             "description": "Destroys the current session and redirects to /login.html."
           }
         },
@@ -77,13 +151,21 @@
           "name": "Get Session User",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/user-session", "host": ["{{baseUrl}}"], "path": ["api", "user-session"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/user-session",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user-session"
+              ]
+            },
             "description": "Returns the currently authenticated user's info and role."
           }
         }
       ]
     },
-
     {
       "name": "Members",
       "description": "Volunteer member management. Requires admin role.",
@@ -92,7 +174,16 @@
           "name": "List Members",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/members", "host": ["{{baseUrl}}"], "path": ["api", "members"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "members"
+              ]
+            },
             "description": "Returns all members as a plain array (no pagination params)."
           }
         },
@@ -102,14 +193,35 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/members?limit=25&offset=0&sortBy=name&sortDir=asc",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "members"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "members"
+              ],
               "query": [
-                { "key": "limit",   "value": "25" },
-                { "key": "offset",  "value": "0" },
-                { "key": "search",  "value": "", "disabled": true },
-                { "key": "sortBy",  "value": "name" },
-                { "key": "sortDir", "value": "asc" }
+                {
+                  "key": "limit",
+                  "value": "25"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "sortBy",
+                  "value": "name"
+                },
+                {
+                  "key": "sortDir",
+                  "value": "asc"
+                }
               ]
             },
             "description": "Returns `{ items, total, limit, offset }`. Add `search=<text>` to filter by member name."
@@ -119,8 +231,22 @@
           "name": "Create Member",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/members", "host": ["{{baseUrl}}"], "path": ["api", "members"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "members"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane@station.nz\",\n  \"mobile\": \"0211234567\",\n  \"station\": \"Station 44\",\n  \"active\": 1\n}"
@@ -131,12 +257,28 @@
           "name": "Update Member",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/members/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "members", ":id"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "members",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             },
             "body": {
               "mode": "raw",
@@ -150,9 +292,20 @@
             "method": "DELETE",
             "url": {
               "raw": "{{baseUrl}}/api/members/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "members", ":id"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "members",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             }
           }
         },
@@ -160,8 +313,23 @@
           "name": "Bulk Delete Members",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/members/bulk-delete", "host": ["{{baseUrl}}"], "path": ["api", "members", "bulk-delete"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/members/bulk-delete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "members",
+                "bulk-delete"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"ids\": [1, 2, 3]\n}"
@@ -172,7 +340,17 @@
           "name": "Discover New Members",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/members/discover", "host": ["{{baseUrl}}"], "path": ["api", "members", "discover"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/members/discover",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "members",
+                "discover"
+              ]
+            },
             "description": "Scrapes the external OI dashboard and returns member names not yet in the database."
           }
         },
@@ -180,8 +358,23 @@
           "name": "Import Members",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/members/import", "host": ["{{baseUrl}}"], "path": ["api", "members", "import"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/members/import",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "members",
+                "import"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "[\n  { \"name\": \"Alice\", \"email\": \"alice@station.nz\", \"mobile\": \"0211111111\", \"active\": 1 },\n  { \"name\": \"Bob\",   \"email\": \"bob@station.nz\",   \"mobile\": \"0212222222\", \"active\": 1 }\n]"
@@ -190,7 +383,6 @@
         }
       ]
     },
-
     {
       "name": "Skills",
       "description": "OSM skill management. Requires admin role.",
@@ -199,7 +391,16 @@
           "name": "List Skills",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/skills", "host": ["{{baseUrl}}"], "path": ["api", "skills"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/skills",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "skills"
+              ]
+            },
             "description": "Returns all skills as a plain array (no pagination params)."
           }
         },
@@ -209,14 +410,35 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/skills?limit=25&offset=0&sortBy=name&sortDir=asc",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "skills"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "skills"
+              ],
               "query": [
-                { "key": "limit",   "value": "25" },
-                { "key": "offset",  "value": "0" },
-                { "key": "search",  "value": "", "disabled": true },
-                { "key": "sortBy",  "value": "name" },
-                { "key": "sortDir", "value": "asc" }
+                {
+                  "key": "limit",
+                  "value": "25"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "sortBy",
+                  "value": "name"
+                },
+                {
+                  "key": "sortDir",
+                  "value": "asc"
+                }
               ]
             },
             "description": "Returns `{ items, total, limit, offset }`. Add `search=<text>` to filter by skill name."
@@ -226,8 +448,22 @@
           "name": "Create Skill",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/skills", "host": ["{{baseUrl}}"], "path": ["api", "skills"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/skills",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "skills"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"BA Renewal\",\n  \"code\": \"BA\",\n  \"expiry_months\": 12,\n  \"active\": 1\n}"
@@ -238,12 +474,28 @@
           "name": "Update Skill",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/skills/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "skills", ":id"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "skills",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             },
             "body": {
               "mode": "raw",
@@ -257,9 +509,20 @@
             "method": "DELETE",
             "url": {
               "raw": "{{baseUrl}}/api/skills/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "skills", ":id"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "skills",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             }
           }
         },
@@ -267,8 +530,23 @@
           "name": "Bulk Delete Skills",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/skills/bulk-delete", "host": ["{{baseUrl}}"], "path": ["api", "skills", "bulk-delete"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/skills/bulk-delete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "skills",
+                "bulk-delete"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"ids\": [1, 2, 3]\n}"
@@ -279,15 +557,40 @@
           "name": "Discover New Skills",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/skills/discover", "host": ["{{baseUrl}}"], "path": ["api", "skills", "discover"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/skills/discover",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "skills",
+                "discover"
+              ]
+            }
           }
         },
         {
           "name": "Import Skills",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/skills/import", "host": ["{{baseUrl}}"], "path": ["api", "skills", "import"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/skills/import",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "skills",
+                "import"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "[\n  { \"name\": \"BA Renewal\", \"code\": \"BA\", \"expiry_months\": 12, \"active\": 1 }\n]"
@@ -296,7 +599,6 @@
         }
       ]
     },
-
     {
       "name": "Forms",
       "description": "Online verification form template management. Requires admin role.",
@@ -305,7 +607,16 @@
           "name": "List Forms",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/forms", "host": ["{{baseUrl}}"], "path": ["api", "forms"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/forms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "forms"
+              ]
+            }
           }
         },
         {
@@ -314,9 +625,20 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/forms/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "forms", ":id"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "forms",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             }
           }
         },
@@ -324,8 +646,22 @@
           "name": "Create Form",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/forms", "host": ["{{baseUrl}}"], "path": ["api", "forms"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/forms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "forms"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"title\": \"BA Renewal Form\",\n  \"skill_id\": 1,\n  \"questions\": [],\n  \"active\": 1\n}"
@@ -336,12 +672,28 @@
           "name": "Update Form",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/forms/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "forms", ":id"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "forms",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             },
             "body": {
               "mode": "raw",
@@ -353,7 +705,18 @@
           "name": "Export All Forms",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/forms/export/all", "host": ["{{baseUrl}}"], "path": ["api", "forms", "export", "all"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/forms/export/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "forms",
+                "export",
+                "all"
+              ]
+            },
             "description": "Downloads all form templates as a JSON file."
           }
         },
@@ -361,17 +724,33 @@
           "name": "Import All Forms",
           "request": {
             "method": "POST",
-            "url": { "raw": "{{baseUrl}}/api/forms/import/all", "host": ["{{baseUrl}}"], "path": ["api", "forms", "import", "all"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/forms/import/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "forms",
+                "import",
+                "all"
+              ]
+            },
             "body": {
               "mode": "formdata",
-              "formdata": [{ "key": "file", "type": "file", "src": "" }]
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
             },
             "description": "Upload a previously exported JSON file to restore all form templates."
           }
         }
       ]
     },
-
     {
       "name": "Live Forms",
       "description": "Active form submission tracking. Requires admin role.",
@@ -382,12 +761,30 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/live-forms",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "live-forms"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "live-forms"
+              ],
               "query": [
-                { "key": "member_id", "value": "",        "disabled": true },
-                { "key": "skill_id",  "value": "",        "disabled": true },
-                { "key": "status",    "value": "pending", "disabled": true, "description": "pending | completed | expired" }
+                {
+                  "key": "member_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "skill_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "disabled": true,
+                  "description": "pending | completed | expired"
+                }
               ]
             }
           }
@@ -396,20 +793,39 @@
           "name": "Export Live Forms",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/live-forms/export", "host": ["{{baseUrl}}"], "path": ["api", "live-forms", "export"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/live-forms/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "live-forms",
+                "export"
+              ]
+            }
           }
         },
         {
           "name": "Delete All Live Forms",
           "request": {
             "method": "DELETE",
-            "url": { "raw": "{{baseUrl}}/api/live-forms/all", "host": ["{{baseUrl}}"], "path": ["api", "live-forms", "all"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/live-forms/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "live-forms",
+                "all"
+              ]
+            },
             "description": "Superadmin only — permanently removes all live form records."
           }
         }
       ]
     },
-
     {
       "name": "Surveys",
       "description": "Survey response details and results. Requires admin role.",
@@ -420,9 +836,21 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/surveys/responses/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "surveys", "responses", ":id"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "surveys",
+                "responses",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             }
           }
         },
@@ -432,16 +860,28 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/surveys/instances/:liveId/results",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "surveys", "instances", ":liveId", "results"],
-              "variable": [{ "key": "liveId", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "surveys",
+                "instances",
+                ":liveId",
+                "results"
+              ],
+              "variable": [
+                {
+                  "key": "liveId",
+                  "value": "1"
+                }
+              ]
             },
             "description": "Returns aggregated results and completion tracking for a live survey instance."
           }
         }
       ]
     },
-
     {
       "name": "Live Surveys (Public)",
       "description": "Public-facing survey endpoints — no authentication required for respondent access.",
@@ -452,22 +892,47 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/live-surveys/preview/:publicId",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "live-surveys", "preview", ":publicId"],
-              "variable": [{ "key": "publicId", "value": "your-public-id" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "live-surveys",
+                "preview",
+                ":publicId"
+              ],
+              "variable": [
+                {
+                  "key": "publicId",
+                  "value": "your-public-id"
+                }
+              ]
             }
           }
         },
         {
           "name": "Fetch Survey for Respondent",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/live-surveys/:accessCode",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "live-surveys", ":accessCode"],
-              "variable": [{ "key": "accessCode", "value": "your-access-code" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "live-surveys",
+                ":accessCode"
+              ],
+              "variable": [
+                {
+                  "key": "accessCode",
+                  "value": "your-access-code"
+                }
+              ]
             },
             "description": "Public endpoint — returns survey questions for a unique access code."
           }
@@ -475,14 +940,32 @@
         {
           "name": "Submit Survey Response",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/live-surveys/:accessCode",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "live-surveys", ":accessCode"],
-              "variable": [{ "key": "accessCode", "value": "your-access-code" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "live-surveys",
+                ":accessCode"
+              ],
+              "variable": [
+                {
+                  "key": "accessCode",
+                  "value": "your-access-code"
+                }
+              ]
             },
             "body": {
               "mode": "raw",
@@ -493,7 +976,6 @@
         }
       ]
     },
-
     {
       "name": "Training Sessions",
       "description": "In-person training session management. Requires admin role.",
@@ -504,10 +986,20 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/training-sessions",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "training-sessions"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "training-sessions"
+              ],
               "query": [
-                { "key": "view", "value": "future", "disabled": true, "description": "Pass 'future' to return only upcoming sessions" }
+                {
+                  "key": "view",
+                  "value": "future",
+                  "disabled": true,
+                  "description": "Pass 'future' to return only upcoming sessions"
+                }
               ]
             }
           }
@@ -516,8 +1008,22 @@
           "name": "Create Training Session",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/training-sessions", "host": ["{{baseUrl}}"], "path": ["api", "training-sessions"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/training-sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "training-sessions"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"skill_id\": 1,\n  \"session_date\": \"2026-06-15\",\n  \"location\": \"Station 44 Training Room\",\n  \"notes\": \"Bring BA set\",\n  \"member_ids\": [1, 2, 3]\n}"
@@ -530,15 +1036,25 @@
             "method": "DELETE",
             "url": {
               "raw": "{{baseUrl}}/api/training-sessions/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "training-sessions", ":id"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "training-sessions",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             }
           }
         }
       ]
     },
-
     {
       "name": "Reports",
       "description": "Compliance and verification reports. Requires admin role.",
@@ -547,7 +1063,18 @@
           "name": "Report — By Member",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/reports/data/by-member", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "by-member"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/by-member",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "data",
+                "by-member"
+              ]
+            },
             "description": "Expiring skills grouped per member."
           }
         },
@@ -555,7 +1082,18 @@
           "name": "Report — By Skill",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/reports/data/by-skill", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "by-skill"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/by-skill",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "data",
+                "by-skill"
+              ]
+            },
             "description": "Members grouped per expiring skill."
           }
         },
@@ -563,42 +1101,108 @@
           "name": "Report — Planned Sessions",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/reports/data/planned-sessions", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "planned-sessions"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/planned-sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "data",
+                "planned-sessions"
+              ]
+            }
           }
         },
         {
           "name": "Report — Critical Overdue",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/reports/data/critical-overdue", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "critical-overdue"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/critical-overdue",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "data",
+                "critical-overdue"
+              ]
+            }
           }
         },
         {
           "name": "Report — Compliance Matrix",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/reports/data/compliance-matrix", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "compliance-matrix"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/compliance-matrix",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "data",
+                "compliance-matrix"
+              ]
+            }
           }
         },
         {
           "name": "Report — Verification History",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/reports/data/verification-history", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "verification-history"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/verification-history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "data",
+                "verification-history"
+              ]
+            }
           }
         },
         {
           "name": "Report — Training Attendance",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/reports/data/training-attendance", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "training-attendance"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/training-attendance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "data",
+                "training-attendance"
+              ]
+            }
           }
         },
         {
           "name": "Report — Survey Participation",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/reports/data/survey-participation", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "survey-participation"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/survey-participation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "data",
+                "survey-participation"
+              ]
+            },
             "description": "All published survey campaigns with invitation counts, response rates, and archive status."
           }
         },
@@ -606,7 +1210,24 @@
           "name": "Report — Survey Response Log",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/reports/data/survey-response-log?days=30", "host": ["{{baseUrl}}"], "path": ["api", "reports", "data", "survey-response-log"], "query": [{ "key": "days", "value": "30" }] },
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/survey-response-log?days=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "data",
+                "survey-response-log"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            },
             "description": "Chronological log of individual survey responses submitted in the last N days."
           }
         },
@@ -614,8 +1235,23 @@
           "name": "Generate PDF",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/reports/pdf", "host": ["{{baseUrl}}"], "path": ["api", "reports", "pdf"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "pdf"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"html\": \"<h1>My Report</h1><p>Content here.</p>\"\n}"
@@ -625,7 +1261,6 @@
         }
       ]
     },
-
     {
       "name": "Statistics",
       "description": "Dashboard statistics. Requires simple role or higher.",
@@ -634,13 +1269,23 @@
           "name": "Compliance Overview",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/statistics/data/compliance-overview", "host": ["{{baseUrl}}"], "path": ["api", "statistics", "data", "compliance-overview"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/statistics/data/compliance-overview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "statistics",
+                "data",
+                "compliance-overview"
+              ]
+            },
             "description": "Returns the top-level compliance stats shown on the dashboard."
           }
         }
       ]
     },
-
     {
       "name": "Users",
       "description": "Admin user account management. Requires admin role.",
@@ -649,15 +1294,38 @@
           "name": "List Users",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
           }
         },
         {
           "name": "Create User",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"New Admin\",\n  \"email\": \"newadmin@station.nz\",\n  \"password\": \"temporary-password\",\n  \"role\": \"admin\"\n}"
@@ -669,12 +1337,28 @@
           "name": "Update User",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/users/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", ":id"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             },
             "body": {
               "mode": "raw",
@@ -688,15 +1372,25 @@
             "method": "DELETE",
             "url": {
               "raw": "{{baseUrl}}/api/users/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", ":id"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             }
           }
         }
       ]
     },
-
     {
       "name": "Profile",
       "description": "Current user's own profile and MFA settings.",
@@ -705,8 +1399,22 @@
           "name": "Update Profile",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/profile", "host": ["{{baseUrl}}"], "path": ["api", "profile"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "profile"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"My Name\",\n  \"email\": \"me@station.nz\",\n  \"currentPassword\": \"old-password\",\n  \"newPassword\": \"new-password\"\n}"
@@ -717,7 +1425,18 @@
           "name": "MFA — Setup",
           "request": {
             "method": "POST",
-            "url": { "raw": "{{baseUrl}}/api/profile/mfa/setup", "host": ["{{baseUrl}}"], "path": ["api", "profile", "mfa", "setup"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/profile/mfa/setup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "profile",
+                "mfa",
+                "setup"
+              ]
+            },
             "description": "Generates a new TOTP secret and QR code URL. Scan with an authenticator app then call MFA Verify."
           }
         },
@@ -725,8 +1444,24 @@
           "name": "MFA — Verify & Enable",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/profile/mfa/verify", "host": ["{{baseUrl}}"], "path": ["api", "profile", "mfa", "verify"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/profile/mfa/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "profile",
+                "mfa",
+                "verify"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"token\": \"123456\"\n}"
@@ -737,8 +1472,24 @@
           "name": "MFA — Disable",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/profile/mfa/disable", "host": ["{{baseUrl}}"], "path": ["api", "profile", "mfa", "disable"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/profile/mfa/disable",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "profile",
+                "mfa",
+                "disable"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"password\": \"your-password\"\n}"
@@ -749,12 +1500,22 @@
           "name": "MFA — Status",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/profile/mfa/status", "host": ["{{baseUrl}}"], "path": ["api", "profile", "mfa", "status"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/profile/mfa/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "profile",
+                "mfa",
+                "status"
+              ]
+            }
           }
         }
       ]
     },
-
     {
       "name": "API Keys",
       "description": "Manage API keys for external integrations. Requires admin role.",
@@ -763,7 +1524,16 @@
           "name": "List API Keys",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/api-keys", "host": ["{{baseUrl}}"], "path": ["api", "api-keys"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "api-keys"
+              ]
+            },
             "description": "Returns all keys. The full key value is never returned — only the prefix for identification."
           }
         },
@@ -771,8 +1541,22 @@
           "name": "Create API Key",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/api-keys", "host": ["{{baseUrl}}"], "path": ["api", "api-keys"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "api-keys"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"External Dashboard\",\n  \"role\": \"admin\"\n}"
@@ -786,9 +1570,21 @@
             "method": "PATCH",
             "url": {
               "raw": "{{baseUrl}}/api/api-keys/:id/toggle",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "api-keys", ":id", "toggle"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "api-keys",
+                ":id",
+                "toggle"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             },
             "description": "Flips the active flag. A revoked key returns 401 on all subsequent requests."
           }
@@ -799,15 +1595,25 @@
             "method": "DELETE",
             "url": {
               "raw": "{{baseUrl}}/api/api-keys/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "api-keys", ":id"],
-              "variable": [{ "key": "id", "value": "1" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "api-keys",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             }
           }
         }
       ]
     },
-
     {
       "name": "System",
       "description": "Health check, preferences, event logs, and diagnostics.",
@@ -816,25 +1622,56 @@
           "name": "Get CSRF Token",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/csrf-token", "host": ["{{baseUrl}}"], "path": ["api", "csrf-token"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/csrf-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "csrf-token"
+              ]
+            },
             "description": "Returns a 64-character hex CSRF token tied to the current session. Include as `X-CSRF-Token` header on all POST/PUT/DELETE requests when authenticating with session cookies. The frontend fetch interceptor in utils.js handles this automatically."
           }
         },
         {
           "name": "Health Check",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
             "description": "Public — no authentication required. Returns DB connectivity and server uptime."
           }
         },
         {
           "name": "Readiness Probe",
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/ready", "host": ["{{baseUrl}}"], "path": ["api", "ready"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/ready",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ready"
+              ]
+            },
             "description": "Public — no authentication required. Returns 200 when fully ready (DB ok, WhatsApp client ready if enabled). Returns 503 while initialising. Use as a Docker/Kubernetes readiness probe."
           }
         },
@@ -842,15 +1679,38 @@
           "name": "Get System Preferences",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/preferences", "host": ["{{baseUrl}}"], "path": ["api", "preferences"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "preferences"
+              ]
+            }
           }
         },
         {
           "name": "Save System Preference",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/preferences", "host": ["{{baseUrl}}"], "path": ["api", "preferences"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "preferences"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"key\": \"app_name\",\n  \"value\": \"Station 44 OSM Manager\"\n}"
@@ -861,7 +1721,16 @@
           "name": "Get User Preferences",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/user-preferences", "host": ["{{baseUrl}}"], "path": ["api", "user-preferences"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/user-preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user-preferences"
+              ]
+            }
           }
         },
         {
@@ -870,9 +1739,20 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/user-preferences/:key",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "user-preferences", ":key"],
-              "variable": [{ "key": "key", "value": "theme" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user-preferences",
+                ":key"
+              ],
+              "variable": [
+                {
+                  "key": "key",
+                  "value": "theme"
+                }
+              ]
             }
           }
         },
@@ -880,8 +1760,22 @@
           "name": "Save User Preference",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/user-preferences", "host": ["{{baseUrl}}"], "path": ["api", "user-preferences"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/user-preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user-preferences"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"key\": \"theme\",\n  \"value\": \"dark\"\n}"
@@ -894,15 +1788,46 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/events",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "events"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events"
+              ],
               "query": [
-                { "key": "category", "value": "",   "disabled": true },
-                { "key": "actor",    "value": "",   "disabled": true },
-                { "key": "from",     "value": "",   "disabled": true, "description": "YYYY-MM-DD" },
-                { "key": "to",       "value": "",   "disabled": true, "description": "YYYY-MM-DD" },
-                { "key": "page",     "value": "1",  "disabled": true },
-                { "key": "limit",    "value": "50", "disabled": true }
+                {
+                  "key": "category",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "actor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true,
+                  "description": "YYYY-MM-DD"
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true,
+                  "description": "YYYY-MM-DD"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": true
+                }
               ]
             }
           }
@@ -911,7 +1836,17 @@
           "name": "Get Event Log Metadata",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/events/meta", "host": ["{{baseUrl}}"], "path": ["api", "events", "meta"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/meta",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "meta"
+              ]
+            },
             "description": "Returns distinct categories and actors for filter dropdowns."
           }
         },
@@ -919,7 +1854,17 @@
           "name": "Export Event Logs",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/events/export", "host": ["{{baseUrl}}"], "path": ["api", "events", "export"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "export"
+              ]
+            },
             "description": "Downloads all matching event logs as a JSON file."
           }
         },
@@ -927,8 +1872,23 @@
           "name": "Prune Event Logs",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/events/prune", "host": ["{{baseUrl}}"], "path": ["api", "events", "prune"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/prune",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "prune"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"days\": 90\n}"
@@ -940,7 +1900,17 @@
           "name": "Purge All Event Logs",
           "request": {
             "method": "DELETE",
-            "url": { "raw": "{{baseUrl}}/api/events/all", "host": ["{{baseUrl}}"], "path": ["api", "events", "all"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "all"
+              ]
+            },
             "description": "Superadmin only — permanently deletes the entire event log."
           }
         },
@@ -948,8 +1918,22 @@
           "name": "Write Custom Log Entry",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/api/logs", "host": ["{{baseUrl}}"], "path": ["api", "logs"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/logs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "logs"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"type\": \"External Integration\",\n  \"title\": \"Sync Completed\",\n  \"payload\": { \"records\": 42 }\n}"
@@ -960,7 +1944,17 @@
           "name": "Download SQL Backup",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/system/backup", "host": ["{{baseUrl}}"], "path": ["api", "system", "backup"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/system/backup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "system",
+                "backup"
+              ]
+            },
             "description": "Superadmin only — generates a full SQL dump of the database and returns it as a downloadable `.sql` file. Safe to call from external schedulers (e.g. cron on a Raspberry Pi or a Cloud Scheduler job) using an API key to wake the Cloud Run instance and retrieve a backup. The response is streamed as `Content-Type: text/plain` with `Content-Disposition: attachment`."
           }
         },
@@ -969,18 +1963,357 @@
           "request": {
             "method": "POST",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/api/system/restore", "host": ["{{baseUrl}}"], "path": ["api", "system", "restore"] },
+            "url": {
+              "raw": "{{baseUrl}}/api/system/restore",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "system",
+                "restore"
+              ]
+            },
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "databaseFile", "type": "file", "src": "/path/to/fenz_backup_YYYY-MM-DD.sql", "description": "The .sql dump file to restore from" }
+                {
+                  "key": "databaseFile",
+                  "type": "file",
+                  "src": "/path/to/fenz_backup_YYYY-MM-DD.sql",
+                  "description": "The .sql dump file to restore from"
+                }
               ]
             },
             "description": "Superadmin only — uploads a `.sql` dump file and replaces the entire database. Disabled in demo mode. All active sessions are invalidated after restore. Use with extreme caution — this is irreversible."
           }
         }
       ]
+    },
+    {
+      "name": "Knowledge Base",
+      "description": "PDF document library — upload, organise, and share documents via GUID-secured public links.",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "categories"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "categories"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Operational\",\n  \"parent_id\": null,\n  \"sort_order\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/categories/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "categories",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Operational (Updated)\",\n  \"parent_id\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/categories/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "categories",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Documents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "documents"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Document",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "documents",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload Document (PDF)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "documents"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/document.pdf",
+                  "description": "PDF file (max 50 MB)"
+                },
+                {
+                  "key": "title",
+                  "value": "Fire Attack Procedures",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Standard operating procedure for fire attack",
+                  "type": "text"
+                },
+                {
+                  "key": "category_id",
+                  "value": "1",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Document Metadata",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "documents",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Title\",\n  \"description\": \"Updated description\",\n  \"category_id\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Toggle Document Active",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents/:id/toggle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "documents",
+                ":id",
+                "toggle"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "documents",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Public Document Metadata (no auth)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/doc/:slug",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "doc",
+                ":slug"
+              ],
+              "variable": [
+                {
+                  "key": "slug",
+                  "value": "4A04912E-F5C3-4CA6-91FC-8CBB3527AD81"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Serve Document File (no auth)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/file/:slug",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "file",
+                ":slug"
+              ],
+              "variable": [
+                {
+                  "key": "slug",
+                  "value": "4A04912E-F5C3-4CA6-91FC-8CBB3527AD81"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
-
   ]
 }

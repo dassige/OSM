@@ -676,6 +676,61 @@
           ]
         }
       ]
+    },
+
+    {
+      "name": "Knowledge Base",
+      "description": "Read-only smoke tests for the Knowledge Base endpoints.",
+      "item": [
+        {
+          "name": "List KB Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "knowledgebase", "categories"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List KB Categories | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('List KB Categories | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('List KB Categories | Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List KB Documents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "knowledgebase", "documents"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List KB Documents | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('List KB Documents | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('List KB Documents | Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
 
   ]

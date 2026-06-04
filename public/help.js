@@ -292,12 +292,20 @@ const helpContent = {
     "system-tools": {
         title: "System Tools",
         body: `
-            <h3>1. Database Backup</h3>
-            <p>Downloads a complete snapshot of the <code>fenz.db</code> SQLite file. This includes all members, skills, live forms, history, and configuration.</p>
+            <h3>1. Backup</h3>
+            <p>Two backup types are available:</p>
+            <ul>
+                <li><strong>Full Backup</strong> — downloads a <code>.zip</code> file containing the complete database <em>and</em> all uploaded Knowledge Base documents (local storage only). Use this for a complete disaster-recovery snapshot.</li>
+                <li><strong>Database Only</strong> — downloads a <code>.sql</code> file containing the database alone. Use this when Knowledge Base documents are stored in S3 or GCS (managed separately by the cloud provider).</li>
+            </ul>
 
-            <h3>2. Database Restore</h3>
-            <p>Uploads a <code>.db</code> file to replace the current system state. <strong style="color:red;">Warning:</strong> This completely overwrites the current database and cannot be undone. The uploaded file must match the current application version.</p>
-            <p><em>Note:</em> In <strong>Demo Mode</strong>, these operations apply only to the sandboxed <code>demo.db</code>.</p>
+            <h3>2. Restore</h3>
+            <p>Upload a backup file to restore the system. <strong style="color:red;">Warning:</strong> This completely overwrites the current data and cannot be undone.</p>
+            <ul>
+                <li>Upload a <code>.zip</code> (Full Backup) to restore both the database and local Knowledge Base documents.</li>
+                <li>Upload a <code>.sql</code> (Database Only) to restore the database only.</li>
+            </ul>
+            <p>The backup must have been created by the same or an earlier version of OpReady. All active sessions are cleared after restore — everyone must log in again.</p>
 
             <h3>3. API Key Management</h3>
             <p>Create and manage API keys that allow external systems to authenticate to the REST API without a browser session.</p>
@@ -482,6 +490,43 @@ const helpContent = {
         `
     },
 
+    // --- Knowledge Base ---
+    "knowledgebase": {
+        title: "Knowledge Base",
+        body: `
+            <p>The <strong>Knowledge Base</strong> lets you upload, organise, and share PDF documents with brigade members — no login required to view them.</p>
+
+            <h3>1. Categories</h3>
+            <ul>
+                <li><strong>Add:</strong> Click <em>+ Add</em> in the Categories panel to create a new category or sub-category.</li>
+                <li><strong>Select:</strong> Click any category to filter the document list on the right. Click <em>All Documents</em> to see everything.</li>
+                <li><strong>Edit / Delete:</strong> Hover over a category name to reveal the edit and delete buttons.</li>
+                <li>Deleting a category re-parents its sub-categories and leaves its documents as <em>Uncategorized</em>.</li>
+            </ul>
+
+            <h3>2. Uploading Documents</h3>
+            <ul>
+                <li>Click <strong>Upload PDF</strong> and fill in the title, optional description, and category.</li>
+                <li>PDF files only · maximum 50 MB per upload.</li>
+                <li>A unique GUID link is generated automatically — share it with members so they can view the document without logging in.</li>
+            </ul>
+
+            <h3>3. Sharing with Members</h3>
+            <ul>
+                <li>Click <strong>Copy Link</strong> on any document to copy the public URL to your clipboard.</li>
+                <li>Click <strong>View</strong> to preview the document as members will see it.</li>
+                <li>The link looks like: <code>/knowledgebase/4A04912E-...</code> — only someone who has the link can access the document.</li>
+            </ul>
+
+            <h3>4. Managing Documents</h3>
+            <ul>
+                <li><strong>Active toggle:</strong> Disable a document to make it temporarily inaccessible without deleting it.</li>
+                <li><strong>Edit:</strong> Update the title, description, or category. The file and link remain unchanged.</li>
+                <li><strong>Delete:</strong> Permanently removes the document and its file. The link will stop working immediately.</li>
+            </ul>
+        `
+    },
+
     // --- Default / Fallback ---
     "default": {
         title: "Help",
@@ -514,6 +559,7 @@ const helpContent = {
     else if (path.includes("live-surveys")) key = "live-surveys";
     else if (path.includes("surveys-tracking")) key = "surveys-tracking";
     else if (path.includes("surveys-results")) key = "surveys-results";
+    else if (path.includes("knowledgebase")) key = "knowledgebase";
 
     // DYNAMIC FORMS-VIEW LOGIC
     if (path.includes("forms-view")) {
@@ -608,7 +654,8 @@ const helpContent = {
         'event-log', 'users', 'profile', 'third-parties', 'training-planner',
         'forms-manage', 'reports', 'live-forms', 'statistics', 'surveys-manage',
         'live-surveys', 'surveys-tracking', 'surveys-results',
-        'forms-view-review', 'forms-view-preview', 'surveys-view-preview'
+        'forms-view-review', 'forms-view-preview', 'surveys-view-preview',
+        'knowledgebase'
     ];
 
     // Short display titles for the banner (no app-name suffix)
@@ -633,7 +680,8 @@ const helpContent = {
         'surveys-results': 'Survey Results',
         'forms-view-review': 'Form Review',
         'forms-view-preview': 'Form Preview',
-        'surveys-view-preview': 'Survey Preview'
+        'surveys-view-preview': 'Survey Preview',
+        'knowledgebase': 'Knowledge Base'
     };
 
     if (bannerKeys.indexOf(key) !== -1) {
