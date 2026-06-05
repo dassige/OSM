@@ -1917,6 +1917,9 @@
             if (isDemo) { showToast('Disabled in demo mode.','warning'); return; }
             const srv = rbServers.find(s => s.id === id);
             if (!srv) return;
+            const _runRes = document.getElementById('rbSchedRunResult');
+            _runRes.style.display = 'none';
+            _runRes.innerHTML = '';
             document.getElementById('rbSchedServerId').value  = id;
             document.getElementById('rbSchedServerName').textContent = srv.name;
             document.getElementById('rbSchedEnabled').checked = !!srv.schedule_enabled;
