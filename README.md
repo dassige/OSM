@@ -568,6 +568,18 @@ Expiry is a **soft warning** only — expired documents remain publicly accessib
 
 The Edit modal includes an optional **Replace Document File** section. Uploading a new file overwrites the stored bytes at the same storage path. The document's **id, public GUID slug, and all metadata are preserved** — only the file content changes. Use this to publish an updated version of a document while all existing shared links continue to work.
 
+When a file is chosen for upload, the **Title** field is automatically pre-filled from the filename — hyphens and underscores are replaced with spaces and the extension is stripped (e.g. `fire-attack_procedures.pdf` → `fire attack procedures`). The title is always editable before saving.
+
+### Missing file recovery
+
+If a document's physical file is deleted from storage (e.g. manual deletion, a database-only restore without restoring the storage folder, or storage misconfiguration), the database record is preserved and the document remains listed in the Knowledge Base. Opening the **Edit** modal for such a document displays an amber warning banner:
+
+> *File not found in storage — the document record is intact but the physical file is missing.*
+
+The Replace Document File section is shown automatically. Upload a replacement file and save to restore the document. The document's public GUID link, ID, and all metadata remain unchanged.
+
+The `GET /api/knowledgebase/documents/:id/file-status` endpoint (returns `{ exists: boolean }`) is used by the UI to detect this condition and can also be called by external integrations to audit storage consistency.
+
 ### Per-document link rotation
 
 The Edit modal includes a **Renew Link** button that generates a new GUID for that specific document, invalidating its current public URL. This is useful when a single link has been shared with unintended recipients without rotating all other document links.

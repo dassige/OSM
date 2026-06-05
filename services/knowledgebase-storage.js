@@ -37,6 +37,10 @@ async function deleteLocal(storagePath) {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 }
 
+async function fileExistsLocal(storagePath) {
+    return fs.existsSync(path.join(getLocalDir(), storagePath));
+}
+
 // ── Shared bucket config parser ───────────────────────────────────────────────
 
 // KB_S3_BUCKET and KB_GCS_BUCKET both support "bucketname/optional/prefix".
@@ -98,6 +102,17 @@ async function deleteS3(storagePath) {
     }));
 }
 
+async function fileExistsS3(storagePath) {
+    try {
+        const { HeadObjectCommand } = require('@aws-sdk/client-s3');
+        const { bucketName } = parseBucketConfig(config.kbStorage.s3.bucket);
+        await s3Client().send(new HeadObjectCommand({ Bucket: bucketName, Key: storagePath }));
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 // ── Google Cloud Storage ──────────────────────────────────────────────────────
 
 function gcsBucket() {
@@ -121,6 +136,15 @@ async function streamGCS(storagePath) {
 
 async function deleteGCS(storagePath) {
     await gcsBucket().file(storagePath).delete({ ignoreNotFound: true });
+}
+
+async function fileExistsGCS(storagePath) {
+    try {
+        const [exists] = await gcsBucket().file(storagePath).exists();
+        return exists;
+    } catch {
+        return false;
+    }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -154,6 +178,12 @@ async function deleteFile(storageType, storagePath) {
     return deleteLocal(storagePath);
 }
 
+async function fileExists(storageType, storagePath) {
+    if (storageType === 's3')  return fileExistsS3(storagePath);
+    if (storageType === 'gcs') return fileExistsGCS(storagePath);
+    return fileExistsLocal(storagePath);
+}
+
 // Overwrites the file at an existing storage path with new content.
 // Used when an admin replaces a document — the storage key and path stay the same.
 async function replaceFile(storageType, storagePath, buffer, mimeType) {
@@ -178,4 +208,4 @@ async function replaceFile(storageType, storagePath, buffer, mimeType) {
     logger.info('[KB Storage] File replaced', { storagePath, storageType, bytes: buffer.length });
 }
 
-module.exports = { upload, getFileStream, deleteFile, replaceFile };
+module.exports = { upload, getFileStream, deleteFile, replaceFile, fileExists };

@@ -552,6 +552,7 @@ const helpContent = {
             <h3>3. Uploading Documents</h3>
             <ul>
                 <li>Click <strong>Upload Document</strong> and fill in the title, optional description, category, and expiry date.</li>
+                <li>When you select a file, the <strong>Title</strong> field is automatically pre-filled from the filename — hyphens and underscores are replaced with spaces and the extension is stripped. You can edit the title before saving.</li>
                 <li>Supported types: <strong>PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF</strong> · maximum 50 MB per upload.</li>
                 <li>The <strong>Expiry date</strong> defaults to today + the configured number of days (set via <code>KB_DEFAULT_EXPIRY_DAYS</code> in <code>.env</code>, default 365). Expired documents are flagged in red for admin review — they remain publicly accessible until explicitly disabled or deleted.</li>
                 <li>A unique GUID link is generated automatically — share it with members so they can view or download the document without logging in.</li>
@@ -577,6 +578,7 @@ const helpContent = {
                 <li><strong>Active toggle:</strong> Disable a document to make it temporarily inaccessible without deleting it.</li>
                 <li><strong>Edit:</strong> Update the title, description, category, or expiry date.</li>
                 <li><strong>Replace File:</strong> Inside the Edit modal, attach a new file to overwrite the stored content. The document's ID, public link, and storage key remain unchanged — only the bytes are replaced.</li>
+                <li><strong>Missing file recovery:</strong> If the Edit modal shows an amber <em>File not found in storage</em> warning (e.g. after a database-only restore), the document record is intact but the physical file is absent. Select a replacement file in the Replace File section and save to restore access.</li>
                 <li><strong>Renew Link:</strong> Inside the Edit modal, click <em>Renew Link</em> to rotate this document's GUID. Its current public link stops working immediately; a new URL is generated. Use this when a link has been shared with unintended recipients.</li>
                 <li><strong>Delete:</strong> Permanently removes the document and its file. The link will stop working immediately.</li>
             </ul>

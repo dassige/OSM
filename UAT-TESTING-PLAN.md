@@ -505,6 +505,8 @@
 | T22-24 | Pagination | Upload more than 25 documents. | Pagination controls appear. First / Previous / Next / Last buttons work correctly. Rows-per-page selector is functional. |
 | T22-25 | Help modal | Click the **?** button on the Knowledge Base page. | A help modal opens with sections covering Categories, Uploading, Sharing, and Managing Documents. |
 | T22-26 | Event log entries | After performing Upload, Edit, Toggle, Delete, and Category CRUD operations, open the Event Log. | Each operation has a corresponding entry in the *Knowledge Base* category with a meaningful title and payload. |
+| T22-27 | Upload auto-fill title from filename | Click **Upload Document**. Attach a file named `fire-attack_procedures.pdf`. Observe the Title field before typing anything. | The Title field is automatically pre-filled with *fire attack procedures* — hyphens and underscores are replaced with spaces and the extension is stripped. The field remains editable. |
+| T22-28 | Missing file warning in Edit modal | Prerequisite: manually delete the physical file from storage while leaving the DB record intact. Open the Knowledge Base page and click **Edit** on that document. | The Edit modal opens with an amber warning banner stating the file is missing from storage. The Replace Document File section is visible with updated hint text. Clicking **Save** without selecting a replacement shows an error toast. Selecting a file and saving succeeds — the document is restored. |
 
 ---
 

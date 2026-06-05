@@ -26,6 +26,7 @@ jest.mock('../services/knowledgebase-storage', () => ({
     getFileStream: jest.fn(),
     deleteFile:  jest.fn().mockResolvedValue(),
     replaceFile: jest.fn().mockResolvedValue(),
+    fileExists:  jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock('../middleware/auth', () => ({
@@ -147,6 +148,33 @@ describe('GET /api/knowledgebase/documents/:id', () => {
     it('returns 404 when doc not found', async () => {
         db.getKbDocumentById.mockResolvedValue(null);
         const res = await request(app).get('/api/knowledgebase/documents/999');
+        expect(res.status).toBe(404);
+    });
+});
+
+describe('GET /api/knowledgebase/documents/:id/file-status', () => {
+    const sampleDoc = { id: 1, title: 'Test Doc', slug: 'SLUG-001', is_active: 1, storage_type: 'local', storage_path: 'SLUG-001.pdf', original_filename: 'test.pdf', mime_type: 'application/pdf', file_size: 1024 };
+
+    it('returns exists:true when file is present', async () => {
+        db.getKbDocumentById.mockResolvedValue(sampleDoc);
+        storage.fileExists.mockResolvedValue(true);
+        const res = await request(app).get('/api/knowledgebase/documents/1/file-status');
+        expect(res.status).toBe(200);
+        expect(res.body.exists).toBe(true);
+        expect(storage.fileExists).toHaveBeenCalledWith('local', 'SLUG-001.pdf');
+    });
+
+    it('returns exists:false when file is missing', async () => {
+        db.getKbDocumentById.mockResolvedValue(sampleDoc);
+        storage.fileExists.mockResolvedValue(false);
+        const res = await request(app).get('/api/knowledgebase/documents/1/file-status');
+        expect(res.status).toBe(200);
+        expect(res.body.exists).toBe(false);
+    });
+
+    it('returns 404 when doc not found', async () => {
+        db.getKbDocumentById.mockResolvedValue(null);
+        const res = await request(app).get('/api/knowledgebase/documents/999/file-status');
         expect(res.status).toBe(404);
     });
 });

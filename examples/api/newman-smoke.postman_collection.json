@@ -813,6 +813,30 @@
               }
             }
           ]
+        },
+        {
+          "name": "Get KB Document File Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents/1/file-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "knowledgebase", "documents", "1", "file-status"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Get KB Document File Status | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Get KB Document File Status | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('Get KB Document File Status | Returns exists boolean', () => pm.expect(pm.response.json()).to.have.property('exists').that.is.a('boolean'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

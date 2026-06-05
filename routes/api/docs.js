@@ -1689,6 +1689,19 @@ const spec = {
                 responses: { 200: { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } } }
             }
         },
+        '/api/knowledgebase/documents/{id}/file-status': {
+            get: {
+                tags: ['Knowledge Base'],
+                summary: 'Check whether the stored file exists in the configured storage backend',
+                description: 'Returns { exists: true } when the physical file is present, { exists: false } when it is missing (e.g. storage deleted, DB-only restore). The metadata record is always preserved.',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'File status', content: { 'application/json': { schema: { type: 'object', properties: { exists: { type: 'boolean', example: true } } } } } },
+                    404: { description: 'Document not found' }
+                }
+            }
+        },
         '/api/knowledgebase/documents/{id}/toggle': {
             patch: {
                 tags: ['Knowledge Base'],

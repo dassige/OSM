@@ -2293,6 +2293,31 @@
           }
         },
         {
+          "name": "Get Document File Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents/:id/file-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "documents",
+                ":id",
+                "file-status"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Upload Document (PDF)",
           "request": {
             "method": "POST",

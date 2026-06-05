@@ -447,6 +447,12 @@
                     <small style="color:var(--text-muted);">Document will be flagged for review after this date.</small>
                 </div>
 
+                <!-- File missing warning (edit only, shown when storage file is absent) -->
+                <div id="fileMissingWarning" style="display:none; background:rgba(255,193,7,0.15); border:1px solid #ffc107; border-radius:6px; padding:10px 14px; margin-bottom:12px; font-size:0.88rem; color:var(--text-main);">
+                    <strong>&#9888; File not found in storage</strong> — the document record is intact but the physical file is missing (storage may have been deleted or a database-only restore was performed).
+                    Please upload a replacement file below.
+                </div>
+
                 <!-- Replace file (edit only) -->
                 <div id="replaceFileGroup" style="display:none; border-top:1px solid var(--border-color); padding-top:12px; margin-top:4px;">
                     <div class="form-group" style="margin-bottom:4px;">
@@ -466,7 +472,7 @@
                             </button>
                             <span class="file-picker-label" id="replaceFileLabel">No file chosen</span>
                         </div>
-                        <small style="color:var(--text-muted);">Leave empty to keep the current file. Same link and ID — only the file content is replaced.</small>
+                        <small id="replaceFileHint" style="color:var(--text-muted);">Leave empty to keep the current file. Same link and ID — only the file content is replaced.</small>
                     </div>
                 </div>
 
@@ -532,6 +538,7 @@
     let allDocs = [];
     let categories = [];
     let selectedCategoryId = null; // null = All Documents
+    let fileMissing = false; // true when the edit modal detects the stored file is absent
     let currentPage = 1;
     let limit = 25;
     let sortCol = 'title';
@@ -638,7 +645,7 @@
         // File picker — auto-fill title from filename; update display label
         initFilePicker('docFile', 'docFileLabel', function(f) {
             const t = document.getElementById('docTitle');
-            if (f && !t.value.trim()) t.value = f.name.replace(/\.[^/.]+$/, '');
+            if (f && !t.value.trim()) t.value = f.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
         });
         initFilePicker('replaceFile', 'replaceFileLabel');
 
@@ -886,7 +893,7 @@
                     </div>
                     ${d.description ? `<div style="font-size:0.78em; color:var(--text-muted); margin-top:3px; font-style:italic; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escHtml(d.description)}">${escHtml(d.description)}</div>` : ''}
                 </td>
-                <td>${escHtml(d.category_name || '<span style="color:var(--text-muted)">Uncategorized</span>')}</td>
+                <td>${categoryBadge(d.category_name)}</td>
                 <td>
                     <div style="display:flex; align-items:center; gap:5px;">
                         ${fileTypeBadge(d.original_filename)}
@@ -964,7 +971,7 @@
                 </div>
                 <div class="card-body">
                     ${d.description ? `<div class="card-row"><span class="card-label">Description:</span><span style="font-style:italic; font-size:0.85em; min-width:0; overflow-wrap:break-word; word-break:break-word; text-align:right;">${escHtml(d.description)}</span></div>` : ''}
-                    <div class="card-row"><span class="card-label">Category:</span><span>${escHtml(d.category_name || '—')}</span></div>
+                    <div class="card-row"><span class="card-label">Category:</span>${categoryBadge(d.category_name)}</div>
                     <div class="card-row"><span class="card-label">File:</span><span style="font-size:0.85em; min-width:0; overflow-wrap:break-word; word-break:break-all; text-align:right; display:flex; align-items:center; gap:5px; flex-wrap:wrap; justify-content:flex-end;">${fileTypeBadge(d.original_filename)}<span>${formatBytes(d.file_size)} &middot; ${escHtml(d.original_filename)}</span></span></div>
                     <div class="card-row"><span class="card-label">Uploaded:</span><span style="font-size:0.85em; min-width:0; overflow-wrap:break-word; word-break:break-word; text-align:right;">${formatDate(d.created_at)}${d.uploaded_by ? ' by ' + escHtml(d.uploaded_by) : ''}</span></div>
                     ${d.expires_at ? `<div class="card-row"><span class="card-label">Expires:</span><span style="font-size:0.85em; min-width:0; text-align:right; ${isExpired(d) ? 'color:#dc3545;font-weight:700;' : ''}">${formatDate(d.expires_at)}${isExpired(d) ? ' — EXPIRED' : ''}</span></div>` : ''}
@@ -1121,6 +1128,8 @@
     }
 
     function openUploadModal() {
+        fileMissing = false;
+        document.getElementById('fileMissingWarning').style.display = 'none';
         document.getElementById('docModalTitle').textContent = 'Upload Document';
         document.getElementById('docId').value = '';
         document.getElementById('docForm').reset();
@@ -1140,7 +1149,10 @@
 
     async function openEditModal(id) {
         try {
-            const doc = await fetch(`/api/knowledgebase/documents/${id}`).then(r => r.json());
+            const [doc, statusData] = await Promise.all([
+                fetch(`/api/knowledgebase/documents/${id}`).then(r => r.json()),
+                fetch(`/api/knowledgebase/documents/${id}/file-status`).then(r => r.json()).catch(() => ({ exists: true })),
+            ]);
             document.getElementById('docModalTitle').textContent = 'Edit Document';
             document.getElementById('docId').value = id;
             document.getElementById('docTitle').value = doc.title;
@@ -1157,6 +1169,12 @@
             document.getElementById('rotateSlugGroup').dataset.docId   = id;
             document.getElementById('rotateSlugGroup').dataset.docSlug = doc.slug;
             document.getElementById('uploadProgress').style.display = 'none';
+            // File missing warning
+            fileMissing = !statusData.exists;
+            document.getElementById('fileMissingWarning').style.display = fileMissing ? '' : 'none';
+            document.getElementById('replaceFileHint').textContent = fileMissing
+                ? 'File is missing from storage — upload a replacement to restore access to this document.'
+                : 'Leave empty to keep the current file. Same link and ID — only the file content is replaced.';
             document.getElementById('docModal').style.display = 'block';
             document.getElementById('docTitle').focus();
         } catch { showToast('Could not load document.', 'error'); }
@@ -1176,6 +1194,13 @@
 
         try {
             if (id) {
+                // Block save when the file is missing and no replacement was provided
+                if (fileMissing && !document.getElementById('replaceFile').files[0]) {
+                    showToast('The file is missing from storage. Please select a replacement file before saving.', 'error');
+                    submitBtn.disabled = false;
+                    return;
+                }
+
                 // 1. Update metadata
                 const res = await fetch(`/api/knowledgebase/documents/${id}`, {
                     method: 'PATCH',
@@ -1367,6 +1392,16 @@
         return `<span style="display:inline-block; font-size:0.68em; font-weight:700; letter-spacing:0.02em;
                              background:${m.bg}; color:${m.color}; border-radius:4px;
                              padding:1px 5px; vertical-align:middle; flex-shrink:0;">${m.label}</span>`;
+    }
+    function categoryBadge(name) {
+        if (!name) return `<span style="display:inline-block; font-size:0.82em; font-weight:500;
+                                        background:var(--hover-bg, rgba(0,0,0,0.06)); color:var(--text-muted);
+                                        border:1px solid var(--border-color); border-radius:20px;
+                                        padding:2px 10px; font-style:italic;">Uncategorized</span>`;
+        return `<span style="display:inline-block; font-size:0.82em; font-weight:600;
+                              background:rgba(23,162,184,0.12); color:#0d8a9e;
+                              border:1px solid rgba(23,162,184,0.35); border-radius:20px;
+                              padding:2px 10px;">${escHtml(name)}</span>`;
     }
     function formatBytes(b) {
         if (!b) return '—';

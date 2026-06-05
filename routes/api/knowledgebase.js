@@ -35,6 +35,12 @@ router.get('/file/:slug', async (req, res) => {
         const doc = await db.getKbDocumentBySlug(req.params.slug);
         if (!doc || !doc.is_active) return res.status(404).json({ error: 'Document not found.' });
 
+        const exists = await storage.fileExists(doc.storage_type, doc.storage_path);
+        if (!exists) {
+            logger.warn('[KB] File missing from storage', { slug: req.params.slug, storagePath: doc.storage_path });
+            return res.status(404).json({ error: 'Document not found.' });
+        }
+
         const stream = await storage.getFileStream(doc.storage_type, doc.storage_path);
         res.setHeader('Content-Type', doc.mime_type || 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.original_filename)}"`);
@@ -167,6 +173,17 @@ router.get('/documents/:id', hasRole('admin'), async (req, res) => {
         const doc = await db.getKbDocumentById(req.params.id);
         if (!doc) return res.status(404).json({ error: 'Document not found.' });
         res.json(doc);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/documents/:id/file-status', hasRole('admin'), async (req, res) => {
+    try {
+        const doc = await db.getKbDocumentById(req.params.id);
+        if (!doc) return res.status(404).json({ error: 'Document not found.' });
+        const exists = await storage.fileExists(doc.storage_type, doc.storage_path);
+        res.json({ exists });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
