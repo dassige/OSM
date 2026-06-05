@@ -10,6 +10,7 @@ const axios    = require("axios");
 
 const db = require("../../services/db");
 const config = require("../../config");
+const kbStorage = require("../../services/knowledgebase-storage");
 const aiService = require("../../services/ai-service");
 const whatsappService = require("../../services/whatsapp-service");
 const { hasRole } = require("../../middleware/auth");
@@ -193,12 +194,16 @@ router.get("/system/backup", hasRole("superadmin"), async (req, res) => {
 
       const dump = await db.generateSqlDump();
 
-      // Count KB files for the manifest (local only)
+      // Collect KB file count and (for cloud storage) all doc records
       let kbFileCount = 0;
+      let kbDocs      = [];
       if (kbType === 'local' && kbPath && fs.existsSync(kbPath)) {
         kbFileCount = fs.readdirSync(kbPath).filter(f =>
           fs.statSync(path.join(kbPath, f)).isFile()
         ).length;
+      } else if (kbType === 's3' || kbType === 'gcs') {
+        kbDocs      = await db.getKbDocuments();
+        kbFileCount = kbDocs.length;
       }
 
       const manifest = {
@@ -207,9 +212,6 @@ router.get("/system/backup", hasRole("superadmin"), async (req, res) => {
         backupType:  'full',
         storageType: kbType,
         kbFileCount,
-        note:        kbType !== 'local'
-          ? 'Cloud-stored KB documents are not included — manage them via your cloud provider.'
-          : undefined,
       };
 
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
@@ -224,6 +226,17 @@ router.get("/system/backup", hasRole("superadmin"), async (req, res) => {
 
       if (kbType === 'local' && kbPath && fs.existsSync(kbPath)) {
         archive.directory(kbPath, 'storage/knowledgebase');
+      } else if (kbType === 's3' || kbType === 'gcs') {
+        for (const doc of kbDocs) {
+          try {
+            const stream = await kbStorage.getFileStream(doc.storage_type, doc.storage_path);
+            const chunks = [];
+            for await (const chunk of stream) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+            archive.append(Buffer.concat(chunks), { name: `storage/knowledgebase/${path.basename(doc.storage_path)}` });
+          } catch (e) {
+            logger.warn('[Backup] Skipped KB file from cloud storage', { storagePath: doc.storage_path, error: e.message });
+          }
+        }
       }
 
       await archive.finalize();

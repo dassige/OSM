@@ -5,9 +5,10 @@ const fs       = require('fs');
 const path     = require('path');
 const archiver = require('archiver');
 
-const db      = require('./db');
-const config  = require('../config');
-const logger  = require('./logger');
+const db         = require('./db');
+const config     = require('../config');
+const kbStorage  = require('./knowledgebase-storage');
+const logger     = require('./logger');
 const { version } = require('../package.json');
 
 let currentTask = null;
@@ -135,11 +136,16 @@ async function writeBackup(cfg) {
         const kbType = config.kbStorage?.type || 'local';
         const kbPath = config.kbStorage?.localPath;
         let kbFileCount = 0;
+        let kbDocs      = [];
         if (kbType === 'local' && kbPath && fs.existsSync(kbPath)) {
             kbFileCount = fs.readdirSync(kbPath).filter(f =>
                 fs.statSync(path.join(kbPath, f)).isFile()
             ).length;
+        } else if (kbType === 's3' || kbType === 'gcs') {
+            kbDocs      = await db.getKbDocuments();
+            kbFileCount = kbDocs.length;
         }
+
         const manifest = {
             appVersion: version,
             date: new Date().toISOString(),
@@ -151,6 +157,20 @@ async function writeBackup(cfg) {
         const filename = `opready-full-backup-${stamp}.zip`;
         const filePath = path.join(loc, filename);
 
+        // Buffer cloud-storage files before starting the archive so the async
+        // fetches complete before we hand control to the synchronous archiver callback.
+        const cloudEntries = [];
+        for (const doc of kbDocs) {
+            try {
+                const stream = await kbStorage.getFileStream(doc.storage_type, doc.storage_path);
+                const chunks = [];
+                for await (const chunk of stream) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+                cloudEntries.push({ name: `storage/knowledgebase/${path.basename(doc.storage_path)}`, data: Buffer.concat(chunks) });
+            } catch (e) {
+                logger.warn('[ScheduledBackup] Skipped KB file from cloud storage', { storagePath: doc.storage_path, error: e.message });
+            }
+        }
+
         await new Promise((resolve, reject) => {
             const output  = fs.createWriteStream(filePath);
             const archive = archiver('zip', { zlib: { level: 6 } });
@@ -161,6 +181,9 @@ async function writeBackup(cfg) {
             archive.append(dump, { name: 'database.sql' });
             if (kbType === 'local' && kbPath && fs.existsSync(kbPath)) {
                 archive.directory(kbPath, 'storage/knowledgebase');
+            }
+            for (const entry of cloudEntries) {
+                archive.append(entry.data, { name: entry.name });
             }
             archive.finalize();
         });

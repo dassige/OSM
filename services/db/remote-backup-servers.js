@@ -51,7 +51,7 @@ async function updateRemoteBackupSchedule(id, schedule) {
         `UPDATE remote_backup_servers SET
             schedule_enabled = ?, schedule_type = ?, schedule_time = ?,
             schedule_days = ?, interval_value = ?, retention_type = ?, retention_value = ?,
-            backup_location = ?
+            backup_location = ?, backup_type = ?
          WHERE id = ?`,
         [
             schedule.enabled ? 1 : 0,
@@ -62,6 +62,7 @@ async function updateRemoteBackupSchedule(id, schedule) {
             schedule.retentionType   || 'count',
             schedule.retentionValue  || 10,
             schedule.backupLocation  || '',
+            schedule.backupType      || 'db',
             id,
         ]
     );
