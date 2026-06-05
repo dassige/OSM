@@ -288,9 +288,9 @@ const helpContent = {
         `
     },
 
-    // --- System Tools ---
-    "system-tools": {
-        title: "System Tools",
+    // --- Backup & Restore ---
+    "backup-restore": {
+        title: "Backup &amp; Restore",
         body: `
             <h3>1. Backup</h3>
             <p>Two backup types are available:</p>
@@ -306,8 +306,17 @@ const helpContent = {
                 <li>Upload a <code>.sql</code> (Database Only) to restore the database only.</li>
             </ul>
             <p>The backup must have been created by the same or an earlier version of OpReady. All active sessions are cleared after restore — everyone must log in again.</p>
+        `
+    },
 
-            <h3>3. Knowledge Base — Rotate Document Links</h3>
+    // --- System Tools ---
+    "system-tools": {
+        title: "System Tools",
+        body: `
+            <h3>1. Backup &amp; Restore</h3>
+            <p>Download backups or restore the system from a saved backup file. These operations are available on the dedicated <strong>Backup &amp; Restore</strong> page, accessible from the navigation menu or the link on this page.</p>
+
+            <h3>2. Knowledge Base — Rotate Document Links</h3>
             <p>Assigns a new GUID to every Knowledge Base document, immediately invalidating all previously shared public links. Use this periodically or when a link may have been shared with unintended recipients.</p>
             <ul>
                 <li>All existing <code>/knowledgebase/&lt;guid&gt;</code> URLs stop working instantly.</li>
@@ -315,7 +324,7 @@ const helpContent = {
                 <li>Links embedded in forms and surveys update automatically because they are stored as document IDs, not raw URLs.</li>
             </ul>
 
-        <h3>4. API Key Management</h3>
+            <h3>3. API Key Management</h3>
             <p>Create and manage API keys that allow external systems to authenticate to the REST API without a browser session.</p>
             <ul>
                 <li><strong>Create:</strong> Give the key a name and assign a role — <em>superadmin</em> (full access including user &amp; key management), <em>admin</em> (full read/write), <em>simple</em> (read-only statistics/reports), or <em>guest</em> (read-only public data). The full key is shown <strong>once</strong> — copy it immediately as it cannot be retrieved again.</li>
@@ -324,10 +333,10 @@ const helpContent = {
             </ul>
             <p>External systems authenticate by adding the header <code>X-API-Key: osm_…</code> to any <code>/api/*</code> request. See the interactive API reference at <code>/api/docs</code> for the full endpoint list.</p>
 
-            <h3>5. AI Evaluator Test Lab</h3>
+            <h3>4. AI Evaluator Test Lab</h3>
             <p>An ad-hoc sandbox for testing the AI grading logic against custom question/answer pairs before enabling it for live forms. Settings auto-save to your user profile.</p>
 
-            <h3>6. Install as App (PWA)</h3>
+            <h3>5. Install as App (PWA)</h3>
             <p>OpReady is a <strong>Progressive Web App</strong>. When supported by your browser, an <em>Install OpReady</em> banner will appear at the top of the page. Installing adds OpReady to your device's home screen or taskbar for one-tap access, works offline for recently visited pages, and removes browser chrome for a native app feel.</p>
             <ul>
                 <li>The install banner appears automatically when the browser detects the app is installable. Dismiss it and it won't reappear until the next session.</li>
@@ -583,6 +592,7 @@ const helpContent = {
     else if (path.includes("members")) key = "members";
     else if (path.includes("skills")) key = "skills";
     else if (path.includes("templates")) key = "templates";
+    else if (path.includes("backup-restore")) key = "backup-restore";
     else if (path.includes("system-tools")) key = "system-tools";
     else if (path.includes("event-log")) key = "event-log";
     else if (path.includes("users")) key = "users";
@@ -688,7 +698,7 @@ const helpContent = {
     // --- MOBILE TOP BANNER ---
     // Pages that get the Android-style top navigation banner
     const bannerKeys = [
-        'index', 'members', 'skills', 'templates', 'system-tools',
+        'index', 'members', 'skills', 'templates', 'system-tools', 'backup-restore',
         'event-log', 'users', 'profile', 'third-parties', 'training-planner',
         'forms-manage', 'reports', 'live-forms', 'statistics', 'surveys-manage',
         'live-surveys', 'surveys-tracking', 'surveys-results',
@@ -703,6 +713,7 @@ const helpContent = {
         'skills': 'Skills',
         'templates': 'Templates',
         'system-tools': 'System Tools',
+        'backup-restore': 'Backup & Restore',
         'event-log': 'Event Log',
         'users': 'Users',
         'profile': 'My Profile',

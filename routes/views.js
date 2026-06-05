@@ -39,6 +39,7 @@ router.get("/ui-config", (req, res) => {
 });
 
 router.get("/system-tools.html", requirePageAccess(["superadmin"]));
+router.get("/backup-restore.html", requirePageAccess(["superadmin"]));
 router.get("/users.html", requirePageAccess(adminAndSuper));
 router.get("/event-log.html", requirePageAccess(adminAndSuper));
 router.get("/third-parties.html", requirePageAccess(adminAndSuper));

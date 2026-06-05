@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#17A2B8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OpReady">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <title id="pageTitle">Backup &amp; Restore - OpReady</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/sidebar.css">
+    <script src="/js/sidebar.js"></script>
+    <style>
+        @media (max-width: 768px) {
+            /* Backup download buttons — stack full-width */
+            #backupActions {
+                flex-direction: column;
+            }
+            #backupActions a {
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* Restore button — full width */
+            #restoreBtn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* File picker label — allow wrapping */
+            .file-picker {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="demoBanner" class="demo-banner">
+        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
+                style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+    </div>
+
+    <a href="/" class="back-btn back-dashboard-btn" title="Back to Dashboard">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+    </a>
+
+    <div class="container" style="max-width: 1000px;">
+        <h1 id="pageHeader" class="text-center" style="margin-bottom: 30px;">Backup &amp; Restore</h1>
+
+        <!-- ── Backup ── -->
+        <div class="system-card">
+            <h2>Backup</h2>
+            <p>Choose what to include in the backup:</p>
+            <table style="width:100%; border-collapse:collapse; margin:12px 0; font-size:0.92em;">
+                <tr>
+                    <td style="padding:8px 12px 8px 0; vertical-align:top; font-weight:600; white-space:nowrap;">Full Backup</td>
+                    <td style="padding:8px 0; color:var(--text-muted);">Database + all uploaded Knowledge Base documents (local storage only). Produces a <code>.zip</code> file.</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 12px 8px 0; vertical-align:top; font-weight:600; white-space:nowrap;">Database Only</td>
+                    <td style="padding:8px 0; color:var(--text-muted);">Database snapshot only. Produces a <code>.sql</code> file. Use when KB documents are stored in S3/GCS.</td>
+                </tr>
+            </table>
+            <div id="backupActions" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;">
+                <a href="/api/system/backup?type=full" class="btn-primary" target="_blank"
+                    title="Download a ZIP containing the database and all local Knowledge Base documents"
+                    style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding:12px 24px; font-size:16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Full Backup
+                </a>
+                <a href="/api/system/backup?type=db" class="btn-secondary" target="_blank"
+                    title="Download a SQL snapshot of the database only"
+                    style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding:12px 24px; font-size:16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                    </svg>
+                    Database Only
+                </a>
+            </div>
+        </div>
+
+        <!-- ── Restore ── -->
+        <div class="system-card">
+            <h2>Restore</h2>
+            <p style="color:var(--danger); font-weight:bold;">&#9888;&#65039; Warning: This will overwrite the current data!</p>
+            <p>Upload a previously downloaded backup file:
+               <strong><code>.zip</code></strong> (Full Backup &mdash; restores database and KB documents)
+               or <strong><code>.sql</code></strong> (Database Only &mdash; restores database only).</p>
+            <p style="font-size:0.88em; color:var(--text-muted);">The backup must have been created by the same or an earlier version of OpReady.</p>
+
+            <form id="restoreForm">
+                <div style="margin: 20px 0;">
+                    <input type="file" id="dbFile" name="databaseFile" accept=".sql,.zip" required style="display:none"
+                        title="Select a .zip (full backup) or .sql (database-only backup) file to restore">
+                    <div class="file-picker">
+                        <button type="button" class="btn-primary file-picker-btn"
+                            onclick="document.getElementById('dbFile').click()"
+                            title="Choose a backup file to restore (.zip full backup or .sql database only)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            Choose Backup File
+                        </button>
+                        <span class="file-picker-label" id="dbFileLabel">No file chosen</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-danger" id="restoreBtn"
+                    title="Restore from the selected backup file"
+                    style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span id="restoreBtnLabel">Restore</span>
+                </button>
+            </form>
+
+            <div id="statusMsg" class="status-msg"></div>
+        </div>
+    </div>
+
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
+
+    <script>
+        let isDemo = false;
+
+        fetch('/ui-config')
+            .then(r => r.json())
+            .then(c => {
+                if (c.appBackground) document.body.style.backgroundImage = `url('${c.appBackground}')`;
+                initPageTitle("Backup & Restore", "Backup & Restore");
+                if (c.appMode === 'demo') {
+                    document.getElementById('demoBanner').style.display = 'block';
+                    isDemo = true;
+                }
+            });
+
+        fetch('/api/user-session')
+            .then(r => r.json())
+            .then(user => {
+                if (!user.isAdmin && !user.isEnvUser) {
+                    showToast("Access Denied: Super Admin privileges required.", "error");
+                    window.location.href = "/";
+                }
+            })
+            .catch(() => window.location.href = "/login.html");
+
+        function updateRestoreBtn(input) {
+            const file  = input.files[0];
+            const label = document.getElementById('restoreBtnLabel');
+            if (!file) { label.textContent = 'Restore'; return; }
+            const isZip = file.name.toLowerCase().endsWith('.zip');
+            label.textContent = isZip ? 'Restore Full Backup' : 'Restore Database';
+        }
+
+        function showRestoreSuccess(serverMsg) {
+            const card = document.getElementById('statusMsg').closest('.system-card');
+            let secs = 5;
+            card.innerHTML = `
+                <div style="text-align:center; padding:24px 16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                        fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="margin-bottom:12px;">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <h2 style="margin:0 0 8px; color:var(--text-main);">Restore Complete</h2>
+                    <p style="margin:0 0 6px;">${serverMsg}</p>
+                    <p style="margin:0 0 20px; color:var(--text-muted); font-size:0.9em;">
+                        Your session has been cleared. You must log in again to continue.
+                    </p>
+                    <a href="/login.html" class="btn-primary"
+                        style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding:12px 28px; font-size:1rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                        </svg>
+                        Log In Now
+                    </a>
+                    <p id="redirectCountdown" style="margin-top:14px; font-size:0.82em; color:var(--text-muted);">
+                        Redirecting to login in <strong id="secsLeft">${secs}</strong>s&hellip;
+                    </p>
+                </div>`;
+
+            const tick = setInterval(() => {
+                secs--;
+                const el = document.getElementById('secsLeft');
+                if (el) el.textContent = secs;
+                if (secs <= 0) {
+                    clearInterval(tick);
+                    window.location.href = '/login.html';
+                }
+            }, 1000);
+        }
+
+        document.getElementById('restoreForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
+
+            const fileInput = document.getElementById('dbFile');
+            const file      = fileInput.files[0];
+            const isZip     = file && file.name.toLowerCase().endsWith('.zip');
+            const what      = isZip
+                ? 'the full backup (database <strong>and</strong> Knowledge Base documents)'
+                : 'the database backup';
+
+            if (!await promptAction("Restore Backup",
+                `This will <strong>overwrite all current data</strong> with ${what}. This cannot be undone.<br><br>Type <strong>RESTORE</strong> to confirm.`,
+                "RESTORE")) return;
+
+            const statusBox = document.getElementById('statusMsg');
+            statusBox.style.display = 'none';
+            const spinMsg = isZip ? 'Restoring database and documents...' : 'Restoring database from backup...';
+            if (window.showGlobalSpinner) showGlobalSpinner(spinMsg);
+
+            const formData = new FormData();
+            formData.append('databaseFile', file);
+
+            try {
+                const res    = await fetch('/api/system/restore', { method: 'POST', body: formData });
+                const result = await res.json();
+
+                if (res.ok) {
+                    fileInput.value = '';
+                    updateRestoreBtn(fileInput);
+                    resetFilePicker('dbFile', 'dbFileLabel');
+                    showRestoreSuccess(result.message);
+                } else {
+                    throw new Error(result.error || 'Unknown error occurred');
+                }
+
+            } catch (err) {
+                statusBox.style.display = 'block';
+                statusBox.className = 'status-msg status-error';
+                statusBox.textContent = err.message;
+            } finally {
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
+            }
+        });
+
+        // ── Scroll to top ───────────────────────────────────────────────────────
+        const scrollTopBtn = document.getElementById("scrollTopBtn");
+        window.onscroll = function () {
+            if (scrollTopBtn) {
+                scrollTopBtn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? "flex" : "none";
+            }
+        };
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+    <script src="help.js"></script>
+    <script src="theme.js"></script>
+    <script src="toast.js"></script>
+    <script src="utils.js"></script>
+    <script>
+        initFilePicker('dbFile', 'dbFileLabel', function() {
+            updateRestoreBtn(document.getElementById('dbFile'));
+        });
+    </script>
+    <script src="/js/pwa.js"></script>
+
+</body>
+
+</html>

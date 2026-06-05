@@ -84,6 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
                           <ul id="submenuSystem" class="submenu">
                               <li><a href="users.html" id="navManageUsers">Manage Users</a></li>
                               <li data-role="superadmin"><a href="system-tools.html" id="navSystemTools">System Tools</a></li>
+                              <li data-role="superadmin"><a href="backup-restore.html" id="navBackupRestore">Backup &amp; Restore</a></li>
                           </ul>
                       </li>
                       <li><a href="profile.html">User Preferences</a></li>

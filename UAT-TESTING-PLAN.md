@@ -328,14 +328,12 @@
 **Page:** `system-tools.html`  
 **Access:** Superadmin only
 
-### T17-A — Database Backup & Restore
+### T17-A — Navigation & Backup Link
 
 | ID | Action | Steps | Expected Result |
 |----|--------|-------|----------------|
-| T17-01 | Page load | Navigate to `system-tools.html`. | Backup, Restore, API Keys, and AI Lab sections are all visible. |
-| T17-02 | Create a database backup | Click `[Download Backup]`. | A `.sql` file is downloaded containing a complete SQL dump of the application database. File size is non-zero. |
-| T17-03 | Restore from backup | Create a test member. Download a new backup. Delete the test member. Click `[Restore]` → upload the backup file → confirm. | Application restores to the backed-up state. The test member reappears. Event log records "Database Restored". |
-| T17-04 | Demo mode blocks restore | If testing on a demo-mode instance, click `[Restore]`. | Action is blocked with an error: "Disabled in demo mode." No data is changed. |
+| T17-01 | Page load | Navigate to `system-tools.html`. | Backup & Restore link card, Knowledge Base Rotate Links, API Keys, and AI Lab sections are all visible. |
+| T17-02 | Navigate to Backup & Restore | Click `[Open Backup & Restore]` in the Backup & Restore card. | Browser navigates to `backup-restore.html`. |
 
 ### T17-B — API Key Management
 
@@ -510,6 +508,25 @@
 
 ---
 
+## T23 — Backup & Restore
+
+**Page:** `backup-restore.html`  
+**Access:** Superadmin only
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T23-01 | Page load | Navigate to `backup-restore.html`. | Backup and Restore sections are both visible. Full Backup and Database Only download buttons are present. A file picker and Restore button are in the Restore section. |
+| T23-02 | Download full backup | Click `[Full Backup]`. | A `.zip` file is downloaded. File size is non-zero. The archive contains `database.sql` and `manifest.json`. |
+| T23-03 | Download database-only backup | Click `[Database Only]`. | A `.sql` file is downloaded. File size is non-zero. The file begins with valid SQL statements. |
+| T23-04 | Restore button label updates on file selection | Click `[Choose Backup File]` and select a `.zip` file. | The submit button label changes to "Restore Full Backup". Repeat with a `.sql` file — label changes to "Restore Database". |
+| T23-05 | Restore from SQL backup | Create a test member. Download a Database Only backup. Delete the test member. Click `[Choose Backup File]` → select the `.sql` file → click `[Restore Database]` → type `RESTORE` to confirm. | Application restores to the backed-up state. The test member reappears. Event log records "Database Restored". User is logged out and redirected to the login page after 5 seconds. |
+| T23-06 | Restore from ZIP backup | Create a test member and upload a Knowledge Base document. Download a Full Backup. Delete the test member and the document. Restore from the `.zip` file → confirm with `RESTORE`. | Both the member and KB document are restored. Event log records "Database Restored". User is redirected to login after restore. |
+| T23-07 | Restore requires keyword confirmation | Begin a restore with a selected file. When the confirmation prompt appears, enter a wrong keyword. | The confirm button remains disabled. The restore does not proceed until the exact keyword `RESTORE` is typed. |
+| T23-08 | Demo mode blocks restore | On a demo-mode instance, select a backup file and click `[Restore]`. | Action is blocked with a toast: "Disabled in demo mode." No data is changed. |
+| T23-09 | Back navigation | Click the back arrow (top-left). | User is returned to the Dashboard. |
+
+---
+
 ## Appendix A — Test Data Setup Checklist
 
 Before starting the UAT run, ensure the following data is in place on the UAT instance:
@@ -542,7 +559,7 @@ After completing the full UAT run, verify the Event Log (`event-log.html`) conta
 | `User Mgmt` | User Created, Updated, Deleted, Password Reset |
 | `Security` | Account Unblocked (if T14-08 was run) |
 | `API Keys` | Key Created, Key Toggled, Key Deleted |
-| `System` | Database Restored (if T17-03 was run), Events Pruned |
+| `System` | Database Restored (if T23-05 or T23-06 was run), Events Pruned |
 | `WhatsApp` | Client Connected, Client Disconnected |
 | `Knowledge Base` | Category Created, Category Updated, Category Deleted, Document Uploaded, Document Updated, Document Toggled, Document Deleted |
 

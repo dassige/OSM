@@ -40,7 +40,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Smart Filtering:** A "Show Training Day Only" toggle that hides irrelevant days and expands the calendar to fill the screen.
       * **Training Day Highlight:** Define your brigade's standard training day in `.env` to have it automatically highlighted.
   * **System Maintenance & Auditing:**
-      * **Backup & Restore:** Two backup modes — **Full Backup** (database + all local Knowledge Base documents, as a `.zip`) and **Database Only** (SQL dump, as a `.sql`). Restore accepts both formats and automatically restores KB documents when a full backup is uploaded.
+      * **Backup & Restore:** Dedicated page (`backup-restore.html`, superadmin only). Two backup modes — **Full Backup** (database + all local Knowledge Base documents, as a `.zip`) and **Database Only** (SQL dump, as a `.sql`). Restore accepts both formats and automatically restores KB documents when a full backup is uploaded.
       * **Event Log:** A comprehensive audit trail recording all major actions.
       * **Log Maintenance:** Super Admins can prune old events, purge the entire log, or export it to JSON.
   * **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies.
@@ -665,7 +665,7 @@ Playwright starts the server automatically on port **3099** in `APP_MODE=demo` (
 | Surveys | Surveys Manage, Live Surveys, Surveys Results, Surveys Tracking, Surveys View |
 | Reports & Stats | Reports, Statistics |
 | Training | Training Planner |
-| Admin | Event Log, Templates, Third Parties, Users, System Tools |
+| Admin | Event Log, Templates, Third Parties, Users, System Tools, Backup & Restore |
 | User | Profile |
 
 #### Overriding credentials
@@ -925,7 +925,7 @@ Add a daily job (example: 2:00 AM):
 
 #### Restoring from a backup
 
-To restore, upload the `.sql` file via the UI (**System Tools → Database → Restore**), or call the restore endpoint directly:
+To restore, upload the backup file via the UI (**Backup & Restore** page — accessible from the System Admin menu or System Tools), or call the restore endpoint directly:
 
 ```bash
 curl -X POST \
@@ -1046,7 +1046,8 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── reports.html            # Compliance reports
 │   ├── statistics.html         # Compliance statistics & charts
 │   ├── event-log.html          # Audit log
-│   ├── system-tools.html       # Backup/Restore, API Key Management
+│   ├── system-tools.html       # API Key Management, KB link rotation, AI Test Lab
+│   ├── backup-restore.html     # Backup & Restore (dedicated page, superadmin only)
 │   ├── users.html              # Admin user management
 │   ├── profile.html            # Current-user profile
 │   ├── forms-manage.html       # Form template management

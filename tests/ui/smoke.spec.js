@@ -20,6 +20,7 @@ const AUTH_PAGES = [
   { url: '/third-parties.html',     name: 'Third Parties' },
   { url: '/users.html',             name: 'Users' },
   { url: '/system-tools.html',      name: 'System Tools' },
+  { url: '/backup-restore.html',    name: 'Backup & Restore' },
   { url: '/profile.html',           name: 'Profile' },
   { url: '/knowledgebase.html',     name: 'Knowledge Base' },
 ];
