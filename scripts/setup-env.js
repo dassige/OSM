@@ -43,6 +43,7 @@ const OPTIONS = {
     ENABLE_AI_EVALUATION:   ['false', 'true'],
     ENABLE_WHATSAPP:        ['false', 'true'],
     KB_STORAGE_TYPE:        ['local', 's3', 'gcs'],
+    DEPLOYMENT_TYPE:        ['local', 'vm', 'cloud-run', 'app-runner', 'fargate'],
 };
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */

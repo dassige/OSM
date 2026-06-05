@@ -15,6 +15,8 @@ const { sendNotification } = require("./services/mailer");
 const { findWorkingNZProxy, setActiveProxy, getActiveProxy } = require("./services/proxy-manager");
 const { globalAuthGuard } = require("./middleware/auth");
 const { runValidation } = require("./services/env-validator");
+const scheduledBackupService = require("./services/scheduled-backup-service");
+const remoteBackupService   = require("./services/remote-backup-service");
 const { ROLES } = require("./middleware/auth");
 const { apiLimiter } = require("./middleware/rate-limiter");
 const { csrfProtection } = require("./middleware/csrf");
@@ -36,7 +38,8 @@ const trainingRoutes = require("./routes/api/training");
 const statisticsRoutes = require("./routes/api/statistics");
 const docsRoutes = require("./routes/api/docs");
 const apiKeyRoutes = require("./routes/api/api-keys");
-const kbRoutes = require("./routes/api/knowledgebase");
+const kbRoutes            = require("./routes/api/knowledgebase");
+const remoteBackupRoutes  = require("./routes/api/remote-backup");
 const authRoutes = require("./routes/auth");
 const viewRoutes = require("./routes/views");
 
@@ -166,6 +169,7 @@ app.use("/api/statistics", statisticsRoutes);
 app.use("/api/docs", docsRoutes);
 app.use("/api/api-keys", apiKeyRoutes);
 app.use("/api/knowledgebase", kbRoutes);
+app.use("/api/system/remote-backup", remoteBackupRoutes);
 
 
 
@@ -462,6 +466,9 @@ if (require.main === module) {
       if (config.enableWhatsApp) {
         whatsappService.startClient();
       }
+
+      await scheduledBackupService.init();
+      await remoteBackupService.init();
 
       await initializeProxy();
 

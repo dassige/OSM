@@ -1147,6 +1147,344 @@ const spec = {
             }
         },
         // -------------------------------------------------------------------------
+        // DIRECTORY BROWSER
+        // -------------------------------------------------------------------------
+        '/api/system/browse-directory': {
+            get: {
+                operationId: 'browseDirectory',
+                tags: ['System'],
+                summary: 'List subdirectories at a server path (superadmin)',
+                description: 'Returns the immediate child directories of the given path. Used by the Backup & Restore UI to let an admin navigate the server filesystem when selecting a backup save location.',
+                security: [{ sessionCookie: [] }, { apiKey: [] }],
+                parameters: [
+                    { name: 'path', in: 'query', required: false, schema: { type: 'string', default: '/' }, description: 'Absolute server path to list. Defaults to the filesystem root.' }
+                ],
+                responses: {
+                    200: {
+                        description: 'Directory listing',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        path:    { type: 'string', example: '/backups' },
+                                        parent:  { type: 'string', nullable: true, example: '/' },
+                                        entries: { type: 'array', items: { type: 'string' }, example: ['opready', 'logs'] }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    400: { description: 'Path does not exist or cannot be read' },
+                    401: { description: 'Not authenticated' },
+                    403: { description: 'Insufficient role' }
+                }
+            }
+        },
+        // -------------------------------------------------------------------------
+        // REMOTE BACKUP
+        // -------------------------------------------------------------------------
+        '/api/system/remote-backup': {
+            get: {
+                operationId: 'listRemoteBackupServers',
+                tags: ['System'],
+                summary: 'List remote backup servers (superadmin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                responses: {
+                    200: { description: 'Array of remote server configurations', content: { 'application/json': { schema: { type: 'array', items: { type: 'object' } } } } },
+                    401: { description: 'Not authenticated' },
+                    403: { description: 'Insufficient role' }
+                }
+            },
+            post: {
+                operationId: 'addRemoteBackupServer',
+                tags: ['System'],
+                summary: 'Add a remote backup server (superadmin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['name', 'url', 'apiKey'],
+                                properties: {
+                                    name:           { type: 'string', example: 'Production Server' },
+                                    url:            { type: 'string', example: 'https://remote.example.com' },
+                                    apiKey:         { type: 'string', description: 'API key for the remote OpReady instance' },
+                                    backupType:     { type: 'string', enum: ['db', 'full'], example: 'db' },
+                                    backupLocation: { type: 'string', example: '/backups/remote' }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Server added', content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' } } } } } },
+                    400: { description: 'Validation error' },
+                    403: { description: 'Insufficient role or max server limit reached' }
+                }
+            }
+        },
+        '/api/system/remote-backup/test-inline': {
+            post: {
+                operationId: 'testRemoteBackupInline',
+                tags: ['System'],
+                summary: 'Test connection with inline credentials (superadmin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['url', 'apiKey'],
+                                properties: {
+                                    url:    { type: 'string', example: 'https://remote.example.com' },
+                                    apiKey: { type: 'string' }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Connection test result with remote version and uptime' },
+                    400: { description: 'Connection failed' },
+                    403: { description: 'Insufficient role' }
+                }
+            }
+        },
+        '/api/system/remote-backup/{id}': {
+            put: {
+                operationId: 'updateRemoteBackupServer',
+                tags: ['System'],
+                summary: 'Update a remote backup server (superadmin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: { type: 'object', properties: { name: { type: 'string' }, url: { type: 'string' }, apiKey: { type: 'string', nullable: true, description: 'Omit or null to keep existing key' }, backupType: { type: 'string', enum: ['db', 'full'] }, backupLocation: { type: 'string' } } } } }
+                },
+                responses: {
+                    200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Insufficient role' },
+                    404: { description: 'Server not found' }
+                }
+            },
+            delete: {
+                operationId: 'deleteRemoteBackupServer',
+                tags: ['System'],
+                summary: 'Delete a remote backup server (superadmin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Insufficient role' },
+                    404: { description: 'Server not found' }
+                }
+            }
+        },
+        '/api/system/remote-backup/{id}/test': {
+            post: {
+                operationId: 'testRemoteBackupServer',
+                tags: ['System'],
+                summary: 'Test connection for a saved remote server (superadmin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Connection test result with remote version and uptime' },
+                    400: { description: 'Connection failed' },
+                    403: { description: 'Insufficient role' },
+                    404: { description: 'Server not found' }
+                }
+            }
+        },
+        '/api/system/remote-backup/{id}/run-now': {
+            post: {
+                operationId: 'runRemoteBackupNow',
+                tags: ['System'],
+                summary: 'Pull a backup from a remote server immediately (superadmin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: false,
+                    content: { 'application/json': { schema: { type: 'object', properties: { backupType: { type: 'string', enum: ['db', 'full'] } } } } }
+                },
+                responses: {
+                    200: { description: 'Pull complete — returns filename and file size', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, filename: { type: 'string' }, size: { type: 'integer' } } } } } },
+                    403: { description: 'Insufficient role or demo mode' },
+                    404: { description: 'Server not found' },
+                    500: { description: 'Pull failed' }
+                }
+            }
+        },
+        '/api/system/remote-backup/{id}/schedule': {
+            post: {
+                operationId: 'saveRemoteBackupSchedule',
+                tags: ['System'],
+                summary: 'Save the pull schedule for a remote server (superadmin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object', required: ['enabled'],
+                                properties: {
+                                    enabled:        { type: 'boolean' },
+                                    scheduleType:   { type: 'string', enum: ['daily', 'weekly', 'every_n_hours', 'every_n_days'] },
+                                    scheduleTime:   { type: 'string', example: '03:00' },
+                                    scheduleDays:   { type: 'string', example: '[1]', description: 'JSON array of day numbers (0=Sun … 6=Sat)' },
+                                    intervalValue:  { type: 'integer', example: 6 },
+                                    backupType:     { type: 'string', enum: ['db', 'full'] },
+                                    backupLocation: { type: 'string', example: '/app/backups/remote/prod', description: 'Absolute path on the local server where pulled files are saved. Defaults to /app/backups/remote/<server-name> if blank.' },
+                                    retentionType:  { type: 'string', enum: ['count', 'days', 'none'] },
+                                    retentionValue: { type: 'integer', example: 10 }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Schedule saved', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Insufficient role or demo mode' },
+                    404: { description: 'Server not found' }
+                }
+            }
+        },
+        '/api/system/remote-backup/{id}/history': {
+            get: {
+                operationId: 'getRemoteBackupHistory',
+                tags: ['System'],
+                summary: 'Get pull history for a remote server (superadmin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Array of pull history entries', content: { 'application/json': { schema: { type: 'array', items: { type: 'object' } } } } },
+                    403: { description: 'Insufficient role' },
+                    404: { description: 'Server not found' }
+                }
+            },
+            delete: {
+                operationId: 'clearRemoteBackupHistory',
+                tags: ['System'],
+                summary: 'Clear pull history for a remote server (superadmin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'History cleared', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Insufficient role' },
+                    404: { description: 'Server not found' }
+                }
+            }
+        },
+        // -------------------------------------------------------------------------
+        // SCHEDULED BACKUP
+        // -------------------------------------------------------------------------
+        '/api/system/scheduled-backup': {
+            get: {
+                operationId: 'getScheduledBackupConfig',
+                tags: ['System'],
+                summary: 'Get scheduled backup configuration and history (superadmin)',
+                security: [{ sessionCookie: [] }, { apiKey: [] }],
+                responses: {
+                    200: {
+                        description: 'Scheduled backup configuration and last 20 history entries',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        config: {
+                                            type: 'object',
+                                            properties: {
+                                                enabled:         { type: 'boolean' },
+                                                backup_type:     { type: 'string', enum: ['db', 'full'] },
+                                                schedule_type:   { type: 'string', enum: ['daily', 'weekly', 'every_n_hours', 'every_n_days'] },
+                                                schedule_time:   { type: 'string', example: '02:00' },
+                                                schedule_days:   { type: 'string', example: '[1]' },
+                                                interval_value:  { type: 'integer' },
+                                                backup_location: { type: 'string' },
+                                                retention_type:  { type: 'string', enum: ['count', 'days', 'none'] },
+                                                retention_value: { type: 'integer' },
+                                                last_run_at:     { type: 'string', format: 'date-time', nullable: true },
+                                                next_run_at:     { type: 'string', format: 'date-time', nullable: true }
+                                            }
+                                        },
+                                        history: { type: 'array', items: { type: 'object' } }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    401: { description: 'Not authenticated' },
+                    403: { description: 'Insufficient role' }
+                }
+            },
+            post: {
+                operationId: 'saveScheduledBackupConfig',
+                tags: ['System'],
+                summary: 'Save scheduled backup configuration (superadmin)',
+                description: 'Saves configuration and immediately restarts the scheduler. Disabled in demo mode and on ephemeral deployments (Cloud Run, App Runner, Fargate).',
+                security: [{ sessionCookie: [] }, { apiKey: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['enabled'],
+                                properties: {
+                                    enabled:        { type: 'boolean' },
+                                    scheduleType:   { type: 'string', enum: ['daily', 'weekly', 'every_n_hours', 'every_n_days'] },
+                                    scheduleTime:   { type: 'string', example: '02:00' },
+                                    scheduleDays:   { type: 'string', example: '[1]', description: 'JSON array of day numbers (0=Sun … 6=Sat)' },
+                                    intervalValue:  { type: 'integer', example: 6 },
+                                    backupType:     { type: 'string', enum: ['db', 'full'] },
+                                    backupLocation: { type: 'string', example: '/backups/opready' },
+                                    retentionType:  { type: 'string', enum: ['count', 'days', 'none'] },
+                                    retentionValue: { type: 'integer', example: 10 }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Configuration saved', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Demo mode or ephemeral deployment' },
+                    500: { description: 'Save failed' }
+                }
+            }
+        },
+        '/api/system/scheduled-backup/run-now': {
+            post: {
+                operationId: 'runScheduledBackupNow',
+                tags: ['System'],
+                summary: 'Trigger scheduled backup immediately (superadmin)',
+                description: 'Runs the backup synchronously using the saved configuration. Returns after the backup and retention cleanup complete.',
+                security: [{ sessionCookie: [] }, { apiKey: [] }],
+                responses: {
+                    200: { description: 'Backup completed', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Demo mode or ephemeral deployment' },
+                    500: { description: 'Backup failed' }
+                }
+            }
+        },
+        '/api/system/scheduled-backup/history': {
+            delete: {
+                operationId: 'clearScheduledBackupHistory',
+                tags: ['System'],
+                summary: 'Clear scheduled backup history (superadmin)',
+                security: [{ sessionCookie: [] }, { apiKey: [] }],
+                responses: {
+                    200: { description: 'History cleared', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Demo mode or insufficient role' },
+                    500: { description: 'Server error' }
+                }
+            }
+        },
+        // -------------------------------------------------------------------------
         // API KEYS
         // -------------------------------------------------------------------------
         '/api/api-keys': {

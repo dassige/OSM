@@ -1987,6 +1987,161 @@
             },
             "description": "Superadmin only — uploads a `.sql` dump file and replaces the entire database. Disabled in demo mode. All active sessions are invalidated after restore. Use with extreme caution — this is irreversible."
           }
+        },
+        {
+          "name": "Browse Server Directory",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/system/browse-directory?path=/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "system", "browse-directory"],
+              "query": [{ "key": "path", "value": "/" }]
+            },
+            "description": "Superadmin only — lists immediate subdirectories of the given server path. Used by the Backup & Restore UI directory navigator."
+          }
+        },
+        {
+          "name": "List Remote Backup Servers",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/system/remote-backup", "host": ["{{baseUrl}}"], "path": ["api", "system", "remote-backup"] },
+            "description": "Superadmin only — returns all configured remote backup servers."
+          }
+        },
+        {
+          "name": "Add Remote Backup Server",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/system/remote-backup", "host": ["{{baseUrl}}"], "path": ["api", "system", "remote-backup"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Production Server\",\n  \"url\": \"https://remote.example.com\",\n  \"apiKey\": \"osm_your_api_key\",\n  \"backupType\": \"db\",\n  \"backupLocation\": \"/backups/remote\"\n}"
+            },
+            "description": "Superadmin only — adds a new remote OpReady server (max 5)."
+          }
+        },
+        {
+          "name": "Test Connection Inline",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/system/remote-backup/test-inline", "host": ["{{baseUrl}}"], "path": ["api", "system", "remote-backup", "test-inline"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://remote.example.com\",\n  \"apiKey\": \"osm_your_api_key\"\n}"
+            },
+            "description": "Superadmin only — tests a connection before saving a server."
+          }
+        },
+        {
+          "name": "Update Remote Backup Server",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/system/remote-backup/:id", "host": ["{{baseUrl}}"], "path": ["api", "system", "remote-backup", ":id"], "variable": [{ "key": "id", "value": "1" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Server Name\",\n  \"url\": \"https://remote.example.com\",\n  \"backupType\": \"full\",\n  \"backupLocation\": \"/backups/remote\"\n}"
+            },
+            "description": "Superadmin only — updates server details. Omit apiKey to keep the stored key unchanged."
+          }
+        },
+        {
+          "name": "Test Saved Server Connection",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/system/remote-backup/:id/test", "host": ["{{baseUrl}}"], "path": ["api", "system", "remote-backup", ":id", "test"], "variable": [{ "key": "id", "value": "1" }] },
+            "description": "Superadmin only — tests the saved credentials for a remote server."
+          }
+        },
+        {
+          "name": "Pull Backup Now",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/system/remote-backup/:id/run-now", "host": ["{{baseUrl}}"], "path": ["api", "system", "remote-backup", ":id", "run-now"], "variable": [{ "key": "id", "value": "1" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"backupType\": \"db\"\n}"
+            },
+            "description": "Superadmin only — immediately pulls a backup from the remote server."
+          }
+        },
+        {
+          "name": "Save Remote Schedule",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/system/remote-backup/:id/schedule", "host": ["{{baseUrl}}"], "path": ["api", "system", "remote-backup", ":id", "schedule"], "variable": [{ "key": "id", "value": "1" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"scheduleType\": \"daily\",\n  \"scheduleTime\": \"03:00\",\n  \"scheduleDays\": \"[1]\",\n  \"intervalValue\": 6,\n  \"backupType\": \"db\",\n  \"backupLocation\": \"/app/backups/remote/prod\",\n  \"retentionType\": \"count\",\n  \"retentionValue\": 10\n}"
+            },
+            "description": "Superadmin only — saves the automated pull schedule for a remote server. backupLocation sets the local path where pulled files are saved (defaults to /app/backups/remote/<server-name> if blank)."
+          }
+        },
+        {
+          "name": "Get Pull History",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/system/remote-backup/:id/history", "host": ["{{baseUrl}}"], "path": ["api", "system", "remote-backup", ":id", "history"], "variable": [{ "key": "id", "value": "1" }] },
+            "description": "Superadmin only — returns pull history entries for a remote server."
+          }
+        },
+        {
+          "name": "Clear Pull History",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/system/remote-backup/:id/history", "host": ["{{baseUrl}}"], "path": ["api", "system", "remote-backup", ":id", "history"], "variable": [{ "key": "id", "value": "1" }] },
+            "description": "Superadmin only — clears all pull history entries for a remote server."
+          }
+        },
+        {
+          "name": "Delete Remote Backup Server",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/system/remote-backup/:id", "host": ["{{baseUrl}}"], "path": ["api", "system", "remote-backup", ":id"], "variable": [{ "key": "id", "value": "1" }] },
+            "description": "Superadmin only — deletes a remote server and its history. Pulled backup files are not deleted."
+          }
+        },
+        {
+          "name": "Get Scheduled Backup Config",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/system/scheduled-backup", "host": ["{{baseUrl}}"], "path": ["api", "system", "scheduled-backup"] },
+            "description": "Superadmin only — returns the current scheduled backup configuration and the last 20 run history entries."
+          }
+        },
+        {
+          "name": "Save Scheduled Backup Config",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/system/scheduled-backup", "host": ["{{baseUrl}}"], "path": ["api", "system", "scheduled-backup"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"scheduleType\": \"daily\",\n  \"scheduleTime\": \"02:00\",\n  \"scheduleDays\": \"[1]\",\n  \"intervalValue\": 6,\n  \"backupType\": \"db\",\n  \"backupLocation\": \"/backups/opready\",\n  \"retentionType\": \"count\",\n  \"retentionValue\": 10\n}"
+            },
+            "description": "Superadmin only — saves scheduled backup configuration and restarts the scheduler. Disabled in demo mode and on ephemeral deployments."
+          }
+        },
+        {
+          "name": "Run Scheduled Backup Now",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/system/scheduled-backup/run-now", "host": ["{{baseUrl}}"], "path": ["api", "system", "scheduled-backup", "run-now"] },
+            "description": "Superadmin only — triggers the scheduled backup immediately. Disabled in demo mode."
+          }
+        },
+        {
+          "name": "Clear Scheduled Backup History",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/system/scheduled-backup/history", "host": ["{{baseUrl}}"], "path": ["api", "system", "scheduled-backup", "history"] },
+            "description": "Superadmin only — deletes all scheduled backup history log entries."
+          }
         }
       ]
     },

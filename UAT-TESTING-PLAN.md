@@ -525,6 +525,53 @@
 | T23-08 | Demo mode blocks restore | On a demo-mode instance, select a backup file and click `[Restore]`. | Action is blocked with a toast: "Disabled in demo mode." No data is changed. |
 | T23-09 | Back navigation | Click the back arrow (top-left). | User is returned to the Dashboard. |
 
+### T23-C — Scheduled Backup
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T23-10 | Scheduled Backup section visible | Scroll to the Scheduled Backup section on `backup-restore.html`. | Section is visible with an Enable toggle, schedule options, backup type, save location, retention policy, and action buttons. |
+| T23-11 | Ephemeral deployment warning | On a server with `DEPLOYMENT_TYPE=cloud-run`, open `backup-restore.html`. | A warning banner explains scheduled backups are unavailable. All form fields are disabled. |
+| T23-12 | Save daily schedule | Toggle [Enable scheduled backups] to on. Select Frequency = "Once a day". Set time to 03:00. Select Database only. Enter a valid local path. Set retention to "Keep last 5 backups". Click [Save Schedule]. | Toast confirms "Schedule saved and activated." Status row shows the next scheduled run at the configured time. Event log records "Scheduled Backup Configured". |
+| T23-13 | Save weekly schedule | Set Frequency = "Selected days of the week". Select Mon and Fri. Set time to 01:00. Click [Save Schedule]. | Config is saved. Next run date falls on the next Monday or Friday at 01:00. |
+| T23-14 | Save every-N-hours schedule | Set Frequency = "Every N hours". Select 4 hours. Click [Save Schedule]. | Config saved. Next run is computed as the next 4-hour boundary from midnight. |
+| T23-15 | Save every-N-days schedule | Set Frequency = "Every N days". Enter 2 days, time 22:00. Click [Save Schedule]. | Config saved. Note about month-boundary cron limitation is visible below the field. |
+| T23-16 | Weekly — day selection required | Select Frequency = "Selected days of the week" but check no days. Click [Save Schedule]. | Toast warns "Select at least one day for weekly schedule." Nothing is saved. |
+| T23-17 | Location required when enabled | Toggle enable to on but leave Save Location blank. Click [Save Schedule]. | Toast warns "Please enter a save location." Nothing is saved. |
+| T23-18 | Run Now | Save a valid schedule. Click [Run Now] and confirm. | Toast confirms "Backup completed successfully." A new entry appears in the Recent Backup History table with status "Success" and a non-zero file size. |
+| T23-19 | Run Now creates the file | After [Run Now], navigate to the configured save location on the server. | A backup file exists with the expected name pattern and is non-empty. |
+| T23-20 | Retention cleanup | Run Now several times until history has more entries than the configured retention limit. | The oldest files in the save location are automatically deleted. The Cleaned column in the history row shows the count of deleted files. |
+| T23-21 | Clear History | Click [Clear History] and confirm. | All entries disappear from the history table and mobile cards. Event log records "Scheduled Backup History Cleared". |
+| T23-22 | Disable schedule | Toggle [Enable scheduled backups] to off. Click [Save Schedule]. | Toast confirms "Schedule disabled." Event log records "Scheduled Backup Disabled". No further automatic backups run. |
+| T23-23 | Demo mode blocks Save and Run | On a demo-mode instance, try to save schedule or run now. | Both actions return a toast: "Disabled in demo mode." No changes made. |
+| T23-24 | History — mobile cards | View the page on a screen ≤ 768 px with existing history entries. | History renders as cards (not a table). Each card shows Date/Time, Type, Filename, Size, Cleaned, and Status. |
+
+---
+
+## T24 — Remote Server Backup
+
+**Page:** `backup-restore.html` → Remote Servers tab
+**Access:** Superadmin only
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T24-01 | Remote Servers tab loads | Navigate to `backup-restore.html`. Click the [Remote Servers] tab. | Tab switches. Empty state message and [Add Server] button are visible. |
+| T24-02 | Add server — validation | Click [Add Server]. Leave Name blank. Click [Save]. | Toast: "Name and URL are required." Nothing saved. |
+| T24-03 | Add server — valid | Click [Add Server]. Fill in Name, URL, API Key, select DB type, enter save path. Click [Save]. | Server appears in the list. Event log records "Remote Backup Server Added". |
+| T24-04 | Test connection — success | Click the edit icon on a server. Click [Test Connection]. | A green confirmation shows the remote OpReady version and uptime. |
+| T24-05 | Test connection — failure | Click [Test Connection] with an incorrect URL or API key. | A red error message is shown. Nothing is saved. |
+| T24-06 | Edit server — replace API key | Click edit icon. Click [Replace key]. Enter a new API key. Click [Save]. | Server is updated. API key is not visible after saving. |
+| T24-07 | Edit server — no API key change | Click edit icon. Change Name only. Click [Save]. | Name is updated. Stored API key is unchanged. |
+| T24-08 | Pull backup manually | Click the Play (▶) icon on a server. Select backup type. Click [Pull Backup]. | A success message shows the saved filename and file size. Entry appears in history. |
+| T24-09 | Pull backup — remote unreachable | Click [Pull Backup] when the remote server is offline. | Error message shown. History entry records the error. |
+| T24-10 | Configure scheduled pull | Click the Clock icon. Enable schedule. Set Frequency = Daily at 03:00. Click [Save Schedule]. | Schedule saved. Server row shows schedule label. Event log records "Remote Backup Schedule Set". |
+| T24-11 | Disable scheduled pull | Open schedule modal. Toggle enable to off. Click [Save Schedule]. | Schedule disabled. Server row shows no schedule. Event log records "Remote Backup Schedule Disabled". |
+| T24-12 | View pull history | Click the History icon on a server. | History modal opens showing a table of pull runs with date, type, triggered by, filename, size, and status. |
+| T24-13 | Clear pull history | In the history modal, click [Clear]. Confirm. | History table clears. Event log records "Remote Backup History Cleared". |
+| T24-14 | Delete server | Click the trash icon on a server. Confirm. | Server is removed from the list. Event log records "Remote Backup Server Deleted". History is deleted. No pulled backup files are deleted. |
+| T24-15 | Max 5 servers limit | Add 5 servers. Try to click [Add Server] again. | [Add Server] button is disabled with tooltip explaining the 5-server limit. |
+| T24-16 | Mobile cards | Open the Remote Servers tab on a mobile screen (≤ 768 px). | Servers render as cards with name, URL, type, schedule, last run, and all action buttons visible. |
+| T24-17 | Demo mode guard | On a demo-mode instance, try Add, Edit, Pull, and Schedule actions. | All mutating actions show "Disabled in demo mode." toast. |
+
 ---
 
 ## Appendix A — Test Data Setup Checklist

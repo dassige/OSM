@@ -10,6 +10,8 @@ const backup = require("./db/backup");
 const surveys = require("./db/surveys");
 const apiKeys = require("./db/api-keys");
 const knowledgebase = require("./db/knowledgebase");
+const scheduledBackup = require("./db/scheduled-backup");
+const remoteBackupServers = require("./db/remote-backup-servers");
 
 module.exports = {
   initDB,
@@ -25,4 +27,6 @@ module.exports = {
   ...surveys,
   ...apiKeys,
   ...knowledgebase,
+  ...scheduledBackup,
+  ...remoteBackupServers,
 };

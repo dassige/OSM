@@ -1,8 +1,8 @@
 {
   "name": "opready",
-  "version": "3.5.6",
+  "version": "3.6.0",
   "description": "OpReady — Operational Readiness Manager",
-  "versionDate": "2026/06/05 13:00",
+  "versionDate": "2026/06/05 16:29",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -44,6 +44,7 @@
     "https-proxy-agent": "^5.0.1",
     "joi": "18.0.2",
     "multer": "^1.4.5-lts.1",
+    "node-cron": "^4.2.1",
     "nodemailer": "^6.9.4",
     "path": "^0.12.7",
     "puppeteer-core": "^20.8.1",

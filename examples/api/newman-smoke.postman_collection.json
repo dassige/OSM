@@ -674,6 +674,90 @@
               }
             }
           ]
+        },
+        {
+          "name": "Browse Server Directory",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/system/browse-directory?path=/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "system", "browse-directory"],
+              "query": [{ "key": "path", "value": "/" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Browse Server Directory | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Browse Server Directory | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('Browse Server Directory | Has path and entries', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('path');",
+                  "  pm.expect(body).to.have.property('entries').that.is.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Remote Backup Servers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/system/remote-backup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "system", "remote-backup"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List Remote Backup Servers | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('List Remote Backup Servers | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('List Remote Backup Servers | Valid JSON array', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Scheduled Backup Config",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/system/scheduled-backup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "system", "scheduled-backup"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Get Scheduled Backup Config | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Get Scheduled Backup Config | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('Get Scheduled Backup Config | Valid JSON with config key', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('config');",
+                  "  pm.expect(body).to.have.property('history');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

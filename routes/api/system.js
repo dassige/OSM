@@ -321,10 +321,104 @@ router.post("/system/restore", hasRole("superadmin"), upload.single("databaseFil
   }
 });
 
+// ── Directory Browser (for backup location picker) ───────────────────────────
+router.get("/system/browse-directory", hasRole("superadmin"), (req, res) => {
+  const requested = req.query.path || path.sep;
+  const resolved  = path.resolve(requested);
+  try {
+    const entries = fs.readdirSync(resolved, { withFileTypes: true });
+    const dirs = entries
+      .filter(e => { try { return e.isDirectory(); } catch { return false; } })
+      .map(e => e.name)
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+    const parent = path.dirname(resolved);
+    res.json({
+      path:    resolved,
+      parent:  resolved !== parent ? parent : null,
+      entries: dirs,
+    });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
 router.get("/demo-credentials", (req, res) => {
   if (config.appMode !== "demo")
     return res.status(403).json({ error: "Not in demo mode" });
   res.json({ username: config.auth.username, password: config.auth.password });
+});
+
+// ── Scheduled Backup ──────────────────────────────────────────────────────────
+
+router.get("/system/scheduled-backup", hasRole("superadmin"), async (req, res) => {
+  try {
+    const schedConfig = await db.getScheduledBackupConfig();
+    const history     = await db.getScheduledBackupHistory(20);
+    res.json({ config: schedConfig, history });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post("/system/scheduled-backup", hasRole("superadmin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
+  if (!config.scheduledBackupSupported) return res.status(403).json({ error: 'Scheduled backups are not supported on this deployment type.' });
+  try {
+    await db.saveScheduledBackupConfig(req.body);
+    const scheduledBackupService = require('../../services/scheduled-backup-service');
+    await scheduledBackupService.restart();
+    if (req.body.enabled) {
+      const nextRunAt = scheduledBackupService.computeNextRun({
+        schedule_type:  req.body.scheduleType,
+        schedule_time:  req.body.scheduleTime,
+        schedule_days:  req.body.scheduleDays,
+        interval_value: req.body.intervalValue,
+      });
+      await db.updateScheduledBackupNextRun(nextRunAt);
+    }
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, 'System',
+      req.body.enabled ? 'Scheduled Backup Configured' : 'Scheduled Backup Disabled',
+      {
+        enabled:        !!req.body.enabled,
+        scheduleType:   req.body.scheduleType,
+        backupType:     req.body.backupType,
+        retentionType:  req.body.retentionType,
+        retentionValue: req.body.retentionValue,
+      }
+    );
+    res.json({ success: true });
+  } catch (e) {
+    logger.error('[ScheduledBackup] Save config failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post("/system/scheduled-backup/run-now", hasRole("superadmin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
+  if (!config.scheduledBackupSupported) return res.status(403).json({ error: 'Not supported on this deployment type.' });
+  try {
+    const scheduledBackupService = require('../../services/scheduled-backup-service');
+    await scheduledBackupService.executeScheduledBackup();
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, 'System', 'Scheduled Backup Run Manually', {});
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.delete("/system/scheduled-backup/history", hasRole("superadmin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
+  try {
+    await db.clearScheduledBackupHistory();
+    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    await db.logEvent(actor, 'System', 'Scheduled Backup History Cleared', {});
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 module.exports = router;

@@ -35,6 +35,8 @@ router.get("/ui-config", (req, res) => {
     aiEnabled: config.aiConfig.enabled,
     kbDefaultExpiryDays: config.kbDefaultExpiryDays || 365,
     ranks: RANKS,
+    scheduledBackupSupported: config.scheduledBackupSupported,
+    deploymentType: config.deploymentType,
   });
 });
 

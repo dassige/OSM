@@ -306,6 +306,27 @@ const helpContent = {
                 <li>Upload a <code>.sql</code> (Database Only) to restore the database only.</li>
             </ul>
             <p>The backup must have been created by the same or an earlier version of OpReady. All active sessions are cleared after restore — everyone must log in again.</p>
+
+            <h3>3. Scheduled Backup</h3>
+            <p>Automatically create and save backup files on a repeating schedule. Set the frequency, backup type, save location, and retention policy.</p>
+            <ul>
+                <li><strong>Frequency options:</strong> Once a day, selected days of the week, every N hours, or every N days.</li>
+                <li><strong>Save location:</strong> An absolute path on the server (e.g. <code>/app/backups</code>). Mounted network shares work if accessible from the Node.js process. The directory is created automatically.</li>
+                <li><strong>Retention:</strong> Keep the last N files, delete files older than N days, or keep everything.</li>
+                <li><strong>Run Now:</strong> Trigger a backup immediately using the saved configuration without waiting for the next scheduled time.</li>
+            </ul>
+            <p><strong style="color:var(--warning, #e07b00);">&#9888; Ephemeral deployments:</strong> Scheduled backups require a persistently running server. They are automatically disabled on Cloud Run, App Runner, and Fargate. Use an external scheduler (Cloud Scheduler, EventBridge, or a cron job on a persistent machine) calling <code>GET /api/system/backup</code> with an API key instead.</p>
+
+            <h3>4. Remote Servers</h3>
+            <p>Pull and schedule backups from other OpReady server instances — useful for centralised backup storage.</p>
+            <ul>
+                <li><strong>Add server:</strong> Provide a name, the remote base URL, and a superadmin API key from that instance. The API key is stored securely and never re-displayed. Use <strong>Test Connection</strong> to verify reachability before saving — note that ephemeral servers (Cloud Run, etc.) may take up to 90 seconds to respond on a cold start.</li>
+                <li><strong>Download Backup (manual):</strong> Click the Play (▶) button to immediately fetch a backup from the remote server. The file is delivered directly to your browser via the standard Save As dialog — nothing is written to the server filesystem.</li>
+                <li><strong>Scheduled pull:</strong> Click the Clock (🕐) button to configure an automatic pull schedule. The schedule modal lets you set frequency, backup type, <strong>save location</strong> (the local path where pulled files are stored), and retention policy. A <strong>Run Now</strong> button inside the modal lets you test the configuration immediately — the file is saved to the configured location, exactly as the scheduler would do it.</li>
+                <li><strong>Save location:</strong> Configured per-server in the Schedule modal (not in the server connection settings). Defaults to <code>/app/backups/remote/&lt;server-name&gt;/</code> if left blank. Mount <code>/app/backups</code> as a Docker volume so pulled files survive container recreation.</li>
+                <li><strong>History:</strong> Click the List icon to view the last 20 pull runs — date, type, triggered by (manual or scheduler), filename, size, and status.</li>
+                <li>Maximum of <strong>5</strong> remote servers. No restore operations — pull backups are for disaster-recovery storage only.</li>
+            </ul>
         `
     },
 

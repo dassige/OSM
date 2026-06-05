@@ -138,6 +138,13 @@ const aiConfig = {
   ollamaUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
 };
 
+// Deployment platform — determines whether the scheduled backup feature is available.
+// Ephemeral platforms (Cloud Run, App Runner, Fargate) may be scaled to zero and
+// therefore cannot guarantee a cron job fires on schedule.
+const deploymentType = process.env.DEPLOYMENT_TYPE || 'local';
+const ephemeralDeployments = ['cloud-run', 'app-runner', 'fargate'];
+const scheduledBackupSupported = !ephemeralDeployments.includes(deploymentType);
+
 module.exports = {
   appMode,
   auth,
@@ -163,4 +170,6 @@ module.exports = {
   rateLimits,
   cookieSecure,
   corsOrigin,
+  deploymentType,
+  scheduledBackupSupported,
 };

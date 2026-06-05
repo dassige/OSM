@@ -40,7 +40,9 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Smart Filtering:** A "Show Training Day Only" toggle that hides irrelevant days and expands the calendar to fill the screen.
       * **Training Day Highlight:** Define your brigade's standard training day in `.env` to have it automatically highlighted.
   * **System Maintenance & Auditing:**
-      * **Backup & Restore:** Dedicated page (`backup-restore.html`, superadmin only). Two backup modes — **Full Backup** (database + all local Knowledge Base documents, as a `.zip`) and **Database Only** (SQL dump, as a `.sql`). Restore accepts both formats and automatically restores KB documents when a full backup is uploaded.
+      * **Backup & Restore:** Dedicated page (`backup-restore.html`, superadmin only). Two tabs:
+          * **This Server** — manual backup (Full `.zip` or Database-only `.sql`), restore from file, and a **Scheduled Backup** section (daily, weekly, every N hours, or every N days) that saves files to a configured server-side path with configurable retention. Requires a persistent deployment (`DEPLOYMENT_TYPE` — disabled automatically on Cloud Run, App Runner, and Fargate).
+          * **Remote Servers** — connect up to 5 other OpReady instances via URL + API key. **Manual pull** downloads the backup directly to the browser (Save As dialog — nothing written to disk on this server). **Scheduled pull** saves files to a configurable local path (set per-server in the Schedule modal, defaults to `/app/backups/remote/<server-name>/`; mount `/app/backups` as a Docker volume). A **Run Now** button in the schedule modal lets you immediately test the configuration. Connection test allows up to 90 s for ephemeral cold-start; pull transfers allow up to 15 min. History per server is logged with status, filename, and file size.
       * **Event Log:** A comprehensive audit trail recording all major actions.
       * **Log Maintenance:** Super Admins can prune old events, purge the entire log, or export it to JSON.
   * **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies.
@@ -842,7 +844,31 @@ Icons are written to `public/icons/`. The manifest references them at `/icons/ic
   * [**WhatsApp Feature Guide**](whatsapp-feature.md): Detailed instructions on connecting your WhatsApp account, managing sessions, and sending mobile notifications.
   * [**Cloudflare Tunnel Guide**](cloudflared-tunnel.md): Step-by-step instructions for exposing OpReady over HTTPS using a Cloudflare Tunnel — covers both bare-metal (systemd service) and Dockerized (docker-compose sidecar) deployments. Required for PWA installation on Android and other non-localhost devices.
 
-### Scheduled External Backup
+### Built-in Scheduled Backup
+
+For **persistent deployments** (local machine, EC2, GCE, or any always-on VM), use the built-in scheduler on the **Backup & Restore** page. Configure the frequency (daily, weekly, every N hours, or every N days), save location, and retention policy directly in the UI. Set `DEPLOYMENT_TYPE=local` or `DEPLOYMENT_TYPE=vm` in `.env` to enable the feature. The scheduler persists its configuration in the database and restarts automatically when the server starts.
+
+#### Docker — mount the backup location as a volume
+
+When running inside Docker, the save location you configure is a path **inside the container**. If the container is ever recreated or the image rebuilt, that directory — and all backup files in it — will be lost. Always mount the backup directory as a named or host-path volume so files survive container recreation.
+
+The `docker-compose.yml` already includes this volume out of the box:
+
+```yaml
+- ${BACKUP_HOST_PATH:-./backups}:/app/backups
+```
+
+The host directory defaults to `./backups` (next to `docker-compose.yml`, already gitignored). Set the backup save location in the **Backup & Restore** UI to the **container-side path**: `/app/backups`.
+
+To redirect backup files to a different host path — for example an external disk or NAS — set `BACKUP_HOST_PATH` in `.env`:
+
+```env
+BACKUP_HOST_PATH=/mnt/nas/opready-backups
+```
+
+> **Tip:** `/app/backups` is the recommended container-side path — it does not overlap with `/app/storage/knowledgebase` (used for Knowledge Base documents) or any other existing mount.
+
+### Scheduled External Backup (for ephemeral / cloud deployments)
 
 The backup endpoint accepts API key authentication (`X-API-Key` header) so it can be called from any external scheduler — no browser session required. Two modes are available:
 

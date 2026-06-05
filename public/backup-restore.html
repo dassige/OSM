@@ -16,6 +16,175 @@
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
     <style>
+        /* ── Scheduled Backup ── */
+        #sbFormFields { margin-top: 20px; }
+        .sb-opts { margin-bottom: 16px; }
+        .sb-day-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+        .sb-day-chip { display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+            background: var(--bg-hover); border: 1px solid var(--border-color);
+            border-radius: 20px; padding: 4px 12px; font-size: 0.88em;
+            transition: background 0.15s, border-color 0.15s; }
+        .sb-day-chip input { display: none; }
+        .sb-day-chip.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .sb-status-row { display: flex; gap: 24px; flex-wrap: wrap; margin: 16px 0;
+            padding: 12px 16px; background: var(--bg-hover); border-radius: 8px;
+            border: 1px solid var(--border-color); font-size: 0.9em; }
+        .sb-status-item strong { display: block; font-size: 0.78em; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 3px; }
+
+        /* History — desktop table hidden on mobile; card list visible */
+        #sbHistoryTableWrap { overflow-x: auto; }
+        #sbHistoryCardList  { display: none; }
+
+        /* ── Remote Servers — action icon buttons ── */
+        .rb-action-btn {
+            width: 34px; height: 34px; border-radius: 50%; padding: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; border: 1px solid transparent; flex-shrink: 0;
+            transition: background 0.13s, border-color 0.13s, color 0.13s;
+        }
+        .rb-action-btn:hover { filter: brightness(0.88); }
+        .rb-action-btn svg  { pointer-events: none; }
+
+        /* Mobile: swap table for cards */
+        #rbTableWrap  { overflow-x: auto; }
+        #rbCardList   { display: none; }
+
+        @media (max-width: 768px) {
+            /* Server list: swap table for cards */
+            #rbTableWrap { display: none !important; }
+            #rbCardList  { display: block !important; }
+
+            /* Add Server button: full-width */
+            #rbAddBtn { width: 100%; justify-content: center; }
+
+            /* Action icon buttons: slightly tighter for 5 to sit comfortably */
+            .rb-action-btn { width: 32px; height: 32px; }
+
+            /* Server modal: stack footer buttons vertically */
+            #rbServerModal .modal-content > div:last-child,
+            #rbRunNowModal .modal-content > div:last-child {
+                flex-direction: column-reverse;
+            }
+            #rbServerModal .modal-content > div:last-child button,
+            #rbRunNowModal .modal-content > div:last-child button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* Schedule modal: full-width selects */
+            #rbSchedType,
+            #rbSchedBackupType { width: 100% !important; max-width: 100% !important; }
+
+            /* Schedule modal: stack footer buttons vertically */
+            #rbScheduleModal .modal-content > div:last-child {
+                flex-direction: column-reverse;
+            }
+            #rbScheduleModal .modal-content > div:last-child button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* Schedule modal: Save Location browse button full-width */
+            #rbSchedBrowseBtn { width: 100%; justify-content: center; }
+
+            /* Time picker dropdown: clamp so it never overflows the viewport */
+            .time-picker-dropdown { max-width: calc(100vw - 48px); }
+        }
+
+        /* ── Tab Navigation ── */
+        .br-tab-nav {
+            display: flex; gap: 4px; padding: 4px;
+            background: var(--bg-hover); border: 1px solid var(--border-color);
+            border-radius: 10px; margin-bottom: 28px;
+        }
+        .br-tab-btn {
+            flex: 1; display: inline-flex; align-items: center; justify-content: center;
+            gap: 8px; padding: 12px 16px; min-height: 48px;
+            border: none; border-radius: 7px; cursor: pointer;
+            background: transparent; color: var(--text-muted);
+            font-size: 0.93em; font-weight: 500; white-space: nowrap;
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+        }
+        .br-tab-btn:hover:not(.active) { background: var(--bg-card); color: var(--text-main); }
+        .br-tab-btn.active {
+            background: var(--primary); color: #fff; font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        }
+        .br-tab-btn svg { flex-shrink: 0; }
+        .br-tab-panel { display: none; }
+        .br-tab-panel.active { display: block; }
+
+        /* ── Custom Time Picker ── */
+        .time-picker-wrap { position: relative; display: inline-block; }
+        .time-picker-display {
+            display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+            padding: 7px 12px; min-width: 110px;
+            background: var(--input-bg); border: 1px solid var(--border-color);
+            border-radius: 6px; color: var(--text-main); font-size: 0.95em;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .time-picker-display:hover { border-color: var(--primary); }
+        .time-picker-display.tp-open {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(23,162,184,0.18);
+        }
+        .time-picker-dropdown {
+            position: absolute; top: calc(100% + 6px); left: 0; z-index: 600;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+            padding: 16px 20px 14px; min-width: 190px;
+        }
+        .time-picker-cols {
+            display: flex; align-items: center; justify-content: center;
+            gap: 4px; margin-bottom: 16px;
+        }
+        .time-picker-col { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .time-picker-chevron {
+            width: 42px; height: 30px; border-radius: 6px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg-hover); border: 1px solid var(--border-color);
+            color: var(--text-main); font-size: 0.65em; line-height: 1;
+            transition: background 0.12s, border-color 0.12s, color 0.12s;
+        }
+        .time-picker-chevron:hover { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .time-picker-num {
+            font-size: 2em; font-weight: 700; color: var(--text-main);
+            min-width: 54px; text-align: center; line-height: 1.1; cursor: default; letter-spacing: 0.02em;
+        }
+        .time-picker-label {
+            font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--text-muted); margin-top: 2px;
+        }
+        .time-picker-sep {
+            font-size: 2em; font-weight: 700; color: var(--text-muted);
+            padding: 0 2px; margin-bottom: 20px; line-height: 1.1;
+        }
+
+        /* ── Directory Navigator Modal ── */
+        .dir-breadcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: 2px;
+            background: var(--bg-hover); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 8px 12px; font-size: 0.88em;
+            margin-bottom: 12px; min-height: 36px; }
+        .dir-crumb { color: var(--primary); cursor: pointer; padding: 0 2px; }
+        .dir-crumb:hover { text-decoration: underline; }
+        .dir-crumb-sep { color: var(--text-muted); padding: 0 2px; }
+        .dir-crumb-current { color: var(--text-main); font-weight: 600; }
+        .dir-list { list-style: none; margin: 0; padding: 0;
+            max-height: 320px; overflow-y: auto;
+            border: 1px solid var(--border-color); border-radius: 6px; }
+        .dir-list li { display: flex; align-items: center; gap: 10px;
+            padding: 9px 14px; cursor: pointer; border-bottom: 1px solid var(--border-color);
+            transition: background 0.12s; font-size: 0.92em; }
+        .dir-list li:last-child { border-bottom: none; }
+        .dir-list li:hover { background: var(--bg-hover); }
+        .dir-list-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.9em; }
+        .dir-selected-path { margin: 12px 0 0; padding: 8px 12px;
+            background: var(--bg-hover); border-radius: 6px; font-size: 0.88em;
+            border: 1px solid var(--border-color); word-break: break-all; }
+        .dir-selected-path strong { color: var(--text-muted); font-size: 0.82em;
+            text-transform: uppercase; display: block; margin-bottom: 2px; }
+
         @media (max-width: 768px) {
             /* Backup download buttons — stack full-width */
             #backupActions {
@@ -36,6 +205,18 @@
             .file-picker {
                 flex-wrap: wrap;
             }
+
+            /* Scheduled Backup — save button full width */
+            #sbSaveBtn, #sbRunNowBtn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* History: swap table for cards */
+            #sbHistoryTableWrap { display: none; }
+            #sbHistoryCardList  { display: block; }
+
+            .sb-status-row { flex-direction: column; gap: 10px; }
         }
     </style>
 </head>
@@ -56,6 +237,32 @@
 
     <div class="container" style="max-width: 1000px;">
         <h1 id="pageHeader" class="text-center" style="margin-bottom: 30px;">Backup &amp; Restore</h1>
+
+        <!-- ── Tab navigation ── -->
+        <div class="br-tab-nav">
+            <button class="br-tab-btn active" data-tab="this-server" title="Backup and restore operations on this server instance">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                    <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                    <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                </svg>
+                This Server
+            </button>
+            <button class="br-tab-btn" data-tab="remote-servers" title="Manage backups on remote OpReady server instances">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+                Remote Servers
+            </button>
+        </div>
+
+        <!-- ── This Server tab panel ── -->
+        <div class="br-tab-panel active" id="br-tab-this-server">
 
         <!-- ── Backup ── -->
         <div class="system-card">
@@ -141,6 +348,666 @@
 
             <div id="statusMsg" class="status-msg"></div>
         </div>
+
+        <!-- ── Scheduled Backup ── -->
+        <div class="system-card">
+            <h2>Scheduled Backup</h2>
+
+            <!-- Ephemeral deployment warning — shown when scheduler is unavailable -->
+            <div id="sbEphemeralWarning" style="display:none; background:var(--bg-hover); border:1px solid var(--border-color); border-radius:8px; padding:14px 18px; margin-bottom:20px;">
+                <p style="margin:0; color:var(--warning, #e07b00); font-weight:600;">
+                    &#9888; Scheduled backups are not available on this deployment.
+                </p>
+                <p style="margin:6px 0 0; font-size:0.88em; color:var(--text-muted);">
+                    This server is running on an <strong id="sbDeploymentType"></strong> deployment. Ephemeral platforms
+                    (Cloud Run, App Runner, Fargate) may be scaled to zero between requests, so a server-side scheduler
+                    cannot guarantee it will fire on time. Use an external scheduler (Cloud Scheduler, EventBridge, cron on
+                    a persistent machine) calling <code>GET /api/system/backup</code> with an API key instead.
+                </p>
+            </div>
+
+            <!-- Main form -->
+            <div id="sbFormWrap">
+                <!-- Enable toggle -->
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+                    <label class="switch" title="Enable or disable the scheduled backup job">
+                        <input type="checkbox" id="sbEnabled">
+                        <span class="slider"></span>
+                    </label>
+                    <span style="font-weight:600;">Enable scheduled backups</span>
+                </div>
+                <p style="font-size:0.85em; color:var(--text-muted); margin:0 0 20px;">
+                    When enabled, the server will automatically create and save backup files on the schedule below.
+                </p>
+
+                <div id="sbFormFields">
+                    <!-- ── Schedule ── -->
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label>Frequency</label>
+                        <select id="sbScheduleType" style="max-width:320px;"
+                            title="How often the backup should run">
+                            <option value="daily">Once a day</option>
+                            <option value="weekly">Selected days of the week</option>
+                            <option value="every_n_hours">Every N hours</option>
+                            <option value="every_n_days">Every N days</option>
+                        </select>
+                    </div>
+
+                    <!-- Daily options -->
+                    <div id="sbOptDaily" class="sb-opts">
+                        <label>Time of day</label>
+                        <div id="tpDailyWrap" class="time-picker-wrap"></div>
+                    </div>
+
+                    <!-- Weekly options -->
+                    <div id="sbOptWeekly" class="sb-opts" style="display:none;">
+                        <label>Day(s)</label>
+                        <div class="sb-day-grid">
+                            <label class="sb-day-chip" data-day="1" title="Monday">
+                                <input type="checkbox" value="1"> Mon
+                            </label>
+                            <label class="sb-day-chip" data-day="2" title="Tuesday">
+                                <input type="checkbox" value="2"> Tue
+                            </label>
+                            <label class="sb-day-chip" data-day="3" title="Wednesday">
+                                <input type="checkbox" value="3"> Wed
+                            </label>
+                            <label class="sb-day-chip" data-day="4" title="Thursday">
+                                <input type="checkbox" value="4"> Thu
+                            </label>
+                            <label class="sb-day-chip" data-day="5" title="Friday">
+                                <input type="checkbox" value="5"> Fri
+                            </label>
+                            <label class="sb-day-chip" data-day="6" title="Saturday">
+                                <input type="checkbox" value="6"> Sat
+                            </label>
+                            <label class="sb-day-chip" data-day="0" title="Sunday">
+                                <input type="checkbox" value="0"> Sun
+                            </label>
+                        </div>
+                        <label style="margin-top:12px; display:block;">Time of day</label>
+                        <div id="tpWeeklyWrap" class="time-picker-wrap"></div>
+                    </div>
+
+                    <!-- Every N hours options -->
+                    <div id="sbOptHours" class="sb-opts" style="display:none;">
+                        <label>Interval</label>
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                            <span>Every</span>
+                            <select id="sbIntervalHours" style="width:90px;"
+                                title="Number of hours between each backup run">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="6" selected>6</option>
+                                <option value="8">8</option>
+                                <option value="12">12</option>
+                            </select>
+                            <span>hours (starting from midnight, server time)</span>
+                        </div>
+                    </div>
+
+                    <!-- Every N days options -->
+                    <div id="sbOptDays" class="sb-opts" style="display:none;">
+                        <label>Interval &amp; time</label>
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                            <span>Every</span>
+                            <input type="number" id="sbIntervalDays" value="3" min="1" max="30" style="width:70px;"
+                                title="Number of days between each backup run">
+                            <span>days at</span>
+                            <div id="tpDaysWrap" class="time-picker-wrap"></div>
+                        </div>
+                        <p style="font-size:0.8em; color:var(--text-muted); margin:6px 0 0;">
+                            Note: the "every N days" interval resets at the start of each month (cron limitation).
+                        </p>
+                    </div>
+
+                    <!-- ── Backup type ── -->
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label>What to backup</label>
+                        <select id="sbBackupType" style="max-width:420px;"
+                            title="Choose between a database-only or full backup including Knowledge Base documents">
+                            <option value="db">Database only (.sql)</option>
+                            <option value="full">Full backup (.zip) — database + local Knowledge Base documents</option>
+                        </select>
+                    </div>
+
+                    <!-- ── Save location ── -->
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label>Save backups to <span style="color:var(--danger);">*</span></label>
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; max-width:560px;">
+                            <input type="text" id="sbLocation" placeholder="/backups/opready"
+                                style="flex:1; min-width:200px;"
+                                title="Absolute path on the server filesystem where backup files will be written. Can be a local path or a mounted network share.">
+                            <button type="button" id="sbBrowseBtn" class="btn-secondary"
+                                title="Browse server directories to select the backup location"
+                                style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; white-space:nowrap;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                Browse
+                            </button>
+                        </div>
+                        <p style="font-size:0.8em; color:var(--text-muted); margin:4px 0 0;">
+                            Absolute path on the server (e.g. <code>/backups/opready</code>).
+                            Mounted network shares work if accessible from this process.
+                            The directory will be created if it does not exist.
+                        </p>
+                    </div>
+
+                    <!-- ── Retention ── -->
+                    <div class="form-group" style="margin-bottom:20px;">
+                        <label>Retention policy</label>
+                        <div style="display:flex; flex-direction:column; gap:10px; margin-top:6px;">
+                            <label style="display:flex; align-items:center; gap:10px; font-weight:normal; cursor:pointer;"
+                                title="Keep only the most recent N backup files; older ones are deleted automatically">
+                                <input type="radio" name="sbRetention" value="count" checked>
+                                Keep the last
+                                <input type="number" id="sbRetentionCount" value="10" min="1" max="999" style="width:70px;"
+                                    title="Maximum number of backup files to retain">
+                                backups
+                            </label>
+                            <label style="display:flex; align-items:center; gap:10px; font-weight:normal; cursor:pointer;"
+                                title="Delete backup files that are older than the specified number of days">
+                                <input type="radio" name="sbRetention" value="days">
+                                Delete backups older than
+                                <input type="number" id="sbRetentionDays" value="30" min="1" max="3650" style="width:70px;"
+                                    title="Delete backups older than this many days">
+                                days
+                            </label>
+                            <label style="display:flex; align-items:center; gap:10px; font-weight:normal; cursor:pointer;"
+                                title="Never automatically delete backup files — they accumulate indefinitely">
+                                <input type="radio" name="sbRetention" value="none">
+                                Keep all backups (no automatic cleanup)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- ── Status row ── -->
+                    <div class="sb-status-row" id="sbStatusRow" style="display:none;">
+                        <div class="sb-status-item">
+                            <strong>Last Run</strong>
+                            <span id="sbLastRun">—</span>
+                        </div>
+                        <div class="sb-status-item">
+                            <strong>Next Scheduled</strong>
+                            <span id="sbNextRun">—</span>
+                        </div>
+                        <div class="sb-status-item">
+                            <strong>Last Result</strong>
+                            <span id="sbLastResult">—</span>
+                        </div>
+                    </div>
+
+                    <!-- ── Action buttons ── -->
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;">
+                        <button id="sbSaveBtn" class="btn-success"
+                            title="Save the scheduled backup configuration and activate the schedule"
+                            style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:16px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                <polyline points="7 3 7 8 15 8"></polyline>
+                            </svg>
+                            Save Schedule
+                        </button>
+                        <button id="sbRunNowBtn" class="btn-primary"
+                            title="Run the scheduled backup immediately using the saved configuration"
+                            style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:16px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            Run Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Backup History ── -->
+            <div id="sbHistorySection" style="margin-top:32px; border-top:1px solid var(--border-color); padding-top:24px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                    <h3 style="margin:0;">Recent Backup History</h3>
+                    <button id="sbClearHistoryBtn" class="btn-danger"
+                        title="Permanently delete all scheduled backup history entries"
+                        style="padding:6px 16px; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                        </svg>
+                        Clear History
+                    </button>
+                </div>
+
+                <!-- Desktop table -->
+                <div id="sbHistoryTableWrap">
+                    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--border-color); text-align:left;">
+                                <th style="padding:8px 12px;">Date / Time</th>
+                                <th style="padding:8px 12px;">Type</th>
+                                <th style="padding:8px 12px;">Filename</th>
+                                <th style="padding:8px 12px;">Size</th>
+                                <th style="padding:8px 12px;">Cleaned</th>
+                                <th style="padding:8px 12px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sbHistoryBody">
+                            <tr><td colspan="6" style="padding:16px 12px; color:var(--text-muted);">No history yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile cards -->
+                <div id="sbHistoryCardList">
+                    <div id="sbHistoryCardContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        </div><!-- /br-tab-this-server -->
+
+        <!-- ── Remote Servers tab panel ── -->
+        <div class="br-tab-panel" id="br-tab-remote-servers">
+            <div class="system-card">
+
+                <!-- Header -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
+                    <div>
+                        <h2 style="margin:0 0 4px;">Remote Servers</h2>
+                        <p style="margin:0; font-size:0.88em; color:var(--text-muted);">
+                            Pull and schedule backups from other OpReady instances. Files are saved locally on this server.
+                        </p>
+                    </div>
+                    <button id="rbAddBtn" class="btn-success"
+                        title="Add a remote OpReady server to pull backups from"
+                        style="display:inline-flex; align-items:center; gap:6px; padding:9px 18px; white-space:nowrap;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Server
+                    </button>
+                </div>
+
+                <!-- Ephemeral deployment notice -->
+                <div id="rbEphemeralNotice" style="display:none; margin-bottom:16px; padding:12px 16px;
+                    background:var(--bg-hover); border:1px solid var(--border-color); border-radius:8px;
+                    font-size:0.88em; color:var(--text-muted);">
+                    &#9888; Scheduled remote backups are not available on ephemeral deployments (Cloud Run, App Runner, Fargate).
+                    Manual pulls still work — only the scheduler is disabled.
+                </div>
+
+                <!-- Desktop table -->
+                <div id="rbTableWrap" style="overflow-x:auto; display:none;">
+                    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--border-color); text-align:left;">
+                                <th style="padding:9px 12px;">Name</th>
+                                <th style="padding:9px 12px;">URL</th>
+                                <th style="padding:9px 12px;">Type</th>
+                                <th style="padding:9px 12px;">Schedule</th>
+                                <th style="padding:9px 12px;">Last Run</th>
+                                <th style="padding:9px 12px; text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rbTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile cards -->
+                <div id="rbCardList" style="display:none;">
+                    <div id="rbCardContainer"></div>
+                </div>
+
+                <!-- Empty state -->
+                <div id="rbEmpty" style="text-align:center; padding:40px 24px; color:var(--text-muted); display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"
+                        stroke-linejoin="round" style="color:var(--border-color); margin-bottom:14px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                    <p style="margin:0;">No remote servers configured yet.<br>Click <strong>Add Server</strong> to connect your first instance.</p>
+                </div>
+            </div>
+        </div><!-- /br-tab-remote-servers -->
+
+        <!-- ══ Add / Edit Server Modal ══ -->
+        <div id="rbServerModal" class="modal" style="display:none;">
+            <div class="modal-content" style="width:100%; max-width:500px; padding:28px;">
+                <h3 id="rbServerModalTitle" style="margin:0 0 20px;">Add Remote Server</h3>
+                <input type="hidden" id="rbServerId">
+
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label>Name <span style="color:var(--danger);">*</span></label>
+                    <input type="text" id="rbServerName" placeholder="e.g. Production Server" style="width:100%;"
+                        title="A short display name for this remote server">
+                </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label>Base URL <span style="color:var(--danger);">*</span></label>
+                    <input type="text" id="rbServerUrl" placeholder="https://other-server.example.com" style="width:100%;"
+                        title="Base URL of the remote OpReady instance (no trailing slash)">
+                </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label>API Key <span style="color:var(--danger);" id="rbApiKeyRequired">*</span></label>
+                    <div id="rbApiKeyExistingHint" style="display:none; font-size:0.85em; color:var(--text-muted); margin-bottom:6px;">
+                        An API key is already stored.
+                        <button type="button" id="rbApiKeyReplaceBtn" class="btn-secondary"
+                            style="padding:2px 10px; font-size:0.82em; margin-left:6px;"
+                            title="Enter a new API key to replace the stored one">Replace key</button>
+                    </div>
+                    <input type="password" id="rbServerApiKey" placeholder="osm_…" style="width:100%;"
+                        title="Superadmin API key from the remote server's System Tools → API Key Management">
+                </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label>Default Backup Type</label>
+                    <select id="rbServerBackupType" style="width:100%;"
+                        title="Type of backup to pull from this server">
+                        <option value="db">Database only (.sql)</option>
+                        <option value="full">Full backup (.zip) — database + local KB documents</option>
+                    </select>
+                </div>
+
+                <!-- Inline connection test result -->
+                <div id="rbTestResult" style="display:none; font-size:0.86em; padding:8px 12px;
+                    border-radius:6px; margin-top:8px;"></div>
+
+                <div style="display:flex; gap:10px; margin-top:22px; flex-wrap:wrap; justify-content:flex-end;">
+                    <button id="rbServerCancelBtn" class="btn-secondary" style="padding:10px 18px;"
+                        title="Cancel without saving">Cancel</button>
+                    <button id="rbTestInlineBtn" class="btn-informative" style="padding:10px 18px;"
+                        title="Test that the URL and API key can reach the remote server">Test Connection</button>
+                    <button id="rbServerSaveBtn" class="btn-success" style="padding:10px 18px;"
+                        title="Save this remote server configuration">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ Edit Schedule Modal ══ -->
+        <div id="rbScheduleModal" class="modal" style="display:none;">
+            <div class="modal-content" style="width:100%; max-width:580px; padding:28px; overflow-y:auto; max-height:90vh;">
+                <h3 style="margin:0 0 6px;">Scheduled Backup —
+                    <span id="rbSchedServerName" style="color:var(--primary);"></span>
+                </h3>
+                <p style="margin:0 0 20px; font-size:0.85em; color:var(--text-muted);">
+                    This server will pull a backup from the remote instance on the configured schedule.
+                </p>
+                <input type="hidden" id="rbSchedServerId">
+
+                <!-- Enable toggle -->
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+                    <label class="switch" title="Enable or disable the scheduled backup for this server">
+                        <input type="checkbox" id="rbSchedEnabled">
+                        <span class="slider"></span>
+                    </label>
+                    <span style="font-weight:600;">Enable scheduled backups</span>
+                </div>
+
+                <!-- Schedule type -->
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label>Frequency</label>
+                    <select id="rbSchedType" style="max-width:320px; width:100%;"
+                        title="How often to pull a backup from this server">
+                        <option value="daily">Once a day</option>
+                        <option value="weekly">Selected days of the week</option>
+                        <option value="every_n_hours">Every N hours</option>
+                        <option value="every_n_days">Every N days</option>
+                    </select>
+                </div>
+
+                <div id="rbSchedOptDaily" class="sb-opts">
+                    <label>Time of day</label>
+                    <div id="rbTpDailyWrap" class="time-picker-wrap"></div>
+                </div>
+                <div id="rbSchedOptWeekly" class="sb-opts" style="display:none;">
+                    <label>Day(s)</label>
+                    <div class="sb-day-grid" id="rbDayGrid">
+                        <label class="sb-day-chip" data-day="1" title="Monday"><input type="checkbox" value="1"> Mon</label>
+                        <label class="sb-day-chip" data-day="2" title="Tuesday"><input type="checkbox" value="2"> Tue</label>
+                        <label class="sb-day-chip" data-day="3" title="Wednesday"><input type="checkbox" value="3"> Wed</label>
+                        <label class="sb-day-chip" data-day="4" title="Thursday"><input type="checkbox" value="4"> Thu</label>
+                        <label class="sb-day-chip" data-day="5" title="Friday"><input type="checkbox" value="5"> Fri</label>
+                        <label class="sb-day-chip" data-day="6" title="Saturday"><input type="checkbox" value="6"> Sat</label>
+                        <label class="sb-day-chip" data-day="0" title="Sunday"><input type="checkbox" value="0"> Sun</label>
+                    </div>
+                    <label style="margin-top:12px; display:block;">Time of day</label>
+                    <div id="rbTpWeeklyWrap" class="time-picker-wrap"></div>
+                </div>
+                <div id="rbSchedOptHours" class="sb-opts" style="display:none;">
+                    <label>Interval</label>
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <span>Every</span>
+                        <select id="rbSchedIntervalHours" style="width:90px;"
+                            title="Number of hours between each pull">
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                            <option value="4">4</option><option value="6" selected>6</option>
+                            <option value="8">8</option><option value="12">12</option>
+                        </select>
+                        <span>hours</span>
+                    </div>
+                </div>
+                <div id="rbSchedOptDays" class="sb-opts" style="display:none;">
+                    <label>Interval &amp; time</label>
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <span>Every</span>
+                        <input type="number" id="rbSchedIntervalDays" value="3" min="1" max="30" style="width:70px;"
+                            title="Number of days between each pull">
+                        <span>days at</span>
+                        <div id="rbTpDaysWrap" class="time-picker-wrap"></div>
+                    </div>
+                </div>
+
+                <!-- Backup type override -->
+                <div class="form-group" style="margin-bottom:14px; margin-top:4px;">
+                    <label>Backup type for scheduled pulls</label>
+                    <select id="rbSchedBackupType" style="max-width:420px; width:100%;"
+                        title="Override the server's default backup type for scheduled pulls">
+                        <option value="db">Database only (.sql)</option>
+                        <option value="full">Full backup (.zip)</option>
+                    </select>
+                </div>
+
+                <!-- Save location -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label>Save backups to</label>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <input type="text" id="rbSchedLocation" placeholder="/app/backups/remote/server-name"
+                            style="flex:1; min-width:180px;"
+                            title="Absolute path on THIS server where pulled backup files will be saved. Defaults to /app/backups/remote/&lt;server-name&gt; if blank.">
+                        <button type="button" id="rbSchedBrowseBtn" class="btn-secondary"
+                            title="Browse server directories to select the save location"
+                            style="display:inline-flex; align-items:center; gap:6px; padding:7px 12px; white-space:nowrap;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            Browse
+                        </button>
+                    </div>
+                    <p style="font-size:0.78em; color:var(--text-muted); margin:4px 0 0;">
+                        Leave blank to use <code>/app/backups/remote/&lt;server-name&gt;</code>.
+                        Mount <code>/app/backups</code> as a Docker volume so files persist.
+                    </p>
+                </div>
+
+                <!-- Retention -->
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label>Retention policy</label>
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-top:6px;">
+                        <label style="display:flex; align-items:center; gap:10px; font-weight:normal; cursor:pointer;"
+                            title="Keep only the most recent N pulled backup files">
+                            <input type="radio" name="rbRetention" value="count" checked>
+                            Keep the last
+                            <input type="number" id="rbRetentionCount" value="10" min="1" max="999" style="width:70px;">
+                            backups
+                        </label>
+                        <label style="display:flex; align-items:center; gap:10px; font-weight:normal; cursor:pointer;"
+                            title="Delete pulled backup files older than N days">
+                            <input type="radio" name="rbRetention" value="days">
+                            Delete backups older than
+                            <input type="number" id="rbRetentionDays" value="30" min="1" max="3650" style="width:70px;">
+                            days
+                        </label>
+                        <label style="display:flex; align-items:center; gap:10px; font-weight:normal; cursor:pointer;"
+                            title="Never automatically delete pulled backup files">
+                            <input type="radio" name="rbRetention" value="none">
+                            Keep all backups (no automatic cleanup)
+                        </label>
+                    </div>
+                </div>
+
+                <div id="rbSchedRunResult" style="display:none; padding:10px 14px; border-radius:6px;
+                    font-size:0.86em; margin-bottom:14px;"></div>
+                <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+                    <button id="rbSchedCancelBtn" class="btn-secondary" style="padding:10px 18px;"
+                        title="Cancel without saving">Cancel</button>
+                    <button id="rbSchedRunNowBtn" class="btn-primary" style="padding:10px 18px;"
+                        title="Save the current schedule configuration and immediately pull a backup to the configured save location">
+                        Run Now
+                    </button>
+                    <button id="rbSchedSaveBtn" class="btn-success" style="padding:10px 18px;"
+                        title="Save the schedule configuration">Save Schedule</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ Run Now Modal ══ -->
+        <div id="rbRunNowModal" class="modal" style="display:none;">
+            <div class="modal-content" style="width:100%; max-width:420px; padding:28px;">
+                <h3 style="margin:0 0 6px;">Download Backup</h3>
+                <p style="margin:0 0 4px; color:var(--text-muted); font-size:0.88em;">
+                    Server: <strong id="rbRunServerName"></strong>
+                </p>
+                <p style="margin:0 0 18px; font-size:0.82em; color:var(--text-muted);">
+                    The backup will be downloaded to your browser — your browser's Save As dialog will appear.
+                    To automatically save backups on a schedule, configure the Scheduled Backup section instead.
+                </p>
+                <input type="hidden" id="rbRunServerId">
+                <div class="form-group" style="margin-bottom:18px;">
+                    <label>Backup type</label>
+                    <select id="rbRunBackupType" style="width:100%;"
+                        title="Select the type of backup to download from the remote server">
+                        <option value="db">Database only (.sql)</option>
+                        <option value="full">Full backup (.zip) — database + local KB documents</option>
+                    </select>
+                </div>
+                <div id="rbRunResult" style="display:none; padding:10px 14px; border-radius:6px;
+                    font-size:0.88em; margin-bottom:14px;"></div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="rbRunCancelBtn" class="btn-secondary" style="padding:10px 18px;"
+                        title="Cancel without downloading">Cancel</button>
+                    <button id="rbRunStartBtn" class="btn-primary" style="padding:10px 18px;"
+                        title="Download a backup from the remote server to your computer">
+                        Download Backup
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ History Modal ══ -->
+        <div id="rbHistoryModal" class="modal" style="display:none;">
+            <div class="modal-content" style="width:100%; max-width:680px; padding:28px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                    <h3 style="margin:0;">Pull History — <span id="rbHistServerName" style="color:var(--primary);"></span></h3>
+                    <button id="rbHistClearBtn" class="btn-danger"
+                        style="padding:6px 14px; font-size:13px; display:inline-flex; align-items:center; gap:6px;"
+                        title="Delete all history entries for this server">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                        </svg>
+                        Clear
+                    </button>
+                </div>
+                <input type="hidden" id="rbHistServerId">
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--border-color); text-align:left;">
+                                <th style="padding:7px 10px;">Date / Time</th>
+                                <th style="padding:7px 10px;">Type</th>
+                                <th style="padding:7px 10px;">Triggered by</th>
+                                <th style="padding:7px 10px;">Filename</th>
+                                <th style="padding:7px 10px;">Size</th>
+                                <th style="padding:7px 10px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rbHistBody">
+                            <tr><td colspan="6" style="padding:16px 10px; color:var(--text-muted);">No history.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="text-align:right; margin-top:18px;">
+                    <button id="rbHistCloseBtn" class="btn-secondary" style="padding:10px 18px;"
+                        title="Close the history panel">Close</button>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /container -->
+
+    <!-- ── Directory Navigator Modal ── -->
+    <div id="dirNavModal" class="modal" style="display:none;">
+        <div class="modal-content" style="width:100%; max-width:520px; padding:28px;">
+            <h3 style="margin:0 0 16px;">Select Backup Location</h3>
+
+            <!-- Breadcrumb -->
+            <div class="dir-breadcrumb" id="dirBreadcrumb" title="Current directory path">
+                <span class="dir-crumb-current">/</span>
+            </div>
+
+            <!-- Up button -->
+            <button id="dirUpBtn" class="btn-secondary"
+                title="Go up one level to the parent directory"
+                style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; font-size:13px; margin-bottom:10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <polyline points="17 11 12 6 7 11"></polyline>
+                    <line x1="12" y1="6" x2="12" y2="18"></line>
+                </svg>
+                Up
+            </button>
+
+            <!-- Directory list -->
+            <ul class="dir-list" id="dirList">
+                <li class="dir-list-empty">Loading…</li>
+            </ul>
+
+            <!-- Loading / error message -->
+            <p id="dirNavError" style="display:none; color:var(--danger); font-size:0.88em; margin:8px 0 0;"></p>
+
+            <!-- Selected path display -->
+            <div class="dir-selected-path" id="dirSelectedDisplay">
+                <strong>Selected path</strong>
+                <span id="dirSelectedPath">/</span>
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px; flex-wrap:wrap;">
+                <button id="dirNavCancelBtn" class="btn-secondary" style="padding:10px 20px;"
+                    title="Cancel and close without selecting a location">Cancel</button>
+                <button id="dirNavSelectBtn" class="btn-success" style="padding:10px 20px;"
+                    title="Use the currently displayed directory as the backup save location">
+                    Select This Location
+                </button>
+            </div>
+        </div>
     </div>
 
     <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
@@ -163,6 +1030,19 @@
                     document.getElementById('demoBanner').style.display = 'block';
                     isDemo = true;
                 }
+                // Scheduled backup availability
+                sbScheduledBackupSupported = c.scheduledBackupSupported !== false;
+                if (!sbScheduledBackupSupported) {
+                    const notice = document.getElementById('rbEphemeralNotice');
+                    if (notice) notice.style.display = 'block';
+                }
+                if (!sbScheduledBackupSupported) {
+                    document.getElementById('sbEphemeralWarning').style.display = 'block';
+                    document.getElementById('sbDeploymentType').textContent = c.deploymentType || 'ephemeral';
+                    const wrap = document.getElementById('sbFormWrap');
+                    wrap.querySelectorAll('input, select, button, textarea').forEach(el => el.disabled = true);
+                }
+                loadScheduledBackupConfig();
             });
 
         fetch('/api/user-session')
@@ -270,6 +1150,1002 @@
                 if (window.hideGlobalSpinner) hideGlobalSpinner();
             }
         });
+
+        // ── Tab switching ────────────────────────────────────────────────────────
+        document.querySelectorAll('.br-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.br-tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.br-tab-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('br-tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ── Directory Navigator ──────────────────────────────────────────────────
+
+        const dirNavModal   = document.getElementById('dirNavModal');
+        const dirList       = document.getElementById('dirList');
+        const dirBreadcrumb = document.getElementById('dirBreadcrumb');
+        const dirUpBtn      = document.getElementById('dirUpBtn');
+        const dirNavError   = document.getElementById('dirNavError');
+        const dirSelectedPath = document.getElementById('dirSelectedPath');
+
+        let dirCurrentPath   = '/';
+        let dirCurrentParent = null;
+
+        // Detect the path separator from a server-returned absolute path
+        function dirGetSep(p) {
+            return /^[A-Za-z]:[\\\/]/.test(p) ? '\\' : '/';
+        }
+
+        // Build [{label, path}] crumb list from an absolute path
+        function dirParseCrumbs(p) {
+            const crumbs = [];
+            if (/^[A-Za-z]:[\\\/]/.test(p)) {
+                // Windows: C:\foo\bar
+                const parts = p.replace(/\\/g, '/').split('/').filter(Boolean);
+                let acc = parts[0] + '\\';
+                crumbs.push({ label: parts[0] + '\\', path: acc });
+                for (let i = 1; i < parts.length; i++) {
+                    acc = acc.endsWith('\\') ? acc + parts[i] : acc + '\\' + parts[i];
+                    crumbs.push({ label: parts[i], path: acc });
+                }
+            } else {
+                // Unix: /foo/bar — filter(Boolean) removes the empty strings split produces
+                const parts = p.split('/').filter(Boolean);
+                crumbs.push({ label: '/', path: '/' });
+                let acc = '';
+                for (const part of parts) {
+                    acc += '/' + part;
+                    crumbs.push({ label: part, path: acc });
+                }
+            }
+            return crumbs;
+        }
+
+        function dirBuildBreadcrumb(p) {
+            dirBreadcrumb.innerHTML = '';
+            const crumbs = dirParseCrumbs(p);
+            crumbs.forEach((crumb, idx) => {
+                const isLast = idx === crumbs.length - 1;
+                // Separator between segments (use › to avoid confusion with the / path char)
+                if (idx > 0) {
+                    const sep = document.createElement('span');
+                    sep.className   = 'dir-crumb-sep';
+                    sep.textContent = '›';
+                    dirBreadcrumb.appendChild(sep);
+                }
+                const span = document.createElement('span');
+                span.textContent = crumb.label;
+                if (isLast) {
+                    span.className = 'dir-crumb-current';
+                } else {
+                    span.className = 'dir-crumb';
+                    const dest = crumb.path;
+                    span.addEventListener('click', () => dirNavigate(dest));
+                }
+                dirBreadcrumb.appendChild(span);
+            });
+        }
+
+        async function dirNavigate(p, fallback) {
+            dirNavError.style.display = 'none';
+            dirList.innerHTML = '<li class="dir-list-empty">Loading…</li>';
+            try {
+                const res  = await fetch(`/api/system/browse-directory?path=${encodeURIComponent(p)}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Cannot read directory');
+
+                dirCurrentPath   = data.path;
+                dirCurrentParent = data.parent;
+
+                dirBuildBreadcrumb(data.path);
+                dirUpBtn.disabled = !data.parent;
+                dirSelectedPath.textContent = data.path;
+
+                if (!data.entries || data.entries.length === 0) {
+                    dirList.innerHTML = '<li class="dir-list-empty">No subdirectories</li>';
+                    return;
+                }
+
+                const sep = dirGetSep(data.path);
+                dirList.innerHTML = data.entries.map(name => {
+                    const fullPath = data.path.endsWith(sep) ? data.path + name : data.path + sep + name;
+                    return `<li data-path="${fullPath.replace(/"/g, '&quot;')}" title="Navigate into ${name}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" style="color:var(--primary); flex-shrink:0;">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        ${name}
+                    </li>`;
+                }).join('');
+
+                dirList.querySelectorAll('li[data-path]').forEach(li => {
+                    li.addEventListener('click', () => dirNavigate(li.dataset.path));
+                });
+
+            } catch (e) {
+                // If an explicit fallback was given and the requested path differs, retry silently
+                if (fallback && p !== fallback) {
+                    return dirNavigate(fallback);
+                }
+                dirNavError.textContent = e.message;
+                dirNavError.style.display = 'block';
+                dirList.innerHTML = '<li class="dir-list-empty">Could not load directory.</li>';
+            }
+        }
+
+        function dirOpenModal() {
+            const startPath = document.getElementById('sbLocation').value.trim() || '/';
+            dirNavModal.style.display = 'block';
+            dirNavigate(startPath, '/');
+        }
+
+        document.getElementById('sbBrowseBtn').addEventListener('click', dirOpenModal);
+
+        dirUpBtn.addEventListener('click', () => {
+            if (dirCurrentParent) dirNavigate(dirCurrentParent);
+        });
+
+        document.getElementById('dirNavCancelBtn').addEventListener('click', () => {
+            dirNavModal.style.display = 'none';
+        });
+
+        // dirNavSelectTarget tracks which input field the navigator feeds into.
+        // Defaults to 'sbLocation'; set to 'rbServerLocation' when opened from the server modal.
+        let dirNavSelectTarget = 'sbLocation';
+
+        document.getElementById('dirNavSelectBtn').addEventListener('click', () => {
+            document.getElementById(dirNavSelectTarget).value = dirCurrentPath;
+            dirNavSelectTarget = 'sbLocation'; // reset to default
+            dirNavModal.style.display = 'none';
+        });
+
+        dirNavModal.addEventListener('click', e => {
+            if (e.target === dirNavModal) dirNavModal.style.display = 'none';
+        });
+
+        // ── Custom Time Picker ───────────────────────────────────────────────────
+
+        function createTimePicker(container, initial) {
+            const STEP = 5;
+            let h = 2, m = 0, isOpen = false;
+            const fmt = n => String(n).padStart(2, '0');
+
+            (function parse(val) {
+                const p = (val || '02:00').split(':');
+                h = Math.min(23, Math.max(0, parseInt(p[0]) || 0));
+                m = Math.min(55, Math.max(0, Math.round((parseInt(p[1]) || 0) / STEP) * STEP));
+            })(initial);
+
+            const UP = '&#9650;';  // ▲
+            const DN = '&#9660;';  // ▼
+
+            container.innerHTML = `
+                <button type="button" class="time-picker-display" title="Click to select time">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span class="tp-display-val">${fmt(h)}:${fmt(m)}</span>
+                </button>
+                <div class="time-picker-dropdown" style="display:none;">
+                    <div class="time-picker-cols">
+                        <div class="time-picker-col">
+                            <button type="button" class="time-picker-chevron tp-h-up" title="Increase hour">${UP}</button>
+                            <span class="time-picker-num tp-h-num">${fmt(h)}</span>
+                            <button type="button" class="time-picker-chevron tp-h-dn" title="Decrease hour">${DN}</button>
+                            <span class="time-picker-label">Hour</span>
+                        </div>
+                        <span class="time-picker-sep">:</span>
+                        <div class="time-picker-col">
+                            <button type="button" class="time-picker-chevron tp-m-up" title="Increase minute">${UP}</button>
+                            <span class="time-picker-num tp-m-num">${fmt(m)}</span>
+                            <button type="button" class="time-picker-chevron tp-m-dn" title="Decrease minute">${DN}</button>
+                            <span class="time-picker-label">Min (${STEP}-step)</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button type="button" class="btn-secondary btn-sm tp-cancel" style="padding:6px 14px;" title="Cancel — revert to previous time">Cancel</button>
+                        <button type="button" class="btn-success  btn-sm tp-apply"  style="padding:6px 14px;" title="Apply the selected time">Apply</button>
+                    </div>
+                </div>`;
+
+            const trigger  = container.querySelector('.time-picker-display');
+            const dropdown = container.querySelector('.time-picker-dropdown');
+            const dispVal  = container.querySelector('.tp-display-val');
+            const hNum     = container.querySelector('.tp-h-num');
+            const mNum     = container.querySelector('.tp-m-num');
+            let tempH = h, tempM = m;
+
+            function refresh() { hNum.textContent = fmt(tempH); mNum.textContent = fmt(tempM); }
+
+            function open() {
+                // Close any other open picker first
+                document.querySelectorAll('.time-picker-dropdown').forEach(d => { if (d !== dropdown) d.style.display = 'none'; });
+                document.querySelectorAll('.time-picker-display.tp-open').forEach(b => { if (b !== trigger) b.classList.remove('tp-open'); });
+                tempH = h; tempM = m;
+                refresh();
+                dropdown.style.display = 'block';
+                trigger.classList.add('tp-open');
+                isOpen = true;
+            }
+
+            function close() {
+                dropdown.style.display = 'none';
+                trigger.classList.remove('tp-open');
+                isOpen = false;
+            }
+
+            function apply() {
+                h = tempH; m = tempM;
+                dispVal.textContent = `${fmt(h)}:${fmt(m)}`;
+                close();
+            }
+
+            trigger.addEventListener('click', e => { e.stopPropagation(); isOpen ? close() : open(); });
+            dropdown.addEventListener('click', e => e.stopPropagation());
+
+            container.querySelector('.tp-h-up').addEventListener('click', () => { tempH = (tempH + 1) % 24; refresh(); });
+            container.querySelector('.tp-h-dn').addEventListener('click', () => { tempH = (tempH - 1 + 24) % 24; refresh(); });
+            container.querySelector('.tp-m-up').addEventListener('click', () => { tempM = (tempM + STEP) % 60; refresh(); });
+            container.querySelector('.tp-m-dn').addEventListener('click', () => { tempM = (tempM - STEP + 60) % 60; refresh(); });
+            container.querySelector('.tp-cancel').addEventListener('click', close);
+            container.querySelector('.tp-apply').addEventListener('click', apply);
+            document.addEventListener('click', () => { if (isOpen) close(); });
+
+            return {
+                getValue: () => `${fmt(h)}:${fmt(m)}`,
+                setValue(val) {
+                    const p = (val || '02:00').split(':');
+                    h = Math.min(23, Math.max(0, parseInt(p[0]) || 0));
+                    m = Math.min(55, Math.max(0, Math.round((parseInt(p[1]) || 0) / STEP) * STEP));
+                    dispVal.textContent = `${fmt(h)}:${fmt(m)}`;
+                }
+            };
+        }
+
+        // Instantiate one picker per time field
+        const tpDaily  = createTimePicker(document.getElementById('tpDailyWrap'),  '02:00');
+        const tpWeekly = createTimePicker(document.getElementById('tpWeeklyWrap'), '02:00');
+        const tpDays   = createTimePicker(document.getElementById('tpDaysWrap'),   '02:00');
+
+        // ── Scheduled Backup ────────────────────────────────────────────────────
+
+        let sbScheduledBackupSupported = true;
+
+        function sbShowOpts(type) {
+            ['daily', 'weekly', 'every_n_hours', 'every_n_days'].forEach(t => {
+                const map = { daily: 'sbOptDaily', weekly: 'sbOptWeekly', every_n_hours: 'sbOptHours', every_n_days: 'sbOptDays' };
+                document.getElementById(map[t]).style.display = (t === type) ? '' : 'none';
+            });
+        }
+
+        document.getElementById('sbScheduleType').addEventListener('change', function() {
+            sbShowOpts(this.value);
+        });
+
+        // Day chip toggles
+        document.querySelectorAll('.sb-day-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const cb = this.querySelector('input');
+                cb.checked = !cb.checked;
+                this.classList.toggle('selected', cb.checked);
+            });
+        });
+
+        function sbGetSelectedDays() {
+            return Array.from(document.querySelectorAll('.sb-day-chip.selected input'))
+                .map(cb => parseInt(cb.value));
+        }
+
+        function sbSetSelectedDays(days) {
+            document.querySelectorAll('.sb-day-chip').forEach(chip => {
+                const day = parseInt(chip.dataset.day);
+                const selected = days.includes(day);
+                chip.classList.toggle('selected', selected);
+                chip.querySelector('input').checked = selected;
+            });
+        }
+
+        function sbFormatBytes(bytes) {
+            if (!bytes) return '—';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        function sbFormatDate(iso) {
+            if (!iso) return '—';
+            try { return new Date(iso).toLocaleString(); } catch { return iso; }
+        }
+
+        function sbStatusBadge(status) {
+            if (status === 'success') return '<span style="color:var(--success, #28a745); font-weight:600;">&#10003; Success</span>';
+            return '<span style="color:var(--danger); font-weight:600;">&#10007; Error</span>';
+        }
+
+        function sbRenderHistory(history) {
+            const tbody = document.getElementById('sbHistoryBody');
+            const container = document.getElementById('sbHistoryCardContainer');
+            if (!history || !history.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="padding:16px 12px; color:var(--text-muted);">No history yet.</td></tr>';
+                if (container) container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No history yet.</p>';
+                return;
+            }
+            tbody.innerHTML = history.map(h => `
+                <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:10px 12px;">${sbFormatDate(h.run_at)}</td>
+                    <td style="padding:10px 12px;">${h.backup_type === 'full' ? 'Full (.zip)' : 'DB (.sql)'}</td>
+                    <td style="padding:10px 12px; font-size:12px; color:var(--text-muted);">${h.filename || '—'}</td>
+                    <td style="padding:10px 12px;">${sbFormatBytes(h.file_size)}</td>
+                    <td style="padding:10px 12px;">${h.retention_cleaned > 0 ? h.retention_cleaned + ' deleted' : '—'}</td>
+                    <td style="padding:10px 12px;">${sbStatusBadge(h.status)}${h.error_message ? '<br><small style="color:var(--danger);">' + h.error_message + '</small>' : ''}</td>
+                </tr>`).join('');
+            if (container) {
+                container.innerHTML = history.map((h, i) => `
+                    <div class="table-card">
+                        <div class="card-header">
+                            <span class="card-title">${sbFormatDate(h.run_at)}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-row"><span class="card-label">Type:</span><span>${h.backup_type === 'full' ? 'Full (.zip)' : 'DB (.sql)'}</span></div>
+                            <div class="card-row"><span class="card-label">File:</span><span style="font-size:12px;">${h.filename || '—'}</span></div>
+                            <div class="card-row"><span class="card-label">Size:</span><span>${sbFormatBytes(h.file_size)}</span></div>
+                            <div class="card-row"><span class="card-label">Cleaned:</span><span>${h.retention_cleaned > 0 ? h.retention_cleaned + ' deleted' : '—'}</span></div>
+                            <div class="card-row"><span class="card-label">Status:</span>${sbStatusBadge(h.status)}</div>
+                            ${h.error_message ? '<div class="card-row"><span class="card-label">Error:</span><span style="color:var(--danger); font-size:12px;">' + h.error_message + '</span></div>' : ''}
+                        </div>
+                    </div>`).join('');
+            }
+        }
+
+        function sbUpdateStatusRow(cfg) {
+            if (!cfg) return;
+            const row = document.getElementById('sbStatusRow');
+            if (cfg.last_run_at || cfg.next_run_at) {
+                row.style.display = 'flex';
+                document.getElementById('sbLastRun').textContent    = sbFormatDate(cfg.last_run_at);
+                document.getElementById('sbNextRun').textContent    = cfg.next_run_at ? sbFormatDate(cfg.next_run_at) : '—';
+                document.getElementById('sbLastResult').textContent = '—';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        async function loadScheduledBackupConfig() {
+            try {
+                const res  = await fetch('/api/system/scheduled-backup');
+                if (!res.ok) return;
+                const data = await res.json();
+                const cfg  = data.config;
+                if (!cfg) return;
+
+                document.getElementById('sbEnabled').checked        = !!cfg.enabled;
+                document.getElementById('sbScheduleType').value     = cfg.schedule_type || 'daily';
+                tpDaily.setValue(cfg.schedule_time  || '02:00');
+                tpWeekly.setValue(cfg.schedule_time || '02:00');
+                tpDays.setValue(cfg.schedule_time   || '02:00');
+                document.getElementById('sbIntervalHours').value    = String(cfg.interval_value || 6);
+                document.getElementById('sbIntervalDays').value     = String(cfg.interval_value || 3);
+                document.getElementById('sbLocation').value         = cfg.backup_location || '';
+                document.getElementById('sbBackupType').value       = cfg.backup_type || 'db';
+                document.getElementById('sbRetentionCount').value   = String(cfg.retention_value || 10);
+                document.getElementById('sbRetentionDays').value    = String(cfg.retention_value || 30);
+
+                const retType = cfg.retention_type || 'count';
+                const radio = document.querySelector(`input[name="sbRetention"][value="${retType}"]`);
+                if (radio) radio.checked = true;
+
+                let days = [1];
+                try { days = JSON.parse(cfg.schedule_days || '[1]'); } catch {}
+                sbSetSelectedDays(days);
+                sbShowOpts(cfg.schedule_type || 'daily');
+                sbUpdateStatusRow(cfg);
+                sbRenderHistory(data.history);
+            } catch (e) {
+                console.error('Failed to load scheduled backup config', e);
+            }
+        }
+
+        document.getElementById('sbSaveBtn').addEventListener('click', async () => {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
+            if (!sbScheduledBackupSupported) { showToast('Not supported on this deployment type.', 'warning'); return; }
+
+            const schedType = document.getElementById('sbScheduleType').value;
+            let schedTime = '02:00';
+            if (schedType === 'daily')             schedTime = tpDaily.getValue();
+            else if (schedType === 'weekly')       schedTime = tpWeekly.getValue();
+            else if (schedType === 'every_n_days') schedTime = tpDays.getValue();
+
+            let intervalValue = 6;
+            if (schedType === 'every_n_hours') intervalValue = parseInt(document.getElementById('sbIntervalHours').value) || 6;
+            if (schedType === 'every_n_days')  intervalValue = parseInt(document.getElementById('sbIntervalDays').value)  || 3;
+
+            const days = sbGetSelectedDays();
+            if (schedType === 'weekly' && days.length === 0) {
+                showToast('Select at least one day for weekly schedule.', 'warning');
+                return;
+            }
+
+            const retentionType  = document.querySelector('input[name="sbRetention"]:checked')?.value || 'count';
+            const retentionValue = retentionType === 'count'
+                ? parseInt(document.getElementById('sbRetentionCount').value) || 10
+                : retentionType === 'days'
+                    ? parseInt(document.getElementById('sbRetentionDays').value) || 30
+                    : 0;
+
+            const location = document.getElementById('sbLocation').value.trim();
+            const enabled  = document.getElementById('sbEnabled').checked;
+            if (enabled && !location) {
+                showToast('Please enter a save location.', 'warning');
+                return;
+            }
+
+            const payload = {
+                enabled, scheduleType: schedType, scheduleTime: schedTime,
+                scheduleDays: JSON.stringify(days), intervalValue,
+                backupType: document.getElementById('sbBackupType').value,
+                backupLocation: location, retentionType, retentionValue,
+            };
+
+            if (window.showGlobalSpinner) showGlobalSpinner('Saving schedule…');
+            try {
+                const res = await fetch('/api/system/scheduled-backup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'Unknown error');
+                showToast(enabled ? 'Schedule saved and activated.' : 'Schedule disabled.', 'success');
+                await loadScheduledBackupConfig();
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            } finally {
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
+            }
+        });
+
+        document.getElementById('sbRunNowBtn').addEventListener('click', async () => {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
+            if (!sbScheduledBackupSupported) { showToast('Not supported on this deployment type.', 'warning'); return; }
+            if (!document.getElementById('sbLocation').value.trim()) {
+                showToast('Save the schedule configuration first.', 'warning');
+                return;
+            }
+            if (!await confirmAction('Run Backup Now', 'Run the scheduled backup immediately using the saved configuration?')) return;
+            if (window.showGlobalSpinner) showGlobalSpinner('Running backup…');
+            try {
+                const res = await fetch('/api/system/scheduled-backup/run-now', { method: 'POST' });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'Unknown error');
+                showToast('Backup completed successfully.', 'success');
+                await loadScheduledBackupConfig();
+            } catch (e) {
+                showToast('Backup failed: ' + e.message, 'error');
+            } finally {
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
+            }
+        });
+
+        document.getElementById('sbClearHistoryBtn').addEventListener('click', async () => {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
+            if (!await confirmAction('Clear History', 'Delete all scheduled backup history entries?')) return;
+            try {
+                await fetch('/api/system/scheduled-backup/history', { method: 'DELETE' });
+                showToast('History cleared.', 'success');
+                await loadScheduledBackupConfig();
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        });
+
+        // ── Remote Servers ───────────────────────────────────────────────────────
+
+        const MAX_RB_SERVERS = 5;
+        let rbServers = [];
+
+        // Time pickers for the schedule modal (instantiated once after DOM is ready)
+        const tpRbDaily  = createTimePicker(document.getElementById('rbTpDailyWrap'),  '02:00');
+        const tpRbWeekly = createTimePicker(document.getElementById('rbTpWeeklyWrap'), '02:00');
+        const tpRbDays   = createTimePicker(document.getElementById('rbTpDaysWrap'),   '02:00');
+
+        function rbShowSchedOpts(type) {
+            ['daily','weekly','every_n_hours','every_n_days'].forEach(t => {
+                const map = { daily:'rbSchedOptDaily', weekly:'rbSchedOptWeekly', every_n_hours:'rbSchedOptHours', every_n_days:'rbSchedOptDays' };
+                document.getElementById(map[t]).style.display = t === type ? '' : 'none';
+            });
+        }
+        document.getElementById('rbSchedType').addEventListener('change', function() { rbShowSchedOpts(this.value); });
+
+        // Day chips in the schedule modal
+        document.querySelectorAll('#rbDayGrid .sb-day-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const cb = this.querySelector('input');
+                cb.checked = !cb.checked;
+                this.classList.toggle('selected', cb.checked);
+            });
+        });
+        function rbGetSchedDays() {
+            return Array.from(document.querySelectorAll('#rbDayGrid .sb-day-chip.selected input')).map(cb => parseInt(cb.value));
+        }
+        function rbSetSchedDays(days) {
+            document.querySelectorAll('#rbDayGrid .sb-day-chip').forEach(chip => {
+                const sel = days.includes(parseInt(chip.dataset.day));
+                chip.classList.toggle('selected', sel);
+                chip.querySelector('input').checked = sel;
+            });
+        }
+
+        // Helpers
+        function rbFmtDate(iso) { if (!iso) return '—'; try { return new Date(iso).toLocaleString(); } catch { return iso; } }
+        function rbFmtBytes(b) { if (!b) return '—'; if (b < 1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+        function rbStatusBadge(s) {
+            return s === 'success'
+                ? '<span style="color:var(--success,#28a745);font-weight:600;">&#10003; OK</span>'
+                : s === 'error'
+                    ? '<span style="color:var(--danger);font-weight:600;">&#10007; Error</span>'
+                    : '—';
+        }
+        function rbScheduleLabel(srv) {
+            if (!srv.schedule_enabled) return '<span style="color:var(--text-muted);">—</span>';
+            const labels = { daily:'Daily', weekly:'Weekly', every_n_hours:`Every ${srv.interval_value || '?'}h`, every_n_days:`Every ${srv.interval_value || '?'}d` };
+            const time = srv.schedule_type === 'every_n_hours' ? '' : ` ${srv.schedule_time || ''}`;
+            return `<span style="background:var(--success,#28a745);color:#fff;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;white-space:nowrap;">${labels[srv.schedule_type] || srv.schedule_type}${time}</span>`;
+        }
+        function rbEsc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        function rbActionBtns(srv) {
+            return `
+                <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;">
+                    <button class="rb-action-btn btn-informative" onclick="rbOpenEdit(${srv.id})" title="Edit server settings">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button class="rb-action-btn btn-primary" onclick="rbOpenRunNow(${srv.id})" title="Pull a backup from this server now">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    </button>
+                    <button class="rb-action-btn btn-secondary" onclick="rbOpenSchedule(${srv.id})" title="Configure scheduled automatic pull backup">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </button>
+                    <button class="rb-action-btn btn-secondary" onclick="rbOpenHistory(${srv.id})" title="View pull backup history for this server">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    </button>
+                    <button class="rb-action-btn btn-danger" onclick="rbDelete(${srv.id},'${rbEsc(srv.name)}')" title="Delete this remote server and its history">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                    </button>
+                </div>`;
+        }
+
+        function rbRender(servers) {
+            rbServers = servers;
+            const tbody     = document.getElementById('rbTableBody');
+            const container = document.getElementById('rbCardContainer');
+            const empty     = document.getElementById('rbEmpty');
+            const tableWrap = document.getElementById('rbTableWrap');
+            const cardList  = document.getElementById('rbCardList');
+
+            document.getElementById('rbAddBtn').disabled = servers.length >= MAX_RB_SERVERS;
+            document.getElementById('rbAddBtn').title = servers.length >= MAX_RB_SERVERS
+                ? `Maximum of ${MAX_RB_SERVERS} remote servers allowed`
+                : 'Add a remote OpReady server to pull backups from';
+
+            if (!servers.length) {
+                empty.style.display     = 'block';
+                tableWrap.style.display = 'none';
+                cardList.style.display  = 'none';
+                return;
+            }
+            empty.style.display     = 'none';
+            tableWrap.style.display = '';  // let CSS control desktop vs mobile
+            cardList.style.display  = '';  // let CSS control desktop vs mobile
+
+            tbody.innerHTML = servers.map(s => `
+                <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:10px 12px;font-weight:600;">${rbEsc(s.name)}</td>
+                    <td style="padding:10px 12px;font-size:12px;color:var(--text-muted);">${rbEsc(s.url)}</td>
+                    <td style="padding:10px 12px;">${s.backup_type === 'full' ? 'Full (.zip)' : 'DB (.sql)'}</td>
+                    <td style="padding:10px 12px;">${rbScheduleLabel(s)}</td>
+                    <td style="padding:10px 12px;font-size:12px;">
+                        ${s.last_run_at ? rbFmtDate(s.last_run_at) + ' ' + rbStatusBadge(s.last_run_status) : '—'}
+                    </td>
+                    <td style="padding:10px 12px;">${rbActionBtns(s)}</td>
+                </tr>`).join('');
+
+            container.innerHTML = servers.map(s => `
+                <div class="table-card">
+                    <div class="card-header">
+                        <span class="card-title">${rbEsc(s.name)}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-row"><span class="card-label">URL:</span><span style="font-size:12px;">${rbEsc(s.url)}</span></div>
+                        <div class="card-row"><span class="card-label">Type:</span><span>${s.backup_type === 'full' ? 'Full (.zip)' : 'DB (.sql)'}</span></div>
+                        <div class="card-row"><span class="card-label">Schedule:</span>${rbScheduleLabel(s)}</div>
+                        <div class="card-row"><span class="card-label">Last Run:</span><span style="font-size:12px;">${s.last_run_at ? rbFmtDate(s.last_run_at)+' '+rbStatusBadge(s.last_run_status) : '—'}</span></div>
+                    </div>
+                    <div class="card-actions">${rbActionBtns(s)}</div>
+                </div>`).join('');
+        }
+
+        async function rbLoad() {
+            try {
+                const res = await fetch('/api/system/remote-backup');
+                if (!res.ok) return;
+                rbRender(await res.json());
+            } catch {}
+        }
+
+        // ── Add / Edit Server modal ───────────────────────────────────────────
+        let rbEditingApiKeyReplace = false;
+
+        function rbOpenAdd() {
+            if (isDemo) { showToast('Disabled in demo mode.','warning'); return; }
+            document.getElementById('rbServerId').value           = '';
+            document.getElementById('rbServerName').value         = '';
+            document.getElementById('rbServerUrl').value          = '';
+            document.getElementById('rbServerApiKey').value       = '';
+            document.getElementById('rbServerApiKey').placeholder = 'osm_…';
+            document.getElementById('rbServerApiKey').disabled    = false;
+            document.getElementById('rbServerBackupType').value   = 'db';
+            document.getElementById('rbApiKeyExistingHint').style.display = 'none';
+            document.getElementById('rbApiKeyRequired').style.display     = 'inline';
+            document.getElementById('rbServerModalTitle').textContent     = 'Add Remote Server';
+            document.getElementById('rbTestResult').style.display         = 'none';
+            rbEditingApiKeyReplace = true;
+            document.getElementById('rbServerModal').style.display = 'block';
+        }
+
+        async function rbOpenEdit(id) {
+            if (isDemo) { showToast('Disabled in demo mode.','warning'); return; }
+            const srv = rbServers.find(s => s.id === id);
+            if (!srv) return;
+            document.getElementById('rbServerId').value           = id;
+            document.getElementById('rbServerName').value         = srv.name;
+            document.getElementById('rbServerUrl').value          = srv.url;
+            document.getElementById('rbServerApiKey').value       = '';
+            document.getElementById('rbServerApiKey').placeholder = '(stored — enter new key to replace)';
+            document.getElementById('rbServerApiKey').disabled    = true;
+            document.getElementById('rbServerBackupType').value   = srv.backup_type || 'db';
+            document.getElementById('rbApiKeyExistingHint').style.display = 'block';
+            document.getElementById('rbApiKeyRequired').style.display     = 'none';
+            document.getElementById('rbServerModalTitle').textContent     = 'Edit Remote Server';
+            document.getElementById('rbTestResult').style.display         = 'none';
+            rbEditingApiKeyReplace = false;
+            document.getElementById('rbServerModal').style.display = 'block';
+        }
+
+        // Browse button in the schedule modal
+        document.getElementById('rbSchedBrowseBtn').addEventListener('click', () => {
+            dirNavSelectTarget = 'rbSchedLocation';
+            const startPath = document.getElementById('rbSchedLocation').value.trim() || '/app/backups/remote';
+            dirNavModal.style.display = 'block';
+            dirNavigate(startPath, '/');
+        });
+
+        document.getElementById('rbApiKeyReplaceBtn').addEventListener('click', () => {
+            rbEditingApiKeyReplace = true;
+            document.getElementById('rbServerApiKey').disabled    = false;
+            document.getElementById('rbServerApiKey').placeholder = 'Enter new API key…';
+            document.getElementById('rbServerApiKey').value       = '';
+            document.getElementById('rbServerApiKey').focus();
+        });
+
+        document.getElementById('rbServerCancelBtn').addEventListener('click', () => {
+            document.getElementById('rbServerModal').style.display = 'none';
+        });
+
+        document.getElementById('rbTestInlineBtn').addEventListener('click', async () => {
+            const url    = document.getElementById('rbServerUrl').value.trim();
+            const apiKey = document.getElementById('rbServerApiKey').value.trim();
+            const result = document.getElementById('rbTestResult');
+            if (!url) { showToast('Enter a URL first.','warning'); return; }
+
+            // Use stored key if not replacing
+            const id = document.getElementById('rbServerId').value;
+            const useInline = rbEditingApiKeyReplace || !id;
+            const endpoint = useInline
+                ? '/api/system/remote-backup/test-inline'
+                : `/api/system/remote-backup/${id}/test`;
+            const body = useInline ? { url, apiKey } : undefined;
+            if (useInline && !apiKey) { showToast('Enter an API key first.','warning'); return; }
+
+            result.style.display    = 'block';
+            result.style.background = 'var(--bg-hover)';
+            result.style.color      = 'var(--text-muted)';
+            result.textContent      = 'Testing connection…';
+            if (window.showGlobalSpinner) showGlobalSpinner('Testing connection…');
+            try {
+                const r    = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: body ? JSON.stringify(body) : undefined });
+                const data = await r.json();
+                if (data.ok) {
+                    result.style.background = '#d4edda';
+                    result.style.color      = '#155724';
+                    result.textContent      = `✓ Connected — OpReady v${data.version || '?'}, uptime ${data.uptime || '?'}s`;
+                } else {
+                    result.style.background = '#f8d7da';
+                    result.style.color      = '#721c24';
+                    result.textContent      = `✗ ${data.error || 'Could not connect'}`;
+                }
+            } catch (e) {
+                result.style.background = '#f8d7da';
+                result.style.color      = '#721c24';
+                result.textContent      = `✗ ${e.message}`;
+            } finally {
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
+            }
+        });
+
+        document.getElementById('rbServerSaveBtn').addEventListener('click', async () => {
+            if (isDemo) { showToast('Disabled in demo mode.','warning'); return; }
+            const id       = document.getElementById('rbServerId').value;
+            const name     = document.getElementById('rbServerName').value.trim();
+            const url      = document.getElementById('rbServerUrl').value.trim();
+            const apiKey     = rbEditingApiKeyReplace ? document.getElementById('rbServerApiKey').value.trim() : undefined;
+            const backupType = document.getElementById('rbServerBackupType').value;
+
+            if (!name || !url)                             { showToast('Name and URL are required.','warning'); return; }
+            if (!id && !apiKey)                            { showToast('API key is required.','warning'); return; }
+            if (rbEditingApiKeyReplace && !apiKey)         { showToast('Enter the new API key.','warning'); return; }
+
+            if (window.showGlobalSpinner) showGlobalSpinner('Saving…');
+            try {
+                const res = await fetch(id ? `/api/system/remote-backup/${id}` : '/api/system/remote-backup', {
+                    method: id ? 'PUT' : 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ name, url, apiKey, backupType }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Unknown error');
+                document.getElementById('rbServerModal').style.display = 'none';
+                showToast(id ? 'Server updated.' : 'Server added.','success');
+                await rbLoad();
+            } catch (e) {
+                showToast('Error: '+e.message,'error');
+            } finally {
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
+            }
+        });
+
+        document.getElementById('rbAddBtn').addEventListener('click', rbOpenAdd);
+
+
+        // ── Schedule modal ────────────────────────────────────────────────────
+        function rbOpenSchedule(id) {
+            if (isDemo) { showToast('Disabled in demo mode.','warning'); return; }
+            const srv = rbServers.find(s => s.id === id);
+            if (!srv) return;
+            document.getElementById('rbSchedServerId').value  = id;
+            document.getElementById('rbSchedServerName').textContent = srv.name;
+            document.getElementById('rbSchedEnabled').checked = !!srv.schedule_enabled;
+            document.getElementById('rbSchedType').value      = srv.schedule_type  || 'daily';
+            tpRbDaily.setValue(srv.schedule_time  || '02:00');
+            tpRbWeekly.setValue(srv.schedule_time || '02:00');
+            tpRbDays.setValue(srv.schedule_time   || '02:00');
+            document.getElementById('rbSchedIntervalHours').value = String(srv.interval_value || 6);
+            document.getElementById('rbSchedIntervalDays').value  = String(srv.interval_value || 3);
+            document.getElementById('rbSchedBackupType').value    = srv.backup_type || 'db';
+            document.getElementById('rbSchedLocation').value      = srv.backup_location || '';
+            const retType = srv.retention_type || 'count';
+            const radio = document.querySelector(`input[name="rbRetention"][value="${retType}"]`);
+            if (radio) radio.checked = true;
+            document.getElementById('rbRetentionCount').value = String(srv.retention_value || 10);
+            document.getElementById('rbRetentionDays').value  = String(srv.retention_value || 30);
+            let days = [1]; try { days = JSON.parse(srv.schedule_days || '[1]'); } catch {}
+            rbSetSchedDays(days);
+            rbShowSchedOpts(srv.schedule_type || 'daily');
+            document.getElementById('rbScheduleModal').style.display = 'block';
+        }
+
+        document.getElementById('rbSchedCancelBtn').addEventListener('click', () => {
+            document.getElementById('rbScheduleModal').style.display = 'none';
+        });
+
+        document.getElementById('rbSchedRunNowBtn').addEventListener('click', async () => {
+            if (isDemo) { showToast('Disabled in demo mode.','warning'); return; }
+            const id         = document.getElementById('rbSchedServerId').value;
+            const backupType = document.getElementById('rbSchedBackupType').value;
+            const result     = document.getElementById('rbSchedRunResult');
+            const btn        = document.getElementById('rbSchedRunNowBtn');
+
+            btn.disabled            = true;
+            result.style.display    = 'block';
+            result.style.background = 'var(--bg-hover)';
+            result.style.color      = 'var(--text-muted)';
+            result.textContent      = 'Pulling backup to save location… this may take a moment.';
+            if (window.showGlobalSpinner) showGlobalSpinner('Running scheduled pull…');
+            try {
+                const res  = await fetch(`/api/system/remote-backup/${id}/run-now`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ backupType }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Unknown error');
+                result.style.background = '#d4edda';
+                result.style.color      = '#155724';
+                result.innerHTML        = `&#10003; Saved: ${rbEsc(data.filename)} (${rbFmtBytes(data.fileSize)})`;
+                await rbLoad();
+            } catch (e) {
+                result.style.background = '#f8d7da';
+                result.style.color      = '#721c24';
+                result.innerHTML        = `&#10007; ${rbEsc(e.message)}`;
+            } finally {
+                btn.disabled = false;
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
+            }
+        });
+
+        document.getElementById('rbSchedSaveBtn').addEventListener('click', async () => {
+            if (isDemo) { showToast('Disabled in demo mode.','warning'); return; }
+            const id        = document.getElementById('rbSchedServerId').value;
+            const schedType = document.getElementById('rbSchedType').value;
+            let schedTime   = '02:00';
+            if (schedType === 'daily')          schedTime = tpRbDaily.getValue();
+            else if (schedType === 'weekly')    schedTime = tpRbWeekly.getValue();
+            else if (schedType === 'every_n_days') schedTime = tpRbDays.getValue();
+            const days = rbGetSchedDays();
+            if (schedType === 'weekly' && !days.length) { showToast('Select at least one day.','warning'); return; }
+            const intervalValue  = schedType === 'every_n_hours'
+                ? parseInt(document.getElementById('rbSchedIntervalHours').value) || 6
+                : parseInt(document.getElementById('rbSchedIntervalDays').value)  || 3;
+            const retentionType  = document.querySelector('input[name="rbRetention"]:checked')?.value || 'count';
+            const retentionValue = retentionType === 'count'
+                ? parseInt(document.getElementById('rbRetentionCount').value) || 10
+                : parseInt(document.getElementById('rbRetentionDays').value)  || 30;
+
+            if (window.showGlobalSpinner) showGlobalSpinner('Saving schedule…');
+            try {
+                const res = await fetch(`/api/system/remote-backup/${id}/schedule`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        enabled: document.getElementById('rbSchedEnabled').checked,
+                        scheduleType: schedType, scheduleTime: schedTime,
+                        scheduleDays: JSON.stringify(days), intervalValue,
+                        backupType:     document.getElementById('rbSchedBackupType').value,
+                        backupLocation: document.getElementById('rbSchedLocation').value.trim(),
+                        retentionType, retentionValue,
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Unknown error');
+                document.getElementById('rbScheduleModal').style.display = 'none';
+                showToast('Schedule saved.','success');
+                await rbLoad();
+            } catch (e) {
+                showToast('Error: '+e.message,'error');
+            } finally {
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
+            }
+        });
+
+        // ── Run Now modal ─────────────────────────────────────────────────────
+        function rbOpenRunNow(id) {
+            if (isDemo) { showToast('Disabled in demo mode.','warning'); return; }
+            const srv = rbServers.find(s => s.id === id);
+            if (!srv) return;
+            document.getElementById('rbRunServerId').value              = id;
+            document.getElementById('rbRunServerName').textContent      = srv.name;
+            document.getElementById('rbRunBackupType').value            = srv.backup_type || 'db';
+            document.getElementById('rbRunResult').style.display        = 'none';
+            document.getElementById('rbRunStartBtn').disabled           = false;
+            document.getElementById('rbRunNowModal').style.display      = 'block';
+        }
+
+        document.getElementById('rbRunCancelBtn').addEventListener('click', () => {
+            document.getElementById('rbRunNowModal').style.display = 'none';
+        });
+
+        document.getElementById('rbRunStartBtn').addEventListener('click', async () => {
+            if (isDemo) { showToast('Disabled in demo mode.','warning'); return; }
+            const id         = document.getElementById('rbRunServerId').value;
+            const backupType = document.getElementById('rbRunBackupType').value;
+            const result     = document.getElementById('rbRunResult');
+            const btn        = document.getElementById('rbRunStartBtn');
+
+            btn.disabled            = true;
+            result.style.display    = 'block';
+            result.style.background = 'var(--bg-hover)';
+            result.style.color      = 'var(--text-muted)';
+            result.textContent      = 'Downloading… this may take a moment for large databases.';
+            if (window.showGlobalSpinner) showGlobalSpinner('Downloading remote backup…');
+
+            try {
+                const res = await fetch(`/api/system/remote-backup/${id}/download?type=${backupType}`);
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data.error || `HTTP ${res.status}`);
+                }
+                // Extract filename from Content-Disposition header
+                const cd  = res.headers.get('content-disposition') || '';
+                const match = cd.match(/filename="?([^"]+)"?/i);
+                const filename = match ? match[1] : `remote-backup.${backupType === 'full' ? 'zip' : 'sql'}`;
+
+                // Trigger browser Save-As dialog
+                const blob = await res.blob();
+                const url  = URL.createObjectURL(blob);
+                const a    = document.createElement('a');
+                a.href = url; a.download = filename;
+                document.body.appendChild(a); a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                document.getElementById('rbRunNowModal').style.display = 'none';
+                showToast('Backup downloaded successfully.', 'success');
+            } catch (e) {
+                result.style.background = '#f8d7da';
+                result.style.color      = '#721c24';
+                result.textContent      = `✗ ${e.message}`;
+                btn.disabled = false;
+            } finally {
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
+            }
+        });
+
+        // ── History modal ─────────────────────────────────────────────────────
+        async function rbOpenHistory(id) {
+            const srv = rbServers.find(s => s.id === id);
+            if (!srv) return;
+            document.getElementById('rbHistServerId').value             = id;
+            document.getElementById('rbHistServerName').textContent     = srv.name;
+            document.getElementById('rbHistoryModal').style.display = 'block';
+            await rbLoadHistory(id);
+        }
+
+        async function rbLoadHistory(id) {
+            const tbody = document.getElementById('rbHistBody');
+            tbody.innerHTML = '<tr><td colspan="6" style="padding:12px 10px;color:var(--text-muted);">Loading…</td></tr>';
+            try {
+                const res  = await fetch(`/api/system/remote-backup/${id}/history`);
+                const rows = await res.json();
+                if (!rows.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="padding:16px 10px;color:var(--text-muted);">No history yet.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = rows.map(r => `
+                    <tr style="border-bottom:1px solid var(--border-color);">
+                        <td style="padding:8px 10px;">${rbFmtDate(r.run_at)}</td>
+                        <td style="padding:8px 10px;">${r.backup_type==='full'?'Full (.zip)':'DB (.sql)'}</td>
+                        <td style="padding:8px 10px;">${r.triggered_by||'—'}</td>
+                        <td style="padding:8px 10px;font-size:11px;color:var(--text-muted);">${r.filename||'—'}</td>
+                        <td style="padding:8px 10px;">${rbFmtBytes(r.file_size)}</td>
+                        <td style="padding:8px 10px;">${rbStatusBadge(r.status)}${r.error_message?'<br><small style="color:var(--danger);">'+rbEsc(r.error_message)+'</small>':''}</td>
+                    </tr>`).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="6" style="padding:12px;color:var(--danger);">${e.message}</td></tr>`;
+            }
+        }
+
+        document.getElementById('rbHistCloseBtn').addEventListener('click', () => {
+            document.getElementById('rbHistoryModal').style.display = 'none';
+        });
+
+        document.getElementById('rbHistClearBtn').addEventListener('click', async () => {
+            if (isDemo) { showToast('Disabled in demo mode.','warning'); return; }
+            const id = document.getElementById('rbHistServerId').value;
+            if (!await confirmAction('Clear History','Delete all pull backup history for this server?')) return;
+            try {
+                await fetch(`/api/system/remote-backup/${id}/history`, { method:'DELETE' });
+                showToast('History cleared.','success');
+                await rbLoadHistory(id);
+            } catch (e) { showToast(e.message,'error'); }
+        });
+
+        // ── Delete server ─────────────────────────────────────────────────────
+        async function rbDelete(id, name) {
+            if (isDemo) { showToast('Disabled in demo mode.','warning'); return; }
+            if (!await confirmAction('Delete Remote Server', `Remove "${name}" and its backup history? This does not delete any pulled backup files.`)) return;
+            try {
+                const res = await fetch(`/api/system/remote-backup/${id}`, { method:'DELETE' });
+                if (!res.ok) throw new Error((await res.json()).error);
+                showToast('Server removed.','success');
+                await rbLoad();
+            } catch (e) { showToast(e.message,'error'); }
+        }
+
+        // Initial load when tab is opened or page loads
+        rbLoad();
 
         // ── Scroll to top ───────────────────────────────────────────────────────
         const scrollTopBtn = document.getElementById("scrollTopBtn");

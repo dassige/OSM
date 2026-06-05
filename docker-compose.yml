@@ -20,6 +20,11 @@ services:
       # Default: ./storage/knowledgebase (inside the project directory, already gitignored).
       # Set KB_STORAGE_HOST_PATH in .env to redirect to an external disk, NAS mount, or named volume.
       - ${KB_STORAGE_HOST_PATH:-./storage/knowledgebase}:/app/storage/knowledgebase
+      # Scheduled backup output — persists backup files created by the built-in scheduler.
+      # Default: ./backups (inside the project directory, already gitignored).
+      # Set BACKUP_HOST_PATH in .env to redirect to an external disk or NAS mount.
+      # Configure /app/backups as the save location in the Backup & Restore UI.
+      - ${BACKUP_HOST_PATH:-./backups}:/backups
     env_file:         
       - .env  
     networks:

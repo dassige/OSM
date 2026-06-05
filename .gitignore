@@ -25,3 +25,4 @@ newman-report.json
 newman-report.html
 fenz_demo.db
 storage/
+backups/
