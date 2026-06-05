@@ -467,6 +467,30 @@ window.hideGlobalSpinner = function() {
  * @param {string|Element} target - element ID or element reference
  * @param {string} [message] - optional text below the spinner
  */
+window.initFilePicker = function(inputId, labelId, onChange) {
+    const input = document.getElementById(inputId);
+    const label = document.getElementById(labelId);
+    if (!input || !label) return;
+    input.addEventListener('change', function() {
+        const f = this.files[0];
+        if (f) {
+            label.textContent = f.name;
+            label.classList.add('has-file');
+        } else {
+            label.textContent = 'No file chosen';
+            label.classList.remove('has-file');
+        }
+        if (typeof onChange === 'function') onChange(f);
+    });
+};
+
+window.resetFilePicker = function(inputId, labelId) {
+    const input = document.getElementById(inputId);
+    const label = document.getElementById(labelId);
+    if (input) input.value = '';
+    if (label) { label.textContent = 'No file chosen'; label.classList.remove('has-file'); }
+};
+
 window.showContainerLoader = function(target, message) {
     const el = typeof target === 'string' ? document.getElementById(target) : target;
     if (!el) return;

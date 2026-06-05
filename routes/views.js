@@ -1,7 +1,8 @@
 // routes/views.js
 const express = require("express");
-const router = express.Router();
-const config = require("../config");
+const path    = require("path");
+const router  = express.Router();
+const config  = require("../config");
 const { RANKS } = require("../services/rank-config");
 /**
  * Middleware to handle HTML page role checks.
@@ -32,6 +33,7 @@ router.get("/ui-config", (req, res) => {
     defaultMinScoreType: config.defaultMinScoreType,
     defaultMaxTries: config.defaultMaxTries,
     aiEnabled: config.aiConfig.enabled,
+    kbDefaultExpiryDays: config.kbDefaultExpiryDays || 365,
     ranks: RANKS,
   });
 });
@@ -44,6 +46,12 @@ router.get("/templates.html", requirePageAccess(adminAndSuper));
 router.get("/live-forms.html", requirePageAccess(adminAndSuper));
 router.get("/live-surveys.html", requirePageAccess(adminAndSuper));
 router.get("/statistics.html", requirePageAccess(allAuthenticated));
+router.get("/knowledgebase.html", requirePageAccess(adminAndSuper));
+
+// Public viewer — no auth; slug is the access control
+router.get("/knowledgebase/:slug", (_req, res) => {
+  res.sendFile(path.join(__dirname, "../public/knowledgebase-view.html"));
+});
 
 // Note: You can easily add protections for /members.html, /skills.html, and /forms-manage.html here if needed.
 

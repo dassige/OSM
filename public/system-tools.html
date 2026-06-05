@@ -62,42 +62,75 @@
 
         <!-- ── Backup ── -->
         <div class="system-card">
-            <h2>Backup Database</h2>
-            <p>Download a snapshot of the current system database (<code>fenz.db</code>). This file contains all
-                the data and structure of the database.</p>
-            <div style="margin-top: 20px;">
-                <a href="/api/system/backup" class="btn-primary" target="_blank"
-                    title="Download a snapshot of the current database"
-                    style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 12px 24px; font-size: 16px;">
+            <h2>Backup</h2>
+            <p>Choose what to include in the backup:</p>
+            <table style="width:100%; border-collapse:collapse; margin:12px 0; font-size:0.92em;">
+                <tr>
+                    <td style="padding:8px 12px 8px 0; vertical-align:top; font-weight:600; white-space:nowrap;">Full Backup</td>
+                    <td style="padding:8px 0; color:var(--text-muted);">Database + all uploaded Knowledge Base documents (local storage only). Produces a <code>.zip</code> file.</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 12px 8px 0; vertical-align:top; font-weight:600; white-space:nowrap;">Database Only</td>
+                    <td style="padding:8px 0; color:var(--text-muted);">Database snapshot only. Produces a <code>.sql</code> file. Use when KB documents are stored in S3/GCS.</td>
+                </tr>
+            </table>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;">
+                <a href="/api/system/backup?type=full" class="btn-primary" target="_blank"
+                    title="Download a ZIP containing the database and all local Knowledge Base documents"
+                    style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding:12px 24px; font-size:16px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
-                    Download Backup
+                    Full Backup
+                </a>
+                <a href="/api/system/backup?type=db" class="btn-secondary" target="_blank"
+                    title="Download a SQL snapshot of the database only"
+                    style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding:12px 24px; font-size:16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                    </svg>
+                    Database Only
                 </a>
             </div>
         </div>
 
         <!-- ── Restore ── -->
         <div class="system-card">
-            <h2>Restore Database</h2>
-            <p style="color: var(--danger); font-weight: bold;">⚠️ Warning: This will overwrite the current database!
-            </p>
-            <p>Upload a previously backed-up <code>.sql</code> file. <br><strong>Note:</strong> The uploaded database
-                MUST match the current application version.</p>
+            <h2>Restore</h2>
+            <p style="color:var(--danger); font-weight:bold;">⚠️ Warning: This will overwrite the current data!</p>
+            <p>Upload a previously downloaded backup file:
+               <strong><code>.zip</code></strong> (Full Backup — restores database and KB documents)
+               or <strong><code>.sql</code></strong> (Database Only — restores database only).</p>
+            <p style="font-size:0.88em; color:var(--text-muted);">The backup must have been created by the same or an earlier version of OpReady.</p>
 
             <form id="restoreForm">
-                <div class="file-input-wrapper">
-                    <input type="file" id="dbFile" name="databaseFile" accept=".sql" required
-                        title="Select a .sql backup file to restore"
-                        style="background: transparent; border: none; color: var(--text-main);">
+                <div style="margin: 20px 0;">
+                    <input type="file" id="dbFile" name="databaseFile" accept=".sql,.zip" required style="display:none"
+                        title="Select a .zip (full backup) or .sql (database-only backup) file to restore">
+                    <div class="file-picker">
+                        <button type="button" class="btn-primary file-picker-btn"
+                            onclick="document.getElementById('dbFile').click()"
+                            title="Choose a backup file to restore (.zip full backup or .sql database only)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            Choose Backup File
+                        </button>
+                        <span class="file-picker-label" id="dbFileLabel">No file chosen</span>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-danger" id="restoreBtn"
-                    title="Upload the selected .sql file and restore the database"
-                    style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; font-size: 16px;">
+                    title="Restore from the selected backup file"
+                    style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:16px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
@@ -105,11 +138,43 @@
                         <polyline points="17 8 12 3 7 8"></polyline>
                         <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
-                    Restore Database
+                    <span id="restoreBtnLabel">Restore</span>
                 </button>
             </form>
 
             <div id="statusMsg" class="status-msg"></div>
+        </div>
+
+        <!-- ── Knowledge Base Security ── -->
+        <div class="system-card">
+            <h2>Knowledge Base — Rotate Document Links</h2>
+            <p>Assigns a new GUID to every Knowledge Base document, immediately invalidating all previously shared
+                public links. Use this periodically or whenever you suspect a link has been shared with
+                unintended recipients.</p>
+            <p style="color:var(--danger); font-weight:600;">
+                &#9888; All existing <code>/knowledgebase/&lt;guid&gt;</code> URLs will stop working.
+                Members who have bookmarked or saved links will need new ones.
+            </p>
+            <p style="font-size:0.88em; color:var(--text-muted); margin-top:4px;">
+                The stored documents themselves are not affected — only their access URLs change.
+                Links embedded in forms and surveys resolve dynamically via the document ID and will
+                update automatically.
+            </p>
+            <div id="rotateSlugsResult" style="display:none;" class="status-msg"></div>
+            <div style="margin-top:16px;">
+                <button id="rotateSlugsBtn" class="btn-danger"
+                    title="Rotate all Knowledge Base document GUIDs — all current public links will stop working"
+                    style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Rotate All Document Links
+                </button>
+            </div>
         </div>
 
         <!-- ── AI Evaluator Test Lab ── -->
@@ -483,33 +548,91 @@
             })
             .catch(() => window.location.href = "/login.html");
 
+        function updateRestoreBtn(input) {
+            const file  = input.files[0];
+            const label = document.getElementById('restoreBtnLabel');
+            if (!file) { label.textContent = 'Restore'; return; }
+            const isZip = file.name.toLowerCase().endsWith('.zip');
+            label.textContent = isZip ? 'Restore Full Backup' : 'Restore Database';
+        }
+
+        function showRestoreSuccess(serverMsg) {
+            // Replace the entire restore card body with a prominent logged-out notice
+            // and auto-redirect to the login page after a countdown.
+            const card = document.getElementById('statusMsg').closest('.system-card');
+            let secs = 5;
+            card.innerHTML = `
+                <div style="text-align:center; padding:24px 16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                        fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="margin-bottom:12px;">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <h2 style="margin:0 0 8px; color:var(--text-main);">Restore Complete</h2>
+                    <p style="margin:0 0 6px;">${serverMsg}</p>
+                    <p style="margin:0 0 20px; color:var(--text-muted); font-size:0.9em;">
+                        Your session has been cleared. You must log in again to continue.
+                    </p>
+                    <a href="/login.html" class="btn-primary"
+                        style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding:12px 28px; font-size:1rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                        </svg>
+                        Log In Now
+                    </a>
+                    <p id="redirectCountdown" style="margin-top:14px; font-size:0.82em; color:var(--text-muted);">
+                        Redirecting to login in <strong id="secsLeft">${secs}</strong>s…
+                    </p>
+                </div>`;
+
+            const tick = setInterval(() => {
+                secs--;
+                const el = document.getElementById('secsLeft');
+                if (el) el.textContent = secs;
+                if (secs <= 0) {
+                    clearInterval(tick);
+                    window.location.href = '/login.html';
+                }
+            }, 1000);
+        }
+
         document.getElementById('restoreForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
-            if (!await promptAction("Restore Database", "This will <strong>overwrite all current data</strong> with the selected backup. The server will restart. This cannot be undone.<br><br>Type <strong>RESTORE</strong> to confirm.", "RESTORE")) return;
+
+            const fileInput = document.getElementById('dbFile');
+            const file      = fileInput.files[0];
+            const isZip     = file && file.name.toLowerCase().endsWith('.zip');
+            const what      = isZip
+                ? 'the full backup (database <strong>and</strong> Knowledge Base documents)'
+                : 'the database backup';
+
+            if (!await promptAction("Restore Backup",
+                `This will <strong>overwrite all current data</strong> with ${what}. This cannot be undone.<br><br>Type <strong>RESTORE</strong> to confirm.`,
+                "RESTORE")) return;
 
             const statusBox = document.getElementById('statusMsg');
-            const fileInput = document.getElementById('dbFile');
-
             statusBox.style.display = 'none';
-            if (window.showGlobalSpinner) showGlobalSpinner('Restoring database from backup...');
+            const spinMsg = isZip ? 'Restoring database and documents...' : 'Restoring database from backup...';
+            if (window.showGlobalSpinner) showGlobalSpinner(spinMsg);
 
             const formData = new FormData();
-            formData.append('databaseFile', fileInput.files[0]);
+            formData.append('databaseFile', file);
 
             try {
-                const res = await fetch('/api/system/restore', {
-                    method: 'POST',
-                    body: formData
-                });
-
+                const res    = await fetch('/api/system/restore', { method: 'POST', body: formData });
                 const result = await res.json();
 
                 if (res.ok) {
-                    statusBox.style.display = 'block';
-                    statusBox.className = 'status-msg status-success';
-                    statusBox.textContent = result.message;
                     fileInput.value = '';
+                    updateRestoreBtn(fileInput);
+                    resetFilePicker('dbFile', 'dbFileLabel');
+                    showRestoreSuccess(result.message);
                 } else {
                     throw new Error(result.error || 'Unknown error occurred');
                 }
@@ -519,6 +642,45 @@
                 statusBox.className = 'status-msg status-error';
                 statusBox.textContent = err.message;
             } finally {
+                if (window.hideGlobalSpinner) hideGlobalSpinner();
+            }
+        });
+
+        document.getElementById('rotateSlugsBtn').addEventListener('click', async () => {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
+
+            const confirmed = await promptAction(
+                'Rotate All Document Links',
+                'This will assign a new GUID to <strong>every</strong> Knowledge Base document. ' +
+                'All existing public links (<code>/knowledgebase/&lt;guid&gt;</code>) will immediately ' +
+                'stop working. This cannot be undone.<br><br>' +
+                'Type <strong>ROTATE</strong> to confirm.',
+                'ROTATE'
+            );
+            if (!confirmed) return;
+
+            const resultBox = document.getElementById('rotateSlugsResult');
+            const btn       = document.getElementById('rotateSlugsBtn');
+            resultBox.style.display = 'none';
+            btn.disabled = true;
+            if (window.showGlobalSpinner) showGlobalSpinner('Rotating document links…');
+
+            try {
+                const res    = await fetch('/api/knowledgebase/rotate-slugs', { method: 'POST' });
+                const result = await res.json();
+                if (res.ok) {
+                    resultBox.style.display   = 'block';
+                    resultBox.className       = 'status-msg status-success';
+                    resultBox.textContent     = `Done — ${result.rotated} document link${result.rotated !== 1 ? 's' : ''} rotated. All previous public URLs are now invalid.`;
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+            } catch (err) {
+                resultBox.style.display = 'block';
+                resultBox.className     = 'status-msg status-error';
+                resultBox.textContent   = err.message;
+            } finally {
+                btn.disabled = false;
                 if (window.hideGlobalSpinner) hideGlobalSpinner();
             }
         });
@@ -868,6 +1030,11 @@
     <script src="theme.js"></script>
     <script src="toast.js"></script>
     <script src="utils.js"></script>
+    <script>
+        initFilePicker('dbFile', 'dbFileLabel', function() {
+            updateRestoreBtn(document.getElementById('dbFile'));
+        });
+    </script>
     <script src="/js/pwa.js"></script>
 
 </body>

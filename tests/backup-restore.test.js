@@ -37,7 +37,7 @@ describe('Database Backup & Restore API (Isolated)', () => {
             expect(response.text).toBe(fakeSql);
             
             expect(response.headers['content-type']).toMatch(/text\/plain/);
-            expect(response.headers['content-disposition']).toMatch(/attachment; filename="fenz_backup_/);
+            expect(response.headers['content-disposition']).toMatch(/attachment; filename="opready-db-backup-/);
             
             expect(db.generateSqlDump).toHaveBeenCalledTimes(1);
             expect(db.logEvent).toHaveBeenCalledWith(

@@ -475,6 +475,41 @@
 
 ---
 
+## T22 — Knowledge Base
+
+**Page:** `/knowledgebase.html` · **Access:** Admin and Superadmin
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T22-01 | Page loads | Log in as admin. Navigate to Knowledge Base from the System menu. | The page loads without errors. The left panel shows a category tree with an *All Documents* node. The right panel is empty with an *Upload PDF* button. |
+| T22-02 | Add root category | Click **+ Add** in the Categories panel. Enter a name (e.g. *Operational*). Leave Parent as Root. Click **Save**. | The category appears in the tree. No parent indentation. |
+| T22-03 | Add child category | Click **+ Add**. Enter a name (e.g. *Training*). Set Parent to *Operational*. Click **Save**. | *Training* appears indented under *Operational* in the tree. |
+| T22-04 | Expand / collapse tree nodes | Click the chevron next to *Operational*. | Sub-categories expand and collapse. The chevron rotates accordingly. |
+| T22-05 | Edit category | Hover over a category name. Click the pencil icon. Update the name and click **Save**. | The tree updates with the new name immediately. |
+| T22-06 | Delete category with children | Create a parent with a child. Delete the parent via the trash icon. Confirm in the dialog. | The parent is removed. The child is re-parented (becomes a root category or moves to the parent's parent). No documents are deleted. |
+| T22-07 | Select category filters documents | Click a category in the tree. | Only documents assigned to that category appear in the right panel. The panel title updates to the category name. |
+| T22-08 | Select *All Documents* | Click the *All Documents* node. | All documents appear regardless of category. |
+| T22-09 | Upload PDF | Click **Upload PDF**. Fill in title (*Fire Attack Procedures*), optional description, select a category, and attach a PDF file. Click **Save**. | A progress bar shows during upload. On completion, the document appears in the list with correct title, category, file size, and upload date. |
+| T22-10 | Upload validation — no file | Click **Upload PDF**. Enter a title but do not attach a file. Click **Save**. | An error toast appears: *Please select a PDF file*. No upload occurs. |
+| T22-11 | Upload validation — no title | Attach a PDF but leave the title blank. Click **Save**. | An error toast appears indicating the title is required. |
+| T22-12 | Copy link | Click **Copy Link** on any document. | A success toast confirms the link was copied. Paste the URL into a new browser tab — the viewer page loads without login. |
+| T22-13 | View document (admin) | Click **View** on a document. | A new tab opens showing the public viewer page for that document: branded header, title, description, and embedded PDF. |
+| T22-14 | Edit document metadata | Click **Edit** on a document. Change the title and category. Click **Save**. | The document list updates with the new title and category. The slug and file are unchanged. |
+| T22-15 | Toggle document inactive | Click the toggle switch on a document to disable it. | The toggle moves to the off state. Navigating to the document's public link returns a *Document Unavailable* page. Re-enabling the toggle restores access. |
+| T22-16 | Delete document | Click **Delete** on a document. Confirm the action. | The document is removed from the list. The previous public link returns *Document Unavailable*. |
+| T22-17 | Demo mode guard | In demo mode, attempt Upload, Edit, Delete, Toggle, and Category CRUD operations. | All destructive actions return a *Disabled in demo mode* error. |
+| T22-18 | Public viewer — valid GUID | Open the public viewer URL (`/knowledgebase/<GUID>`) in an incognito window without logging in. | The page loads: branded header with app name, document title, description, category, file size, and the PDF embedded in the page. A Download button is visible. |
+| T22-19 | Public viewer — invalid GUID | Navigate to `/knowledgebase/INVALID-GUID` without logging in. | The page loads showing *Document Unavailable* with a friendly message. No 500 error or stack trace. |
+| T22-20 | Download PDF from viewer | On the public viewer, click **Download**. | The browser downloads the PDF file with the correct filename. |
+| T22-21 | Mobile — category tree | Open Knowledge Base on a screen ≤ 768 px wide. | The category panel stacks above the document panel. The tree is still usable. |
+| T22-22 | Mobile — document cards | View the document list on a narrow screen. | Documents render as cards (not a table). Each card shows title, category, size, date, active toggle, and action buttons. |
+| T22-23 | Sort documents | Click a column header (e.g. *Uploaded*). | Documents sort by that column. Click again to reverse order. Sort direction indicator (▲/▼) updates. Preference is saved across page reloads. |
+| T22-24 | Pagination | Upload more than 25 documents. | Pagination controls appear. First / Previous / Next / Last buttons work correctly. Rows-per-page selector is functional. |
+| T22-25 | Help modal | Click the **?** button on the Knowledge Base page. | A help modal opens with sections covering Categories, Uploading, Sharing, and Managing Documents. |
+| T22-26 | Event log entries | After performing Upload, Edit, Toggle, Delete, and Category CRUD operations, open the Event Log. | Each operation has a corresponding entry in the *Knowledge Base* category with a meaningful title and payload. |
+
+---
+
 ## Appendix A — Test Data Setup Checklist
 
 Before starting the UAT run, ensure the following data is in place on the UAT instance:
@@ -509,6 +544,7 @@ After completing the full UAT run, verify the Event Log (`event-log.html`) conta
 | `API Keys` | Key Created, Key Toggled, Key Deleted |
 | `System` | Database Restored (if T17-03 was run), Events Pruned |
 | `WhatsApp` | Client Connected, Client Disconnected |
+| `Knowledge Base` | Category Created, Category Updated, Category Deleted, Document Uploaded, Document Updated, Document Toggled, Document Deleted |
 
 All entries must include: a non-empty `actor` name, a timestamp, a meaningful `title`, and a populated `payload` object (never `{}`).
 

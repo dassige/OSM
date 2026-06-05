@@ -292,14 +292,30 @@ const helpContent = {
     "system-tools": {
         title: "System Tools",
         body: `
-            <h3>1. Database Backup</h3>
-            <p>Downloads a complete snapshot of the <code>fenz.db</code> SQLite file. This includes all members, skills, live forms, history, and configuration.</p>
+            <h3>1. Backup</h3>
+            <p>Two backup types are available:</p>
+            <ul>
+                <li><strong>Full Backup</strong> — downloads a <code>.zip</code> file containing the complete database <em>and</em> all uploaded Knowledge Base documents (local storage only). Use this for a complete disaster-recovery snapshot.</li>
+                <li><strong>Database Only</strong> — downloads a <code>.sql</code> file containing the database alone. Use this when Knowledge Base documents are stored in S3 or GCS (managed separately by the cloud provider).</li>
+            </ul>
 
-            <h3>2. Database Restore</h3>
-            <p>Uploads a <code>.db</code> file to replace the current system state. <strong style="color:red;">Warning:</strong> This completely overwrites the current database and cannot be undone. The uploaded file must match the current application version.</p>
-            <p><em>Note:</em> In <strong>Demo Mode</strong>, these operations apply only to the sandboxed <code>demo.db</code>.</p>
+            <h3>2. Restore</h3>
+            <p>Upload a backup file to restore the system. <strong style="color:red;">Warning:</strong> This completely overwrites the current data and cannot be undone.</p>
+            <ul>
+                <li>Upload a <code>.zip</code> (Full Backup) to restore both the database and local Knowledge Base documents.</li>
+                <li>Upload a <code>.sql</code> (Database Only) to restore the database only.</li>
+            </ul>
+            <p>The backup must have been created by the same or an earlier version of OpReady. All active sessions are cleared after restore — everyone must log in again.</p>
 
-            <h3>3. API Key Management</h3>
+            <h3>3. Knowledge Base — Rotate Document Links</h3>
+            <p>Assigns a new GUID to every Knowledge Base document, immediately invalidating all previously shared public links. Use this periodically or when a link may have been shared with unintended recipients.</p>
+            <ul>
+                <li>All existing <code>/knowledgebase/&lt;guid&gt;</code> URLs stop working instantly.</li>
+                <li>Documents themselves are not affected — only their access URLs change.</li>
+                <li>Links embedded in forms and surveys update automatically because they are stored as document IDs, not raw URLs.</li>
+            </ul>
+
+        <h3>4. API Key Management</h3>
             <p>Create and manage API keys that allow external systems to authenticate to the REST API without a browser session.</p>
             <ul>
                 <li><strong>Create:</strong> Give the key a name and assign a role — <em>superadmin</em> (full access including user &amp; key management), <em>admin</em> (full read/write), <em>simple</em> (read-only statistics/reports), or <em>guest</em> (read-only public data). The full key is shown <strong>once</strong> — copy it immediately as it cannot be retrieved again.</li>
@@ -308,10 +324,10 @@ const helpContent = {
             </ul>
             <p>External systems authenticate by adding the header <code>X-API-Key: osm_…</code> to any <code>/api/*</code> request. See the interactive API reference at <code>/api/docs</code> for the full endpoint list.</p>
 
-            <h3>4. AI Evaluator Test Lab</h3>
+            <h3>5. AI Evaluator Test Lab</h3>
             <p>An ad-hoc sandbox for testing the AI grading logic against custom question/answer pairs before enabling it for live forms. Settings auto-save to your user profile.</p>
 
-            <h3>5. Install as App (PWA)</h3>
+            <h3>6. Install as App (PWA)</h3>
             <p>OpReady is a <strong>Progressive Web App</strong>. When supported by your browser, an <em>Install OpReady</em> banner will appear at the top of the page. Installing adds OpReady to your device's home screen or taskbar for one-tap access, works offline for recently visited pages, and removes browser chrome for a native app feel.</p>
             <ul>
                 <li>The install banner appears automatically when the browser detects the app is installable. Dismiss it and it won't reappear until the next session.</li>
@@ -482,6 +498,73 @@ const helpContent = {
         `
     },
 
+    // --- Knowledge Base ---
+    "knowledgebase": {
+        title: "Knowledge Base",
+        body: `
+            <p>The <strong>Knowledge Base</strong> lets you upload, organise, and share documents with brigade members — no login required to view them.</p>
+
+            <h3>1. Categories</h3>
+            <ul>
+                <li><strong>Add:</strong> Click <em>+ Add</em> in the Categories panel to create a root or sub-category. The document count badge next to each folder reflects the current filter.</li>
+                <li><strong>Select:</strong> Click any category to filter the document list on the right. Click <em>All Documents</em> to see everything.</li>
+                <li><strong>Edit / Delete:</strong> Hover over a category name to reveal the edit and delete icons. On mobile, they are always visible.</li>
+                <li>Deleting a category re-parents its sub-categories and leaves its documents as <em>Uncategorized</em>.</li>
+            </ul>
+
+            <h3>2. Filtering</h3>
+            <ul>
+                <li>Use the <strong>Filters</strong> bar to narrow the document list by title, description, or active/disabled status.</li>
+                <li>Click <strong>Apply</strong> to activate the filters. The category tree document counts update to reflect the filtered set.</li>
+                <li>Click <strong>Reset</strong> to clear all filters and restore the full list.</li>
+            </ul>
+
+            <h3>3. Uploading Documents</h3>
+            <ul>
+                <li>Click <strong>Upload Document</strong> and fill in the title, optional description, category, and expiry date.</li>
+                <li>Supported types: <strong>PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF</strong> · maximum 50 MB per upload.</li>
+                <li>The <strong>Expiry date</strong> defaults to today + the configured number of days (set via <code>KB_DEFAULT_EXPIRY_DAYS</code> in <code>.env</code>, default 365). Expired documents are flagged in red for admin review — they remain publicly accessible until explicitly disabled or deleted.</li>
+                <li>A unique GUID link is generated automatically — share it with members so they can view or download the document without logging in.</li>
+                <li>The category field pre-selects the category currently active in the left tree.</li>
+            </ul>
+
+            <h3>4. Sharing with Members</h3>
+            <ul>
+                <li>Click <strong>Copy Link</strong> on any document to copy the public URL to your clipboard.</li>
+                <li>Click <strong>View</strong> to preview the document as members will see it. PDFs display inline; Word and Excel open via Google Docs Viewer (on public servers) or as a download on mobile/iOS.</li>
+                <li>The link looks like: <code>/knowledgebase/4A04912E-...</code> — only someone who has the link can access the document.</li>
+            </ul>
+
+            <h3>5. Expiry &amp; Review</h3>
+            <ul>
+                <li>Documents flagged as expired show a red <strong>EXPIRED</strong> badge in the document table and a red <code>!N</code> count in the category tree.</li>
+                <li>Open the <strong>Edit</strong> modal to extend the expiry date, replace the file content, or renew the public link.</li>
+                <li>Expiry does <em>not</em> automatically disable a document — it is a visual reminder for admin review.</li>
+            </ul>
+
+            <h3>6. Managing Documents</h3>
+            <ul>
+                <li><strong>Active toggle:</strong> Disable a document to make it temporarily inaccessible without deleting it.</li>
+                <li><strong>Edit:</strong> Update the title, description, category, or expiry date.</li>
+                <li><strong>Replace File:</strong> Inside the Edit modal, attach a new file to overwrite the stored content. The document's ID, public link, and storage key remain unchanged — only the bytes are replaced.</li>
+                <li><strong>Renew Link:</strong> Inside the Edit modal, click <em>Renew Link</em> to rotate this document's GUID. Its current public link stops working immediately; a new URL is generated. Use this when a link has been shared with unintended recipients.</li>
+                <li><strong>Delete:</strong> Permanently removes the document and its file. The link will stop working immediately.</li>
+            </ul>
+
+            <h3>7. Embedding Links in Forms &amp; Surveys</h3>
+            <ul>
+                <li>When editing a form or survey, use the green <strong>KB Link</strong> button at the start of any TinyMCE toolbar to insert a link to a Knowledge Base document.</li>
+                <li>The link is stored as a placeholder using the document's integer ID — not the slug — so it automatically updates if the document's public link is rotated.</li>
+            </ul>
+
+            <h3>8. Rotating Links (Security)</h3>
+            <ul>
+                <li><strong>Per-document:</strong> Use the <em>Renew Link</em> button in the Edit modal to rotate one document's link.</li>
+                <li><strong>All documents at once:</strong> Go to <strong>System Tools → Rotate Document Links</strong> and type <code>ROTATE</code> to confirm. Every document is assigned a new GUID immediately. Links embedded in forms and surveys are <em>not</em> affected — they resolve dynamically via document ID.</li>
+            </ul>
+        `
+    },
+
     // --- Default / Fallback ---
     "default": {
         title: "Help",
@@ -514,6 +597,7 @@ const helpContent = {
     else if (path.includes("live-surveys")) key = "live-surveys";
     else if (path.includes("surveys-tracking")) key = "surveys-tracking";
     else if (path.includes("surveys-results")) key = "surveys-results";
+    else if (path.includes("knowledgebase")) key = "knowledgebase";
 
     // DYNAMIC FORMS-VIEW LOGIC
     if (path.includes("forms-view")) {
@@ -608,7 +692,8 @@ const helpContent = {
         'event-log', 'users', 'profile', 'third-parties', 'training-planner',
         'forms-manage', 'reports', 'live-forms', 'statistics', 'surveys-manage',
         'live-surveys', 'surveys-tracking', 'surveys-results',
-        'forms-view-review', 'forms-view-preview', 'surveys-view-preview'
+        'forms-view-review', 'forms-view-preview', 'surveys-view-preview',
+        'knowledgebase'
     ];
 
     // Short display titles for the banner (no app-name suffix)
@@ -633,7 +718,8 @@ const helpContent = {
         'surveys-results': 'Survey Results',
         'forms-view-review': 'Form Review',
         'forms-view-preview': 'Form Preview',
-        'surveys-view-preview': 'Survey Preview'
+        'surveys-view-preview': 'Survey Preview',
+        'knowledgebase': 'Knowledge Base'
     };
 
     if (bannerKeys.indexOf(key) !== -1) {

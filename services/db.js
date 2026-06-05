@@ -9,6 +9,7 @@ const training = require("./db/training");
 const backup = require("./db/backup");
 const surveys = require("./db/surveys");
 const apiKeys = require("./db/api-keys");
+const knowledgebase = require("./db/knowledgebase");
 
 module.exports = {
   initDB,
@@ -23,4 +24,5 @@ module.exports = {
   ...backup,
   ...surveys,
   ...apiKeys,
+  ...knowledgebase,
 };

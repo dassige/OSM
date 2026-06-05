@@ -14,8 +14,12 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-      # CHANGED: Allow overriding resources via .env, default to standard folder
+      # Custom branding assets — override UI_RESOURCES_PATH in .env to use a different host path
       - ${UI_RESOURCES_PATH:-./public/resources}:/app/public/resources
+      # Knowledge Base document storage — persists uploaded PDFs across restarts and redeployments.
+      # Default: ./storage/knowledgebase (inside the project directory, already gitignored).
+      # Set KB_STORAGE_HOST_PATH in .env to redirect to an external disk, NAS mount, or named volume.
+      - ${KB_STORAGE_HOST_PATH:-./storage/knowledgebase}:/app/storage/knowledgebase
     env_file:         
       - .env  
     networks:

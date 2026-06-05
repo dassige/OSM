@@ -42,6 +42,7 @@ const OPTIONS = {
     COOKIE_SECURE:          ['false', 'true'],
     ENABLE_AI_EVALUATION:   ['false', 'true'],
     ENABLE_WHATSAPP:        ['false', 'true'],
+    KB_STORAGE_TYPE:        ['local', 's3', 'gcs'],
 };
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */

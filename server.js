@@ -36,6 +36,7 @@ const trainingRoutes = require("./routes/api/training");
 const statisticsRoutes = require("./routes/api/statistics");
 const docsRoutes = require("./routes/api/docs");
 const apiKeyRoutes = require("./routes/api/api-keys");
+const kbRoutes = require("./routes/api/knowledgebase");
 const authRoutes = require("./routes/auth");
 const viewRoutes = require("./routes/views");
 
@@ -164,6 +165,7 @@ app.use("/api/training-sessions", trainingRoutes);
 app.use("/api/statistics", statisticsRoutes);
 app.use("/api/docs", docsRoutes);
 app.use("/api/api-keys", apiKeyRoutes);
+app.use("/api/knowledgebase", kbRoutes);
 
 
 

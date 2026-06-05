@@ -458,6 +458,11 @@
 
                 container.appendChild(card);
             });
+
+            // Resolve {{kb:N}} placeholders inserted by the KB Link button
+            if (typeof window.resolveKbLinks === 'function') {
+                window.resolveKbLinks(document.getElementById('surveyIntro').parentElement);
+            }
         }
 
         async function handleSubmission(e) {
@@ -552,6 +557,7 @@
         window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
     </script>
+    <script src="/js/kb-resolver.js"></script>
     <script src="/js/pwa.js"></script>
 
 </body>

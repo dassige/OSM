@@ -3349,6 +3349,34 @@ input:checked + .slider:before { transform: translateX(14px); }
     border-color: var(--primary);
 }
 
+/* Custom File Picker */
+.file-picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.file-picker-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.file-picker-label {
+    font-size: 0.875em;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+    font-style: italic;
+}
+.file-picker-label.has-file {
+    color: var(--text-main);
+    font-style: normal;
+    font-weight: 500;
+}
+
 .status-msg {
     margin-top: 15px;
     padding: 10px;

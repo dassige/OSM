@@ -75,6 +75,24 @@ const gcsConfig = {
   dataFilename: process.env.GCS_DATA_FILENAME || "osm_dashboard_export.html",
 };
 
+const kbDefaultExpiryDays = parseInt(process.env.KB_DEFAULT_EXPIRY_DAYS) || 365;
+
+const kbStorage = {
+  type:      process.env.KB_STORAGE_TYPE || 'local',
+  localPath: process.env.KB_LOCAL_PATH   || path.join(__dirname, 'storage', 'knowledgebase'),
+  s3: {
+    bucket:          process.env.KB_S3_BUCKET            || '',
+    region:          process.env.KB_S3_REGION            || 'us-east-1',
+    accessKeyId:     process.env.KB_S3_ACCESS_KEY_ID     || '',
+    secretAccessKey: process.env.KB_S3_SECRET_ACCESS_KEY || '',
+    endpoint:        process.env.KB_S3_ENDPOINT          || '',
+  },
+  gcs: {
+    bucket:      process.env.KB_GCS_BUCKET   || '',
+    keyFilename: process.env.KB_GCS_KEY_FILE || '',
+  },
+};
+
 function getDayIndex(dayName) {
   const days = [
     "sunday",
@@ -140,6 +158,8 @@ module.exports = {
   defaultMaxTries,
   aiConfig,
   gcsConfig,
+  kbStorage,
+  kbDefaultExpiryDays,
   rateLimits,
   cookieSecure,
   corsOrigin,

@@ -40,7 +40,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Smart Filtering:** A "Show Training Day Only" toggle that hides irrelevant days and expands the calendar to fill the screen.
       * **Training Day Highlight:** Define your brigade's standard training day in `.env` to have it automatically highlighted.
   * **System Maintenance & Auditing:**
-      * **Database Backup & Restore:** Download full database snapshots and restore them with strict version compatibility checks.
+      * **Backup & Restore:** Two backup modes — **Full Backup** (database + all local Knowledge Base documents, as a `.zip`) and **Database Only** (SQL dump, as a `.sql`). Restore accepts both formats and automatically restores KB documents when a full backup is uploaded.
       * **Event Log:** A comprehensive audit trail recording all major actions.
       * **Log Maintenance:** Super Admins can prune old events, purge the entire log, or export it to JSON.
   * **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies.
@@ -50,6 +50,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **WhatsApp Integration:** Send expiring skill notifications directly to members' WhatsApp accounts using a headless client. Includes support for bulk sending, test messages, session management, **automatic reconnection with exponential backoff**, and a **message queue** that retries delivery once the connection is restored.
   * **REST API with API Key Authentication:** Every `/api/*` endpoint can be called by external systems using an `X-API-Key` request header. Keys are managed (create, revoke, delete) through the System Tools page without restarting the server.
   * **API Reference (Swagger UI):** Interactive OpenAPI 3.0 documentation is available at `/api/docs` for authenticated admin users.
+  * **Knowledge Base:** A built-in document library for storing and sharing documents (PDF, Word, Excel, RTF) with brigade members — no login required. Documents are organised in a collapsible folder/category tree with live document counts and red expiry badges. Each document has a configurable expiry date; expired documents are flagged for admin review but remain accessible until explicitly disabled. The Edit modal supports replacing a document's file content without changing its public link. Admins can rotate GUIDs per-document or in bulk (System Tools) to invalidate shared links. A **KB Link** button in every TinyMCE editor embeds persistent document links inside forms and surveys using a stable integer ID that survives slug rotation.
 
 ## Table of Contents
 
@@ -207,6 +208,13 @@ Open the `.env` file and configure the following parameters:
 
 #### **WhatsApp Integration**
   * `ENABLE_WHATSAPP`: Set to `true` to enable the WhatsApp service and menu items.
+
+#### **Knowledge Base Document Storage**
+  * `KB_STORAGE_TYPE`: Storage backend for uploaded documents. Options: `local` (default, filesystem), `s3` (AWS S3 or compatible), `gcs` (Google Cloud Storage).
+  * `KB_LOCAL_PATH`: Path *inside the container* where files are stored when `KB_STORAGE_TYPE=local` (default: `./storage/knowledgebase`). Created automatically. In Docker, control the *host* path via `KB_STORAGE_HOST_PATH` instead.
+  * `KB_STORAGE_HOST_PATH`: *Docker only.* Host path mounted into the container at `/app/storage/knowledgebase`. Defaults to `./storage/knowledgebase` (inside the project directory, gitignored). Set this to redirect storage to an external disk or NAS.
+  * **AWS S3:** Set `KB_S3_BUCKET` (supports `bucket/subfolder` prefix), `KB_S3_REGION`, `KB_S3_ACCESS_KEY_ID`, `KB_S3_SECRET_ACCESS_KEY`. Set `KB_S3_ENDPOINT` to use S3-compatible stores (MinIO, Cloudflare R2, etc.).
+  * **Google Cloud Storage:** Set `KB_GCS_BUCKET` to the bucket name, or `bucketname/subfolder/prefix` to store files under a specific path within the bucket. Optionally set `KB_GCS_KEY_FILE` to a service-account JSON path; leave unset to use Application Default Credentials.
 
 #### **Rate Limiting**
 
@@ -507,6 +515,91 @@ See `/api/docs` for the complete endpoint reference including request/response s
 
 ---
 
+## Knowledge Base
+
+The Knowledge Base is a built-in document library that lets brigade administrators upload, organise, and share documents with members without requiring a login.
+
+### Supported file types
+
+| Type | Format | Member viewer |
+|---|---|---|
+| PDF | `.pdf` | Inline browser viewer (iframe) |
+| Word | `.doc`, `.docx` | Google Docs Viewer (public URLs) / Download card |
+| Excel | `.xls`, `.xlsx` | Google Docs Viewer (public URLs) / Download card |
+| RTF | `.rtf` | Download only |
+
+Maximum file size: **50 MB**.
+
+### Public access — GUID links
+
+Each document receives a unique UUID slug. The public URL is:
+
+```
+https://your-server.com/knowledgebase/4A04912E-F5C3-4CA6-91FC-8CBB3527AD81
+```
+
+No login is required. The UUID is the only access control — keep links confidential if the document is sensitive. On iOS Safari, PDFs and Office documents open via a download/open card because inline PDF embedding is not supported.
+
+### Categories
+
+Documents are organised in a collapsible folder/category tree with unlimited nesting depth. The document count badge next to each folder reflects the active filter state. Admins can create, rename, and delete categories; deleting a category re-parents its children and leaves documents as *Uncategorized*.
+
+### Filters
+
+The filter bar (collapsible on mobile) lets admins filter the document list by **title**, **description**, or **active/disabled status**. Category tree counts update to reflect the filtered set, so admins can see at a glance which categories contain matching documents.
+
+### Document expiry
+
+Every document has an optional **expiry date**. The default is *today + `KB_DEFAULT_EXPIRY_DAYS`* (default: 365). Set a different default in `.env`:
+
+```env
+KB_DEFAULT_EXPIRY_DAYS=365
+```
+
+Expiry is a **soft warning** only — expired documents remain publicly accessible until an admin acts. Expired documents are highlighted with a red `EXPIRED` badge in the document table and a red `!N` count in the category tree. Admins can then:
+
+- **Extend the expiry** — update the date in the Edit modal and save
+- **Replace the file** — upload new content in the Edit modal (same link, same ID, bytes replaced)
+- **Disable the document** — use the active toggle to immediately block public access
+
+### Replacing a document file
+
+The Edit modal includes an optional **Replace Document File** section. Uploading a new file overwrites the stored bytes at the same storage path. The document's **id, public GUID slug, and all metadata are preserved** — only the file content changes. Use this to publish an updated version of a document while all existing shared links continue to work.
+
+### Per-document link rotation
+
+The Edit modal includes a **Renew Link** button that generates a new GUID for that specific document, invalidating its current public URL. This is useful when a single link has been shared with unintended recipients without rotating all other document links.
+
+For bulk rotation of all documents at once, see [Rotating slugs (security)](#rotating-slugs-security).
+
+### Embedding links in forms and surveys
+
+When editing a form or survey in the TinyMCE editor, the green **KB Link** button at the start of the toolbar opens a searchable document picker. Selecting a document inserts a placeholder link:
+
+```html
+<a href="{{kb:42}}" data-kb-id="42" class="kb-doc-link">Document Title</a>
+```
+
+The integer `id` (`42`) is the stable anchor — not the slug. When the form or survey is rendered for a member, the placeholder is resolved to the current public URL automatically. This means **rotating slugs does not break embedded links**.
+
+### Rotating slugs (security)
+
+Go to **System Tools → Rotate Document Links** and confirm with the keyword `ROTATE`. Every document is assigned a new UUID immediately. All previously shared `/knowledgebase/<guid>` URLs stop working. Embedded links in forms and surveys are unaffected.
+
+### Storage backends
+
+Controlled by `KB_STORAGE_TYPE` in `.env`:
+
+| Value | Storage | Notes |
+|---|---|---|
+| `local` (default) | `./storage/knowledgebase/` on the server filesystem | Mounted as a Docker volume via `KB_STORAGE_HOST_PATH` |
+| `s3` | AWS S3 (or any S3-compatible store) | Set `KB_S3_BUCKET` (supports `bucket/subfolder` prefix), `KB_S3_REGION`, `KB_S3_ACCESS_KEY_ID`, `KB_S3_SECRET_ACCESS_KEY`; optionally `KB_S3_ENDPOINT` for MinIO/R2 |
+| `gcs` | Google Cloud Storage | Set `KB_GCS_BUCKET` (supports `bucket/subfolder` prefix); optionally `KB_GCS_KEY_FILE` for explicit credentials |
+
+The public GUID slug and the internal storage key are **separate UUIDs** generated at upload time. Rotating slugs never touches stored files.
+
+---
+
 ## Testing
 
 | Command | When to run | Requires |
@@ -659,6 +752,29 @@ Newman prints a summary table: requests run, assertions passed/failed, average r
 5.  **Database WAL mode:** The SQLite database runs in WAL (Write-Ahead Logging) mode. This creates two additional files alongside `fenz.db` (`fenz.db-wal` and `fenz.db-shm`) while the server is running. These are normal and should be included in any backup. They are automatically checkpointed and removed on clean shutdown.
 6.  **Multi-stage build:** The `Dockerfile` uses a two-stage build. The `builder` stage installs `python3`, `make`, and `g++` to compile native Node.js addons (e.g. `better-sqlite3`). The `runtime` stage copies only the pre-built `node_modules` and the app source — no build tooling is present in the final image, reducing the attack surface.
 7.  **Non-root execution:** The runtime image runs as the built-in `node` user (UID 1000) rather than root. This applies to Cloud Run and any deployment where the image runs without a bind mount — the `chown -R node:node /app` layer in the Dockerfile is effective in that case. The provided `docker-compose.yml` overrides this with `user: "0"` because it bind-mounts the host directory at `/app`, meaning host-file ownership governs write access rather than the image layer. The `USER node` instruction still appears in the Dockerfile so that production image deployments (no bind mount) benefit from non-root execution automatically.
+8.  **Knowledge Base document storage:** Uploaded PDFs are stored at `./storage/knowledgebase` on the host (the directory is gitignored and created automatically on first upload). The `docker-compose.yml` mounts this path explicitly at `/app/storage/knowledgebase` inside the container so files survive container recreation:
+
+    ```yaml
+    - ${KB_STORAGE_HOST_PATH:-./storage/knowledgebase}:/app/storage/knowledgebase
+    ```
+
+    To redirect storage to a different host path — for example an external disk or NAS mount — set `KB_STORAGE_HOST_PATH` in your `.env`:
+
+    ```env
+    KB_STORAGE_HOST_PATH=/mnt/nas/opready-kb
+    ```
+
+    For **cloud or server deployments** where local disk is not suitable, switch to S3 or GCS instead and remove the volume entry:
+
+    ```env
+    KB_STORAGE_TYPE=s3
+    KB_S3_BUCKET=my-bucket
+    KB_S3_REGION=ap-southeast-2
+    KB_S3_ACCESS_KEY_ID=...
+    KB_S3_SECRET_ACCESS_KEY=...
+    ```
+
+    When `KB_STORAGE_TYPE` is `s3` or `gcs`, no local directory or volume mount is needed for document storage.
 
 ## Cloudflare Tunnel
 
@@ -728,7 +844,14 @@ Icons are written to `public/icons/`. The manifest references them at `/icons/ic
 
 ### Scheduled External Backup
 
-OpReady exposes a `GET /api/system/backup` endpoint that generates a full SQL dump and returns it as a downloadable `.sql` file. Because it accepts API key authentication (`X-API-Key` header), it can be called from any external scheduler — no browser session required.
+The backup endpoint accepts API key authentication (`X-API-Key` header) so it can be called from any external scheduler — no browser session required. Two modes are available:
+
+| Endpoint | Output | Contains |
+|---|---|---|
+| `GET /api/system/backup?type=db` | `.sql` | Database only |
+| `GET /api/system/backup?type=full` | `.zip` | Database + local KB documents |
+
+Use `type=db` for Cloud Run / S3/GCS deployments where documents live in the cloud. Use `type=full` for local/Docker deployments to capture everything in one file.
 
 This is the recommended backup strategy for Cloud Run deployments, where keeping the instance running continuously just to run scheduled jobs would incur unnecessary cost. The HTTP request wakes the instance, the dump is streamed back, and the instance returns to idle.
 
@@ -742,7 +865,9 @@ A ready-to-use script is provided at [`examples/system/backup-opready.sh`](examp
 
 ```bash
 #!/bin/bash
-# backup-opready.sh — downloads a full SQL backup from OpReady
+# backup-opready.sh — downloads a database-only SQL backup from OpReady
+# For a full backup (DB + KB documents) change ?type=db to ?type=full
+# and update the filename extension to .zip.
 # Recommended schedule: daily via cron
 
 API_KEY="osm_your64hexkeyhere"
@@ -758,25 +883,25 @@ mkdir -p "$BACKUP_DIR"
 
 HTTP_STATUS=$(curl -s -w "%{http_code}" \
   -H "X-API-Key: $API_KEY" \
-  -o "$BACKUP_DIR/fenz_backup_${DATE}.sql" \
-  "${BASE_URL}/api/system/backup")
+  -o "$BACKUP_DIR/opready-db-backup-${DATE}.sql" \
+  "${BASE_URL}/api/system/backup?type=db")
 
 if [ "$HTTP_STATUS" -eq 200 ]; then
-  echo "[$(date)] Backup saved: fenz_backup_${DATE}.sql"
+  echo "[$(date)] Backup saved: opready-db-backup-${DATE}.sql"
 else
   echo "[$(date)] Backup FAILED — HTTP $HTTP_STATUS" >&2
-  rm -f "$BACKUP_DIR/fenz_backup_${DATE}.sql"
+  rm -f "$BACKUP_DIR/opready-db-backup-${DATE}.sql"
   exit 1
 fi
 
 # Retention: remove files older than KEEP_DAYS days
 if [ "$KEEP_DAYS" -gt 0 ]; then
-  find "$BACKUP_DIR" -name "fenz_backup_*.sql" -mtime +"$KEEP_DAYS" -delete
+  find "$BACKUP_DIR" -name "opready-db-backup-*.sql" -mtime +"$KEEP_DAYS" -delete
 fi
 
 # Retention: keep only the KEEP_COUNT most recent files
 if [ "$KEEP_COUNT" -gt 0 ]; then
-  ls -1t "$BACKUP_DIR"/fenz_backup_*.sql 2>/dev/null | tail -n +"$((KEEP_COUNT + 1))" | xargs -r rm --
+  ls -1t "$BACKUP_DIR"/opready-db-backup-*.sql 2>/dev/null | tail -n +"$((KEEP_COUNT + 1))" | xargs -r rm --
 fi
 ```
 

@@ -29,7 +29,8 @@ const spec = {
         { name: 'Users', description: 'Admin user account management' },
         { name: 'Profile', description: 'Current user profile and MFA' },
         { name: 'System', description: 'Health, preferences, and event logs' },
-        { name: 'API Keys', description: 'API key management for external integrations' }
+        { name: 'API Keys', description: 'API key management for external integrations' },
+        { name: 'Knowledge Base', description: 'PDF document library — categories and documents with GUID-secured public viewer links' }
     ],
     components: {
         securitySchemes: {
@@ -1244,6 +1245,183 @@ const spec = {
                 },
                 responses: {
                     200: { description: 'Logged', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+
+        // ── Knowledge Base ────────────────────────────────────────────────────
+        '/api/knowledgebase/categories': {
+            get: {
+                tags: ['Knowledge Base'],
+                summary: 'List all categories',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                responses: { 200: { description: 'Array of category objects' } }
+            },
+            post: {
+                tags: ['Knowledge Base'],
+                summary: 'Create a category',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: {
+                        type: 'object',
+                        required: ['name'],
+                        properties: {
+                            name: { type: 'string', example: 'Operational' },
+                            parent_id: { type: 'integer', nullable: true },
+                            sort_order: { type: 'integer', default: 0 }
+                        }
+                    }}}
+                },
+                responses: {
+                    200: { description: 'Created', content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' } } } } } },
+                    400: { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/knowledgebase/categories/{id}': {
+            patch: {
+                tags: ['Knowledge Base'],
+                summary: 'Update a category',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { name: { type: 'string' }, parent_id: { type: 'integer', nullable: true }, sort_order: { type: 'integer' } } } } } },
+                responses: { 200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } } }
+            },
+            delete: {
+                tags: ['Knowledge Base'],
+                summary: 'Delete a category (children re-parented; documents become uncategorized)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: { 200: { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } } }
+            }
+        },
+        '/api/knowledgebase/documents': {
+            get: {
+                tags: ['Knowledge Base'],
+                summary: 'List documents (optionally filtered by category_id)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'category_id', in: 'query', schema: { type: 'integer' }, description: 'Omit for all documents; pass null for uncategorized' }],
+                responses: { 200: { description: 'Array of document objects' } }
+            },
+            post: {
+                tags: ['Knowledge Base'],
+                summary: 'Upload a PDF document',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                requestBody: {
+                    required: true,
+                    content: { 'multipart/form-data': { schema: {
+                        type: 'object',
+                        required: ['file', 'title'],
+                        properties: {
+                            file: { type: 'string', format: 'binary', description: 'Document file — PDF, Word, Excel or RTF (max 50 MB)' },
+                            title: { type: 'string', example: 'Fire Attack Procedures' },
+                            description: { type: 'string', nullable: true },
+                            category_id: { type: 'integer', nullable: true },
+                            expires_at: { type: 'string', format: 'date', nullable: true, example: '2027-06-04', description: 'ISO date after which the document is flagged as expired' }
+                        }
+                    }}}
+                },
+                responses: {
+                    200: { description: 'Uploaded', content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' }, slug: { type: 'string', example: '4A04912E-F5C3-4CA6-91FC-8CBB3527AD81' } } } } } }
+                }
+            }
+        },
+        '/api/knowledgebase/documents/{id}': {
+            get: {
+                tags: ['Knowledge Base'],
+                summary: 'Get a single document by ID',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: { 200: { description: 'Document object' }, 404: { description: 'Not found' } }
+            },
+            patch: {
+                tags: ['Knowledge Base'],
+                summary: 'Update document title, description, or category',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string', nullable: true }, category_id: { type: 'integer', nullable: true }, expires_at: { type: 'string', format: 'date', nullable: true, description: 'ISO date after which the document is flagged as expired' } } } } } },
+                responses: { 200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } } }
+            },
+            delete: {
+                tags: ['Knowledge Base'],
+                summary: 'Delete a document and its stored file',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: { 200: { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } } }
+            }
+        },
+        '/api/knowledgebase/documents/{id}/toggle': {
+            patch: {
+                tags: ['Knowledge Base'],
+                summary: 'Toggle document active/inactive',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: { 200: { description: 'Toggled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } } }
+            }
+        },
+        '/api/knowledgebase/documents/{id}/replace-file': {
+            post: {
+                tags: ['Knowledge Base'],
+                summary: 'Replace the stored file — same id, slug and storage path; only the bytes change',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: { 'multipart/form-data': { schema: {
+                        type: 'object',
+                        required: ['file'],
+                        properties: {
+                            file: { type: 'string', format: 'binary', description: 'Replacement file — PDF, Word, Excel or RTF (max 50 MB)' }
+                        }
+                    }}}
+                },
+                responses: {
+                    200: { description: 'File replaced', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'No file provided' },
+                    404: { description: 'Document not found' }
+                }
+            }
+        },
+        '/api/knowledgebase/documents/{id}/rotate-slug': {
+            patch: {
+                tags: ['Knowledge Base'],
+                summary: 'Rotate the public slug for a single document — invalidates its current public link only',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Slug rotated', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, slug: { type: 'string', example: 'NEW-UUID-HERE' } } } } } },
+                    404: { description: 'Document not found' }
+                }
+            }
+        },
+        '/api/knowledgebase/rotate-slugs': {
+            post: {
+                tags: ['Knowledge Base'],
+                summary: 'Rotate all document slugs — invalidates every existing public link (superadmin only)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                responses: {
+                    200: { description: 'Rotation complete', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, rotated: { type: 'integer', example: 12 } } } } } },
+                    403: { description: 'Forbidden or demo mode' }
+                }
+            }
+        },
+        '/api/knowledgebase/doc/{slug}': {
+            get: {
+                tags: ['Knowledge Base'],
+                summary: 'Get public document metadata by GUID slug (no auth required)',
+                parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' }, example: '4A04912E-F5C3-4CA6-91FC-8CBB3527AD81' }],
+                responses: { 200: { description: 'Document metadata' }, 404: { description: 'Not found or inactive' } }
+            }
+        },
+        '/api/knowledgebase/file/{slug}': {
+            get: {
+                tags: ['Knowledge Base'],
+                summary: 'Serve the PDF file by GUID slug (no auth required — GUID is the access control)',
+                parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
+                responses: {
+                    200: { description: 'PDF binary stream', content: { 'application/pdf': {} } },
+                    404: { description: 'Not found or inactive' }
                 }
             }
         }

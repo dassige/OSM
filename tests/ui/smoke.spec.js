@@ -21,6 +21,7 @@ const AUTH_PAGES = [
   { url: '/users.html',             name: 'Users' },
   { url: '/system-tools.html',      name: 'System Tools' },
   { url: '/profile.html',           name: 'Profile' },
+  { url: '/knowledgebase.html',     name: 'Knowledge Base' },
 ];
 
 function attachErrorListeners(page) {
@@ -66,5 +67,18 @@ test.describe('Smoke — public pages', () => {
     await page.waitForLoadState('domcontentloaded');
 
     expect(errors, `JS errors on Login:\n${errors.join('\n')}`).toEqual([]);
+  });
+
+  test('KB viewer page loads without JS errors (no GUID — shows not-found state)', async ({ page, context }) => {
+    // Public page — no auth required; load the shell without a real GUID
+    await context.clearCookies();
+
+    const errors = attachErrorListeners(page);
+
+    // /knowledgebase-view.html is the static shell; the viewer JS handles the missing-GUID case gracefully
+    await page.goto('/knowledgebase-view.html');
+    await page.waitForLoadState('domcontentloaded');
+
+    expect(errors, `JS errors on KB Viewer:\n${errors.join('\n')}`).toEqual([]);
   });
 });

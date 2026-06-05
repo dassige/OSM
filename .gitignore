@@ -24,4 +24,4 @@ examples/api/newman-environment.local.json
 newman-report.json
 newman-report.html
 fenz_demo.db
-OpReady*Improvements*.md
+storage/
