@@ -179,6 +179,60 @@ describe('GET /api/knowledgebase/documents/:id/file-status', () => {
     });
 });
 
+describe('GET /api/knowledgebase/documents/missing-files', () => {
+    const docs = [
+        { id: 1, title: 'Doc A', original_filename: 'a.pdf', storage_type: 'local', storage_path: 'a.pdf', category_name: 'Ops', is_active: 1, created_at: '2026-01-01' },
+        { id: 2, title: 'Doc B', original_filename: 'b.pdf', storage_type: 'local', storage_path: 'b.pdf', category_name: null,  is_active: 0, created_at: '2026-01-02' },
+    ];
+
+    it('returns total and empty missing array when all files exist', async () => {
+        db.getKbDocuments.mockResolvedValue(docs);
+        storage.fileExists.mockResolvedValue(true);
+        const res = await request(app).get('/api/knowledgebase/documents/missing-files');
+        expect(res.status).toBe(200);
+        expect(res.body.total).toBe(2);
+        expect(res.body.missing).toEqual([]);
+    });
+
+    it('returns documents whose file is missing', async () => {
+        db.getKbDocuments.mockResolvedValue(docs);
+        storage.fileExists
+            .mockResolvedValueOnce(true)   // Doc A exists
+            .mockResolvedValueOnce(false);  // Doc B missing
+        const res = await request(app).get('/api/knowledgebase/documents/missing-files');
+        expect(res.status).toBe(200);
+        expect(res.body.total).toBe(2);
+        expect(res.body.missing).toHaveLength(1);
+        expect(res.body.missing[0].id).toBe(2);
+        expect(res.body.missing[0].title).toBe('Doc B');
+        expect(res.body.missing[0].storage_type).toBe('local');
+    });
+
+    it('returns all documents when no files exist', async () => {
+        db.getKbDocuments.mockResolvedValue(docs);
+        storage.fileExists.mockResolvedValue(false);
+        const res = await request(app).get('/api/knowledgebase/documents/missing-files');
+        expect(res.status).toBe(200);
+        expect(res.body.total).toBe(2);
+        expect(res.body.missing).toHaveLength(2);
+    });
+
+    it('returns 200 with empty results when no documents exist', async () => {
+        db.getKbDocuments.mockResolvedValue([]);
+        const res = await request(app).get('/api/knowledgebase/documents/missing-files');
+        expect(res.status).toBe(200);
+        expect(res.body.total).toBe(0);
+        expect(res.body.missing).toEqual([]);
+    });
+
+    it('returns 500 on DB error', async () => {
+        db.getKbDocuments.mockRejectedValue(new Error('DB fail'));
+        const res = await request(app).get('/api/knowledgebase/documents/missing-files');
+        expect(res.status).toBe(500);
+        expect(res.body.error).toBe('DB fail');
+    });
+});
+
 describe('POST /api/knowledgebase/documents (upload)', () => {
     it('returns 400 when title is missing', async () => {
         const res = await request(app)

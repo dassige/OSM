@@ -2512,6 +2512,25 @@
           }
         },
         {
+          "name": "Scan Documents for Missing Files",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents/missing-files",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "knowledgebase",
+                "documents",
+                "missing-files"
+              ]
+            }
+          }
+        },
+        {
           "name": "Replace Document File",
           "request": {
             "method": "POST",

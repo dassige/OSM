@@ -580,6 +580,8 @@ The Replace Document File section is shown automatically. Upload a replacement f
 
 The `GET /api/knowledgebase/documents/:id/file-status` endpoint (returns `{ exists: boolean }`) is used by the UI to detect this condition and can also be called by external integrations to audit storage consistency.
 
+To proactively audit the entire library rather than discovering missing files one at a time, go to **System Tools → Knowledge Base → Find Documents with Missing Files** and click **Scan for Missing Files**. The scan checks every document record against the storage backend and lists any whose physical file is absent, including the title, filename, storage type, category, and active/inactive status. The equivalent API endpoint is `GET /api/knowledgebase/documents/missing-files`, which returns `{ total: <integer>, missing: [...] }`.  This scan is read-only and covers active and inactive documents.
+
 ### Per-document link rotation
 
 The Edit modal includes a **Renew Link** button that generates a new GUID for that specific document, invalidating its current public URL. This is useful when a single link has been shared with unintended recipients without rotating all other document links.
@@ -1084,7 +1086,7 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── reports.html            # Compliance reports
 │   ├── statistics.html         # Compliance statistics & charts
 │   ├── event-log.html          # Audit log
-│   ├── system-tools.html       # API Key Management, KB link rotation, AI Test Lab
+│   ├── system-tools.html       # API Key Management, KB link rotation, KB missing-file scan, AI Test Lab
 │   ├── backup-restore.html     # Backup & Restore (dedicated page, superadmin only)
 │   ├── users.html              # Admin user management
 │   ├── profile.html            # Current-user profile

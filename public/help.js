@@ -337,12 +337,11 @@ const helpContent = {
             <h3>1. Backup &amp; Restore</h3>
             <p>Download backups or restore the system from a saved backup file. These operations are available on the dedicated <strong>Backup &amp; Restore</strong> page, accessible from the navigation menu or the link on this page.</p>
 
-            <h3>2. Knowledge Base — Rotate Document Links</h3>
-            <p>Assigns a new GUID to every Knowledge Base document, immediately invalidating all previously shared public links. Use this periodically or when a link may have been shared with unintended recipients.</p>
+            <h3>2. Knowledge Base</h3>
+            <p>Two maintenance tools are available for the Knowledge Base document library.</p>
             <ul>
-                <li>All existing <code>/knowledgebase/&lt;guid&gt;</code> URLs stop working instantly.</li>
-                <li>Documents themselves are not affected — only their access URLs change.</li>
-                <li>Links embedded in forms and surveys update automatically because they are stored as document IDs, not raw URLs.</li>
+                <li><strong>Rotate Document Links</strong> — assigns a new GUID to every document, immediately invalidating all previously shared public links. Use periodically or when a link may have been shared with unintended recipients. Documents are not affected — only their access URLs change. Links embedded in forms and surveys update automatically (stored as document IDs, not raw URLs).</li>
+                <li><strong>Find Documents with Missing Files</strong> — scans every document record and checks whether its physical file is present in the storage backend. Useful after a database-only restore, a storage migration, or if files were deleted outside the application. The scan is read-only and covers all documents regardless of active/inactive status.</li>
             </ul>
 
             <h3>3. API Key Management</h3>

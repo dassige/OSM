@@ -837,6 +837,30 @@
               }
             }
           ]
+        },
+        {
+          "name": "Scan KB Documents for Missing Files",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/knowledgebase/documents/missing-files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "knowledgebase", "documents", "missing-files"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Scan KB Missing Files | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Scan KB Missing Files | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('Scan KB Missing Files | Returns total and missing array', () => { const b = pm.response.json(); pm.expect(b).to.have.property('total').that.is.a('number'); pm.expect(b).to.have.property('missing').that.is.an('array'); });"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

@@ -168,6 +168,33 @@ router.get('/documents', hasRole('admin'), async (req, res) => {
     }
 });
 
+// Must be declared before /documents/:id so Express does not treat "missing-files" as an id param.
+router.get('/documents/missing-files', hasRole('admin'), async (req, res) => {
+    try {
+        const docs = await db.getKbDocuments();
+        const missing = [];
+        for (const doc of docs) {
+            const exists = await storage.fileExists(doc.storage_type, doc.storage_path);
+            if (!exists) {
+                missing.push({
+                    id:                doc.id,
+                    title:             doc.title,
+                    original_filename: doc.original_filename,
+                    storage_type:      doc.storage_type,
+                    category_name:     doc.category_name || null,
+                    is_active:         doc.is_active,
+                    created_at:        doc.created_at,
+                });
+            }
+        }
+        logger.info('[KB] Missing files scan completed', { total: docs.length, missing: missing.length });
+        res.json({ total: docs.length, missing });
+    } catch (e) {
+        logger.error('[KB] Missing files scan failed', { error: e.message });
+        res.status(500).json({ error: e.message });
+    }
+});
+
 router.get('/documents/:id', hasRole('admin'), async (req, res) => {
     try {
         const doc = await db.getKbDocumentById(req.params.id);

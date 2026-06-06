@@ -1665,6 +1665,41 @@ const spec = {
                 }
             }
         },
+        '/api/knowledgebase/documents/missing-files': {
+            get: {
+                tags: ['Knowledge Base'],
+                summary: 'Scan all documents for missing storage files',
+                description: 'Checks every document record against the configured storage backend and returns those whose physical file is absent. Useful after a DB-only restore or a storage migration.',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                responses: {
+                    200: {
+                        description: 'Scan result',
+                        content: { 'application/json': { schema: {
+                            type: 'object',
+                            properties: {
+                                total:   { type: 'integer', description: 'Total documents scanned', example: 15 },
+                                missing: {
+                                    type: 'array',
+                                    description: 'Documents whose file was not found in storage',
+                                    items: {
+                                        type: 'object',
+                                        properties: {
+                                            id:                { type: 'integer' },
+                                            title:             { type: 'string' },
+                                            original_filename: { type: 'string' },
+                                            storage_type:      { type: 'string', enum: ['local', 's3', 'gcs'] },
+                                            category_name:     { type: 'string', nullable: true },
+                                            is_active:         { type: 'integer', enum: [0, 1] },
+                                            created_at:        { type: 'string', format: 'date-time' }
+                                        }
+                                    }
+                                }
+                            }
+                        }}}
+                    }
+                }
+            }
+        },
         '/api/knowledgebase/documents/{id}': {
             get: {
                 tags: ['Knowledge Base'],
