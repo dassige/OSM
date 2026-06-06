@@ -211,6 +211,134 @@ window.confirmAction = function(title, message) {
         };
     });
 };
+// --- CUSTOM PROMPT-WITH-INPUT MODAL (value field + confirmation keyword) ---
+(function setupPromptInputModal() {
+    if (document.getElementById('customPromptInputModal')) return;
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #customPromptInputModal {
+            display: none; position: fixed; z-index: 10500; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+            align-items: center; justify-content: center;
+        }
+        #customPromptInputModal[style*="display: flex"],
+        #customPromptInputModal[style*="display:flex"] { display: flex !important; }
+        #customPromptInputModal .modal-content {
+            background-color: var(--bg-card, #fff); color: var(--text-main, #333);
+            margin: 0; padding: 25px; border: 1px solid var(--border-color, #ddd); width: 90%; max-width: 420px;
+            border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: fadeIn 0.2s ease-out;
+        }
+        .prompt-input-label {
+            display: block; font-size: 13px; font-weight: 600;
+            color: var(--text-muted, #666); margin: 15px 0 6px;
+        }
+    `;
+    document.head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.id = 'customPromptInputModal';
+    div.innerHTML = `
+        <div class="modal-content">
+            <h3 id="promptInputTitle" style="margin-top:0; font-size:1.25rem;">Action Required</h3>
+            <p id="promptInputMessage" style="color: var(--text-muted, #666); line-height: 1.5; margin: 15px 0 0;"></p>
+            <label id="promptInputValueLabel" class="prompt-input-label" for="promptInputValue"></label>
+            <input id="promptInputValue" class="prompt-input" autocomplete="off">
+            <label id="promptInputConfirmLabel" class="prompt-input-label" for="promptInputConfirm"></label>
+            <input type="text" id="promptInputConfirm" class="prompt-input" autocomplete="off">
+            <div class="confirm-btn-group">
+                <button id="btnPromptInputCancel" class="confirm-btn confirm-btn-cancel">Cancel</button>
+                <button id="btnPromptInputYes" class="confirm-btn confirm-btn-ok">Confirm</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(div);
+})();
+
+/**
+ * Custom modal: a labelled value input (text or number) PLUS a confirmation keyword.
+ * @param {string} title
+ * @param {string} message          - HTML allowed
+ * @param {object} opts
+ * @param {string}  opts.inputLabel   - Label shown above the value field
+ * @param {*}       opts.inputDefault - Pre-filled value
+ * @param {string}  [opts.inputType]  - 'number' | 'text'  (default: 'text')
+ * @param {number}  [opts.inputMin]   - Minimum allowed value for number inputs
+ * @param {string}  opts.requiredText - Confirmation keyword the user must type exactly
+ * @returns {Promise<string|null>}  The trimmed value string when confirmed, null when cancelled
+ */
+window.promptActionWithInput = function(title, message, opts) {
+    return new Promise((resolve) => {
+        const modal        = document.getElementById('customPromptInputModal');
+        const titleEl      = document.getElementById('promptInputTitle');
+        const msgEl        = document.getElementById('promptInputMessage');
+        const valueLabel   = document.getElementById('promptInputValueLabel');
+        const valueEl      = document.getElementById('promptInputValue');
+        const confirmLabel = document.getElementById('promptInputConfirmLabel');
+        const confirmEl    = document.getElementById('promptInputConfirm');
+        const btnYes       = document.getElementById('btnPromptInputYes');
+        const btnCancel    = document.getElementById('btnPromptInputCancel');
+
+        titleEl.textContent      = title || 'Action Required';
+        msgEl.innerHTML          = message || '';
+        valueLabel.textContent   = opts.inputLabel || 'Value';
+        confirmLabel.innerHTML   = `Type <strong>${opts.requiredText}</strong> to confirm`;
+
+        valueEl.type  = opts.inputType || 'text';
+        valueEl.value = opts.inputDefault != null ? String(opts.inputDefault) : '';
+        if (opts.inputType === 'number') {
+            valueEl.min = opts.inputMin != null ? String(opts.inputMin) : '1';
+        } else {
+            valueEl.removeAttribute('min');
+        }
+        confirmEl.value       = '';
+        confirmEl.placeholder = `Type '${opts.requiredText}'`;
+
+        btnYes.disabled      = true;
+        btnYes.style.opacity = '0.5';
+        btnYes.classList.remove('btn-danger');
+
+        modal.style.display = 'flex';
+        valueEl.focus();
+        valueEl.select();
+
+        const validate = () => {
+            const min     = parseFloat(valueEl.min);
+            const num     = parseFloat(valueEl.value);
+            const valueOk = valueEl.value.trim() !== '' &&
+                (opts.inputType !== 'number' || (!isNaN(num) && (isNaN(min) || num >= min)));
+            const ok      = valueOk && confirmEl.value === opts.requiredText;
+            btnYes.disabled      = !ok;
+            btnYes.style.opacity = ok ? '1' : '0.5';
+            if (ok) btnYes.classList.add('btn-danger');
+            else    btnYes.classList.remove('btn-danger');
+        };
+
+        valueEl.addEventListener('input', validate);
+        confirmEl.addEventListener('input', validate);
+
+        const cleanup = () => {
+            modal.style.display = 'none';
+            btnYes.onclick    = null;
+            btnCancel.onclick = null;
+            modal.onclick     = null;
+            valueEl.removeEventListener('input', validate);
+            confirmEl.removeEventListener('input', validate);
+            window.removeEventListener('keydown', handleKey);
+        };
+
+        const handleKey = (e) => {
+            if (e.key === 'Escape') { cleanup(); resolve(null); }
+            if (e.key === 'Enter' && !btnYes.disabled) { cleanup(); resolve(valueEl.value.trim()); }
+        };
+
+        window.addEventListener('keydown', handleKey);
+        btnYes.onclick    = () => { cleanup(); resolve(valueEl.value.trim()); };
+        btnCancel.onclick = () => { cleanup(); resolve(null); };
+        modal.onclick     = (e) => { if (e.target === modal) { cleanup(); resolve(null); } };
+    });
+};
+
 /**
  * Opens a modal by ID and ensures it is visible.
  */

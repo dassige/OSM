@@ -332,20 +332,8 @@
 
 | ID | Action | Steps | Expected Result |
 |----|--------|-------|----------------|
-| T17-01 | Page load | Navigate to `system-tools.html`. | Backup & Restore link card, Knowledge Base section (Rotate Document Links + Find Documents with Missing Files cards), API Keys, and AI Lab sections are all visible. |
+| T17-01 | Page load | Navigate to `system-tools.html`. | Backup & Restore link card, Knowledge Base section (Rotate Document Links + Find Documents with Missing Files cards), and AI Lab section are all visible. |
 | T17-02 | Navigate to Backup & Restore | Click `[Open Backup & Restore]` in the Backup & Restore card. | Browser navigates to `backup-restore.html`. |
-
-### T17-B — API Key Management
-
-| ID | Action | Steps | Expected Result |
-|----|--------|-------|----------------|
-| T17-05 | Create an API key for each role | Click `[Create API Key]` → enter a name, select Role = `superadmin` → click `[Generate]`. Repeat for roles `admin`, `simple`, and `guest`. | For each creation: the full API key (`osm_...`) is displayed once; the key appears in the list with the correct role label. Event log records "API Key Created" for each. |
-| T17-06 | Copy the API key | Click `[Copy]` next to the displayed key. | Key is copied to the clipboard. The full key value is NOT shown again after closing this dialog. |
-| T17-07 | Verify API key works | Use the copied `admin` key in a REST client (e.g., Postman): `GET /api/members` with header `X-API-Key: {copied_key}`. | HTTP 200 response with member data is returned. |
-| T17-08 | Disable (toggle) an API key | Click `[Toggle]` on the active API key. | Key status changes to Disabled. Event log records "API Key Toggled" with `newState: disabled`. |
-| T17-09 | Verify disabled key is rejected | Retry the API request from T17-07 with the now-disabled key. | HTTP 403 response. Request is rejected. |
-| T17-10 | Re-enable an API key | Click `[Toggle]` again. | Key status returns to Active. Event log records "API Key Toggled" with `newState: enabled`. |
-| T17-11 | Delete an API key | Click `[Delete]` → confirm. | Key is removed from the list. Event log records "API Key Deleted". Subsequent requests with that key return 403. |
 
 ### T17-C — AI Evaluator Sandbox
 
@@ -583,6 +571,53 @@
 
 ---
 
+## T25 — API Management
+
+**Page:** `api-management.html`  
+**Access:** Admin and above
+
+### T25-A — API Key Management
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T25-01 | Page load | Navigate to `api-management.html`. | Two sections are visible: "API Key Management" and "API Call Log". The key table loads (empty or with existing keys). |
+| T25-02 | Create an API key — each role | Click `[+ Add API Key]` → enter Name, select Role = `superadmin` → click `[Create]`. Repeat for `admin`, `simple`, and `guest`. | For each: the full key (`osm_...`) is displayed once in a modal. Key appears in the list with the correct role badge. Event log records "API Key Created". |
+| T25-03 | Copy the API key | Click `[Copy]` in the reveal modal. | Key is copied to the clipboard. Toast confirms. The full value is NOT shown again after closing. |
+| T25-04 | Verify API key works | Use the copied `admin` key in a REST client: `GET /api/members` with header `X-API-Key: {key}`. | HTTP 200 response with member data. The call appears in the API Call Log after refreshing. |
+| T25-05 | Revoke an API key | Click `[Revoke]` on an active key → confirm. | Key status changes to Revoked. Event log records "API Key Toggled" with `newState: disabled`. |
+| T25-06 | Verify revoked key is rejected | Retry the API call from T25-04 with the now-revoked key. | HTTP 401 response. |
+| T25-07 | Re-enable an API key | Click `[Enable]` on the revoked key → confirm. | Key status returns to Active. Event log records "API Key Toggled" with `newState: enabled`. |
+| T25-08 | Delete an API key | Click `[Delete]` on a key → confirm. | Key is removed from the list. Event log records "API Key Deleted". Subsequent requests with that key return 401. |
+| T25-09 | Sort API keys | Click the Name column header. | List sorts alphabetically. Icon shows ▲/▼ direction indicator. Preference persists on page reload. |
+| T25-10 | Demo mode guard | On a demo instance, try Create, Revoke, and Delete. | All mutating operations show "Disabled in demo mode." toast. |
+
+### T25-B — API Call Log
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T25-11 | Call log loads | Scroll to the API Call Log section. | Table shows logged entries (or "No entries found." if none yet). Columns: Timestamp, Key Name, Prefix, Method, Endpoint, Origin IP, User Agent, Status. |
+| T25-12 | Endpoint includes query string | Make a REST call with query parameters: `GET /api/members?active=1&page=2` using an API key. Click `[Refresh]`. | The Endpoint column shows the full URL including query string: `/api/members?active=1&page=2`. |
+| T25-13 | Filter by API key — active highlight | Open the Filters panel. Select a key from the "API Key" dropdown → click `[Apply]`. | Log shows only entries for that key. The "API Key" filter field has a blue border indicating it is active. |
+| T25-14 | Filter by HTTP method | Select Method = `GET` → click `[Apply]`. | Only GET requests are shown. The "Method" filter field has a blue border. |
+| T25-15 | Filter by endpoint text | Enter `/api/members` in "Endpoint contains" → click `[Apply]`. | Only entries whose endpoint path contains "/api/members" are shown. The "Endpoint" filter field has a blue border. |
+| T25-16 | Filter by date range | Enter a From and To date → click `[Apply]`. | Only entries within the selected range are shown. Both date fields have a blue border. |
+| T25-17 | Clear filters | Click `[Clear]`. | All filters are reset and blue borders are removed. Full unfiltered log is shown. |
+| T25-18 | Rows per page — selector in pagination bar | Observe the pagination bar at the bottom of the call log. | A "Rows per page" dropdown is visible inside the pagination bar (not above it). Changing the value reloads the log with the new page size. |
+| T25-19 | Purge old entries | Click `[Purge Old Entries]`. Enter `90` days → type `PURGE` → confirm. | Entries older than 90 days are deleted. Toast shows count deleted. Log refreshes. Event log records "API Call Log Purged". |
+| T25-20 | Demo mode guard — purge | On a demo instance, click `[Purge Old Entries]`. | Toast shows "Disabled in demo mode." No entries deleted. |
+| T25-21 | Sort by Timestamp | Click the Timestamp column header. | Log sorts by timestamp. Icon changes to ▲ or ▼. Click again to toggle direction. |
+| T25-22 | Sort by Endpoint and Origin IP | Click the Endpoint column header, then the Origin IP column header. | Log re-sorts each time. Active column shows ▲/▼ icon; all other sortable columns show ⇅. |
+| T25-23 | Sort preference persists on reload | Sort by Status (click the Status column header). Reload the page. | The call log reloads already sorted by Status in the same direction, without any user action. |
+| T25-24 | Rows-per-page preference persists on reload | Change rows per page to 100. Reload the page. | The call log loads 100 rows per page automatically. The selector shows 100. |
+| T25-25 | Params / Body detail — query params | Make a REST call with query parameters: `GET /api/members?active=1` using an API key. In the log, click the round action button (▶) on that row. | A detail panel expands below the row showing a "Query Params" block with `{ "active": "1" }`. |
+| T25-26 | Params / Body detail — path params | Make a REST call with a path parameter: `GET /api/members/1` using an API key. Click the round action button on that row. | The detail panel shows a "Path Params" block with `{ "id": "1" }`. |
+| T25-27 | Params / Body detail — request body | Make a `POST` call with a JSON body using an API key (e.g. create a member). Click the round action button on that log row. | The detail panel shows a "Request Body" block containing the sent fields. |
+| T25-28 | Sensitive field masking | Make a call whose body or query string contains a field named `password` or `token`. Click the round action button on that row. | The value of the sensitive field is shown as `***` in the detail panel. The actual value is never stored. |
+| T25-29 | No detail button when no params | Observe a log row for a plain `GET` with no query string, no path param, and no body (e.g. `GET /api/api-keys`). | No round action button appears on that row. |
+| T25-30 | Download JSON includes params fields | Apply a filter and click `[Download JSON]`. Open the downloaded file. | Each record object contains `query_params`, `request_body`, and `path_params` fields (null when not applicable). |
+
+---
+
 ## Appendix A — Test Data Setup Checklist
 
 Before starting the UAT run, ensure the following data is in place on the UAT instance:
@@ -614,7 +649,7 @@ After completing the full UAT run, verify the Event Log (`event-log.html`) conta
 | `Training` | Session Created, Session Deleted |
 | `User Mgmt` | User Created, Updated, Deleted, Password Reset |
 | `Security` | Account Unblocked (if T14-08 was run) |
-| `API Keys` | Key Created, Key Toggled, Key Deleted |
+| `API Keys` | Key Created, Key Toggled, Key Deleted, API Call Log Purged |
 | `System` | Database Restored (if T23-05 or T23-06 was run), Events Pruned |
 | `WhatsApp` | Client Connected, Client Disconnected |
 | `Knowledge Base` | Category Created, Category Updated, Category Deleted, Document Uploaded, Document Updated, Document Toggled, Document Deleted |

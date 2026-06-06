@@ -44,7 +44,7 @@ const spec = {
                 type: 'apiKey',
                 in: 'header',
                 name: 'X-API-Key',
-                description: 'API key in the format `osm_<64-hex-chars>`. Manage keys via System Tools → API Key Management.'
+                description: 'API key in the format `osm_<64-hex-chars>`. Manage keys via System Admin → API Management.'
             }
         },
         schemas: {
@@ -225,6 +225,24 @@ const spec = {
                     created_at: { type: 'string', format: 'date-time' },
                     last_used_at: { type: 'string', format: 'date-time', nullable: true },
                     active: { type: 'integer', enum: [0, 1] }
+                }
+            },
+            ApiCallLogEntry: {
+                type: 'object',
+                properties: {
+                    id:           { type: 'integer' },
+                    api_key_id:   { type: 'integer', nullable: true },
+                    key_name:     { type: 'string', example: 'External Dashboard' },
+                    key_prefix:   { type: 'string', example: 'osm_a1b2c3d4' },
+                    method:       { type: 'string', example: 'GET' },
+                    endpoint:     { type: 'string', example: '/api/members?active=1&page=2' },
+                    origin_ip:    { type: 'string', example: '203.0.113.42', nullable: true },
+                    user_agent:   { type: 'string', nullable: true },
+                    status_code:  { type: 'integer', example: 200, nullable: true },
+                    path_params:  { type: 'string', format: 'json', nullable: true, description: 'JSON object of route path parameters, e.g. {"id":"42"} for /api/members/:id. Null when the route has no path parameters.' },
+                    query_params: { type: 'string', format: 'json', nullable: true, description: 'JSON object of query-string parameters. Sensitive field values (password, token, etc.) are masked as "***".' },
+                    request_body: { type: 'string', format: 'json', nullable: true, description: 'JSON-encoded request body. Sensitive field values are masked. Null for GET/HEAD requests or bodies with no parseable fields. Truncated to 2 KB.' },
+                    logged_at:    { type: 'string', format: 'date-time' }
                 }
             }
         }
@@ -1557,6 +1575,99 @@ const spec = {
                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
                 responses: {
                     200: { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+        '/api/api-keys/call-log/export': {
+            get: {
+                tags: ['API Keys'],
+                summary: 'Export all matching call log entries as JSON (admin)',
+                description: 'Returns all records matching the filters without pagination. The response includes a Content-Disposition header suggesting a filename for download.',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [
+                    { name: 'sort',      in: 'query', schema: { type: 'string', enum: ['logged_at','key_name','method','endpoint','origin_ip','status_code'], default: 'logged_at' }, description: 'Column to sort by' },
+                    { name: 'sortDir',   in: 'query', schema: { type: 'string', enum: ['asc','desc'], default: 'desc' }, description: 'Sort direction' },
+                    { name: 'keyId',     in: 'query', schema: { type: 'integer' }, description: 'Filter by api_key_id' },
+                    { name: 'method',    in: 'query', schema: { type: 'string', enum: ['GET','POST','PUT','PATCH','DELETE'] }, description: 'Filter by HTTP method' },
+                    { name: 'endpoint',  in: 'query', schema: { type: 'string' }, description: 'Partial match on endpoint URL' },
+                    { name: 'startDate', in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Filter entries logged on or after this datetime' },
+                    { name: 'endDate',   in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Filter entries logged on or before this datetime' }
+                ],
+                responses: {
+                    200: {
+                        description: 'Full export (no pagination)',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        exportedAt: { type: 'string', format: 'date-time', example: '2026-06-06T10:30:00.000Z' },
+                                        count:   { type: 'integer', example: 42 },
+                                        records: { type: 'array', items: { $ref: '#/components/schemas/ApiCallLogEntry' } }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
+        '/api/api-keys/call-log': {
+            get: {
+                tags: ['API Keys'],
+                summary: 'List API call log entries (admin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [
+                    { name: 'page',      in: 'query', schema: { type: 'integer', default: 1 }, description: 'Page number' },
+                    { name: 'limit',     in: 'query', schema: { type: 'integer', default: 50, maximum: 500 }, description: 'Rows per page' },
+                    { name: 'sort',      in: 'query', schema: { type: 'string', enum: ['logged_at','key_name','method','endpoint','origin_ip','status_code'], default: 'logged_at' }, description: 'Column to sort by' },
+                    { name: 'sortDir',   in: 'query', schema: { type: 'string', enum: ['asc','desc'], default: 'desc' }, description: 'Sort direction' },
+                    { name: 'keyId',     in: 'query', schema: { type: 'integer' }, description: 'Filter by api_key_id' },
+                    { name: 'method',    in: 'query', schema: { type: 'string', enum: ['GET','POST','PUT','PATCH','DELETE'] }, description: 'Filter by HTTP method' },
+                    { name: 'endpoint',  in: 'query', schema: { type: 'string' }, description: 'Partial match on endpoint URL (includes query string)' },
+                    { name: 'startDate', in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Filter entries logged on or after this datetime' },
+                    { name: 'endDate',   in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'Filter entries logged on or before this datetime' }
+                ],
+                responses: {
+                    200: {
+                        description: 'Paginated call log',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        rows:  { type: 'array', items: { $ref: '#/components/schemas/ApiCallLogEntry' } },
+                                        total: { type: 'integer', example: 142 }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            delete: {
+                tags: ['API Keys'],
+                summary: 'Purge call log entries older than N days (admin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [
+                    { name: 'days', in: 'query', required: true, schema: { type: 'integer', example: 90 }, description: 'Delete entries older than this many days' }
+                ],
+                responses: {
+                    200: {
+                        description: 'Purge result',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        success:      { type: 'boolean', example: true },
+                                        deletedCount: { type: 'integer', example: 312 }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         },

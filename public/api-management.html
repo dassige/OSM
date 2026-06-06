@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#17A2B8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OpReady">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <title>API Management - OpReady</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/sidebar.css">
+    <script src="/js/sidebar.js"></script>
+    <style>
+        /* ── API Keys: desktop table / mobile cards ── */
+        #apiKeyCardList    { display: none; }
+        #callLogCardList   { display: none; }
+
+        .toolbar-btn-mobile { display: none; }
+
+        @media (max-width: 768px) {
+            #apiKeyTableWrap   { display: none; }
+            #apiKeyCardList    { display: block; }
+            #callLogTableWrap  { display: none; }
+            #callLogCardList   { display: block; }
+
+            #apiKeys-sort-bar         { display: none; }
+            #apiKeys-sort-bar.sort-expanded  { display: flex; }
+            #callLog-sort-bar         { display: none; }
+            #callLog-sort-bar.sort-expanded  { display: flex; }
+
+            .toolbar-btn-desktop { display: none; }
+            .toolbar-btn-mobile {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                padding: 0;
+            }
+
+            /* Filter accordion — hidden until toggled */
+            .filter-bar { display: none; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+            .filter-bar.filter-expanded { display: flex; }
+
+            /* Each filter field: label left, control right */
+            .filter-bar .filter-group {
+                flex: 0 0 auto !important;
+                flex-direction: row !important;
+                align-items: center;
+                gap: 8px;
+                min-width: unset;
+                width: 100%;
+            }
+            .filter-bar .filter-group > label {
+                min-width: 5.5em;
+                flex-shrink: 0;
+                white-space: nowrap;
+                margin-bottom: 0 !important;
+            }
+            .filter-bar .filter-group > select,
+            .filter-bar .filter-group > input {
+                flex: 1;
+                min-width: 0 !important;
+                width: auto !important;
+            }
+            /* Date range: label on its own line, then both pickers side-by-side */
+            .filter-bar .filter-group-date {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 4px;
+            }
+            .filter-bar .filter-group-date > label { min-width: unset; margin-bottom: 0 !important; }
+            .filter-bar .date-range-container {
+                display: flex !important;
+                flex-direction: row;
+                align-items: center;
+                gap: 6px;
+                width: 100%;
+            }
+            .filter-bar .date-range-container input.filter-date {
+                flex: 1;
+                min-width: 0 !important;
+                width: auto !important;
+            }
+
+            /* Desktop pagination bar hidden on mobile — mobile cards have their own */
+            #callLogPaginationControls { display: none !important; }
+
+            .am-modal-inner {
+                max-width: calc(100% - 32px) !important;
+                padding: 20px !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="demoBanner" class="demo-banner">
+        DEMO VERSION <span style="font-weight:normal;">(<a href="demo/demo_osm_dasboard.html" target="_blank"
+                style="color:inherit; text-decoration:underline;">View Source HTML</a>)</span>
+    </div>
+
+    <a href="/" class="back-btn back-dashboard-btn" title="Back to Dashboard">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+    </a>
+
+    <div class="container" style="max-width: 1100px;">
+        <h1 id="pageHeader" style="margin-bottom: 24px;">API Management</h1>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 1 — API Key Management                                    -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="system-card">
+            <h2>API Key Management</h2>
+            <p style="margin-bottom: 16px;">API keys allow external systems to authenticate to the REST API using the
+                <code>X-API-Key</code> request header. Keys are never shown again after creation.
+                See <a href="/api/docs" target="_blank" style="color:var(--primary);">API Documentation</a>
+                for available endpoints.</p>
+
+            <div style="margin-bottom: 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <!-- Desktop: labelled button -->
+                <button id="btnNewApiKey" class="btn-success toolbar-btn-desktop"
+                    title="Create a new API key for external system access">
+                    + Add API Key
+                </button>
+                <!-- Mobile: icon-only -->
+                <button id="btnNewApiKeyMobile" class="btn-success toolbar-btn-mobile"
+                    title="Create a new API key for external system access">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Desktop table -->
+            <div id="apiKeyTableWrap" style="overflow-x: auto;">
+                <table id="apiKeyTable" style="width:100%; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border-color); text-align: left;">
+                            <th data-sort="name" class="sortable sort-asc"
+                                style="padding: 8px 12px; cursor:pointer;">
+                                Name <span class="sort-icon">▲</span>
+                            </th>
+                            <th style="padding: 8px 12px;">Prefix</th>
+                            <th data-sort="role" class="sortable"
+                                style="padding: 8px 12px; cursor:pointer;">
+                                Role <span class="sort-icon">⇅</span>
+                            </th>
+                            <th data-sort="created_by" class="sortable"
+                                style="padding: 8px 12px; cursor:pointer;">
+                                Created By <span class="sort-icon">⇅</span>
+                            </th>
+                            <th data-sort="last_used_at" class="sortable"
+                                style="padding: 8px 12px; cursor:pointer;">
+                                Last Used <span class="sort-icon">⇅</span>
+                            </th>
+                            <th data-sort="active" class="sortable"
+                                style="padding: 8px 12px; cursor:pointer;">
+                                Status <span class="sort-icon">⇅</span>
+                            </th>
+                            <th style="padding: 8px 12px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="apiKeyBody">
+                        <tr><td colspan="7" style="padding: 16px 12px; color: var(--text-muted);">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile card list -->
+            <div id="apiKeyCardList">
+                <div class="sort-section">
+                    <button class="sort-toggle-btn" id="sortToggleBtnApiKeys" title="Show or hide sort options">
+                        <span>Sort by</span>
+                        <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div id="apiKeys-sort-bar" class="sort-bar-container">
+                        <span class="sort-bar-label">Sort:</span>
+                        <button class="sort-bar-btn active" data-sort="name" title="Sort by name">
+                            Name <span class="sort-icon">▲</span>
+                        </button>
+                        <button class="sort-bar-btn" data-sort="role" title="Sort by role">
+                            Role <span class="sort-icon">⇅</span>
+                        </button>
+                        <button class="sort-bar-btn" data-sort="last_used_at" title="Sort by last used date">
+                            Last Used <span class="sort-icon">⇅</span>
+                        </button>
+                        <button class="sort-bar-btn" data-sort="active" title="Sort by status">
+                            Status <span class="sort-icon">⇅</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="apiKeyCardContainer"></div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 2 — API Call Log                                          -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="system-card" style="margin-top: 28px;">
+            <h2>API Call Log</h2>
+            <p style="margin-bottom: 16px;">Every request authenticated via an API key is recorded here.
+                Use the filters to narrow results by key, HTTP method, endpoint path, or date range.</p>
+
+            <!-- Toolbar -->
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px;">
+                <button id="btnRefreshLog" class="btn-primary toolbar-btn-desktop"
+                    title="Reload the call log">
+                    Refresh
+                </button>
+                <button id="btnRefreshLogMobile" class="btn-primary toolbar-btn-mobile"
+                    title="Reload the call log">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                </button>
+                <button id="btnExportLog" class="btn-secondary toolbar-btn-desktop"
+                    title="Download filtered results as JSON">
+                    Download JSON
+                </button>
+                <button id="btnExportLogMobile" class="btn-secondary toolbar-btn-mobile"
+                    title="Download filtered results as JSON">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
+                <button id="btnPurgeLog" class="btn-danger toolbar-btn-desktop"
+                    title="Permanently delete old call log entries">
+                    Purge Old Entries
+                </button>
+                <button id="btnPurgeLogMobile" class="btn-danger toolbar-btn-mobile"
+                    title="Permanently delete old call log entries">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                        <path d="M10 11v6M14 11v6"></path>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Filter bar -->
+            <div class="filter-section" style="margin-bottom: 14px;">
+                <button class="filter-toggle-btn" id="callLogFilterToggleBtn"
+                    title="Show or hide filters">
+                    <span style="display:flex; align-items:center; gap:8px;">
+                        Filters
+                        <span id="callLogFilterCount" style="display:none; background:var(--primary); color:#fff; border-radius:10px; padding:1px 8px; font-size:0.78em; font-weight:700;"></span>
+                    </span>
+                    <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div class="filter-bar" id="callLogFilterBar">
+                    <div class="filter-group">
+                        <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">API Key</label>
+                        <select id="filterKeyId" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); min-width:160px;"
+                            title="Filter by API key">
+                            <option value="">All keys</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Method</label>
+                        <select id="filterMethod" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main);"
+                            title="Filter by HTTP method">
+                            <option value="">All methods</option>
+                            <option>GET</option>
+                            <option>POST</option>
+                            <option>PUT</option>
+                            <option>PATCH</option>
+                            <option>DELETE</option>
+                        </select>
+                    </div>
+                    <div class="filter-group" style="flex: 1 1 200px; min-width: 200px;">
+                        <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Endpoint contains</label>
+                        <input type="text" id="filterEndpoint" placeholder="/api/members"
+                            style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); width:100%; box-sizing:border-box;"
+                            title="Filter by endpoint path (partial match)">
+                    </div>
+                    <div class="filter-group filter-group-date">
+                        <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Date range</label>
+                        <div class="date-range-container">
+                            <input type="date" id="filterStartDate" class="filter-date"
+                                style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main);"
+                                title="Show calls on or after this date">
+                            <span style="color:var(--text-muted); align-self:center; font-size:12px; flex-shrink:0;">—</span>
+                            <input type="date" id="filterEndDate" class="filter-date"
+                                style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main);"
+                                title="Show calls on or before this date">
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button id="btnApplyCallLogFilters" class="btn-primary"
+                            style="padding:6px 16px;"
+                            title="Apply the selected filters">Apply</button>
+                        <button id="btnClearCallLogFilters" class="btn-secondary"
+                            style="padding:6px 16px;"
+                            title="Clear all filters">Clear</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desktop table -->
+            <div id="callLogTableWrap" style="overflow-x: auto;">
+                <table id="callLogTable" style="width:100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border-color); text-align: left;">
+                            <th data-sort="logged_at" class="sortable sort-desc"
+                                style="padding: 8px 10px; cursor:pointer; white-space:nowrap;">
+                                Timestamp <span class="sort-icon">▼</span>
+                            </th>
+                            <th data-sort="key_name" class="sortable"
+                                style="padding: 8px 10px; cursor:pointer; white-space:nowrap;">
+                                Key Name <span class="sort-icon">⇅</span>
+                            </th>
+                            <th style="padding: 8px 10px; white-space:nowrap;">Prefix</th>
+                            <th data-sort="method" class="sortable"
+                                style="padding: 8px 10px; cursor:pointer; white-space:nowrap;">
+                                Method <span class="sort-icon">⇅</span>
+                            </th>
+                            <th data-sort="endpoint" class="sortable"
+                                style="padding: 8px 10px; cursor:pointer;">
+                                Endpoint <span class="sort-icon">⇅</span>
+                            </th>
+                            <th data-sort="origin_ip" class="sortable"
+                                style="padding: 8px 10px; cursor:pointer; white-space:nowrap;">
+                                Origin IP <span class="sort-icon">⇅</span>
+                            </th>
+                            <th style="padding: 8px 10px; max-width:180px;">User Agent</th>
+                            <th data-sort="status_code" class="sortable"
+                                style="padding: 8px 10px; cursor:pointer; white-space:nowrap;">
+                                Status <span class="sort-icon">⇅</span>
+                            </th>
+                            <th style="padding: 8px 10px; width:44px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="callLogBody">
+                        <tr><td colspan="9" style="padding: 16px 10px; color: var(--text-muted);">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Desktop pagination -->
+            <div class="pagination-container" id="callLogPaginationControls" style="display:none;">
+                <div class="page-limit-selector">
+                    <label>Rows per page:</label>
+                    <select id="clRowsPerPage"
+                        style="padding:4px; border-radius:4px; border:1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);"
+                        title="Number of rows to display per page">
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="250">250</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:0;">
+                    <button class="btn-page" id="clBtnFirst" title="First page" style="margin:0 1px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>
+                    </button>
+                    <button class="btn-page" id="clBtnPrev" title="Previous page" style="margin:0 1px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <button id="clPageInfo" class="btn-page"
+                        style="width:auto; min-width:52px; padding:0 8px; font-size:0.8em; cursor:default; pointer-events:none; white-space:nowrap; margin:0 1px;">
+                        1 of 1
+                    </button>
+                    <button class="btn-page" id="clBtnNext" title="Next page" style="margin:0 1px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                    <button class="btn-page" id="clBtnLast" title="Last page" style="margin:0 1px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>
+                    </button>
+                </div>
+                <span id="clTotalCount" style="font-size:12px; color:var(--text-muted); margin-left:8px;"></span>
+            </div>
+
+            <!-- Mobile card list -->
+            <div id="callLogCardList">
+                <div class="sort-section">
+                    <button class="sort-toggle-btn" id="sortToggleBtnCallLog" title="Show or hide sort options">
+                        <span>Sort by</span>
+                        <svg class="filter-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div id="callLog-sort-bar" class="sort-bar-container">
+                        <span class="sort-bar-label">Sort:</span>
+                        <button class="sort-bar-btn active" data-sort="logged_at" title="Sort by timestamp">
+                            Timestamp <span class="sort-icon">▼</span>
+                        </button>
+                        <button class="sort-bar-btn" data-sort="key_name" title="Sort by key name">
+                            Key Name <span class="sort-icon">⇅</span>
+                        </button>
+                        <button class="sort-bar-btn" data-sort="method" title="Sort by method">
+                            Method <span class="sort-icon">⇅</span>
+                        </button>
+                        <button class="sort-bar-btn" data-sort="endpoint" title="Sort by endpoint">
+                            Endpoint <span class="sort-icon">⇅</span>
+                        </button>
+                        <button class="sort-bar-btn" data-sort="origin_ip" title="Sort by origin IP">
+                            Origin IP <span class="sort-icon">⇅</span>
+                        </button>
+                        <button class="sort-bar-btn" data-sort="status_code" title="Sort by status code">
+                            Status <span class="sort-icon">⇅</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="callLogCardContainer"></div>
+                <!-- Mobile pagination -->
+                <div class="pagination-container" id="callLogPaginationMobile" style="display:none;">
+                    <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap; justify-content:center;">
+                        <button class="btn-page" id="clBtnPrevMobile" title="Previous page">Prev</button>
+                        <span id="clPageInfoMobile" style="font-size:0.85em; padding:0 6px;">1 of 1</span>
+                        <button class="btn-page" id="clBtnNextMobile" title="Next page">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Create API Key Modal ── -->
+    <div class="modal" id="apiKeyModal" style="display:none;">
+        <div class="modal-content" style="max-width:440px; width:100%;">
+            <h3 style="margin:0 0 20px;">Create API Key</h3>
+            <div class="form-group">
+                <label>Key Name <span style="color:var(--danger)">*</span></label>
+                <input type="text" id="apiKeyName" placeholder="e.g. External Integration" style="width:100%;"
+                    title="A descriptive name for this API key">
+            </div>
+            <div class="form-group" style="margin-top:14px;">
+                <label>Role</label>
+                <select id="apiKeyRole" style="width:100%;" title="Permission level granted to this API key">
+                    <option value="superadmin">superadmin — full access including user &amp; key management</option>
+                    <option value="admin" selected>admin — full read/write access</option>
+                    <option value="simple">simple — read-only statistics/reports</option>
+                    <option value="guest">guest — read-only public data</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:24px; justify-content:flex-end;">
+                <button id="btnCancelApiKey" class="btn-secondary" style="padding:10px 20px;"
+                    title="Cancel and close without creating a key">Cancel</button>
+                <button id="btnCreateApiKey" class="btn-success" style="padding:10px 20px;"
+                    title="Create the new API key">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Reveal API Key Modal ── -->
+    <div class="modal" id="apiKeyRevealModal" style="display:none;">
+        <div class="modal-content" style="max-width:520px; width:100%;">
+            <h3 style="margin:0 0 8px;">API Key Created</h3>
+            <p style="color:var(--danger); font-weight:600; margin-bottom:16px;">⚠️ Copy this key now — it will never be shown again.</p>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <code id="apiKeyRevealValue" style="flex:1; background:var(--bg-hover); padding:10px 14px; border-radius:6px; font-size:13px; word-break:break-all; border:1px solid var(--border-color);"></code>
+                <button id="btnCopyApiKey" class="btn-secondary" style="padding:10px 14px; white-space:nowrap;"
+                    title="Copy the API key to clipboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy
+                </button>
+            </div>
+            <div style="margin-top:24px; text-align:right;">
+                <button id="btnDismissReveal" class="btn-secondary" style="padding:10px 20px;"
+                    title="Close this window — make sure you have copied the key first">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
+
+    <script src="utils.js"></script>
+    <script src="toast.js"></script>
+    <script src="theme.js"></script>
+    <script src="help.js"></script>
+    <script>
+        // ── Shared helpers ─────────────────────────────────────────────────────
+        let isDemo = false;
+        let uiLocale = 'en-NZ';
+
+        fetch('/ui-config').then(r => r.json()).then(c => {
+            isDemo = c.appMode === 'demo';
+            uiLocale = c.locale || 'en-NZ';
+            if (isDemo) {
+                const b = document.getElementById('demoBanner');
+                if (b) b.style.display = 'block';
+            }
+            if (window.initPageTitle) initPageTitle('API Management', 'API Management');
+        }).catch(() => {});
+
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function formatDate(isoStr) {
+            if (!isoStr) return '—';
+            try { return new Date(isoStr + (isoStr.endsWith('Z') ? '' : 'Z')).toLocaleString(uiLocale); }
+            catch { return isoStr; }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SECTION 1 — API Key Management
+        // ═══════════════════════════════════════════════════════════════════════
+
+        let apiKeysSortCol = 'name';
+        let apiKeysSortDir = 'asc';
+        let allApiKeys = [];
+
+        async function initApiKeySection() {
+            try {
+                const res = await fetch('/api/user-preferences/apiKeysSort');
+                const data = await res.json();
+                if (data.value) {
+                    const [col, dir] = data.value.split(':');
+                    apiKeysSortCol = col;
+                    apiKeysSortDir = dir;
+                }
+            } catch (e) {}
+            updateApiKeySortHeaders();
+            syncMobileApiKeySort();
+            await loadApiKeys();
+            await populateKeyFilter();
+        }
+
+        function sortApiKeyData(keys) {
+            return [...keys].sort((a, b) => {
+                let valA, valB;
+                if (apiKeysSortCol === 'active') {
+                    valA = a.active ? 'active' : 'revoked';
+                    valB = b.active ? 'active' : 'revoked';
+                } else if (apiKeysSortCol === 'last_used_at') {
+                    valA = a.last_used_at || '';
+                    valB = b.last_used_at || '';
+                } else {
+                    valA = (a[apiKeysSortCol] || '').toString().toLowerCase();
+                    valB = (b[apiKeysSortCol] || '').toString().toLowerCase();
+                }
+                if (valA < valB) return apiKeysSortDir === 'asc' ? -1 : 1;
+                if (valA > valB) return apiKeysSortDir === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        async function handleApiKeySort(col) {
+            if (apiKeysSortCol === col) {
+                apiKeysSortDir = apiKeysSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                apiKeysSortCol = col;
+                apiKeysSortDir = 'asc';
+            }
+            updateApiKeySortHeaders();
+            syncMobileApiKeySort();
+            try {
+                await fetch('/api/user-preferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: 'apiKeysSort', value: `${apiKeysSortCol}:${apiKeysSortDir}` })
+                });
+            } catch (e) {}
+            renderApiKeyData();
+        }
+
+        function updateApiKeySortHeaders() {
+            document.querySelectorAll('#apiKeyTable th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                const icon = th.querySelector('.sort-icon');
+                if (th.dataset.sort === apiKeysSortCol) {
+                    th.classList.add(apiKeysSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+                    if (icon) icon.textContent = apiKeysSortDir === 'asc' ? '▲' : '▼';
+                } else {
+                    if (icon) icon.textContent = '⇅';
+                }
+            });
+        }
+
+        function syncMobileApiKeySort() {
+            document.querySelectorAll('#apiKeys-sort-bar .sort-bar-btn').forEach(btn => {
+                const col = btn.dataset.sort;
+                btn.classList.toggle('active', col === apiKeysSortCol);
+                const icon = btn.querySelector('.sort-icon');
+                if (icon) icon.textContent = col === apiKeysSortCol ? (apiKeysSortDir === 'asc' ? '▲' : '▼') : '⇅';
+            });
+        }
+
+        async function loadApiKeys() {
+            const tbody = document.getElementById('apiKeyBody');
+            try {
+                const res = await fetch('/api/api-keys');
+                allApiKeys = await res.json();
+                renderApiKeyData();
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="7" style="padding:16px 12px; color:var(--danger);">Failed to load keys: ${escapeHtml(e.message)}</td></tr>`;
+            }
+        }
+
+        function renderApiKeyData() {
+            const tbody = document.getElementById('apiKeyBody');
+            const container = document.getElementById('apiKeyCardContainer');
+            const sorted = sortApiKeyData(allApiKeys);
+
+            if (!sorted.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="padding:16px 12px; color:var(--text-muted);">No API keys yet.</td></tr>';
+                if (container) container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No API keys yet.</p>';
+                return;
+            }
+
+            tbody.innerHTML = sorted.map(k => `
+                <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:10px 12px;">${escapeHtml(k.name)}</td>
+                    <td style="padding:10px 12px;"><code>${escapeHtml(k.key_prefix)}…</code></td>
+                    <td style="padding:10px 12px;"><span style="background:var(--bg-hover);padding:2px 8px;border-radius:4px;font-size:12px;">${escapeHtml(k.role)}</span></td>
+                    <td style="padding:10px 12px;">${escapeHtml(k.created_by || '—')}</td>
+                    <td style="padding:10px 12px;">${formatDate(k.last_used_at)}</td>
+                    <td style="padding:10px 12px;">
+                        <span style="color:${k.active ? 'var(--success, #4caf50)' : 'var(--danger)'}; font-weight:600;">
+                            ${k.active ? 'Active' : 'Revoked'}
+                        </span>
+                    </td>
+                    <td style="padding:10px 12px;">
+                        <div style="display:flex; gap:8px;">
+                            <button class="${k.active ? 'btn-danger' : 'btn-success'}"
+                                style="padding:5px 12px; font-size:13px;"
+                                data-toggle-id="${k.id}" data-toggle-active="${k.active}"
+                                title="${k.active ? 'Revoke this API key' : 'Enable this API key'}">
+                                ${k.active ? 'Revoke' : 'Enable'}
+                            </button>
+                            <button class="btn-danger"
+                                style="padding:5px 12px; font-size:13px;"
+                                data-delete-id="${k.id}" data-delete-name="${escapeHtml(k.name)}"
+                                title="Permanently delete this API key">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>`).join('');
+
+            if (container) {
+                container.innerHTML = sorted.map(k => `
+                    <div class="table-card">
+                        <div class="card-header">
+                            <span class="card-title">${escapeHtml(k.name)}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-row"><span class="card-label">Prefix:</span><span><code>${escapeHtml(k.key_prefix)}…</code></span></div>
+                            <div class="card-row"><span class="card-label">Role:</span><span style="background:var(--bg-hover);padding:2px 8px;border-radius:4px;font-size:12px;">${escapeHtml(k.role)}</span></div>
+                            <div class="card-row"><span class="card-label">Created By:</span><span>${escapeHtml(k.created_by || '—')}</span></div>
+                            <div class="card-row"><span class="card-label">Last Used:</span><span>${formatDate(k.last_used_at)}</span></div>
+                            <div class="card-row"><span class="card-label">Status:</span>
+                                <span style="color:${k.active ? 'var(--success, #4caf50)' : 'var(--danger)'}; font-weight:600;">${k.active ? 'Active' : 'Revoked'}</span>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <button class="${k.active ? 'btn-danger' : 'btn-success'} btn-sm"
+                                data-toggle-id="${k.id}" data-toggle-active="${k.active}"
+                                title="${k.active ? 'Revoke this API key' : 'Enable this API key'}">
+                                ${k.active ? 'Revoke' : 'Enable'}
+                            </button>
+                            <button class="btn-danger btn-sm"
+                                data-delete-id="${k.id}" data-delete-name="${escapeHtml(k.name)}"
+                                title="Permanently delete this API key">
+                                Delete
+                            </button>
+                        </div>
+                    </div>`).join('');
+            }
+        }
+
+        function openCreateKeyModal() {
+            document.getElementById('apiKeyName').value = '';
+            document.getElementById('apiKeyRole').value = 'admin';
+            document.getElementById('apiKeyModal').style.display = 'block';
+        }
+
+        async function toggleKey(id, currentlyActive) {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
+            const action = currentlyActive ? 'revoke' : 'enable';
+            if (!await confirmAction('API Key', `Are you sure you want to ${action} this key?`)) return;
+            await fetch(`/api/api-keys/${id}/toggle`, { method: 'PATCH' });
+            await loadApiKeys();
+            populateKeyFilter();
+        }
+
+        async function deleteKey(id, name) {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
+            if (!await confirmAction('Delete API Key', `Permanently delete the key "${name}"? This cannot be undone.`)) return;
+            await fetch(`/api/api-keys/${id}`, { method: 'DELETE' });
+            showToast('API key deleted', 'success');
+            await loadApiKeys();
+            populateKeyFilter();
+        }
+
+        // Event delegation for API key table / card actions
+        document.addEventListener('click', e => {
+            const toggleBtn = e.target.closest('[data-toggle-id]');
+            if (toggleBtn) { toggleKey(Number(toggleBtn.dataset.toggleId), Number(toggleBtn.dataset.toggleActive)); return; }
+            const deleteBtn = e.target.closest('[data-delete-id]');
+            if (deleteBtn) { deleteKey(Number(deleteBtn.dataset.deleteId), deleteBtn.dataset.deleteName); return; }
+        });
+
+        // Sort header clicks for API key table
+        document.querySelectorAll('#apiKeyTable th.sortable').forEach(th => {
+            th.addEventListener('click', () => handleApiKeySort(th.dataset.sort));
+        });
+
+        // Sort bar buttons (mobile)
+        document.querySelectorAll('#apiKeys-sort-bar .sort-bar-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleApiKeySort(btn.dataset.sort));
+        });
+
+        document.getElementById('btnNewApiKey').addEventListener('click', openCreateKeyModal);
+        document.getElementById('btnNewApiKeyMobile').addEventListener('click', openCreateKeyModal);
+        document.getElementById('btnCancelApiKey').addEventListener('click', () => {
+            document.getElementById('apiKeyModal').style.display = 'none';
+        });
+        document.getElementById('btnDismissReveal').addEventListener('click', async () => {
+            document.getElementById('apiKeyRevealModal').style.display = 'none';
+            await loadApiKeys();
+            populateKeyFilter();
+        });
+        document.getElementById('btnCreateApiKey').addEventListener('click', async () => {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
+            const name = document.getElementById('apiKeyName').value.trim();
+            const role = document.getElementById('apiKeyRole').value;
+            if (!name) { showToast('Name is required.', 'warning'); return; }
+            try {
+                const res = await fetch('/api/api-keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, role })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Unknown error');
+                document.getElementById('apiKeyModal').style.display = 'none';
+                document.getElementById('apiKeyRevealValue').textContent = data.key;
+                document.getElementById('apiKeyRevealModal').style.display = 'block';
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        });
+        document.getElementById('btnCopyApiKey').addEventListener('click', () => {
+            const val = document.getElementById('apiKeyRevealValue').textContent;
+            navigator.clipboard.writeText(val).then(() => showToast('Copied to clipboard', 'success'));
+        });
+
+        // Mobile sort bar toggle
+        document.getElementById('sortToggleBtnApiKeys').addEventListener('click', () => {
+            const bar = document.getElementById('apiKeys-sort-bar');
+            const btn = document.getElementById('sortToggleBtnApiKeys');
+            btn.classList.toggle('expanded', bar.classList.toggle('sort-expanded'));
+        });
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SECTION 2 — API Call Log
+        // ═══════════════════════════════════════════════════════════════════════
+
+        let callLogPage    = 1;
+        let callLogLimit   = 25;
+        let callLogTotal   = 0;
+        let callLogSortCol = 'logged_at';
+        let callLogSortDir = 'desc';
+
+        let activeFilters = { keyId: '', method: '', endpoint: '', startDate: '', endDate: '' };
+
+        async function initCallLogSection() {
+            try {
+                const r = await fetch('/api/user-preferences/callLogSort');
+                const d = await r.json();
+                if (d.value) { const [c, dir] = d.value.split(':'); callLogSortCol = c; callLogSortDir = dir; }
+            } catch (e) {}
+            try {
+                const r = await fetch('/api/user-preferences/callLogLimit');
+                const d = await r.json();
+                if (d.value) {
+                    callLogLimit = parseInt(d.value) || 25;
+                    const sel = document.getElementById('clRowsPerPage');
+                    if (sel) sel.value = String(callLogLimit);
+                }
+            } catch (e) {}
+            updateCallLogSortHeaders();
+            syncMobileCallLogSort();
+            await loadCallLog();
+        }
+
+        function handleCallLogSort(col) {
+            if (callLogSortCol === col) {
+                callLogSortDir = callLogSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                callLogSortCol = col;
+                callLogSortDir = 'asc';
+            }
+            updateCallLogSortHeaders();
+            syncMobileCallLogSort();
+            fetch('/api/user-preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'callLogSort', value: `${callLogSortCol}:${callLogSortDir}` })
+            }).catch(() => {});
+            callLogPage = 1;
+            loadCallLog();
+        }
+
+        function updateCallLogSortHeaders() {
+            document.querySelectorAll('#callLogTable th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                const icon = th.querySelector('.sort-icon');
+                if (th.dataset.sort === callLogSortCol) {
+                    th.classList.add(callLogSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+                    if (icon) icon.textContent = callLogSortDir === 'asc' ? '▲' : '▼';
+                } else {
+                    if (icon) icon.textContent = '⇅';
+                }
+            });
+        }
+
+        function syncMobileCallLogSort() {
+            document.querySelectorAll('#callLog-sort-bar .sort-bar-btn').forEach(btn => {
+                const col = btn.dataset.sort;
+                btn.classList.toggle('active', col === callLogSortCol);
+                const icon = btn.querySelector('.sort-icon');
+                if (icon) icon.textContent = col === callLogSortCol ? (callLogSortDir === 'asc' ? '▲' : '▼') : '⇅';
+            });
+        }
+
+        async function loadCallLog() {
+            const tbody = document.getElementById('callLogBody');
+            tbody.innerHTML = '<tr><td colspan="9" style="padding:16px 10px; color:var(--text-muted);">Loading...</td></tr>';
+
+            const params = new URLSearchParams({
+                page:    callLogPage,
+                limit:   callLogLimit,
+                sort:    callLogSortCol,
+                sortDir: callLogSortDir,
+            });
+            if (activeFilters.keyId)     params.set('keyId',     activeFilters.keyId);
+            if (activeFilters.method)    params.set('method',    activeFilters.method);
+            if (activeFilters.endpoint)  params.set('endpoint',  activeFilters.endpoint);
+            if (activeFilters.startDate) params.set('startDate', activeFilters.startDate + 'T00:00:00');
+            if (activeFilters.endDate)   params.set('endDate',   activeFilters.endDate   + 'T23:59:59');
+
+            try {
+                const res  = await fetch('/api/api-keys/call-log?' + params.toString());
+                const data = await res.json();
+                callLogTotal = data.total || 0;
+                renderCallLog(data.rows || []);
+                updateCallLogPagination();
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="9" style="padding:16px 10px; color:var(--danger);">Failed to load log: ${escapeHtml(e.message)}</td></tr>`;
+            }
+        }
+
+        function statusColor(code) {
+            if (!code) return 'var(--text-muted)';
+            if (code < 300) return 'var(--success, #4caf50)';
+            if (code < 400) return '#f0ad4e';
+            return 'var(--danger)';
+        }
+
+        function fmtJson(jsonStr) {
+            try { return escapeHtml(JSON.stringify(JSON.parse(jsonStr), null, 2)); }
+            catch (_) { return escapeHtml(jsonStr); }
+        }
+
+        function detailBlock(label, jsonStr) {
+            return `<div style="flex:1;min-width:220px;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">${label}</div>
+                <pre style="margin:0;font-size:11px;line-height:1.5;background:var(--bg-card);border:1px solid var(--border-color);padding:8px 10px;border-radius:4px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;">${fmtJson(jsonStr)}</pre>
+            </div>`;
+        }
+
+        function toggleLogDetail(detailId, btnId) {
+            const row = document.getElementById(detailId);
+            const btn = document.getElementById(btnId);
+            if (!row) return;
+            const open = row.style.display !== 'none';
+            row.style.display = open ? 'none' : '';
+            if (btn) btn.style.transform = open ? '' : 'rotate(90deg)';
+        }
+
+        function renderCallLog(rows) {
+            const tbody     = document.getElementById('callLogBody');
+            const container = document.getElementById('callLogCardContainer');
+
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="9" style="padding:16px 10px; color:var(--text-muted);">No entries found.</td></tr>';
+                if (container) container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No entries found.</p>';
+                return;
+            }
+
+            tbody.innerHTML = rows.map(r => {
+                const hasDetail = r.query_params || r.request_body || r.path_params;
+                const dId = `ld-${r.id}`;
+                const bId = `lb-${r.id}`;
+                const mainRow = `
+                <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:8px 10px; white-space:nowrap; font-size:12px;">${formatDate(r.logged_at)}</td>
+                    <td style="padding:8px 10px;">${escapeHtml(r.key_name || '—')}</td>
+                    <td style="padding:8px 10px;"><code style="font-size:11px;">${escapeHtml(r.key_prefix || '—')}…</code></td>
+                    <td style="padding:8px 10px;"><span style="background:var(--bg-hover);padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">${escapeHtml(r.method)}</span></td>
+                    <td style="padding:8px 10px; font-family:monospace; font-size:12px; word-break:break-all;">${escapeHtml(r.endpoint)}</td>
+                    <td style="padding:8px 10px; font-size:12px; white-space:nowrap;">${escapeHtml(r.origin_ip || '—')}</td>
+                    <td style="padding:8px 10px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px;" title="${escapeHtml(r.user_agent || '')}">${escapeHtml(r.user_agent || '—')}</td>
+                    <td style="padding:8px 10px; font-weight:600; color:${statusColor(r.status_code)};">${r.status_code || '—'}</td>
+                    <td style="padding:4px 8px; text-align:center;">
+                        ${hasDetail ? `<button id="${bId}" onclick="toggleLogDetail('${dId}','${bId}')"
+                            title="Show params / body"
+                            style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-hover);cursor:pointer;color:var(--text-muted);padding:0;transition:transform .15s,background .15s;"
+                            onmouseover="this.style.background='var(--primary)';this.style.color='#fff';this.style.borderColor='var(--primary)';"
+                            onmouseout="this.style.background='var(--bg-hover)';this.style.color='var(--text-muted)';this.style.borderColor='var(--border-color)';">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .15s;pointer-events:none;">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>` : ''}
+                    </td>
+                </tr>`;
+                const detailRow = hasDetail ? `
+                <tr id="${dId}" style="display:none; background:var(--bg-hover);">
+                    <td colspan="9" style="padding:0;">
+                        <div style="padding:12px 16px 16px; display:flex; gap:16px; flex-wrap:wrap;">
+                            ${r.path_params   ? detailBlock('Path Params',   r.path_params)   : ''}
+                            ${r.query_params  ? detailBlock('Query Params',  r.query_params)  : ''}
+                            ${r.request_body  ? detailBlock('Request Body',  r.request_body)  : ''}
+                        </div>
+                    </td>
+                </tr>` : '';
+                return mainRow + detailRow;
+            }).join('');
+
+            if (container) {
+                container.innerHTML = rows.map(r => {
+                    const hasDetail = r.query_params || r.request_body || r.path_params;
+                    const cdId = `cd-${r.id}`;
+                    const cbId = `cb-${r.id}`;
+                    return `
+                    <div class="table-card">
+                        <div class="card-header">
+                            <span class="card-title">${escapeHtml(r.key_name || '—')}</span>
+                            <span style="font-size:11px; color:var(--text-muted); margin-left:auto;">${formatDate(r.logged_at)}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-row"><span class="card-label">Prefix:</span><span><code style="font-size:11px;">${escapeHtml(r.key_prefix || '—')}…</code></span></div>
+                            <div class="card-row"><span class="card-label">Method:</span><span style="background:var(--bg-hover);padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">${escapeHtml(r.method)}</span></div>
+                            <div class="card-row"><span class="card-label">Endpoint:</span><span style="font-family:monospace; font-size:11px; word-break:break-all;">${escapeHtml(r.endpoint)}</span></div>
+                            <div class="card-row"><span class="card-label">Origin IP:</span><span style="font-size:12px;">${escapeHtml(r.origin_ip || '—')}</span></div>
+                            <div class="card-row"><span class="card-label">Status:</span><span style="font-weight:600; color:${statusColor(r.status_code)};">${r.status_code || '—'}</span></div>
+                            <div class="card-row"><span class="card-label">User Agent:</span><span style="font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;" title="${escapeHtml(r.user_agent || '')}">${escapeHtml(r.user_agent || '—')}</span></div>
+                            ${hasDetail ? `
+                            <div style="margin-top:10px; border-top:1px solid var(--border-color); padding-top:10px;">
+                                <button id="${cbId}" onclick="toggleCardDetail('${cdId}','${cbId}')"
+                                    style="display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--border-color);border-radius:16px;padding:4px 12px;font-size:12px;color:var(--text-muted);cursor:pointer;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .15s;pointer-events:none;">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                    Params / Body
+                                </button>
+                                <div id="${cdId}" style="display:none; margin-top:10px; display:flex; flex-direction:column; gap:10px;">
+                                    ${r.path_params ? `<div>
+                                        <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Path Params</div>
+                                        <pre style="margin:0;font-size:11px;line-height:1.5;background:var(--bg-card);border:1px solid var(--border-color);padding:8px;border-radius:4px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;">${fmtJson(r.path_params)}</pre>
+                                    </div>` : ''}
+                                    ${r.query_params ? `<div>
+                                        <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Query Params</div>
+                                        <pre style="margin:0;font-size:11px;line-height:1.5;background:var(--bg-card);border:1px solid var(--border-color);padding:8px;border-radius:4px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;">${fmtJson(r.query_params)}</pre>
+                                    </div>` : ''}
+                                    ${r.request_body ? `<div>
+                                        <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Request Body</div>
+                                        <pre style="margin:0;font-size:11px;line-height:1.5;background:var(--bg-card);border:1px solid var(--border-color);padding:8px;border-radius:4px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;">${fmtJson(r.request_body)}</pre>
+                                    </div>` : ''}
+                                </div>
+                            </div>` : ''}
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        function toggleCardDetail(detailId, btnId) {
+            const panel = document.getElementById(detailId);
+            const btn   = document.getElementById(btnId);
+            if (!panel) return;
+            const open = panel.style.display !== 'none';
+            panel.style.display = open ? 'none' : 'flex';
+            if (btn) {
+                const svg = btn.querySelector('svg');
+                if (svg) svg.style.transform = open ? '' : 'rotate(90deg)';
+            }
+        }
+
+        function updateCallLogPagination() {
+            const totalPages = Math.max(1, Math.ceil(callLogTotal / callLogLimit));
+            const pageText   = `${callLogPage} of ${totalPages}`;
+            const hasPrev    = callLogPage > 1;
+            const hasNext    = callLogPage < totalPages;
+
+            const ctrl = document.getElementById('callLogPaginationControls');
+            ctrl.style.display = callLogTotal > 0 ? 'flex' : 'none';
+
+            document.getElementById('clPageInfo').textContent    = pageText;
+            document.getElementById('clBtnFirst').disabled       = !hasPrev;
+            document.getElementById('clBtnPrev').disabled        = !hasPrev;
+            document.getElementById('clBtnNext').disabled        = !hasNext;
+            document.getElementById('clBtnLast').disabled        = !hasNext;
+            document.getElementById('clTotalCount').textContent  = `${callLogTotal.toLocaleString()} total`;
+
+            const mobileCtrl = document.getElementById('callLogPaginationMobile');
+            mobileCtrl.style.display = callLogTotal > 0 ? 'flex' : 'none';
+            document.getElementById('clPageInfoMobile').textContent = pageText;
+            document.getElementById('clBtnPrevMobile').disabled     = !hasPrev;
+            document.getElementById('clBtnNextMobile').disabled     = !hasNext;
+        }
+
+        async function changeCallLogLimit(val) {
+            callLogLimit = parseInt(val) || 25;
+            callLogPage  = 1;
+            fetch('/api/user-preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'callLogLimit', value: String(callLogLimit) })
+            }).catch(() => {});
+            loadCallLog();
+        }
+
+        function callLogChangePage(delta) {
+            const totalPages = Math.max(1, Math.ceil(callLogTotal / callLogLimit));
+            callLogPage = Math.max(1, Math.min(totalPages, callLogPage + delta));
+            loadCallLog();
+        }
+
+        function callLogGoFirst() { callLogPage = 1; loadCallLog(); }
+        function callLogGoLast()  { callLogPage = Math.max(1, Math.ceil(callLogTotal / callLogLimit)); loadCallLog(); }
+
+        document.getElementById('clBtnFirst').addEventListener('click', callLogGoFirst);
+        document.getElementById('clBtnPrev').addEventListener('click', () => callLogChangePage(-1));
+        document.getElementById('clBtnNext').addEventListener('click', () => callLogChangePage(1));
+        document.getElementById('clBtnLast').addEventListener('click', callLogGoLast);
+        document.getElementById('clBtnPrevMobile').addEventListener('click', () => callLogChangePage(-1));
+        document.getElementById('clBtnNextMobile').addEventListener('click', () => callLogChangePage(1));
+        document.getElementById('clRowsPerPage').addEventListener('change', function () { changeCallLogLimit(this.value); });
+
+        // Filter highlights
+        function updateFilterHighlights() {
+            ['filterKeyId', 'filterMethod', 'filterEndpoint', 'filterStartDate', 'filterEndDate'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('filter-active', el.value !== '');
+            });
+        }
+
+        // Filters — Apply
+        document.getElementById('btnApplyCallLogFilters').addEventListener('click', () => {
+            activeFilters = {
+                keyId:     document.getElementById('filterKeyId').value,
+                method:    document.getElementById('filterMethod').value,
+                endpoint:  document.getElementById('filterEndpoint').value.trim(),
+                startDate: document.getElementById('filterStartDate').value,
+                endDate:   document.getElementById('filterEndDate').value,
+            };
+            callLogPage = 1;
+            updateCallLogFilterBadge();
+            updateFilterHighlights();
+            loadCallLog();
+        });
+
+        // Filters — Clear
+        document.getElementById('btnClearCallLogFilters').addEventListener('click', () => {
+            document.getElementById('filterKeyId').value     = '';
+            document.getElementById('filterMethod').value    = '';
+            document.getElementById('filterEndpoint').value  = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value   = '';
+            activeFilters = { keyId: '', method: '', endpoint: '', startDate: '', endDate: '' };
+            callLogPage = 1;
+            updateCallLogFilterBadge();
+            updateFilterHighlights();
+            loadCallLog();
+        });
+
+        function updateCallLogFilterBadge() {
+            const count = Object.values(activeFilters).filter(v => v !== '').length;
+            const badge = document.getElementById('callLogFilterCount');
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+
+        document.getElementById('callLogFilterToggleBtn').addEventListener('click', () => {
+            const bar = document.getElementById('callLogFilterBar');
+            const btn = document.getElementById('callLogFilterToggleBtn');
+            btn.classList.toggle('expanded', bar.classList.toggle('filter-expanded'));
+        });
+
+        document.getElementById('filterEndpoint').addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('btnApplyCallLogFilters').click();
+        });
+
+        document.getElementById('btnRefreshLog').addEventListener('click', loadCallLog);
+        document.getElementById('btnRefreshLogMobile').addEventListener('click', loadCallLog);
+        document.getElementById('btnExportLog').addEventListener('click', exportCallLog);
+        document.getElementById('btnExportLogMobile').addEventListener('click', exportCallLog);
+        document.getElementById('btnPurgeLog').addEventListener('click', purgeCallLog);
+        document.getElementById('btnPurgeLogMobile').addEventListener('click', purgeCallLog);
+
+        async function exportCallLog() {
+            const params = new URLSearchParams({ sort: callLogSortCol, sortDir: callLogSortDir });
+            if (activeFilters.keyId)     params.set('keyId',     activeFilters.keyId);
+            if (activeFilters.method)    params.set('method',    activeFilters.method);
+            if (activeFilters.endpoint)  params.set('endpoint',  activeFilters.endpoint);
+            if (activeFilters.startDate) params.set('startDate', activeFilters.startDate + 'T00:00:00');
+            if (activeFilters.endDate)   params.set('endDate',   activeFilters.endDate   + 'T23:59:59');
+            try {
+                const res = await fetch('/api/api-keys/call-log/export?' + params.toString());
+                if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+                const blob = await res.blob();
+                const url  = URL.createObjectURL(blob);
+                const a    = document.createElement('a');
+                a.href = url;
+                a.download = `api-call-log-${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                showToast('Export failed: ' + e.message, 'error');
+            }
+        }
+
+        async function purgeCallLog() {
+            if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
+            const daysStr = await promptActionWithInput(
+                'Purge Call Log',
+                'This will permanently delete all call log entries older than the specified number of days. This action cannot be undone.',
+                { inputLabel: 'Delete entries older than (days)', inputDefault: 90, inputType: 'number', inputMin: 1, requiredText: 'PURGE' }
+            );
+            if (daysStr === null) return;
+            const days = parseInt(daysStr);
+            try {
+                const res  = await fetch(`/api/api-keys/call-log?days=${days}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                showToast(`${data.deletedCount} entries deleted`, 'success');
+                callLogPage = 1;
+                loadCallLog();
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        document.getElementById('sortToggleBtnCallLog').addEventListener('click', () => {
+            const bar = document.getElementById('callLog-sort-bar');
+            const btn = document.getElementById('sortToggleBtnCallLog');
+            btn.classList.toggle('expanded', bar.classList.toggle('sort-expanded'));
+        });
+
+        document.querySelectorAll('#callLog-sort-bar .sort-bar-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleCallLogSort(btn.dataset.sort));
+        });
+
+        document.querySelectorAll('#callLogTable th.sortable').forEach(th => {
+            th.addEventListener('click', () => handleCallLogSort(th.dataset.sort));
+        });
+
+        async function populateKeyFilter() {
+            const sel = document.getElementById('filterKeyId');
+            const current = sel.value;
+            try {
+                const res  = await fetch('/api/api-keys');
+                const keys = await res.json();
+                sel.innerHTML = '<option value="">All keys</option>' +
+                    keys.map(k => `<option value="${k.id}">${escapeHtml(k.name)} (${escapeHtml(k.key_prefix)}…)</option>`).join('');
+                sel.value = current;
+            } catch (e) {}
+        }
+
+        // ── Scroll to top ──────────────────────────────────────────────────────
+        const scrollTopBtn = document.getElementById('scrollTopBtn');
+        window.onscroll = function () {
+            if (scrollTopBtn) scrollTopBtn.style.display =
+                (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? 'flex' : 'none';
+        };
+
+        // ── Role guard ─────────────────────────────────────────────────────────
+        (async function () {
+            try {
+                const res  = await fetch('/api/user-session');
+                const user = await res.json();
+                const roleMap = { guest: 0, simple: 1, admin: 2, superadmin: 3 };
+                if ((roleMap[user.role] || 0) < roleMap['admin']) {
+                    window.location.href = '/';
+                }
+            } catch (e) {
+                window.location.href = '/login.html';
+            }
+        })();
+
+        // ── Init ───────────────────────────────────────────────────────────────
+        initApiKeySection();
+        initCallLogSection();
+    </script>
+</body>
+</html>

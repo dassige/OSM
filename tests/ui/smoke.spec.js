@@ -19,6 +19,7 @@ const AUTH_PAGES = [
   { url: '/templates.html',         name: 'Templates' },
   { url: '/third-parties.html',     name: 'Third Parties' },
   { url: '/users.html',             name: 'Users' },
+  { url: '/api-management.html',     name: 'API Management' },
   { url: '/system-tools.html',      name: 'System Tools' },
   { url: '/backup-restore.html',    name: 'Backup & Restore' },
   { url: '/profile.html',           name: 'Profile' },

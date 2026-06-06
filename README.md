@@ -50,7 +50,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **Dockerized:** Ready for production deployment with a flexible configuration system.
   * **Demo Mode:** Run the application in a fully sandboxed environment using static local data and a separate database (`demo.db`). This allows for safe testing and demonstration without connecting to the live OSM Dashboard or risking production data.
   * **WhatsApp Integration:** Send expiring skill notifications directly to members' WhatsApp accounts using a headless client. Includes support for bulk sending, test messages, session management, **automatic reconnection with exponential backoff**, and a **message queue** that retries delivery once the connection is restored.
-  * **REST API with API Key Authentication:** Every `/api/*` endpoint can be called by external systems using an `X-API-Key` request header. Keys are managed (create, revoke, delete) through the System Tools page without restarting the server.
+  * **REST API with API Key Authentication:** Every `/api/*` endpoint can be called by external systems using an `X-API-Key` request header. Keys are managed (create, revoke, delete) through the **System Admin → API Management** page without restarting the server.
   * **API Reference (Swagger UI):** Interactive OpenAPI 3.0 documentation is available at `/api/docs` for authenticated admin users.
   * **Knowledge Base:** A built-in document library for storing and sharing documents (PDF, Word, Excel, RTF) with brigade members — no login required. Documents are organised in a collapsible folder/category tree with live document counts and red expiry badges. Each document has a configurable expiry date; expired documents are flagged for admin review but remain accessible until explicitly disabled. The Edit modal supports replacing a document's file content without changing its public link. Admins can rotate GUIDs per-document or in bulk (System Tools) to invalidate shared links. A **KB Link** button in every TinyMCE editor embeds persistent document links inside forms and surveys using a stable integer ID that survives slug rotation.
 
@@ -434,13 +434,22 @@ Requires an active admin session. The raw OpenAPI 3.0 spec is also downloadable 
 
 ### Managing API Keys
 
-API keys are managed exclusively through **System Tools → API Key Management** (admin role required).
+API keys are managed exclusively through **System Admin → API Management** (admin role required).
 
 | Action | Description |
 |--------|-------------|
-| **Create** | Provide a name and role (`admin` or `simple`). The full key is shown **once** — copy it immediately. |
+| **Create** | Provide a name and role (`superadmin`, `admin`, `simple`, or `guest`). The full key is shown **once** — copy it immediately. |
 | **Revoke / Enable** | Toggle a key active/inactive without deleting it. |
 | **Delete** | Permanently removes the key. |
+
+### API Call Log
+
+Every request authenticated with an API key is recorded in the **API Call Log** section of the API Management page. The log captures key name, HTTP method, full endpoint URL (including query parameters), origin IP, user agent, and response status.
+
+- **Sort** by any column (Timestamp, Key Name, Method, Endpoint, Origin IP, Status). Sort column and direction persist across page reloads.
+- **Filter** by key, method, endpoint text, and date range. Active filter fields are highlighted with a blue border.
+- **Rows per page** can be changed from the pagination bar; the preference persists across reloads.
+- **Purge** entries older than a configurable number of days (requires typing `PURGE` to confirm).
 
 > **Security:** Only the SHA-256 hash of each key is stored in the database. If a key is lost, delete it and create a new one.
 
@@ -737,7 +746,7 @@ npm install
 Copy-Item examples/api/newman-environment.example.json examples/api/newman-environment.local.json
 # Then edit newman-environment.local.json:
 #   "baseUrl"  → your UAT instance URL  (e.g. https://opready.example.com)
-#   "apiKey"   → an admin-role API key from System Tools → API Key Management
+#   "apiKey"   → an admin-role API key from System Admin → API Management
 ```
 
 `newman-environment.local.json` is gitignored — it stays on your machine.
@@ -897,7 +906,7 @@ This is the recommended backup strategy for Cloud Run deployments, where keeping
 
 #### Step 1 — Create a superadmin API key
 
-In the app UI go to **System Tools → API Key Management**, create a key with the `superadmin` role, and copy the value. Store it securely on the machine that will run the backup.
+In the app UI go to **System Admin → API Management**, create a key with the `superadmin` role, and copy the value. Store it securely on the machine that will run the backup.
 
 #### Step 2 — Write the backup script
 
@@ -1086,7 +1095,7 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── reports.html            # Compliance reports
 │   ├── statistics.html         # Compliance statistics & charts
 │   ├── event-log.html          # Audit log
-│   ├── system-tools.html       # API Key Management, KB link rotation, KB missing-file scan, AI Test Lab
+│   ├── system-tools.html       # KB link rotation, KB missing-file scan, AI Test Lab
 │   ├── backup-restore.html     # Backup & Restore (dedicated page, superadmin only)
 │   ├── users.html              # Admin user management
 │   ├── profile.html            # Current-user profile

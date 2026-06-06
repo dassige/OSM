@@ -563,6 +563,37 @@
               }
             }
           ]
+        },
+        {
+          "name": "List API Call Log",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/call-log?page=1&limit=25",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "api-keys", "call-log"],
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "25" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List API Call Log | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('List API Call Log | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('List API Call Log | Valid JSON with rows array', () => {",
+                  "  pm.response.to.be.json;",
+                  "  pm.expect(pm.response.json()).to.have.property('rows').that.is.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

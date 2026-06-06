@@ -34,7 +34,7 @@ async function createApiKey(name, role, createdByName) {
 async function getApiKeyByHash(hash) {
     const db = await initDB();
     return db.get(
-        `SELECT id, name, role, active FROM api_keys WHERE key_hash = ?`,
+        `SELECT id, name, key_prefix, role, active FROM api_keys WHERE key_hash = ?`,
         hash
     );
 }
@@ -65,6 +65,84 @@ async function deleteApiKey(id) {
     await db.run(`DELETE FROM api_keys WHERE id = ?`, id);
 }
 
+// ── API Call Log ──────────────────────────────────────────────────────────────
+
+async function logApiCall(apiKeyId, keyName, keyPrefix, method, endpoint, originIp, userAgent, statusCode, queryParams, requestBody, pathParams) {
+    try {
+        const db = await initDB();
+        await db.run(
+            `INSERT INTO api_call_log (api_key_id, key_name, key_prefix, method, endpoint, origin_ip, user_agent, status_code, query_params, request_body, path_params)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            apiKeyId, keyName, keyPrefix, method, endpoint, originIp, userAgent, statusCode,
+            queryParams || null, requestBody || null, pathParams || null
+        );
+    } catch (_) {
+        // Never let logging failures affect request handling
+    }
+}
+
+async function listApiCallLog({ page = 1, limit = 50, keyId, method, endpoint, startDate, endDate, sort = 'logged_at', sortDir = 'desc' } = {}) {
+    const ALLOWED_SORT = new Set(['logged_at', 'key_name', 'method', 'endpoint', 'origin_ip', 'status_code']);
+    const sortCol   = ALLOWED_SORT.has(sort) ? sort : 'logged_at';
+    const sortOrder = sortDir === 'asc' ? 'ASC' : 'DESC';
+
+    const db = await initDB();
+    const conditions = [];
+    const params = [];
+
+    if (keyId) { conditions.push('api_key_id = ?'); params.push(keyId); }
+    if (method) { conditions.push('method = ?'); params.push(method.toUpperCase()); }
+    if (endpoint) { conditions.push('endpoint LIKE ?'); params.push(`%${endpoint}%`); }
+    if (startDate) { conditions.push("logged_at >= ?"); params.push(startDate); }
+    if (endDate) { conditions.push("logged_at <= ?"); params.push(endDate); }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const offset = (page - 1) * limit;
+
+    const [rows, countRow] = await Promise.all([
+        db.all(
+            `SELECT id, api_key_id, key_name, key_prefix, method, endpoint, origin_ip, user_agent, status_code, query_params, request_body, path_params, logged_at
+             FROM api_call_log ${where} ORDER BY ${sortCol} ${sortOrder} LIMIT ? OFFSET ?`,
+            [...params, limit, offset]
+        ),
+        db.get(`SELECT COUNT(*) AS total FROM api_call_log ${where}`, params)
+    ]);
+
+    return { rows, total: countRow?.total || 0 };
+}
+
+async function exportApiCallLog({ keyId, method, endpoint, startDate, endDate, sort = 'logged_at', sortDir = 'desc' } = {}) {
+    const ALLOWED_SORT = new Set(['logged_at', 'key_name', 'method', 'endpoint', 'origin_ip', 'status_code']);
+    const sortCol   = ALLOWED_SORT.has(sort) ? sort : 'logged_at';
+    const sortOrder = sortDir === 'asc' ? 'ASC' : 'DESC';
+
+    const db = await initDB();
+    const conditions = [];
+    const params = [];
+
+    if (keyId)     { conditions.push('api_key_id = ?');  params.push(keyId); }
+    if (method)    { conditions.push('method = ?');       params.push(method.toUpperCase()); }
+    if (endpoint)  { conditions.push('endpoint LIKE ?');  params.push(`%${endpoint}%`); }
+    if (startDate) { conditions.push('logged_at >= ?');   params.push(startDate); }
+    if (endDate)   { conditions.push('logged_at <= ?');   params.push(endDate); }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    return db.all(
+        `SELECT id, api_key_id, key_name, key_prefix, method, endpoint, origin_ip, user_agent, status_code, query_params, request_body, path_params, logged_at
+         FROM api_call_log ${where} ORDER BY ${sortCol} ${sortOrder}`,
+        params
+    );
+}
+
+async function purgeApiCallLog(olderThanDays) {
+    const db = await initDB();
+    const result = await db.run(
+        `DELETE FROM api_call_log WHERE logged_at < datetime('now', '-' || ? || ' days')`,
+        olderThanDays
+    );
+    return result.changes || 0;
+}
+
 module.exports = {
     listApiKeys,
     getApiKeyById,
@@ -73,5 +151,9 @@ module.exports = {
     touchApiKey,
     toggleApiKey,
     deleteApiKey,
-    hashKey
+    hashKey,
+    logApiCall,
+    listApiCallLog,
+    exportApiCallLog,
+    purgeApiCallLog,
 };

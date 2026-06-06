@@ -40,6 +40,59 @@ router.patch('/:id/toggle', hasRole('admin'), async (req, res) => {
     }
 });
 
+// ── API Call Log — must be declared before /:id to avoid misrouting ───────────
+
+router.get('/call-log', hasRole('admin'), async (req, res) => {
+    try {
+        const page     = Math.max(1, parseInt(req.query.page)  || 1);
+        const limit    = Math.min(500, Math.max(1, parseInt(req.query.limit) || 50));
+        const keyId    = req.query.keyId    ? Number(req.query.keyId) : undefined;
+        const method   = req.query.method   || undefined;
+        const endpoint = req.query.endpoint || undefined;
+        const startDate = req.query.startDate || undefined;
+        const endDate   = req.query.endDate   || undefined;
+        const sort      = req.query.sort    || 'logged_at';
+        const sortDir   = req.query.sortDir || 'desc';
+
+        const result = await db.listApiCallLog({ page, limit, keyId, method, endpoint, startDate, endDate, sort, sortDir });
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/call-log/export', hasRole('admin'), async (req, res) => {
+    try {
+        const keyId     = req.query.keyId    ? Number(req.query.keyId) : undefined;
+        const method    = req.query.method   || undefined;
+        const endpoint  = req.query.endpoint || undefined;
+        const startDate = req.query.startDate || undefined;
+        const endDate   = req.query.endDate   || undefined;
+        const sort      = req.query.sort    || 'logged_at';
+        const sortDir   = req.query.sortDir || 'desc';
+
+        const records = await db.exportApiCallLog({ keyId, method, endpoint, startDate, endDate, sort, sortDir });
+        const today = new Date().toISOString().slice(0, 10);
+        res.setHeader('Content-Disposition', `attachment; filename="api-call-log-${today}.json"`);
+        res.json({ exportedAt: new Date().toISOString(), count: records.length, records });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.delete('/call-log', hasRole('admin'), async (req, res) => {
+    if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
+    try {
+        const days = Math.max(1, parseInt(req.query.days) || 30);
+        const deleted = await db.purgeApiCallLog(days);
+        const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+        await db.logEvent(actor, 'API Keys', 'API Call Log Purged', { olderThanDays: days, deletedCount: deleted });
+        res.json({ success: true, deletedCount: deleted });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 router.delete('/:id', hasRole('admin'), async (req, res) => {
     if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
     try {

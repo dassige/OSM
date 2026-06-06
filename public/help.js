@@ -340,28 +340,48 @@ const helpContent = {
             <h3>2. Knowledge Base</h3>
             <p>Two maintenance tools are available for the Knowledge Base document library.</p>
             <ul>
-                <li><strong>Rotate Document Links</strong> — assigns a new GUID to every document, immediately invalidating all previously shared public links. Use periodically or when a link may have been shared with unintended recipients. Documents are not affected — only their access URLs change. Links embedded in forms and surveys update automatically (stored as document IDs, not raw URLs).</li>
-                <li><strong>Find Documents with Missing Files</strong> — scans every document record and checks whether its physical file is present in the storage backend. Useful after a database-only restore, a storage migration, or if files were deleted outside the application. The scan is read-only and covers all documents regardless of active/inactive status.</li>
+                <li><strong>Rotate Document Links</strong> — assigns a new GUID to every document, immediately invalidating all previously shared public links.</li>
+                <li><strong>Find Documents with Missing Files</strong> — scans every document record and checks whether its physical file is present in the storage backend.</li>
             </ul>
 
-            <h3>3. API Key Management</h3>
-            <p>Create and manage API keys that allow external systems to authenticate to the REST API without a browser session.</p>
-            <ul>
-                <li><strong>Create:</strong> Give the key a name and assign a role — <em>superadmin</em> (full access including user &amp; key management), <em>admin</em> (full read/write), <em>simple</em> (read-only statistics/reports), or <em>guest</em> (read-only public data). The full key is shown <strong>once</strong> — copy it immediately as it cannot be retrieved again.</li>
-                <li><strong>Revoke / Enable:</strong> Toggle a key inactive without deleting it. A revoked key is rejected immediately on all API requests.</li>
-                <li><strong>Delete:</strong> Permanently removes the key from the database.</li>
-            </ul>
-            <p>External systems authenticate by adding the header <code>X-API-Key: osm_…</code> to any <code>/api/*</code> request. See the interactive API reference at <code>/api/docs</code> for the full endpoint list.</p>
-
-            <h3>4. AI Evaluator Test Lab</h3>
+            <h3>3. AI Evaluator Test Lab</h3>
             <p>An ad-hoc sandbox for testing the AI grading logic against custom question/answer pairs before enabling it for live forms. Settings auto-save to your user profile.</p>
 
-            <h3>5. Install as App (PWA)</h3>
-            <p>OpReady is a <strong>Progressive Web App</strong>. When supported by your browser, an <em>Install OpReady</em> banner will appear at the top of the page. Installing adds OpReady to your device's home screen or taskbar for one-tap access, works offline for recently visited pages, and removes browser chrome for a native app feel.</p>
+            <h3>4. Install as App (PWA)</h3>
+            <p>OpReady is a <strong>Progressive Web App</strong>. When supported by your browser, an <em>Install OpReady</em> banner will appear at the top of the page.</p>
             <ul>
-                <li>The install banner appears automatically when the browser detects the app is installable. Dismiss it and it won't reappear until the next session.</li>
                 <li>On iOS (Safari): use the Share button → <strong>Add to Home Screen</strong>.</li>
                 <li>On Android (Chrome) or desktop (Chrome/Edge): accept the Install banner or use the browser menu → <strong>Install OpReady</strong>.</li>
+            </ul>
+
+            <h3>API Key Management</h3>
+            <p>API Key Management has moved to the dedicated <strong>API Management</strong> page under System Admin.</p>
+        `
+    },
+
+    // --- API Management ---
+    "api-management": {
+        title: "API Management",
+        body: `
+            <h3>1. API Key Management</h3>
+            <p>API keys allow external systems to authenticate to the REST API using the <code>X-API-Key</code> header without a browser session.</p>
+            <ul>
+                <li><strong>Create:</strong> Give the key a name and a role — <em>superadmin</em>, <em>admin</em>, <em>simple</em>, or <em>guest</em>. The raw key is shown <strong>once</strong> at creation — copy it immediately.</li>
+                <li><strong>Revoke / Enable:</strong> Toggle a key inactive without deleting it. Revoked keys are rejected immediately.</li>
+                <li><strong>Delete:</strong> Permanently removes the key.</li>
+            </ul>
+            <p>Sort the key list by clicking any column header. Sort preference is saved automatically. See the interactive API reference at <code>/api/docs</code> for all available endpoints.</p>
+
+            <h3>2. API Call Log</h3>
+            <p>Every request authenticated via an API key is recorded with: key name, HTTP method, full endpoint URL (including query parameters), origin IP, user agent, and HTTP response code.</p>
+            <ul>
+                <li><strong>Sort:</strong> Click any column header — Timestamp, Key Name, Method, Endpoint, Origin IP, or Status — to sort. Direction and column are saved automatically.</li>
+                <li><strong>Filter:</strong> Click <em>Filters</em> to expand the filter panel. Narrow results by key, method, endpoint text, and date range, then click <em>Apply</em>. Active filter fields are highlighted with a blue border.</li>
+                <li><strong>Rows per page:</strong> Use the selector in the pagination bar to change how many rows are shown. Your choice is saved automatically.</li>
+                <li><strong>Download JSON:</strong> Export all records matching the current filters as a <code>.json</code> file. The download includes every matching entry (no pagination limit) in the active sort order.</li>
+                <li><strong>Call detail:</strong> Rows that include query parameters, path parameters, or a request body display a small round button in the action column. Click it to expand an inline detail panel showing up to three blocks — <em>Path Params</em>, <em>Query Params</em>, and <em>Request Body</em> — each formatted as JSON. Sensitive fields (e.g. <code>password</code>, <code>token</code>, <code>api_key</code>) are automatically masked as <code>***</code> before storage. Rows with no parameters show no button.</li>
+                <li><strong>Refresh:</strong> Reload the log to see the latest entries.</li>
+                <li><strong>Purge:</strong> Opens a single confirmation dialog where you enter the number of days to keep and type <em>PURGE</em> to confirm. Entries older than the specified threshold are permanently deleted.</li>
             </ul>
         `
     },
@@ -615,6 +635,7 @@ const helpContent = {
     else if (path.includes("skills")) key = "skills";
     else if (path.includes("templates")) key = "templates";
     else if (path.includes("backup-restore")) key = "backup-restore";
+    else if (path.includes("api-management")) key = "api-management";
     else if (path.includes("system-tools")) key = "system-tools";
     else if (path.includes("event-log")) key = "event-log";
     else if (path.includes("users")) key = "users";
@@ -720,7 +741,7 @@ const helpContent = {
     // --- MOBILE TOP BANNER ---
     // Pages that get the Android-style top navigation banner
     const bannerKeys = [
-        'index', 'members', 'skills', 'templates', 'system-tools', 'backup-restore',
+        'index', 'members', 'skills', 'templates', 'api-management', 'system-tools', 'backup-restore',
         'event-log', 'users', 'profile', 'third-parties', 'training-planner',
         'forms-manage', 'reports', 'live-forms', 'statistics', 'surveys-manage',
         'live-surveys', 'surveys-tracking', 'surveys-results',
@@ -734,6 +755,7 @@ const helpContent = {
         'members': 'Members',
         'skills': 'Skills',
         'templates': 'Templates',
+        'api-management': 'API Management',
         'system-tools': 'System Tools',
         'backup-restore': 'Backup & Restore',
         'event-log': 'Event Log',

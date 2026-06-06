@@ -2,12 +2,15 @@ const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 
 jest.mock('../services/db', () => ({
-    listApiKeys:  jest.fn(),
-    createApiKey: jest.fn(),
-    getApiKeyById: jest.fn().mockResolvedValue({ id: 1, name: 'Test Key', key_prefix: 'osm_abc123', role: 'admin', active: 1 }),
-    toggleApiKey: jest.fn().mockResolvedValue(),
-    deleteApiKey: jest.fn().mockResolvedValue(),
-    logEvent:     jest.fn().mockResolvedValue()
+    listApiKeys:      jest.fn(),
+    createApiKey:     jest.fn(),
+    getApiKeyById:    jest.fn().mockResolvedValue({ id: 1, name: 'Test Key', key_prefix: 'osm_abc123', role: 'admin', active: 1 }),
+    toggleApiKey:     jest.fn().mockResolvedValue(),
+    deleteApiKey:     jest.fn().mockResolvedValue(),
+    listApiCallLog:   jest.fn(),
+    exportApiCallLog: jest.fn(),
+    purgeApiCallLog:  jest.fn(),
+    logEvent:         jest.fn().mockResolvedValue()
 }));
 
 jest.mock('../middleware/auth', () => ({
@@ -157,6 +160,147 @@ describe('API Keys Endpoints (Isolated)', () => {
             db.deleteApiKey.mockRejectedValueOnce(new Error('DB failure'));
 
             const res = await request(app).delete('/api/api-keys/1');
+
+            expect(res.status).toBe(500);
+            expect(res.body.error).toBe('DB failure');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // GET /api/api-keys/call-log
+    // -----------------------------------------------------------------------
+    describe('GET /api/api-keys/call-log', () => {
+        it('returns 200 with rows and total', async () => {
+            const mockResult = {
+                rows: [
+                    { id: 1, api_key_id: 1, key_name: 'Test Key', key_prefix: 'osm_abc123',
+                      method: 'GET', endpoint: '/api/members', origin_ip: '127.0.0.1',
+                      user_agent: 'curl/7.88', status_code: 200, logged_at: '2025-01-01T00:00:00' }
+                ],
+                total: 1
+            };
+            db.listApiCallLog.mockResolvedValue(mockResult);
+
+            const res = await request(app).get('/api/api-keys/call-log?page=1&limit=25');
+
+            expect(res.status).toBe(200);
+            expect(res.body.rows).toHaveLength(1);
+            expect(res.body.total).toBe(1);
+            expect(db.listApiCallLog).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 25 }));
+        });
+
+        it('passes filter params to db function', async () => {
+            db.listApiCallLog.mockResolvedValue({ rows: [], total: 0 });
+
+            await request(app).get('/api/api-keys/call-log?keyId=2&method=POST&endpoint=%2Fapi%2Fmembers');
+
+            expect(db.listApiCallLog).toHaveBeenCalledWith(expect.objectContaining({
+                keyId: 2, method: 'POST', endpoint: '/api/members'
+            }));
+        });
+
+        it('passes sort params to db function', async () => {
+            db.listApiCallLog.mockResolvedValue({ rows: [], total: 0 });
+
+            await request(app).get('/api/api-keys/call-log?sort=status_code&sortDir=asc');
+
+            expect(db.listApiCallLog).toHaveBeenCalledWith(expect.objectContaining({
+                sort: 'status_code', sortDir: 'asc'
+            }));
+        });
+
+        it('defaults sort to logged_at desc when not specified', async () => {
+            db.listApiCallLog.mockResolvedValue({ rows: [], total: 0 });
+
+            await request(app).get('/api/api-keys/call-log');
+
+            expect(db.listApiCallLog).toHaveBeenCalledWith(expect.objectContaining({
+                sort: 'logged_at', sortDir: 'desc'
+            }));
+        });
+
+        it('returns 500 on db error', async () => {
+            db.listApiCallLog.mockRejectedValueOnce(new Error('DB failure'));
+
+            const res = await request(app).get('/api/api-keys/call-log');
+
+            expect(res.status).toBe(500);
+            expect(res.body.error).toBe('DB failure');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // GET /api/api-keys/call-log/export
+    // -----------------------------------------------------------------------
+    describe('GET /api/api-keys/call-log/export', () => {
+        it('returns 200 with exportedAt, count, and records array', async () => {
+            const mockRecords = [
+                { id: 1, key_name: 'Test Key', method: 'GET', endpoint: '/api/members?active=1', status_code: 200, logged_at: '2025-01-01T00:00:00' }
+            ];
+            db.exportApiCallLog.mockResolvedValue(mockRecords);
+
+            const res = await request(app).get('/api/api-keys/call-log/export');
+
+            expect(res.status).toBe(200);
+            expect(res.body.count).toBe(1);
+            expect(res.body.records).toHaveLength(1);
+            expect(res.body.exportedAt).toBeDefined();
+            expect(res.headers['content-disposition']).toMatch(/attachment.*api-call-log/);
+        });
+
+        it('passes filter and sort params to db function', async () => {
+            db.exportApiCallLog.mockResolvedValue([]);
+
+            await request(app).get('/api/api-keys/call-log/export?sort=status_code&sortDir=asc&method=GET');
+
+            expect(db.exportApiCallLog).toHaveBeenCalledWith(expect.objectContaining({
+                sort: 'status_code', sortDir: 'asc', method: 'GET'
+            }));
+        });
+
+        it('returns 500 on db error', async () => {
+            db.exportApiCallLog.mockRejectedValueOnce(new Error('DB failure'));
+
+            const res = await request(app).get('/api/api-keys/call-log/export');
+
+            expect(res.status).toBe(500);
+            expect(res.body.error).toBe('DB failure');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // DELETE /api/api-keys/call-log
+    // -----------------------------------------------------------------------
+    describe('DELETE /api/api-keys/call-log', () => {
+        it('purges entries and returns deletedCount', async () => {
+            db.purgeApiCallLog.mockResolvedValue(42);
+
+            const res = await request(app).delete('/api/api-keys/call-log?days=90');
+
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(res.body.deletedCount).toBe(42);
+            expect(db.purgeApiCallLog).toHaveBeenCalledWith(90);
+            expect(db.logEvent).toHaveBeenCalledWith(
+                expect.any(String),
+                'API Keys',
+                'API Call Log Purged',
+                expect.objectContaining({ olderThanDays: 90, deletedCount: 42 })
+            );
+        });
+
+        it('defaults to 30 days when days param is missing', async () => {
+            db.purgeApiCallLog.mockResolvedValue(0);
+
+            await request(app).delete('/api/api-keys/call-log');
+
+            expect(db.purgeApiCallLog).toHaveBeenCalledWith(30);
+        });
+
+        it('returns 500 on db error', async () => {
+            db.purgeApiCallLog.mockRejectedValueOnce(new Error('DB failure'));
+
+            const res = await request(app).delete('/api/api-keys/call-log?days=30');
 
             expect(res.status).toBe(500);
             expect(res.body.error).toBe('DB failure');

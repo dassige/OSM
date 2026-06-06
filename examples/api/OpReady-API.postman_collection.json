@@ -1611,6 +1611,63 @@
               ]
             }
           }
+        },
+        {
+          "name": "List API Call Log",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/call-log?page=1&limit=50&sort=logged_at&sortDir=desc",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "api-keys", "call-log" ],
+              "query": [
+                { "key": "page",      "value": "1" },
+                { "key": "limit",     "value": "50" },
+                { "key": "sort",      "value": "logged_at" },
+                { "key": "sortDir",   "value": "desc" },
+                { "key": "keyId",     "value": "", "disabled": true },
+                { "key": "method",    "value": "", "disabled": true },
+                { "key": "endpoint",  "value": "", "disabled": true },
+                { "key": "startDate", "value": "", "disabled": true },
+                { "key": "endDate",   "value": "", "disabled": true }
+              ]
+            },
+            "description": "Returns paginated call log entries for all API key requests. Supports sorting by any column (logged_at, key_name, method, endpoint, origin_ip, status_code) and filtering by keyId, method, endpoint (partial URL match including query string), and date range."
+          }
+        },
+        {
+          "name": "Export API Call Log",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/call-log/export?sort=logged_at&sortDir=desc",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "api-keys", "call-log", "export" ],
+              "query": [
+                { "key": "sort",      "value": "logged_at" },
+                { "key": "sortDir",   "value": "desc" },
+                { "key": "keyId",     "value": "", "disabled": true },
+                { "key": "method",    "value": "", "disabled": true },
+                { "key": "endpoint",  "value": "", "disabled": true },
+                { "key": "startDate", "value": "", "disabled": true },
+                { "key": "endDate",   "value": "", "disabled": true }
+              ]
+            },
+            "description": "Returns all matching call log entries as a JSON download (no pagination). Accepts the same filter and sort parameters as List API Call Log. Response includes Content-Disposition header with a suggested filename."
+          }
+        },
+        {
+          "name": "Purge API Call Log",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/api-keys/call-log?days=90",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "api-keys", "call-log" ],
+              "query": [ { "key": "days", "value": "90" } ]
+            },
+            "description": "Permanently deletes call log entries older than the specified number of days. Returns deletedCount."
+          }
         }
       ]
     },
