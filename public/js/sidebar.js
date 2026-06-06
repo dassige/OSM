@@ -64,11 +64,10 @@ document.addEventListener("DOMContentLoaded", () => {
                       </li>
   
                       <li class="has-children" id="groupReports" data-role="simple">
-                          <div class="menu-label" onclick="toggleSubmenu(event, 'submenuReports')">Reports & Logs</div>
+                          <div class="menu-label" onclick="toggleSubmenu(event, 'submenuReports')">Reports</div>
                           <ul id="submenuReports" class="submenu">
                               <li><a href="reports.html" id="navReports">Reports</a></li>
                               <li><a href="statistics.html" id="navStats">Statistics</a></li>
-                              <li data-role="admin"><a href="event-log.html" id="navEventLog">Event Log</a></li>
                           </ul>
                       </li>
   
@@ -83,6 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
                           <div class="menu-label" onclick="toggleSubmenu(event, 'submenuSystem')">System Admin</div>
                           <ul id="submenuSystem" class="submenu">
                               <li><a href="users.html" id="navManageUsers">Manage Users</a></li>
+                              <li><a href="event-log.html" id="navEventLog">Event Log</a></li>
                               <li data-role="superadmin"><a href="system-tools.html" id="navSystemTools">System Tools</a></li>
                               <li data-role="superadmin"><a href="backup-restore.html" id="navBackupRestore">Backup &amp; Restore</a></li>
                           </ul>
