@@ -722,6 +722,8 @@ Every new page or feature **must** follow the existing UI conventions without ex
 | **Mobile icon buttons** | On mobile (≤ 768 px), replace labelled toolbar buttons with compact SVG icon buttons — see Mobile Icon Button Convention below |
 | **Modals** | All modals must render above every floating element (`z-index: 10500`) and be centred both horizontally and vertically — see Modal Convention below |
 | **Destructive confirmation** | Mass-destructive, irreversible operations must use `promptAction()` requiring the user to type a keyword — see Destructive Confirmation Convention below |
+| **Date inputs** | Never use a native `<input type="date">`. Include `datepicker.js` and use `<input type="date">` — the picker auto-attaches. See Custom Date Picker Mandate below |
+| **Time inputs** | Never use a native `<input type="time">`. Use the `createTimePicker(container, initialHHMM)` pattern from `backup-restore.html`. See Custom Time Picker Mandate below |
 
 ### Button Colour Convention
 
@@ -734,6 +736,73 @@ Every new page or feature **must** follow the existing UI conventions without ex
 | `btn-informative` | Teal | **Read-only view**: Preview, View Details |
 | `btn-purple` | Purple | **AI actions**: AI Generate, AI Evaluate, AI Grade |
 | `btn-warning` | Yellow | **Reserved** — true edge-case warnings only (e.g. forced password reset); do not use for regular actions |
+
+---
+
+### ⚠️ Custom Date Picker Mandate
+
+Never use a native `<input type="date">` — the browser's native calendar is inconsistent across OS/browser combinations and does not match the app's visual style.
+
+**How to use it:**
+
+1. Add `<script src="datepicker.js"></script>` to the page (after `utils.js`).
+2. Use a plain `<input type="date">` in the HTML — the script auto-attaches on `DOMContentLoaded`.
+3. Apply the same CSS classes and attributes you would use on a normal filter/form input (`filter-date`, `form-group`, `title`, etc.).
+
+The original `<input type="date">` is kept hidden in the DOM. All existing JS that reads `.value`, sets `.value = ''`, or listens to `onchange` continues to work unchanged. A native `change` event is dispatched when the user picks or clears a date.
+
+**What it provides:**
+- Month/year navigation with a `‹ Month Year ›` header; click the header to switch to a 3×4 month-grid year picker
+- Today highlighted in teal; selected date highlighted in primary blue
+- ✕ clear button; "Today" shortcut in the footer
+- Displays dates as `DD/MM/YYYY`; stores as `YYYY-MM-DD`
+- Fully respects `var(--primary)`, `var(--bg-card)`, `var(--border-color)` etc. — works in light and dark mode
+- `z-index: 100001` — renders above all page chrome including the mobile hamburger (99999)
+- Popup is responsive: capped at `min(280px, viewport − 16px)`; flips upward if near the bottom of the viewport; closes on outside click, Escape, scroll, and resize
+
+**Width behaviour:**
+
+| Context | How width is controlled |
+|---|---|
+| Filter bar (`.filter-date` class) | CSS sets `width: 135px`; on mobile the date-range-container overrides to `flex: 1` — wrapper inherits both rules correctly |
+| Form group (`.form-group`) | Injected CSS rule `.form-group .dp-wrapper { width: 100% }` makes it full-width |
+| Inline `style="width: …"` on the original input | Copied to the wrapper automatically |
+
+**When the filter reset clears dates** (e.g. `el.value = ''` or `getElementById('x').value = ''`): the visible display clears automatically via a property-setter override on the hidden input. No extra code needed.
+
+---
+
+### ⚠️ Custom Time Picker Mandate
+
+Never use a native `<input type="time">` — it is visually inconsistent and does not support the app's styling.
+
+**How to use it:**
+
+The custom time picker is implemented as an inline factory function `createTimePicker(container, initialHHMM)`. The canonical implementation lives in `public/backup-restore.html` (search for `// ── Custom Time Picker ──`). Copy the full CSS block (`.time-picker-wrap`, `.time-picker-display`, `.time-picker-dropdown`, `.time-picker-cols`, etc.) and the `createTimePicker` function into the new page.
+
+**Usage pattern:**
+
+```html
+<!-- Wrapper div — the picker is injected here -->
+<div id="myTimeWrap" class="time-picker-wrap"></div>
+```
+
+```js
+// Instantiate — returns an object with a .value() accessor
+const myPicker = createTimePicker(document.getElementById('myTimeWrap'), '09:00');
+
+// Read the selected time (returns 'HH:MM')
+const time = myPicker.value(); // e.g. '14:30'
+```
+
+**What it provides:**
+- Clock icon button that opens a scroll-wheel style dropdown
+- Separate hour (0–23) and minute (5-minute steps) columns with ▲/▼ chevrons
+- "Set" button commits the selection; clicking outside or pressing Escape cancels
+- Fully themed with CSS variables; works in light and dark mode
+- Closes any other open time picker when opened
+
+**When to extract to a shared file:** if a third page needs a time picker, extract `createTimePicker` and its CSS into `public/timepicker.js` following the same auto-attach pattern as `datepicker.js`.
 
 ---
 
