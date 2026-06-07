@@ -16,11 +16,33 @@
     <link rel="stylesheet" href="/sidebar.css">
     <script src="/js/sidebar.js"></script>
     <style>
+        /* ── Tab navigation ── */
+        .st-tab-nav {
+            display: flex; gap: 8px; background: var(--bg-hover);
+            border: 1px solid var(--border-color); border-radius: 10px; padding: 6px;
+            margin-bottom: 28px;
+        }
+        .st-tab-btn {
+            flex: 1; display: inline-flex; align-items: center; justify-content: center;
+            gap: 8px; padding: 12px 16px; min-height: 48px;
+            background: transparent; border: none; border-radius: 7px;
+            color: var(--text-muted); font-size: 0.97em; cursor: pointer;
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+        }
+        .st-tab-btn:hover:not(.active) { background: var(--bg-card); color: var(--text-main); }
+        .st-tab-btn.active {
+            background: var(--primary); color: #fff; font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        }
+        .st-tab-btn svg { flex-shrink: 0; }
+        .st-tab-panel { display: none; }
+        .st-tab-panel.active { display: block; }
+
         /* ── AI Test button: fixed width on desktop, full-width on mobile ── */
         #btnRunAiTest { min-width: 280px; }
 
         @media (max-width: 768px) {
-            /* AI Test button full-width */
+            .st-tab-btn { font-size: 0.88em; padding: 10px 8px; gap: 6px; }
             #btnRunAiTest { width: 100%; min-width: 0; }
         }
     </style>
@@ -43,176 +65,199 @@
     <div class="container" style="max-width: 1000px;">
         <h1 id="pageHeader" class="text-center" style="margin-bottom: 30px;">System Tools</h1>
 
-        <!-- ── Knowledge Base ── -->
-        <div style="display:flex; align-items:center; gap:10px; margin:8px 0 4px; color:var(--text-muted); font-size:0.82em; font-weight:700; text-transform:uppercase; letter-spacing:0.07em;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
-            Knowledge Base
-            <span style="flex:1; height:1px; background:var(--border-color); display:inline-block;"></span>
+        <!-- ── Tab navigation ── -->
+        <div class="st-tab-nav">
+            <button class="st-tab-btn active" data-tab="knowledgebase" title="Knowledge Base maintenance tools">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                Knowledge Base
+            </button>
+            <button class="st-tab-btn" data-tab="ai" title="AI evaluator configuration and test lab">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"></path>
+                    <circle cx="7.5" cy="14.5" r="1.5"></circle>
+                    <circle cx="16.5" cy="14.5" r="1.5"></circle>
+                </svg>
+                AI
+            </button>
         </div>
 
-        <div class="system-card">
-            <h2>Rotate Document Links</h2>
-            <p>Assigns a new GUID to every Knowledge Base document, immediately invalidating all previously shared
-                public links. Use this periodically or whenever you suspect a link has been shared with
-                unintended recipients.</p>
-            <p style="color:var(--danger); font-weight:600;">
-                &#9888; All existing <code>/knowledgebase/&lt;guid&gt;</code> URLs will stop working.
-                Members who have bookmarked or saved links will need new ones.
-            </p>
-            <p style="font-size:0.88em; color:var(--text-muted); margin-top:4px;">
-                The stored documents themselves are not affected — only their access URLs change.
-                Links embedded in forms and surveys resolve dynamically via the document ID and will
-                update automatically.
-            </p>
-            <div id="rotateSlugsResult" style="display:none;" class="status-msg"></div>
-            <div style="margin-top:16px;">
-                <button id="rotateSlugsBtn" class="btn-danger"
-                    title="Rotate all Knowledge Base document GUIDs — all current public links will stop working"
-                    style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:16px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <polyline points="1 20 1 14 7 14"></polyline>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                    </svg>
-                    Rotate All Document Links
-                </button>
-            </div>
-        </div>
+        <!-- ══════════════════════════════════════════════════════════════
+             Tab: Knowledge Base
+        ══════════════════════════════════════════════════════════════ -->
+        <div class="st-tab-panel active" id="st-tab-knowledgebase">
 
-        <div class="system-card">
-            <h2>Find Documents with Missing Files</h2>
-            <p>Scans every Knowledge Base document record and checks whether its physical file is present in the
-                configured storage backend. Useful after a database-only restore, a storage migration, or if
-                files were deleted outside the application.</p>
-            <p style="font-size:0.88em; color:var(--text-muted); margin-top:4px;">
-                All documents are scanned regardless of their active/inactive status. The scan is read-only —
-                no records are modified.
-            </p>
-            <div id="missingFilesResult" style="display:none;" class="status-msg"></div>
-            <div id="missingFilesTable" style="display:none; margin-top:12px; overflow-x:auto;"></div>
-            <div style="margin-top:16px;">
-                <button id="scanMissingFilesBtn" class="btn-primary"
-                    title="Scan all Knowledge Base documents to find any whose physical file is missing from storage"
-                    style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:16px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    Scan for Missing Files
-                </button>
-            </div>
-        </div>
-
-        <!-- ── AI Evaluator Test Lab ── -->
-        <div class="system-card">
-            <h2>AI Evaluator Test Lab</h2>
-            <p style="margin-bottom: 20px; font-style: italic;">Ad-hoc testing for AI grading logic. Fields auto-save to
-                your user profile.</p>
-
-            <div
-                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; background: var(--bg-hover); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 25px;">
-                <div class="form-group" style="margin:0;">
-                    <label>AI Provider</label>
-                    <select id="testAiProvider" class="save-pref" data-key="ai_test_provider" style="width:100%;"
-                        title="Select the AI provider to use for evaluation">
-                        <option value="gemini">Google Gemini</option>
-                        <option value="ollama">Ollama (Local)</option>
-                    </select>
+            <div class="system-card">
+                <h2>Rotate Document Links</h2>
+                <p>Assigns a new GUID to every Knowledge Base document, immediately invalidating all previously shared
+                    public links. Use this periodically or whenever you suspect a link has been shared with
+                    unintended recipients.</p>
+                <p style="color:var(--danger); font-weight:600;">
+                    &#9888; All existing <code>/knowledgebase/&lt;guid&gt;</code> URLs will stop working.
+                    Members who have bookmarked or saved links will need new ones.
+                </p>
+                <p style="font-size:0.88em; color:var(--text-muted); margin-top:4px;">
+                    The stored documents themselves are not affected — only their access URLs change.
+                    Links embedded in forms and surveys resolve dynamically via the document ID and will
+                    update automatically.
+                </p>
+                <div id="rotateSlugsResult" style="display:none;" class="status-msg"></div>
+                <div style="margin-top:16px;">
+                    <button id="rotateSlugsBtn" class="btn-danger"
+                        title="Rotate all Knowledge Base document GUIDs — all current public links will stop working"
+                        style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:16px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        Rotate All Document Links
+                    </button>
                 </div>
+            </div>
 
-                <div class="form-group" style="margin:0;">
-                    <label>Model Name</label>
-                    <div id="modelInputContainer">
-                        <input type="text" id="testAiModel" class="save-pref" data-key="ai_test_model"
-                            placeholder="e.g. gemini-1.5-pro" style="width:100%;"
-                            title="AI model name to use for evaluation, e.g. gemini-1.5-pro">
-                        <select id="testOllamaModelSelect" class="save-pref" data-key="ai_test_model_ollama"
-                            style="width:100%; display:none;"
-                            title="Select a locally available Ollama model">
-                            <option value="">-- Refresh to load models --</option>
+            <div class="system-card">
+                <h2>Find Documents with Missing Files</h2>
+                <p>Scans every Knowledge Base document record and checks whether its physical file is present in the
+                    configured storage backend. Useful after a database-only restore, a storage migration, or if
+                    files were deleted outside the application.</p>
+                <p style="font-size:0.88em; color:var(--text-muted); margin-top:4px;">
+                    All documents are scanned regardless of their active/inactive status. The scan is read-only —
+                    no records are modified.
+                </p>
+                <div id="missingFilesResult" style="display:none;" class="status-msg"></div>
+                <div id="missingFilesTable" style="display:none; margin-top:12px; overflow-x:auto;"></div>
+                <div style="margin-top:16px;">
+                    <button id="scanMissingFilesBtn" class="btn-primary"
+                        title="Scan all Knowledge Base documents to find any whose physical file is missing from storage"
+                        style="display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:16px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        Scan for Missing Files
+                    </button>
+                </div>
+            </div>
+
+        </div><!-- /st-tab-knowledgebase -->
+
+        <!-- ══════════════════════════════════════════════════════════════
+             Tab: AI
+        ══════════════════════════════════════════════════════════════ -->
+        <div class="st-tab-panel" id="st-tab-ai">
+
+            <div class="system-card">
+                <h2>AI Evaluator Test Lab</h2>
+                <p style="margin-bottom: 20px; font-style: italic;">Ad-hoc testing for AI grading logic. Fields auto-save to
+                    your user profile.</p>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; background: var(--bg-hover); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 25px;">
+                    <div class="form-group" style="margin:0;">
+                        <label>AI Provider</label>
+                        <select id="testAiProvider" class="save-pref" data-key="ai_test_provider" style="width:100%;"
+                            title="Select the AI provider to use for evaluation">
+                            <option value="gemini">Google Gemini</option>
+                            <option value="ollama">Ollama (Local)</option>
                         </select>
                     </div>
-                </div>
 
-                <div class="form-group" id="ollamaUrlGroup" style="margin:0; display:none;">
-                    <label>Ollama Base URL</label>
-                    <div style="display:flex; gap:5px;">
-                        <input type="text" id="testOllamaUrl" class="save-pref" data-key="ai_test_ollama_url"
-                            placeholder="http://localhost:11434" style="flex:1;"
-                            title="Base URL of your local Ollama server, e.g. http://localhost:11434">
-                        <button type="button" onclick="refreshOllamaModels()" class="btn-primary"
-                            style="padding:0 10px; margin: 0;" title="Refresh the list of locally available Ollama models">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path
-                                    d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                            </svg>
-                        </button>
+                    <div class="form-group" style="margin:0;">
+                        <label>Model Name</label>
+                        <div id="modelInputContainer">
+                            <input type="text" id="testAiModel" class="save-pref" data-key="ai_test_model"
+                                placeholder="e.g. gemini-1.5-pro" style="width:100%;"
+                                title="AI model name to use for evaluation, e.g. gemini-1.5-pro">
+                            <select id="testOllamaModelSelect" class="save-pref" data-key="ai_test_model_ollama"
+                                style="width:100%; display:none;"
+                                title="Select a locally available Ollama model">
+                                <option value="">-- Refresh to load models --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="ollamaUrlGroup" style="margin:0; display:none;">
+                        <label>Ollama Base URL</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="testOllamaUrl" class="save-pref" data-key="ai_test_ollama_url"
+                                placeholder="http://localhost:11434" style="flex:1;"
+                                title="Base URL of your local Ollama server, e.g. http://localhost:11434">
+                            <button type="button" onclick="refreshOllamaModels()" class="btn-primary"
+                                style="padding:0 10px; margin: 0;" title="Refresh the list of locally available Ollama models">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path
+                                        d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin:0;">
+                        <label>Max Points</label>
+                        <input type="number" id="testMaxPoints" class="save-pref" data-key="ai_test_max_points" value="5"
+                            min="1" step="0.5" style="width:100%;"
+                            title="Maximum score the AI can award for this answer">
                     </div>
                 </div>
 
-                <div class="form-group" style="margin:0;">
-                    <label>Max Points</label>
-                    <input type="number" id="testMaxPoints" class="save-pref" data-key="ai_test_max_points" value="5"
-                        min="1" step="0.5" style="width:100%;"
-                        title="Maximum score the AI can award for this answer">
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div class="form-group" style="margin:0;">
+                        <label style="color: var(--primary); font-size: 0.9em; text-transform: uppercase;">Question
+                            Description</label>
+                        <textarea id="testQuestion" class="save-pref" data-key="ai_test_question" rows="4"
+                            style="width:100%; min-height: 70px;"
+                            placeholder="The question text shown to the member..."
+                            title="The question text shown to the member"></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin:0;">
+                        <label style="color: var(--primary); font-size: 0.9em; text-transform: uppercase;">Reference Text
+                            (The Rubric)</label>
+                        <textarea id="testReference" class="save-pref" data-key="ai_test_reference" rows="6"
+                            style="width:100%; min-height: 70px;"
+                            placeholder="Technical source or ideal answer..."
+                            title="The rubric or ideal answer used to evaluate the member's response"></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin:0;">
+                        <label style="color: var(--primary); font-size: 0.9em; text-transform: uppercase;">Member's
+                            Answer</label>
+                        <textarea id="testAnswer" class="save-pref" data-key="ai_test_answer" rows="6"
+                            style="width:100%; min-height: 70px;"
+                            placeholder="Text provided by the volunteer..."
+                            title="The member's written answer to evaluate"></textarea>
+                    </div>
+                </div>
+
+                <div
+                    style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+                    <button onclick="runAiTest()" class="btn-primary" id="btnRunAiTest"
+                        title="Run the AI evaluation test with the current configuration"
+                        style="display: inline-flex; align-items: center; justify-content: center; height: 50px; font-size: 1.1em; margin: 0; gap: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Execute Evaluation Test
+                    </button>
+                </div>
+
+                <div id="aiTestLog" class="terminal-log">
                 </div>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-                <div class="form-group" style="margin:0;">
-                    <label style="color: var(--primary); font-size: 0.9em; text-transform: uppercase;">Question
-                        Description</label>
-                    <textarea id="testQuestion" class="save-pref" data-key="ai_test_question" rows="4"
-                        style="width:100%; min-height: 70px;"
-                        placeholder="The question text shown to the member..."
-                        title="The question text shown to the member"></textarea>
-                </div>
-
-                <div class="form-group" style="margin:0;">
-                    <label style="color: var(--primary); font-size: 0.9em; text-transform: uppercase;">Reference Text
-                        (The Rubric)</label>
-                    <textarea id="testReference" class="save-pref" data-key="ai_test_reference" rows="6"
-                        style="width:100%; min-height: 70px;"
-                        placeholder="Technical source or ideal answer..."
-                        title="The rubric or ideal answer used to evaluate the member's response"></textarea>
-                </div>
-
-                <div class="form-group" style="margin:0;">
-                    <label style="color: var(--primary); font-size: 0.9em; text-transform: uppercase;">Member's
-                        Answer</label>
-                    <textarea id="testAnswer" class="save-pref" data-key="ai_test_answer" rows="6"
-                        style="width:100%; min-height: 70px;"
-                        placeholder="Text provided by the volunteer..."
-                        title="The member's written answer to evaluate"></textarea>
-                </div>
-            </div>
-
-            <div
-                style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
-                <button onclick="runAiTest()" class="btn-primary" id="btnRunAiTest"
-                    title="Run the AI evaluation test with the current configuration"
-                    style="display: inline-flex; align-items: center; justify-content: center; height: 50px; font-size: 1.1em; margin: 0; gap: 10px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                    Execute Evaluation Test
-                </button>
-            </div>
-
-            <div id="aiTestLog" class="terminal-log">
-            </div>
-        </div>
+        </div><!-- /st-tab-ai -->
 
     </div>
 
@@ -309,6 +354,16 @@
     </div>
 
     <script>
+        // ── Tab switching ────────────────────────────────────────────────────────
+        document.querySelectorAll('.st-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.st-tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.st-tab-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('st-tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
         // ── AI Lab ──────────────────────────────────────────────────────────────
         let currentAiPrefs = {};
         let isDemo = false;

@@ -334,28 +334,22 @@ const helpContent = {
     "system-tools": {
         title: "System Tools",
         body: `
-            <h3>1. Backup &amp; Restore</h3>
-            <p>Download backups or restore the system from a saved backup file. These operations are available on the dedicated <strong>Backup &amp; Restore</strong> page, accessible from the navigation menu or the link on this page.</p>
+            <p>System Tools is organised into two tabs. Click a tab header to switch between tool groups.</p>
 
-            <h3>2. Knowledge Base</h3>
-            <p>Two maintenance tools are available for the Knowledge Base document library.</p>
+            <h3>Knowledge Base tab</h3>
+            <p>Maintenance tools for the Knowledge Base document library.</p>
             <ul>
-                <li><strong>Rotate Document Links</strong> — assigns a new GUID to every document, immediately invalidating all previously shared public links.</li>
-                <li><strong>Find Documents with Missing Files</strong> — scans every document record and checks whether its physical file is present in the storage backend.</li>
+                <li><strong>Rotate Document Links</strong> — assigns a new GUID to every document, immediately invalidating all previously shared public links. Use periodically or whenever a link may have been shared with unintended recipients. Document content is unaffected; links embedded in forms and surveys update automatically.</li>
+                <li><strong>Find Documents with Missing Files</strong> — scans every document record and checks whether its physical file is present in the configured storage backend. Useful after a database-only restore or a storage migration. The scan is read-only — no records are modified. Missing documents are listed in a table with an edit button to upload a replacement file.</li>
             </ul>
 
-            <h3>3. AI Evaluator Test Lab</h3>
-            <p>An ad-hoc sandbox for testing the AI grading logic against custom question/answer pairs before enabling it for live forms. Settings auto-save to your user profile.</p>
-
-            <h3>4. Install as App (PWA)</h3>
-            <p>OpReady is a <strong>Progressive Web App</strong>. When supported by your browser, an <em>Install OpReady</em> banner will appear at the top of the page.</p>
+            <h3>AI tab</h3>
+            <p>Ad-hoc sandbox for testing the AI grading logic against custom question/answer pairs before enabling it for live forms. Settings auto-save to your user profile.</p>
             <ul>
-                <li>On iOS (Safari): use the Share button → <strong>Add to Home Screen</strong>.</li>
-                <li>On Android (Chrome) or desktop (Chrome/Edge): accept the Install banner or use the browser menu → <strong>Install OpReady</strong>.</li>
+                <li>Select the AI provider (Google Gemini or local Ollama) and model.</li>
+                <li>Enter a question, rubric (reference text), and a candidate answer.</li>
+                <li>Click <strong>Execute Evaluation Test</strong> to see the score, justification, and raw provider response in the terminal log.</li>
             </ul>
-
-            <h3>API Key Management</h3>
-            <p>API Key Management has moved to the dedicated <strong>API Management</strong> page under System Admin.</p>
         `
     },
 

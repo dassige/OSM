@@ -328,18 +328,18 @@
 **Page:** `system-tools.html`  
 **Access:** Superadmin only
 
-### T17-A — Navigation & Backup Link
+### T17-A — Navigation & Tabs
 
 | ID | Action | Steps | Expected Result |
 |----|--------|-------|----------------|
-| T17-01 | Page load | Navigate to `system-tools.html`. | Backup & Restore link card, Knowledge Base section (Rotate Document Links + Find Documents with Missing Files cards), and AI Lab section are all visible. |
-| T17-02 | Navigate to Backup & Restore | Click `[Open Backup & Restore]` in the Backup & Restore card. | Browser navigates to `backup-restore.html`. |
+| T17-01 | Page load | Navigate to `system-tools.html`. | Page loads. Two tabs are visible: **Knowledge Base** (active by default) and **AI**. The Knowledge Base tab shows the Rotate Document Links and Find Documents with Missing Files cards. |
+| T17-03 | Tab switching | Click the **AI** tab. | The AI Evaluator Test Lab card becomes visible and the AI tab is highlighted as active. Click the **Knowledge Base** tab — the KB tools reappear. |
 
 ### T17-C — AI Evaluator Sandbox
 
 | ID | Action | Steps | Expected Result |
 |----|--------|-------|----------------|
-| T17-12 | Open AI test lab | Scroll to the AI Evaluator section. | Input fields for Question, Reference Answer, Candidate Answer, and AI Provider are visible. |
+| T17-12 | Open AI test lab | Click the **AI** tab. | Input fields for Question, Reference Answer, Candidate Answer, and AI Provider are visible. |
 | T17-13 | Run an AI evaluation (Gemini) | Select Provider = Gemini → fill in a question, reference answer, and candidate answer → click `[Evaluate]`. | An AI-generated score and feedback is returned and displayed. No error is shown. |
 | T17-14 | Run an AI evaluation (Ollama) | If Ollama is configured, switch Provider = Ollama → select a model → run evaluation. | Score and feedback returned from the local Ollama model. |
 | T17-15 | Ollama model list | If Ollama is connected, observe the model dropdown. | Available models are listed and selectable. |
@@ -348,7 +348,7 @@
 
 | ID | Action | Steps | Expected Result |
 |----|--------|-------|----------------|
-| T17-16 | Scan for missing files — all present | Scroll to the Knowledge Base section. Click `[Scan for Missing Files]`. | A green success message is displayed: "All N documents have their files intact." No table appears. |
+| T17-16 | Scan for missing files — all present | The **Knowledge Base** tab is active by default; if not, click it. Click `[Scan for Missing Files]`. | A green success message is displayed: "All N documents have their files intact." No table appears. |
 | T17-17 | Verify scan API response shape | Call `GET /api/knowledgebase/documents/missing-files` with a valid API key (admin or above). | HTTP 200 response with shape `{ "total": <integer>, "missing": [...] }`. The `missing` array contains only documents whose physical file is absent from storage. |
 
 ---

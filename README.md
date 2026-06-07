@@ -1095,7 +1095,7 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── reports.html            # Compliance reports
 │   ├── statistics.html         # Compliance statistics & charts
 │   ├── event-log.html          # Audit log
-│   ├── system-tools.html       # KB link rotation, KB missing-file scan, AI Test Lab
+│   ├── system-tools.html       # Tabbed: Knowledge Base tab (link rotation, missing-file scan); AI tab (AI Evaluator Test Lab)
 │   ├── backup-restore.html     # Backup & Restore (dedicated page, superadmin only)
 │   ├── users.html              # Admin user management
 │   ├── profile.html            # Current-user profile
