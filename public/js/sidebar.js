@@ -285,7 +285,33 @@ document.addEventListener("DOMContentLoaded", () => {
         toggleSidebar(wasCollapsed);
     }
     
+    // Highlight the nav link matching the current page and expand its parent submenus
+    const highlightCurrentPage = function() {
+        const path = window.location.pathname;
+        const page = path === '/' ? '/' : (path.split('/').pop() || '/');
+        document.querySelectorAll('#osm-sidebar-nav a').forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href || href === '#') return;
+            const linkPage = href === '/' ? '/' : href.split('/').pop();
+            if (linkPage === page) {
+                link.classList.add('active');
+                // Expand all ancestor submenu groups so the active item is visible
+                let submenu = link.closest('.submenu');
+                while (submenu) {
+                    const parentLi = submenu.parentElement;
+                    if (parentLi) parentLi.classList.add('expanded');
+                    submenu = parentLi && parentLi.closest('.submenu');
+                }
+                // Scroll the active item into view after submenu expand transitions finish
+                setTimeout(() => {
+                    link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }, 350);
+            }
+        });
+    };
+
     applyRoleBasedAccess().then(() => {
         restoreSidebarState();
+        highlightCurrentPage();
     });
 });

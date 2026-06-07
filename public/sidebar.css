@@ -227,6 +227,18 @@ body.osm-no-margin {
     color: var(--brand-teal-hover) !important;
 }
 
+/* Active (current page) indicator */
+.osm-menu a.active {
+    background-color: var(--brand-teal) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.osm-menu a.active:hover {
+    background-color: var(--brand-teal-hover) !important;
+    color: #ffffff !important;
+}
+
 /* Chevron indicator for dropdowns */
 .has-children > .menu-label::after {
     content: '\25B8' !important; 
