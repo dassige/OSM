@@ -117,6 +117,9 @@
         @media (max-width: 768px) {
             .kb-layout { flex-direction: column; }
             .cat-panel { width: 100%; min-width: unset; }
+            /* doc-panel: align-items:flex-start means no automatic stretch in column layout;
+               set width explicitly so the panel (and the cards inside) can't exceed the viewport */
+            .doc-panel { width: 100%; box-sizing: border-box; }
             #tableWrapper { display: none; }
             #cardList      { display: block; }
             .toolbar-btn-desktop { display: none; }
@@ -973,7 +976,7 @@
                 <div class="card-body">
                     ${d.description ? `<div class="card-row"><span class="card-label">Description:</span><span style="font-style:italic; font-size:0.85em; min-width:0; overflow-wrap:break-word; word-break:break-word; text-align:right;">${escHtml(d.description)}</span></div>` : ''}
                     <div class="card-row"><span class="card-label">Category:</span>${categoryBadge(d.category_name)}</div>
-                    <div class="card-row"><span class="card-label">File:</span><span style="font-size:0.85em; min-width:0; overflow-wrap:break-word; word-break:break-all; text-align:right; display:flex; align-items:center; gap:5px; flex-wrap:wrap; justify-content:flex-end;">${fileTypeBadge(d.original_filename)}<span>${formatBytes(d.file_size)} &middot; ${escHtml(d.original_filename)}</span></span></div>
+                    <div class="card-row"><span class="card-label">File:</span><span style="font-size:0.85em; min-width:0; overflow-wrap:break-word; word-break:break-all; text-align:right; display:flex; align-items:center; gap:5px; flex-wrap:wrap; justify-content:flex-end;">${fileTypeBadge(d.original_filename)}<span style="min-width:0; overflow-wrap:break-word; word-break:break-all;">${formatBytes(d.file_size)} &middot; ${escHtml(d.original_filename)}</span></span></div>
                     <div class="card-row"><span class="card-label">Uploaded:</span><span style="font-size:0.85em; min-width:0; overflow-wrap:break-word; word-break:break-word; text-align:right;">${formatDate(d.created_at)}${d.uploaded_by ? ' by ' + escHtml(d.uploaded_by) : ''}</span></div>
                     ${d.expires_at ? `<div class="card-row"><span class="card-label">Expires:</span><span style="font-size:0.85em; min-width:0; text-align:right; ${isExpired(d) ? 'color:#dc3545;font-weight:700;' : ''}">${formatDate(d.expires_at)}${isExpired(d) ? ' — EXPIRED' : ''}</span></div>` : ''}
                 </div>
