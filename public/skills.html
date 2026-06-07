@@ -1106,6 +1106,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
             if (toUpdate.length) parts.push('Update <strong>' + toUpdate.length + '</strong> existing skill(s)');
             if (!await confirmAction('Sync from OSM', parts.join(' and ') + '.')) return;
             try {
+                showGlobalSpinner('Syncing skills from OSM…');
                 const res = await fetch('/api/skills/sync', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1116,6 +1117,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
                 await reloadSkills();
                 showToast('Synced: ' + toAdd.length + ' added, ' + toUpdate.length + ' updated.', 'success');
             } catch (e) { showToast('Sync failed: ' + e.message, 'error'); }
+            finally { hideGlobalSpinner(); }
         }
 
         const confirmOsmImport = confirmOsmSync;

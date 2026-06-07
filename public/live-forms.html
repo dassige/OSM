@@ -823,6 +823,7 @@
             const label = newState ? 'Archive' : 'Restore';
             if (!await confirmAction(`${label} Record`, `Are you sure you want to ${label.toLowerCase()} this record?`)) return;
             try {
+                showGlobalSpinner(`${label}ing record…`);
                 const res = await fetch(`/api/live-forms/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -834,6 +835,8 @@
                 } else throw new Error("Update failed");
             } catch (e) {
                 showToast("Error: " + e.message, "error");
+            } finally {
+                hideGlobalSpinner();
             }
         }
 
@@ -859,6 +862,7 @@
             if (getVal('filterSubEnd')) params.append('subEnd', getVal('filterSubEnd'));
 
             try {
+                showGlobalSpinner('Purging records…');
                 const res = await fetch(`/api/live-forms/all?${params.toString()}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
@@ -869,6 +873,8 @@
                 }
             } catch (e) {
                 showToast("Purge failed: " + e.message, "error");
+            } finally {
+                hideGlobalSpinner();
             }
         }
 
@@ -918,6 +924,7 @@
             const id = document.getElementById('editId').value;
             const status = document.getElementById('editStatusSelect').value;
             try {
+                showGlobalSpinner('Saving status…');
                 const res = await fetch(`/api/live-forms/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -929,16 +936,19 @@
                     showToast("Status updated", "success");
                 } else throw new Error("Update failed");
             } catch (e) { showToast(e.message, "error"); }
+            finally { hideGlobalSpinner(); }
         }
 
         async function deleteRecord(id) {
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             if (!await confirmAction("Delete Record", "Are you sure you want to delete this record? This cannot be undone.")) return;
             try {
+                showGlobalSpinner('Deleting record…');
                 await fetch(`/api/live-forms/${id}`, { method: 'DELETE' });
                 loadData();
                 showToast("Record deleted", "success");
             } catch (e) { showToast("Delete failed", "error"); }
+            finally { hideGlobalSpinner(); }
         }
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }

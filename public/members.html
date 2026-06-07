@@ -1057,6 +1057,7 @@
             ].filter(Boolean).join(' and ') + '.';
             if (!await confirmAction('Sync from OSM', msg)) return;
             try {
+                showGlobalSpinner('Syncing members from OSM…');
                 const res = await fetch('/api/members/sync', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1067,6 +1068,7 @@
                 await reloadMembers();
                 showToast(`Synced: ${toAdd.length} added, ${toUpdate.length} updated.`, 'success');
             } catch (e) { showToast('Sync failed: ' + e.message, 'error'); }
+            finally { hideGlobalSpinner(); }
         }
 
         // Keep legacy name so any other inline callers still work
