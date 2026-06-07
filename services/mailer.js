@@ -205,12 +205,14 @@ async function sendNewAccountNotification(
   transporter,
   appName,
   templatePref,
+  loginLink,
 ) {
   const variables = {
     appname: appName || "OpReady",
     name: name,
     email: email,
     password: password,
+    loginlink: loginLink || "",
   };
   const defaults = {
     from: `"${variables.appname}" <noreply@opready.app>`,
@@ -220,7 +222,12 @@ async function sendNewAccountNotification(
   const config = templatePref || defaults;
   const from = replaceVariables(config.from || defaults.from, variables);
   const subject = replaceVariables(config.subject || defaults.subject, variables);
-  const body = replaceVariables(config.body || defaults.body, escapeHtmlVars(variables));
+  const bodyVars = escapeHtmlVars(variables);
+  if (variables.loginlink) {
+    const safeUrl = escapeHtml(variables.loginlink);
+    bodyVars.loginlink = `<a href="${safeUrl}">${safeUrl}</a>`;
+  }
+  const body = replaceVariables(config.body || defaults.body, bodyVars);
 
   await transporter.sendMail({
     from,

@@ -29,13 +29,15 @@ router.post("/", hasRole("admin"), async (req, res) => {
     const prefs = await db.getPreferences();
     const tpl = prefs.tpl_new_user ? JSON.parse(prefs.tpl_new_user) : null;
     
+    const loginLink = `${req.protocol}://${req.get("host")}`;
     await sendNewAccountNotification(
       req.body.email,
       req.body.name,
       tempPassword,
       config.transporter,
       config.ui.loginTitle,
-      tpl
+      tpl,
+      loginLink
     );
     
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
