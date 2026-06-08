@@ -9,6 +9,7 @@ const unzipper = require("unzipper");
 const axios    = require("axios");
 
 const db = require("../../services/db");
+const { validateSqlDump } = require("../../services/db/backup");
 const config = require("../../config");
 const kbStorage = require("../../services/knowledgebase-storage");
 const aiService = require("../../services/ai-service");
@@ -272,6 +273,10 @@ router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.sin
       // ── SQL-only restore (existing behaviour) ──────────────────────────
       if (ext !== '.sql') throw new Error('Unsupported file type. Upload a .sql or .zip backup file.');
       const sqlContent = fs.readFileSync(req.file.path, 'utf8');
+      try { validateSqlDump(sqlContent); } catch (ve) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: ve.message });
+      }
       await db.restoreFromSqlDump(sqlContent);
       await db.logEvent(actor, "System", "Database Restored via SQL", { sourceFile: req.file.originalname });
       req.session?.destroy?.(() => {});

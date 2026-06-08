@@ -853,6 +853,7 @@ const spec = {
                 },
                 responses: {
                     200: { description: 'Created', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Role elevation blocked — cannot create a user with a role higher than your own' },
                     429: { description: 'Rate limit exceeded — max 10 account creations per 15 minutes per IP' }
                 }
             }
@@ -1610,7 +1611,8 @@ const spec = {
                             }
                         }
                     },
-                    400: { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                    400: { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    403: { description: 'Role elevation blocked — cannot create a key with a role higher than your own' }
                 }
             }
         },
@@ -1733,7 +1735,8 @@ const spec = {
         '/api/logs': {
             post: {
                 tags: ['System'],
-                summary: 'Write a custom event log entry',
+                summary: 'Write a custom event log entry (admin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
                 requestBody: {
                     required: true,
                     content: {
@@ -1752,7 +1755,8 @@ const spec = {
                 },
                 responses: {
                     200: { description: 'Logged', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
-                    403: { description: 'Category is restricted — writes to Security, System, User Mgmt, API Keys, and WhatsApp categories are blocked' }
+                    401: { description: 'Not authenticated' },
+                    403: { description: 'Admin role required, or category is restricted (Security, System, User Mgmt, API Keys, WhatsApp)' }
                 }
             }
         },

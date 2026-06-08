@@ -149,4 +149,4 @@ async function verifyAndReplaceDb(newDbPath) {
   }
 }
 
-module.exports = { generateSqlDump, restoreFromSqlDump, verifyAndReplaceDb, clearSessions };
+module.exports = { generateSqlDump, restoreFromSqlDump, verifyAndReplaceDb, clearSessions, validateSqlDump };

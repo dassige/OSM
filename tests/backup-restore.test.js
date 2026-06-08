@@ -13,6 +13,12 @@ jest.mock('../middleware/auth', () => ({
     hasRole: () => (req, res, next) => next()
 }));
 
+jest.mock('../middleware/rate-limiter', () => ({
+    backupLimiter:  (req, res, next) => next(),
+    restoreLimiter: (req, res, next) => next(),
+    aiTestLimiter:  (req, res, next) => next(),
+}));
+
 const db = require('../services/db');
 const systemRoutes = require('../routes/api/system');
 
@@ -86,6 +92,29 @@ describe('Database Backup & Restore API (Isolated)', () => {
                 'Database Restored via SQL',
                 { sourceFile: 'test_backup.sql' }
             );
+        });
+
+        it('should return 400 if the SQL file contains a forbidden ATTACH DATABASE statement', async () => {
+            const maliciousSql = "BEGIN TRANSACTION;\nATTACH DATABASE '/tmp/evil.db' AS evil;\nCOMMIT;";
+
+            const response = await request(app)
+                .post('/api/system/restore')
+                .attach('databaseFile', Buffer.from(maliciousSql), 'evil.sql');
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toMatch(/forbidden statement/i);
+            expect(db.restoreFromSqlDump).not.toHaveBeenCalled();
+        });
+
+        it('should return 400 if the SQL file contains a CREATE TRIGGER statement', async () => {
+            const maliciousSql = "CREATE TRIGGER bad_trigger AFTER INSERT ON members BEGIN SELECT load_extension('/tmp/evil'); END;";
+
+            const response = await request(app)
+                .post('/api/system/restore')
+                .attach('databaseFile', Buffer.from(maliciousSql), 'evil.sql');
+
+            expect(response.status).toBe(400);
+            expect(db.restoreFromSqlDump).not.toHaveBeenCalled();
         });
     });
 });

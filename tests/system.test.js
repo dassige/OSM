@@ -11,6 +11,16 @@ describe('System API Endpoints', () => {
         });
     });
 
+    describe('POST /api/logs', () => {
+        it('returns 401 when unauthenticated', async () => {
+            const res = await request(app)
+                .post('/api/logs')
+                .send({ type: 'External Integration', title: 'Test Event' });
+            expect(res.status).toBe(401);
+            expect(res.body).toHaveProperty('error');
+        });
+    });
+
     describe('GET /ui-config', () => {
         it('returns 200 with appMode, scheduledBackupSupported, and deploymentType', async () => {
             const res = await request(app).get('/ui-config');
