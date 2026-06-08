@@ -96,4 +96,23 @@ describe('System API Endpoints', () => {
             expect(res.body).toHaveProperty('error');
         });
     });
+
+    // F2: Reports endpoints now require admin role
+    describe('GET /api/reports/data/:type', () => {
+        it('returns 401 when unauthenticated', async () => {
+            const res = await request(app).get('/api/reports/data/by-member');
+            expect(res.status).toBe(401);
+            expect(res.body).toHaveProperty('error');
+        });
+    });
+
+    describe('POST /api/reports/pdf', () => {
+        it('returns 401 when unauthenticated', async () => {
+            const res = await request(app)
+                .post('/api/reports/pdf')
+                .send({ html: '<h1>Test</h1>', title: 'Test' });
+            expect(res.status).toBe(401);
+            expect(res.body).toHaveProperty('error');
+        });
+    });
 });

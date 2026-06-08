@@ -807,6 +807,110 @@
                                                   }
                                   },
                                   {
+                                      "name":  "Update Live Form (status / archive)",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-forms/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-forms",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"status\": \"disabled\"\n}"
+                                                               },
+                                                      "description":  "Update a live form's status or archive flag. Valid status values: sent, submitted, accepted, rejected, disabled. Cannot revert accepted/rejected back to sent (returns 409)."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Accept Live Form Submission",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-forms/accept/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-forms",
+                                                                               "accept",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"notifyEmail\": true,\n  \"notifyWa\": false\n}"
+                                                               },
+                                                      "description":  "Admin accepts a submitted live form. Disabled in demo mode (403)."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Reject Live Form Submission",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-forms/reject/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-forms",
+                                                                               "reject",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"notifyEmail\": true,\n  \"notifyWa\": false,\n  \"generateNew\": false\n}"
+                                                               },
+                                                      "description":  "Admin rejects a submitted live form. Set generateNew to true to archive the current form and issue a retry link. Disabled in demo mode (403)."
+                                                  }
+                                  },
+                                  {
                                       "name":  "Delete All Live Forms",
                                       "request":  {
                                                       "method":  "DELETE",
@@ -1425,6 +1529,12 @@
                                       "name":  "MFA — Setup",
                                       "request":  {
                                                       "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
                                                       "url":  {
                                                                   "raw":  "{{baseUrl}}/api/profile/mfa/setup",
                                                                   "host":  [
@@ -1437,7 +1547,11 @@
                                                                                "setup"
                                                                            ]
                                                               },
-                                                      "description":  "Generates a new TOTP secret and QR code URL. Scan with an authenticator app then call MFA Verify."
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"currentPassword\": \"your-current-password\"\n}"
+                                                               },
+                                                      "description":  "Generates a new TOTP secret and QR code. Requires currentPassword to confirm identity before issuing MFA credentials. Scan the returned QR code with an authenticator app then call MFA Verify."
                                                   }
                                   },
                                   {
@@ -1492,8 +1606,9 @@
                                                               },
                                                       "body":  {
                                                                    "mode":  "raw",
-                                                                   "raw":  "{\n  \"password\": \"your-password\"\n}"
-                                                               }
+                                                                   "raw":  "{\n  \"totpToken\": \"123456\"\n}"
+                                                               },
+                                                      "description":  "Disables MFA for the current user account. Requires a valid 6-digit TOTP code from the authenticator app to confirm the action."
                                                   }
                                   },
                                   {

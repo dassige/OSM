@@ -256,4 +256,76 @@ describe('Live Forms API Endpoints (Isolated)', () => {
             expect(formsService.createRetryLiveForm).toHaveBeenCalledWith('5');
         });
     });
+
+    // ─── F28: Demo-mode guard fires BEFORE DB write ──────────────────────────────
+
+    describe('Demo-mode guard on accept / reject (F28)', () => {
+        const config = require('../config');
+
+        beforeEach(() => { config.appMode = 'demo'; });
+        afterEach(() => { config.appMode = 'testing'; });
+
+        it('POST /accept/:id returns 403 in demo mode without touching the DB', async () => {
+            const res = await request(app)
+                .post('/api/live-forms/accept/5')
+                .send({ notifyEmail: false, notifyWa: false });
+
+            expect(res.status).toBe(403);
+            expect(formsService.updateLiveFormStatus).not.toHaveBeenCalled();
+        });
+
+        it('POST /reject/:id returns 403 in demo mode without touching the DB', async () => {
+            const res = await request(app)
+                .post('/api/live-forms/reject/5')
+                .send({ notifyEmail: false, notifyWa: false, generateNew: false });
+
+            expect(res.status).toBe(403);
+            expect(formsService.updateLiveFormStatus).not.toHaveBeenCalled();
+        });
+    });
+
+    // ─── F29: Status allowlist + anti-downgrade on PUT /:id ─────────────────────
+
+    describe('PUT /api/live-forms/:id — status validation (F29)', () => {
+        it('returns 400 for an unrecognised status value', async () => {
+            const res = await request(app)
+                .put('/api/live-forms/5')
+                .send({ status: 'hacked' });
+
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/invalid status/i);
+            expect(formsService.updateLiveFormStatus).not.toHaveBeenCalled();
+        });
+
+        it('returns 409 when attempting to revert an accepted form back to sent', async () => {
+            formsService.getLiveFormSubmission.mockResolvedValue({ form_status: 'accepted' });
+
+            const res = await request(app)
+                .put('/api/live-forms/5')
+                .send({ status: 'sent' });
+
+            expect(res.status).toBe(409);
+            expect(res.body.error).toMatch(/terminal/i);
+            expect(formsService.updateLiveFormStatus).not.toHaveBeenCalled();
+        });
+
+        it('returns 409 when attempting to revert a rejected form back to sent', async () => {
+            formsService.getLiveFormSubmission.mockResolvedValue({ form_status: 'rejected' });
+
+            const res = await request(app)
+                .put('/api/live-forms/5')
+                .send({ status: 'sent' });
+
+            expect(res.status).toBe(409);
+        });
+
+        it('allows setting a valid non-terminal status', async () => {
+            const res = await request(app)
+                .put('/api/live-forms/5')
+                .send({ status: 'disabled' });
+
+            expect(res.status).toBe(200);
+            expect(formsService.updateLiveFormStatus).toHaveBeenCalledWith('5', 'disabled');
+        });
+    });
 });

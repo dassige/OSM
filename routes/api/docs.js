@@ -653,6 +653,86 @@ const spec = {
                 }
             }
         },
+        '/api/live-forms/{id}': {
+            put: {
+                tags: ['Live Forms'],
+                summary: 'Update status or archive flag of a live form record',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    status:     { type: 'string', enum: ['sent', 'submitted', 'accepted', 'rejected', 'disabled'], description: 'New status value' },
+                                    isArchived: { type: 'boolean' }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'Invalid status value' },
+                    403: { description: 'Disabled in demo mode' },
+                    409: { description: 'Cannot revert a terminal status (accepted / rejected) back to sent' }
+                }
+            }
+        },
+        '/api/live-forms/accept/{id}': {
+            post: {
+                tags: ['Live Forms'],
+                summary: 'Accept a submitted form and optionally notify the member',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    notifyEmail:   { type: 'boolean' },
+                                    notifyWa:      { type: 'boolean' },
+                                    customComment: { type: 'string' }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Accepted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Disabled in demo mode' }
+                }
+            }
+        },
+        '/api/live-forms/reject/{id}': {
+            post: {
+                tags: ['Live Forms'],
+                summary: 'Reject a submitted form and optionally notify the member',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    notifyEmail:   { type: 'boolean' },
+                                    notifyWa:      { type: 'boolean' },
+                                    customComment: { type: 'string' },
+                                    generateNew:   { type: 'boolean', description: 'If true, archives this form and creates a new retry link' }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Rejected', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Disabled in demo mode' }
+                }
+            }
+        },
 
         // -------------------------------------------------------------------------
         // SURVEYS
@@ -761,6 +841,7 @@ const spec = {
             get: {
                 tags: ['Reports'],
                 summary: 'Get report data',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
                 parameters: [
                     {
                         name: 'type',
@@ -773,7 +854,9 @@ const spec = {
                     }
                 ],
                 responses: {
-                    200: { description: 'Report data array or object' }
+                    200: { description: 'Report data array or object' },
+                    401: { description: 'Not authenticated' },
+                    403: { description: 'Insufficient role — admin or above required' }
                 }
             }
         },
@@ -781,6 +864,7 @@ const spec = {
             post: {
                 tags: ['Reports'],
                 summary: 'Generate a PDF from HTML content',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
                 requestBody: {
                     required: true,
                     content: {
@@ -794,7 +878,9 @@ const spec = {
                     }
                 },
                 responses: {
-                    200: { description: 'PDF file', content: { 'application/pdf': { schema: { type: 'string', format: 'binary' } } } }
+                    200: { description: 'PDF file', content: { 'application/pdf': { schema: { type: 'string', format: 'binary' } } } },
+                    401: { description: 'Not authenticated' },
+                    403: { description: 'Insufficient role — admin or above required' }
                 }
             }
         },
@@ -913,7 +999,21 @@ const spec = {
         '/api/profile/mfa/setup': {
             post: {
                 tags: ['Profile'],
-                summary: 'Generate MFA secret and QR code',
+                summary: 'Generate MFA secret and QR code (requires current password)',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['currentPassword'],
+                                properties: {
+                                    currentPassword: { type: 'string', format: 'password', description: 'The user\'s current account password — required to initiate MFA setup' }
+                                }
+                            }
+                        }
+                    }
+                },
                 responses: {
                     200: {
                         description: 'MFA setup data',
@@ -923,12 +1023,14 @@ const spec = {
                                     type: 'object',
                                     properties: {
                                         secret: { type: 'string' },
-                                        qrCodeUrl: { type: 'string' }
+                                        qrCode: { type: 'string', description: 'Base64 data URL of the QR code image' }
                                     }
                                 }
                             }
                         }
-                    }
+                    },
+                    400: { description: 'currentPassword missing' },
+                    403: { description: 'Incorrect password or disabled in demo mode' }
                 }
             }
         },
@@ -949,13 +1051,25 @@ const spec = {
         '/api/profile/mfa/disable': {
             post: {
                 tags: ['Profile'],
-                summary: 'Disable MFA for own account',
+                summary: 'Disable MFA for own account (requires valid TOTP code)',
                 requestBody: {
                     required: true,
-                    content: { 'application/json': { schema: { type: 'object', required: ['password'], properties: { password: { type: 'string', format: 'password' } } } } }
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['totpToken'],
+                                properties: {
+                                    totpToken: { type: 'string', description: '6-digit authenticator code from the user\'s TOTP app — required to confirm MFA disable' }
+                                }
+                            }
+                        }
+                    }
                 },
                 responses: {
-                    200: { description: 'MFA disabled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                    200: { description: 'MFA disabled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'totpToken missing or MFA not configured' },
+                    403: { description: 'Invalid TOTP code or disabled in demo mode' }
                 }
             }
         },
@@ -1218,6 +1332,7 @@ const spec = {
                             }
                         }
                     },
+                    400: { description: 'Invalid Ollama URL — when provider is ollama and ollamaUrl is a blocked/private address' },
                     429: { description: 'Rate limit exceeded — max 10 AI tests per minute' },
                     500: { description: 'AI provider error — message included in response body; stack trace is server-side only' }
                 }
