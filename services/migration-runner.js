@@ -36,9 +36,12 @@ async function runMigrations(db) {
                 const statements = sql.split(';').map(s => s.trim()).filter(s => s.length > 0);
                 
                 for (const stmt of statements) {
-                    // Swallow "duplicate column" errors for idempotency on existing DBs
+                    // Swallow "duplicate column" errors for idempotency on existing DBs.
+                    // Use db.exec() (sqlite3_exec) rather than db.run() (prepare+step)
+                    // because ALTER TABLE triggers SQLITE_MISUSE via the prepared-statement
+                    // path on Linux/WAL-mode databases.
                     try {
-                        await db.run(stmt);
+                        await db.exec(stmt);
                     } catch (err) {
                         if (!err.message.includes('duplicate column name')) {
                             throw err;
