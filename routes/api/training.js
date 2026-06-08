@@ -6,7 +6,7 @@ const db = require("../../services/db");
 const config = require("../../config");
 const { hasRole } = require("../../middleware/auth");
 
-router.get("/", async (req, res) => {
+router.get("/", hasRole("admin"), async (req, res) => {
   try {
     if (req.query.view === "future") {
       res.json(await db.getAllFutureTrainingSessions());

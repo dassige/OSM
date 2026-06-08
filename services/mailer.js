@@ -351,9 +351,42 @@ async function sendSecurityAlert(details, transporter, appName, superEmail) {
   });
 }
 
+async function sendPasswordResetLink(
+  email,
+  resetLink,
+  transporter,
+  appName,
+  templatePref,
+) {
+  const variables = {
+    appname: appName || "OpReady",
+    email: email,
+    resetlink: resetLink,
+  };
+  const defaults = {
+    from: `"${variables.appname}" <noreply@opready.app>`,
+    subject: `${variables.appname}: Password Reset`,
+    body: `<p>A password reset was requested for your account.</p><p>Click the link below to set a new password. The link expires in 30 minutes.</p><p><a href="{{resetlink}}">Reset my password</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
+  };
+  const config = templatePref || defaults;
+  const from = replaceVariables(config.from || defaults.from, variables);
+  const subject = replaceVariables(config.subject || defaults.subject, variables);
+  const body = replaceVariables(config.body || defaults.body, variables);
+
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject,
+    html: body,
+    text: stripHtml(body),
+  });
+  logger.info(`[SMTP] Password reset link sent to ${email}`);
+}
+
 module.exports = {
   sendNotification,
   sendPasswordReset,
+  sendPasswordResetLink,
   sendNewAccountNotification,
   sendAccountDeletionNotification,
   sendSurveyInvitation,

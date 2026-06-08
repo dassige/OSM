@@ -134,6 +134,30 @@ async function verifyUserPassword(userId, password) {
   return verifyPassword(password, user.hash, user.salt);
 }
 
+async function storePasswordResetToken(userId, tokenHash, expiresAt) {
+  const db = await initDB();
+  await db.run(
+    "UPDATE users SET reset_token_hash = ?, reset_token_expires = ? WHERE id = ?",
+    tokenHash, expiresAt, userId,
+  );
+}
+
+async function getUserByResetToken(tokenHash) {
+  const db = await initDB();
+  return await db.get(
+    "SELECT id, email, name, role, reset_token_expires FROM users WHERE reset_token_hash = ?",
+    tokenHash,
+  );
+}
+
+async function clearPasswordResetToken(userId) {
+  const db = await initDB();
+  await db.run(
+    "UPDATE users SET reset_token_hash = NULL, reset_token_expires = NULL WHERE id = ?",
+    userId,
+  );
+}
+
 module.exports = {
   authenticateUser,
   resetLoginAttempts,
@@ -151,4 +175,7 @@ module.exports = {
   setMfaStatus,
   getMfaData,
   verifyUserPassword,
+  storePasswordResetToken,
+  getUserByResetToken,
+  clearPasswordResetToken,
 };

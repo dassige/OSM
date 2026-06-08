@@ -173,7 +173,7 @@ router.get(
   },
 );
 
-router.get("/", async (req, res) => {
+router.get("/", hasRole("admin"), async (req, res) => {
   try {
     const surveys = await db.getAllSurveys();
     res.json(surveys);
@@ -281,7 +281,7 @@ router.get("/:id/export", hasRole("admin"), async (req, res) => {
     res.status(500).json({ error: "Failed to export survey." });
   }
 });
-router.get("/:id", async (req, res) => {
+router.get("/:id", hasRole("admin"), async (req, res) => {
   try {
     const survey = await db.getSurveyById(req.params.id);
     if (!survey) return res.status(404).json({ error: "Survey not found." });

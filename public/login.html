@@ -184,8 +184,7 @@
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal('forgotModal')">&times;</span>
             <h2 style="margin-top: 0;">Reset Password</h2>
-            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter your email address. We will generate a
-                new password and send it to you.</p>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter your email address. We will send you a link to reset your password.</p>
             <form id="forgotForm">
                 <input type="email" id="forgotEmail" placeholder="Enter your email" required style="margin-top: 0;">
                 <div id="forgotMsg" class="error" style="margin-top: 5px; margin-bottom: 5px;"></div>
@@ -382,7 +381,7 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    if (window.showToast) window.showToast('Check email for new password.', 'success');
+                    if (window.showToast) window.showToast(data.message || 'If that address is registered, a reset link has been sent.', 'success');
                     closeModal('forgotModal');
                     document.getElementById('forgotForm').reset();
                 } else {

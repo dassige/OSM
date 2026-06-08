@@ -371,11 +371,25 @@ router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.sin
 });
 
 // ── Directory Browser (for backup location picker) ───────────────────────────
+// Blocked prefixes — system pseudo-filesystems that are never valid backup destinations
+const BROWSE_BLOCKED_PREFIXES = [
+  '/proc', '/sys', '/dev', '/run/secrets',
+  '\\Windows\\System32', '\\Windows\\SysWOW64',
+];
+
 router.get("/system/browse-directory", hasRole("superadmin"), (req, res) => {
   const requested = req.query.path || path.sep;
   try {
     // realpathSync resolves symlinks so callers cannot traverse into symlink targets
     const resolved = fs.realpathSync(path.resolve(requested));
+
+    const lowerResolved = resolved.toLowerCase().replace(/\\/g, '/');
+    const isBlocked = BROWSE_BLOCKED_PREFIXES.some(p => {
+      const lp = p.toLowerCase().replace(/\\/g, '/');
+      return lowerResolved === lp || lowerResolved.startsWith(lp + '/');
+    });
+    if (isBlocked) return res.status(403).json({ error: 'Access to system paths is not permitted.' });
+
     const entries  = fs.readdirSync(resolved, { withFileTypes: true });
     const dirs = entries
       .filter(e => { try { return e.isDirectory(); } catch { return false; } })
