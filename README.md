@@ -146,6 +146,16 @@ cp .generated.env .env          # activate (Bash)
 
 The tool uses only Node.js built-ins — no additional install required.
 
+**Windows standalone executable (no Node.js needed)**
+
+For machines without Node.js, build a self-contained `.exe` with:
+
+```powershell
+npm run build:setup-env   # requires npm install (dev deps)
+```
+
+This produces `dist/setup-env-<version>.exe` (~36 MB, bundles Node.js 18 runtime — e.g. `setup-env-3.7.8.exe`). Copy it alongside `.example.env` and double-click or run it from a terminal — the same web UI opens at `http://localhost:3088` and writes `.generated.env` next to the executable.
+
 ### Environment Variables (`.env`)
 
 Open the `.env` file and configure the following parameters:

@@ -1,8 +1,8 @@
 {
   "name": "opready",
-  "version": "3.7.7",
+  "version": "3.7.8",
   "description": "OpReady — Operational Readiness Manager",
-  "versionDate": "2026/06/08 10:30",
+  "versionDate": "2026/06/08 12:33",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -23,7 +23,8 @@
     "setup-env": "node scripts/setup-env.js",
     "release": "node scripts/release.js",
     "backfill-etl-fields": "node scripts/backfill-etl-fields.js",
-    "generate-uat-etl-fields": "node scripts/generate-uat-etl-fields.js"
+    "generate-uat-etl-fields": "node scripts/generate-uat-etl-fields.js",
+    "build:setup-env": "node scripts/build-setup-env.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1061.0",
@@ -76,6 +77,7 @@
     "docx": "^9.7.1",
     "jest": "^30.3.0",
     "newman": "^6.2.2",
+    "pkg": "^5.8.1",
     "sharp": "^0.34.5",
     "supertest": "^7.2.2"
   }
