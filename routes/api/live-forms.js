@@ -104,6 +104,9 @@ router.delete("/all", hasRole("superadmin"), async (req, res) => {
   }
 });
 
+const ALLOWED_FORM_STATUSES = new Set(['sent', 'submitted', 'accepted', 'rejected', 'disabled']);
+const TERMINAL_FORM_STATUSES = new Set(['accepted', 'rejected']);
+
 router.put("/:id", hasRole("admin"), async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
@@ -116,6 +119,15 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
       await db.logEvent(actor, "Live Forms", isArchived ? "Record Archived" : "Record Restored", { recordId: id });
     }
     if (status !== undefined) {
+      if (!ALLOWED_FORM_STATUSES.has(status)) {
+        return res.status(400).json({ error: 'Invalid status value.' });
+      }
+      if (status === 'sent') {
+        const current = await formsService.getLiveFormSubmission(id);
+        if (current && TERMINAL_FORM_STATUSES.has(current.form_status)) {
+          return res.status(409).json({ error: 'Cannot revert a terminal status back to sent.' });
+        }
+      }
       await formsService.updateLiveFormStatus(id, status);
       await db.logEvent(actor, "Live Forms", "Status Updated", { recordId: id, newStatus: status });
     }
@@ -257,10 +269,10 @@ router.get("/review/:id", hasRole("admin"), async (req, res) => {
 });
 
 router.post("/accept/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const { notifyEmail, notifyWa, customComment } = req.body;
     const id = req.params.id;
-    const isDemo = config.appMode === "demo"; 
 
     await formsService.updateLiveFormStatus(id, "accepted");
     const form = await formsService.getLiveFormSubmission(id);
@@ -314,17 +326,12 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
       const subject = applyVars(tplEmail.subject);
       const htmlBody = tplEmail.body ? applyHtmlVars(tplEmail.body) : `<p>Hello ${escapeHtml(member.name)}, your submission for &#34;${escapeHtml(form.skill_name)}&#34; has been APPROVED.</p>`;
       const textBody = convertHtmlToText(htmlBody);
-
-      if (!isDemo) {
-        await config.transporter.sendMail({ from, to: member.email, subject, text: textBody, html: htmlBody });
-      }
+      await config.transporter.sendMail({ from, to: member.email, subject, text: textBody, html: htmlBody });
     }
 
     if (notifyWa && member.mobile && config.enableWhatsApp) {
       let message = tplWa.body ? applyVars(tplWa.body) : `Hello ${member.name}, your submission for "${form.skill_name}" has been APPROVED.`;
-      if (!isDemo) {
-        await whatsappService.sendMessage(member.mobile, message);
-      }
+      await whatsappService.sendMessage(member.mobile, message);
     }
 
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
@@ -334,17 +341,17 @@ router.post("/accept/:id", hasRole("admin"), async (req, res) => {
       notifiedVia: { email: notifyEmail, whatsapp: notifyWa },
       adminComment: customComment || "No comment provided",
     });
-    res.json({ success: true, demo: isDemo });
+    res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
 router.post("/reject/:id", hasRole("admin"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const { notifyEmail, notifyWa, customComment, generateNew } = req.body;
     const id = req.params.id;
-    const isDemo = config.appMode === "demo";
 
     await formsService.updateLiveFormStatus(id, "rejected");
     if (generateNew) {
@@ -412,17 +419,13 @@ router.post("/reject/:id", hasRole("admin"), async (req, res) => {
       let htmlBody = rawBody ? applyHtmlVars(rawBody) : `<p>Hello ${escapeHtml(member.name)}, your submission for &#34;${escapeHtml(form.skill_name)}&#34; was NOT accepted.</p>`;
       let textBody = convertHtmlToText(htmlBody);
 
-      if (!isDemo) {
-        await config.transporter.sendMail({ from, to: member.email, subject, text: textBody, html: htmlBody });
-      }
+      await config.transporter.sendMail({ from, to: member.email, subject, text: textBody, html: htmlBody });
     }
 
     if (notifyWa && member.mobile && config.enableWhatsApp) {
       const rawBody = generateNew ? tplWa.bodyRetry : tplWa.bodySimple;
       let message = rawBody ? applyVars(rawBody) : `Hello ${member.name}, your submission for "${form.skill_name}" was NOT accepted.`;
-      if (!isDemo) {
-        await whatsappService.sendMessage(member.mobile, message);
-      }
+      await whatsappService.sendMessage(member.mobile, message);
     }
 
     const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
@@ -433,7 +436,7 @@ router.post("/reject/:id", hasRole("admin"), async (req, res) => {
       notifiedVia: { email: notifyEmail, whatsapp: notifyWa },
       reasonProvided: customComment || "No reason specified",
     });
-    res.json({ success: true, demo: isDemo });
+    res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

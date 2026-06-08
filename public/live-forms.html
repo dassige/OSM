@@ -421,6 +421,20 @@
         let appTimezone = 'Pacific/Auckland';
         let isDemo = false;
 
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = String(s ?? '');
+            return d.innerHTML;
+        }
+        function escAttr(s) {
+            return String(s ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/'/g, '&#39;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
         // Accepts a live-form row object (uses member_rank/first/last) or a plain name string.
         function parseRankAndName(rowOrName) {
             if (rowOrName && typeof rowOrName === 'object') {
@@ -557,8 +571,8 @@
                     tr.className = rowClass;
                     tr.innerHTML = `
                         <td data-label="Rank" class="text-center">${formatRankCell(rank)}</td>
-                        <td data-label="Name" style="font-weight:bold;">${displayName || 'Unknown'}</td>
-                        <td data-label="Skill">${row.skill_name || 'Unknown'}</td>
+                        <td data-label="Name" style="font-weight:bold;">${esc(displayName || 'Unknown')}</td>
+                        <td data-label="Skill">${esc(row.skill_name || 'Unknown')}</td>
                         <td data-label="Tries" class="text-center">${row.tries || 1}</td>
                         <td data-label="Score" class="text-center">${scoreDisplay}</td>
                         <td data-label="Dates" style="font-size:0.8em; line-height:1.4; white-space:nowrap;">
@@ -629,7 +643,7 @@
                 <button class="btn-icon" onclick="downloadSingleJson('${row.id}')" title="Download record as JSON">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                 </button>
-                <button class="btn-icon edit" onclick="openEdit('${row.id}', '${row.member_name}', '${row.skill_name}', '${row.form_status}', '${row.form_access_code}')" title="Edit form status">
+                <button class="btn-icon edit" onclick="openEdit('${row.id}', '${escAttr(row.member_name)}', '${escAttr(row.skill_name)}', '${escAttr(row.form_status)}', '${escAttr(row.form_access_code)}')" title="Edit form status">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 </button>
                 <button class="btn-icon delete" onclick="deleteRecord('${row.id}')" title="Permanently delete this record">
@@ -672,11 +686,11 @@
                 card.innerHTML = `
                     <div class="card-header">
                         ${rankHtml}
-                        <span class="card-title">${displayName || 'Unknown'}</span>
-                        <span class="badge status-${row.form_status}">${row.form_status}</span>
+                        <span class="card-title">${esc(displayName || 'Unknown')}</span>
+                        <span class="badge status-${escAttr(row.form_status)}">${esc(row.form_status)}</span>
                     </div>
                     <div class="card-body">
-                        <div class="card-row"><span class="card-label">Skill:</span><span>${row.skill_name || 'Unknown'}</span></div>
+                        <div class="card-row"><span class="card-label">Skill:</span><span>${esc(row.skill_name || 'Unknown')}</span></div>
                         <div class="card-row"><span class="card-label">Tries:</span><span>${row.tries || 1}</span></div>
                         <div class="card-row"><span class="card-label">Score:</span><span>${scoreDisplay}</span></div>
                         <div class="card-row"><span class="card-label">Sent:</span><span style="font-size:0.88em;">${fmtDate(row.form_sent_datetime)}</span></div>
@@ -692,7 +706,7 @@
                         ` : `
                             ${canReview ? `<button class="btn-informative btn-sm" onclick="openReview('${row.id}')" title="Review this submission">Review</button>` : ''}
                             <button class="btn-primary btn-sm" onclick="downloadSingleJson('${row.id}')" title="Download record as JSON">JSON</button>
-                            <button class="btn-success btn-sm" onclick="openEdit('${row.id}', '${row.member_name}', '${row.skill_name}', '${row.form_status}', '${row.form_access_code}')" title="Edit form status">Edit</button>
+                            <button class="btn-success btn-sm" onclick="openEdit('${row.id}', '${escAttr(row.member_name)}', '${escAttr(row.skill_name)}', '${escAttr(row.form_status)}', '${escAttr(row.form_access_code)}')" title="Edit form status">Edit</button>
                             <button class="btn-danger btn-sm" onclick="deleteRecord('${row.id}')" title="Permanently delete this record">Delete</button>
                         `}
                     </div>

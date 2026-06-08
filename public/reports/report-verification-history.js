@@ -1,6 +1,15 @@
 (function () {
   window.ReportRegistry = window.ReportRegistry || {};
 
+  function escHtml(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   window.ReportRegistry["verification-history"] = {
     title: "Verification History",
     description:
@@ -54,11 +63,14 @@
             if (Object.keys(fb).length > 0) aiNote = " (AI Evaluated)";
           } catch (e) {}
         }
+        const memberDisplay = window.formatMemberName
+          ? window.formatMemberName(row.member_rank, row.member_last_name, row.member_first_name, row.member_name)
+          : row.member_name;
         html += `<tr>
           <td>${date}</td>
-          <td>${window.formatMemberName ? window.formatMemberName(row.member_rank, row.member_last_name, row.member_first_name, row.member_name) : row.member_name}</td>
-          <td>${row.skill_name}</td>
-          <td style="color:${statusColor}; font-weight:bold; text-transform:uppercase;">${row.form_status}</td>
+          <td>${escHtml(memberDisplay)}</td>
+          <td>${escHtml(row.skill_name)}</td>
+          <td style="color:${statusColor}; font-weight:bold; text-transform:uppercase;">${escHtml(row.form_status)}</td>
           <td>${score}</td>
           <td style="font-size:10px;">Attempt #${row.tries}${aiNote}</td>
         </tr>`;

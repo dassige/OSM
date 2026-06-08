@@ -6,8 +6,9 @@ const logger = require("../../services/logger");
 
 const reportService = require("../../services/report-service");
 const { getActiveProxy } = require("../../services/proxy-manager");
+const { hasRole } = require("../../middleware/auth");
 
-router.get("/data/:type", async (req, res) => {
+router.get("/data/:type", hasRole("admin"), async (req, res) => {
   try {
     const type = req.params.type;
     const proxyUrl = getActiveProxy();
@@ -41,7 +42,7 @@ router.get("/data/:type", async (req, res) => {
   }
 });
 
-router.post("/pdf", async (req, res) => {
+router.post("/pdf", hasRole("admin"), async (req, res) => {
   try {
     const browser = await puppeteer.launch({
       headless: "new",

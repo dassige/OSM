@@ -432,6 +432,12 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
         let skillsLimit = 25;
         let isDemo = false;
 
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = String(s ?? '');
+            return d.innerHTML;
+        }
+
         async function initPage() {
             try {
                 const uiRes = await fetch('/ui-config');
@@ -515,7 +521,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
                     tr.innerHTML = `
                         <td class="cb-col"><input type="checkbox" class="skill-checkbox" value="${s.id}" onchange="updateBulkDeleteButton()" title="Select this skill for bulk actions"></td>
                         <td data-label="Enabled" class="text-center"><label class="switch" title="Toggle enabled state for this skill"><input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSkillEnabled(${s.id}, this.checked)"><span class="slider"></span></label></td>
-                        <td data-label="Skill Name">${s.name}</td>
+                        <td data-label="Skill Name">${esc(s.name)}</td>
                         <td data-label="Critical" class="text-center">${s.critical_skill ? '<b style="color:var(--danger);">Yes</b>' : 'No'}</td>
                         <td data-label="Form Link">${urlDisplay}</td>
                         <td data-label="Actions" class="text-center ws-nowrap">
@@ -608,7 +614,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
                 card.className = 'table-card';
                 card.innerHTML = `
                     <div class="card-header">
-                        <span class="card-title">${s.name}</span>
+                        <span class="card-title">${esc(s.name)}</span>
                         <label class="switch" title="Toggle enabled state for this skill">
                             <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSkillEnabled(${s.id}, this.checked)">
                             <span class="slider"></span>

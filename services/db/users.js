@@ -127,6 +127,13 @@ async function getMfaData(userId) {
   return await db.get("SELECT mfa_secret, mfa_enabled FROM users WHERE id = ?", userId);
 }
 
+async function verifyUserPassword(userId, password) {
+  const db = await initDB();
+  const user = await db.get("SELECT hash, salt FROM users WHERE id = ?", userId);
+  if (!user) return false;
+  return verifyPassword(password, user.hash, user.salt);
+}
+
 module.exports = {
   authenticateUser,
   resetLoginAttempts,
@@ -143,4 +150,5 @@ module.exports = {
   setMfaSecret,
   setMfaStatus,
   getMfaData,
+  verifyUserPassword,
 };

@@ -2,6 +2,15 @@
 (function () {
   window.ReportRegistry = window.ReportRegistry || {};
 
+  function escHtml(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   window.ReportRegistry["compliance-matrix"] = {
     title: "Brigade Compliance Matrix",
     description:
@@ -26,7 +35,7 @@
 
       let html = `
                 <div class="rpt-header">
-                    <h1>${uiConfig.loginTitle || "OpReady"} - Compliance Matrix</h1>
+                    <h1>${escHtml(uiConfig.loginTitle || "OpReady")} - Compliance Matrix</h1>
                     <p>Generated: ${meta.generated} • Total Members: ${rows.length}</p>
                 </div>`;
 
@@ -64,8 +73,8 @@
                                 margin: 0 auto;
                                 overflow: hidden;
                                 font-size: 10px;
-                            " title="${h}">
-                                ${h}
+                            " title="${escHtml(h)}">
+                                ${escHtml(h)}
                             </div>
                         </th>`;
         });
@@ -76,7 +85,7 @@
           const bg = rowIndex % 2 === 0 ? "#fff" : "#f8f9fa";
           html += `<tr style="background-color:${bg};">
                         <td style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:6px 8px; border:1px solid #ddd;">
-                            ${r.member}
+                            ${escHtml(r.member)}
                         </td>`;
 
           const skillSlice = r.skills.slice(i, sliceEnd);
@@ -102,7 +111,7 @@
               content = "·";
             }
 
-            html += `<td style="${cellStyle}" title="${s.name}: ${s.date}">${content}</td>`;
+            html += `<td style="${cellStyle}" title="${escHtml(s.name)}: ${escHtml(s.date)}">${content}</td>`;
           });
           html += `</tr>`;
         });

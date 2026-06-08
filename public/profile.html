@@ -119,6 +119,37 @@
         </div>
     </div>
 
+    <div id="mfaPasswordModal" class="modal">
+        <div class="modal-content" style="text-align:center; max-width: 400px;">
+            <span class="close-btn" onclick="closeModal('mfaPasswordModal')">&times;</span>
+            <h2 style="margin-top:0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Confirm Identity</h2>
+            <p style="font-size:0.9em; color:var(--text-muted);">Enter your current password to begin 2FA setup.</p>
+            <div class="form-group" style="text-align:left;">
+                <label>Current Password</label>
+                <input type="password" id="mfaSetupPassword" autocomplete="current-password"
+                    title="Your current account password">
+            </div>
+            <button id="btnConfirmMfaSetup" class="btn-success w-100" style="margin: 0;"
+                title="Confirm password and proceed to QR code setup">Continue</button>
+        </div>
+    </div>
+
+    <div id="mfaDisableModal" class="modal">
+        <div class="modal-content" style="text-align:center; max-width: 400px;">
+            <span class="close-btn" onclick="closeModal('mfaDisableModal')">&times;</span>
+            <h2 style="margin-top:0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Disable 2FA</h2>
+            <p style="font-size:0.9em; color:var(--text-muted);">Enter your current authenticator code to confirm.</p>
+            <div class="form-group" style="text-align:left;">
+                <label>Authenticator Code</label>
+                <input type="text" id="mfaDisableToken" maxlength="6" autocomplete="one-time-code"
+                    style="text-align:center; letter-spacing: 4px; font-size: 1.2em; font-weight: bold;"
+                    title="6-digit code from your authenticator app">
+            </div>
+            <button id="btnConfirmMfaDisable" class="btn-danger w-100" style="margin: 0;"
+                title="Verify code and disable Two-Factor Authentication">Disable 2FA</button>
+        </div>
+    </div>
+
     <div id="mfaModal" class="modal">
         <div class="modal-content" style="text-align:center; max-width: 400px;">
             <span class="close-btn" onclick="closeModal('mfaModal')">&times;</span>
@@ -247,24 +278,29 @@
             }
         }
 
-        document.getElementById('btnEnableMfa').addEventListener('click', async () => {
+        document.getElementById('btnEnableMfa').addEventListener('click', () => {
+            document.getElementById('mfaSetupPassword').value = '';
+            openModal('mfaPasswordModal');
+        });
+
+        document.getElementById('btnConfirmMfaSetup').addEventListener('click', async () => {
+            const pw = document.getElementById('mfaSetupPassword').value;
+            if (!pw) return showToast('Current password is required', 'warning');
             try {
-                const res = await fetch('/api/profile/mfa/setup', { method: 'POST' });
-                if (!res.ok) throw new Error("Setup failed");
-
-                const data = await res.json();
-                document.getElementById('mfaQrCode').src = data.qrCode;
-                const tokenInput = document.getElementById('mfaVerifyToken');
-
-                if (currentAppMode === 'demo') {
-                    tokenInput.placeholder = "Demo: Type '000000'";
-                    tokenInput.value = "000000";
-                    if (window.showToast) showToast("Demo Mode: 2FA Verification simulated.", "info");
-                } else {
-                    tokenInput.placeholder = "Enter 6-digit code";
-                    tokenInput.value = "";
+                const res = await fetch('/api/profile/mfa/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ currentPassword: pw })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    return showToast(err.error || 'Authentication failed', 'error');
                 }
-
+                const data = await res.json();
+                closeModal('mfaPasswordModal');
+                document.getElementById('mfaQrCode').src = data.qrCode;
+                document.getElementById('mfaVerifyToken').placeholder = "Enter 6-digit code";
+                document.getElementById('mfaVerifyToken').value = "";
                 openModal('mfaModal');
             } catch (e) {
                 if (window.showToast) showToast(e.message, 'error');
@@ -293,15 +329,29 @@
             }
         });
 
-        document.getElementById('btnDisableMfa').addEventListener('click', async () => {
-            if (await confirmAction("Disable Security?", "Are you sure you want to remove 2FA protection?")) {
-                try {
-                    await fetch('/api/profile/mfa/disable', { method: 'POST' });
-                    updateMfaUi(false);
-                    if (window.showToast) showToast("MFA Disabled", "success");
-                } catch (e) {
-                    if (window.showToast) showToast("Error disabling MFA", "error");
+        document.getElementById('btnDisableMfa').addEventListener('click', () => {
+            document.getElementById('mfaDisableToken').value = '';
+            openModal('mfaDisableModal');
+        });
+
+        document.getElementById('btnConfirmMfaDisable').addEventListener('click', async () => {
+            const token = document.getElementById('mfaDisableToken').value;
+            if (!token || token.length < 6) return showToast('Please enter the authenticator code', 'warning');
+            try {
+                const res = await fetch('/api/profile/mfa/disable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ totpToken: token })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    return showToast(err.error || 'Disable failed', 'error');
                 }
+                closeModal('mfaDisableModal');
+                updateMfaUi(false);
+                if (window.showToast) showToast("MFA Disabled", "success");
+            } catch (e) {
+                if (window.showToast) showToast("Error disabling MFA", "error");
             }
         });
 

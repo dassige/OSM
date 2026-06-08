@@ -22,6 +22,21 @@ const logger = require("../../services/logger");
 
 const upload = multer({ dest: "uploads/", limits: { fileSize: 500 * 1024 * 1024 } });
 
+function assertSafeUrl(url) {
+  let parsed;
+  try { parsed = new URL(url); } catch { throw new Error('Invalid endpoint URL'); }
+  if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid endpoint URL');
+  const h = parsed.hostname.toLowerCase();
+  const blocked =
+    /^169\.254\./.test(h) ||      // link-local / AWS+Azure metadata
+    h === '100.100.100.200' ||    // Alibaba Cloud metadata
+    /^10\./.test(h) ||            // RFC-1918 class A
+    /^172\.(1[6-9]|2\d|3[01])\./.test(h) || // RFC-1918 class B
+    /^192\.168\./.test(h) ||      // RFC-1918 class C
+    h === '0.0.0.0';
+  if (blocked) throw new Error('Endpoint not reachable');
+}
+
 
 
 router.get("/csrf-token", (req, res) => {
@@ -142,15 +157,22 @@ router.post("/logs", hasRole('admin'), async (req, res) => {
 router.get("/system/ollama-models", hasRole("superadmin"), async (req, res) => {
   const baseUrl = req.query.baseUrl || config.aiConfig.ollamaUrl;
   try {
+    assertSafeUrl(baseUrl);
     const response = await axios.get(`${baseUrl}/api/tags`, { timeout: 5000 });
     res.json(response.data.models || []);
   } catch (e) {
-    res.status(500).json({ error: "Could not reach Ollama: " + e.message });
+    res.status(500).json({ error: "Could not reach the Ollama endpoint." });
   }
 });
 
 router.post("/system/ai-test", hasRole("superadmin"), aiTestLimiter, async (req, res) => {
   const { question, reference, answer, maxPoints, configOverride } = req.body;
+
+  if (configOverride.provider === "ollama" && configOverride.ollamaUrl) {
+    try { assertSafeUrl(configOverride.ollamaUrl); } catch {
+      return res.status(400).json({ success: false, error: "Invalid Ollama URL." });
+    }
+  }
 
   if (configOverride.provider === "gemini" && configOverride.geminiKey === "USE_SERVER_DEFAULT") {
     configOverride.geminiKey = config.aiConfig.geminiKey;
@@ -174,7 +196,7 @@ router.post("/system/ai-test", hasRole("superadmin"), aiTestLimiter, async (req,
     });
   } catch (e) {
     logger.error('[AI Test] Evaluation failed', { error: e.message, stack: e.stack });
-    res.status(500).json({ success: false, error: e.message });
+    res.status(500).json({ success: false, error: "AI evaluation failed." });
   }
 });
 

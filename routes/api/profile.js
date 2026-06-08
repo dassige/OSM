@@ -33,6 +33,12 @@ router.post("/mfa/setup", async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   if (!req.session.user || !req.session.user.id) return res.status(401).json({ error: "Unauthorized" });
 
+  const { currentPassword } = req.body;
+  if (!currentPassword) return res.status(400).json({ error: "Current password is required to enable MFA." });
+
+  const valid = await db.verifyUserPassword(req.session.user.id, currentPassword);
+  if (!valid) return res.status(403).json({ error: "Incorrect password." });
+
   const secret = speakeasy.generateSecret({ name: `${config.ui.loginTitle} (${req.session.user.email})` });
 
   // Secret is stored but MFA stays inactive until the user proves their TOTP app is configured correctly
@@ -76,6 +82,21 @@ router.post("/mfa/disable", async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   const userId = req.session.user.id;
   const userName = req.session.user.name;
+
+  const { totpToken } = req.body;
+  if (!totpToken) return res.status(400).json({ error: "Authenticator code required to disable MFA." });
+
+  const data = await db.getMfaData(userId);
+  if (!data || !data.mfa_secret) return res.status(400).json({ error: "MFA is not configured." });
+
+  const verified = speakeasy.totp.verify({
+    secret: data.mfa_secret,
+    encoding: "base32",
+    token: totpToken,
+    window: 1,
+  });
+  if (!verified) return res.status(403).json({ error: "Invalid code. MFA not disabled." });
+
   await db.setMfaStatus(userId, false);
   await db.setMfaSecret(userId, null);
   await db.logEvent(userName, "Security", "MFA Disabled", { userId, userName });

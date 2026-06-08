@@ -18,6 +18,15 @@ function ensureLocalDir(dir) {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
+function resolveAndCheck(storagePath) {
+    const base = path.resolve(getLocalDir());
+    const resolved = path.resolve(base, storagePath);
+    if (resolved !== base && !resolved.startsWith(base + path.sep)) {
+        throw new Error('Invalid storage path');
+    }
+    return resolved;
+}
+
 // ── Local filesystem ──────────────────────────────────────────────────────────
 
 async function uploadLocal(slug, ext, buffer) {
@@ -29,16 +38,16 @@ async function uploadLocal(slug, ext, buffer) {
 }
 
 async function streamLocal(storagePath) {
-    return fs.createReadStream(path.join(getLocalDir(), storagePath));
+    return fs.createReadStream(resolveAndCheck(storagePath));
 }
 
 async function deleteLocal(storagePath) {
-    const filePath = path.join(getLocalDir(), storagePath);
+    const filePath = resolveAndCheck(storagePath);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 }
 
 async function fileExistsLocal(storagePath) {
-    return fs.existsSync(path.join(getLocalDir(), storagePath));
+    return fs.existsSync(resolveAndCheck(storagePath));
 }
 
 // ── Shared bucket config parser ───────────────────────────────────────────────
@@ -202,7 +211,7 @@ async function replaceFile(storageType, storagePath, buffer, mimeType) {
         const storage = new Storage(gcsCfg.keyFilename ? { keyFilename: gcsCfg.keyFilename } : {});
         await storage.bucket(gcsParts().bucketName).file(storagePath).save(buffer, { contentType: mimeType });
     } else {
-        const filePath = path.join(getLocalDir(), storagePath);
+        const filePath = resolveAndCheck(storagePath);
         fs.writeFileSync(filePath, buffer);
     }
     logger.info('[KB Storage] File replaced', { storagePath, storageType, bytes: buffer.length });

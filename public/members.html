@@ -408,6 +408,12 @@
         let membersLimit = 25;
         let isDemo = false;
 
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = String(s ?? '');
+            return d.innerHTML;
+        }
+
         // Use DB structured fields when available; fall back to parsing the raw name.
         function parseRankAndName(memberOrName) {
             if (memberOrName && typeof memberOrName === 'object') {
@@ -524,9 +530,9 @@
                     <td data-label="Rank" class="text-center">
                         ${formatRankCell(rank)}
                     </td>
-                    <td data-label="Name" style="font-weight:bold;">${displayName}</td>
-                    <td data-label="Email">${m.email}</td>
-                    <td data-label="Mobile">${m.mobile || ''}</td>
+                    <td data-label="Name" style="font-weight:bold;">${esc(displayName)}</td>
+                    <td data-label="Email">${esc(m.email)}</td>
+                    <td data-label="Mobile">${esc(m.mobile || '')}</td>
                     <td data-label="Prefs" class="text-center ws-nowrap">
                         <span class="pref-icon bg-email ${hasEmail}" title="Email notifications enabled">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
@@ -622,7 +628,7 @@
                 card.innerHTML = `
                     <div class="card-header">
                         ${rankHtml}
-                        <span class="card-title">${displayName}</span>
+                        <span class="card-title">${esc(displayName)}</span>
                         <label class="switch" title="Toggle enabled state for this member">
                             <input type="checkbox" ${m.enabled ? 'checked' : ''} onchange="toggleMemberEnabled(${m.id}, this.checked)">
                             <span class="slider"></span>
@@ -631,11 +637,11 @@
                     <div class="card-body">
                         <div class="card-row">
                             <span class="card-label">Email:</span>
-                            <span style="word-break:break-all;">${m.email}</span>
+                            <span style="word-break:break-all;">${esc(m.email)}</span>
                         </div>
                         <div class="card-row">
                             <span class="card-label">Mobile:</span>
-                            <span>${m.mobile || '—'}</span>
+                            <span>${esc(m.mobile || '—')}</span>
                         </div>
                         <div class="card-row">
                             <span class="card-label">Notifications:</span>
