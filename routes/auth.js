@@ -58,8 +58,10 @@ router.post("/login", loginLimiter, async (req, res) => {
 
     if (user) {
       const mfaData = await db.getMfaData(user.id);
-      if (mfaData && mfaData.mfa_enabled) {
-        req.session.mfaPendingUser = user; 
+      // In demo mode MFA secrets are not provisioned, so the challenge is skipped at
+      // the login step rather than bypassed inside the verification endpoint.
+      if (mfaData && mfaData.mfa_enabled && config.appMode !== 'demo') {
+        req.session.mfaPendingUser = user;
         return res.json({ mfaRequired: true });
       }
       return await finalizeLogin(req, res, user, "database");
@@ -82,12 +84,6 @@ router.post("/login/mfa", mfaLimiter, async (req, res) => {
 
   const { token } = req.body;
   const user = req.session.mfaPendingUser;
-
-  // No real TOTP secret is stored in demo mode, so MFA verification is bypassed
-  if (config.appMode === 'demo') {
-      delete req.session.mfaPendingUser;
-      return await finalizeLogin(req, res, user, "demo-mfa"); 
-  }
 
   const mfaData = await db.getMfaData(user.id);
   const verified = speakeasy.totp.verify({
@@ -114,7 +110,7 @@ router.post("/forgot-password", forgotPasswordLimiter, async (req, res) => {
     const user = await db.getUserByEmail(email);
     if (!user) return res.status(404).json({ error: "User not found." });
     
-    const tempPassword = crypto.randomBytes(4).toString("hex");
+    const tempPassword = crypto.randomBytes(16).toString("hex");
     await db.adminResetPassword(user.id, tempPassword);
     
     const prefs = await db.getPreferences();

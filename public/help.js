@@ -349,6 +349,7 @@ const helpContent = {
                 <li>Select the AI provider (Google Gemini or local Ollama) and model.</li>
                 <li>Enter a question, rubric (reference text), and a candidate answer.</li>
                 <li>Click <strong>Execute Evaluation Test</strong> to see the score, justification, and raw provider response in the terminal log.</li>
+                <li><strong>Rate limit:</strong> AI test evaluations are limited to <strong>10 per minute</strong> per IP to control AI provider costs. If you hit this limit, wait 60 seconds before retrying.</li>
             </ul>
         `
     },
@@ -363,8 +364,26 @@ const helpContent = {
                 <li><strong>Create:</strong> Give the key a name and a role — <em>superadmin</em>, <em>admin</em>, <em>simple</em>, or <em>guest</em>. The raw key is shown <strong>once</strong> at creation — copy it immediately.</li>
                 <li><strong>Revoke / Enable:</strong> Toggle a key inactive without deleting it. Revoked keys are rejected immediately.</li>
                 <li><strong>Delete:</strong> Permanently removes the key.</li>
+                <li><strong>Role scope:</strong> Keys inherit the same role-hierarchy rules as browser users. An API key with <em>admin</em> role cannot access <em>superadmin</em>-only endpoints (backup, restore, event prune). Key the role as low as the integration actually needs.</li>
             </ul>
             <p>Sort the key list by clicking any column header. Sort preference is saved automatically. See the interactive API reference at <code>/api/docs</code> for all available endpoints.</p>
+
+            <h3>Rate Limits for Sensitive Endpoints</h3>
+            <p>Certain endpoints have additional per-IP rate limits on top of the global API limit:</p>
+            <ul>
+                <li><strong>User creation</strong> (<code>POST /api/users</code>): max <strong>10 per 15 minutes</strong>.</li>
+                <li><strong>Database backup</strong> (<code>GET /api/system/backup</code>): max <strong>10 per hour</strong>.</li>
+                <li><strong>Database restore</strong> (<code>POST /api/system/restore</code>): max <strong>3 per hour</strong>.</li>
+                <li><strong>AI evaluation test</strong> (<code>POST /api/system/ai-test</code>): max <strong>10 per minute</strong>.</li>
+            </ul>
+            <p>Hitting any of these limits returns HTTP <strong>429 Too Many Requests</strong>. The response body includes a plain-English message with the window duration.</p>
+
+            <h3>Restricted Event Log Categories</h3>
+            <p>The <code>POST /api/logs</code> endpoint (used by frontend pages to record user actions) rejects writes to the following <strong>system-managed categories</strong> with HTTP 403:</p>
+            <ul>
+                <li><code>Security</code>, <code>System</code>, <code>User Mgmt</code>, <code>API Keys</code>, <code>WhatsApp</code></li>
+            </ul>
+            <p>These categories are written exclusively by server-side code to prevent tampering with security-sensitive audit records. Frontend pages may only write to application-level categories (e.g. <code>Members</code>).</p>
 
             <h3>2. API Call Log</h3>
             <p>Every request authenticated via an API key is recorded with: key name, HTTP method, full endpoint URL (including query parameters), origin IP, user agent, and HTTP response code.</p>
@@ -392,6 +411,14 @@ const helpContent = {
                 <li><strong>Admin:</strong> Full access to manage Members, Skills, Forms, and Users.</li>
                 <li><strong>Super Admin:</strong> (Environment User) Has access to everything, including Database Restore and Log Purging.</li>
             </ul>
+            <h3>Role Hierarchy Enforcement</h3>
+            <p>Users can only manage accounts at a <strong>lower</strong> role level than their own. This means:</p>
+            <ul>
+                <li>An <strong>Admin</strong> can create, edit, or reset passwords for <em>Simple</em> and <em>Guest</em> accounts — but cannot modify other Admin accounts or the Super Admin account.</li>
+                <li>No user can promote another account to a role <strong>equal to or higher</strong> than their own. For example, an Admin cannot create a new Admin or Super Admin.</li>
+                <li>Only the <strong>Super Admin</strong> can manage all other accounts, including other Admins.</li>
+            </ul>
+            <p>Attempts to violate these rules return a clear error message and are rejected by the server.</p>
             <h3>Security</h3>
             <p>Users are automatically <strong>Blocked</strong> after a configurable number of failed login attempts (set via <code>MAX_LOGIN_ATTEMPTS</code> in the environment configuration, default 5). An admin must manually uncheck "Blocked" in the Edit User modal to restore access.</p>
         `
@@ -538,6 +565,9 @@ const helpContent = {
                 <li><strong>Disable MFA:</strong> Re-enter your current password to remove the second factor from your account.</li>
                 <li>MFA is applied at login — after entering your password you will be asked for the current 6-digit code from your app.</li>
             </ul>
+
+            <h3>3. Session Timeout</h3>
+            <p>Your login session automatically expires after <strong>8 hours</strong> of inactivity. When this happens you will be redirected to the login page. This limit protects against unattended browser sessions on shared or public computers and cannot be changed per-user.</p>
         `
     },
 
@@ -567,6 +597,7 @@ const helpContent = {
                 <li>Click <strong>Upload Document</strong> and fill in the title, optional description, category, and expiry date.</li>
                 <li>When you select a file, the <strong>Title</strong> field is automatically pre-filled from the filename — hyphens and underscores are replaced with spaces and the extension is stripped. You can edit the title before saving.</li>
                 <li>Supported types: <strong>PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF</strong> · maximum 50 MB per upload.</li>
+                <li><strong>Disk space requirement:</strong> The server checks available disk space before accepting any upload. If the server has less than <strong>100 MB</strong> free, the upload is rejected with an "Insufficient Storage" error. This only applies to the <em>local</em> storage backend — cloud storage (S3/GCS) manages its own capacity. If you see this error, contact your system administrator to free up disk space.</li>
                 <li>The <strong>Expiry date</strong> defaults to today + the configured number of days (set via <code>KB_DEFAULT_EXPIRY_DAYS</code> in <code>.env</code>, default 365). Expired documents are flagged in red for admin review — they remain publicly accessible until explicitly disabled or deleted.</li>
                 <li>A unique GUID link is generated automatically — share it with members so they can view or download the document without logging in.</li>
                 <li>The category field pre-selects the category currently active in the left tree.</li>

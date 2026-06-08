@@ -157,6 +157,8 @@ Open the `.env` file and configure the following parameters:
   * `SESSION_SECRET`: **Required in production.** A random string of 32+ characters used to sign session cookies. Startup will abort if this is missing in production mode. Generate one with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
   * `MAX_LOGIN_ATTEMPTS`: Maximum number of failing login attempt before a user is blocked and a notification is sent to the super user (default 5).
   * `COOKIE_SECURE`: Set to `false` for local HTTP development. Leave unset (defaults to `true`) in production — session cookies will only be sent over HTTPS. Your deployment must run behind a TLS-terminating reverse proxy (e.g., Cloudflare Tunnel, nginx) for this to work correctly.
+  * **Session timeout:** Sessions automatically expire after **8 hours** of inactivity regardless of the `COOKIE_SECURE` setting. This is a server-side `maxAge` on the session cookie and is not configurable via environment variables.
+  * **Content Security Policy:** Helmet's CSP is enabled by default with a baseline policy that blocks external script/style loading, prevents clickjacking (`frame-ancestors: none`), blocks Flash/plugins (`object-src: none`), and restricts form targets to the same origin. `'unsafe-inline'` and `'unsafe-eval'` are currently permitted for `script-src` and `style-src` to support existing inline scripts. Future hardening: migrate inline scripts to external files and remove these directives.
   * `CORS_ORIGIN`: Leave unset for the standard same-origin deployment (the frontend and API are served from the same host). Set to your frontend's full origin (e.g., `https://app.yourdomain.com`) only if the frontend is hosted on a separate domain.
 
 #### **Operation Mode**
@@ -220,13 +222,24 @@ Open the `.env` file and configure the following parameters:
 
 #### **Rate Limiting**
 
-All rate limits are per-IP and configurable via environment variables. Defaults are suitable for most brigades.
+All rate limits are per-IP. The configurable limits below apply to unauthenticated and general API traffic. Additional fixed limits apply to sensitive system endpoints (see table).
 
   * `RATE_LIMIT_LOGIN_MAX` / `RATE_LIMIT_LOGIN_WINDOW_MIN`: Max login attempts per window before the IP is blocked (default: max=10, window=15 min).
   * `RATE_LIMIT_MFA_MAX` / `RATE_LIMIT_MFA_WINDOW_MIN`: MFA code verification attempts (default: max=5, window=5 min).
   * `RATE_LIMIT_FORGOT_MAX` / `RATE_LIMIT_FORGOT_WINDOW_MIN`: Password-reset requests (default: max=3, window=30 min).
   * `RATE_LIMIT_API_MAX` / `RATE_LIMIT_API_WINDOW_MIN`: Authenticated API requests (default: max=300, window=1 min).
   * `RATE_LIMIT_PUBLIC_SUBMIT_MAX` / `RATE_LIMIT_PUBLIC_SUBMIT_WINDOW_MIN`: Unauthenticated live-form access and survey submission endpoints. Applied per IP to member-facing routes (`/api/live-forms/access/`, `/api/live-forms/submit/`, `/api/live-surveys/`). Set high enough to allow a whole crew to submit simultaneously. (default: max=30, window=5 min).
+
+**Fixed-limit system endpoint rate limits** (not configurable — hardcoded to prevent abuse):
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| `POST /api/users` (create user) | 10 requests | 15 minutes |
+| `GET /api/system/backup` | 10 requests | 1 hour |
+| `POST /api/system/restore` | 3 requests | 1 hour |
+| `POST /api/system/ai-test` | 10 requests | 1 minute |
+
+All rate-limited responses return HTTP **429** with a JSON body containing a human-readable `error` message and standard `RateLimit-*` response headers.
 
 #### **CSRF Protection**
 
@@ -289,9 +302,11 @@ node server.js
 ### 2\. User Management
 
   * **Super Admin:** Log in with the credentials defined in `.env`. Access **Manage Users** to create other admins.
-  * **Creating Users:** When you add a user, the system generates a secure random password and emails it to them automatically.
+  * **Creating Users:** When you add a user, the system generates a cryptographically random 128-bit (32 hex character) temporary password and emails it to them automatically.
   * **Deleting Users:** Deleting a user will also send them a notification email.
   * **MFA Authentication:** Enhance security using an authenticator app (e.g. Google Authenticator).
+  * **Role hierarchy:** Admin users can only create or modify accounts at a lower role level than their own. An Admin cannot create another Admin or promote any account to Super Admin — only the Super Admin can manage other admins.
+  * **Session timeout:** All sessions expire automatically after **8 hours** of inactivity. Users are redirected to the login page when their session expires.
 
 ### 3\. Dashboard Workflow
 
@@ -488,10 +503,14 @@ members = r.json()
 
 | Role | Access |
 |------|--------|
-| `admin` | Full read/write access to all `/api/*` endpoints |
+| `superadmin` | All endpoints including backup, restore, event prune, and system tools |
+| `admin` | Full read/write access to members, skills, forms, users, and preferences |
 | `simple` | Read-only access to statistics and reports (`/api/statistics/*`, `/api/reports/*`) |
+| `guest` | Read-only access to the member list and dashboard data |
 
-API keys **cannot** access HTML pages — those remain session-only. Endpoints restricted to `superadmin` (e.g., purge event log) are not accessible via API key.
+**Role hierarchy enforcement:** The server enforces strict hierarchy on user management. An `admin` API key cannot modify another admin account or a superadmin account, and cannot create or promote accounts to a role equal to or higher than its own. Attempts return HTTP 403.
+
+API keys **cannot** access HTML pages — those remain session-only. Endpoints restricted to `superadmin` (e.g., backup, restore, purge event log) are not accessible via an `admin` or lower key.
 
 ---
 
@@ -540,6 +559,8 @@ The Knowledge Base is a built-in document library that lets brigade administrato
 | RTF | `.rtf` | Download only |
 
 Maximum file size: **50 MB**.
+
+**Disk space requirement (local storage only):** Before accepting any upload, the server checks available disk space on the KB storage partition. If less than **100 MB** is free, the upload is rejected with HTTP 507 Insufficient Storage. This guard applies only to the local filesystem backend — S3 and GCS manage their own capacity. Monitor free space on the server running OpReady and ensure at least several hundred MB are available for ongoing uploads.
 
 ### Public access — GUID links
 
