@@ -15,6 +15,7 @@ const aiService = require("../../services/ai-service");
 const whatsappService = require("../../services/whatsapp-service");
 const { hasRole } = require("../../middleware/auth");
 const { generateCsrfToken } = require("../../middleware/csrf");
+const { backupLimiter, restoreLimiter, aiTestLimiter } = require("../../middleware/rate-limiter");
 const { version } = require("../../package.json");
 const logger = require("../../services/logger");
 
@@ -54,7 +55,7 @@ router.get("/ready", async (req, res) => {
   }
 });
 
-router.get("/preferences", async (req, res) => {
+router.get("/preferences", hasRole("admin"), async (req, res) => {
   res.json(await db.getPreferences());
 });
 
@@ -65,18 +66,18 @@ router.post("/preferences", hasRole("admin"), async (req, res) => {
 });
 
 router.get("/user-preferences", async (req, res) => {
-  res.json(await db.getAllUserPreferences(req.session.user.id || 0));
+  res.json(await db.getAllUserPreferences(req.session?.user?.id ?? 0));
 });
 
 router.get("/user-preferences/:key", async (req, res) => {
   res.json({
-    value: await db.getUserPreference(req.session.user.id || 0, req.params.key),
+    value: await db.getUserPreference(req.session?.user?.id ?? 0, req.params.key),
   });
 });
 
 router.post("/user-preferences", async (req, res) => {
   await db.saveUserPreference(
-    req.session.user.id || 0,
+    req.session?.user?.id ?? 0,
     req.body.key,
     req.body.value
   );
@@ -98,7 +99,8 @@ router.get("/events/export", hasRole("admin"), async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.send(JSON.stringify(data, null, 2));
   } catch (e) {
-    res.status(500).send(e.message);
+    logger.error('[Events] Export failed', { error: e.message, stack: e.stack });
+    res.status(500).json({ error: 'Export failed. Please try again.' });
   }
 });
 
@@ -124,7 +126,13 @@ router.post("/events/prune", hasRole("superadmin"), async (req, res) => {
   res.json({ success: true });
 });
 
+// Categories reserved for server-side code only — clients cannot forge entries in these
+const RESTRICTED_LOG_CATEGORIES = new Set(['Security', 'System', 'User Mgmt', 'API Keys', 'WhatsApp']);
+
 router.post("/logs", async (req, res) => {
+  if (RESTRICTED_LOG_CATEGORIES.has(req.body.type)) {
+    return res.status(403).json({ error: 'Log category is restricted to server-side operations.' });
+  }
   const user = req.session?.user?.name || "System";
   await db.logEvent(user, req.body.type, req.body.title, req.body.payload);
   res.json({ success: true });
@@ -140,7 +148,7 @@ router.get("/system/ollama-models", hasRole("superadmin"), async (req, res) => {
   }
 });
 
-router.post("/system/ai-test", hasRole("superadmin"), async (req, res) => {
+router.post("/system/ai-test", hasRole("superadmin"), aiTestLimiter, async (req, res) => {
   const { question, reference, answer, maxPoints, configOverride } = req.body;
 
   if (configOverride.provider === "gemini" && configOverride.geminiKey === "USE_SERVER_DEFAULT") {
@@ -164,14 +172,15 @@ router.post("/system/ai-test", hasRole("superadmin"), async (req, res) => {
       metadata: { duration: `${duration}ms` },
     });
   } catch (e) {
-    res.status(500).json({ success: false, error: e.message, stack: e.stack });
+    logger.error('[AI Test] Evaluation failed', { error: e.message, stack: e.stack });
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
 // ── Backup ────────────────────────────────────────────────────────────────────
 // ?type=db   (default) → SQL dump only
 // ?type=full           → ZIP: manifest.json + database.sql + storage/knowledgebase/*
-router.get("/system/backup", hasRole("superadmin"), async (req, res) => {
+router.get("/system/backup", hasRole("superadmin"), backupLimiter, async (req, res) => {
   const actor     = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
   const backupType = req.query.type === 'full' ? 'full' : 'db';
   const stamp      = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -250,7 +259,7 @@ router.get("/system/backup", hasRole("superadmin"), async (req, res) => {
 
 // ── Restore ───────────────────────────────────────────────────────────────────
 // Accepts: .sql (DB-only restore) or .zip (full restore — DB + KB files)
-router.post("/system/restore", hasRole("superadmin"), upload.single("databaseFile"), async (req, res) => {
+router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.single("databaseFile"), async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   if (!req.file)                return res.status(400).json({ error: "No file uploaded." });
 
@@ -337,9 +346,10 @@ router.post("/system/restore", hasRole("superadmin"), upload.single("databaseFil
 // ── Directory Browser (for backup location picker) ───────────────────────────
 router.get("/system/browse-directory", hasRole("superadmin"), (req, res) => {
   const requested = req.query.path || path.sep;
-  const resolved  = path.resolve(requested);
   try {
-    const entries = fs.readdirSync(resolved, { withFileTypes: true });
+    // realpathSync resolves symlinks so callers cannot traverse into symlink targets
+    const resolved = fs.realpathSync(path.resolve(requested));
+    const entries  = fs.readdirSync(resolved, { withFileTypes: true });
     const dirs = entries
       .filter(e => { try { return e.isDirectory(); } catch { return false; } })
       .map(e => e.name)

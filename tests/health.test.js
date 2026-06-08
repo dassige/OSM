@@ -11,7 +11,14 @@ jest.mock('../config', () => ({
     appMode: 'production',
     auth: {},
     aiConfig: {},
-    enableWhatsApp: false
+    enableWhatsApp: false,
+    rateLimits: {
+        login:         { windowMin: 15, max: 10  },
+        mfa:           { windowMin: 5,  max: 5   },
+        forgotPassword:{ windowMin: 30, max: 3   },
+        api:           { windowMin: 1,  max: 300 },
+        publicSubmit:  { windowMin: 5,  max: 30  },
+    },
 }));
 jest.mock('../middleware/auth', () => ({
     hasRole: () => (req, res, next) => next(),

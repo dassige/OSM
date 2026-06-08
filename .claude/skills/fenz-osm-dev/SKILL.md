@@ -477,6 +477,51 @@ $env:TEST_USERNAME = "myuser"; $env:TEST_PASSWORD = "mypass"; npm run test:ui
 
 ---
 
+## ⚠️ Content Security Policy Mandate
+
+The application serves a baseline CSP via Helmet in `server.js`. **Any change that introduces a new external resource origin or a new inline-execution pattern must update the CSP in the same task.** Forgetting this causes pages to break silently in production and `npm run test:ui` will catch the failures as `console.error` CSP violations.
+
+### Current allowed origins (as of Security Round 3)
+
+```js
+// server.js — app.use(helmet({ contentSecurityPolicy: { directives: { ... } } }))
+scriptSrc:     ["'self'", "'unsafe-inline'", "'unsafe-eval'",
+                "https://cdnjs.cloudflare.com",   // TinyMCE, Sortable.js
+                "https://cdn.jsdelivr.net"],       // Chart.js
+scriptSrcAttr: ["'unsafe-inline'"],               // inline onclick/onchange attribute handlers
+styleSrc:      ["'self'", "'unsafe-inline'",
+                "https://cdnjs.cloudflare.com"],   // TinyMCE skin stylesheets
+```
+
+### Rules
+
+| Trigger | Required action |
+|---------|----------------|
+| New `<script src="https://...">` from a CDN **not already listed** | Add the CDN origin to `scriptSrc` in `server.js` |
+| New `<link rel="stylesheet" href="https://...">` from an external source | Add the origin to `styleSrc` |
+| New external `fetch()` / `XMLHttpRequest` / WebSocket target | Add the origin to `connectSrc` |
+| New external font loaded via CSS `@font-face` | Add the origin to `fontSrc` |
+| New `<img src="https://...">` from an external host | Add the origin to `imgSrc` |
+| New `<iframe src="...">` (rare — verify it is intentional) | Add the origin to `frameSrc`; note `frameAncestors 'none'` only controls *embedding of this app*, not iframes *inside* it |
+
+### `scriptSrcAttr` and inline event handlers
+
+Helmet sets `script-src-attr: 'none'` by default, which blocks **all** `onclick`, `onchange`, `onsubmit`, and similar attribute-style event handlers — even when `scriptSrc` includes `'unsafe-inline'`. The two directives are independent.
+
+The `scriptSrcAttr: ["'unsafe-inline'"]` entry must **always remain** in the CSP config. Do not remove it. If you ever migrate all inline handlers to `addEventListener` calls in `.js` files, you may then remove it — but only after confirming `npm run test:ui` passes without it.
+
+### Verification
+
+After any change that touches `<script src>`, `<link href>`, or new fetch targets, run:
+
+```powershell
+npm run test:ui
+```
+
+All smoke tests must pass with zero `console.error` CSP violations. A CSP violation shows as a test failure with a `[console.error] Loading the script '...' violates the following Content Security Policy` message.
+
+---
+
 ## Route Conventions
 
 ### Error Handling Pattern
@@ -975,6 +1020,7 @@ These are injected by `utils.js` and do **not** carry the `modal` CSS class. The
 | **Showing a modal** | Always use `element.style.display = 'block'` for `.modal`-classed elements (CSS converts to flex automatically); use `'flex'` directly for the confirm/prompt utility modals |
 | **Hiding a modal** | Always `element.style.display = 'none'` |
 | **Mobile** | On ≤ 480 px the global CSS anchors modals to the bottom of the screen — this is intentional and must not be overridden |
+| **CSP — inline handlers** | Modals and their trigger buttons use `onclick`/`onchange` attribute handlers. These require `scriptSrcAttr: ["'unsafe-inline'"]` in the Helmet CSP config (`server.js`). This entry must never be removed while any inline handlers remain in the HTML pages. See the **Content Security Policy Mandate** section. |
 
 ---
 

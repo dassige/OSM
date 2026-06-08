@@ -1,5 +1,7 @@
 const express  = require('express');
 const multer   = require('multer');
+const fs       = require('fs');
+const path     = require('path');
 const { v4: uuidv4 } = require('uuid');
 const crypto   = require('crypto');
 const router   = express.Router();
@@ -8,6 +10,28 @@ const storage  = require('../../services/knowledgebase-storage');
 const { hasRole } = require('../../middleware/auth');
 const config   = require('../../config');
 const logger   = require('../../services/logger');
+
+// Minimum free disk space required before accepting a local-storage upload (100 MB)
+const MIN_FREE_BYTES = 100 * 1024 * 1024;
+
+function assertLocalDiskSpace() {
+    if (config.kbStorage?.type !== 'local') return; // Cloud storage manages its own capacity
+    try {
+        const kbPath = config.kbStorage.localPath || __dirname;
+        const checkPath = fs.existsSync(kbPath) ? kbPath : path.dirname(kbPath);
+        const stats = fs.statfsSync(checkPath);
+        const freeBytes = stats.bfree * stats.bsize;
+        if (freeBytes < MIN_FREE_BYTES) {
+            const err = new Error('Insufficient disk space on server. Please contact your administrator.');
+            err.status = 507;
+            throw err;
+        }
+    } catch (e) {
+        if (e.status === 507) throw e;
+        // statfsSync failure is non-fatal — log and continue
+        logger.warn('[KB] Could not check disk space', { error: e.message });
+    }
+}
 
 const ALLOWED_MIME_TYPES = new Set([
     'application/pdf',
@@ -219,6 +243,7 @@ router.get('/documents/:id/file-status', hasRole('admin'), async (req, res) => {
 router.post('/documents', hasRole('admin'), upload.single('file'), async (req, res) => {
     if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
     try {
+        assertLocalDiskSpace();
         if (!req.file) return res.status(400).json({ error: 'A file is required (PDF, Word, Excel, or RTF).' });
         const { title, description, category_id } = req.body;
         if (!title || !title.trim()) return res.status(400).json({ error: 'Document title is required.' });
@@ -255,7 +280,7 @@ router.post('/documents', hasRole('admin'), upload.single('file'), async (req, r
         res.json({ id, slug });
     } catch (e) {
         logger.error('[KB] Upload error', { error: e.message });
-        res.status(500).json({ error: e.message });
+        res.status(e.status || 500).json({ error: e.message });
     }
 });
 
@@ -282,6 +307,7 @@ router.patch('/documents/:id', hasRole('admin'), async (req, res) => {
 router.post('/documents/:id/replace-file', hasRole('admin'), upload.single('file'), async (req, res) => {
     if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
     try {
+        assertLocalDiskSpace();
         if (!req.file) return res.status(400).json({ error: 'A replacement file is required.' });
         const doc = await db.getKbDocumentById(req.params.id);
         if (!doc) return res.status(404).json({ error: 'Document not found.' });
@@ -303,7 +329,7 @@ router.post('/documents/:id/replace-file', hasRole('admin'), upload.single('file
         res.json({ success: true });
     } catch (e) {
         logger.error('[KB] Replace file error', { id: req.params.id, error: e.message });
-        res.status(500).json({ error: e.message });
+        res.status(e.status || 500).json({ error: e.message });
     } finally {
         // multer memoryStorage — no temp file to clean up
     }

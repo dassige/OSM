@@ -633,6 +633,7 @@
         },
         {
           "name": "Get Preferences",
+          "description": "Requires admin role or higher — run this collection with a superadmin or admin API key. Returns 403 for lower-privileged keys.",
           "request": {
             "method": "GET",
             "url": {
@@ -647,7 +648,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Get Preferences | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Get Preferences | Status 200 (admin+ API key required)', () => pm.response.to.have.status(200));",
                   "pm.test('Get Preferences | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
                   "pm.test('Get Preferences | Valid JSON', () => pm.response.to.be.json);"
                 ]

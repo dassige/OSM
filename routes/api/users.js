@@ -5,7 +5,8 @@ const crypto = require("crypto");
 
 const db = require("../../services/db");
 const config = require("../../config");
-const { hasRole } = require("../../middleware/auth");
+const { hasRole, ROLES } = require("../../middleware/auth");
+const { createUserLimiter } = require("../../middleware/rate-limiter");
 const {
   sendNewAccountNotification,
   sendAccountDeletionNotification,
@@ -16,10 +17,10 @@ router.get("/", hasRole("admin"), async (req, res) => {
   res.json(await db.getUsers());
 });
 
-router.post("/", hasRole("admin"), async (req, res) => {
+router.post("/", hasRole("admin"), createUserLimiter, async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
-    const tempPassword = crypto.randomBytes(4).toString("hex");
+    const tempPassword = crypto.randomBytes(16).toString("hex");
     const id = await db.addUser(
       req.body.email,
       req.body.name,
@@ -60,6 +61,15 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
     const userRecord = await db.getUserById(req.params.id);
     if (!userRecord) {
         return res.status(404).json({ error: "User not found" });
+    }
+
+    const actorRole = (req.apiKeyUser || req.session?.user)?.role || 'guest';
+    const actorLevel = ROLES[actorRole] ?? 0;
+    if (actorLevel <= (ROLES[userRecord.role] ?? 0)) {
+      return res.status(403).json({ error: 'Forbidden: Cannot modify a user at or above your own role level.' });
+    }
+    if (role !== undefined && (ROLES[role] ?? 0) > actorLevel) {
+      return res.status(403).json({ error: 'Forbidden: Cannot assign a role higher than your own.' });
     }
 
     await db.updateUser(req.params.id, name, email, role, enabled, blocked);
@@ -120,7 +130,7 @@ router.post("/:id/reset", hasRole("admin"), async (req, res) => {
     const user = await db.getUserById(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
     
-    const tempPassword = crypto.randomBytes(4).toString("hex");
+    const tempPassword = crypto.randomBytes(16).toString("hex");
     await db.adminResetPassword(req.params.id, tempPassword);
     
     const prefs = await db.getPreferences();

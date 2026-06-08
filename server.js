@@ -48,10 +48,31 @@ const server = http.createServer(app);
 // Trust first proxy hop so rate limiting reads the real client IP from X-Forwarded-For
 app.set('trust proxy', 1);
 
-// Security headers — CSP and COEP disabled: extensive inline scripts in static HTML pages
-// and PWA icon loading require a dedicated CSP audit before enabling.
+// Security headers — COEP disabled (PWA icon loading).
+// CSP allows 'unsafe-inline'/'unsafe-eval' because the current codebase uses
+// extensive inline scripts. Once those are migrated to external files, tighten
+// scriptSrc to remove both unsafe directives.
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:     ["'self'"],
+      scriptSrc:      ["'self'", "'unsafe-inline'", "'unsafe-eval'",
+                       "https://cdnjs.cloudflare.com",   // TinyMCE, Sortable.js
+                       "https://cdn.jsdelivr.net"],       // Chart.js
+      // script-src-attr must also allow unsafe-inline — Helmet sets it to 'none'
+      // by default even when scriptSrc is permissive, which blocks onclick/onchange
+      // attribute handlers used throughout the existing HTML pages.
+      scriptSrcAttr:  ["'unsafe-inline'"],
+      styleSrc:       ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],  // TinyMCE skins
+      imgSrc:         ["'self'", "data:", "blob:"],
+      connectSrc:     ["'self'", "ws:", "wss:"],
+      fontSrc:        ["'self'", "data:"],
+      objectSrc:      ["'none'"],
+      frameAncestors: ["'none'"],
+      baseUri:        ["'self'"],
+      formAction:     ["'self'"],
+    },
+  },
   crossOriginEmbedderPolicy: false,
 }));
 
@@ -114,13 +135,14 @@ const io = new Server(server, {
 
 
 const sessionMiddleware = session({
-  secret: config.auth?.sessionSecret || "demo-only-insecure-fallback",
+  secret: config.auth.sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
     sameSite: "strict",
     secure: config.cookieSecure,
+    maxAge: 8 * 60 * 60 * 1000,  // 8-hour idle timeout
   },
   store: new SQLiteStore({
     db: "sessions.db",
