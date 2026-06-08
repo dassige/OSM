@@ -47,7 +47,29 @@ async function clearSessions() {
   }
 }
 
+// Statements that should never appear in a legitimate OpReady backup dump.
+// Checked line-by-line so we only match actual statement starts, not VALUES content.
+const FORBIDDEN_SQL_LINE_PATTERNS = [
+  /^\s*ATTACH\s+DATABASE\b/i,
+  /^\s*DETACH\s+DATABASE\b/i,
+  /^\s*CREATE\s+TRIGGER\b/i,
+  /^\s*CREATE\s+VIRTUAL\s+TABLE\b/i,
+  /^\s*\.load\b/i,
+];
+
+function validateSqlDump(sqlContent) {
+  const lines = sqlContent.split('\n');
+  for (const line of lines) {
+    for (const pattern of FORBIDDEN_SQL_LINE_PATTERNS) {
+      if (pattern.test(line)) {
+        throw new Error('Invalid SQL content: forbidden statement type detected in restore file.');
+      }
+    }
+  }
+}
+
 async function restoreFromSqlDump(sqlContent) {
+  validateSqlDump(sqlContent);
   const db = await initDB();
   try {
     logger.info("[DB] Executing logical SQL restore...");

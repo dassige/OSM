@@ -20,6 +20,12 @@ router.get("/", hasRole("admin"), async (req, res) => {
 router.post("/", hasRole("admin"), createUserLimiter, async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
+    const actorUser = req.apiKeyUser || req.session?.user;
+    const actorLevel = ROLES[actorUser?.role] ?? 0;
+    if ((ROLES[req.body.role] ?? 0) > actorLevel) {
+      return res.status(403).json({ error: 'Forbidden: Cannot assign a role higher than your own.' });
+    }
+
     const tempPassword = crypto.randomBytes(16).toString("hex");
     const id = await db.addUser(
       req.body.email,

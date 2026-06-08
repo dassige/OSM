@@ -49,7 +49,7 @@ describe('API Keys Endpoints (Isolated)', () => {
     // POST /api/api-keys
     // -----------------------------------------------------------------------
     describe('POST /api/api-keys', () => {
-        it.each(['superadmin', 'admin', 'simple', 'guest'])(
+        it.each(['admin', 'simple', 'guest'])(
             'creates a key with role "%s" and returns 200 with key + prefix',
             async (role) => {
                 db.createApiKey.mockResolvedValue({ raw: 'osm_fullkeyvalue', prefix: 'osm_fullkey0' });
@@ -71,6 +71,16 @@ describe('API Keys Endpoints (Isolated)', () => {
                 );
             }
         );
+
+        it('returns 403 when admin session tries to create a superadmin key', async () => {
+            const res = await request(app)
+                .post('/api/api-keys')
+                .send({ name: 'Escalated Key', role: 'superadmin' });
+
+            expect(res.status).toBe(403);
+            expect(res.body.error).toMatch(/higher than your own/i);
+            expect(db.createApiKey).not.toHaveBeenCalled();
+        });
 
         it('returns 400 when name is missing', async () => {
             const res = await request(app)

@@ -129,11 +129,11 @@ router.post("/events/prune", hasRole("superadmin"), async (req, res) => {
 // Categories reserved for server-side code only — clients cannot forge entries in these
 const RESTRICTED_LOG_CATEGORIES = new Set(['Security', 'System', 'User Mgmt', 'API Keys', 'WhatsApp']);
 
-router.post("/logs", async (req, res) => {
+router.post("/logs", hasRole('admin'), async (req, res) => {
   if (RESTRICTED_LOG_CATEGORIES.has(req.body.type)) {
     return res.status(403).json({ error: 'Log category is restricted to server-side operations.' });
   }
-  const user = req.session?.user?.name || "System";
+  const user = (req.apiKeyUser || req.session?.user)?.name || "System";
   await db.logEvent(user, req.body.type, req.body.title, req.body.payload);
   res.json({ success: true });
 });

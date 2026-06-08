@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../../services/db');
 const config = require('../../config');
-const { hasRole } = require('../../middleware/auth');
+const { hasRole, ROLES } = require('../../middleware/auth');
 
 router.get('/', hasRole('admin'), async (req, res) => {
     res.json(await db.listApiKeys());
@@ -15,7 +15,13 @@ router.post('/', hasRole('admin'), async (req, res) => {
     if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required.' });
     if (!['superadmin', 'admin', 'simple', 'guest'].includes(role)) return res.status(400).json({ error: 'Role must be one of: superadmin, admin, simple, guest.' });
 
-    const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+    const actorUser = req.apiKeyUser || req.session?.user;
+    const actorLevel = ROLES[actorUser?.role] ?? 0;
+    if ((ROLES[role] ?? 0) > actorLevel) {
+        return res.status(403).json({ error: 'Cannot create an API key with a role higher than your own.' });
+    }
+
+    const actor = actorUser?.name || 'Unknown';
     const { raw, prefix } = await db.createApiKey(name.trim(), role, actor);
 
     await db.logEvent(actor, 'API Keys', 'API Key Created', { name: name.trim(), prefix, role });
