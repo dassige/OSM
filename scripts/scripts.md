@@ -102,7 +102,11 @@ Done.
 
 ## setup-env.js
 
-Parses `.example.env` and serves a local web form for configuring environment variables. Variables are grouped by section, each showing the key name, a value input, an enable/disable checkbox, and the description from `.example.env`. Clicking **Generate .env File** writes the configured result to `.generated.env` in the project root.
+Parses `.example.env` and serves a local web form for configuring environment variables. Variables are grouped by section, each showing the key name, a value input, an enable/disable checkbox, and the description from `.example.env`. The footer bar has three actions:
+
+- **Load .env** — opens a file picker; the selected `.env` file is read client-side, its values are applied to all matching form fields, and any row that received a value from the file is highlighted with a teal left border so you can see at a glance what the loaded file contained.
+- **Generate .env File** — writes the current form state to `.generated.env` in the project root (existing behaviour).
+- **Save to .env** — appears after a file is loaded; writes the current form state directly to `.env` in the project root (overwrites it).
 
 **npm shortcut**
 
@@ -127,7 +131,9 @@ node scripts/setup-env.js
 1. Parses `.example.env` into sections and variables (key, default value, enabled/disabled state, description).
 2. If `.generated.env` already exists, pre-fills the form with those values. Falls back to `.env` if present, then to `.example.env` defaults.
 3. Starts a local HTTP server on port **3088** and opens the form in your default browser automatically.
-4. On submission, writes `.generated.env` to the project root, preserving the section structure and all descriptions as comments.
+4. **Load .env** button (footer) — triggers a client-side file picker. The selected file is parsed in the browser; all matching variables have their values and enabled-state updated in the form, and each affected row gains a teal left-border highlight. The **Save to .env** button then becomes visible.
+5. **Generate .env File** button — POSTs to `/generate`; writes the current form state to `.generated.env` in the project root.
+6. **Save to .env** button (visible after Load) — POSTs to `/save-env`; writes the current form state directly to `.env` in the project root, overwriting it.
 
 **Activating the generated file**
 
@@ -367,7 +373,7 @@ node scripts/generate-demo-db.js
 
 | Step | Table(s) affected | Action |
 |---|---|---|
-| 1 | `members` | Preserves each member's rank prefix (SO, SFF, QFF, FF, RFF …), replaces surname and initial with a unique Star Wars character, generates `<initial>.<lastname>@starwars.demo` email, clears `mobile` and `messengerId` |
+| 1 | `members` | Preserves each member's rank prefix (SO, SFF, QFF, FF, RFF …), replaces surname and initial with a unique Star Wars character, generates `<initial>.<lastname>@starwars.demo` email, clears `mobile` and `messengerId`. Also writes demo values into the ETL fields (`rank`, `first_name`, `last_name`) and clears `member_osm_id` |
 | 2 | `email_history` | Mirrors the same name and email replacements, matched by `recipient_name` |
 | 3 | `event_log` | Replaces real email addresses found in `Security` event payloads with `demo@starwars.demo` |
 | 4 | `preferences` | Replaces the sender name and email in all notification templates with `Rebel Alliance Training <training@rebels.starwars.demo>` |
@@ -378,9 +384,9 @@ node scripts/generate-demo-db.js
 
 **Name assignment**
 
-Each member's rank prefix is read from their real name and kept as-is, so the brigade structure remains realistic. The surname and initial are replaced using a pool of 60 unique Star Wars characters drawn from across all eras (Prequel, Original, Rebels, Mandalorian, Sequel). The pool is ordered deterministically by member ID, so the mapping is stable across runs as long as the set of members does not change.
+The character pool is parsed at runtime from `public/demo/demo_osm_dasboard.html` — the same file the demo mode dashboard serves. Unique member names are extracted in order of first appearance (currently 15 characters: Skywalker, Solo, Kenobi, …). Each real member is assigned one pool entry by DB insertion order, so the mapping is stable across runs as long as the set of members does not change. The assigned demo name, including its rank prefix, is used verbatim — the real member's rank is not preserved — ensuring the demo DB is always consistent with the demo HTML.
 
-If the brigade ever grows beyond 60 members, overflow entries receive a numeric suffix (e.g. `SO Kenobi2, O` / `o.kenobi2@starwars.demo`) so all names and emails remain unique regardless of brigade size.
+If the brigade ever grows beyond the pool size, overflow entries receive a numeric suffix (e.g. `QFF Kenobi2, O` / `o.kenobi2@starwars.demo`) so all names and emails remain unique regardless of brigade size.
 
 **Output**
 

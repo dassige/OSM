@@ -2,10 +2,10 @@
  * Generates a sanitised demo copy of fenz.db → fenz_demo.db
  *
  * What it does:
- *  - Preserves each member's rank prefix (SO, SFF, QFF, FF, RFF …)
- *  - Replaces surname + initial with a unique Star Wars character
- *  - Replaces all member emails with <initial>.<lastname>@starwars.demo
- *  - Clears mobile and messengerId on every member
+ *  - Reads the character pool from public/demo/demo_osm_dasboard.html (unique
+ *    member names in appearance order) and maps each real member to one entry
+ *  - Replaces each member's name, email, rank, first_name, last_name with the
+ *    demo character's values; clears mobile, messengerId, and member_osm_id
  *  - Mirrors the name/email replacements into email_history
  *  - Scrubs real emails from event_log security-event payloads
  *  - Replaces sender name and email in all notification templates (preferences)
@@ -18,9 +18,9 @@
  *   fenz_demo.db  (in the project root — safe to commit/share)
  *
  * Scale guarantee:
- *   The character pool has 60 entries. If member count exceeds that, overflow
- *   members receive a numeric suffix (e.g. "Kenobi2, O") so all names remain
- *   unique regardless of brigade size.
+ *   If member count exceeds the pool size, overflow members receive a numeric
+ *   suffix (e.g. "Kenobi2, O") so all names remain unique regardless of brigade
+ *   size. The pool size equals the number of unique members in the demo HTML.
  */
 
 'use strict';
@@ -33,6 +33,7 @@ const sqlite3  = require('sqlite3');
 const ROOT      = path.join(__dirname, '..');
 const SOURCE_DB = path.join(ROOT, 'fenz.db');
 const DEST_DB   = path.join(ROOT, 'fenz_demo.db');
+const DEMO_HTML = path.join(ROOT, 'public', 'demo', 'demo_osm_dasboard.html');
 
 // Sender identity used in all notification templates
 const DEMO_SENDER_NAME  = 'Rebel Alliance Training';
@@ -40,114 +41,78 @@ const DEMO_SENDER_EMAIL = 'training@rebels.starwars.demo';
 const DEMO_SENDER_FULL  = `${DEMO_SENDER_NAME} <${DEMO_SENDER_EMAIL}>`;
 
 // ---------------------------------------------------------------------------
-// Star Wars character pool  { last, initial }
-// All (last, initial) pairs are unique → unique emails guaranteed within pool.
+// Parse unique member names from the demo OSM dashboard HTML in appearance
+// order.  Returns: Array<{ rank, last, initial }>
+// `initial` is '' for single-name members such as "SFF Chewbacca".
 // ---------------------------------------------------------------------------
-const SW_POOL = [
-  // From demo_osm_dasboard.html
-  { last: 'Kenobi',      initial: 'O' },
-  { last: 'Organa',      initial: 'L' },
-  { last: 'Skywalker',   initial: 'L' },
-  { last: 'Solo',        initial: 'H' },
-  { last: 'Vader',       initial: 'D' },
-  { last: 'Yoda',        initial: 'M' },
-  { last: 'Calrissian',  initial: 'L' },
-  { last: 'Dameron',     initial: 'P' },
-  { last: 'Erso',        initial: 'J' },
-  { last: 'Tano',        initial: 'A' },
-  { last: 'Ackbar',      initial: 'G' },
-  { last: 'Fett',        initial: 'B' },
-  { last: 'Palpatine',   initial: 'S' },
-  { last: 'Windu',       initial: 'M' },
-  // Prequel era
-  { last: 'Dooku',       initial: 'C' },
-  { last: 'Maul',        initial: 'D' },
-  { last: 'Jinn',        initial: 'Q' },
-  { last: 'Amidala',     initial: 'P' },
-  { last: 'Offee',       initial: 'B' },
-  { last: 'Secura',      initial: 'A' },
-  { last: 'Unduli',      initial: 'L' },
-  { last: 'Gallia',      initial: 'A' },
-  { last: 'Koon',        initial: 'P' },
-  { last: 'Mundi',       initial: 'K' },
-  { last: 'Fisto',       initial: 'K' },
-  { last: 'Billaba',     initial: 'D' },
-  { last: 'Wesell',      initial: 'Z' },
-  { last: 'Ventress',    initial: 'A' },
-  { last: 'Sing',        initial: 'A' },
-  { last: 'Grievous',    initial: 'G' },
-  { last: 'Mereel',      initial: 'J' },
-  { last: 'Fett',        initial: 'J' },
-  // Rebels era
-  { last: 'Bridger',     initial: 'E' },
-  { last: 'Syndulla',    initial: 'H' },
-  { last: 'Rex',         initial: 'C' },
-  { last: 'Wren',        initial: 'S' },
-  { last: 'Jarrus',      initial: 'K' },
-  { last: 'Bonteri',     initial: 'L' },
-  { last: 'Kallus',      initial: 'A' },
-  { last: 'Thrawn',      initial: 'M' },
-  { last: 'Pryce',       initial: 'A' },
-  // Mandalorian / Rogue One / Andor
-  { last: 'Djarin',      initial: 'D' },
-  { last: 'Kryze',       initial: 'B' },
-  { last: 'Vizsla',      initial: 'P' },
-  { last: 'Andor',       initial: 'C' },
-  { last: 'Imwe',        initial: 'C' },
-  { last: 'Malbus',      initial: 'B' },
-  { last: 'Erso',        initial: 'G' },
-  // Sequel era
-  { last: 'Ren',         initial: 'K' },
-  { last: 'Hux',         initial: 'A' },
-  { last: 'Phasma',      initial: 'C' },
-  { last: 'Tico',        initial: 'R' },
-  { last: 'Holdo',       initial: 'A' },
-  // Original era extras
-  { last: 'Tarkin',      initial: 'W' },
-  { last: 'Mothma',      initial: 'M' },
-  { last: 'Piett',       initial: 'F' },
-  { last: 'Veers',       initial: 'M' },
-  { last: 'Lobot',       initial: 'L' },
-  { last: 'Dodonna',     initial: 'J' },
-  { last: 'Antilles',    initial: 'W' },
-  { last: 'Porkins',     initial: 'J' },
-];
+function parseDemoPool(html) {
+  const seen = new Set();
+  const pool = [];
+  // Match the text inside <td style="background-color:...">  (member column)
+  const re = /<td[^>]*>([A-Z]{2,}\s+[A-Z][a-z]+(?:,\s*[A-Z])?)\s*<\/td>/g;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const raw = m[1].trim();
+    if (seen.has(raw)) continue;
+    seen.add(raw);
+    const parts = raw.match(/^([A-Z]+)\s+([A-Za-z]+)(?:,\s*([A-Z]))?$/);
+    if (!parts) continue;
+    pool.push({ rank: parts[1], last: parts[2], initial: parts[3] || '' });
+  }
+  return pool;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-// "QFF Dassi, G"  →  "QFF"  (handles ranks like RFF, SFF, DCFO, etc.)
-function extractRank(realName) {
-  const m = realName.match(/^([A-Z]+)\s/);
-  return m ? m[1] : 'FF';
+// Build the full demo name from a pool entry + optional overflow suffix.
+//   { rank:"QFF", last:"Solo",      initial:"H" }, ''  →  "QFF Solo, H"
+//   { rank:"SFF", last:"Chewbacca", initial:""  }, ''  →  "SFF Chewbacca"
+function buildDemoName(char, suffix = '') {
+  const last = char.last + suffix;
+  return char.initial
+    ? `${char.rank} ${last}, ${char.initial}`
+    : `${char.rank} ${last}`;
 }
 
-// Build the demo name from the real rank + a pool character
-// e.g. rank="QFF", char={last:"Solo", initial:"H"}  →  "QFF Solo, H"
-function buildDemoName(rank, char, suffix = '') {
-  return `${rank} ${char.last}${suffix}, ${char.initial}`;
-}
-
-// "QFF Solo, H"  →  "h.solo@starwars.demo"
+// Build the demo email from a pool entry.
+// Uses initial if present; falls back to first letter of last name.
+//   { last:"Solo",      initial:"H" }  →  "h.solo@starwars.demo"
+//   { last:"Chewbacca", initial:""  }  →  "c.chewbacca@starwars.demo"
 function buildEmail(char, suffix = '') {
-  const last = (char.last + suffix).toLowerCase();
-  return `${char.initial.toLowerCase()}.${last}@starwars.demo`;
+  const last    = (char.last + suffix).toLowerCase();
+  const initial = (char.initial || char.last[0]).toLowerCase();
+  return `${initial}.${last}@starwars.demo`;
 }
 
 // Assign unique (char, suffix) pairs to each member index.
 // First pass uses pool as-is; overflow rounds append "2", "3", etc.
-function assignCharacter(index) {
-  const poolSize = SW_POOL.length;
-  const round    = Math.floor(index / poolSize);   // 0 = first pass (no suffix)
+function assignCharacter(index, pool) {
+  const poolSize = pool.length;
+  const round    = Math.floor(index / poolSize);
   const slot     = index % poolSize;
   const suffix   = round === 0 ? '' : String(round + 1);
-  return { char: SW_POOL[slot], suffix };
+  return { char: pool[slot], suffix };
 }
 
 // ---------------------------------------------------------------------------
 
 async function main() {
+  // -------------------------------------------------------------------------
+  // 0. Parse the demo character pool from the dashboard HTML
+  // -------------------------------------------------------------------------
+  if (!fs.existsSync(DEMO_HTML)) {
+    console.error(`Demo HTML not found: ${DEMO_HTML}`);
+    process.exit(1);
+  }
+  const pool = parseDemoPool(fs.readFileSync(DEMO_HTML, 'utf8'));
+  if (pool.length === 0) {
+    console.error('No member names parsed from demo HTML — aborting.');
+    process.exit(1);
+  }
+  console.log(`Demo pool: ${pool.length} characters from ${path.relative(ROOT, DEMO_HTML)}`);
+
   if (!fs.existsSync(SOURCE_DB)) {
     console.error(`Source database not found: ${SOURCE_DB}`);
     process.exit(1);
@@ -163,37 +128,41 @@ async function main() {
   // -------------------------------------------------------------------------
   const members = await db.all('SELECT id, name FROM members ORDER BY id');
 
-  if (members.length > SW_POOL.length) {
+  if (members.length > pool.length) {
     console.warn(
-      `Note: ${members.length} members exceed the pool size of ${SW_POOL.length}. ` +
+      `Note: ${members.length} members exceed the pool size of ${pool.length}. ` +
       `Overflow members will receive a numeric suffix (e.g. "Kenobi2, O").`
     );
   }
 
   // real name  →  { demoName, demoEmail }
   const nameMap = new Map();
-  // member id  →  { demoName, demoEmail }
+  // member id  →  { demoName, demoEmail, rank, firstName, lastName }
   const idMap   = new Map();
 
   members.forEach((m, i) => {
-    const rank          = extractRank(m.name);
-    const { char, suffix } = assignCharacter(i);
-    const dn            = buildDemoName(rank, char, suffix);
-    const de            = buildEmail(char, suffix);
+    const { char, suffix } = assignCharacter(i, pool);
+    const dn        = buildDemoName(char, suffix);
+    const de        = buildEmail(char, suffix);
+    const firstName = char.initial ? char.initial : char.last[0].toUpperCase();
+    const lastName  = char.last + suffix;
     nameMap.set(m.name, { dn, de });
-    idMap.set(m.id,     { dn, de });
+    idMap.set(m.id,     { dn, de, rank: char.rank, firstName, lastName });
   });
 
   // -------------------------------------------------------------------------
   // 2. Update members
   // -------------------------------------------------------------------------
-  for (const [id, { dn, de }] of idMap) {
+  for (const [id, { dn, de, rank, firstName, lastName }] of idMap) {
     await db.run(
-      `UPDATE members SET name = ?, email = ?, mobile = NULL, messengerId = NULL WHERE id = ?`,
-      [dn, de, id]
+      `UPDATE members
+       SET name = ?, email = ?, mobile = NULL, messengerId = NULL,
+           rank = ?, first_name = ?, last_name = ?, member_osm_id = NULL
+       WHERE id = ?`,
+      [dn, de, rank, firstName, lastName, id]
     );
   }
-  console.log(`Updated  ${idMap.size} members  (name, email, mobile cleared)`);
+  console.log(`Updated  ${idMap.size} members  (name, email, mobile, ETL fields sanitised)`);
 
   // -------------------------------------------------------------------------
   // 3. Update email_history — match on recipient_name

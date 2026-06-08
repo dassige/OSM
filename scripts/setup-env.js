@@ -317,7 +317,18 @@ function buildHtml(sections, existing) {
              border-radius: 6px; font-size: .92rem; font-weight: 700; cursor: pointer;
              transition: background .15s; }
   .btn-gen:hover { background: #0b7a8c; }
-  .footer-hint { font-size: .78rem; color: #a0aec0; font-family: monospace; }
+  .footer-hint { font-size: .78rem; color: #a0aec0; font-family: monospace; flex: 1; }
+
+  .btn-load { background: #4a5568; color: #fff; border: none; padding: 10px 20px;
+              border-radius: 6px; font-size: .92rem; font-weight: 700; cursor: pointer;
+              transition: background .15s; }
+  .btn-load:hover { background: #2d3748; }
+  .btn-save { background: #276749; color: #fff; border: none; padding: 10px 20px;
+              border-radius: 6px; font-size: .92rem; font-weight: 700; cursor: pointer;
+              transition: background .15s; }
+  .btn-save:hover { background: #1a4a35; }
+
+  .var-row.from-file { border-left: 3px solid #0d8a9e; background: rgba(13,138,158,.07); }
 
   #toast { display: none; position: fixed; top: 68px; right: 20px; max-width: 460px;
            padding: 12px 18px; border-radius: 6px; font-size: .85rem; font-weight: 500;
@@ -346,10 +357,11 @@ ${body}
 </div>
 
 <div class="footer">
-  <button class="btn-gen" title="Write all values to .generated.env">
-    Generate .env File
-  </button>
-  <span class="footer-hint">→ .generated.env &nbsp;&bull;&nbsp; then: cp .generated.env .env</span>
+  <input type="file" id="envFileInput" accept=".env,text/plain" style="display:none">
+  <button class="btn-load" id="btnLoad" title="Load an existing .env file and highlight its values">Load .env</button>
+  <button class="btn-gen" id="btnGenerate" title="Write all values to .generated.env">Generate .env File</button>
+  <button class="btn-save" id="btnSave" style="display:none" title="Save values directly to .env (overwrites)">Save to .env</button>
+  <span class="footer-hint" id="footerHint">→ .generated.env &nbsp;&bull;&nbsp; then: cp .generated.env .env</span>
 </div>
 
 <div id="toast"></div>
@@ -368,7 +380,7 @@ function togglePwd(btn) {
   btn.textContent = inp.type === "password" ? "Show" : "Hide";
 }
 
-async function generate() {
+function collectPayload() {
   var payload = {};
   document.querySelectorAll(".var-row[data-key]").forEach(function(row) {
     var key = row.dataset.key;
@@ -376,10 +388,14 @@ async function generate() {
     var inp = row.querySelector(".var-input");
     payload[key] = { enabled: cb ? cb.checked : true, value: inp ? inp.value : "" };
   });
+  return payload;
+}
+
+async function generate() {
   try {
     var res  = await fetch("/generate", { method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload) });
+      body: JSON.stringify(collectPayload()) });
     var data = await res.json();
     if (data.ok) {
       toast("ok", "✓ .generated.env written successfully.\\n\\nNext: cp .generated.env .env");
@@ -387,6 +403,83 @@ async function generate() {
       toast("err", "✗ Error: " + data.error);
     }
   } catch (e) { toast("err", "✗ " + e.message); }
+}
+
+async function saveToEnv() {
+  try {
+    var res  = await fetch("/save-env", { method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(collectPayload()) });
+    var data = await res.json();
+    if (data.ok) {
+      toast("ok", "✓ .env written successfully.");
+    } else {
+      toast("err", "✗ Error: " + data.error);
+    }
+  } catch (e) { toast("err", "✗ " + e.message); }
+}
+
+// ── Load .env File (client-side FileReader — no server path needed) ──
+
+function parseEnvContent(text) {
+  var vals = {};
+  text.split(/\\r?\\n/).forEach(function(line) {
+    var dm = line.match(/^#\\s*([A-Z][A-Z0-9_]*)=(.*)$/);
+    if (dm) { vals[dm[1]] = { enabled: false, value: dm[2].trim() }; return; }
+    var vm = line.match(/^([A-Z][A-Z0-9_]*)=(.*)$/);
+    if (vm) { vals[vm[1]] = { enabled: true,  value: vm[2].trim() }; }
+  });
+  return vals;
+}
+
+function applyLoadedValues(vals) {
+  document.querySelectorAll(".var-row.from-file").forEach(function(r) {
+    r.classList.remove("from-file");
+  });
+  Object.keys(vals).forEach(function(key) {
+    var row = document.querySelector('.var-row[data-key="' + key + '"]');
+    if (!row) return;
+    var entry = vals[key];
+    var cb  = row.querySelector(".var-toggle");
+    var inp = row.querySelector(".var-input");
+    if (cb) {
+      cb.checked = entry.enabled;
+      row.classList.toggle("is-disabled", !entry.enabled);
+    }
+    if (inp) {
+      inp.disabled = !entry.enabled;
+      if (inp.tagName === "SELECT") {
+        inp.value = entry.value;
+        if (inp.value !== entry.value) {
+          var opt = document.createElement("option");
+          opt.value = entry.value;
+          opt.textContent = entry.value;
+          inp.appendChild(opt);
+          inp.value = entry.value;
+        }
+      } else {
+        inp.value = entry.value;
+      }
+    }
+    row.classList.add("from-file");
+  });
+}
+
+function onFileSelected(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var vals  = parseEnvContent(ev.target.result);
+    var count = Object.keys(vals).length;
+    applyLoadedValues(vals);
+    document.getElementById("btnSave").style.display = "inline-block";
+    document.getElementById("footerHint").textContent =
+      "Loaded: " + file.name + " (" + count + " vars highlighted)  •  Generate → .generated.env  •  Save → .env";
+    toast("ok", "✓ Loaded " + count + " variables from " + file.name + "\\nHighlighted rows (teal border) have values from the file.");
+  };
+  reader.readAsText(file);
+  e.target.value = "";
 }
 
 function toast(cls, msg) {
@@ -404,7 +497,12 @@ document.querySelectorAll(".var-toggle").forEach(function(cb) {
 document.querySelectorAll(".show-hide").forEach(function(btn) {
   btn.addEventListener("click", function() { togglePwd(this); });
 });
-document.querySelector(".btn-gen").addEventListener("click", generate);
+document.getElementById("btnGenerate").addEventListener("click", generate);
+document.getElementById("btnSave").addEventListener("click", saveToEnv);
+document.getElementById("btnLoad").addEventListener("click", function() {
+  document.getElementById("envFileInput").click();
+});
+document.getElementById("envFileInput").addEventListener("change", onFileSelected);
 </script>
 </body>
 </html>`;
@@ -483,6 +581,21 @@ const server = http.createServer(async (req, res) => {
             fs.writeFileSync(GENERATED, content, 'utf8');
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ ok: true, path: GENERATED }));
+        } catch (e) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, error: e.message }));
+        }
+        return;
+    }
+
+    if (req.method === 'POST' && req.url === '/save-env') {
+        try {
+            const body    = await readBody(req);
+            const values  = JSON.parse(body);
+            const content = generateContent(sections, values);
+            fs.writeFileSync(EXISTING_ENV, content, 'utf8');
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true, path: EXISTING_ENV }));
         } catch (e) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ ok: false, error: e.message }));
