@@ -25,7 +25,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Super Admin:** A resilient system account defined via environment variables.
       * **User Management:** Create multiple database-backed administrators with secure password hashing.
       * **Automatic Notifications:** New users receive a welcome email with a randomly generated temporary password.
-      * **Self-Service:** Users can manage their profiles and recover lost passwords via email.
+      * **Self-Service:** Users can manage their profiles and reset forgotten passwords via a time-limited email link.
   * **Web-Based Management:**
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
       * **Skills:** Configure which skills to track and mark them as Critical.
@@ -185,7 +185,7 @@ Open the `.env` file and configure the following parameters:
   * `APP_TIMEZONE`: The timezone used for date calculations (e.g., `Pacific/Auckland`). Defaults to NZ time.
   * `APP_LOCALE`: The locale used for date/time formatting strings (e.g., `en-NZ`, `en-US`). Defaults to `en-NZ`.
   * `TRAINING_DAY_OF_WEEK`: Your brigade's training day (e.g., `Monday`). Used to highlight the day in the Training Planner.   
-  * `APP_BASE_URL`: Public URL of your app (e.g., https://osm.station44.nz). Required for valid form links (default http://localhost:3000).   
+  * `APP_BASE_URL`: Public base URL of the deployment (e.g., `https://opready.yourbrigade.nz`). Used when building absolute links in outbound emails — skill verification form links and password reset links. If unset, the URL is derived automatically from the incoming request (works correctly for most deployments, but must be set explicitly when the app is behind a custom domain on Cloud Run or a reverse proxy).
   * `ACCEPTED_FORM_VISIBILITY_DAYS`: Days an 'Accepted' icon stays on the dashboard after review. (default 30)
 
 #### **Forms Scoring Defaults**
@@ -314,6 +314,7 @@ node server.js
   * **Super Admin:** Log in with the credentials defined in `.env`. Access **Manage Users** to create other admins.
   * **Creating Users:** When you add a user, the system generates a cryptographically random 128-bit (32 hex character) temporary password and emails it to them automatically.
   * **Deleting Users:** Deleting a user will also send them a notification email.
+  * **Forgot Password:** Users can request a password reset from the login page. A time-limited link (valid for 30 minutes) is emailed to the registered address. The link opens a self-service page (`/reset-password.html`) where the user sets a new password. The response is always identical regardless of whether the address is registered, to prevent account enumeration.
   * **MFA Authentication:** Enhance security using an authenticator app (e.g. Google Authenticator).
   * **Role hierarchy:** Admin users can only create or modify accounts at a lower role level than their own. An Admin cannot create another Admin or promote any account to Super Admin — only the Super Admin can manage other admins.
   * **Session timeout:** All sessions expire automatically after **8 hours** of inactivity. Users are redirected to the login page when their session expires.
