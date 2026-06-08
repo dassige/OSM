@@ -6,6 +6,7 @@ npm-debug.log
 import-skills.csv
 import-members.csv
 .env
+.env.copy
 public/resources/logo_dvfb.png
 # Database
 fenz.db*
@@ -26,3 +27,4 @@ newman-report.html
 fenz_demo.db
 storage/
 backups/
+

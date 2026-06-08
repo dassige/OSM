@@ -2,11 +2,16 @@
 const express = require("express");
 const router = express.Router();
 const puppeteer = require("puppeteer-core");
+const { JSDOM } = require("jsdom");
+const createDOMPurify = require("dompurify");
 const logger = require("../../services/logger");
 
 const reportService = require("../../services/report-service");
 const { getActiveProxy } = require("../../services/proxy-manager");
 const { hasRole } = require("../../middleware/auth");
+
+// Create a single DOMPurify instance using a jsdom window (server-side sanitizer)
+const _domPurify = createDOMPurify(new JSDOM("").window);
 
 router.get("/data/:type", hasRole("admin"), async (req, res) => {
   try {
@@ -56,7 +61,8 @@ router.post("/pdf", hasRole("admin"), async (req, res) => {
 
     const page = await browser.newPage();
 
-    await page.setContent(req.body.html, { waitUntil: "networkidle0" });
+    const safeHtml = _domPurify.sanitize(req.body.html || "", { WHOLE_DOCUMENT: true, FORCE_BODY: false });
+    await page.setContent(safeHtml, { waitUntil: "networkidle0" });
 
     const pdf = await page.pdf({
       format: "A4",
