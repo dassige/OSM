@@ -21,7 +21,10 @@ const { exec } = require('child_process');
 /* ── Constants ──────────────────────────────────────────────────────────── */
 
 const PORT         = 3088;
-const ROOT         = path.resolve(__dirname, '..');
+// When packaged as a standalone exe via @yao-pkg/pkg, __dirname points to the
+// virtual bundle filesystem. Use the real exe location instead so the tool can
+// find .example.env and write .generated.env next to the executable.
+const ROOT         = process.pkg ? path.dirname(process.execPath) : path.resolve(__dirname, '..');
 const EXAMPLE_ENV  = path.join(ROOT, '.example.env');
 const GENERATED    = path.join(ROOT, '.generated.env');
 const EXISTING_ENV = path.join(ROOT, '.env');

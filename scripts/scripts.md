@@ -153,6 +153,50 @@ Then restart the server for changes to take effect.
 
 If port 3088 is already in use the script exits with an error message. Stop the conflicting process and retry, or change `PORT` at the top of `scripts/setup-env.js`.
 
+**Building a Windows standalone executable**
+
+Run `npm run build:setup-env` — see [`build-setup-env.js`](#build-setup-envjs) below for full details.
+
+---
+
+## build-setup-env.js
+
+Packages `setup-env.js` into a self-contained Windows `.exe` (no Node.js required on the target machine) and writes a companion plain-text instruction file alongside it.
+
+**npm shortcut**
+
+```powershell
+npm run build:setup-env
+```
+
+**Direct invocation**
+
+```powershell
+node scripts/build-setup-env.js
+```
+
+**Prerequisites**
+
+- `pkg` dev dependency must be installed (`npm install` covers it).
+- No other dependencies beyond Node.js built-ins.
+
+**What it does**
+
+1. Reads `version` from `package.json` and derives the output base name (e.g. `setup-env-3.7.8`).
+2. Runs `pkg` to bundle `scripts/setup-env.js` with the Node.js 18 runtime into `dist/setup-env-<version>.exe`.
+3. Writes `dist/setup-env-<version>.txt` — a plain-text quick-start guide containing copy-paste instructions for end users.
+
+**Output**
+
+| File | Description |
+|---|---|
+| `dist/setup-env-<version>.exe` | ~36 MB self-contained Windows executable |
+| `dist/setup-env-<version>.txt` | Plain-text instructions for the end user |
+
+Distribute both files together. The end user places them in the same folder as `.example.env` and runs the `.exe`.
+
+The `dist/` folder is gitignored — neither file is committed to the repository.
+
 ---
 
 ## take-screenshots.js
