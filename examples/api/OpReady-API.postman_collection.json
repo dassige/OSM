@@ -128,7 +128,36 @@
                                                                    "mode":  "raw",
                                                                    "raw":  "{\n  \"email\": \"user@example.com\"\n}"
                                                                },
-                                                      "description":  "Sends a password reset email if the account exists."
+                                                      "description":  "Sends a password reset link to the registered email address. Always returns HTTP 200 with a uniform message regardless of whether the address exists — prevents email enumeration."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Reset Password (token)",
+                                      "request":  {
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/reset-password",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "reset-password"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"token\": \"<64-hex-token-from-reset-link>\",\n  \"newPassword\": \"MyNewSecurePass1!\"\n}"
+                                                               },
+                                                      "description":  "Completes a password reset using the token from the /forgot-password reset link. Token expires after 30 minutes. Returns 400 if the token is invalid or expired."
                                                   }
                                   },
                                   {

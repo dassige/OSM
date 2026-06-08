@@ -305,7 +305,8 @@ const spec = {
         '/forgot-password': {
             post: {
                 tags: ['Auth'],
-                summary: 'Request password reset email',
+                summary: 'Request password reset link (always returns 200)',
+                description: 'Generates a 30-minute password reset token and emails a /reset-password.html link. Always returns HTTP 200 with an identical generic message regardless of whether the address is registered — prevents email enumeration.',
                 security: [],
                 requestBody: {
                     required: true,
@@ -320,7 +321,35 @@ const spec = {
                     }
                 },
                 responses: {
-                    200: { description: 'Reset email sent (if account exists)' }
+                    200: { description: 'Uniform response returned regardless of whether the address is registered' },
+                    400: { description: 'Cannot reset Super Admin password via email' }
+                }
+            }
+        },
+        '/reset-password': {
+            post: {
+                tags: ['Auth'],
+                summary: 'Complete password reset using a token from the reset email',
+                security: [],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['token', 'newPassword'],
+                                properties: {
+                                    token: { type: 'string', description: '64-hex raw token from the reset link query string' },
+                                    newPassword: { type: 'string', format: 'password', description: 'New password (minimum 8 characters)' }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Password updated successfully', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'Token missing/invalid/expired, or password too short' },
+                    500: { description: 'Unexpected server error' }
                 }
             }
         },
@@ -737,6 +766,32 @@ const spec = {
         // -------------------------------------------------------------------------
         // SURVEYS
         // -------------------------------------------------------------------------
+        '/api/surveys': {
+            get: {
+                tags: ['Surveys'],
+                summary: 'List all survey templates (admin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                responses: {
+                    200: { description: 'Array of survey templates' },
+                    401: { description: 'Not authenticated' },
+                    403: { description: 'Insufficient role (admin required)' }
+                }
+            }
+        },
+        '/api/surveys/{id}': {
+            get: {
+                tags: ['Surveys'],
+                summary: 'Get a survey template by ID (admin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Survey template detail including full question structure' },
+                    401: { description: 'Not authenticated' },
+                    403: { description: 'Insufficient role (admin required)' },
+                    404: { description: 'Survey not found' }
+                }
+            }
+        },
         '/api/surveys/responses/{id}': {
             get: {
                 tags: ['Surveys'],
@@ -803,12 +858,15 @@ const spec = {
         '/api/training-sessions': {
             get: {
                 tags: ['Training'],
-                summary: 'List training sessions',
+                summary: 'List training sessions (admin)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
                 parameters: [
                     { name: 'view', in: 'query', schema: { type: 'string', enum: ['future', 'all'] }, description: 'Filter to future sessions only' }
                 ],
                 responses: {
-                    200: { description: 'Array of training sessions', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/TrainingSession' } } } } }
+                    200: { description: 'Array of training sessions', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/TrainingSession' } } } } },
+                    401: { description: 'Not authenticated' },
+                    403: { description: 'Insufficient role (admin required)' }
                 }
             },
             post: {

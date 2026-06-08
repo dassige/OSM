@@ -97,6 +97,32 @@ describe('System API Endpoints', () => {
         });
     });
 
+    // F6: Surveys GET endpoints now require admin role
+    describe('GET /api/surveys', () => {
+        it('returns 401 when unauthenticated', async () => {
+            const res = await request(app).get('/api/surveys');
+            expect(res.status).toBe(401);
+            expect(res.body).toHaveProperty('error');
+        });
+    });
+
+    describe('GET /api/surveys/:id', () => {
+        it('returns 401 when unauthenticated', async () => {
+            const res = await request(app).get('/api/surveys/1');
+            expect(res.status).toBe(401);
+            expect(res.body).toHaveProperty('error');
+        });
+    });
+
+    // F7: Training sessions GET now requires admin role
+    describe('GET /api/training-sessions', () => {
+        it('returns 401 when unauthenticated', async () => {
+            const res = await request(app).get('/api/training-sessions');
+            expect(res.status).toBe(401);
+            expect(res.body).toHaveProperty('error');
+        });
+    });
+
     // F2: Reports endpoints now require admin role
     describe('GET /api/reports/data/:type', () => {
         it('returns 401 when unauthenticated', async () => {
