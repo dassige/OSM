@@ -618,6 +618,70 @@
 
 ---
 
+## T26 — Security Controls
+
+This section verifies the security hardening applied in Round 3 (June 2026). All tests require a **superadmin** account unless a specific role is stated.
+
+### T26-A — Session Timeout
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T26-01 | Session expires after 8 hours | Log in as any user. Note the login time. After 8 hours (or simulate by expiring the session cookie in DevTools), attempt to navigate to any authenticated page. | Redirected to the login page. The page does not load authenticated content. |
+| T26-02 | No indefinite session | Log in and do not interact with the application for more than 8 hours. Return and refresh the page. | Session has expired. Login page is shown. |
+
+### T26-B — Role Hierarchy Enforcement (User Management)
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T26-03 | Admin cannot edit another admin | Log in as an **admin** user. Navigate to `users.html`. Attempt to click `[Edit]` on another admin account. | Edit is blocked. Error toast: "Cannot modify a user at or above your own role level." No changes are saved. |
+| T26-04 | Admin cannot edit superadmin | Log in as **admin**. Attempt to edit the superadmin account. | Same 403 error. No changes are saved. |
+| T26-05 | Admin cannot promote user to admin | Log in as **admin**. Edit a simple user and change their Role to `admin`. Click `[Save]`. | Error: "Cannot assign a role higher than your own." The role is not updated. |
+| T26-06 | Admin cannot promote user to superadmin | Log in as **admin**. Edit any user and set Role to `superadmin`. Click `[Save]`. | Same 403 error. The role is not updated. |
+| T26-07 | Superadmin can edit admin | Log in as **superadmin**. Edit an admin account and change the name. Click `[Save]`. | Name updated successfully. Event log records the change. |
+| T26-08 | Superadmin can change role to admin | Log in as **superadmin**. Edit a simple user and set Role to `admin`. Click `[Save]`. | Role updated successfully. |
+
+### T26-C — GET /api/preferences Role Guard
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T26-09 | Unauthenticated access blocked | Log out of the application. In a REST client, call `GET {base-url}/api/preferences` with no credentials. | HTTP 401 Unauthorized. |
+| T26-10 | Simple-role user blocked | Using an API key with `simple` role, call `GET /api/preferences`. | HTTP 403 Forbidden. |
+| T26-11 | Admin can read preferences | Using an API key with `admin` role, call `GET /api/preferences`. | HTTP 200. JSON object with preference keys returned. |
+
+### T26-D — Rate Limits (Sensitive Endpoints)
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T26-12 | Backup rate limit | Using a superadmin API key, call `GET /api/system/backup` 11 times in rapid succession. | The 11th call returns HTTP 429 with error message. Earlier calls return 200. |
+| T26-13 | Restore rate limit | Using a superadmin API key, call `POST /api/system/restore` 4 times in rapid succession (with a valid SQL file each time). | The 4th call returns HTTP 429. Earlier calls proceed normally. |
+| T26-14 | AI-test rate limit | Using a superadmin API key, call `POST /api/system/ai-test` 11 times within 60 seconds. | The 11th call returns HTTP 429. The window resets after 1 minute. |
+| T26-15 | User creation rate limit | Using an admin API key, call `POST /api/users` 11 times within 15 minutes (use unique email addresses each time, then clean up). | The 11th call returns HTTP 429. |
+
+### T26-E — Restricted Audit Log Categories
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T26-16 | Security category blocked | In a REST client with a valid session or API key, call `POST /api/logs` with body `{ "type": "Security", "title": "Test injection" }`. | HTTP 403 Forbidden. No log entry is created. |
+| T26-17 | System category blocked | Repeat with `"type": "System"`. | HTTP 403 Forbidden. |
+| T26-18 | User Mgmt category blocked | Repeat with `"type": "User Mgmt"`. | HTTP 403 Forbidden. |
+| T26-19 | Application category allowed | Call `POST /api/logs` with `{ "type": "Members", "title": "Test entry" }`. | HTTP 200. Entry appears in the Event Log under category "Members". |
+
+### T26-F — Knowledge Base Disk Space Guard
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T26-20 | Upload succeeds with sufficient disk space | On a server with more than 100 MB free, navigate to `knowledgebase.html` and upload a PDF. | Upload completes successfully. Document appears in the list. |
+| T26-21 | Upload rejected when disk space is low | (Simulate or test on a near-full filesystem) Attempt to upload a document when server disk space is below 100 MB. | HTTP 507 response. Upload is rejected with an "Insufficient Storage" error message. No partial file is written. |
+
+### T26-G — Content Security Policy
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T26-22 | CSP header present | Load any authenticated page and open DevTools → Network. Inspect the response headers for the HTML page. | `Content-Security-Policy` header is present with `frame-ancestors 'none'`, `object-src 'none'`, `form-action 'self'`, and `connect-src 'self' ws: wss:`. |
+| T26-23 | Clickjacking prevention | Attempt to embed any OpReady page in an `<iframe>` on a different origin. | Browser blocks the frame load due to `frame-ancestors 'none'`. |
+
+---
+
 ## Appendix A — Test Data Setup Checklist
 
 Before starting the UAT run, ensure the following data is in place on the UAT instance:

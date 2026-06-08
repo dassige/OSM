@@ -852,7 +852,8 @@ const spec = {
                     }
                 },
                 responses: {
-                    200: { description: 'Created', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                    200: { description: 'Created', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    429: { description: 'Rate limit exceeded — max 10 account creations per 15 minutes per IP' }
                 }
             }
         },
@@ -866,7 +867,8 @@ const spec = {
                     content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } }
                 },
                 responses: {
-                    200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                    200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Role hierarchy violation — cannot modify a peer/superior or assign a role higher than your own' }
                 }
             },
             delete: {
@@ -1018,7 +1020,8 @@ const spec = {
                 tags: ['System'],
                 summary: 'Get all system preferences',
                 responses: {
-                    200: { description: 'Preferences map', content: { 'application/json': { schema: { type: 'object', additionalProperties: true } } } }
+                    200: { description: 'Preferences map', content: { 'application/json': { schema: { type: 'object', additionalProperties: true } } } },
+                    403: { description: 'Admin role required' }
                 }
             },
             post: {
@@ -1133,7 +1136,8 @@ const spec = {
                             'Content-Disposition': { schema: { type: 'string', example: 'attachment; filename="fenz_backup_2025-01-15.sql"' } }
                         }
                     },
-                    403: { description: 'Insufficient role' }
+                    403: { description: 'Insufficient role' },
+                    429: { description: 'Rate limit exceeded — max 10 backups per hour' }
                 }
             }
         },
@@ -1160,7 +1164,61 @@ const spec = {
                     200: { description: 'Restored', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
                     400: { description: 'No file provided or invalid SQL' },
                     403: { description: 'Insufficient role or demo mode' },
+                    429: { description: 'Rate limit exceeded — max 3 restores per hour' },
                     500: { description: 'Restore failed' }
+                }
+            }
+        },
+        '/api/system/ai-test': {
+            post: {
+                tags: ['System'],
+                summary: 'Run a one-off AI evaluation test (superadmin)',
+                description: 'Submits a question/rubric/answer triple to the configured AI provider and returns the score and justification. Used to verify AI scoring configuration before enabling it for live forms. Rate-limited to 10 requests per minute.',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['question', 'reference', 'answer', 'maxPoints', 'configOverride'],
+                                properties: {
+                                    question:       { type: 'string', description: 'The question text' },
+                                    reference:      { type: 'string', description: 'The rubric / reference answer' },
+                                    answer:         { type: 'string', description: 'The candidate answer to evaluate' },
+                                    maxPoints:      { type: 'number', description: 'Maximum score for this question' },
+                                    configOverride: {
+                                        type: 'object',
+                                        description: 'AI provider settings to use for this test',
+                                        properties: {
+                                            provider:  { type: 'string', enum: ['gemini', 'ollama'] },
+                                            geminiKey: { type: 'string', description: 'Pass "USE_SERVER_DEFAULT" to use the server key' },
+                                            ollamaUrl: { type: 'string' },
+                                            model:     { type: 'string' }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: {
+                        description: 'Evaluation result',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        success:       { type: 'boolean' },
+                                        score:         { type: 'number' },
+                                        justification: { type: 'string' }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    429: { description: 'Rate limit exceeded — max 10 AI tests per minute' },
+                    500: { description: 'AI provider error — message included in response body; stack trace is server-side only' }
                 }
             }
         },
@@ -1693,7 +1751,8 @@ const spec = {
                     }
                 },
                 responses: {
-                    200: { description: 'Logged', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                    200: { description: 'Logged', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    403: { description: 'Category is restricted — writes to Security, System, User Mgmt, API Keys, and WhatsApp categories are blocked' }
                 }
             }
         },
@@ -1772,7 +1831,8 @@ const spec = {
                     }}}
                 },
                 responses: {
-                    200: { description: 'Uploaded', content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' }, slug: { type: 'string', example: '4A04912E-F5C3-4CA6-91FC-8CBB3527AD81' } } } } } }
+                    200: { description: 'Uploaded', content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' }, slug: { type: 'string', example: '4A04912E-F5C3-4CA6-91FC-8CBB3527AD81' } } } } } },
+                    507: { description: 'Insufficient server disk space — free space below 100 MB (local storage only)' }
                 }
             }
         },
@@ -1876,7 +1936,8 @@ const spec = {
                 responses: {
                     200: { description: 'File replaced', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
                     400: { description: 'No file provided' },
-                    404: { description: 'Document not found' }
+                    404: { description: 'Document not found' },
+                    507: { description: 'Insufficient server disk space — free space below 100 MB (local storage only)' }
                 }
             }
         },

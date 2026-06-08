@@ -48,4 +48,39 @@ const publicSubmitLimiter = rateLimit({
     message: { error: 'Too many submission attempts. Please try again later.' },
 });
 
-module.exports = { loginLimiter, mfaLimiter, forgotPasswordLimiter, apiLimiter, publicSubmitLimiter };
+// Tighter limit for user-creation to prevent account flooding by a rogue admin
+const createUserLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,  // 15 minutes
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many user creation requests. Please wait before creating more accounts.' },
+});
+
+// System operation limiters — fixed limits; these endpoints are superadmin-only
+// and must not be called at high volume under any legitimate use case.
+const backupLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,  // 1 hour
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many backup requests. Please wait before trying again.' },
+});
+
+const restoreLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,  // 1 hour
+    max: 3,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many restore attempts. Please wait before trying again.' },
+});
+
+const aiTestLimiter = rateLimit({
+    windowMs: 60 * 1000,  // 1 minute
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many AI test requests. Please slow down.' },
+});
+
+module.exports = { loginLimiter, mfaLimiter, forgotPasswordLimiter, apiLimiter, publicSubmitLimiter, createUserLimiter, backupLimiter, restoreLimiter, aiTestLimiter };
