@@ -56,8 +56,14 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:     ["'self'"],
-      scriptSrc:      ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      styleSrc:       ["'self'", "'unsafe-inline'"],
+      scriptSrc:      ["'self'", "'unsafe-inline'", "'unsafe-eval'",
+                       "https://cdnjs.cloudflare.com",   // TinyMCE, Sortable.js
+                       "https://cdn.jsdelivr.net"],       // Chart.js
+      // script-src-attr must also allow unsafe-inline — Helmet sets it to 'none'
+      // by default even when scriptSrc is permissive, which blocks onclick/onchange
+      // attribute handlers used throughout the existing HTML pages.
+      scriptSrcAttr:  ["'unsafe-inline'"],
+      styleSrc:       ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],  // TinyMCE skins
       imgSrc:         ["'self'", "data:", "blob:"],
       connectSrc:     ["'self'", "ws:", "wss:"],
       fontSrc:        ["'self'", "data:"],
