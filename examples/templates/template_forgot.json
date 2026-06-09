@@ -1,0 +1,5 @@
+{
+  "from": "DVFB Training Manager <webmaster@dvfb.org.nz>",
+  "subject": "{{appname}}: Forgot Password Link",
+  "body": "<p>Hi&nbsp;{{email}},</p>\n<p>We received a request to reset the password for your {{appname}} account.</p>\n<p>To set a new password, click the link below. The link is valid for 30 minutes.</p>\n<p>{{resetlink}}</p>\n<p>If you did not request a password reset, you can safely ignore this email — your password will not change.</p>\n<p>For security, do not share this link with anyone.</p>\n<hr style=\"border: 0; border-top: 1px solid #eee; margin: 20px 0;\">\n<p style=\"font-size: 12px; color: #888;\">This is an automated notification from {{appname}}. Please do not reply to this email.</p>"
+}
