@@ -39,6 +39,9 @@
 | T01-04 | Login with valid superadmin credentials | Enter valid superadmin username and password → click `[Login]`. | Redirected to Dashboard (`index.html`). App name and navigation are visible. |
 | T01-05 | Session persistence | After login, close and reopen the browser tab (same session). | User remains logged in; Dashboard loads without prompting for credentials. |
 | T01-06 | Logout | Click `[Logout]` in the navigation. | Session is ended. Redirected to Login page. Navigating back to Dashboard redirects to Login. |
+| T01-07 | Forgot password — request reset link | On the login page click `[Forgot Password?]` → enter a registered email address → submit. | A toast or message confirms that if the address is registered, a reset link will be sent. The response is identical whether the email exists or not. An email arrives containing a "Reset link" clickable anchor. |
+| T01-08 | Forgot password — complete reset via link | Click the reset link in the email → enter a new password (8+ characters) → confirm → click `[Set New Password]`. | Success message is shown. Navigating to `/login.html` → logging in with the new password succeeds. The old password no longer works. |
+| T01-09 | Forgot password — expired or invalid token | Manually alter the token in the reset URL (e.g., append an extra character) → submit the form. | The page shows "This reset link is invalid or has expired." The form is hidden. A link to return to the login page is shown. |
 
 ---
 
@@ -269,6 +272,7 @@
 | T13-03 | Preview template variables | Check that the template body uses supported variables: `{{name}}`, `{{email}}`, `{{skill}}`, `{{custom_comment}}`, `{{url}}`, `{{surveyLink}}`. | Variables are visible in the template text as placeholder tokens. |
 | T13-04 | Edit WhatsApp template | Click `[Edit]` on a WhatsApp template → update the markdown body text → click `[Save]`. | Template is saved. Toast confirms. |
 | T13-05 | Verify template is used in notifications | Send a test notification from the Dashboard → check recipient's inbox. | The email received reflects the edited template content and correctly substituted variable values. |
+| T13-06 | Forgot Password template tab | Click the **Forgot Password** tab in `templates.html` → edit the body to include the `{{resetlink}}` chip → click `[Save All Templates]` → trigger a forgot-password request from the login page. | The received email renders `{{resetlink}}` as a clickable "Reset link" anchor. `{{password}}` is not available in this tab's variable palette. |
 
 ---
 

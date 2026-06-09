@@ -71,6 +71,17 @@ test.describe('Smoke — public pages', () => {
     expect(errors, `JS errors on Login:\n${errors.join('\n')}`).toEqual([]);
   });
 
+  test('Reset-password page loads without JS errors (no token — shows invalid state)', async ({ page, context }) => {
+    await context.clearCookies();
+
+    const errors = attachErrorListeners(page);
+
+    await page.goto('/reset-password.html');
+    await page.waitForLoadState('domcontentloaded');
+
+    expect(errors, `JS errors on Reset Password:\n${errors.join('\n')}`).toEqual([]);
+  });
+
   test('KB viewer page loads without JS errors (no GUID — shows not-found state)', async ({ page, context }) => {
     // Public page — no auth required; load the shell without a real GUID
     await context.clearCookies();

@@ -231,12 +231,17 @@ const helpContent = {
                 <li><strong>Form Accepted:</strong> Sent when a Live Form submission is approved.</li>
                 <li><strong>Form Rejected:</strong> Sent when a submission fails. Includes logic for "Retry Links" if a new attempt was generated.</li>
                 <li><strong>Survey Invitations:</strong> Sent when an anonymous survey is published or a reminder is triggered.</li>
-                <li><strong>System:</strong> New User credentials, Password Reset, etc.</li>
+                <li><strong>New User:</strong> Sent when an admin creates a new user account — includes the temporary password.</li>
+                <li><strong>Password Reset:</strong> Sent by an admin when manually resetting a user's password — includes the new temporary password via <code>{{password}}</code>.</li>
+                <li><strong>Forgot Password:</strong> Sent by the self-service forgot-password flow — includes a time-limited reset link via <code>{{resetlink}}</code>, which renders as a clickable "Reset link" anchor automatically.</li>
+                <li><strong>Delete Account:</strong> Sent when an admin deletes a user account.</li>
             </ul>
 
             <h3>Dynamic Variables</h3>
             <p>Drag and drop chips from the palette into the editor. Key variables include:</p>
             <ul>
+                <li><code>{{resetlink}}</code>: In the Forgot Password template, inserts a clickable "Reset link" anchor pointing to the 30-minute reset page.</li>
+                <li><code>{{password}}</code>: In New User and Password Reset templates, inserts the temporary password.</li>
                 <li><code>{{custom_comment}}</code>: Inserts the specific feedback you wrote during the review process.</li>
                 <li><code>{{url}}</code>: In rejection templates, this inserts the <strong>new</strong> link for the retry attempt.</li>
                 <li><code>{{surveyLink}}</code>: In survey templates, this inserts the unique, anonymous access URL.</li>

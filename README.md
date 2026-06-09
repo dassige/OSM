@@ -30,7 +30,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
       * **Skills:** Configure which skills to track and mark them as Critical.
       * **Smart Form Links:** Define Online Form URLs with dynamic placeholders (e.g., `{{member-name}}`) to pre-fill member details automatically.
-      * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, Surveys, New Users, Password Resets, and Account Deletions.
+      * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, Surveys, New Users, Password Resets, Forgot Password reset links, and Account Deletions.
   * **Reports Console:**
       * **Flexible Reporting:** Generate comprehensive reports grouped by **Member** (for individual follow-up) or **Skill** (for planning training blocks).
       * **Export Options:** Includes built-in support for browser Printing (A4 optimized) and direct **PDF Export**.
@@ -327,7 +327,7 @@ node server.js
       * **Templated URLs:** You can use variables in the "Form URL" field.
           * Example: `https://docs.google.com/forms/...?entry.123={{member-name}}`
           * The system will auto-fill the member's name and email when generating the link.
-3.  **Email Templates**: Use the tabbed editor to customize the `Expiring Skills`, `New User`, `Password Reset`, and `Account Deleted` emails. Drag and drop variables directly into the text.
+3.  **Email Templates**: Use the tabbed editor to customize the `Expiring Skills`, `New User`, `Password Reset`, `Forgot Password`, and `Account Deleted` emails. Drag and drop variables directly into the text. The `Forgot Password` tab uses `{{resetlink}}`, which automatically renders as a clickable "Reset link" anchor in the outbound email.
 4.  **Training Planner**: Use the planner to schedule in-person verification sessions for skills that don't have an online form. Drag skills from the list to the calendar.
 5.  **Event Log**: Use the yellow maintenance bar (Super Admin only) to prune old logs or purge the history.
 6.  **Reports**: Navigate to the Reports Console to print or export PDF summaries of expiring competencies to display on station noticeboards.
