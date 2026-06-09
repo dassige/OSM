@@ -10,6 +10,7 @@ const logger = require("../services/logger");
 const { sendPasswordReset, sendPasswordResetLink } = require("../services/mailer");
 const whatsappService = require("../services/whatsapp-service");
 const { loginLimiter, mfaLimiter, forgotPasswordLimiter } = require("../middleware/rate-limiter");
+const { validatePassword } = require("../services/password-policy");
 
 // Shared by both password and MFA login paths to ensure identical session state
 async function finalizeLogin(req, res, user, authType) {
@@ -148,9 +149,8 @@ router.post("/reset-password", forgotPasswordLimiter, async (req, res) => {
   if (!token || !newPassword) {
     return res.status(400).json({ error: "Token and new password are required." });
   }
-  if (newPassword.length < 8) {
-    return res.status(400).json({ error: "Password must be at least 8 characters." });
-  }
+  const { valid: pwValid, error: pwError } = validatePassword(newPassword);
+  if (!pwValid) return res.status(400).json({ error: pwError });
 
   try {
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");

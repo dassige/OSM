@@ -71,6 +71,7 @@
                         <input type="password" id="passwordConfirm" placeholder="Repeat to confirm"
                             autocomplete="new-password" minlength="8"
                             title="Repeat the new password to confirm">
+                        <p style="font-size:12px; color:var(--text-secondary, #6c757d); margin:4px 0 0;">Min. 8 characters, at least one uppercase letter and one digit.</p>
                     </div>
 
                     <div id="accountActions" style="margin-top: 20px;">
@@ -361,9 +362,10 @@
             const pwConf = document.getElementById('passwordConfirm').value;
             const msgBox = document.getElementById('msgBox');
 
-            if (pw && pw.length < 8) {
+            const PASSWORD_POLICY = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
+            if (pw && !PASSWORD_POLICY.test(pw)) {
                 msgBox.className = 'alert-box status-error';
-                msgBox.innerText = 'Password must be at least 8 characters.';
+                msgBox.innerText = 'Min. 8 characters, at least one uppercase letter and one digit.';
                 msgBox.style.display = 'block';
                 return;
             }

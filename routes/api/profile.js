@@ -6,6 +6,7 @@ const qrcode = require("qrcode");
 
 const db = require("../../services/db");
 const config = require("../../config");
+const { validatePassword } = require("../../services/password-policy");
 
 router.put("/", async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
@@ -14,7 +15,11 @@ router.put("/", async (req, res) => {
     const oldName = req.session.user.name;
     const changedFields = [];
     if (req.body.name && req.body.name !== oldName) changedFields.push('name');
-    if (req.body.password) changedFields.push('password');
+    if (req.body.password) {
+      const { valid, error } = validatePassword(req.body.password);
+      if (!valid) return res.status(400).json({ error });
+      changedFields.push('password');
+    }
 
     await db.updateUserProfile(userId, req.body.name, req.body.password);
     req.session.user.name = req.body.name;
