@@ -92,7 +92,7 @@ tunnel: <your-tunnel-id>
 credentials-file: /root/.cloudflared/<your-tunnel-id>.json
 
 ingress:
-  - hostname: dassig.net
+  - hostname: mydomain.net
     service: http://localhost:812
   - service: http_status:404
 ```
@@ -100,7 +100,7 @@ ingress:
 > **Notes:**
 > - Replace `<your-tunnel-id>` in both lines with the UUID from step 3.
 > - The path in `credentials-file` assumes you are running as `root`. If running as another user, replace `/root` with that user's home directory (e.g. `/home/ubuntu`).
-> - To use a subdomain (e.g. `app.dassig.net`), change the `hostname` value accordingly.
+> - To use a subdomain (e.g. `app.mydomain.net`), change the `hostname` value accordingly.
 > - The final `- service: http_status:404` is a required catch-all rule; leave it as-is.
 
 ### Multiple hostnames (optional)
@@ -109,7 +109,7 @@ If you want to expose OpReady on a subdomain while keeping the apex domain for s
 
 ```yaml
 ingress:
-  - hostname: app.dassig.net
+  - hostname: app.mydomain.net
     service: http://localhost:812
   - service: http_status:404
 ```
@@ -119,14 +119,14 @@ ingress:
 ## 5. Route DNS to the Tunnel
 
 ```bash
-cloudflared tunnel route dns opready dassig.net
+cloudflared tunnel route dns opready mydomain.net
 ```
 
-This automatically creates a `CNAME` record in your Cloudflare DNS pointing `dassig.net` to the tunnel endpoint. You can verify it in the Cloudflare dashboard under **DNS → Records** — it will appear as a proxied (orange cloud) CNAME.
+This automatically creates a `CNAME` record in your Cloudflare DNS pointing `mydomain.net` to the tunnel endpoint. You can verify it in the Cloudflare dashboard under **DNS → Records** — it will appear as a proxied (orange cloud) CNAME.
 
 If you used a subdomain in step 4, route that instead:
 ```bash
-cloudflared tunnel route dns opready app.dassig.net
+cloudflared tunnel route dns opready app.mydomain.net
 ```
 
 ---
@@ -139,7 +139,7 @@ Before installing it as a service, run the tunnel in the foreground to confirm i
 cloudflared tunnel run opready
 ```
 
-Open `https://dassig.net` in a browser. If OpReady loads correctly over HTTPS, the tunnel is working. Press `Ctrl+C` to stop.
+Open `https://mydomain.net` in a browser. If OpReady loads correctly over HTTPS, the tunnel is working. Press `Ctrl+C` to stop.
 
 ---
 
@@ -183,7 +183,7 @@ For a Cloudflare Tunnel, **Full** is the recommended setting. Cloudflare encrypt
 
 Once the tunnel is active:
 
-1. On your Android device, open Chrome and navigate to `https://dassig.net`.
+1. On your Android device, open Chrome and navigate to `https://mydomain.net`.
 2. Wait a few seconds — the **Install OpReady** banner should slide in at the top of the page.
 3. From a desktop Chrome browser, open DevTools → **Application → Service Workers** to confirm the service worker is registered with status `activated and is running`.
 
