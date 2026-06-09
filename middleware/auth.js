@@ -38,6 +38,8 @@ const globalAuthGuard = async (req, res, next) => {
       '/login.html',
       '/login',
       '/forgot-password',
+      '/reset-password',
+      '/reset-password.html',
       '/styles.css',
       '/ui-config',
       '/login/mfa',
