@@ -366,12 +366,19 @@ async function sendPasswordResetLink(
   const defaults = {
     from: `"${variables.appname}" <noreply@opready.app>`,
     subject: `${variables.appname}: Password Reset`,
-    body: `<p>A password reset was requested for your account.</p><p>Click the link below to set a new password. The link expires in 30 minutes.</p><p><a href="{{resetlink}}">Reset my password</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
+    body: `<p>A password reset was requested for your account.</p><p>Click the link below to set a new password. The link expires in 30 minutes.</p><p>{{resetlink}}</p><p>If you did not request this, you can safely ignore this email.</p>`,
   };
   const config = templatePref || defaults;
   const from = replaceVariables(config.from || defaults.from, variables);
   const subject = replaceVariables(config.subject || defaults.subject, variables);
-  const body = replaceVariables(config.body || defaults.body, variables);
+  // Render {{resetlink}} as a clickable anchor in the body so template authors
+  // can drag-drop the variable without manually writing HTML.
+  const bodyVars = { ...variables };
+  if (variables.resetlink) {
+    const safeUrl = escapeHtml(variables.resetlink);
+    bodyVars.resetlink = `<a href="${safeUrl}">Reset link</a>`;
+  }
+  const body = replaceVariables(config.body || defaults.body, bodyVars);
 
   await transporter.sendMail({
     from,
