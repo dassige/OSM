@@ -22,7 +22,7 @@ Browser (HTTPS)
 
 ## Prerequisites
 
-- A Cloudflare account with your domain (`dassig.net` or similar) added and its DNS managed by Cloudflare.
+- A Cloudflare account with your domain (`mydomain.net` or similar) added and its DNS managed by Cloudflare.
 - The OpReady app running and reachable on its local port (e.g. `http://localhost:812`).
 - A Linux server with `sudo` access (Debian/Ubuntu instructions below; RPM variants noted where they differ).
 
