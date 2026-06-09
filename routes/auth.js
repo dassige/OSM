@@ -124,7 +124,7 @@ router.post("/forgot-password", forgotPasswordLimiter, async (req, res) => {
       const appBaseUrl = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
       const resetLink = `${appBaseUrl}/reset-password.html?token=${rawToken}`;
       const prefs = await db.getPreferences();
-      const tpl = prefs.tpl_reset_password ? JSON.parse(prefs.tpl_reset_password) : null;
+      const tpl = prefs.tpl_forgot_password ? JSON.parse(prefs.tpl_forgot_password) : null;
 
       await sendPasswordResetLink(email, resetLink, config.transporter, config.ui.loginTitle, tpl);
 

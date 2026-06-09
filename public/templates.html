@@ -101,6 +101,7 @@
                 </svg> Survey Invitations</div>
             <div class="tab" onclick="switchTab('newuser')">New User</div>
             <div class="tab" onclick="switchTab('reset')">Password Reset</div>
+            <div class="tab" onclick="switchTab('forgot')">Forgot Password</div>
             <div class="tab" onclick="switchTab('delete')">Delete Account</div>
         </div>
 
@@ -596,6 +597,25 @@
                 </div>
             </div>
 
+            <div id="tab-forgot" class="tab-content">
+                <div class="template-actions">
+                    <button type="button" class="btn-sm btn-success toolbar-btn-desktop" onclick="triggerImport('forgot')" title="Import template from JSON file">Import</button>
+                    <button type="button" class="btn-success toolbar-btn-mobile" onclick="triggerImport('forgot')" title="Import template from JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></button>
+                    <button type="button" class="btn-sm btn-primary toolbar-btn-desktop" onclick="exportTemplate('forgot')" title="Export template as JSON file">Export</button>
+                    <button type="button" class="btn-primary toolbar-btn-mobile" onclick="exportTemplate('forgot')" title="Export template as JSON file"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
+                </div>
+                <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:10px;">Forgot Password — Reset Link Email</h3>
+                <div class="palette-container" style="margin-top: 10px;">
+                    <span class="palette-label">Variables:</span>
+                    <div class="draggable-item" draggable="true" data-val="appname">AppName</div>
+                    <div class="draggable-item" draggable="true" data-val="email">User Email</div>
+                    <div class="draggable-item" draggable="true" data-val="resetlink">Reset Link</div>
+                </div>
+                <div class="form-group"><label>Sender</label><input type="text" id="forgotFrom" class="droppable-input"></div>
+                <div class="form-group"><label>Subject</label><input type="text" id="forgotSubject"></div>
+                <div class="form-group"><label>Body</label><textarea id="forgotBody" class="rich-editor"></textarea></div>
+            </div>
+
             <div id="tab-delete" class="tab-content">
                 <div class="template-actions">
                     <button type="button" class="btn-sm btn-success toolbar-btn-desktop" onclick="triggerImport('delete')" title="Import template from JSON file">Import</button>
@@ -971,6 +991,7 @@
         };
         loadTab('tpl_new_user', 'newUser');
         loadTab('tpl_reset_password', 'reset');
+        loadTab('tpl_forgot_password', 'forgot');
         loadTab('tpl_delete_user', 'delete');
         }
 
@@ -1036,6 +1057,7 @@
 
                 { key: 'tpl_new_user', value: JSON.stringify(getTab('newUser')) },
                 { key: 'tpl_reset_password', value: JSON.stringify(getTab('reset')) },
+                { key: 'tpl_forgot_password', value: JSON.stringify(getTab('forgot')) },
                 { key: 'tpl_delete_user', value: JSON.stringify(getTab('delete')) }
             ];
 
