@@ -687,7 +687,7 @@
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-            const tabs = ['skills', 'accepted', 'rejected', 'surveys', 'newuser', 'reset', 'delete'];
+            const tabs = ['skills', 'accepted', 'rejected', 'surveys', 'newuser', 'reset', 'forgot', 'delete'];
             const idx = tabs.indexOf(tabId);
             if (idx !== -1) {
                 document.querySelectorAll('.tab')[idx].classList.add('active');
