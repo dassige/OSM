@@ -340,7 +340,7 @@ const spec = {
                                 required: ['token', 'newPassword'],
                                 properties: {
                                     token: { type: 'string', description: '64-hex raw token from the reset link query string' },
-                                    newPassword: { type: 'string', format: 'password', description: 'New password (minimum 8 characters)' }
+                                    newPassword: { type: 'string', format: 'password', description: 'New password — minimum 8 characters, at least one uppercase letter and one digit' }
                                 }
                             }
                         }
@@ -348,7 +348,7 @@ const spec = {
                 },
                 responses: {
                     200: { description: 'Password updated successfully', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
-                    400: { description: 'Token missing/invalid/expired, or password too short' },
+                    400: { description: 'Token missing/invalid/expired, or password does not meet complexity requirements (min 8 chars, one uppercase, one digit)' },
                     500: { description: 'Unexpected server error' }
                 }
             }
@@ -1043,14 +1043,15 @@ const spec = {
                                     name: { type: 'string' },
                                     email: { type: 'string', format: 'email' },
                                     currentPassword: { type: 'string', format: 'password' },
-                                    newPassword: { type: 'string', format: 'password' }
+                                    newPassword: { type: 'string', format: 'password', description: 'New password — minimum 8 characters, at least one uppercase letter and one digit' }
                                 }
                             }
                         }
                     }
                 },
                 responses: {
-                    200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                    200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'Password does not meet complexity requirements (min 8 chars, one uppercase, one digit)' }
                 }
             }
         },

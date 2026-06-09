@@ -1550,7 +1550,7 @@
                                                               },
                                                       "body":  {
                                                                    "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"My Name\",\n  \"email\": \"me@station.nz\",\n  \"currentPassword\": \"old-password\",\n  \"newPassword\": \"new-password\"\n}"
+                                                                   "raw":  "{\n  \"name\": \"My Name\",\n  \"email\": \"me@station.nz\",\n  \"currentPassword\": \"OldPass1!\",\n  \"newPassword\": \"NewPass1!\"\n}"
                                                                }
                                                   }
                                   },

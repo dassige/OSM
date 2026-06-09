@@ -275,13 +275,31 @@ describe('POST /reset-password — token-based reset (F19/F20)', () => {
         expect(res.body.error).toMatch(/required/i);
     });
 
-    it('returns 400 when newPassword is shorter than 8 characters', async () => {
+    it('returns 400 when newPassword fails complexity (too short)', async () => {
         const res = await request(app)
             .post('/reset-password')
-            .send({ token: 'sometoken', newPassword: 'short' });
+            .send({ token: 'sometoken', newPassword: 'Short1' });
 
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/8 characters/i);
+    });
+
+    it('returns 400 when newPassword has no uppercase letter', async () => {
+        const res = await request(app)
+            .post('/reset-password')
+            .send({ token: 'sometoken', newPassword: 'nouppercase1' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/uppercase/i);
+    });
+
+    it('returns 400 when newPassword has no digit', async () => {
+        const res = await request(app)
+            .post('/reset-password')
+            .send({ token: 'sometoken', newPassword: 'NoDigitPass' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/digit/i);
     });
 
     it('returns 400 when the token does not exist in the DB', async () => {

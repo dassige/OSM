@@ -2,11 +2,12 @@ const request = require('supertest');
 const { createTestApp } = require('./test-utils');
 
 jest.mock('../services/db', () => ({
-    verifyUserPassword: jest.fn(),
-    getMfaData:         jest.fn(),
-    setMfaSecret:       jest.fn().mockResolvedValue(),
-    setMfaStatus:       jest.fn().mockResolvedValue(),
-    logEvent:           jest.fn().mockResolvedValue(),
+    verifyUserPassword:  jest.fn(),
+    getMfaData:          jest.fn(),
+    setMfaSecret:        jest.fn().mockResolvedValue(),
+    setMfaStatus:        jest.fn().mockResolvedValue(),
+    logEvent:            jest.fn().mockResolvedValue(),
+    updateUserProfile:   jest.fn().mockResolvedValue(),
 }));
 
 jest.mock('../config', () => ({
@@ -28,11 +29,67 @@ jest.mock('qrcode', () => ({
     toDataURL: jest.fn((_url, cb) => cb(null, 'data:image/png;base64,fakeqr')),
 }));
 
-const db       = require('../services/db');
-const speakeasy = require('speakeasy');
+const db        = require('../services/db');
+const speakeasy  = require('speakeasy');
 const profileRoutes = require('../routes/api/profile');
 
 const app = createTestApp([{ path: '/api/profile', router: profileRoutes }]);
+
+// ─── PUT /api/profile — password complexity ──────────────────────────────────
+
+describe('PUT /api/profile — password complexity', () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    it('returns 400 when password has no uppercase letter', async () => {
+        const res = await request(app)
+            .put('/api/profile')
+            .send({ name: 'Test Admin', password: 'nouppercase1' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/uppercase/i);
+        expect(db.updateUserProfile).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 when password has no digit', async () => {
+        const res = await request(app)
+            .put('/api/profile')
+            .send({ name: 'Test Admin', password: 'NoDigitPass' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/digit/i);
+        expect(db.updateUserProfile).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 when password is shorter than 8 characters', async () => {
+        const res = await request(app)
+            .put('/api/profile')
+            .send({ name: 'Test Admin', password: 'Short1' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/8 characters/i);
+        expect(db.updateUserProfile).not.toHaveBeenCalled();
+    });
+
+    it('returns 200 when password meets complexity requirements', async () => {
+        const res = await request(app)
+            .put('/api/profile')
+            .send({ name: 'Test Admin', password: 'ValidPass1!' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(db.updateUserProfile).toHaveBeenCalledWith(99, 'Test Admin', 'ValidPass1!');
+    });
+
+    it('returns 200 when no password is supplied (name-only update)', async () => {
+        const res = await request(app)
+            .put('/api/profile')
+            .send({ name: 'Test Admin' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(db.updateUserProfile).toHaveBeenCalled();
+    });
+});
 
 describe('Profile MFA Endpoints (Isolated)', () => {
     beforeEach(() => jest.clearAllMocks());
