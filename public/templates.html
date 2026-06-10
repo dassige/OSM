@@ -1061,8 +1061,13 @@
                 { key: 'tpl_delete_user', value: JSON.stringify(getTab('delete')) }
             ];
 
-            for (const u of updates) await fetch('/api/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(u) });
-            showToast("Templates saved!", "success");
+            showGlobalSpinner("Saving templates…");
+            try {
+                for (const u of updates) await fetch('/api/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(u) });
+                showToast("Templates saved!", "success");
+            } finally {
+                hideGlobalSpinner();
+            }
         });
 
         // TinyMCE editors need time to fully initialize before content can be injected
