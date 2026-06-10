@@ -43,7 +43,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Backup & Restore:** Dedicated page (`backup-restore.html`, superadmin only). Two tabs:
           * **This Server** — manual backup (Full `.zip` or Database-only `.sql`), restore from file, and a **Scheduled Backup** section (daily, weekly, every N hours, or every N days) that saves files to a configured server-side path with configurable retention. Requires a persistent deployment (`DEPLOYMENT_TYPE` — disabled automatically on Cloud Run, App Runner, and Fargate).
           * **Remote Servers** — connect up to 5 other OpReady instances via URL + API key. **Manual pull** downloads the backup directly to the browser (Save As dialog — nothing written to disk on this server). **Scheduled pull** saves files to a configurable local path (set per-server in the Schedule modal, defaults to `/app/backups/remote/<server-name>/`; mount `/app/backups` as a Docker volume). A **Run Now** button in the schedule modal lets you immediately test the configuration. Connection test allows up to 90 s for ephemeral cold-start; pull transfers allow up to 15 min. History per server is logged with status, filename, and file size.
-      * **Event Log:** A comprehensive audit trail recording all major actions.
+      * **Event Log:** A comprehensive audit trail recording all major actions. Successful login events include the originating IP address and its resolved geographic location (city and country), displayed in a highlighted panel in the event detail modal.
       * **Log Maintenance:** Super Admins can prune old events, purge the entire log, or export it to JSON.
   * **Geoblocking Bypass:** Built-in proxy manager with support for **Fixed** (paid) and **Dynamic** (free) proxies.
   * **Cloud-Native Persistence:** Uses **Litestream** to replicate the SQLite database to Google Cloud Storage (GCS) for stateless deployments (e.g., Google Cloud Run).
@@ -470,8 +470,9 @@ API keys are managed exclusively through **System Admin → API Management** (ad
 
 ### API Call Log
 
-Every request authenticated with an API key is recorded in the **API Call Log** section of the API Management page. The log captures key name, HTTP method, full endpoint URL (including query parameters), origin IP, user agent, and response status.
+Every request authenticated with an API key is recorded in the **API Call Log** section of the API Management page. The log captures key name, HTTP method, full endpoint URL (including query parameters), origin IP, **geographic location** (city and country resolved from the IP), user agent, and response status.
 
+- **Geo-location:** Each entry resolves the caller's IP to a city and country using an offline GeoLite2 database (via `geoip-lite`). The location is displayed as a subtitle beneath the Origin IP in the table, and as a dedicated row in the mobile card view. Private and loopback addresses (`127.x`, `10.x`, `192.168.x`, `::1`, etc.) show no geo label.
 - **Sort** by any column (Timestamp, Key Name, Method, Endpoint, Origin IP, Status). Sort column and direction persist across page reloads.
 - **Filter** by key, method, endpoint text, and date range. Active filter fields are highlighted with a blue border.
 - **Rows per page** can be changed from the pagination bar; the preference persists across reloads.

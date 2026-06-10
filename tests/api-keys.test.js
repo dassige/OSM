@@ -184,7 +184,8 @@ describe('API Keys Endpoints (Isolated)', () => {
             const mockResult = {
                 rows: [
                     { id: 1, api_key_id: 1, key_name: 'Test Key', key_prefix: 'osm_abc123',
-                      method: 'GET', endpoint: '/api/members', origin_ip: '127.0.0.1',
+                      method: 'GET', endpoint: '/api/members', origin_ip: '203.0.113.42',
+                      geo_location: '{"city":"Auckland","region":"Auckland","country":"NZ"}',
                       user_agent: 'curl/7.88', status_code: 200, logged_at: '2025-01-01T00:00:00' }
                 ],
                 total: 1
@@ -245,7 +246,9 @@ describe('API Keys Endpoints (Isolated)', () => {
     describe('GET /api/api-keys/call-log/export', () => {
         it('returns 200 with exportedAt, count, and records array', async () => {
             const mockRecords = [
-                { id: 1, key_name: 'Test Key', method: 'GET', endpoint: '/api/members?active=1', status_code: 200, logged_at: '2025-01-01T00:00:00' }
+                { id: 1, key_name: 'Test Key', method: 'GET', endpoint: '/api/members?active=1',
+                  origin_ip: '203.0.113.42', geo_location: '{"city":"Auckland","region":"Auckland","country":"NZ"}',
+                  status_code: 200, logged_at: '2025-01-01T00:00:00' }
             ];
             db.exportApiCallLog.mockResolvedValue(mockRecords);
 

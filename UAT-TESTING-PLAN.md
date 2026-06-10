@@ -308,6 +308,7 @@
 | T15-06 | Prune old events | Click `[Prune]` → enter `90` days → confirm. | Events older than 90 days are deleted. Toast confirms how many were removed. Event log records "Events Pruned". |
 | T15-07 | Purge all events | Click `[Purge All]` → confirm. | All event log entries are deleted. Table shows empty. Toast confirms. (In demo mode: this action should be blocked.) |
 | T15-08 | Pagination | Observe the pagination bar at the bottom of the log. | Rows-per-page selector, Previous/Next buttons, and "Showing X–Y of Z" counter work correctly. Preference persists on reload. |
+| T15-09 | Login event geo-location | Log in from a routable public IP. Navigate to `event-log.html`. Filter by category `Security`. Click the `ℹ` info button on the "Successful Login" entry. | The event detail modal shows a highlighted panel above the JSON payload displaying the Source IP and its resolved geographic location (city and country, e.g. "Auckland, NZ"). |
 
 ---
 
@@ -619,6 +620,8 @@
 | T25-28 | Sensitive field masking | Make a call whose body or query string contains a field named `password` or `token`. Click the round action button on that row. | The value of the sensitive field is shown as `***` in the detail panel. The actual value is never stored. |
 | T25-29 | No detail button when no params | Observe a log row for a plain `GET` with no query string, no path param, and no body (e.g. `GET /api/api-keys`). | No round action button appears on that row. |
 | T25-30 | Download JSON includes params fields | Apply a filter and click `[Download JSON]`. Open the downloaded file. | Each record object contains `query_params`, `request_body`, and `path_params` fields (null when not applicable). |
+| T25-31 | Geo-location — public IP | Make a REST API call from a routable public IP address using an API key (e.g. from a cloud VM). Click `[Refresh]`. Click the entry in the log. | The Origin IP cell shows the IP address with a small geo label beneath it (e.g. "Auckland, NZ"). The mobile card shows a "Location:" row. |
+| T25-32 | Geo-location — private/local IP | Make a REST API call from localhost or a private network (e.g. `127.0.0.1`, `192.168.x.x`). Click `[Refresh]`. | The Origin IP cell shows the IP address. No geo label appears beneath it (private IPs resolve as null and produce no label). |
 
 ---
 

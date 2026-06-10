@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">68.88% </span>
+                <span class="strong">70% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>31/45</span>
+                <span class='fraction'>35/50</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">69.23% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>18/24</span>
+                <span class='fraction'>18/26</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">68.88% </span>
+                <span class="strong">70% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>31/45</span>
+                <span class='fraction'>35/50</span>
             </div>
         
             
@@ -139,7 +139,16 @@
 <a name='L74'></a><a href='#L74'>74</a>
 <a name='L75'></a><a href='#L75'>75</a>
 <a name='L76'></a><a href='#L76'>76</a>
-<a name='L77'></a><a href='#L77'>77</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -147,17 +156,21 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">6x</span>
@@ -197,6 +210,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -219,12 +233,18 @@
 const express = require("express");
 const router = express.Router();
 const puppeteer = require("puppeteer-core");
+const { JSDOM } = require("jsdom");
+const createDOMPurify = require("dompurify");
 const logger = require("../../services/logger");
 &nbsp;
 const reportService = require("../../services/report-service");
 const { getActiveProxy } = require("../../services/proxy-manager");
+const { hasRole } = require("../../middleware/auth");
 &nbsp;
-router.get("/data/:type", async (req, res) =&gt; {
+// Create a single DOMPurify instance using a jsdom window (server-side sanitizer)
+const _domPurify = createDOMPurify(new JSDOM("").window);
+&nbsp;
+router.get("/data/:type", hasRole("admin"), async (req, res) =&gt; {
   try {
     const type = req.params.type;
     const proxyUrl = getActiveProxy();
@@ -258,7 +278,7 @@ router.get("/data/:type", async (req, res) =&gt; {
   }
 });
 &nbsp;
-router.post("/pdf", <span class="fstat-no" title="function not covered" >as</span>ync (req, res) =&gt; {
+router.post("/pdf", hasRole("admin"), <span class="fstat-no" title="function not covered" >as</span>ync (req, res) =&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const browser = <span class="cstat-no" title="statement not covered" >await puppeteer.launch({</span>
       headless: "new",
@@ -272,7 +292,8 @@ router.post("/pdf", <span class="fstat-no" title="function not covered" >as</spa
 &nbsp;
     const page = <span class="cstat-no" title="statement not covered" >await browser.newPage();</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    await page.setContent(req.body.html, { waitUntil: "networkidle0" });</span>
+    const safeHtml = <span class="cstat-no" title="statement not covered" >_domPurify.sanitize(req.body.html || "", { WHOLE_DOCUMENT: true, FORCE_BODY: false });</span>
+<span class="cstat-no" title="statement not covered" >    await page.setContent(safeHtml, { waitUntil: "networkidle0" });</span>
 &nbsp;
     const pdf = <span class="cstat-no" title="statement not covered" >await page.pdf({</span>
       format: "A4",
@@ -298,7 +319,7 @@ module.exports = router;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-08T02:26:53.794Z
+                at 2026-06-09T23:49:58.655Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

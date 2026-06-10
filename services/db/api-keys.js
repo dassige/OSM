@@ -67,14 +67,15 @@ async function deleteApiKey(id) {
 
 // ── API Call Log ──────────────────────────────────────────────────────────────
 
-async function logApiCall(apiKeyId, keyName, keyPrefix, method, endpoint, originIp, userAgent, statusCode, queryParams, requestBody, pathParams) {
+async function logApiCall(apiKeyId, keyName, keyPrefix, method, endpoint, originIp, userAgent, statusCode, queryParams, requestBody, pathParams, geoLocation) {
     try {
         const db = await initDB();
         await db.run(
-            `INSERT INTO api_call_log (api_key_id, key_name, key_prefix, method, endpoint, origin_ip, user_agent, status_code, query_params, request_body, path_params)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO api_call_log (api_key_id, key_name, key_prefix, method, endpoint, origin_ip, user_agent, status_code, query_params, request_body, path_params, geo_location)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             apiKeyId, keyName, keyPrefix, method, endpoint, originIp, userAgent, statusCode,
-            queryParams || null, requestBody || null, pathParams || null
+            queryParams || null, requestBody || null, pathParams || null,
+            geoLocation ? JSON.stringify(geoLocation) : null
         );
     } catch (_) {
         // Never let logging failures affect request handling
@@ -101,7 +102,7 @@ async function listApiCallLog({ page = 1, limit = 50, keyId, method, endpoint, s
 
     const [rows, countRow] = await Promise.all([
         db.all(
-            `SELECT id, api_key_id, key_name, key_prefix, method, endpoint, origin_ip, user_agent, status_code, query_params, request_body, path_params, logged_at
+            `SELECT id, api_key_id, key_name, key_prefix, method, endpoint, origin_ip, geo_location, user_agent, status_code, query_params, request_body, path_params, logged_at
              FROM api_call_log ${where} ORDER BY ${sortCol} ${sortOrder} LIMIT ? OFFSET ?`,
             [...params, limit, offset]
         ),
@@ -128,7 +129,7 @@ async function exportApiCallLog({ keyId, method, endpoint, startDate, endDate, s
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     return db.all(
-        `SELECT id, api_key_id, key_name, key_prefix, method, endpoint, origin_ip, user_agent, status_code, query_params, request_body, path_params, logged_at
+        `SELECT id, api_key_id, key_name, key_prefix, method, endpoint, origin_ip, geo_location, user_agent, status_code, query_params, request_body, path_params, logged_at
          FROM api_call_log ${where} ORDER BY ${sortCol} ${sortOrder}`,
         params
     );

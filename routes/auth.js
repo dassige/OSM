@@ -7,6 +7,7 @@ const speakeasy = require("speakeasy");
 const db = require("../services/db");
 const config = require("../config");
 const logger = require("../services/logger");
+const { lookupIp } = require("../services/geo-ip");
 const { sendPasswordReset, sendPasswordResetLink } = require("../services/mailer");
 const whatsappService = require("../services/whatsapp-service");
 const { loginLimiter, mfaLimiter, forgotPasswordLimiter } = require("../middleware/rate-limiter");
@@ -30,6 +31,7 @@ async function finalizeLogin(req, res, user, authType) {
     authType: authType,
     role: user.role,
     sourceIP: ip,
+    sourceLocation: lookupIp(ip),
   });
 
   res.json({ success: true });
@@ -44,7 +46,7 @@ router.post("/login", loginLimiter, async (req, res) => {
     req.session.user = {
       id: 0, name: "Super Admin", email: username, role: "superadmin", isAdmin: true, isEnvUser: true,
     };
-    await db.logEvent("Super Admin", "Security", "Successful Login", { userEmail: username, authType: "environment", sourceIP: ip });
+    await db.logEvent("Super Admin", "Security", "Successful Login", { userEmail: username, authType: "environment", sourceIP: ip, sourceLocation: lookupIp(ip) });
     return res.json({ success: true });
   }
 

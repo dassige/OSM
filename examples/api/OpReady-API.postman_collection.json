@@ -1814,7 +1814,7 @@
                                                                                 }
                                                                             ]
                                                               },
-                                                      "description":  "Returns paginated call log entries for all API key requests. Supports sorting by any column (logged_at, key_name, method, endpoint, origin_ip, status_code) and filtering by keyId, method, endpoint (partial URL match including query string), and date range."
+                                                      "description":  "Returns paginated call log entries for all API key requests. Each entry includes origin_ip and geo_location (an object with city, region, country resolved from the IP offline; null for private/loopback addresses). Supports sorting by any column (logged_at, key_name, method, endpoint, origin_ip, status_code) and filtering by keyId, method, endpoint (partial URL match including query string), and date range."
                                                   }
                                   },
                                   {
@@ -1868,7 +1868,7 @@
                                                                                 }
                                                                             ]
                                                               },
-                                                      "description":  "Returns all matching call log entries as a JSON download (no pagination). Accepts the same filter and sort parameters as List API Call Log. Response includes Content-Disposition header with a suggested filename."
+                                                      "description":  "Returns all matching call log entries as a JSON download (no pagination). Each record includes geo_location (city, region, country resolved from origin_ip; null for private addresses). Accepts the same filter and sort parameters as List API Call Log. Response includes Content-Disposition header with a suggested filename."
                                                   }
                                   },
                                   {

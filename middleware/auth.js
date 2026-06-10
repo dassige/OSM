@@ -1,4 +1,5 @@
 const { getApiKeyByHash, touchApiKey, hashKey, logApiCall } = require('../services/db/api-keys');
+const { lookupIp } = require('../services/geo-ip');
 
 // Keys whose values are replaced with '***' in stored params/body
 const MASK_KEYS = /^(password|passwd|pass|secret|token|api[_-]?key|authorization|credential|pin|cvv)$/i;
@@ -92,9 +93,10 @@ const globalAuthGuard = async (req, res, next) => {
         touchApiKey(record.id).catch(() => {});
         const originIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip || '';
         const userAgent = req.headers['user-agent'] || '';
+        const geoLocation = lookupIp(originIp);
         res.on('finish', () => {
           logApiCall(record.id, record.name, record.key_prefix, req.method, req.originalUrl, originIp, userAgent, res.statusCode,
-              toLogJson(req.query), toLogJson(req.body), toLogJson(req.params));
+              toLogJson(req.query), toLogJson(req.body), toLogJson(req.params), geoLocation);
         });
         return next();
       }

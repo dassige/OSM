@@ -237,6 +237,15 @@ const spec = {
                     method:       { type: 'string', example: 'GET' },
                     endpoint:     { type: 'string', example: '/api/members?active=1&page=2' },
                     origin_ip:    { type: 'string', example: '203.0.113.42', nullable: true },
+                    geo_location: {
+                        type: 'object', nullable: true,
+                        description: 'Geographic location resolved from origin_ip using an offline GeoLite2 database. Null for private/loopback addresses or unrecognised IPs.',
+                        properties: {
+                            city:    { type: 'string', example: 'Auckland' },
+                            region:  { type: 'string', example: 'Auckland' },
+                            country: { type: 'string', example: 'NZ' }
+                        }
+                    },
                     user_agent:   { type: 'string', nullable: true },
                     status_code:  { type: 'integer', example: 200, nullable: true },
                     path_params:  { type: 'string', format: 'json', nullable: true, description: 'JSON object of route path parameters, e.g. {"id":"42"} for /api/members/:id. Null when the route has no path parameters.' },

@@ -288,6 +288,7 @@ const helpContent = {
             <ul>
                 <li><strong>Tracks:</strong> Login attempts (success/fail), emails sent, forms submitted, settings changed, and database backups.</li>
                 <li><strong>Payloads:</strong> Click the <span style="color:#17a2b8;">ℹ</span> icon to view detailed JSON data (e.g., exact scores calculated for a form submission).</li>
+                <li><strong>Login geo-location:</strong> Successful login events display a highlighted panel showing the originating IP address and its resolved geographic location (city and country) above the raw payload data.</li>
                 <li><strong>Maintenance:</strong> Super Admins can <strong>Prune</strong> (delete old logs) or <strong>Purge</strong> (clear all logs) to save space.</li>
             </ul>
         `
@@ -391,7 +392,7 @@ const helpContent = {
             <p>These categories are written exclusively by server-side code to prevent tampering with security-sensitive audit records. Frontend pages may only write to application-level categories (e.g. <code>Members</code>).</p>
 
             <h3>2. API Call Log</h3>
-            <p>Every request authenticated via an API key is recorded with: key name, HTTP method, full endpoint URL (including query parameters), origin IP, user agent, and HTTP response code.</p>
+            <p>Every request authenticated via an API key is recorded with: key name, HTTP method, full endpoint URL (including query parameters), origin IP, <strong>geographic location</strong> (city and country resolved from the IP), user agent, and HTTP response code.</p>
             <ul>
                 <li><strong>Sort:</strong> Click any column header — Timestamp, Key Name, Method, Endpoint, Origin IP, or Status — to sort. Direction and column are saved automatically.</li>
                 <li><strong>Filter:</strong> Click <em>Filters</em> to expand the filter panel. Narrow results by key, method, endpoint text, and date range, then click <em>Apply</em>. Active filter fields are highlighted with a blue border.</li>

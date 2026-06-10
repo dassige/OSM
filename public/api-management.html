@@ -901,6 +901,17 @@
             </div>`;
         }
 
+        function parseGeo(r) {
+            try { return r.geo_location ? JSON.parse(r.geo_location) : null; }
+            catch (_) { return null; }
+        }
+
+        function geoLabel(geo) {
+            if (!geo) return '';
+            const parts = [geo.city, geo.country].filter(Boolean);
+            return parts.join(', ');
+        }
+
         function toggleLogDetail(detailId, btnId) {
             const row = document.getElementById(detailId);
             const btn = document.getElementById(btnId);
@@ -931,7 +942,10 @@
                     <td style="padding:8px 10px;"><code style="font-size:11px;">${escapeHtml(r.key_prefix || '—')}…</code></td>
                     <td style="padding:8px 10px;"><span style="background:var(--bg-hover);padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">${escapeHtml(r.method)}</span></td>
                     <td style="padding:8px 10px; font-family:monospace; font-size:12px; word-break:break-all;">${escapeHtml(r.endpoint)}</td>
-                    <td style="padding:8px 10px; font-size:12px; white-space:nowrap;">${escapeHtml(r.origin_ip || '—')}</td>
+                    <td style="padding:8px 10px; font-size:12px; white-space:nowrap;">
+                        <div>${escapeHtml(r.origin_ip || '—')}</div>
+                        ${geoLabel(parseGeo(r)) ? `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${escapeHtml(geoLabel(parseGeo(r)))}</div>` : ''}
+                    </td>
                     <td style="padding:8px 10px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px;" title="${escapeHtml(r.user_agent || '')}">${escapeHtml(r.user_agent || '—')}</td>
                     <td style="padding:8px 10px; font-weight:600; color:${statusColor(r.status_code)};">${r.status_code || '—'}</td>
                     <td style="padding:4px 8px; text-align:center;">
@@ -975,6 +989,7 @@
                             <div class="card-row"><span class="card-label">Method:</span><span style="background:var(--bg-hover);padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">${escapeHtml(r.method)}</span></div>
                             <div class="card-row"><span class="card-label">Endpoint:</span><span style="font-family:monospace; font-size:11px; word-break:break-all;">${escapeHtml(r.endpoint)}</span></div>
                             <div class="card-row"><span class="card-label">Origin IP:</span><span style="font-size:12px;">${escapeHtml(r.origin_ip || '—')}</span></div>
+                            ${geoLabel(parseGeo(r)) ? `<div class="card-row"><span class="card-label">Location:</span><span style="font-size:12px;">${escapeHtml(geoLabel(parseGeo(r)))}</span></div>` : ''}
                             <div class="card-row"><span class="card-label">Status:</span><span style="font-weight:600; color:${statusColor(r.status_code)};">${r.status_code || '—'}</span></div>
                             <div class="card-row"><span class="card-label">User Agent:</span><span style="font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;" title="${escapeHtml(r.user_agent || '')}">${escapeHtml(r.user_agent || '—')}</span></div>
                             ${hasDetail ? `

@@ -33,6 +33,7 @@ jest.mock('../config', () => ({
     },
 }));
 jest.mock('../services/whatsapp-service', () => ({ logout: jest.fn() }));
+jest.mock('../services/geo-ip', () => ({ lookupIp: jest.fn().mockReturnValue(null) }));
 jest.mock('../middleware/rate-limiter', () => ({
     loginLimiter:           (req, res, next) => next(),
     mfaLimiter:             (req, res, next) => next(),

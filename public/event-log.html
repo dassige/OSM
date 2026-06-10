@@ -602,8 +602,28 @@
             document.getElementById('modalType').textContent = type;
             document.getElementById('modalTitle').textContent = title;
 
+            // Remove any previously injected geo block
+            const prev = document.getElementById('modalGeoBlock');
+            if (prev) prev.remove();
+
             try {
                 const obj = JSON.parse(payloadStr);
+
+                // For Security login events, surface IP + location prominently above the raw JSON
+                if (type === 'Security' && (obj.sourceIP || obj.sourceLocation)) {
+                    const geo = obj.sourceLocation;
+                    const geoText = geo
+                        ? [geo.city, geo.region, geo.country].filter(Boolean).join(', ')
+                        : '';
+                    const block = document.createElement('div');
+                    block.id = 'modalGeoBlock';
+                    block.style.cssText = 'background:var(--bg-hover); border:1px solid var(--border-color); border-radius:6px; padding:10px 14px; margin-bottom:12px; font-size:13px; display:grid; grid-template-columns:auto 1fr; gap:6px 16px;';
+                    block.innerHTML =
+                        '<strong>Source IP:</strong><span style="font-family:monospace;">' + esc(obj.sourceIP || '—') + '</span>' +
+                        (geoText ? '<strong>Location:</strong><span>' + esc(geoText) + '</span>' : '');
+                    document.getElementById('modalPayload').before(block);
+                }
+
                 document.getElementById('modalPayload').textContent = JSON.stringify(obj, null, 2);
             } catch (e) {
                 document.getElementById('modalPayload').textContent = payloadStr;
