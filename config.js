@@ -34,6 +34,7 @@ const ui = {
   loginTitle: process.env.UI_LOGIN_TITLE || "OpReady",
   version: packageJson.version,
   deployDate: packageJson.versionDate,
+  parentCommitId: packageJson["git-parentCommit-ID"] || "",
   trainingDayIndex: getDayIndex(process.env.TRAINING_DAY_OF_WEEK),
   trainingDayName: process.env.TRAINING_DAY_OF_WEEK || "Monday",
   timezone: timezone,

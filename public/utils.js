@@ -425,6 +425,7 @@ window.showAboutModal = async function() {
                 <div style="margin: 20px 0; font-size: 0.9em;">
                     <p><strong>Version:</strong> ${config.version}</p>
                     <p><strong>Version Date:</strong> ${config.deployDate}</p>
+                    ${config.parentCommitId ? `<p><strong>Parent Commit:</strong> <span style="font-family:monospace;">${config.parentCommitId.slice(0, 7)}</span></p>` : ''}
                     <p><strong>Release Notes:</strong> <a id="globalAboutReleaseLink" href="${_GITHUB_REPO}/releases" target="_blank" rel="noopener" title="View release notes on GitHub">Loading…</a></p>
                 </div>
                 <div class="modal-credits">

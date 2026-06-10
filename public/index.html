@@ -300,33 +300,6 @@
         </svg>
     </button>
 
-    <div id="aboutModal" class="modal">
-        <div class="modal-content modal-centered-content">
-            <span class="close-btn" onclick="closeModal('aboutModal')">&times;</span>
-            <img id="aboutLogo" alt="App Logo" class="modal-about-logo">
-            <h2 style="margin-top: 0;">About</h2>
-            <p style="font-size: 1.1em; color: var(--text-muted);">OpReady Automation Manager</p>
-            <div style="margin: 20px 0; font-size: 0.9em;">
-                <p style="margin: 10px 0;"><strong>Version:</strong> <span id="disp-version">...</span></p>
-                <p style="margin: 10px 0;"><strong>Date:</strong> <span id="disp-date">...</span></p>
-                <p style="margin: 10px 0;"><strong>Release Notes:</strong> <a id="disp-release-link" href="https://github.com/dassige/OSM/releases" target="_blank" rel="noopener" title="View release notes on GitHub">Loading…</a></p>
-            </div>
-            <div class="modal-credits">
-                <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">Credits</p>
-                <ul style="padding-left: 20px; margin: 0; line-height: 1.6;">
-                    <li><strong>Developer:</strong> Gerardo Dassi (<a href="https://github.com/dassige/OSM"
-                            target="_blank">Github</a>)</li>
-                    <li><strong>Persistence:</strong> Litestream</li>
-                    <li><strong>Icons:</strong> Feather Icons</li>
-                </ul>
-            </div>
-            <div class="modal-actions-center">
-                <button onclick="closeModal('aboutModal')"
-                    style="background-color: var(--text-muted); border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer;">Close</button>
-            </div>
-        </div>
-    </div>
-
     <div id="pendingReviewsModal" class="modal">
         <div class="modal-content modal-centered-content">
             <span class="close-btn" onclick="closeModal('pendingReviewsModal')">&times;</span>
@@ -376,7 +349,6 @@
             .catch(() => window.location.href = '/login.html');
 
         window.onclick = function (event) {
-            if (event.target == document.getElementById('aboutModal')) closeModal('aboutModal');
             if (event.target == document.getElementById('pendingReviewsModal')) closeModal('pendingReviewsModal');
             if (event.target == document.getElementById('legendModal')) closeModal('legendModal');
         }
@@ -448,17 +420,6 @@
             });
         });
 
-        fetch('/ui-config')
-            .then(r => r.json())
-            .then(config => {
-                if (config.loginLogo) {
-                    const logo = document.getElementById('aboutLogo');
-                    if (logo) {
-                        logo.src = config.loginLogo;
-                        logo.style.display = 'block';
-                    }
-                }
-            });
     </script>
     <script src="/js/pwa.js"></script>
 
