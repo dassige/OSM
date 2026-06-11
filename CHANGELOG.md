@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.10.1] - 2026/06/11
+
+- feat: enhance environment configuration options and documentation for APP_MODE
+
 ## [3.10.0] - 2026/06/11
 
 - feat(ai-service): refactor prompt structure to enhance security against injection attacks

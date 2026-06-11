@@ -166,7 +166,7 @@ The `OPTIONS` constant at the top of `scripts/setup-env.js` maps variable names 
 
 | Variable | Options |
 |----------|---------|
-| `APP_MODE` | `production`, `demo` |
+| `APP_MODE` | `production`, `demo`, `development` |
 | `NODE_ENV` | `development`, `production` |
 | `LOG_LEVEL` | `info`, `error`, `warn`, `debug` |
 | `PROXY_MODE` | `none`, `fixed`, `dynamic` |

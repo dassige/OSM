@@ -34,7 +34,7 @@ const EXISTING_ENV = path.join(ROOT, '.env');
 // Keep in sync with .example.env when new enum-style variables are added.
 
 const OPTIONS = {
-    APP_MODE:               ['production', 'demo'],
+    APP_MODE:               ['production', 'demo', 'development'],
     EXTRACTION_PLUGIN:      ['html-scraper', 'rest-api'],
     NODE_ENV:               ['development', 'production'],
     LOG_LEVEL:              ['info', 'error', 'warn', 'debug'],

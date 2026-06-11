@@ -104,6 +104,8 @@ Done.
 
 Parses `.example.env` and serves a local web form for configuring environment variables. Variables are grouped by section, each showing the key name, a value input, an enable/disable checkbox, and the description from `.example.env`. The footer bar has three actions:
 
+> **`APP_MODE` dropdown** renders three options: `production` (default — live DB, HTTPS required), `development` (live DB, HTTP allowed for local use without a TLS proxy), and `demo` (sandboxed DB, demo credentials, all destructive actions blocked). Select `development` when running the app on a local laptop without a TLS-terminating reverse proxy.
+
 - **Load .env** — opens a file picker; the selected `.env` file is read client-side, its values are applied to all matching form fields, and any row that received a value from the file is highlighted with a teal left border so you can see at a glance what the loaded file contained.
 - **Generate .env File** — writes the current form state to `.generated.env` in the project root (existing behaviour).
 - **Save to .env** — appears after a file is loaded; writes the current form state directly to `.env` in the project root (overwrites it).

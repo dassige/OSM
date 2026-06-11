@@ -173,7 +173,10 @@ Open the `.env` file and configure the following parameters:
 
 #### **Operation Mode**
 
-  * `APP_MODE`: Set to `production` (default) for live scraping, or `demo` to enable the sandboxed demo mode.
+  * `APP_MODE`: Controls the operating mode:
+    * `production` (default) — live OI dashboard scraping, real database, HTTPS required (`COOKIE_SECURE=true` is enforced).
+    * `development` — same as production (real database, real scraping, real credentials required) but `COOKIE_SECURE=false` is permitted for local HTTP development without a TLS proxy.
+    * `demo` — sandboxed mode with a bundled static data file, isolated `demo.db`, and demo credentials. All destructive actions are blocked.
 
 #### **Demo Secrets (Only used when APP_MODE=demo)**
 
