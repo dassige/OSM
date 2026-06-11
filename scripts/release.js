@@ -82,9 +82,49 @@ async function main() {
         console.warn('    Install from https://cli.github.com/ to enable automatic release creation.\n');
     }
 
+    // 5. Determine commit range and list commits to be included
+    const tipRef      = tagExists ? `${tagName}^` : 'HEAD';
+    const prevTagRes  = tryRun(`git describe --tags --abbrev=0 ${tipRef}`);
+    const prevTagName = prevTagRes.ok ? prevTagRes.out : null;
+    const rangeEnd    = tagExists ? tagName : 'HEAD';
+    const commitRange = prevTagName ? `${prevTagName}..${rangeEnd}` : rangeEnd;
+
+    const SEP = '__OPREADY_COMMIT__';
+    const logRes = tryRun(`git log ${commitRange} --format=${SEP}%n%B`);
+    const commits = logRes.ok
+        ? logRes.out.split(SEP + '\n').map(s => s.trim()).filter(Boolean)
+        : [];
+
+    const sinceLabel = prevTagName ? `since ${prevTagName}` : 'all commits';
+    console.log(`\nCommits in this release — ${sinceLabel} (${commits.length}):`);
+    console.log('─'.repeat(50));
+    if (commits.length === 0) {
+        console.log('  (none)');
+    } else {
+        commits.forEach((msg, i) => {
+            const lines = msg.split('\n');
+            const subject = lines[0].trim();
+            const body = lines.slice(1).join('\n').trim();
+            console.log(`  ${i + 1}. ${subject}`);
+            if (body) {
+                body.split('\n').forEach(l => console.log(`     ${l}`));
+                console.log('');
+            }
+        });
+    }
+    console.log('─'.repeat(50));
+
+    // Pre-build markdown notes for step 9
+    const autoNotes = commits.map(msg => {
+        const lines = msg.split('\n');
+        const subject = lines[0].trim();
+        const body = lines.slice(1).join('\n').trim();
+        return body ? `### ${subject}\n\n${body}` : `### ${subject}`;
+    }).join('\n\n');
+
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-    // 5. Confirm
+    // 6. Confirm
     console.log('');
     const confirm = (await ask(rl, `Release ${tagName}? (y/N): `)).trim().toLowerCase();
     if (confirm !== 'y') {
@@ -93,7 +133,7 @@ async function main() {
         process.exit(0);
     }
 
-    // 6. Optional custom release notes
+    // 7. Optional custom release notes
     let customNotes = '';
     if (ghAvail) {
         console.log('\nRelease notes (press Enter to include all commit messages in full):');
@@ -102,13 +142,13 @@ async function main() {
 
     rl.close();
 
-    // 7. Create tag (skip if it already existed)
+    // 8. Create tag (skip if it already existed)
     if (!tagExists) {
         console.log(`\nCreating tag ${tagName} ...`);
         run(`git tag ${tagName}`);
     }
 
-    // 8. Push tag
+    // 9. Push tag
     console.log('Pushing tag to origin ...');
     const pushResult = tryRun(`git push origin ${tagName}`);
     if (!pushResult.ok) {
@@ -120,7 +160,7 @@ async function main() {
         }
     }
 
-    // 9. GitHub release
+    // 10. GitHub release
     if (ghAvail) {
         console.log('Creating GitHub release ...');
 
@@ -130,13 +170,7 @@ async function main() {
             return;
         }
 
-        let notes = customNotes;
-        if (!notes) {
-            const prevTag = tryRun(`git describe --tags --abbrev=0 ${tagName}^`);
-            const range = prevTag.ok ? `${prevTag.out}..${tagName}` : tagName;
-            const logResult = tryRun(`git log ${range} --format=### %s%n%n%b%n`);
-            notes = logResult.ok ? logResult.out.trim() : '';
-        }
+        const notes = customNotes || autoNotes;
 
         const tmpFile = path.join(ROOT, '.release-notes.tmp');
         fs.writeFileSync(tmpFile, notes || '(no release notes)', 'utf8');
