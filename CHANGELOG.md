@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.10.4] - 2026/06/12
+
+- feat(release): improve commit range determination by querying GitHub releases
+- fix(release): correct commit range reference for tag handling
+
 ## [3.10.3] - 2026/06/12
 
 - feat(release): enhance release script to display commit range and improve release notes handling
