@@ -83,7 +83,7 @@ async function main() {
     }
 
     // 5. Determine commit range and list commits to be included
-    const tipRef      = tagExists ? `${tagName}^` : 'HEAD';
+    const tipRef      = tagExists ? `${tagName}~1` : 'HEAD';
     const prevTagRes  = tryRun(`git describe --tags --abbrev=0 ${tipRef}`);
     const prevTagName = prevTagRes.ok ? prevTagRes.out : null;
     const rangeEnd    = tagExists ? tagName : 'HEAD';
