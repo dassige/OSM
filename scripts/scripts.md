@@ -61,7 +61,7 @@ node scripts/release.js
 6. Creates the Git tag locally (skipped if it already existed).
 7. Pushes the tag to origin. If the push fails and the tag was pre-existing (likely already on remote), warns and continues. If the push fails for a freshly created tag, removes the local tag and aborts.
 8. Checks whether a GitHub Release for the tag already exists. If it does, prints a warning and exits cleanly.
-9. Builds release notes: custom notes if entered, otherwise the commit messages from step 3 formatted as `### subject` + body per commit. Notes are written to a temp file and passed via `--notes-file`.
+9. Builds release notes: custom notes if entered as-is; otherwise commits are grouped by conventional-commit type (feat → ✨ Features, fix → 🐛 Bug Fixes, etc.) with the type prefix bolded, commit bodies indented beneath their bullet, and a **Full Changelog** compare link appended. Notes are written to a temp file and passed via `--notes-file`.
 10. Runs `gh release create vX.Y.Z --notes-file .release-notes.tmp`.
 11. Prints the GitHub Release URL on success.
 
@@ -102,6 +102,34 @@ Creating GitHub release ...
 
 Done.
 ```
+
+**Generated release notes structure** (when custom notes are not entered):
+
+```markdown
+## OpReady v3.2.9
+
+### ✨ Features
+
+- **ai-service:** Refactor prompt structure to enhance security against injection attacks
+- Add skill verification export
+
+  Adds a CSV export button to the verification history report view.
+
+### 🐛 Bug Fixes
+
+- **backup:** Update allowed SQL statement prefixes to enhance security
+- Correct date formatting in reports
+
+### 🔧 Maintenance
+
+- Bump dependencies
+
+---
+
+**Full Changelog**: https://github.com/dassige/OSM/compare/v3.2.8...v3.2.9
+```
+
+The `feat:` / `fix:` / `chore:` prefix is stripped from every bullet — the section heading already carries that information. If the commit has a scope (e.g. `feat(ai-service):`), it is kept as a bold prefix (`**ai-service:**`). The description is capitalised. Breaking changes are flagged with ⚠️ **Breaking:**. Commits are grouped in this order: Features → Bug Fixes → Performance → Refactoring → Documentation → Tests → Maintenance → CI/CD → Build → Reverts → Other Changes. Commits that do not follow the conventional-commit prefix convention are placed in **Other Changes**.
 
 **Error cases**
 

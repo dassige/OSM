@@ -45,6 +45,83 @@ function abort(rl, msg) {
     process.exit(1);
 }
 
+function buildMarkdownNotes(commits, tagName, prevReleaseTag) {
+    const TYPES = {
+        feat:     { label: '✨ Features',       order: 1 },
+        fix:      { label: '🐛 Bug Fixes',      order: 2 },
+        perf:     { label: '⚡ Performance',     order: 3 },
+        refactor: { label: '♻️ Refactoring',    order: 4 },
+        docs:     { label: '📚 Documentation',  order: 5 },
+        test:     { label: '🧪 Tests',           order: 6 },
+        chore:    { label: '🔧 Maintenance',    order: 7 },
+        ci:       { label: '⚙️ CI / CD',        order: 8 },
+        build:    { label: '📦 Build',          order: 9 },
+        revert:   { label: '⏪ Reverts',        order: 10 },
+    };
+    const OTHER_KEY   = 'other';
+    const OTHER_LABEL = '🔀 Other Changes';
+
+    // Parse one commit subject into its components.
+    function parseSubject(subject) {
+        // Matches: type(scope)!: description  OR  type!: description  OR  type: description
+        const m = subject.match(/^([a-z]+)(?:\(([^)]*)\))?(!)?: (.+)/i);
+        if (!m) return { type: OTHER_KEY, scope: null, breaking: false, desc: subject };
+        return {
+            type:     m[1].toLowerCase(),
+            scope:    m[2] || null,
+            breaking: !!m[3],
+            desc:     m[4],
+        };
+    }
+
+    // Format a bullet line: strip the type prefix; bold the scope if present.
+    function formatBullet(subject) {
+        const { scope, breaking, desc } = parseSubject(subject);
+        const clean = desc.charAt(0).toUpperCase() + desc.slice(1);
+        let bullet  = scope ? `**${scope}:** ${clean}` : clean;
+        if (breaking) bullet = `⚠️ **Breaking:** ${bullet}`;
+        return bullet;
+    }
+
+    const groups = {};
+    for (const msg of commits) {
+        const lines   = msg.split('\n');
+        const subject = lines[0].trim();
+        const body    = lines.slice(1).join('\n').trim();
+        const { type } = parseSubject(subject);
+        const key = TYPES[type] ? type : OTHER_KEY;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push({ subject, body });
+    }
+
+    const sortedKeys = Object.keys(groups).sort((a, b) =>
+        (TYPES[a]?.order ?? 99) - (TYPES[b]?.order ?? 99)
+    );
+
+    const compareUrl = prevReleaseTag
+        ? `${GITHUB_REPO}/compare/${prevReleaseTag}...${tagName}`
+        : `${GITHUB_REPO}/releases/tag/${tagName}`;
+
+    let md = `## OpReady ${tagName}\n\n`;
+
+    for (const key of sortedKeys) {
+        const label = TYPES[key] ? TYPES[key].label : OTHER_LABEL;
+        md += `### ${label}\n\n`;
+        for (const { subject, body } of groups[key]) {
+            md += `- ${formatBullet(subject)}\n`;
+            if (body) {
+                md += '\n';
+                body.split('\n').forEach(l => { md += `  ${l.trimEnd()}\n`; });
+                md += '\n';
+            }
+        }
+        md += '\n';
+    }
+
+    md += `---\n\n**Full Changelog**: ${compareUrl}\n`;
+    return md;
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -129,13 +206,8 @@ async function main() {
     }
     console.log('─'.repeat(50));
 
-    // Pre-build markdown notes for step 9
-    const autoNotes = commits.map(msg => {
-        const lines = msg.split('\n');
-        const subject = lines[0].trim();
-        const body = lines.slice(1).join('\n').trim();
-        return body ? `### ${subject}\n\n${body}` : `### ${subject}`;
-    }).join('\n\n');
+    // Pre-build structured markdown notes for step 10
+    const autoNotes = buildMarkdownNotes(commits, tagName, prevReleaseTag);
 
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
