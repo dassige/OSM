@@ -153,43 +153,44 @@ The tool renders three distinct input types. When adding new variables, decide w
 | Condition | Rendered as | Where to update |
 |-----------|------------|-----------------|
 | Variable name matches `/PASSWORD\|_SECRET$\|_PASS$\|_KEY$\|_TOKEN$/` | `<input type="password">` with Show/Hide toggle | No change needed — regex-driven |
-| Variable key is present in the `OPTIONS` map | `<select>` dropdown | Add/update entry in `OPTIONS` in `scripts/setup-env.js` |
+| Variable has a `# Values: v1 \| v2` line in `.example.env` **or** key is in the `OPTIONS` map | `<select>` dropdown | Add `# Values:` line to `.example.env` (preferred) |
 | All other variables | `<input type="text">` | No change needed |
 
 Sensitive and dropdown classifications are mutually exclusive by design — no variable in the `OPTIONS` map matches the secret regex.
 
-### The `OPTIONS` map — dropdown variables
+### Declaring dropdown values — `# Values:` in `.example.env`
 
-The `OPTIONS` constant at the top of `scripts/setup-env.js` maps variable names to their allowed values. It must be kept in sync with `.example.env`.
+**The preferred way** to make a variable render as a dropdown is to add a `# Values:` comment line directly above it in `.example.env`:
 
-**Current entries:**
+```
+# Values: value1 | value2 | value3
+MY_VARIABLE=value1
+```
 
-| Variable | Options |
-|----------|---------|
-| `APP_MODE` | `production`, `demo`, `development` |
-| `NODE_ENV` | `development`, `production` |
-| `LOG_LEVEL` | `info`, `error`, `warn`, `debug` |
-| `PROXY_MODE` | `none`, `fixed`, `dynamic` |
-| `AI_PROVIDER` | `gemini`, `ollama` |
-| `DEFAULT_MIN_SCORE_TYPE` | `percentage`, `number` |
-| `TRAINING_DAY_OF_WEEK` | `Monday` … `Sunday` |
-| `COOKIE_SECURE` | `false`, `true` |
-| `ENABLE_AI_EVALUATION` | `false`, `true` |
-| `ENABLE_WHATSAPP` | `false`, `true` |
+- The parser reads this line and attaches the values list to the variable object.
+- The `# Values:` line is **not** included in the description text shown in the web UI — the dropdown itself makes the options visible.
+- Order options with the recommended/default value first.
+- The `# Values:` line can appear anywhere in the variable's description block (immediately before the variable declaration is clearest).
 
-**When to add a new entry:** any new variable whose valid values form a closed, enumerable set (booleans, named modes, day names, provider names, etc.). Order options with the recommended/default value first.
+### The `OPTIONS` map — fallback for edge cases
 
-**When to remove or rename an entry:** when the variable is removed from `.example.env` or its allowed values change.
+The `OPTIONS` constant at the top of `scripts/setup-env.js` is now a **fallback** only. If a variable has both a `# Values:` line in `.example.env` and an entry in `OPTIONS`, the `.example.env` value takes priority.
+
+Only update `OPTIONS` when:
+- The variable must render as a dropdown but cannot be added to `.example.env` (very rare).
+- You need to temporarily override the values list for tooling reasons.
+
+All existing enum variables in `.example.env` already carry `# Values:` lines. The OPTIONS map is kept for backward compatibility.
 
 ### When to update `scripts/setup-env.js` directly
 
 | Trigger | Required action |
 |---------|----------------|
-| New enum-style variable added to `.example.env` | Add the variable and its options to the `OPTIONS` map |
-| Existing enum variable's allowed values change | Update its entry in `OPTIONS` |
+| New enum-style variable added to `.example.env` | Add `# Values: v1 \| v2 \| v3` to `.example.env` — no `OPTIONS` map change needed |
+| Existing enum variable's allowed values change | Update the `# Values:` line in `.example.env` (and the `OPTIONS` entry if one exists) |
 | Variable removed from `.example.env` | Remove its entry from `OPTIONS` (if present) |
 | Section separator format changes (`# ===` → something else) | Update `isSep()` |
-| Disabled variable convention changes (`# KEY=` → something else) | Update the disabled-variable regex in `parse()` |
+| Disabled variable convention changes (`#KEY=` → something else) | Update the disabled-variable regex in `parse()` |
 | A new input type is needed (e.g. file-path picker, textarea) | Extend `buildHtml()` and the POST `/generate` handler |
 
 ### Disabled-variable behaviour
@@ -197,7 +198,7 @@ The `OPTIONS` constant at the top of `scripts/setup-env.js` maps variable names 
 When the enable checkbox is unchecked:
 - The input (text, password, or select) gains the `disabled` HTML attribute — the user cannot edit the value.
 - The row is visually dimmed via the `is-disabled` CSS class.
-- On generate, the variable is written as `# KEY=value` (commented out) in `.generated.env`.
+- On generate, the variable is written as `#KEY=value` (no space — commented out) in `.generated.env`.
 
 Checking the box re-enables the input and removes the dimming.
 

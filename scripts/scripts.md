@@ -122,6 +122,26 @@ npm run setup-env
 node scripts/setup-env.js
 ```
 
+**`.example.env` convention**
+
+The parser uses these four line types (anything else is ignored):
+
+| Line pattern | Parsed as |
+|---|---|
+| `# text` | Free-form description comment — accumulated as the variable's help text in the web UI |
+| `# Values: v1 \| v2 \| v3` | Dropdown values — drives the `<select>` for that variable; NOT added to the description text |
+| `#KEY=value` | Disabled/optional variable (no space between `#` and the key) |
+| `KEY=value` | Enabled variable |
+
+**To make a variable render as a dropdown**, add a `# Values:` line directly above it:
+```
+# Description text here.
+# Values: option1 | option2 | option3
+MY_VARIABLE=option1
+```
+
+This means description prose can safely mention environment variable names like `COOKIE_SECURE` without being misinterpreted as a disabled variable declaration, as long as the line has a space after `#`.
+
 **Prerequisites**
 
 - `.example.env` must exist in the project root (it is committed to the repository).
@@ -155,7 +175,7 @@ Then restart the server for changes to take effect.
 - Section headers matching `.example.env`
 - Description comments above each variable
 - Enabled variables as `KEY=value`
-- Disabled variables as `# KEY=value`
+- Disabled variables as `#KEY=value` (no space after `#`)
 
 **Port conflict**
 

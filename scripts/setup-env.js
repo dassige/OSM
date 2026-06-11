@@ -64,7 +64,13 @@ function isSecret(key) {
 }
 
 function buildOptions(key, currentValue) {
-    return OPTIONS[key].map(function(opt) {
+    return buildOptionsArr(OPTIONS[key], currentValue);
+}
+
+// Accepts a plain array — used by both the OPTIONS map path and the
+// parsed-from-.example.env path so the HTML generation is identical.
+function buildOptionsArr(arr, currentValue) {
+    return arr.map(function(opt) {
         return '<option value="' + esc(opt) + '"' + (opt === currentValue ? ' selected' : '') + '>' + esc(opt) + '</option>';
     }).join('');
 }
@@ -93,22 +99,20 @@ function isSep(line) {
 function parse(content) {
     const lines = content.split(/\r?\n/);
     const sections = [];
-    let cur   = null;   // current section
-    let desc  = [];     // description accumulator
-    let state = 'normal'; // 'normal' | 'sep1' | 'titled'
+    let cur          = null;    // current section
+    let desc         = [];      // description accumulator
+    let pendingVals  = null;    // values from '# Values: v1 | v2' line
+    let state        = 'normal'; // 'normal' | 'sep1' | 'titled'
+
+    function resetBlock() { desc = []; pendingVals = null; }
 
     for (const raw of lines) {
         const line = raw.trimEnd();
 
         /* ── Separator ── */
         if (isSep(line)) {
-            if (state === 'titled') {
-                state = 'normal';
-                desc  = [];
-            } else {
-                state = 'sep1';
-                desc  = [];
-            }
+            if (state === 'titled') { state = 'normal'; resetBlock(); }
+            else                    { state = 'sep1';   resetBlock(); }
             continue;
         }
 
@@ -121,16 +125,13 @@ function parse(content) {
         }
 
         /* ── Non-separator line breaks out of sep context ── */
-        if (state !== 'normal') {
-            state = 'normal';
-            desc  = [];
-        }
+        if (state !== 'normal') { state = 'normal'; resetBlock(); }
 
         /* ── Blank line ── */
-        if (line === '') { desc = []; continue; }
+        if (line === '') { resetBlock(); continue; }
 
-        /* ── Disabled variable: # KEY=value ── */
-        const dm = line.match(/^#\s*([A-Z][A-Z0-9_]*)=(.*)$/);
+        /* ── Disabled variable: #KEY=value (no space after #) ── */
+        const dm = line.match(/^#([A-Z][A-Z0-9_]*)=(.*)$/);
         if (dm) {
             if (!cur) { cur = { title: 'General', variables: [] }; sections.push(cur); }
             cur.variables.push({
@@ -138,8 +139,9 @@ function parse(content) {
                 defaultValue: dm[2].trim(),
                 enabled:      false,
                 description:  desc.join('\n').trim(),
+                values:       pendingVals,
             });
-            desc = [];
+            resetBlock();
             continue;
         }
 
@@ -152,14 +154,21 @@ function parse(content) {
                 defaultValue: vm[2].trim(),
                 enabled:      true,
                 description:  desc.join('\n').trim(),
+                values:       pendingVals,
             });
-            desc = [];
+            resetBlock();
             continue;
         }
 
-        /* ── Comment line → accumulate description ── */
+        /* ── Comment line → description or structured Values declaration ── */
         if (/^#/.test(line)) {
-            desc.push(line.replace(/^#\s?/, ''));
+            const valMatch = line.match(/^#\s*Values:\s*(.+)$/i);
+            if (valMatch) {
+                // Structured values list — drives the dropdown; NOT added to description text
+                pendingVals = valMatch[1].trim().split(/\s*\|\s*/).map(v => v.trim()).filter(Boolean);
+            } else {
+                desc.push(line.replace(/^#\s?/, ''));
+            }
         }
     }
 
@@ -199,10 +208,12 @@ function buildHtml(sections, existing) {
             const rowCls  = enabled ? 'var-row' : 'var-row is-disabled';
 
             const dis  = enabled ? '' : ' disabled';
-            const opts = OPTIONS[v.key];
+            // v.values (from '# Values:' in .example.env) takes priority;
+            // OPTIONS map is the fallback for edge cases not covered in the file.
+            const opts = v.values || OPTIONS[v.key];
             const inputHtml = opts
                 ? '<select class="var-input" title="' + esc(v.key) + ' options"' + dis + '>' +
-                    buildOptions(v.key, value) +
+                    buildOptionsArr(opts, value) +
                   '</select>'
                 : secret
                 ? '<div class="input-wrap">' +
@@ -531,7 +542,7 @@ function generateContent(sections, values) {
                     if (dline.trim()) out.push('# ' + dline);
                 }
             }
-            out.push(val.enabled ? v.key + '=' + val.value : '# ' + v.key + '=' + val.value);
+            out.push(val.enabled ? v.key + '=' + val.value : '#' + v.key + '=' + val.value);
             out.push('');
         }
     }

@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.10.2] - 2026/06/12
+
+- feat: update .example.env and documentation for variable declaration conventions
+
 ## [3.10.1] - 2026/06/11
 
 - feat: enhance environment configuration options and documentation for APP_MODE
