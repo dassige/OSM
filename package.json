@@ -22,8 +22,6 @@
     "generate-demo-db": "node scripts/generate-demo-db.js",
     "setup-env": "node scripts/setup-env.js",
     "release": "node scripts/release.js",
-    "backfill-etl-fields": "node scripts/backfill-etl-fields.js",
-    "generate-uat-etl-fields": "node scripts/generate-uat-etl-fields.js",
     "build:setup-env": "node scripts/build-setup-env.js"
   },
   "dependencies": {
