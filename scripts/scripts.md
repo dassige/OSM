@@ -56,12 +56,13 @@ node scripts/release.js
 1. Reads `version` from `package.json` and derives the tag name (`v3.2.9`).
 2. Checks that the working tree is clean. If the tag already exists locally, prints a warning and skips creation — the script continues rather than aborting.
 3. Asks for confirmation before making any changes.
-4. Optionally accepts custom release notes (press Enter to auto-generate from commits via `gh --generate-notes`).
+4. Optionally accepts custom release notes (press Enter to auto-generate from full commit messages).
 5. Creates the Git tag locally (skipped if it already existed).
 6. Pushes the tag to origin. If the push fails and the tag was pre-existing (likely already on remote), warns and continues. If the push fails for a freshly created tag, removes the local tag and aborts.
 7. Checks whether a GitHub Release for the tag already exists. If it does, prints a warning and exits cleanly.
-8. Runs `gh release create vX.Y.Z --generate-notes` (or `--notes-file` if custom notes were entered).
-9. Prints the GitHub Release URL on success.
+8. Builds release notes: if the user entered custom notes those are used; otherwise all commit messages since the previous tag are collected in full (`### subject` + body per commit) via `git log`. Notes are written to a temp file and passed via `--notes-file`.
+9. Runs `gh release create vX.Y.Z --notes-file .release-notes.tmp`.
+10. Prints the GitHub Release URL on success.
 
 **Tag format**
 

@@ -96,7 +96,7 @@ async function main() {
     // 6. Optional custom release notes
     let customNotes = '';
     if (ghAvail) {
-        console.log('\nRelease notes (press Enter to auto-generate from commits):');
+        console.log('\nRelease notes (press Enter to include all commit messages in full):');
         customNotes = (await ask(rl, '> ')).trim();
     }
 
@@ -130,19 +130,20 @@ async function main() {
             return;
         }
 
-        let ghCmd;
-        let tmpFile;
-
-        if (customNotes) {
-            tmpFile = path.join(ROOT, '.release-notes.tmp');
-            fs.writeFileSync(tmpFile, customNotes, 'utf8');
-            ghCmd = `gh release create ${tagName} --title "${tagName}" --notes-file "${tmpFile}"`;
-        } else {
-            ghCmd = `gh release create ${tagName} --title "${tagName}" --generate-notes`;
+        let notes = customNotes;
+        if (!notes) {
+            const prevTag = tryRun(`git describe --tags --abbrev=0 ${tagName}^`);
+            const range = prevTag.ok ? `${prevTag.out}..${tagName}` : tagName;
+            const logResult = tryRun(`git log ${range} --format=### %s%n%n%b%n`);
+            notes = logResult.ok ? logResult.out.trim() : '';
         }
 
+        const tmpFile = path.join(ROOT, '.release-notes.tmp');
+        fs.writeFileSync(tmpFile, notes || '(no release notes)', 'utf8');
+        const ghCmd = `gh release create ${tagName} --title "${tagName}" --notes-file "${tmpFile}"`;
+
         const ghResult = tryRun(ghCmd);
-        if (tmpFile && fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+        if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
 
         if (!ghResult.ok) {
             console.warn(`\n⚠   GitHub release creation failed: ${ghResult.err}`);
