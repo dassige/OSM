@@ -54,13 +54,14 @@ node scripts/release.js
 **What it does**
 
 1. Reads `version` from `package.json` and derives the tag name (`v3.2.9`).
-2. Checks that the working tree is clean and the tag does not already exist.
+2. Checks that the working tree is clean. If the tag already exists locally, prints a warning and skips creation — the script continues rather than aborting.
 3. Asks for confirmation before making any changes.
 4. Optionally accepts custom release notes (press Enter to auto-generate from commits via `gh --generate-notes`).
-5. Creates the Git tag locally.
-6. Pushes the tag to origin (rolls back the local tag if the push fails).
-7. Runs `gh release create vX.Y.Z --generate-notes` (or `--notes-file` if custom notes were entered).
-8. Prints the GitHub Release URL on success.
+5. Creates the Git tag locally (skipped if it already existed).
+6. Pushes the tag to origin. If the push fails and the tag was pre-existing (likely already on remote), warns and continues. If the push fails for a freshly created tag, removes the local tag and aborts.
+7. Checks whether a GitHub Release for the tag already exists. If it does, prints a warning and exits cleanly.
+8. Runs `gh release create vX.Y.Z --generate-notes` (or `--notes-file` if custom notes were entered).
+9. Prints the GitHub Release URL on success.
 
 **Tag format**
 
@@ -93,8 +94,10 @@ Done.
 | Condition | Behaviour |
 |---|---|
 | Dirty working tree | Aborts before touching anything |
-| Tag already exists | Aborts before touching anything |
-| `git push` fails | Removes the local tag and aborts with the git error |
+| Tag already exists (local) | Warns and skips tag creation; continues to push and release steps |
+| `git push` fails (new tag) | Removes the local tag and aborts with the git error |
+| `git push` fails (pre-existing tag) | Warns (likely already on remote) and continues to release step |
+| GitHub Release already exists | Warns and exits cleanly — no duplicate release is created |
 | `gh` not installed | Skips GitHub Release, prints the manual creation URL |
 | `gh release create` fails | Warns and prints the manual creation URL; tag is already pushed |
 

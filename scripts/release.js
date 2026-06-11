@@ -69,9 +69,10 @@ async function main() {
         console.warn(`\n⚠   You are on branch "${branch}", not "main".`);
     }
 
-    // 3. Tag must not already exist
-    if (tryRun(`git rev-parse ${tagName}`).ok) {
-        abort(null, `Tag ${tagName} already exists.`);
+    // 3. Tag existence check — skip creation if already present
+    const tagExists = tryRun(`git rev-parse ${tagName}`).ok;
+    if (tagExists) {
+        console.warn(`\n⚠   Tag ${tagName} already exists — skipping tag creation.`);
     }
 
     // 4. gh CLI availability
@@ -101,21 +102,33 @@ async function main() {
 
     rl.close();
 
-    // 7. Create tag
-    console.log(`\nCreating tag ${tagName} ...`);
-    run(`git tag ${tagName}`);
+    // 7. Create tag (skip if it already existed)
+    if (!tagExists) {
+        console.log(`\nCreating tag ${tagName} ...`);
+        run(`git tag ${tagName}`);
+    }
 
     // 8. Push tag
     console.log('Pushing tag to origin ...');
     const pushResult = tryRun(`git push origin ${tagName}`);
     if (!pushResult.ok) {
-        run(`git tag -d ${tagName}`);
-        abort(null, `git push failed — local tag removed.\n${pushResult.err}`);
+        if (tagExists) {
+            console.warn(`\n⚠   Could not push tag ${tagName} (it may already be on remote): ${pushResult.err}`);
+        } else {
+            run(`git tag -d ${tagName}`);
+            abort(null, `git push failed — local tag removed.\n${pushResult.err}`);
+        }
     }
 
     // 9. GitHub release
     if (ghAvail) {
         console.log('Creating GitHub release ...');
+
+        if (tryRun(`gh release view ${tagName}`).ok) {
+            console.warn(`\n⚠   GitHub release for ${tagName} already exists — nothing to do.`);
+            console.log('\nDone.\n');
+            return;
+        }
 
         let ghCmd;
         let tmpFile;
