@@ -55,14 +55,15 @@ node scripts/release.js
 
 1. Reads `version` from `package.json` and derives the tag name (`v3.2.9`).
 2. Checks that the working tree is clean. If the tag already exists locally, prints a warning and skips creation — the script continues rather than aborting.
-3. Asks for confirmation before making any changes.
-4. Optionally accepts custom release notes (press Enter to auto-generate from full commit messages).
-5. Creates the Git tag locally (skipped if it already existed).
-6. Pushes the tag to origin. If the push fails and the tag was pre-existing (likely already on remote), warns and continues. If the push fails for a freshly created tag, removes the local tag and aborts.
-7. Checks whether a GitHub Release for the tag already exists. If it does, prints a warning and exits cleanly.
-8. Builds release notes: if the user entered custom notes those are used; otherwise all commit messages since the previous tag are collected in full (`### subject` + body per commit) via `git log`. Notes are written to a temp file and passed via `--notes-file`.
-9. Runs `gh release create vX.Y.Z --notes-file .release-notes.tmp`.
-10. Prints the GitHub Release URL on success.
+3. Determines the commit range since the previous tag (`git describe --tags`) and prints a numbered list of every commit — subject line and full body — that will be included in this release.
+4. Asks for confirmation before making any changes.
+5. Optionally accepts custom release notes (press Enter to use the full commit messages collected in step 3).
+6. Creates the Git tag locally (skipped if it already existed).
+7. Pushes the tag to origin. If the push fails and the tag was pre-existing (likely already on remote), warns and continues. If the push fails for a freshly created tag, removes the local tag and aborts.
+8. Checks whether a GitHub Release for the tag already exists. If it does, prints a warning and exits cleanly.
+9. Builds release notes: custom notes if entered, otherwise the commit messages from step 3 formatted as `### subject` + body per commit. Notes are written to a temp file and passed via `--notes-file`.
+10. Runs `gh release create vX.Y.Z --notes-file .release-notes.tmp`.
+11. Prints the GitHub Release URL on success.
 
 **Tag format**
 
@@ -76,9 +77,21 @@ Tags are created as `v{major}.{minor}.{patch}` (e.g. `v3.2.9`). The GitHub Relea
 ──────────────────────────────────
 Version : 3.2.9  →  tag: v3.2.9
 
+Commits in this release — since v3.2.8 (3):
+──────────────────────────────────────────────────
+  1. feat: add skill verification export
+
+     Adds a CSV export button to the verification
+     history report view.
+
+  2. fix: correct date formatting in reports
+
+  3. chore: bump dependencies
+──────────────────────────────────────────────────
+
 Release v3.2.9? (y/N): y
 
-Release notes (press Enter to auto-generate from commits):
+Release notes (press Enter to include all commit messages in full):
 >
 
 Creating tag v3.2.9 ...

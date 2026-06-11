@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.10.3] - 2026/06/12
+
+- feat(release): enhance release script to display commit range and improve release notes handling
+- feat(release): add commit range determination and auto-generate release notes
+- feat(release): update release notes handling to include full commit messages
+- feat(release): enhance tag creation logic and update documentation for existing tags
+
 ## [3.10.2] - 2026/06/12
 
 - feat: update .example.env and documentation for variable declaration conventions
