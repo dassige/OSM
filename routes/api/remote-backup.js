@@ -7,6 +7,7 @@ const config              = require('../../config');
 const remoteBackupService = require('../../services/remote-backup-service');
 const { hasRole }         = require('../../middleware/auth');
 const logger              = require('../../services/logger');
+const { assertSafeUrl }   = require('../../services/url-utils');
 
 const MAX_SERVERS = 5;
 
@@ -33,6 +34,10 @@ router.post('/', hasRole('superadmin'), async (req, res) => {
         if (!name || !url || !apiKey)
             return res.status(400).json({ error: 'Name, URL and API key are required.' });
 
+        try { assertSafeUrl(url); } catch (e) {
+            return res.status(400).json({ error: `Invalid server URL: ${e.message}` });
+        }
+
         const id    = await db.createRemoteBackupServer({ name, url, apiKey, backupType, backupLocation });
         const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
         await db.logEvent(actor, 'System', 'Remote Backup Server Added', { id, serverName: name, url });
@@ -51,6 +56,11 @@ router.put('/:id', hasRole('superadmin'), async (req, res) => {
     try {
         const { name, url, apiKey, backupType, backupLocation } = req.body;
         if (!name || !url) return res.status(400).json({ error: 'Name and URL are required.' });
+
+        try { assertSafeUrl(url); } catch (e) {
+            return res.status(400).json({ error: `Invalid server URL: ${e.message}` });
+        }
+
         await db.updateRemoteBackupServer(Number(req.params.id), { name, url, apiKey, backupType, backupLocation });
         const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
         await db.logEvent(actor, 'System', 'Remote Backup Server Updated', { serverId: req.params.id, serverName: name });
@@ -92,6 +102,9 @@ router.post('/test-inline', hasRole('superadmin'), async (req, res) => {
     try {
         const { url, apiKey } = req.body;
         if (!url || !apiKey) return res.status(400).json({ error: 'URL and API key are required.' });
+        try { assertSafeUrl(url); } catch (e) {
+            return res.status(400).json({ ok: false, error: `Invalid server URL: ${e.message}` });
+        }
         const result = await remoteBackupService.testConnection(url, apiKey);
         res.json(result);
     } catch (e) {

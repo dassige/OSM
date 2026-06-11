@@ -74,14 +74,13 @@ describe('SSRF Prevention (F16 / F25)', () => {
             expect(axios.get).not.toHaveBeenCalled();
         });
 
-        it('allows localhost and calls axios', async () => {
-            axios.get.mockResolvedValue({ data: { models: [{ name: 'llama3' }] } });
-
+        it('blocks localhost and does NOT call axios (C-03 fix)', async () => {
             const res = await request(app)
                 .get('/api/system/ollama-models?baseUrl=http://localhost:11434');
 
-            expect(res.status).toBe(200);
-            expect(axios.get).toHaveBeenCalledWith('http://localhost:11434/api/tags', { timeout: 5000 });
+            expect(res.status).toBe(500);
+            expect(res.body.error).toBe('Could not reach the Ollama endpoint.');
+            expect(axios.get).not.toHaveBeenCalled();
         });
     });
 
@@ -115,14 +114,14 @@ describe('SSRF Prevention (F16 / F25)', () => {
             expect(aiService.evaluateTextAnswer).not.toHaveBeenCalled();
         });
 
-        it('proceeds and calls evaluateTextAnswer for valid localhost URL', async () => {
+        it('returns 400 for localhost ollama URL (C-03 fix — loopback now blocked)', async () => {
             const res = await request(app)
                 .post('/api/system/ai-test')
                 .send(validBody('http://localhost:11434'));
 
-            expect(res.status).toBe(200);
-            expect(res.body.success).toBe(true);
-            expect(aiService.evaluateTextAnswer).toHaveBeenCalled();
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/invalid ollama url/i);
+            expect(aiService.evaluateTextAnswer).not.toHaveBeenCalled();
         });
     });
 });

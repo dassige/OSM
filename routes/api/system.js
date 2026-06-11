@@ -19,23 +19,9 @@ const { generateCsrfToken } = require("../../middleware/csrf");
 const { backupLimiter, restoreLimiter, aiTestLimiter } = require("../../middleware/rate-limiter");
 const { version } = require("../../package.json");
 const logger = require("../../services/logger");
+const { assertSafeUrl } = require("../../services/url-utils");
 
 const upload = multer({ dest: "uploads/", limits: { fileSize: 500 * 1024 * 1024 } });
-
-function assertSafeUrl(url) {
-  let parsed;
-  try { parsed = new URL(url); } catch { throw new Error('Invalid endpoint URL'); }
-  if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid endpoint URL');
-  const h = parsed.hostname.toLowerCase();
-  const blocked =
-    /^169\.254\./.test(h) ||      // link-local / AWS+Azure metadata
-    h === '100.100.100.200' ||    // Alibaba Cloud metadata
-    /^10\./.test(h) ||            // RFC-1918 class A
-    /^172\.(1[6-9]|2\d|3[01])\./.test(h) || // RFC-1918 class B
-    /^192\.168\./.test(h) ||      // RFC-1918 class C
-    h === '0.0.0.0';
-  if (blocked) throw new Error('Endpoint not reachable');
-}
 
 
 

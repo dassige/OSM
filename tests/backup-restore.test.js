@@ -94,7 +94,7 @@ describe('Database Backup & Restore API (Isolated)', () => {
             );
         });
 
-        it('should return 400 if the SQL file contains a forbidden ATTACH DATABASE statement', async () => {
+        it('should return 400 if the SQL file contains an ATTACH DATABASE statement', async () => {
             const maliciousSql = "BEGIN TRANSACTION;\nATTACH DATABASE '/tmp/evil.db' AS evil;\nCOMMIT;";
 
             const response = await request(app)
@@ -102,7 +102,7 @@ describe('Database Backup & Restore API (Isolated)', () => {
                 .attach('databaseFile', Buffer.from(maliciousSql), 'evil.sql');
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toMatch(/forbidden statement/i);
+            expect(response.body.error).toMatch(/not permitted/i);
             expect(db.restoreFromSqlDump).not.toHaveBeenCalled();
         });
 
@@ -114,7 +114,100 @@ describe('Database Backup & Restore API (Isolated)', () => {
                 .attach('databaseFile', Buffer.from(maliciousSql), 'evil.sql');
 
             expect(response.status).toBe(400);
+            expect(response.body.error).toMatch(/not permitted/i);
             expect(db.restoreFromSqlDump).not.toHaveBeenCalled();
+        });
+
+        it('should return 400 if the SQL file contains an UPDATE statement (privilege escalation attempt)', async () => {
+            const maliciousSql = [
+                "PRAGMA foreign_keys=OFF;",
+                "BEGIN TRANSACTION;",
+                "UPDATE users SET role='superadmin', hash='abc', salt='def' WHERE email='attacker@evil.com';",
+                "COMMIT;",
+                "PRAGMA foreign_keys=ON;",
+            ].join('\n');
+
+            const response = await request(app)
+                .post('/api/system/restore')
+                .attach('databaseFile', Buffer.from(maliciousSql), 'evil.sql');
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toMatch(/not permitted/i);
+            expect(db.restoreFromSqlDump).not.toHaveBeenCalled();
+        });
+
+        it('should return 400 if the SQL file contains a DELETE statement', async () => {
+            const maliciousSql = "BEGIN TRANSACTION;\nDELETE FROM users WHERE 1=1;\nCOMMIT;";
+
+            const response = await request(app)
+                .post('/api/system/restore')
+                .attach('databaseFile', Buffer.from(maliciousSql), 'evil.sql');
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toMatch(/not permitted/i);
+            expect(db.restoreFromSqlDump).not.toHaveBeenCalled();
+        });
+
+        it('should return 400 if the SQL file contains SELECT load_extension', async () => {
+            const maliciousSql = "BEGIN TRANSACTION;\nSELECT load_extension('/tmp/evil.so');\nCOMMIT;";
+
+            const response = await request(app)
+                .post('/api/system/restore')
+                .attach('databaseFile', Buffer.from(maliciousSql), 'evil.sql');
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toMatch(/not permitted/i);
+            expect(db.restoreFromSqlDump).not.toHaveBeenCalled();
+        });
+
+        it('should return 400 if ATTACH DATABASE is disguised with a comment (bypass attempt)', async () => {
+            const maliciousSql = "BEGIN TRANSACTION;\nATTACH/**/DATABASE '/tmp/evil.db' AS evil;\nCOMMIT;";
+
+            const response = await request(app)
+                .post('/api/system/restore')
+                .attach('databaseFile', Buffer.from(maliciousSql), 'evil.sql');
+
+            expect(response.status).toBe(400);
+            expect(db.restoreFromSqlDump).not.toHaveBeenCalled();
+        });
+
+        it('should accept a valid dump that contains multi-line CREATE TABLE', async () => {
+            const validSql = [
+                "PRAGMA foreign_keys=OFF;",
+                "BEGIN TRANSACTION;",
+                'DROP TABLE IF EXISTS "members";',
+                "CREATE TABLE members (\n  id INTEGER PRIMARY KEY,\n  name TEXT NOT NULL\n);",
+                'INSERT INTO "members" (id,name) VALUES (1,\'Alice\');',
+                "COMMIT;",
+                "PRAGMA foreign_keys=ON;",
+            ].join('\n');
+
+            const response = await request(app)
+                .post('/api/system/restore')
+                .attach('databaseFile', Buffer.from(validSql), 'backup.sql');
+
+            expect(response.status).toBe(200);
+            expect(db.restoreFromSqlDump).toHaveBeenCalledWith(validSql);
+        });
+
+        it('should accept a valid dump containing a multi-line string value with a word on its own line', async () => {
+            // Regression: multi-line INSERT values must not be misidentified as statement starts
+            const validSql = [
+                "PRAGMA foreign_keys=OFF;",
+                "BEGIN TRANSACTION;",
+                'DROP TABLE IF EXISTS "live_forms";',
+                "CREATE TABLE live_forms (id INTEGER PRIMARY KEY, answer TEXT);",
+                "INSERT INTO \"live_forms\" (id,answer) VALUES (1,'First line\nSecond line\nThird line');",
+                "COMMIT;",
+                "PRAGMA foreign_keys=ON;",
+            ].join('\n');
+
+            const response = await request(app)
+                .post('/api/system/restore')
+                .attach('databaseFile', Buffer.from(validSql), 'backup.sql');
+
+            expect(response.status).toBe(200);
+            expect(db.restoreFromSqlDump).toHaveBeenCalledWith(validSql);
         });
     });
 });

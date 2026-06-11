@@ -8,6 +8,7 @@ const path   = require('path');
 const db     = require('./db');
 const config = require('../config');
 const logger = require('./logger');
+const { assertSafeUrl } = require('./url-utils');
 
 // Cron tasks keyed by server ID
 const tasks = new Map();
@@ -97,6 +98,7 @@ async function applyRetention(location, retentionType, retentionValue) {
 // Returns the raw axios response so the caller can pipe response.data → res.
 
 async function getBackupStream(srv, backupType) {
+    assertSafeUrl(srv.url); // SSRF guard — must run before every outbound request
     const base = (srv.url || '').replace(/\/$/, '');
     return axios.get(`${base}/api/system/backup?type=${backupType}`, {
         headers:      { 'X-API-Key': srv.api_key },
@@ -108,6 +110,7 @@ async function getBackupStream(srv, backupType) {
 // ── Connection test ───────────────────────────────────────────────────────────
 
 async function testConnection(url, apiKey) {
+    assertSafeUrl(url); // SSRF guard — must run before every outbound request
     const base = (url || '').replace(/\/$/, '');
     const res  = await axios.get(`${base}/api/health`, {
         headers: { 'X-API-Key': apiKey },
@@ -119,6 +122,7 @@ async function testConnection(url, apiKey) {
 // ── Pull backup from a remote server ─────────────────────────────────────────
 
 async function pullBackup(srv, triggeredBy = 'scheduler') {
+    assertSafeUrl(srv.url); // SSRF guard — must run before every outbound request
     const runAt     = new Date().toISOString();
     const backupType = srv.backup_type || 'db';
     const stamp     = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);

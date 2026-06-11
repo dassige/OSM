@@ -14,9 +14,12 @@ async function generateSqlDump() {
 
   for (const table of tables.map((t) => t.name)) {
     const schema = await db.get("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", table);
-    dump += `DROP TABLE IF EXISTS ${table};\n${schema.sql};\n`;
+    // Quote table names to prevent injection if a restored table name ever contains
+    // special characters, and to make the dump unambiguous.
+    const quotedTable = `"${table.replace(/"/g, '""')}"`;
+    dump += `DROP TABLE IF EXISTS ${quotedTable};\n${schema.sql};\n`;
 
-    const rows = await db.all(`SELECT * FROM ${table}`);
+    const rows = await db.all(`SELECT * FROM ${quotedTable}`);
     for (const row of rows) {
       const keys = Object.keys(row);
       const values = keys.map((k) => {
@@ -24,7 +27,7 @@ async function generateSqlDump() {
         if (typeof row[k] === "string") return `'${row[k].replace(/'/g, "''")}'`;
         return row[k];
       });
-      dump += `INSERT INTO ${table} (${keys.join(",")}) VALUES (${values.join(",")});\n`;
+      dump += `INSERT INTO ${quotedTable} (${keys.join(",")}) VALUES (${values.join(",")});\n`;
     }
   }
 
@@ -47,23 +50,75 @@ async function clearSessions() {
   }
 }
 
-// Statements that should never appear in a legitimate OpReady backup dump.
-// Checked line-by-line so we only match actual statement starts, not VALUES content.
-const FORBIDDEN_SQL_LINE_PATTERNS = [
-  /^\s*ATTACH\s+DATABASE\b/i,
-  /^\s*DETACH\s+DATABASE\b/i,
-  /^\s*CREATE\s+TRIGGER\b/i,
-  /^\s*CREATE\s+VIRTUAL\s+TABLE\b/i,
-  /^\s*\.load\b/i,
+// Allowlist of statement types that can legitimately appear in an OpReady SQL dump.
+// Any statement whose beginning does not match one of these patterns is rejected.
+const ALLOWED_STMT_PREFIXES = [
+  /^PRAGMA\s+foreign_keys\s*=/i,
+  /^BEGIN(\s+TRANSACTION)?$/i,
+  /^COMMIT$/i,
+  /^DROP\s+TABLE\s+IF\s+EXISTS\s+/i,
+  /^CREATE\s+(TABLE|UNIQUE\s+INDEX|INDEX)(\s+IF\s+NOT\s+EXISTS)?\s+/i,
+  /^INSERT\s+INTO\s+/i,
 ];
 
-function validateSqlDump(sqlContent) {
-  const lines = sqlContent.split('\n');
-  for (const line of lines) {
-    for (const pattern of FORBIDDEN_SQL_LINE_PATTERNS) {
-      if (pattern.test(line)) {
-        throw new Error('Invalid SQL content: forbidden statement type detected in restore file.');
+/**
+ * Splits a SQL string into individual statements, correctly handling
+ * single-quoted string literals (including '' escaped quotes) and -- line comments.
+ * This prevents statement-keyword detection from being fooled by content inside
+ * string values (e.g. a member answer that contains "UPDATE ..." on its own line).
+ */
+function splitSqlStatements(sql) {
+  const statements = [];
+  let current = '';
+  let inString = false;
+  let i = 0;
+
+  while (i < sql.length) {
+    const ch = sql[i];
+
+    if (inString) {
+      current += ch;
+      if (ch === "'") {
+        if (i + 1 < sql.length && sql[i + 1] === "'") {
+          // Escaped single-quote '' — consume both chars and stay inside string
+          current += sql[++i];
+        } else {
+          inString = false;
+        }
       }
+    } else if (ch === "'") {
+      inString = true;
+      current += ch;
+    } else if (ch === '-' && i + 1 < sql.length && sql[i + 1] === '-') {
+      // Line comment: skip everything up to (but not including) the newline
+      while (i < sql.length && sql[i] !== '\n') i++;
+      continue;
+    } else if (ch === ';') {
+      const stmt = current.trim();
+      if (stmt) statements.push(stmt);
+      current = '';
+    } else {
+      current += ch;
+    }
+
+    i++;
+  }
+
+  // Capture any trailing content that has no terminating semicolon
+  const last = current.trim();
+  if (last) statements.push(last);
+
+  return statements;
+}
+
+function validateSqlDump(sqlContent) {
+  const statements = splitSqlStatements(sqlContent);
+  for (const stmt of statements) {
+    if (!stmt) continue;
+    const allowed = ALLOWED_STMT_PREFIXES.some(pattern => pattern.test(stmt));
+    if (!allowed) {
+      const preview = stmt.replace(/\s+/g, ' ').slice(0, 80);
+      throw new Error(`Invalid SQL content: statement type not permitted in restore file. (${preview})`);
     }
   }
 }
