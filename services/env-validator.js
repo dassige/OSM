@@ -46,10 +46,13 @@ function validateEnv(config) {
     );
   }
 
-  // --- Warn: insecure cookies in production ---
+  // --- Fatal: insecure cookies in production ---
+  // COOKIE_SECURE=false means session IDs travel in plaintext — hard block in production.
+  // If you must use HTTP (e.g. local dev), set APP_MODE=demo or NODE_ENV=development.
   if (isProduction && process.env.COOKIE_SECURE === 'false')
-    warnings.push(
-      "COOKIE_SECURE=false in production — session cookies will be sent over HTTP. Only use this behind a TLS-terminating proxy."
+    errors.push(
+      "COOKIE_SECURE=false is not permitted in production. Session cookies must be sent over HTTPS. " +
+      "Set COOKIE_SECURE=true (or remove the variable — it defaults to true) and ensure your deployment uses a TLS-terminating proxy."
     );
 
   // --- Warn: SMTP credentials ---

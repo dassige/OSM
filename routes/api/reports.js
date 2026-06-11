@@ -19,7 +19,10 @@ router.get("/data/:type", hasRole("admin"), async (req, res) => {
     const proxyUrl = getActiveProxy();
     const userId = (req.apiKeyUser || req.session?.user)?.id;
 
-    const days = req.query.days ? parseInt(req.query.days) : undefined;
+    // M-05: Clamp days to prevent full-history dump via large values.
+    const days = req.query.days
+      ? Math.min(Math.max(parseInt(req.query.days, 10) || 30, 1), 3650)
+      : undefined;
 
     if (type === "by-member")
       res.json(await reportService.getGroupedByMember(userId, proxyUrl, days));

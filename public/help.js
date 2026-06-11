@@ -197,7 +197,7 @@ const helpContent = {
             <h3>2. Linking Forms</h3>
             <p>Each skill can be linked to a verification method:</p>
             <ul>
-                <li><strong>External URL:</strong> A link to Google Forms, SurveyMonkey, etc. Use <code>{{member-name}}</code> and <code>{{member-email}}</code> placeholders to pre-fill data.</li>
+                <li><strong>External URL:</strong> A link to Google Forms, SurveyMonkey, etc. Must use <code>http://</code> or <code>https://</code> — other schemes are rejected. Use <code>{{member-name}}</code> and <code>{{member-email}}</code> placeholders to pre-fill data.</li>
                 <li><strong>App Hosted Form:</strong> Select a form created in the <em>Forms Manager</em>. This enables the full tracking, scoring, and review lifecycle.</li>
             </ul>
 
@@ -317,7 +317,7 @@ const helpContent = {
             <p>Automatically create and save backup files on a repeating schedule. Set the frequency, backup type, save location, and retention policy.</p>
             <ul>
                 <li><strong>Frequency options:</strong> Once a day, selected days of the week, every N hours, or every N days.</li>
-                <li><strong>Save location:</strong> An absolute path on the server (e.g. <code>/app/backups</code>). Mounted network shares work if accessible from the Node.js process. The directory is created automatically.</li>
+                <li><strong>Save location:</strong> An absolute path on the server within the configured backup root (e.g. <code>/app/backups/scheduled</code>). Paths outside the backup root are rejected for security. The directory is created automatically if it doesn't exist.</li>
                 <li><strong>Retention:</strong> Keep the last N files, delete files older than N days, or keep everything.</li>
                 <li><strong>Run Now:</strong> Trigger a backup immediately using the saved configuration without waiting for the next scheduled time.</li>
             </ul>
@@ -329,7 +329,7 @@ const helpContent = {
                 <li><strong>Add server:</strong> Provide a name, the remote base URL, and a superadmin API key from that instance. The API key is stored securely and never re-displayed. Use <strong>Test Connection</strong> to verify reachability before saving — note that ephemeral servers (Cloud Run, etc.) may take up to 90 seconds to respond on a cold start.</li>
                 <li><strong>Download Backup (manual):</strong> Click the Play (▶) button to immediately fetch a backup from the remote server. The file is delivered directly to your browser via the standard Save As dialog — nothing is written to the server filesystem.</li>
                 <li><strong>Scheduled pull:</strong> Click the Clock (🕐) button to configure an automatic pull schedule. The schedule modal lets you set frequency, backup type, <strong>save location</strong> (the local path where pulled files are stored), and retention policy. A <strong>Run Now</strong> button inside the modal lets you test the configuration immediately — the file is saved to the configured location, exactly as the scheduler would do it.</li>
-                <li><strong>Save location:</strong> Configured per-server in the Schedule modal (not in the server connection settings). Defaults to <code>/app/backups/remote/&lt;server-name&gt;/</code> if left blank. Mount <code>/app/backups</code> as a Docker volume so pulled files survive container recreation.</li>
+                <li><strong>Save location:</strong> Configured per-server in the Schedule modal (not in the server connection settings). Must be inside the configured backup root. Defaults to <code>/app/backups/remote/&lt;server-name&gt;/</code> if left blank. Mount <code>/app/backups</code> as a Docker volume so pulled files survive container recreation.</li>
                 <li><strong>History:</strong> Click the List icon to view the last 20 pull runs — date, type, triggered by (manual or scheduler), filename, size, and status.</li>
                 <li>Maximum of <strong>5</strong> remote servers. No restore operations — pull backups are for disaster-recovery storage only.</li>
             </ul>
@@ -384,12 +384,8 @@ const helpContent = {
             </ul>
             <p>Hitting any of these limits returns HTTP <strong>429 Too Many Requests</strong>. The response body includes a plain-English message with the window duration.</p>
 
-            <h3>Restricted Event Log Categories</h3>
-            <p>The <code>POST /api/logs</code> endpoint (used by frontend pages to record user actions) rejects writes to the following <strong>system-managed categories</strong> with HTTP 403:</p>
-            <ul>
-                <li><code>Security</code>, <code>System</code>, <code>User Mgmt</code>, <code>API Keys</code>, <code>WhatsApp</code></li>
-            </ul>
-            <p>These categories are written exclusively by server-side code to prevent tampering with security-sensitive audit records. Frontend pages may only write to application-level categories (e.g. <code>Members</code>).</p>
+            <h3>Audit Log Integrity</h3>
+            <p>All event log entries are written exclusively by server-side route handlers. There is no client-facing endpoint for writing log entries — this ensures the audit trail cannot be forged or tampered with from the browser.</p>
 
             <h3>2. API Call Log</h3>
             <p>Every request authenticated via an API key is recorded with: key name, HTTP method, full endpoint URL (including query parameters), origin IP, <strong>geographic location</strong> (city and country resolved from the IP), user agent, and HTTP response code.</p>
@@ -602,7 +598,7 @@ const helpContent = {
             <ul>
                 <li>Click <strong>Upload Document</strong> and fill in the title, optional description, category, and expiry date.</li>
                 <li>When you select a file, the <strong>Title</strong> field is automatically pre-filled from the filename — hyphens and underscores are replaced with spaces and the extension is stripped. You can edit the title before saving.</li>
-                <li>Supported types: <strong>PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF</strong> · maximum 50 MB per upload.</li>
+                <li>Supported types: <strong>PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF</strong> · maximum 50 MB per upload. File content is validated against the declared type — renaming an unsupported file (e.g. an image) to <code>.pdf</code> will be rejected.</li>
                 <li><strong>Disk space requirement:</strong> The server checks available disk space before accepting any upload. If the server has less than <strong>100 MB</strong> free, the upload is rejected with an "Insufficient Storage" error. This only applies to the <em>local</em> storage backend — cloud storage (S3/GCS) manages its own capacity. If you see this error, contact your system administrator to free up disk space.</li>
                 <li>The <strong>Expiry date</strong> defaults to today + the configured number of days (set via <code>KB_DEFAULT_EXPIRY_DAYS</code> in <code>.env</code>, default 365). Expired documents are flagged in red for admin review — they remain publicly accessible until explicitly disabled or deleted.</li>
                 <li>A unique GUID link is generated automatically — share it with members so they can view or download the document without logging in.</li>

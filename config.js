@@ -16,6 +16,12 @@ const auth = {
   // the validator exits(1) before express-session is reached.
   sessionSecret: process.env.SESSION_SECRET ||
     (appMode === 'demo' ? crypto.randomBytes(32).toString('hex') : undefined),
+  // H-16: HMAC secret for API key hashing. Falls back to SESSION_SECRET so
+  // existing deployments without this env var work without change. Demo mode
+  // uses a static string (not random) to keep hashes stable across restarts.
+  apiKeyHashSecret: process.env.API_KEY_HASH_SECRET ||
+    process.env.SESSION_SECRET ||
+    (appMode === 'demo' ? 'opready-demo-apikey-hmac-do-not-use-in-production' : undefined),
   maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5,
   superuserEmail: process.env.SMTP_USER // Alert recipient
 };
@@ -148,6 +154,12 @@ const deploymentType = process.env.DEPLOYMENT_TYPE || 'local';
 const ephemeralDeployments = ['cloud-run', 'app-runner', 'fargate'];
 const scheduledBackupSupported = !ephemeralDeployments.includes(deploymentType);
 
+// M-07: Root directory that remote backup files are allowed to be written into.
+// Remote backup save paths are validated against this root at save time.
+const backupRootDir = process.env.BACKUP_ROOT_DIR
+  ? path.resolve(process.env.BACKUP_ROOT_DIR)
+  : path.resolve(__dirname, 'backups');
+
 module.exports = {
   appMode,
   auth,
@@ -175,4 +187,5 @@ module.exports = {
   corsOrigin,
   deploymentType,
   scheduledBackupSupported,
+  backupRootDir,
 };

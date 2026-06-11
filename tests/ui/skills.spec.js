@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { goTo, showAllRows, confirmDialog, waitForAPI } = require('./crud-helpers');
+const { goTo, showAllRows, confirmDialog, waitForAPI, checkDemoMode } = require('./crud-helpers');
 
 const TS    = Date.now();
 const NAME  = `UAT Skill ${TS}`;
@@ -7,8 +7,14 @@ const NAME2 = `UAT Skill ${TS} v2`;
 const TEST_URL = 'https://example.com/test-skill';
 
 test.describe.serial('T04 — Skills CRUD', () => {
+  let demoMode = false;
+
+  test.beforeAll(async ({ request }) => {
+    demoMode = await checkDemoMode(request);
+  });
 
   test('T04-02 | Create a new skill', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/skills.html');
 
     await page.getByRole('button', { name: 'Add Skill' }).click();
@@ -25,6 +31,7 @@ test.describe.serial('T04 — Skills CRUD', () => {
   });
 
   test('T04-03 | Mark skill as critical', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/skills.html');
     await showAllRows(page, '#skillsRowsPerPage');
 
@@ -42,6 +49,7 @@ test.describe.serial('T04 — Skills CRUD', () => {
   });
 
   test('T04-04 | Link skill to external URL', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/skills.html');
     await showAllRows(page, '#skillsRowsPerPage');
 
@@ -59,6 +67,7 @@ test.describe.serial('T04 — Skills CRUD', () => {
   });
 
   test('T04-06 | Disable a skill', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/skills.html');
     await showAllRows(page, '#skillsRowsPerPage');
 
@@ -76,6 +85,7 @@ test.describe.serial('T04 — Skills CRUD', () => {
   });
 
   test('T04-08 | Delete the test skill', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/skills.html');
     await showAllRows(page, '#skillsRowsPerPage');
 

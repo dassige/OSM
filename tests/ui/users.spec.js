@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { goTo, showAllRows, confirmDialog, waitForAPI } = require('./crud-helpers');
+const { goTo, showAllRows, confirmDialog, waitForAPI, checkDemoMode } = require('./crud-helpers');
 
 const TS    = Date.now();
 const NAME  = `UAT User ${TS}`;
@@ -7,8 +7,14 @@ const NAME2 = `UAT User ${TS} v2`;
 const EMAIL = `uat-user-${TS}@test.nz`;
 
 test.describe.serial('T14 — Users CRUD', () => {
+  let demoMode = false;
+
+  test.beforeAll(async ({ request }) => {
+    demoMode = await checkDemoMode(request);
+  });
 
   test('T14-02 | Create a new user', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/users.html');
 
     await page.getByRole('button', { name: 'Add User' }).click();
@@ -37,6 +43,7 @@ test.describe.serial('T14 — Users CRUD', () => {
   });
 
   test('T14-03 | Edit user name', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/users.html');
     await showAllRows(page);
 
@@ -53,6 +60,7 @@ test.describe.serial('T14 — Users CRUD', () => {
   });
 
   test('T14-04 | Change user role to admin', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/users.html');
     await showAllRows(page);
 
@@ -68,6 +76,7 @@ test.describe.serial('T14 — Users CRUD', () => {
   });
 
   test('T14-05 | Disable user account', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/users.html');
     await showAllRows(page);
 
@@ -85,6 +94,7 @@ test.describe.serial('T14 — Users CRUD', () => {
   });
 
   test('T14-09 | Delete the test user', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/users.html');
     await showAllRows(page);
 

@@ -166,7 +166,7 @@ Open the `.env` file and configure the following parameters:
   * `APP_PASSWORD`: A strong password for the Super Admin.
   * `SESSION_SECRET`: **Required in production.** A random string of 32+ characters used to sign session cookies. Startup will abort if this is missing in production mode. Generate one with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
   * `MAX_LOGIN_ATTEMPTS`: Maximum number of failing login attempt before a user is blocked and a notification is sent to the super user (default 5).
-  * `COOKIE_SECURE`: Set to `false` for local HTTP development. Leave unset (defaults to `true`) in production — session cookies will only be sent over HTTPS. Your deployment must run behind a TLS-terminating reverse proxy (e.g., Cloudflare Tunnel, nginx) for this to work correctly.
+  * `COOKIE_SECURE`: Set to `false` for local HTTP development. Leave unset (defaults to `true`) in production — session cookies will only be sent over HTTPS. Your deployment must run behind a TLS-terminating reverse proxy (e.g., Cloudflare Tunnel, nginx) for this to work correctly. **Setting `COOKIE_SECURE=false` when `APP_MODE=production` is a fatal startup error — the server will abort with an error message.** This prevents accidental insecure cookie deployment in production.
   * **Session timeout:** Sessions automatically expire after **8 hours** of inactivity regardless of the `COOKIE_SECURE` setting. This is a server-side `maxAge` on the session cookie and is not configurable via environment variables.
   * **Content Security Policy:** Helmet's CSP is enabled by default with a baseline policy that blocks external script/style loading, prevents clickjacking (`frame-ancestors: none`), blocks Flash/plugins (`object-src: none`), and restricts form targets to the same origin. `'unsafe-inline'` and `'unsafe-eval'` are currently permitted for `script-src` and `style-src` to support existing inline scripts. Future hardening: migrate inline scripts to external files and remove these directives.
   * `CORS_ORIGIN`: Leave unset for the standard same-origin deployment (the frontend and API are served from the same host). Set to your frontend's full origin (e.g., `https://app.yourdomain.com`) only if the frontend is hosted on a separate domain.
@@ -230,6 +230,10 @@ Open the `.env` file and configure the following parameters:
   * **AWS S3:** Set `KB_S3_BUCKET` (supports `bucket/subfolder` prefix), `KB_S3_REGION`, `KB_S3_ACCESS_KEY_ID`, `KB_S3_SECRET_ACCESS_KEY`. Set `KB_S3_ENDPOINT` to use S3-compatible stores (MinIO, Cloudflare R2, etc.).
   * **Google Cloud Storage:** Set `KB_GCS_BUCKET` to the bucket name, or `bucketname/subfolder/prefix` to store files under a specific path within the bucket. Optionally set `KB_GCS_KEY_FILE` to a service-account JSON path; leave unset to use Application Default Credentials.
 
+#### **Backup Root Directory**
+
+  * `BACKUP_ROOT_DIR`: The absolute server-side path that acts as the root for all backup save locations — scheduled backups, remote pull backups, and the filesystem browser. Defaults to `<app-root>/backups`. All user-supplied backup paths are validated against this root at runtime; paths outside it are rejected with HTTP 400. When running in Docker, mount this path as a volume so backup files survive container recreation (e.g. `-v /host/backups:/app/backups`).
+
 #### **Rate Limiting**
 
 All rate limits are per-IP. The configurable limits below apply to unauthenticated and general API traffic. Additional fixed limits apply to sensitive system endpoints (see table).
@@ -258,6 +262,11 @@ All state-changing requests (POST, PUT, DELETE) made by a logged-in browser sess
 #### **Input Validation**
 
 Member and skill create/update endpoints are validated with [Joi](https://joi.dev/). Invalid or unexpected fields return HTTP 400 with a `{ "error": "Validation Failed", "details": [...] }` response listing each failing constraint. Unknown fields are stripped before they reach the database.
+
+  * **Skill external URLs** — the `url` field on skills is restricted to `http://` and `https://` schemes. Other schemes (e.g. `javascript:`, `ftp://`) are rejected at validation time with HTTP 400.
+  * **Knowledge Base file uploads** — the server validates file content against the declared MIME type using magic-byte detection. A file renamed to `.pdf` that does not contain PDF bytes is rejected with HTTP 400. Accepted types: PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF.
+  * **Pagination bounds** — `limit` and `offset` query parameters on paginated list endpoints are clamped to safe ranges (`limit`: 1–500, `offset`: ≥ 0) to prevent unbounded queries.
+  * **Report lookback window** — the `days` parameter on `/api/reports/data/:type` is clamped to 1–3650 days.
 
 ## Demo Mode
 

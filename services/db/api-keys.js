@@ -1,8 +1,17 @@
 const crypto = require('crypto');
 const { initDB } = require('./connection');
 
+// H-16: Use HMAC-SHA256 keyed on a server secret so that a stolen database alone
+// is insufficient to verify or brute-force API keys. Secret is loaded lazily to
+// avoid circular-dependency issues at module load time.
+let _hmacSecret = null;
+function getHmacSecret() {
+    if (!_hmacSecret) _hmacSecret = require('../../config').auth.apiKeyHashSecret;
+    return _hmacSecret;
+}
+
 function hashKey(rawKey) {
-    return crypto.createHash('sha256').update(rawKey).digest('hex');
+    return crypto.createHmac('sha256', getHmacSecret()).update(rawKey).digest('hex');
 }
 
 function generateApiKey() {

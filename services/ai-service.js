@@ -9,36 +9,42 @@ async function evaluateTextAnswer(question, reference, memberAnswer, maxPoints, 
 
   if (!activeConfig.enabled && !configOverride) return { score: 0, justification: "AI disabled." };
 
-  const prompt = `
-    Role: Technical Examiner for Fire and Emergency New Zealand.
-    Task: Grade a volunteer firefighter's written answer.
-    
-    Question: "${question}"
-    Reference/Rubric: "${reference}"
-    Member's Answer: "${memberAnswer}"
-    Max Points: ${maxPoints}
+  // H-14: Use multi-turn format to isolate static instructions (system role) from
+  // user-controlled data (user role), preventing prompt injection via member answers.
+  const systemInstruction =
+    `You are a Technical Examiner for Fire and Emergency New Zealand. ` +
+    `Grade volunteer firefighter written answers. ` +
+    `Assign a score from 0 to the stated max based on technical accuracy, relevance, and completeness — ` +
+    `ignore grammar errors and typos. ` +
+    `Respond ONLY with a JSON object: {"score": number, "justification": "string"} ` +
+    `where justification is at most 20 words.`;
 
-    Instructions:
-    1. Compare the Member's Answer to the Reference.
-    2. Assign a Raw Score (0 to ${maxPoints}) based on technical accuracy, relevance, and completeness. Don't give much relevance to grammar errors or obvious typos.
-    3. Provide a concise justification (max 20 words).
-    4. Return ONLY a JSON object: {"score": number, "justification": "string"}
-  `;
+  const userContent =
+    `Question: ${question}\n` +
+    `Reference/Rubric: ${reference}\n` +
+    `Member's Answer: ${memberAnswer}\n` +
+    `Max Points: ${maxPoints}`;
 
   try {
     let rawResponse;
     if (activeConfig.provider === "ollama") {
-      const response = await axios.post(`${activeConfig.ollamaUrl}/api/generate`, {
+      const response = await axios.post(`${activeConfig.ollamaUrl}/api/chat`, {
         model: activeConfig.model,
-        prompt: prompt,
+        messages: [
+          { role: "system", content: systemInstruction },
+          { role: "user",   content: userContent },
+        ],
         stream: false,
         format: "json",
       });
-      rawResponse = response.data.response;
+      rawResponse = response.data.message?.content || response.data.response;
     } else {
       const genAI = new GoogleGenerativeAI(activeConfig.geminiKey);
-      const model = genAI.getGenerativeModel({ model: activeConfig.model });
-      const result = await model.generateContent(prompt);
+      const model = genAI.getGenerativeModel({
+        model: activeConfig.model,
+        systemInstruction: systemInstruction,
+      });
+      const result = await model.generateContent(userContent);
       rawResponse = result.response.text();
     }
 

@@ -13,8 +13,9 @@ module.exports = {
     reuseExistingServer: true,
     env: {
       PORT: String(TEST_PORT),
-      APP_USERNAME: 'demo',
-      APP_PASSWORD: 'demo',
+      APP_MODE: 'demo',
+      APP_USERNAME: process.env.TEST_USERNAME || 'demo',
+      APP_PASSWORD: process.env.TEST_PASSWORD || 'demo',
     },
     timeout: 30_000,
   },

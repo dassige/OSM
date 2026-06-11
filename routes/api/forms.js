@@ -68,6 +68,19 @@ router.get("/:id", async (req, res) => {
   try {
     const form = await formsService.getFormById(req.params.id);
     if (!form) return res.status(404).json({ error: "Form not found" });
+
+    // H-10: Strip correctAnswer from all question fields for non-admin callers to
+    // prevent answer-key disclosure. Admins need correctAnswer for the review panel.
+    const callerRole = (req.apiKeyUser || req.session?.user)?.role;
+    const isAdmin = callerRole === 'admin' || callerRole === 'superadmin';
+    if (!isAdmin && form.structure) {
+      let structure = form.structure;
+      if (typeof structure === 'string') structure = JSON.parse(structure);
+      if (Array.isArray(structure)) {
+        form.structure = structure.map(({ correctAnswer, ...rest }) => rest);
+      }
+    }
+
     res.json(form);
   } catch (e) {
     res.status(500).json({ error: e.message });

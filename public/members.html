@@ -868,7 +868,7 @@
                     ? window.formatMemberName(member.rank, member.last_name, member.first_name, member.name)
                     : member.name)
                 : 'this member';
-            if (await confirmAction('Delete Member', `Are you sure you want to delete <strong>${displayName}</strong>?`)) {
+            if (await confirmAction('Delete Member', `Are you sure you want to delete <strong>${esc(displayName)}</strong>?`)) {
                 try {
                     const res = await fetch(`/api/members/${id}`, { method: 'DELETE' });
                     if (!res.ok) {
@@ -963,7 +963,7 @@
         function osmDiffLabel(field, from, to) {
             const f = from || '—';
             const t = to   || '—';
-            return f === t ? '' : `<span style="font-size:0.82em; color:var(--text-muted);">${field}: <s style="color:var(--danger-color,#dc3545);">${f}</s> → <strong style="color:var(--success-color,#28a745);">${t}</strong></span>`;
+            return f === t ? '' : `<span style="font-size:0.82em; color:var(--text-muted);">${esc(field)}: <s style="color:var(--danger-color,#dc3545);">${esc(f)}</s> → <strong style="color:var(--success-color,#28a745);">${esc(t)}</strong></span>`;
         }
 
         async function openOsmImportModal() {
@@ -1010,8 +1010,8 @@
                             li.innerHTML = `
                                 <input type="checkbox" class="osm-check" id="osmNew-${i}" checked onchange="osmUpdateSelectedCount()" title="Include this member in the sync" style="margin-top:3px; flex-shrink:0;">
                                 <label for="osmNew-${i}" style="cursor:pointer; flex:1;">
-                                    <span style="font-weight:600;">${window.formatMemberName ? window.formatMemberName(m.rank, m.lastName, m.firstName, m.name) : m.name}</span>
-                                    <span style="font-size:0.82em; color:var(--text-muted); margin-left:8px;">${m.rank||'—'} · ${m.lastName||'—'}, ${m.firstName||'—'}</span>
+                                    <span style="font-weight:600;">${esc(window.formatMemberName ? window.formatMemberName(m.rank, m.lastName, m.firstName, m.name) : m.name)}</span>
+                                    <span style="font-size:0.82em; color:var(--text-muted); margin-left:8px;">${esc(m.rank||'—')} · ${esc(m.lastName||'—')}, ${esc(m.firstName||'—')}</span>
                                 </label>`;
                             newList.appendChild(li);
                         });
@@ -1030,7 +1030,7 @@
                             li.innerHTML = `
                                 <input type="checkbox" class="osm-check" id="osmChanged-${i}" checked onchange="osmUpdateSelectedCount()" title="Apply this update" style="margin-top:3px; flex-shrink:0;">
                                 <label for="osmChanged-${i}" style="cursor:pointer; flex:1;">
-                                    <span style="font-weight:600;">${window.formatMemberName ? window.formatMemberName(m.rank, m.lastName, m.firstName, m.name) : m.name}</span><br>
+                                    <span style="font-weight:600;">${esc(window.formatMemberName ? window.formatMemberName(m.rank, m.lastName, m.firstName, m.name) : m.name)}</span><br>
                                     <span>${diffs || '<em style="color:var(--text-muted);">OSM ID needs setting</em>'}</span>
                                 </label>`;
                             chgList.appendChild(li);

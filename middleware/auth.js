@@ -94,9 +94,12 @@ const globalAuthGuard = async (req, res, next) => {
         const originIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip || '';
         const userAgent = req.headers['user-agent'] || '';
         const geoLocation = lookupIp(originIp);
+        // H-17: Suppress request body for paths that handle PII or credentials.
+        const SUPPRESS_BODY = [/^\/api\/auth/, /^\/api\/users/, /^\/api\/members/, /^\/api\/profile/];
+        const suppressBody = SUPPRESS_BODY.some(p => p.test(req.originalUrl));
         res.on('finish', () => {
           logApiCall(record.id, record.name, record.key_prefix, req.method, req.originalUrl, originIp, userAgent, res.statusCode,
-              toLogJson(req.query), toLogJson(req.body), toLogJson(req.params), geoLocation);
+              toLogJson(req.query), suppressBody ? null : toLogJson(req.body), toLogJson(req.params), geoLocation);
         });
         return next();
       }

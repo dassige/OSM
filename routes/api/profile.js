@@ -6,9 +6,10 @@ const qrcode = require("qrcode");
 
 const db = require("../../services/db");
 const config = require("../../config");
+const { hasRole } = require("../../middleware/auth");
 const { validatePassword } = require("../../services/password-policy");
 
-router.put("/", async (req, res) => {
+router.put("/", hasRole('simple'), async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   try {
     const userId = req.session.user.id;
@@ -34,7 +35,7 @@ router.put("/", async (req, res) => {
   }
 });
 
-router.post("/mfa/setup", async (req, res) => {
+router.post("/mfa/setup", hasRole('simple'), async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   if (!req.session.user || !req.session.user.id) return res.status(401).json({ error: "Unauthorized" });
 
@@ -55,7 +56,7 @@ router.post("/mfa/setup", async (req, res) => {
   });
 });
 
-router.post("/mfa/verify", async (req, res) => {
+router.post("/mfa/verify", hasRole('simple'), async (req, res) => {
   const { token } = req.body;
   const userId = req.session.user.id;
   const userName = req.session.user.name;
@@ -83,7 +84,7 @@ router.post("/mfa/verify", async (req, res) => {
   }
 });
 
-router.post("/mfa/disable", async (req, res) => {
+router.post("/mfa/disable", hasRole('simple'), async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   const userId = req.session.user.id;
   const userName = req.session.user.name;
@@ -108,7 +109,7 @@ router.post("/mfa/disable", async (req, res) => {
   res.json({ success: true });
 });
 
-router.get("/mfa/status", async (req, res) => {
+router.get("/mfa/status", hasRole('simple'), async (req, res) => {
   const userId = req.session.user.id;
   const data = await db.getMfaData(userId);
   res.json({ enabled: !!(data && data.mfa_enabled) });

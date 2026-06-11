@@ -263,6 +263,29 @@ describe('POST /api/knowledgebase/documents (upload)', () => {
         expect(db.createKbDocument).toHaveBeenCalled();
         expect(db.logEvent).toHaveBeenCalledWith(expect.any(String), 'Knowledge Base', 'Document Uploaded', expect.any(Object));
     });
+
+    it('returns 400 when file content does not match declared type — PNG as PDF (M-08)', async () => {
+        // PNG magic bytes with PDF mime type — detected type is not in ACCEPTABLE_MAGIC_MIMES set
+        const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+        const res = await request(app)
+            .post('/api/knowledgebase/documents')
+            .attach('file', pngHeader, { filename: 'disguised.pdf', contentType: 'application/pdf' })
+            .field('title', 'Disguised File');
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/content does not match/i);
+        expect(storage.upload).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 when file content is unrecognised — plain text as PDF (M-08)', async () => {
+        const textBuf = Buffer.from('this is not a pdf at all');
+        const res = await request(app)
+            .post('/api/knowledgebase/documents')
+            .attach('file', textBuf, { filename: 'fake.pdf', contentType: 'application/pdf' })
+            .field('title', 'Fake File');
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/content does not match/i);
+        expect(storage.upload).not.toHaveBeenCalled();
+    });
 });
 
 describe('PATCH /api/knowledgebase/documents/:id', () => {
@@ -345,6 +368,17 @@ describe('POST /api/knowledgebase/documents/:id/replace-file', () => {
             .post('/api/knowledgebase/documents/999/replace-file')
             .attach('file', Buffer.from('%PDF-1.4'), { filename: 'new.pdf', contentType: 'application/pdf' });
         expect(res.status).toBe(404);
+    });
+
+    it('returns 400 when replacement file content does not match declared type — PNG as PDF (M-08)', async () => {
+        db.getKbDocumentById.mockResolvedValue({ id: 1, title: 'Test Doc', slug: 'SLUG-001', is_active: 1, storage_type: 'local', storage_path: 'SLUG-001.pdf', original_filename: 'test.pdf', mime_type: 'application/pdf', file_size: 1024 });
+        const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+        const res = await request(app)
+            .post('/api/knowledgebase/documents/1/replace-file')
+            .attach('file', pngHeader, { filename: 'disguised.pdf', contentType: 'application/pdf' });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/content does not match/i);
+        expect(storage.replaceFile).not.toHaveBeenCalled();
     });
 });
 

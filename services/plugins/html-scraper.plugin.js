@@ -131,8 +131,7 @@ const plugin = {
                 } catch (e) {
                     log(`[html-scraper] Proxy configuration failed: ${e.message}`);
                 }
-            } else {
-                axiosConfig.httpsAgent = new https.Agent({ rejectUnauthorized: false });
+            // H-18: TLS certificate validation is now enforced (rejectUnauthorized defaults to true).
             }
             const response = await axios.get(config.url, axiosConfig);
             responseData = response.data;

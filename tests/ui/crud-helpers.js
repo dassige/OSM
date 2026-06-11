@@ -34,4 +34,15 @@ function waitForAPI(page, urlPart, method) {
   );
 }
 
-module.exports = { goTo, showAllRows, confirmDialog, waitForAPI };
+// Returns true when the test server is running in demo mode (mutations blocked)
+async function checkDemoMode(request) {
+  try {
+    const res = await request.get('/ui-config');
+    const cfg = await res.json();
+    return cfg.appMode === 'demo';
+  } catch {
+    return false;
+  }
+}
+
+module.exports = { goTo, showAllRows, confirmDialog, waitForAPI, checkDemoMode };

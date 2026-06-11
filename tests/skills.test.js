@@ -78,6 +78,22 @@ describe('Skills API Endpoints (Isolated)', () => {
 
             expect(db.getSkillsPage).toHaveBeenCalledWith({ limit: 10, offset: 0, search: 'Aid', sortBy: 'url_type', sortDir: 'asc' });
         });
+
+        it('clamps limit=999 to maximum of 500 (M-06)', async () => {
+            db.getSkillsPage.mockResolvedValue({ items: [], total: 0, limit: 500, offset: 0 });
+
+            await request(app).get('/api/skills?limit=999&offset=0');
+
+            expect(db.getSkillsPage).toHaveBeenCalledWith(expect.objectContaining({ limit: 500 }));
+        });
+
+        it('clamps negative offset to 0 (M-06)', async () => {
+            db.getSkillsPage.mockResolvedValue({ items: [], total: 0, limit: 10, offset: 0 });
+
+            await request(app).get('/api/skills?limit=10&offset=-3');
+
+            expect(db.getSkillsPage).toHaveBeenCalledWith(expect.objectContaining({ offset: 0 }));
+        });
     });
 
     describe('POST /api/skills', () => {
@@ -113,6 +129,34 @@ describe('Skills API Endpoints (Isolated)', () => {
             expect(response.body).toHaveProperty('error', 'Validation Failed');
             expect(response.body).toHaveProperty('details');
             expect(db.addSkill).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('POST /api/skills — URL scheme validation (M-09)', () => {
+        it('returns 400 for a javascript: URL', async () => {
+            const res = await request(app)
+                .post('/api/skills')
+                .send({ name: 'Bad Skill', url_type: 'external', url: 'javascript:alert(1)' });
+            expect(res.status).toBe(400);
+            expect(res.body).toHaveProperty('error', 'Validation Failed');
+            expect(db.addSkill).not.toHaveBeenCalled();
+        });
+
+        it('returns 400 for an ftp:// URL', async () => {
+            const res = await request(app)
+                .post('/api/skills')
+                .send({ name: 'Bad Skill', url_type: 'external', url: 'ftp://files.example.com/form' });
+            expect(res.status).toBe(400);
+            expect(res.body).toHaveProperty('error', 'Validation Failed');
+            expect(db.addSkill).not.toHaveBeenCalled();
+        });
+
+        it('accepts a valid https:// URL', async () => {
+            db.addSkill.mockResolvedValue(9);
+            const res = await request(app)
+                .post('/api/skills')
+                .send({ name: 'Good Skill', url_type: 'external', url: 'https://forms.example.com/survey' });
+            expect(res.status).toBe(200);
         });
     });
 

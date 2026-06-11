@@ -8,7 +8,8 @@ jest.mock('../services/db', () => ({
     getMfaData: jest.fn(),
     logEvent: jest.fn().mockResolvedValue(),
     resetLoginAttempts: jest.fn().mockResolvedValue(),
-    incrementLoginAttempts: jest.fn().mockResolvedValue(),
+    incrementLoginAttempts: jest.fn().mockResolvedValue({ id: 1, login_attempts: 1 }),
+    blockUser: jest.fn().mockResolvedValue(),
     getPreferences: jest.fn().mockResolvedValue({}),
     storePasswordResetToken: jest.fn().mockResolvedValue(),
     getUserByResetToken: jest.fn(),
@@ -20,7 +21,7 @@ jest.mock('../services/mailer', () => ({
     sendPasswordResetLink: jest.fn().mockResolvedValue(),
 }));
 jest.mock('../config', () => ({
-    auth: { username: 'super@admin.com', password: 'superpassword' },
+    auth: { username: 'super@admin.com', password: 'superpassword', maxLoginAttempts: 5 },
     appMode: 'production',
     ui: { loginTitle: 'TestApp' },
     transporter: {},
@@ -46,10 +47,14 @@ jest.mock('speakeasy', () => ({
 const db = require('../services/db');
 
 // Build an app specifically for Auth testing (needs active session manipulation)
+// H-01: session.regenerate must be present so finalizeLogin can swap session IDs.
 const app = express();
 app.use(express.json());
 app.use((req, res, next) => {
-    req.session = { destroy: jest.fn() };
+    req.session = {
+        destroy: jest.fn(),
+        regenerate: jest.fn((cb) => { cb(null); }),
+    };
     next();
 });
 app.use('/', authRoutes);
@@ -98,11 +103,13 @@ describe('Authentication Flow Regression', () => {
 const speakeasy = require('speakeasy');
 
 // Separate app with mfaPendingUser already in the session (simulates post-login MFA step)
+// H-01: regenerate must be present here too — finalizeLogin is called after MFA verification.
 const mfaApp = express();
 mfaApp.use(express.json());
 mfaApp.use((req, res, next) => {
     req.session = {
-        mfaPendingUser: { id: 1, name: 'Test User', email: 'user@fenz.osm', role: 'admin' }
+        mfaPendingUser: { id: 1, name: 'Test User', email: 'user@fenz.osm', role: 'admin' },
+        regenerate: jest.fn((cb) => { cb(null); }),
     };
     next();
 });
@@ -189,6 +196,34 @@ describe('Login — account state check ordering (F23)', () => {
 
         expect(res.status).toBe(401);
         expect(res.body.error).toBe('Invalid credentials');
+        // H-02: already-blocked account must NOT trigger another increment
+        expect(db.incrementLoginAttempts).not.toHaveBeenCalled();
+    });
+
+    it('H-02: blocks the account after maxLoginAttempts failed attempts', async () => {
+        db.getUserByEmail.mockResolvedValue({ id: 7, enabled: 1, blocked: 0 });
+        db.authenticateUser.mockResolvedValue(null);
+        db.incrementLoginAttempts.mockResolvedValue({ id: 7, login_attempts: 5 });
+
+        const res = await request(app)
+            .post('/login')
+            .send({ username: 'victim@fenz.osm', password: 'wrong' });
+
+        expect(res.status).toBe(401);
+        expect(db.blockUser).toHaveBeenCalledWith(7);
+        expect(db.logEvent).toHaveBeenCalledWith(
+            'System', 'Security', 'Account Blocked', expect.objectContaining({ targetEmail: 'victim@fenz.osm' })
+        );
+    });
+
+    it('H-02: does NOT block when attempt count is below threshold', async () => {
+        db.getUserByEmail.mockResolvedValue({ id: 7, enabled: 1, blocked: 0 });
+        db.authenticateUser.mockResolvedValue(null);
+        db.incrementLoginAttempts.mockResolvedValue({ id: 7, login_attempts: 2 });
+
+        await request(app).post('/login').send({ username: 'victim@fenz.osm', password: 'wrong' });
+
+        expect(db.blockUser).not.toHaveBeenCalled();
     });
 
     it('returns 403 for a DISABLED account with the correct password', async () => {

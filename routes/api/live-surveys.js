@@ -63,14 +63,19 @@ router.get("/:accessCode", publicSubmitLimiter, async (req, res) => {
       });
     }
 
+    // H-13: Only expose respondentName for non-anonymous surveys.
+    const respondentName = liveInstance.is_anonymous
+      ? undefined
+      : formatMemberName(trackingRecord.member_rank, trackingRecord.member_last_name, trackingRecord.member_first_name, trackingRecord.member_name);
+
     res.json({
       status: "pending",
       survey: {
         name: liveInstance.name,
         intro: liveInstance.intro_text,
         structure: liveInstance.structure,
-        is_anonymous: liveInstance.is_anonymous, 
-        respondentName: formatMemberName(trackingRecord.member_rank, trackingRecord.member_last_name, trackingRecord.member_first_name, trackingRecord.member_name)
+        is_anonymous: liveInstance.is_anonymous,
+        respondentName,
       },
     });
   } catch (error) {

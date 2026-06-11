@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { goTo, showAllRows, confirmDialog, waitForAPI } = require('./crud-helpers');
+const { goTo, showAllRows, confirmDialog, waitForAPI, checkDemoMode } = require('./crud-helpers');
 
 const TS   = Date.now();
 const NAME  = `UAT Member ${TS}`;
@@ -7,8 +7,14 @@ const NAME2 = `UAT Member ${TS} v2`;
 const EMAIL = `uat-member-${TS}@test.nz`;
 
 test.describe.serial('T03 — Members CRUD', () => {
+  let demoMode = false;
+
+  test.beforeAll(async ({ request }) => {
+    demoMode = await checkDemoMode(request);
+  });
 
   test('T03-02 | Create a new member', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/members.html');
 
     await page.getByRole('button', { name: 'Add Member' }).click();
@@ -28,6 +34,7 @@ test.describe.serial('T03 — Members CRUD', () => {
   });
 
   test('T03-03 | Edit member name', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/members.html');
     await showAllRows(page);
 
@@ -46,6 +53,7 @@ test.describe.serial('T03 — Members CRUD', () => {
   });
 
   test('T03-05 | Edit notification preference', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/members.html');
     await showAllRows(page);
 
@@ -63,6 +71,7 @@ test.describe.serial('T03 — Members CRUD', () => {
   });
 
   test('T03-06 | Disable a member', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/members.html');
     await showAllRows(page);
 
@@ -82,6 +91,7 @@ test.describe.serial('T03 — Members CRUD', () => {
   });
 
   test('T03-08 | Delete the test member', async ({ page }) => {
+    test.skip(demoMode, 'Skipped in demo mode — mutations are blocked by frontend and backend guards');
     await goTo(page, '/members.html');
     await showAllRows(page);
 

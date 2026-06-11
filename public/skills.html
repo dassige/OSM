@@ -943,7 +943,7 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
             const skill = currentSkills.find(s => s.id == id);
             const name = skill ? skill.name : 'this skill';
-            if (await confirmAction('Delete Skill', `Delete skill '<strong>${name}</strong>'?`)) {
+            if (await confirmAction('Delete Skill', `Delete skill '<strong>${esc(name)}</strong>'?`)) {
                 try {
                     const res = await fetch(`/api/skills/${id}`, { method: 'DELETE' });
                     if (!res.ok) {
@@ -1062,8 +1062,8 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
                             li.innerHTML =
                                 '<input type="checkbox" class="osm-check" id="osmNew-' + i + '" checked onchange="osmUpdateSelectedCount()" title="Include this skill in the sync" style="margin-top:3px; flex-shrink:0;">' +
                                 '<label for="osmNew-' + i + '" style="cursor:pointer; flex:1;">' +
-                                '<span style="font-weight:600;">' + s.skill + '</span>' +
-                                '<span style="font-size:0.82em; color:var(--text-muted); margin-left:8px;">category: ' + (s.skillCategory || '—') + '</span>' +
+                                '<span style="font-weight:600;">' + esc(s.skill) + '</span>' +
+                                '<span style="font-size:0.82em; color:var(--text-muted); margin-left:8px;">category: ' + esc(s.skillCategory || '—') + '</span>' +
                                 (isCritical ? '<span class="badge badge-danger" style="font-size:0.75em; margin-left:4px;">Critical</span>' : '') +
                                 '</label>';
                             newList.appendChild(li);
@@ -1080,8 +1080,8 @@ OI (IS1) - Operational Safety,https://example.com/skill,external,false,true</div
                             li.innerHTML =
                                 '<input type="checkbox" class="osm-check" id="osmChanged-' + i + '" checked onchange="osmUpdateSelectedCount()" title="Apply this category update" style="margin-top:3px; flex-shrink:0;">' +
                                 '<label for="osmChanged-' + i + '" style="cursor:pointer; flex:1;">' +
-                                '<span style="font-weight:600;">' + s.skill + '</span><br>' +
-                                '<span style="font-size:0.82em; color:var(--text-muted);">category: <s style="color:var(--danger-color,#dc3545);">' + from + '</s> → <strong style="color:var(--success-color,#28a745);">' + to + '</strong></span>' +
+                                '<span style="font-weight:600;">' + esc(s.skill) + '</span><br>' +
+                                '<span style="font-size:0.82em; color:var(--text-muted);">category: <s style="color:var(--danger-color,#dc3545);">' + esc(from) + '</s> → <strong style="color:var(--success-color,#28a745);">' + esc(to) + '</strong></span>' +
                                 '</label>';
                             chgList.appendChild(li);
                         });

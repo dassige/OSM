@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { goTo, confirmDialog, waitForAPI } = require('./crud-helpers');
+const { goTo, confirmDialog, waitForAPI, checkDemoMode } = require('./crud-helpers');
 
 test.describe('T06 — Live Forms — Filter & Status', () => {
 
@@ -37,7 +37,11 @@ test.describe('T06 — Live Forms — Filter & Status', () => {
     expect(page.url()).toContain('/live-forms.html');
   });
 
-  test('T06-07 | Change status of first active record to accepted', async ({ page }) => {
+  test('T06-07 | Change status of first active record to accepted', async ({ page, request }) => {
+    if (await checkDemoMode(request)) {
+      test.skip(true, 'Skipped in demo mode — status changes are blocked by frontend and backend guards');
+      return;
+    }
     await goTo(page, '/live-forms.html');
 
     const firstEditBtn = page.locator('.btn-icon.edit').first();

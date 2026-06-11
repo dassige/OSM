@@ -128,17 +128,9 @@ router.post("/events/prune", hasRole("superadmin"), async (req, res) => {
   res.json({ success: true });
 });
 
-// Categories reserved for server-side code only — clients cannot forge entries in these
-const RESTRICTED_LOG_CATEGORIES = new Set(['Security', 'System', 'User Mgmt', 'API Keys', 'WhatsApp']);
-
-router.post("/logs", hasRole('admin'), async (req, res) => {
-  if (RESTRICTED_LOG_CATEGORIES.has(req.body.type)) {
-    return res.status(403).json({ error: 'Log category is restricted to server-side operations.' });
-  }
-  const user = (req.apiKeyUser || req.session?.user)?.name || "System";
-  await db.logEvent(user, req.body.type, req.body.title, req.body.payload);
-  res.json({ success: true });
-});
+// H-12: POST /logs endpoint removed — all audit events must originate server-side.
+// Frontend pages that previously called this endpoint should trigger the relevant
+// server-side action instead, which logs the event as a side effect.
 
 router.get("/system/ollama-models", hasRole("superadmin"), async (req, res) => {
   const baseUrl = req.query.baseUrl || config.aiConfig.ollamaUrl;
@@ -319,8 +311,15 @@ router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.sin
       const kbFiles = directory.files.filter(f =>
         f.path.startsWith('storage/knowledgebase/') && f.type === 'File'
       );
+      const resolvedKbPath = path.resolve(kbPath);
       for (const entry of kbFiles) {
-        const dest = path.join(kbPath, path.basename(entry.path));
+        const dest = path.resolve(kbPath, path.basename(entry.path));
+        // M-11: Zip slip guard — reject any entry whose resolved path escapes kbPath.
+        if (!dest.startsWith(resolvedKbPath + path.sep) && dest !== resolvedKbPath) {
+          logger.warn('[Restore] Skipping KB entry with traversal path', { entryPath: entry.path });
+          entry.autodrain();
+          continue;
+        }
         await new Promise((resolve, reject) => {
           entry.stream()
             .pipe(fs.createWriteStream(dest))
@@ -357,24 +356,21 @@ router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.sin
 });
 
 // ── Directory Browser (for backup location picker) ───────────────────────────
-// Blocked prefixes — system pseudo-filesystems that are never valid backup destinations
-const BROWSE_BLOCKED_PREFIXES = [
-  '/proc', '/sys', '/dev', '/run/secrets',
-  '\\Windows\\System32', '\\Windows\\SysWOW64',
-];
+// M-14: Replaced blocklist with an allowlist. Only paths inside the configured
+// backup root (BACKUP_ROOT_DIR env var, defaulting to <cwd>/backups) are browsable.
+// This prevents superadmins from enumerating /etc, /home, /root, etc.
 
 router.get("/system/browse-directory", hasRole("superadmin"), (req, res) => {
-  const requested = req.query.path || path.sep;
+  const requested = req.query.path || config.backupRootDir;
   try {
     // realpathSync resolves symlinks so callers cannot traverse into symlink targets
     const resolved = fs.realpathSync(path.resolve(requested));
+    const root     = path.resolve(config.backupRootDir);
 
-    const lowerResolved = resolved.toLowerCase().replace(/\\/g, '/');
-    const isBlocked = BROWSE_BLOCKED_PREFIXES.some(p => {
-      const lp = p.toLowerCase().replace(/\\/g, '/');
-      return lowerResolved === lp || lowerResolved.startsWith(lp + '/');
-    });
-    if (isBlocked) return res.status(403).json({ error: 'Access to system paths is not permitted.' });
+    // Allowlist: only permit browsing within the configured backup root.
+    const isAllowed = resolved === root ||
+      resolved.startsWith(root + path.sep);
+    if (!isAllowed) return res.status(403).json({ error: `Directory browsing is restricted to the backup root (${root}).` });
 
     const entries  = fs.readdirSync(resolved, { withFileTypes: true });
     const dirs = entries

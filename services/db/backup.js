@@ -52,6 +52,10 @@ async function clearSessions() {
 
 // Allowlist of statement types that can legitimately appear in an OpReady SQL dump.
 // Any statement whose beginning does not match one of these patterns is rejected.
+// This allowlist implicitly blocks: SELECT (incl. load_extension), UPDATE, DELETE,
+// ATTACH, PRAGMA (except foreign_keys), and any other statement not in the list.
+// M-10: SELECT load_extension() and PRAGMA trusted_schema are rejected because
+// no SELECT or non-foreign_keys PRAGMA pattern appears in the allowlist.
 const ALLOWED_STMT_PREFIXES = [
   /^PRAGMA\s+foreign_keys\s*=/i,
   /^BEGIN(\s+TRANSACTION)?$/i,

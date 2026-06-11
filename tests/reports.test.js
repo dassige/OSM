@@ -70,6 +70,22 @@ describe('Reports API Endpoints', () => {
 
             expect(reportService.getGroupedByMember).toHaveBeenCalledWith(99, null, 60);
         });
+
+        it('clamps days=-1 to minimum of 1 (M-05)', async () => {
+            reportService.getGroupedByMember.mockResolvedValue({ items: [], meta: MOCK_META });
+
+            await request(app).get('/api/reports/data/by-member?days=-1');
+
+            expect(reportService.getGroupedByMember).toHaveBeenCalledWith(99, null, 1);
+        });
+
+        it('clamps days=9999 to maximum of 3650 (M-05)', async () => {
+            reportService.getGroupedByMember.mockResolvedValue({ items: [], meta: MOCK_META });
+
+            await request(app).get('/api/reports/data/by-member?days=9999');
+
+            expect(reportService.getGroupedByMember).toHaveBeenCalledWith(99, null, 3650);
+        });
     });
 
     describe('GET /api/reports/data/by-skill', () => {

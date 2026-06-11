@@ -9,7 +9,7 @@ router.get("/data/:key", hasRole("simple"), async (req, res) => {
   try {
     if (req.params.key === "compliance-overview") {
       const data = await statisticsService.getComplianceOverview(
-        req.session.user.id
+        (req.apiKeyUser || req.session?.user)?.id
       );
       res.json(data);
     } else {

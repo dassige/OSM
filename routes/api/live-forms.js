@@ -154,11 +154,11 @@ router.get("/access/:code", publicSubmitLimiter, async (req, res) => {
     const result = await formsService.getLiveFormByCode(req.params.code);
     if (!result) return res.status(404).json({ error: "Form link invalid or expired." });
 
+    // H-11: Do not log the access code — it is a credential equivalent.
     await db.logEvent("System", "Live Forms", "Form Link Accessed", {
       memberName: formatMemberName(result.member_rank, result.member_last_name, result.member_first_name, result.member_name),
       skillName: result.skill_name,
       attemptNumber: result.tries || 1,
-      accessCode: req.params.code,
     });
 
     if (["submitted", "accepted", "rejected"].includes(result.form_status)) {

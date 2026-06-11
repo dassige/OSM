@@ -22,13 +22,22 @@
         // Create Toast Element
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        
+
         // Structure: Icon + Message
-        toast.innerHTML = `
-            <div class="toast-icon">${icons[type] || icons.info}</div>
-            <div class="toast-message">${message}</div>
-            <div class="toast-close">&times;</div>
-        `;
+        // M-12: Build DOM nodes rather than using innerHTML to prevent XSS when
+        // message originates from server error text (data.error from API responses).
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'toast-icon';
+        iconDiv.innerHTML = icons[type] || icons.info; // icons are trusted SVG literals
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'toast-message';
+        msgDiv.textContent = message;
+        const closeDiv = document.createElement('div');
+        closeDiv.className = 'toast-close';
+        closeDiv.textContent = '×';
+        toast.appendChild(iconDiv);
+        toast.appendChild(msgDiv);
+        toast.appendChild(closeDiv);
 
         // Add to DOM
         const container = document.getElementById('toast-container');
@@ -51,7 +60,7 @@
         let timer = setTimeout(removeToast, duration);
 
         // Click to close
-        toast.querySelector('.toast-close').onclick = () => {
+        closeDiv.onclick = () => {
             clearTimeout(timer);
             removeToast();
         };

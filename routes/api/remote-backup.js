@@ -1,5 +1,6 @@
 // routes/api/remote-backup.js
 const express = require('express');
+const path    = require('path');
 const router  = express.Router();
 
 const db                  = require('../../services/db');
@@ -10,6 +11,19 @@ const logger              = require('../../services/logger');
 const { assertSafeUrl }   = require('../../services/url-utils');
 
 const MAX_SERVERS = 5;
+
+// M-07: Validate that a user-supplied backup save path stays within the allowed root.
+function assertSafeBackupLocation(location) {
+    if (!location || !location.trim()) return; // empty → service uses its own safe default
+    const resolved = path.resolve(location.trim());
+    const root     = path.resolve(config.backupRootDir);
+    if (!resolved.startsWith(root + path.sep) && resolved !== root) {
+        throw new Error(
+            `Backup location must be inside the configured backup root (${root}). ` +
+            `Received: ${resolved}`
+        );
+    }
+}
 
 // ── List all remote servers ───────────────────────────────────────────────────
 router.get('/', hasRole('superadmin'), async (req, res) => {
@@ -37,6 +51,9 @@ router.post('/', hasRole('superadmin'), async (req, res) => {
         try { assertSafeUrl(url); } catch (e) {
             return res.status(400).json({ error: `Invalid server URL: ${e.message}` });
         }
+        try { assertSafeBackupLocation(backupLocation); } catch (e) {
+            return res.status(400).json({ error: e.message });
+        }
 
         const id    = await db.createRemoteBackupServer({ name, url, apiKey, backupType, backupLocation });
         const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
@@ -59,6 +76,9 @@ router.put('/:id', hasRole('superadmin'), async (req, res) => {
 
         try { assertSafeUrl(url); } catch (e) {
             return res.status(400).json({ error: `Invalid server URL: ${e.message}` });
+        }
+        try { assertSafeBackupLocation(backupLocation); } catch (e) {
+            return res.status(400).json({ error: e.message });
         }
 
         await db.updateRemoteBackupServer(Number(req.params.id), { name, url, apiKey, backupType, backupLocation });

@@ -4,6 +4,7 @@ const fs       = require('fs');
 const path     = require('path');
 const { v4: uuidv4 } = require('uuid');
 const crypto   = require('crypto');
+const fileType = require('file-type');
 const router   = express.Router();
 const db       = require('../../services/db');
 const storage  = require('../../services/knowledgebase-storage');
@@ -30,6 +31,35 @@ function assertLocalDiskSpace() {
         if (e.status === 507) throw e;
         // statfsSync failure is non-fatal — log and continue
         logger.warn('[KB] Could not check disk space', { error: e.message });
+    }
+}
+
+// M-08: Magic bytes detected by file-type that are acceptable for document uploads.
+// OOXML files (.docx/.xlsx) are ZIP archives at the byte level — file-type returns
+// 'application/zip' when it cannot distinguish the specific OOXML sub-type.
+// RTF is plain text with no magic bytes; file-type returns null — handled separately.
+const ACCEPTABLE_MAGIC_MIMES = new Set([
+    'application/pdf',
+    'application/msword',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/zip', // generic detection for OOXML when sub-type not identified
+]);
+
+function assertMagicBytes(file) {
+    const isRtf = file.mimetype === 'application/rtf' || file.mimetype === 'text/rtf';
+    if (isRtf) {
+        // RTF has no binary magic bytes — verify the text signature instead.
+        const sig = file.buffer.slice(0, 6).toString('ascii');
+        if (!sig.startsWith('{\\rtf')) {
+            throw new Error('File content does not match the declared RTF type.');
+        }
+        return;
+    }
+    const detected = fileType(file.buffer);
+    if (!detected || !ACCEPTABLE_MAGIC_MIMES.has(detected.mime)) {
+        throw new Error('File content does not match the declared type. Upload rejected.');
     }
 }
 
@@ -245,6 +275,9 @@ router.post('/documents', hasRole('admin'), upload.single('file'), async (req, r
     try {
         assertLocalDiskSpace();
         if (!req.file) return res.status(400).json({ error: 'A file is required (PDF, Word, Excel, or RTF).' });
+        try { assertMagicBytes(req.file); } catch (e) {
+            return res.status(400).json({ error: e.message });
+        }
         const { title, description, category_id } = req.body;
         if (!title || !title.trim()) return res.status(400).json({ error: 'Document title is required.' });
 
@@ -309,6 +342,9 @@ router.post('/documents/:id/replace-file', hasRole('admin'), upload.single('file
     try {
         assertLocalDiskSpace();
         if (!req.file) return res.status(400).json({ error: 'A replacement file is required.' });
+        try { assertMagicBytes(req.file); } catch (e) {
+            return res.status(400).json({ error: e.message });
+        }
         const doc = await db.getKbDocumentById(req.params.id);
         if (!doc) return res.status(404).json({ error: 'Document not found.' });
 

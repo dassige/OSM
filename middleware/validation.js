@@ -87,7 +87,8 @@ const validateMember = (req, res, next) => {
 const skillSchema = Joi.object({
     name: Joi.string().required().trim().max(255),
     url_type: Joi.string().valid('internal', 'external', 'none').required(),
-    url: Joi.string().allow('', null).optional(),
+    // M-09: Restrict URL scheme to http/https to prevent javascript: URIs.
+    url: Joi.string().uri({ scheme: ['http', 'https'] }).allow('', null).optional(),
     critical_skill: Joi.alternatives().try(Joi.boolean(), Joi.number().valid(0, 1)).optional(),
     enabled: Joi.alternatives().try(Joi.boolean(), Joi.number().valid(0, 1)).optional(),
     // ETL enrichment fields

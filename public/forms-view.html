@@ -385,6 +385,10 @@
         let appLocale = 'en-NZ', appTimezone = 'Pacific/Auckland';
         let isAiEnabled = false;
 
+        function esc(s) {
+            return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
         function updateCommentVisibility() {
             const emailChecked = document.getElementById('revEmailCb').checked;
             const waChecked = document.getElementById('revWaCb').checked;
@@ -475,8 +479,8 @@
                     headerPanel.innerHTML = `
                         <div class="review-info-grid">
                             <div>
-                                <p style="margin:5px 0;"><strong>Member:</strong> ${data.member}</p>
-                                <p style="margin:5px 0;"><strong>Skill:</strong> ${data.skill}</p>
+                                <p style="margin:5px 0;"><strong>Member:</strong> ${esc(data.member)}</p>
+                                <p style="margin:5px 0;"><strong>Skill:</strong> ${esc(data.skill)}</p>
                                 <p style="margin:5px 0;"><strong>Status:</strong> <span style="color:${statusColor}; font-weight:bold; text-transform:uppercase;">${st}</span></p>
                             </div>
                             <div class="review-info-grid-right">
@@ -520,11 +524,11 @@
                                 <div class="public-member-header">
                                     <div>
                                         <p style="margin:0; font-size:0.9em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Member Required</p>
-                                        <p style="margin:2px 0 0 0; font-size:1.2em; font-weight:bold; color:var(--primary);">${data.member}</p>
+                                        <p style="margin:2px 0 0 0; font-size:1.2em; font-weight:bold; color:var(--primary);">${esc(data.member)}</p>
                                     </div>
                                     <div>
                                         <p style="margin:0; font-size:0.9em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Skill Verification</p>
-                                        <p style="margin:2px 0 0 0; font-size:1.1em; font-weight:600;">${data.skill}</p>
+                                        <p style="margin:2px 0 0 0; font-size:1.1em; font-weight:600;">${esc(data.skill)}</p>
                                     </div>
                                     <div class="public-member-header-last">
                                         <p style="margin:0; font-size:0.9em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Max Attempts Allowed</p>
@@ -579,7 +583,7 @@
                     case 'text_multi':
                         inputHtml = `<textarea name="${field.id}" rows="4" style="width:100%; box-sizing: border-box; padding:12px;" ${reqAttr}></textarea>`;
                         if (isPreview && correct) {
-                            inputHtml += `<div class="reference-box"><strong>Correct Answer (Reference):</strong><br>${correct}</div>`;
+                            inputHtml += `<div class="reference-box"><strong>Correct Answer (Reference):</strong><br>${esc(Array.isArray(correct) ? correct.join(', ') : correct)}</div>`;
                         }
                         break;
                     case 'radio':
@@ -588,7 +592,7 @@
                         opts.forEach(o => {
                             const isCorrect = isPreview && corrArr.includes(o);
                             inputHtml += `<label class="option-label ${isCorrect ? 'review-correct' : ''}">
-                        <input type="radio" name="${field.id}" value="${o}" ${reqAttr} ${isCorrect ? 'checked' : ''}> ${o}
+                        <input type="radio" name="${field.id}" value="${esc(o)}" ${reqAttr} ${isCorrect ? 'checked' : ''}> ${esc(o)}
                     </label>`;
                         });
                         break;
@@ -596,7 +600,7 @@
                         field.options.forEach(o => {
                             const isCorrect = isPreview && corrArr.includes(o);
                             inputHtml += `<label class="option-label ${isCorrect ? 'review-correct' : ''}">
-                        <input type="checkbox" name="${field.id}[]" value="${o}" ${isCorrect ? 'checked' : ''}> ${o}
+                        <input type="checkbox" name="${field.id}[]" value="${esc(o)}" ${isCorrect ? 'checked' : ''}> ${esc(o)}
                     </label>`;
                         });
                         break;
@@ -680,10 +684,10 @@
                                         AI Evaluation
                                     </strong>
                                     <span style="background:#007bff; color:white; padding:2px 6px; border-radius:4px; font-size:0.9em; font-weight:bold;">
-                                        ${aiData.score} Pts
+                                        ${esc(aiData.score)} Pts
                                     </span>
                                 </div>
-                                <div style="font-style:italic;">"${aiData.reason}"</div>
+                                <div style="font-style:italic;">"${esc(aiData.reason)}"</div>
                             `;
                             ta.parentNode.appendChild(aiBox);
                         }

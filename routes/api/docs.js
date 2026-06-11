@@ -918,6 +918,13 @@ const spec = {
                             type: 'string',
                             enum: ['by-member', 'by-skill', 'planned-sessions', 'critical-overdue', 'compliance-matrix', 'verification-history', 'training-attendance', 'survey-participation', 'survey-response-log']
                         }
+                    },
+                    {
+                        name: 'days',
+                        in: 'query',
+                        required: false,
+                        schema: { type: 'integer', minimum: 1, maximum: 3650, default: 30 },
+                        description: 'Look-back window in days for time-filtered reports (by-member, by-skill, verification-history, survey-response-log). Clamped server-side to 1–3650. Defaults to 30 when omitted.'
                     }
                 ],
                 responses: {
@@ -1413,11 +1420,11 @@ const spec = {
             get: {
                 operationId: 'browseDirectory',
                 tags: ['System'],
-                summary: 'List subdirectories at a server path (superadmin)',
-                description: 'Returns the immediate child directories of the given path. Used by the Backup & Restore UI to let an admin navigate the server filesystem when selecting a backup save location.',
+                summary: 'List subdirectories within the backup root (superadmin)',
+                description: 'Returns the immediate child directories of the given path. Used by the Backup & Restore UI to let an admin navigate the server filesystem when selecting a backup save location. The path must be inside the configured backup root directory (BACKUP_ROOT_DIR) — requests outside this root are rejected with HTTP 400.',
                 security: [{ sessionCookie: [] }, { apiKey: [] }],
                 parameters: [
-                    { name: 'path', in: 'query', required: false, schema: { type: 'string', default: '/' }, description: 'Absolute server path to list. Defaults to the filesystem root.' }
+                    { name: 'path', in: 'query', required: false, schema: { type: 'string', default: '/' }, description: 'Absolute server path to list. Must be inside the configured BACKUP_ROOT_DIR.' }
                 ],
                 responses: {
                     200: {

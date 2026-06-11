@@ -78,6 +78,30 @@ describe('Members API Endpoints (Isolated)', () => {
 
             expect(db.getMembersPage).toHaveBeenCalledWith({ limit: 10, offset: 0, search: 'John', sortBy: 'email', sortDir: 'desc' });
         });
+
+        it('clamps limit=999 to maximum of 500 (M-06)', async () => {
+            db.getMembersPage.mockResolvedValue({ items: [], total: 0, limit: 500, offset: 0 });
+
+            await request(app).get('/api/members?limit=999&offset=0');
+
+            expect(db.getMembersPage).toHaveBeenCalledWith(expect.objectContaining({ limit: 500 }));
+        });
+
+        it('clamps negative limit to minimum of 1 (M-06)', async () => {
+            db.getMembersPage.mockResolvedValue({ items: [], total: 0, limit: 1, offset: 0 });
+
+            await request(app).get('/api/members?limit=-5&offset=0');
+
+            expect(db.getMembersPage).toHaveBeenCalledWith(expect.objectContaining({ limit: 1 }));
+        });
+
+        it('clamps negative offset to 0 (M-06)', async () => {
+            db.getMembersPage.mockResolvedValue({ items: [], total: 0, limit: 10, offset: 0 });
+
+            await request(app).get('/api/members?limit=10&offset=-5');
+
+            expect(db.getMembersPage).toHaveBeenCalledWith(expect.objectContaining({ offset: 0 }));
+        });
     });
 
     describe('POST /api/members', () => {

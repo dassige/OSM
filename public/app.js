@@ -1,6 +1,10 @@
 // public/app.js
 const socket = io();
 
+function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 let currentOsmData = [];
 let currentSort = { column: "name", order: "asc" };
 let isWaReady = false;
@@ -614,7 +618,7 @@ async function sendSingleAction(name, type) {
   if (
     await confirmAction(
       "Send Immediate Reminder",
-      `Send immediate ${label} reminder to <strong>${displayName}</strong>?`,
+      `Send immediate ${esc(label)} reminder to <strong>${esc(displayName)}</strong>?`,
     )
   ) {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -763,7 +767,7 @@ socket.on("expiring-skills-data", (data) => {
 });
 
 function buildSkillHtml(skillObj, memberId) {
-  let html = skillObj.skill;
+  let html = esc(skillObj.skill);
   if (skillObj.isCritical) html = `<b>${html}</b>`;
 
   if (skillObj.hasUrl) {
@@ -771,13 +775,15 @@ function buildSkillHtml(skillObj, memberId) {
   }
 
   const canLink = memberId && skillObj.skillId;
+  const safeMemId = encodeURIComponent(memberId || '');
+  const safeSkillId = encodeURIComponent(skillObj.skillId || '');
 
   if (skillObj.liveFormStatus === "accepted") {
     const icon = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
     const wrapper = `<span class="status-circle accepted" title="Verification Accepted">${icon}</span>`;
 
     if (canLink) {
-      html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=accepted">${wrapper}</a>`;
+      html += ` <a href="live-forms.html?memberId=${safeMemId}&skillId=${safeSkillId}&status=accepted">${wrapper}</a>`;
     } else {
       html += ` ${wrapper}`;
     }
@@ -785,7 +791,7 @@ function buildSkillHtml(skillObj, memberId) {
     const icon = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
     const wrapper = `<span class="status-circle submitted" title="Form Submitted - Awaiting Review">${icon}</span>`;
     html += canLink
-      ? ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=submitted">${wrapper}</a>`
+      ? ` <a href="live-forms.html?memberId=${safeMemId}&skillId=${safeSkillId}&status=submitted">${wrapper}</a>`
       : ` ${wrapper}`;
   } else if (skillObj.liveFormStatus === "sent") {
     const icon = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -795,7 +801,7 @@ function buildSkillHtml(skillObj, memberId) {
     const wrapper = `<span class="status-circle sent" title="Form Sent - Waiting for Member">${icon}</span>`;
 
     if (canLink) {
-      html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=sent" target="_self" style="text-decoration:none;">${wrapper}</a>`;
+      html += ` <a href="live-forms.html?memberId=${safeMemId}&skillId=${safeSkillId}&status=sent" target="_self" style="text-decoration:none;">${wrapper}</a>`;
     } else {
       html += ` ${wrapper}`;
     }
@@ -804,7 +810,7 @@ function buildSkillHtml(skillObj, memberId) {
     const wrapper = `<span class="status-circle rejected" title="Verification Rejected">${icon}</span>`;
 
     if (canLink) {
-      html += ` <a href="live-forms.html?memberId=${memberId}&skillId=${skillObj.skillId}&status=rejected">${wrapper}</a>`;
+      html += ` <a href="live-forms.html?memberId=${safeMemId}&skillId=${safeSkillId}&status=rejected">${wrapper}</a>`;
     } else {
       html += ` ${wrapper}`;
     }

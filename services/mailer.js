@@ -28,6 +28,11 @@ function escapeHtmlVars(variables) {
   return safe;
 }
 
+// H-15: Strip CR/LF from email header values to prevent SMTP header injection.
+function sanitizeHeader(value) {
+  return String(value || "").replace(/[\r\n]+/g, " ").trim();
+}
+
 function replaceVariables(text, variables) {
   if (!text) return "";
   let result = text;
@@ -95,8 +100,8 @@ async function sendNotification(
       `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} (No online form available)</li>`,
   };
 
-  const from = replaceVariables(defaults.from, globalVars);
-  const subject = replaceVariables(defaults.subject, globalVars);
+  const from = sanitizeHeader(replaceVariables(defaults.from, globalVars));
+  const subject = sanitizeHeader(replaceVariables(defaults.subject, globalVars));
   const intro = replaceVariables(defaults.intro, escapeHtmlVars(globalVars));
 
   let rowsHtml = "";
@@ -184,8 +189,8 @@ async function sendPasswordReset(
     body: `<p>A password reset was requested.</p><p>New Password: <strong>{{password}}</strong></p>`,
   };
   const config = templatePref || defaults;
-  const from = replaceVariables(config.from || defaults.from, variables);
-  const subject = replaceVariables(config.subject || defaults.subject, variables);
+  const from = sanitizeHeader(replaceVariables(config.from || defaults.from, variables));
+  const subject = sanitizeHeader(replaceVariables(config.subject || defaults.subject, variables));
   const body = replaceVariables(config.body || defaults.body, escapeHtmlVars(variables));
 
   await transporter.sendMail({
@@ -220,8 +225,8 @@ async function sendNewAccountNotification(
     body: `<p>Welcome <strong>{{name}}</strong>,</p><p>Your account has been created.</p><p>Password: <strong>{{password}}</strong></p>`,
   };
   const config = templatePref || defaults;
-  const from = replaceVariables(config.from || defaults.from, variables);
-  const subject = replaceVariables(config.subject || defaults.subject, variables);
+  const from = sanitizeHeader(replaceVariables(config.from || defaults.from, variables));
+  const subject = sanitizeHeader(replaceVariables(config.subject || defaults.subject, variables));
   const bodyVars = escapeHtmlVars(variables);
   if (variables.loginlink) {
     const safeUrl = escapeHtml(variables.loginlink);
@@ -257,8 +262,8 @@ async function sendAccountDeletionNotification(
     body: `<p>Hello {{name}},</p><p>Your account on {{appname}} has been deleted.</p>`,
   };
   const config = templatePref || defaults;
-  const from = replaceVariables(config.from || defaults.from, variables);
-  const subject = replaceVariables(config.subject || defaults.subject, variables);
+  const from = sanitizeHeader(replaceVariables(config.from || defaults.from, variables));
+  const subject = sanitizeHeader(replaceVariables(config.subject || defaults.subject, variables));
   const body = replaceVariables(config.body || defaults.body, escapeHtmlVars(variables));
 
   await transporter.sendMail({
@@ -307,11 +312,11 @@ async function sendSurveyInvitation(
 
   const config =
     templatePref && templatePref.email ? templatePref.email : defaults.email;
-  const from = replaceVariables(config.from || defaults.email.from, variables);
-  const subject = replaceVariables(
+  const from = sanitizeHeader(replaceVariables(config.from || defaults.email.from, variables));
+  const subject = sanitizeHeader(replaceVariables(
     config.subject || defaults.email.subject,
     variables,
-  );
+  ));
 
   // Logic: Use non-anonymous body if flag is false AND the template exists
   let bodyTemplate = config.body || defaults.email.body;
@@ -369,8 +374,8 @@ async function sendPasswordResetLink(
     body: `<p>A password reset was requested for your account.</p><p>Click the link below to set a new password. The link expires in 30 minutes.</p><p>{{resetlink}}</p><p>If you did not request this, you can safely ignore this email.</p>`,
   };
   const config = templatePref || defaults;
-  const from = replaceVariables(config.from || defaults.from, variables);
-  const subject = replaceVariables(config.subject || defaults.subject, variables);
+  const from = sanitizeHeader(replaceVariables(config.from || defaults.from, variables));
+  const subject = sanitizeHeader(replaceVariables(config.subject || defaults.subject, variables));
   // Render {{resetlink}} as a clickable anchor in the body so template authors
   // can drag-drop the variable without manually writing HTML.
   const bodyVars = { ...variables };

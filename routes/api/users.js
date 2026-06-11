@@ -22,8 +22,9 @@ router.post("/", hasRole("admin"), createUserLimiter, async (req, res) => {
   try {
     const actorUser = req.apiKeyUser || req.session?.user;
     const actorLevel = ROLES[actorUser?.role] ?? 0;
-    if ((ROLES[req.body.role] ?? 0) > actorLevel) {
-      return res.status(403).json({ error: 'Forbidden: Cannot assign a role higher than your own.' });
+    // H-03: >= prevents assigning a role equal to your own (admins cannot create more admins).
+    if ((ROLES[req.body.role] ?? 0) >= actorLevel) {
+      return res.status(403).json({ error: 'Forbidden: Cannot assign a role at or above your own.' });
     }
 
     const tempPassword = crypto.randomBytes(16).toString("hex");
@@ -74,8 +75,9 @@ router.put("/:id", hasRole("admin"), async (req, res) => {
     if (actorLevel <= (ROLES[userRecord.role] ?? 0)) {
       return res.status(403).json({ error: 'Forbidden: Cannot modify a user at or above your own role level.' });
     }
-    if (role !== undefined && (ROLES[role] ?? 0) > actorLevel) {
-      return res.status(403).json({ error: 'Forbidden: Cannot assign a role higher than your own.' });
+    // H-03: >= prevents assigning a role equal to your own.
+    if (role !== undefined && (ROLES[role] ?? 0) >= actorLevel) {
+      return res.status(403).json({ error: 'Forbidden: Cannot assign a role at or above your own.' });
     }
 
     await db.updateUser(req.params.id, name, email, role, enabled, blocked);

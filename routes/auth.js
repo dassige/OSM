@@ -16,14 +16,25 @@ const { validatePassword } = require("../services/password-policy");
 // Shared by both password and MFA login paths to ensure identical session state
 async function finalizeLogin(req, res, user, authType) {
   await db.resetLoginAttempts(user.id);
-  req.session.loggedIn = true;
-  req.session.user = {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    isAdmin: user.role === "admin" || user.role === "superadmin",
+
+  // H-01: Regenerate session ID on login to prevent session fixation attacks.
+  const newSessionData = {
+    loggedIn: true,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isAdmin: user.role === "admin" || user.role === "superadmin",
+    },
   };
+  await new Promise((resolve, reject) =>
+    req.session.regenerate((err) => {
+      if (err) return reject(err);
+      Object.assign(req.session, newSessionData);
+      resolve();
+    })
+  );
 
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   await db.logEvent(user.name, "Security", "Successful Login", {
@@ -42,10 +53,18 @@ router.post("/login", loginLimiter, async (req, res) => {
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
   if (username === config.auth.username && password === config.auth.password) {
-    req.session.loggedIn = true;
-    req.session.user = {
-      id: 0, name: "Super Admin", email: username, role: "superadmin", isAdmin: true, isEnvUser: true,
+    // H-01: Regenerate session ID before setting env-admin session data.
+    const envData = {
+      loggedIn: true,
+      user: { id: 0, name: "Super Admin", email: username, role: "superadmin", isAdmin: true, isEnvUser: true },
     };
+    await new Promise((resolve, reject) =>
+      req.session.regenerate((err) => {
+        if (err) return reject(err);
+        Object.assign(req.session, envData);
+        resolve();
+      })
+    );
     await db.logEvent("Super Admin", "Security", "Successful Login", { userEmail: username, authType: "environment", sourceIP: ip, sourceLocation: lookupIp(ip) });
     return res.json({ success: true });
   }
@@ -72,7 +91,18 @@ router.post("/login", loginLimiter, async (req, res) => {
       }
       return await finalizeLogin(req, res, user, "database");
     } else {
-      if (userRecord) await db.incrementLoginAttempts(username);
+      // H-02: Increment and block when threshold is reached.
+      if (userRecord && !userRecord.blocked) {
+        const updated = await db.incrementLoginAttempts(username);
+        if (updated && updated.login_attempts >= config.auth.maxLoginAttempts) {
+          await db.blockUser(updated.id);
+          logger.warn("[Auth] Account blocked after max failed attempts", { email: username });
+          await db.logEvent("System", "Security", "Account Blocked", {
+            targetEmail: username,
+            reason: `Exceeded ${config.auth.maxLoginAttempts} failed login attempts`,
+          });
+        }
+      }
       return res.status(401).json({ error: "Invalid credentials" });
     }
   } catch (e) {
@@ -188,8 +218,10 @@ router.get("/logout", async (req, res) => {
   } catch (e) {
     logger.error("Logout cleanup error", e);
   }
-  req.session.destroy();
-  res.redirect("/login.html");
+  req.session.destroy((err) => {
+    if (err) logger.warn("[Auth] Session destroy error on logout", { error: err.message });
+    res.redirect("/login.html");
+  });
 });
 
 router.get("/api/user-session", (req, res) => {

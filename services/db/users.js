@@ -9,7 +9,12 @@ function hashPassword(password) {
 
 function verifyPassword(password, storedHash, storedSalt) {
   const derivedKey = crypto.scryptSync(password, storedSalt, 64);
-  return storedHash === derivedKey.toString("hex");
+  // M-03: Use constant-time comparison to prevent timing side-channel attacks.
+  try {
+    return crypto.timingSafeEqual(Buffer.from(storedHash, 'hex'), derivedKey);
+  } catch {
+    return false;
+  }
 }
 
 async function authenticateUser(email, password) {

@@ -18,9 +18,12 @@ router.get('/', hasRole('admin'), async (req, res) => {
   try {
     const { limit, offset, search, sortBy, sortDir } = req.query;
     if (limit !== undefined) {
+      // M-06: Clamp to prevent NaN being passed to SQLite LIMIT.
+      const safeLimit  = Math.min(Math.max(parseInt(limit,  10) || 25, 1), 500);
+      const safeOffset = Math.max(parseInt(offset, 10) || 0, 0);
       res.json(await db.getSkillsPage({
-        limit: parseInt(limit, 10),
-        offset: parseInt(offset, 10) || 0,
+        limit: safeLimit,
+        offset: safeOffset,
         search,
         sortBy,
         sortDir,

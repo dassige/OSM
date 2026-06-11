@@ -102,6 +102,7 @@
 | T04-09 | Discover skills from OSM | Click `[Discover from OSM]`. | A list of skill names found in OSM data but not yet in the local DB is shown. |
 | T04-10 | Bulk import discovered skills | Select all → click `[Import]`. | New skills are added to the list. Toast confirms count. |
 | T04-11 | Bulk delete skills | Select multiple test skills → click `[Bulk Delete]` → confirm. | Skills removed. Event log records bulk deletion. |
+| T04-12 | Reject invalid external URL scheme | Click `[Edit]` on a skill → choose URL type = External → enter `javascript:alert(1)` as the URL → click `[Save]`. | HTTP 400 response. Toast shows a validation error. Skill is not saved with the invalid URL. |
 
 ---
 
@@ -444,6 +445,8 @@
 | T20-13 | CSRF protection on mutations | While logged in as admin, use Postman to send `POST /api/members` with a valid body but **without** the `X-CSRF-Token` header. Then repeat the request **with** `X-CSRF-Token: <token from T20-12>`. | First request: HTTP 403 with `{ "error": "Invalid or missing CSRF token." }`. Second request: HTTP 200 and member is created. | Manual |
 | T20-14 | Member input validation | While logged in as admin, send `POST /api/members` with an empty body `{}`. Then send a body missing the `name` field (e.g. `{ "email": "test@test.com" }`). | Both requests return HTTP 400 with `{ "error": "Validation Failed", "details": [...] }`. The `details` array names the failing field(s). No member is created. | Manual |
 | T20-15 | Skill input validation | While logged in as admin, send `POST /api/skills` with body `{ "name": "Test" }` (missing required `url_type`). Then send `{ "name": "Test", "url_type": "bad-value" }` (invalid enum). | Both requests return HTTP 400 with `{ "error": "Validation Failed", "details": [...] }`. No skill is created. | Manual |
+| T20-16 | Skill URL scheme validation | While logged in as admin, send `POST /api/skills` with body `{ "name": "Test", "url_type": "external", "url": "javascript:alert(1)" }`. Then try `"url": "ftp://files.example.com/form"`. | Both requests return HTTP 400. The `details` field describes the URL scheme constraint. No skill is created. | Manual |
+| T20-17 | Pagination clamping | Call `GET /api/members?limit=999&offset=0`. Then call `GET /api/members?limit=5&offset=-5`. | First call: response `{ items, total, limit: 500, offset: 0 }` — limit clamped to 500. Second call: `{ items, total, limit: 5, offset: 0 }` — negative offset clamped to 0. | Manual |
 
 ---
 
@@ -507,6 +510,7 @@
 | T22-26 | Event log entries | After performing Upload, Edit, Toggle, Delete, and Category CRUD operations, open the Event Log. | Each operation has a corresponding entry in the *Knowledge Base* category with a meaningful title and payload. |
 | T22-27 | Upload auto-fill title from filename | Click **Upload Document**. Attach a file named `fire-attack_procedures.pdf`. Observe the Title field before typing anything. | The Title field is automatically pre-filled with *fire attack procedures* — hyphens and underscores are replaced with spaces and the extension is stripped. The field remains editable. |
 | T22-28 | Missing file warning in Edit modal | Prerequisite: manually delete the physical file from storage while leaving the DB record intact. Open the Knowledge Base page and click **Edit** on that document. | The Edit modal opens with an amber warning banner stating the file is missing from storage. The Replace Document File section is visible with updated hint text. Clicking **Save** without selecting a replacement shows an error toast. Selecting a file and saving succeeds — the document is restored. |
+| T22-29 | Reject file with mismatched content type (magic bytes) | Rename a PNG image to `test.pdf`. Click **Upload Document**, fill in a title, and attach the renamed file. Click **Save**. | Upload is rejected with an error message stating the file content does not match the declared type. No document is created in the list. |
 
 ---
 
