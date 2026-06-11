@@ -82,12 +82,27 @@ async function main() {
         console.warn('    Install from https://cli.github.com/ to enable automatic release creation.\n');
     }
 
-    // 5. Determine commit range and list commits to be included
-    const tipRef      = tagExists ? `${tagName}~1` : 'HEAD';
-    const prevTagRes  = tryRun(`git describe --tags --abbrev=0 ${tipRef}`);
-    const prevTagName = prevTagRes.ok ? prevTagRes.out : null;
+    // 5. Determine commit range from the previous GitHub release
+    //    gh release list is the source of truth — fall back to git describe only when gh is unavailable.
+    let prevReleaseTag = null;
+    if (ghAvail) {
+        const relListRes = tryRun(`gh release list --limit 10 --json tagName`);
+        if (relListRes.ok) {
+            try {
+                const releases = JSON.parse(relListRes.out);
+                const prev = releases.find(r => r.tagName !== tagName);
+                if (prev) prevReleaseTag = prev.tagName;
+            } catch (e) {}
+        }
+    }
+    if (!prevReleaseTag) {
+        const tipRef = tagExists ? `${tagName}~1` : 'HEAD';
+        const prevTagRes = tryRun(`git describe --tags --abbrev=0 ${tipRef}`);
+        if (prevTagRes.ok) prevReleaseTag = prevTagRes.out;
+    }
+
     const rangeEnd    = tagExists ? tagName : 'HEAD';
-    const commitRange = prevTagName ? `${prevTagName}..${rangeEnd}` : rangeEnd;
+    const commitRange = prevReleaseTag ? `${prevReleaseTag}..${rangeEnd}` : rangeEnd;
 
     const SEP = '__OPREADY_COMMIT__';
     const logRes = tryRun(`git log ${commitRange} --format=${SEP}%n%B`);
@@ -95,7 +110,7 @@ async function main() {
         ? logRes.out.split(SEP + '\n').map(s => s.trim()).filter(Boolean)
         : [];
 
-    const sinceLabel = prevTagName ? `since ${prevTagName}` : 'all commits';
+    const sinceLabel = prevReleaseTag ? `since ${prevReleaseTag}` : 'all commits';
     console.log(`\nCommits in this release — ${sinceLabel} (${commits.length}):`);
     console.log('─'.repeat(50));
     if (commits.length === 0) {

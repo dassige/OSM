@@ -55,7 +55,7 @@ node scripts/release.js
 
 1. Reads `version` from `package.json` and derives the tag name (`v3.2.9`).
 2. Checks that the working tree is clean. If the tag already exists locally, prints a warning and skips creation — the script continues rather than aborting.
-3. Determines the commit range since the previous tag (`git describe --tags`) and prints a numbered list of every commit — subject line and full body — that will be included in this release.
+3. Determines the commit range by querying `gh release list` for the most recent published GitHub release (skipping the current tag if it already has one). Falls back to `git describe --tags` only when `gh` is unavailable or no releases exist yet. Prints a numbered list of every commit — subject line and full body — since that release tag.
 4. Asks for confirmation before making any changes.
 5. Optionally accepts custom release notes (press Enter to use the full commit messages collected in step 3).
 6. Creates the Git tag locally (skipped if it already existed).
