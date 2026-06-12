@@ -64,7 +64,7 @@ app.use(helmet({
       // attribute handlers used throughout the existing HTML pages.
       scriptSrcAttr:  ["'unsafe-inline'"],
       styleSrc:       ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],  // TinyMCE skins
-      imgSrc:         ["'self'", "data:", "blob:"],
+      imgSrc:         ["'self'", "data:", "blob:", "https://storage.googleapis.com"],
       connectSrc:     ["'self'", "ws:", "wss:", "https://api.github.com"],  // api.github.com for release notes fetch
       fontSrc:        ["'self'", "data:"],
       objectSrc:      ["'none'"],

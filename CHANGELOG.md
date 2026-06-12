@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.10.6] - 2026/06/12
+
+- fix: update Content Security Policy to allow images from Google Cloud Storage
+
 ## [3.10.5] - 2026/06/12
 
 - feat(release): implement release notes modal with markdown rendering and caching
