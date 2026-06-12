@@ -369,6 +369,7 @@ window.addEventListener('click', (event) => {
 });
 const _GITHUB_REPO = 'https://github.com/dassige/OSM';
 let _cachedReleaseUrl = null;
+let _cachedReleaseBody = null;
 
 window.resolveReleaseUrl = async function(version) {
     if (_cachedReleaseUrl !== null) return _cachedReleaseUrl;
@@ -377,22 +378,102 @@ window.resolveReleaseUrl = async function(version) {
             `https://api.github.com/repos/dassige/OSM/releases/tags/v${version}`,
             { headers: { Accept: 'application/vnd.github+json' } }
         );
-        _cachedReleaseUrl = res.ok
-            ? `${_GITHUB_REPO}/releases/tag/v${version}`
-            : `${_GITHUB_REPO}/releases`;
+        if (res.ok) {
+            const data = await res.json();
+            _cachedReleaseUrl = `${_GITHUB_REPO}/releases/tag/v${version}`;
+            _cachedReleaseBody = data.body || null;
+        } else {
+            _cachedReleaseUrl = `${_GITHUB_REPO}/releases`;
+            _cachedReleaseBody = null;
+        }
     } catch (_) {
         _cachedReleaseUrl = `${_GITHUB_REPO}/releases`;
+        _cachedReleaseBody = null;
     }
     return _cachedReleaseUrl;
 };
 
-window.applyReleaseLink = function(linkEl, url, version) {
-    const isSpecific = url.includes('/tag/');
-    linkEl.href = url;
-    linkEl.textContent = isSpecific ? 'View Release Notes' : 'View All Releases';
-    linkEl.title = isSpecific
-        ? `View release notes for v${version} on GitHub`
-        : `No specific release found for v${version} — view all releases on GitHub`;
+function _renderMarkdown(md) {
+    const lines = md.split('\n');
+    let html = '';
+    let inList = false;
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i]
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        line = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        line = line.replace(/`([^`]+)`/g, '<code style="background:var(--input-bg);padding:1px 4px;border-radius:3px;font-size:0.88em;font-family:monospace;">$1</code>');
+        line = line.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--primary);">$1</a>');
+        line = line.replace(/(?<!href=")https?:\/\/[^\s<>"')\]]+/g, function(url) {
+            return '<a href="' + url.replace(/[.,!?;:]+$/, '') + '" target="_blank" rel="noopener" style="color:var(--primary);">' + url.replace(/[.,!?;:]+$/, '') + '</a>';
+        });
+        if (/^### /.test(lines[i])) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += '<h4 style="margin:14px 0 5px;">' + line.slice(4) + '</h4>';
+        } else if (/^## /.test(lines[i])) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += '<h3 style="margin:18px 0 7px;border-bottom:1px solid var(--border-color);padding-bottom:4px;">' + line.slice(3) + '</h3>';
+        } else if (/^# /.test(lines[i])) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += '<h2 style="margin:18px 0 7px;">' + line.slice(2) + '</h2>';
+        } else if (/^[\*\-] /.test(lines[i])) {
+            if (!inList) { html += '<ul style="margin:5px 0;padding-left:20px;line-height:1.7;">'; inList = true; }
+            html += '<li>' + line.slice(2) + '</li>';
+        } else if (lines[i].trim() === '') {
+            if (inList) { html += '</ul>'; inList = false; }
+        } else {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += '<p style="margin:5px 0;">' + line + '</p>';
+        }
+    }
+    if (inList) html += '</ul>';
+    return html;
+}
+
+window.showReleaseNotesModal = async function(version) {
+    closeModal('globalAboutModal');
+    let modal = document.getElementById('globalReleaseNotesModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'globalReleaseNotesModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width:680px;width:95%;max-height:82vh;display:flex;flex-direction:column;">
+                <span class="close-btn" onclick="closeModal('globalReleaseNotesModal')">&times;</span>
+                <h2 style="margin-top:0;">Release Notes</h2>
+                <div id="globalReleaseNotesBody" style="overflow-y:auto;flex:1;padding-right:4px;font-size:0.92em;"></div>
+                <div class="modal-actions-center" style="margin-top:16px;">
+                    <button onclick="closeModal('globalReleaseNotesModal')" class="btn-secondary" title="Close release notes">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    const bodyEl = document.getElementById('globalReleaseNotesBody');
+    bodyEl.innerHTML = '<p style="color:var(--text-muted);">Loading release notes…</p>';
+    modal.style.display = 'block';
+
+    // Use cached body if already fetched; otherwise fetch directly (bypasses stale cache from pre-fetch failures)
+    let notesBody = _cachedReleaseBody;
+    if (!notesBody) {
+        try {
+            const res = await fetch(
+                `https://api.github.com/repos/dassige/OSM/releases/tags/v${version}`,
+                { headers: { Accept: 'application/vnd.github+json' } }
+            );
+            if (res.ok) {
+                const data = await res.json();
+                notesBody = data.body || null;
+                _cachedReleaseBody = notesBody;
+                _cachedReleaseUrl = `${_GITHUB_REPO}/releases/tag/v${version}`;
+            }
+        } catch (_) {}
+    }
+
+    if (notesBody) {
+        bodyEl.innerHTML = _renderMarkdown(notesBody);
+    } else {
+        bodyEl.innerHTML = `<p style="color:var(--text-muted);">Release notes are not available for this version. <a href="${_GITHUB_REPO}/releases" target="_blank" rel="noopener" style="color:var(--primary);">View on GitHub</a>.</p>`;
+    }
 };
 
 /**
@@ -426,7 +507,7 @@ window.showAboutModal = async function() {
                     <p><strong>Version:</strong> ${config.version}</p>
                     <p><strong>Version Date:</strong> ${config.deployDate}</p>
                     ${config.parentCommitId ? `<p><strong>Parent Commit:</strong> <span style="font-family:monospace;">${config.parentCommitId.slice(0, 7)}</span></p>` : ''}
-                    <p><strong>Release Notes:</strong> <a id="globalAboutReleaseLink" href="${_GITHUB_REPO}/releases" target="_blank" rel="noopener" title="View release notes on GitHub">Loading…</a></p>
+                    <p><strong>Release Notes:</strong> <button class="btn-informative btn-sm" onclick="showReleaseNotesModal('${config.version}')" title="View release notes for v${config.version}" style="margin-left:4px;">View Release Notes</button></p>
                 </div>
                 <div class="modal-credits">
                     <p style="text-align: center; font-weight: bold; margin-bottom: 10px;">Credits</p>
@@ -456,10 +537,7 @@ window.showAboutModal = async function() {
         `;
         document.body.appendChild(modal);
 
-        window.resolveReleaseUrl(config.version).then(function(url) {
-            const link = document.getElementById('globalAboutReleaseLink');
-            if (link) window.applyReleaseLink(link, url, config.version);
-        });
+        window.resolveReleaseUrl(config.version);
     }
 
     // Show Install button only when the browser has a pending install prompt and app isn't installed

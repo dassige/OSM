@@ -65,7 +65,7 @@ app.use(helmet({
       scriptSrcAttr:  ["'unsafe-inline'"],
       styleSrc:       ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],  // TinyMCE skins
       imgSrc:         ["'self'", "data:", "blob:"],
-      connectSrc:     ["'self'", "ws:", "wss:"],
+      connectSrc:     ["'self'", "ws:", "wss:", "https://api.github.com"],  // api.github.com for release notes fetch
       fontSrc:        ["'self'", "data:"],
       objectSrc:      ["'none'"],
       frameAncestors: ["'none'"],

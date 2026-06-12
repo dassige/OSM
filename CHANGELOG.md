@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.10.5] - 2026/06/12
+
+- feat(release): implement release notes modal with markdown rendering and caching
+- refactor: remove unused backfill and generate UAT ETL fields scripts
+- feat(release): enhance release notes generation with structured markdown and conventional commit grouping
+
 ## [3.10.4] - 2026/06/12
 
 - feat(release): improve commit range determination by querying GitHub releases
