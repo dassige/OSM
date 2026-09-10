@@ -27,8 +27,8 @@ newman-report.html
 fenz_demo.db
 storage/
 backups/
-
 keys/
-
+KnowledgeBase/
 # Local-only: references TEST environment access details (URLs, hosts, SSH aliases)
 .claude/skills/opready-tst-env/
+
