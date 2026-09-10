@@ -29,3 +29,6 @@ storage/
 backups/
 
 keys/
+
+# Local-only: references TEST environment access details (URLs, hosts, SSH aliases)
+.claude/skills/opready-tst-env/
