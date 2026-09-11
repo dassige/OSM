@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.11.1] - 2026/09/11
+
+- release
+- fix: filter Live Forms member dropdown to active members; drop redundant proxy-init event log
+
 ## [3.11.0] - 2026/09/11
 
 - Refactor document upload and handling: 
