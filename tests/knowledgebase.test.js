@@ -44,6 +44,7 @@ jest.mock('../config', () => ({
         publicSubmit:  { windowMin: 5,  max: 30  },
     },
     kbStorage: { type: 'local', localPath: '/tmp/kb-test' },
+    timezone: 'Pacific/Auckland',
 }));
 
 const db      = require('../services/db');
@@ -149,6 +150,66 @@ describe('GET /api/knowledgebase/documents/:id', () => {
         db.getKbDocumentById.mockResolvedValue(null);
         const res = await request(app).get('/api/knowledgebase/documents/999');
         expect(res.status).toBe(404);
+    });
+});
+
+describe('GET/HEAD /api/knowledgebase/file/:slug', () => {
+    const { Readable } = require('stream');
+    const fileBuffer = Buffer.alloc(1024, 'a');
+    const sampleDoc = { id: 1, title: 'Test Doc', slug: 'SLUG-001', is_active: 1, storage_type: 'local', storage_path: 'SLUG-001.pdf', original_filename: 'test.pdf', mime_type: 'application/pdf', file_size: fileBuffer.length };
+
+    beforeEach(() => {
+        storage.fileExists.mockResolvedValue(true);
+    });
+
+    it('GET streams the file with frame-ancestors self and Content-Length', async () => {
+        db.getKbDocumentBySlug.mockResolvedValue(sampleDoc);
+        storage.getFileStream.mockResolvedValue(Readable.from([fileBuffer]));
+
+        const res = await request(app).get('/api/knowledgebase/file/SLUG-001');
+
+        expect(res.status).toBe(200);
+        expect(res.headers['content-security-policy']).toBe("frame-ancestors 'self'");
+        expect(res.headers['content-length']).toBe('1024');
+        expect(res.headers['content-disposition']).toContain('inline');
+    });
+
+    it('GET returns 404 when document is not found', async () => {
+        db.getKbDocumentBySlug.mockResolvedValue(null);
+        const res = await request(app).get('/api/knowledgebase/file/UNKNOWN');
+        expect(res.status).toBe(404);
+    });
+
+    it('GET returns 404 when the file is missing from storage', async () => {
+        db.getKbDocumentBySlug.mockResolvedValue(sampleDoc);
+        storage.fileExists.mockResolvedValue(false);
+        const res = await request(app).get('/api/knowledgebase/file/SLUG-001');
+        expect(res.status).toBe(404);
+    });
+
+    it('GET returns 404 when the document has expired', async () => {
+        db.getKbDocumentBySlug.mockResolvedValue({ ...sampleDoc, expires_at: '2000-01-01' });
+        const res = await request(app).get('/api/knowledgebase/file/SLUG-001');
+        expect(res.status).toBe(404);
+        expect(storage.getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('GET serves the file when expires_at is in the future', async () => {
+        db.getKbDocumentBySlug.mockResolvedValue({ ...sampleDoc, expires_at: '2999-01-01' });
+        storage.getFileStream.mockResolvedValue(Readable.from([fileBuffer]));
+        const res = await request(app).get('/api/knowledgebase/file/SLUG-001');
+        expect(res.status).toBe(200);
+    });
+
+    it('HEAD returns headers with Content-Length and an empty body without opening the file stream', async () => {
+        db.getKbDocumentBySlug.mockResolvedValue(sampleDoc);
+
+        const res = await request(app).head('/api/knowledgebase/file/SLUG-001');
+
+        expect(res.status).toBe(200);
+        expect(res.headers['content-length']).toBe('1024');
+        expect(res.headers['content-security-policy']).toBe("frame-ancestors 'self'");
+        expect(storage.getFileStream).not.toHaveBeenCalled();
     });
 });
 
@@ -265,7 +326,8 @@ describe('POST /api/knowledgebase/documents (upload)', () => {
     });
 
     it('returns 400 when file content does not match declared type — PNG as PDF (M-08)', async () => {
-        // PNG magic bytes with PDF mime type — detected type is not in ACCEPTABLE_MAGIC_MIMES set
+        // PNG magic bytes with a .pdf name/mimetype — a real image can no longer masquerade
+        // as a document just by renaming it, even though images are now an allowed KB type.
         const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
         const res = await request(app)
             .post('/api/knowledgebase/documents')
@@ -284,6 +346,62 @@ describe('POST /api/knowledgebase/documents (upload)', () => {
             .field('title', 'Fake File');
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/content does not match/i);
+        expect(storage.upload).not.toHaveBeenCalled();
+    });
+
+    it('uploads a TXT file', async () => {
+        db.createKbDocument.mockResolvedValue(8);
+        const res = await request(app)
+            .post('/api/knowledgebase/documents')
+            .attach('file', Buffer.from('Plain text SOP notes.'), { filename: 'notes.txt', contentType: 'text/plain' })
+            .field('title', 'Notes');
+        expect(res.status).toBe(200);
+        expect(storage.upload).toHaveBeenCalledWith(expect.any(String), 'notes.txt', expect.any(Buffer), 'text/plain');
+    });
+
+    it('uploads a Markdown file even when the browser sends no mimetype', async () => {
+        db.createKbDocument.mockResolvedValue(9);
+        const res = await request(app)
+            .post('/api/knowledgebase/documents')
+            .attach('file', Buffer.from('# SOP\n\nBody text.'), { filename: 'sop.md', contentType: '' })
+            .field('title', 'SOP Markdown');
+        expect(res.status).toBe(200);
+        // Extension-based fallback resolves the mime type since the browser sent none.
+        expect(storage.upload).toHaveBeenCalledWith(expect.any(String), 'sop.md', expect.any(Buffer), 'text/markdown');
+    });
+
+    it('rejects a TXT file containing binary content', async () => {
+        const binaryBuf = Buffer.from([0x00, 0x01, 0x02, 0x03, 0x00, 0x00]);
+        const res = await request(app)
+            .post('/api/knowledgebase/documents')
+            .attach('file', binaryBuf, { filename: 'notes.txt', contentType: 'text/plain' })
+            .field('title', 'Bad Notes');
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/plain text/i);
+        expect(storage.upload).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['png', Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52]), 'image/png'],
+        ['jpg', Buffer.from('ffd8ffe000104a46494600010100000100010000ffdb', 'hex'), 'image/jpeg'],
+        ['bmp', Buffer.from('424d3600000000000000', 'hex'), 'image/bmp'],
+    ])('uploads a %s image', async (ext, bytes, expectedMime) => {
+        db.createKbDocument.mockResolvedValue(10);
+        const res = await request(app)
+            .post('/api/knowledgebase/documents')
+            .attach('file', bytes, { filename: `photo.${ext}`, contentType: expectedMime })
+            .field('title', 'Photo');
+        expect(res.status).toBe(200);
+        expect(storage.upload).toHaveBeenCalledWith(expect.any(String), `photo.${ext}`, expect.any(Buffer), expectedMime);
+    });
+
+    it('rejects a file with an image extension whose bytes are actually a PDF', async () => {
+        const res = await request(app)
+            .post('/api/knowledgebase/documents')
+            .attach('file', Buffer.from('%PDF-1.4'), { filename: 'disguised.png', contentType: 'image/png' })
+            .field('title', 'Disguised as Image');
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/declared image type/i);
         expect(storage.upload).not.toHaveBeenCalled();
     });
 });
@@ -464,6 +582,14 @@ describe('GET /api/knowledgebase/resolve/:id (public)', () => {
         const res = await request(app).get('/api/knowledgebase/resolve/999');
         expect(res.status).toBe(404);
     });
+
+    it('returns 404 for an expired document', async () => {
+        db.getKbDocumentById.mockResolvedValue({
+            id: 5, slug: 'SOME-GUID', title: 'Fire SOP', is_active: 1, expires_at: '2000-01-01',
+        });
+        const res = await request(app).get('/api/knowledgebase/resolve/5');
+        expect(res.status).toBe(404);
+    });
 });
 
 describe('GET /api/knowledgebase/doc/:slug (public)', () => {
@@ -488,5 +614,21 @@ describe('GET /api/knowledgebase/doc/:slug (public)', () => {
         db.getKbDocumentBySlug.mockResolvedValue(null);
         const res = await request(app).get('/api/knowledgebase/doc/NONEXISTENT');
         expect(res.status).toBe(404);
+    });
+
+    it('returns 404 for an expired document', async () => {
+        db.getKbDocumentBySlug.mockResolvedValue({
+            title: 'Expired Doc', is_active: 1, expires_at: '2000-01-01',
+        });
+        const res = await request(app).get('/api/knowledgebase/doc/SOME-GUID');
+        expect(res.status).toBe(404);
+    });
+
+    it('returns metadata when expires_at is in the future', async () => {
+        db.getKbDocumentBySlug.mockResolvedValue({
+            title: 'Public Doc', is_active: 1, expires_at: '2999-01-01',
+        });
+        const res = await request(app).get('/api/knowledgebase/doc/SOME-GUID');
+        expect(res.status).toBe(200);
     });
 });

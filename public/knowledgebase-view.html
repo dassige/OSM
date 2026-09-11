@@ -49,6 +49,21 @@
             height: calc(100dvh - 120px); min-height: 400px;
             background: #525659;
         }
+        .kb-text-embed {
+            background: #fff; /* plain text renders on a white page, unlike the PDF canvas above */
+        }
+
+        /* ── Image viewer ── */
+        .kb-image-embed {
+            flex: 1; width: 100%;
+            height: calc(100dvh - 120px); min-height: 400px;
+            background: #525659;
+            display: flex; align-items: center; justify-content: center;
+            overflow: auto;
+        }
+        .kb-image-embed img {
+            max-width: 100%; max-height: 100%; object-fit: contain;
+        }
 
         /* ── Download card (non-PDF / iOS) ── */
         .kb-download-card {
@@ -126,12 +141,12 @@
             .kb-header .header-actions { margin-left: auto; }
             .kb-meta h1 { font-size: 1rem; }
             .kb-meta .meta-row { font-size: 0.75rem; gap: 8px; }
-            .kb-embed { height: calc(100dvh - 160px); min-height: 300px; }
+            .kb-embed, .kb-image-embed { height: calc(100dvh - 160px); min-height: 300px; }
             .kb-btn-group { flex-direction: column; align-items: stretch; }
             .kb-btn-primary, .kb-btn-secondary { justify-content: center; }
         }
         @media (max-height: 500px) and (orientation: landscape) {
-            .kb-embed { height: calc(100dvh - 80px); min-height: 200px; }
+            .kb-embed, .kb-image-embed { height: calc(100dvh - 80px); min-height: 200px; }
         }
     </style>
 </head>
@@ -177,6 +192,12 @@
         xls:  { label: 'XLS',  bg: '#217346', canEmbed: false },
         xlsx: { label: 'XLSX', bg: '#217346', canEmbed: false },
         rtf:  { label: 'RTF',  bg: '#6c757d', canEmbed: false },
+        txt:  { label: 'TXT',  bg: '#868e96', canEmbed: false, isText: true },
+        md:   { label: 'MD',   bg: '#24292e', canEmbed: false },
+        png:  { label: 'PNG',  bg: '#6f42c1', canEmbed: false, isImage: true },
+        jpg:  { label: 'JPG',  bg: '#fd7e14', canEmbed: false, isImage: true },
+        jpeg: { label: 'JPG',  bg: '#fd7e14', canEmbed: false, isImage: true },
+        bmp:  { label: 'BMP',  bg: '#20c997', canEmbed: false, isImage: true },
     };
 
     function getExt(filename) {
@@ -268,8 +289,28 @@
             // PDF on iOS — iframe doesn't work either; show open card
             viewer.innerHTML = buildDownloadCard(docMeta, fileUrl, typeMeta, true);
 
+        } else if (typeMeta.isImage) {
+            // Images render natively in every browser, including iOS — no download-only fallback needed.
+            const wrap = document.createElement('div');
+            wrap.className = 'kb-image-embed';
+            const img = document.createElement('img');
+            img.src = fileUrl;
+            img.alt = docMeta.title;
+            wrap.appendChild(img);
+            viewer.innerHTML = '';
+            viewer.appendChild(wrap);
+
+        } else if (typeMeta.isText) {
+            // Plain text renders natively in an iframe on every browser, including iOS.
+            const frame = document.createElement('iframe');
+            frame.className = 'kb-embed kb-text-embed';
+            frame.src   = fileUrl;
+            frame.title = 'Text document viewer';
+            viewer.innerHTML = '';
+            viewer.appendChild(frame);
+
         } else {
-            // Word / Excel / RTF — always show download card
+            // Word / Excel / RTF / Markdown — always show download card
             viewer.innerHTML = buildDownloadCard(docMeta, fileUrl, typeMeta, false);
         }
     })();

@@ -3377,6 +3377,34 @@ input:checked + .slider:before { transform: translateX(14px); }
     font-weight: 500;
 }
 
+.kb-filetype-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.kb-filetype-tab {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 0.82em;
+    font-weight: 600;
+    text-align: center;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.kb-filetype-tab:hover {
+    border-color: var(--primary);
+    color: var(--text-main);
+}
+.kb-filetype-tab.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
 .status-msg {
     margin-top: 15px;
     padding: 10px;

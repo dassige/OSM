@@ -52,7 +52,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **WhatsApp Integration:** Send expiring skill notifications directly to members' WhatsApp accounts using a headless client. Includes support for bulk sending, test messages, session management, **automatic reconnection with exponential backoff**, and a **message queue** that retries delivery once the connection is restored.
   * **REST API with API Key Authentication:** Every `/api/*` endpoint can be called by external systems using an `X-API-Key` request header. Keys are managed (create, revoke, delete) through the **System Admin → API Management** page without restarting the server.
   * **API Reference (Swagger UI):** Interactive OpenAPI 3.0 documentation is available at `/api/docs` for authenticated admin users.
-  * **Knowledge Base:** A built-in document library for storing and sharing documents (PDF, Word, Excel, RTF) with brigade members — no login required. Documents are organised in a collapsible folder/category tree with live document counts and red expiry badges. Each document has a configurable expiry date; expired documents are flagged for admin review but remain accessible until explicitly disabled. The Edit modal supports replacing a document's file content without changing its public link. Admins can rotate GUIDs per-document or in bulk (System Tools) to invalidate shared links. A **KB Link** button in every TinyMCE editor embeds persistent document links inside forms and surveys using a stable integer ID that survives slug rotation.
+  * **Knowledge Base:** A built-in document library for storing and sharing documents (PDF, Word, Excel, RTF, TXT, Markdown, PNG, JPG, BMP) with brigade members — no login required. Documents are organised in a collapsible folder/category tree with live document counts and red expiry badges. Each document has a configurable expiry date; expired documents are flagged for admin review and their public link stops working automatically until an admin extends the date or replaces the file. The Edit modal supports replacing a document's file content without changing its public link. Admins can rotate GUIDs per-document or in bulk (System Tools) to invalidate shared links. A **KB Link** button in every TinyMCE editor embeds persistent document links inside forms and surveys using a stable integer ID that survives slug rotation.
 
 ## Table of Contents
 
@@ -267,7 +267,7 @@ All state-changing requests (POST, PUT, DELETE) made by a logged-in browser sess
 Member and skill create/update endpoints are validated with [Joi](https://joi.dev/). Invalid or unexpected fields return HTTP 400 with a `{ "error": "Validation Failed", "details": [...] }` response listing each failing constraint. Unknown fields are stripped before they reach the database.
 
   * **Skill external URLs** — the `url` field on skills is restricted to `http://` and `https://` schemes. Other schemes (e.g. `javascript:`, `ftp://`) are rejected at validation time with HTTP 400.
-  * **Knowledge Base file uploads** — the server validates file content against the declared MIME type using magic-byte detection. A file renamed to `.pdf` that does not contain PDF bytes is rejected with HTTP 400. Accepted types: PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF.
+  * **Knowledge Base file uploads** — the server validates file content against the declared MIME type using magic-byte detection (TXT/MD are verified as plain text instead, since they have no binary signature). A file renamed to `.pdf` that does not contain PDF bytes is rejected with HTTP 400. Accepted types: PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF, TXT, Markdown (.md), PNG, JPG/JPEG, BMP.
   * **Pagination bounds** — `limit` and `offset` query parameters on paginated list endpoints are clamped to safe ranges (`limit`: 1–500, `offset`: ≥ 0) to prevent unbounded queries.
   * **Report lookback window** — the `days` parameter on `/api/reports/data/:type` is clamped to 1–3650 days.
 
@@ -575,12 +575,17 @@ The Knowledge Base is a built-in document library that lets brigade administrato
 
 ### Supported file types
 
-| Type | Format | Member viewer |
-|---|---|---|
-| PDF | `.pdf` | Inline browser viewer (iframe) |
-| Word | `.doc`, `.docx` | Google Docs Viewer (public URLs) / Download card |
-| Excel | `.xls`, `.xlsx` | Google Docs Viewer (public URLs) / Download card |
-| RTF | `.rtf` | Download only |
+The upload dialog groups allowed types into three categories — **Documents**, **Spreadsheets**, and **Images** — selectable as tabs above the file picker; choosing one narrows the browser's file picker to that category.
+
+| Category | Type | Format | Member viewer |
+|---|---|---|---|
+| Documents | PDF | `.pdf` | Inline browser viewer (iframe) |
+| Documents | Word | `.doc`, `.docx` | Google Docs Viewer (public URLs) / Download card |
+| Documents | RTF | `.rtf` | Download only |
+| Documents | Plain text | `.txt` | Inline browser viewer (iframe) |
+| Documents | Markdown | `.md` | Download only |
+| Spreadsheets | Excel | `.xls`, `.xlsx` | Google Docs Viewer (public URLs) / Download card |
+| Images | PNG / JPEG / BMP | `.png`, `.jpg`, `.jpeg`, `.bmp` | Inline browser viewer (`<img>`) |
 
 Maximum file size: **50 MB**.
 
@@ -612,11 +617,11 @@ Every document has an optional **expiry date**. The default is *today + `KB_DEFA
 KB_DEFAULT_EXPIRY_DAYS=365
 ```
 
-Expiry is a **soft warning** only — expired documents remain publicly accessible until an admin acts. Expired documents are highlighted with a red `EXPIRED` badge in the document table and a red `!N` count in the category tree. Admins can then:
+Once a document's expiry date passes, its public link stops working automatically — viewing, downloading, and any `{{kb}}` links inserted into forms or surveys all show "Document Not Available". Expired documents are highlighted with a red `EXPIRED` badge in the document table and a red `!N` count in the category tree, but remain fully visible and manageable by admins. Admins can then:
 
-- **Extend the expiry** — update the date in the Edit modal and save
+- **Extend the expiry** — update the date in the Edit modal and save, restoring the public link immediately
 - **Replace the file** — upload new content in the Edit modal (same link, same ID, bytes replaced)
-- **Disable the document** — use the active toggle to immediately block public access
+- **Disable the document** — use the active toggle to block public access regardless of expiry (e.g. to retire it permanently rather than just extend the date)
 
 ### Replacing a document file
 

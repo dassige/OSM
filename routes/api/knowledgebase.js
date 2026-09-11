@@ -37,8 +37,10 @@ function assertLocalDiskSpace() {
 // M-08: Magic bytes detected by file-type that are acceptable for document uploads.
 // OOXML files (.docx/.xlsx) are ZIP archives at the byte level — file-type returns
 // 'application/zip' when it cannot distinguish the specific OOXML sub-type.
-// RTF is plain text with no magic bytes; file-type returns null — handled separately.
-const ACCEPTABLE_MAGIC_MIMES = new Set([
+// RTF and plain-text formats (TXT/MD) have no binary magic bytes — handled separately.
+// Kept as two separate sets (rather than one combined set) so an image can't pass off
+// as a document, or vice versa, purely by renaming the extension — see IMAGE_EXTENSIONS below.
+const DOCUMENT_MAGIC_MIMES = new Set([
     'application/pdf',
     'application/msword',
     'application/vnd.ms-excel',
@@ -46,8 +48,14 @@ const ACCEPTABLE_MAGIC_MIMES = new Set([
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/zip', // generic detection for OOXML when sub-type not identified
 ]);
+const IMAGE_MAGIC_MIMES = new Set(['image/png', 'image/jpeg', 'image/bmp']);
+
+// Extensions with no reliable binary signature, verified as plain text instead.
+const PLAIN_TEXT_EXTENSIONS = new Set(['.txt', '.md']);
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.bmp']);
 
 function assertMagicBytes(file) {
+    const ext = path.extname(file.originalname || '').toLowerCase();
     const isRtf = file.mimetype === 'application/rtf' || file.mimetype === 'text/rtf';
     if (isRtf) {
         // RTF has no binary magic bytes — verify the text signature instead.
@@ -57,8 +65,23 @@ function assertMagicBytes(file) {
         }
         return;
     }
+    if (PLAIN_TEXT_EXTENSIONS.has(ext)) {
+        // TXT/MD have no magic bytes either — reject anything that isn't valid text
+        // (a null byte anywhere in the sample means it's binary content smuggled in
+        // under a .txt/.md extension).
+        if (file.buffer.slice(0, 1024).includes(0)) {
+            throw new Error('File does not appear to be plain text.');
+        }
+        return;
+    }
     const detected = fileType(file.buffer);
-    if (!detected || !ACCEPTABLE_MAGIC_MIMES.has(detected.mime)) {
+    if (IMAGE_EXTENSIONS.has(ext)) {
+        if (!detected || !IMAGE_MAGIC_MIMES.has(detected.mime)) {
+            throw new Error('File content does not match the declared image type. Upload rejected.');
+        }
+        return;
+    }
+    if (!detected || !DOCUMENT_MAGIC_MIMES.has(detected.mime)) {
         throw new Error('File content does not match the declared type. Upload rejected.');
     }
 }
@@ -71,23 +94,59 @@ const ALLOWED_MIME_TYPES = new Set([
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',                // .xlsx
     'application/rtf',                                                                  // .rtf
     'text/rtf',                                                                         // .rtf (some browsers)
+    'text/plain',                                                                        // .txt
+    'text/markdown',                                                                     // .md (not all browsers set this)
+    'image/png',                                                                         // .png
+    'image/jpeg',                                                                        // .jpg / .jpeg
+    'image/bmp',                                                                         // .bmp
+    'image/x-ms-bmp',                                                                    // .bmp (some browsers/OSes)
 ]);
+
+// Browsers don't reliably set a MIME type for .md (and sometimes .txt/.bmp) in the
+// upload's Content-Type — fall back to the file extension for these known-safe types.
+const EXTENSION_MIME_FALLBACK = {
+    '.txt':  'text/plain',
+    '.md':   'text/markdown',
+    '.png':  'image/png',
+    '.jpg':  'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.bmp':  'image/bmp',
+};
+
+// Resolves the mime type to store/serve for an uploaded file, trusting the browser's
+// declared Content-Type when it's already an allowed type, otherwise falling back to
+// the extension map above (multer's fileFilter already guarantees one of the two matches).
+function resolveUploadMimeType(file) {
+    if (ALLOWED_MIME_TYPES.has(file.mimetype)) return file.mimetype;
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    return EXTENSION_MIME_FALLBACK[ext] || file.mimetype;
+}
 
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 50 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
-        if (ALLOWED_MIME_TYPES.has(file.mimetype)) return cb(null, true);
-        cb(new Error('Unsupported file type. Allowed: PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF.'));
+        const ext = path.extname(file.originalname || '').toLowerCase();
+        if (ALLOWED_MIME_TYPES.has(file.mimetype) || EXTENSION_MIME_FALLBACK[ext]) return cb(null, true);
+        cb(new Error('Unsupported file type. Allowed: PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF, TXT, Markdown, PNG, JPG, BMP.'));
     },
 });
+
+// An expired document is treated identically to an inactive/missing one on every public
+// (no-auth) endpoint — it must not be viewable, downloadable, or resolvable via its old
+// link. Admins can still see and manage it (e.g. renew the expiry date) via the authed UI.
+function isKbDocExpired(doc) {
+    if (!doc.expires_at) return false;
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: config.timezone });
+    return String(doc.expires_at).slice(0, 10) < today;
+}
 
 // ── Public: serve document file by slug (no auth — GUID is the security) ──────
 
 router.get('/file/:slug', async (req, res) => {
     try {
         const doc = await db.getKbDocumentBySlug(req.params.slug);
-        if (!doc || !doc.is_active) return res.status(404).json({ error: 'Document not found.' });
+        if (!doc || !doc.is_active || isKbDocExpired(doc)) return res.status(404).json({ error: 'Document not found.' });
 
         const exists = await storage.fileExists(doc.storage_type, doc.storage_path);
         if (!exists) {
@@ -95,10 +154,22 @@ router.get('/file/:slug', async (req, res) => {
             return res.status(404).json({ error: 'Document not found.' });
         }
 
-        const stream = await storage.getFileStream(doc.storage_type, doc.storage_path);
         res.setHeader('Content-Type', doc.mime_type || 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.original_filename)}"`);
         res.setHeader('Cache-Control', 'private, max-age=3600');
+        // Override the global frame-ancestors 'none' (server.js) — this route is the
+        // one place the app legitimately embeds its own response in an <iframe>
+        // (the PDF inline viewer on the public knowledgebase-view page).
+        res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
+        if (doc.file_size) res.setHeader('Content-Length', doc.file_size);
+
+        // The viewer page HEAD-checks this route before rendering the iframe. Without an
+        // explicit Content-Length, a HEAD response carries no body-framing header at all
+        // (Node omits Transfer-Encoding for HEAD), which some HTTP/1.1 keep-alive clients
+        // and proxies cannot reliably terminate — end here instead of opening the file.
+        if (req.method === 'HEAD') return res.end();
+
+        const stream = await storage.getFileStream(doc.storage_type, doc.storage_path);
         stream.pipe(res);
     } catch (e) {
         logger.error('[KB] File serve error', { slug: req.params.slug, error: e.message });
@@ -111,7 +182,7 @@ router.get('/file/:slug', async (req, res) => {
 router.get('/resolve/:id', async (req, res) => {
     try {
         const doc = await db.getKbDocumentById(req.params.id);
-        if (!doc || !doc.is_active) return res.status(404).json({ error: 'Document not found.' });
+        if (!doc || !doc.is_active || isKbDocExpired(doc)) return res.status(404).json({ error: 'Document not found.' });
         res.json({ id: doc.id, slug: doc.slug, title: doc.title });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -123,7 +194,7 @@ router.get('/resolve/:id', async (req, res) => {
 router.get('/doc/:slug', async (req, res) => {
     try {
         const doc = await db.getKbDocumentBySlug(req.params.slug);
-        if (!doc || !doc.is_active) return res.status(404).json({ error: 'Document not found.' });
+        if (!doc || !doc.is_active || isKbDocExpired(doc)) return res.status(404).json({ error: 'Document not found.' });
         res.json({
             title:             doc.title,
             description:       doc.description,
@@ -274,17 +345,18 @@ router.post('/documents', hasRole('admin'), upload.single('file'), async (req, r
     if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
     try {
         assertLocalDiskSpace();
-        if (!req.file) return res.status(400).json({ error: 'A file is required (PDF, Word, Excel, or RTF).' });
+        if (!req.file) return res.status(400).json({ error: 'A file is required (PDF, Word, Excel, RTF, TXT, Markdown, PNG, JPG, or BMP).' });
         try { assertMagicBytes(req.file); } catch (e) {
             return res.status(400).json({ error: e.message });
         }
         const { title, description, category_id } = req.body;
         if (!title || !title.trim()) return res.status(400).json({ error: 'Document title is required.' });
 
+        const mimeType   = resolveUploadMimeType(req.file);
         const slug       = uuidv4().toUpperCase(); // public access key — rotatable
         const storageKey = uuidv4().toUpperCase(); // immutable storage filename — never changes
         const { storageType, storagePath, fileSize } = await storage.upload(
-            storageKey, req.file.originalname, req.file.buffer, req.file.mimetype,
+            storageKey, req.file.originalname, req.file.buffer, mimeType,
         );
 
         const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
@@ -295,7 +367,7 @@ router.post('/documents', hasRole('admin'), upload.single('file'), async (req, r
             category_id: category_id ? parseInt(category_id, 10) : null,
             original_filename: req.file.originalname,
             file_size: fileSize,
-            mime_type: req.file.mimetype,
+            mime_type: mimeType,
             storage_type: storageType,
             storage_path: storagePath,
             uploaded_by: actor,
@@ -348,11 +420,12 @@ router.post('/documents/:id/replace-file', hasRole('admin'), upload.single('file
         const doc = await db.getKbDocumentById(req.params.id);
         if (!doc) return res.status(404).json({ error: 'Document not found.' });
 
-        await storage.replaceFile(doc.storage_type, doc.storage_path, req.file.buffer, req.file.mimetype);
+        const mimeType = resolveUploadMimeType(req.file);
+        await storage.replaceFile(doc.storage_type, doc.storage_path, req.file.buffer, mimeType);
         await db.updateKbDocumentFile(req.params.id, {
             original_filename: req.file.originalname,
             file_size:         req.file.size,
-            mime_type:         req.file.mimetype,
+            mime_type:         mimeType,
         });
 
         const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';

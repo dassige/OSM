@@ -2008,7 +2008,7 @@ const spec = {
             },
             post: {
                 tags: ['Knowledge Base'],
-                summary: 'Upload a PDF document',
+                summary: 'Upload a document',
                 security: [{ sessionCookie: [] }, { xApiKey: [] }],
                 requestBody: {
                     required: true,
@@ -2016,11 +2016,11 @@ const spec = {
                         type: 'object',
                         required: ['file', 'title'],
                         properties: {
-                            file: { type: 'string', format: 'binary', description: 'Document file — PDF, Word, Excel or RTF (max 50 MB)' },
+                            file: { type: 'string', format: 'binary', description: 'Document file — PDF, Word, Excel, RTF, TXT, Markdown, PNG, JPG, or BMP (max 50 MB)' },
                             title: { type: 'string', example: 'Fire Attack Procedures' },
                             description: { type: 'string', nullable: true },
                             category_id: { type: 'integer', nullable: true },
-                            expires_at: { type: 'string', format: 'date', nullable: true, example: '2027-06-04', description: 'ISO date after which the document is flagged as expired' }
+                            expires_at: { type: 'string', format: 'date', nullable: true, example: '2027-06-04', description: 'ISO date after which the document is flagged as expired and its public link stops working' }
                         }
                     }}}
                 },
@@ -2123,7 +2123,7 @@ const spec = {
                         type: 'object',
                         required: ['file'],
                         properties: {
-                            file: { type: 'string', format: 'binary', description: 'Replacement file — PDF, Word, Excel or RTF (max 50 MB)' }
+                            file: { type: 'string', format: 'binary', description: 'Replacement file — PDF, Word, Excel, RTF, TXT, Markdown, PNG, JPG, or BMP (max 50 MB)' }
                         }
                     }}}
                 },
@@ -2163,17 +2163,17 @@ const spec = {
                 tags: ['Knowledge Base'],
                 summary: 'Get public document metadata by GUID slug (no auth required)',
                 parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' }, example: '4A04912E-F5C3-4CA6-91FC-8CBB3527AD81' }],
-                responses: { 200: { description: 'Document metadata' }, 404: { description: 'Not found or inactive' } }
+                responses: { 200: { description: 'Document metadata' }, 404: { description: 'Not found, inactive, or expired' } }
             }
         },
         '/api/knowledgebase/file/{slug}': {
             get: {
                 tags: ['Knowledge Base'],
-                summary: 'Serve the PDF file by GUID slug (no auth required — GUID is the access control)',
+                summary: 'Serve the document file by GUID slug (no auth required — GUID is the access control)',
                 parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
                 responses: {
-                    200: { description: 'PDF binary stream', content: { 'application/pdf': {} } },
-                    404: { description: 'Not found or inactive' }
+                    200: { description: 'File binary stream — Content-Type reflects the stored document (PDF, Word, Excel, RTF, TXT, Markdown, PNG, JPG, or BMP)', content: { 'application/pdf': {}, 'image/png': {}, 'image/jpeg': {} } },
+                    404: { description: 'Not found, inactive, or expired' }
                 }
             }
         }

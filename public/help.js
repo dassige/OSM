@@ -598,9 +598,9 @@ const helpContent = {
             <ul>
                 <li>Click <strong>Upload Document</strong> and fill in the title, optional description, category, and expiry date.</li>
                 <li>When you select a file, the <strong>Title</strong> field is automatically pre-filled from the filename — hyphens and underscores are replaced with spaces and the extension is stripped. You can edit the title before saving.</li>
-                <li>Supported types: <strong>PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF</strong> · maximum 50 MB per upload. File content is validated against the declared type — renaming an unsupported file (e.g. an image) to <code>.pdf</code> will be rejected.</li>
+                <li>Choose a category — <strong>Documents</strong> (PDF, Word, RTF, TXT, Markdown), <strong>Spreadsheets</strong> (Excel), or <strong>Images</strong> (PNG, JPG, BMP) — before clicking Choose File; this narrows the file picker to that category's types. Maximum 50 MB per upload. File content is validated against the declared type — renaming an unsupported file to e.g. <code>.pdf</code> will be rejected.</li>
                 <li><strong>Disk space requirement:</strong> The server checks available disk space before accepting any upload. If the server has less than <strong>100 MB</strong> free, the upload is rejected with an "Insufficient Storage" error. This only applies to the <em>local</em> storage backend — cloud storage (S3/GCS) manages its own capacity. If you see this error, contact your system administrator to free up disk space.</li>
-                <li>The <strong>Expiry date</strong> defaults to today + the configured number of days (set via <code>KB_DEFAULT_EXPIRY_DAYS</code> in <code>.env</code>, default 365). Expired documents are flagged in red for admin review — they remain publicly accessible until explicitly disabled or deleted.</li>
+                <li>The <strong>Expiry date</strong> defaults to today + the configured number of days (set via <code>KB_DEFAULT_EXPIRY_DAYS</code> in <code>.env</code>, default 365). Expired documents are flagged in red for admin review and their public link stops working automatically (see Section 5).</li>
                 <li>A unique GUID link is generated automatically — share it with members so they can view or download the document without logging in.</li>
                 <li>The category field pre-selects the category currently active in the left tree.</li>
             </ul>
@@ -608,7 +608,7 @@ const helpContent = {
             <h3>4. Sharing with Members</h3>
             <ul>
                 <li>Click <strong>Copy Link</strong> on any document to copy the public URL to your clipboard.</li>
-                <li>Click <strong>View</strong> to preview the document as members will see it. PDFs display inline; Word and Excel open via Google Docs Viewer (on public servers) or as a download on mobile/iOS.</li>
+                <li>Click <strong>View</strong> to preview the document as members will see it. PDFs, plain text (.txt), and images display inline; Word, Excel, RTF, and Markdown offer a download, plus Google Docs Viewer for Word/Excel on public servers.</li>
                 <li>The link looks like: <code>/knowledgebase/4A04912E-...</code> — only someone who has the link can access the document.</li>
             </ul>
 
@@ -616,7 +616,7 @@ const helpContent = {
             <ul>
                 <li>Documents flagged as expired show a red <strong>EXPIRED</strong> badge in the document table and a red <code>!N</code> count in the category tree.</li>
                 <li>Open the <strong>Edit</strong> modal to extend the expiry date, replace the file content, or renew the public link.</li>
-                <li>Expiry does <em>not</em> automatically disable a document — it is a visual reminder for admin review.</li>
+                <li>Once expired, the public link stops working automatically — viewing, downloading, and any <code>{{kb}}</code> links inserted into forms or surveys all show "Document Not Available". Admins can still see and manage the document from this page at any time.</li>
             </ul>
 
             <h3>6. Managing Documents</h3>

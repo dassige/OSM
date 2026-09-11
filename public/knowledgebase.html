@@ -406,8 +406,12 @@
                 <!-- Upload field (create only) -->
                 <div class="form-group" id="fileGroup">
                     <label>Document <span style="color:#dc3545;">*</span></label>
-                    <input type="file" id="docFile" style="display:none"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/rtf,text/rtf">
+                    <div class="kb-filetype-tabs" id="docFileTypeTabs" role="group" aria-label="Document category">
+                        <button type="button" class="kb-filetype-tab active" data-cat="documents" title="PDF, Word, RTF, TXT, Markdown">Documents</button>
+                        <button type="button" class="kb-filetype-tab" data-cat="spreadsheets" title="Excel spreadsheets">Spreadsheets</button>
+                        <button type="button" class="kb-filetype-tab" data-cat="images" title="PNG, JPG, BMP images">Images</button>
+                    </div>
+                    <input type="file" id="docFile" style="display:none">
                     <div class="file-picker">
                         <button type="button" class="btn-primary btn-sm file-picker-btn"
                             onclick="document.getElementById('docFile').click()"
@@ -421,7 +425,7 @@
                         </button>
                         <span class="file-picker-label" id="docFileLabel">No file chosen</span>
                     </div>
-                    <small style="color:var(--text-muted);">PDF · Word · Excel · RTF &nbsp;·&nbsp; max 50 MB</small>
+                    <small id="docFileHint" style="color:var(--text-muted);">PDF · Word · RTF · TXT · Markdown &nbsp;·&nbsp; max 50 MB</small>
                 </div>
 
                 <div class="form-group">
@@ -460,8 +464,12 @@
                 <div id="replaceFileGroup" style="display:none; border-top:1px solid var(--border-color); padding-top:12px; margin-top:4px;">
                     <div class="form-group" style="margin-bottom:4px;">
                         <label>Replace Document File</label>
-                        <input type="file" id="replaceFile" style="display:none"
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/rtf,text/rtf">
+                        <div class="kb-filetype-tabs" id="replaceFileTypeTabs" role="group" aria-label="Document category">
+                            <button type="button" class="kb-filetype-tab active" data-cat="documents" title="PDF, Word, RTF, TXT, Markdown">Documents</button>
+                            <button type="button" class="kb-filetype-tab" data-cat="spreadsheets" title="Excel spreadsheets">Spreadsheets</button>
+                            <button type="button" class="kb-filetype-tab" data-cat="images" title="PNG, JPG, BMP images">Images</button>
+                        </div>
+                        <input type="file" id="replaceFile" style="display:none">
                         <div class="file-picker">
                             <button type="button" class="btn-primary btn-sm file-picker-btn"
                                 onclick="document.getElementById('replaceFile').click()"
@@ -475,7 +483,8 @@
                             </button>
                             <span class="file-picker-label" id="replaceFileLabel">No file chosen</span>
                         </div>
-                        <small id="replaceFileHint" style="color:var(--text-muted);">Leave empty to keep the current file. Same link and ID — only the file content is replaced.</small>
+                        <small id="replaceFileTypeHint" style="color:var(--text-muted); display:block;">PDF · Word · RTF · TXT · Markdown &nbsp;·&nbsp; max 50 MB</small>
+                        <small id="replaceFileHint" style="color:var(--text-muted); display:block;">Leave empty to keep the current file. Same link and ID — only the file content is replaced.</small>
                     </div>
                 </div>
 
@@ -652,6 +661,8 @@
             if (f && !t.value.trim()) t.value = f.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
         });
         initFilePicker('replaceFile', 'replaceFileLabel');
+        initFileTypeTabs('docFileTypeTabs', 'docFile', 'docFileHint');
+        initFileTypeTabs('replaceFileTypeTabs', 'replaceFile', 'replaceFileTypeHint');
 
         // Sort column click handlers
         document.querySelectorAll('th.sortable').forEach(th => {
@@ -1131,6 +1142,70 @@
         return d.toLocaleDateString('en-CA', { timeZone: tz });
     }
 
+    // ── Upload category tabs (Documents / Spreadsheets / Images) ───────────────
+    // A single native <input type="file" accept="..."> can't show multiple named
+    // filter groups in the OS "Open File" dialog — browsers only ever offer one
+    // combined filter plus their own "All Files" fallback. Instead we offer the
+    // 3 categories as an in-app tab picker and swap the input's accept filter to
+    // match whichever one is selected before the OS dialog opens.
+    const KB_FILE_CATEGORIES = {
+        documents: {
+            hint: 'PDF · Word · RTF · TXT · Markdown',
+            accept: '.pdf,.doc,.docx,.rtf,.txt,.md,application/pdf,application/msword,' +
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document,' +
+                'application/rtf,text/rtf,text/plain,text/markdown',
+        },
+        spreadsheets: {
+            hint: 'Excel (.xls, .xlsx)',
+            accept: '.xls,.xlsx,application/vnd.ms-excel,' +
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+        images: {
+            hint: 'PNG · JPG · BMP',
+            accept: '.png,.jpg,.jpeg,.bmp,image/png,image/jpeg,image/bmp',
+        },
+    };
+
+    function initFileTypeTabs(tabsId, inputId, hintId) {
+        const tabs  = document.getElementById(tabsId);
+        const input = document.getElementById(inputId);
+        const hint  = document.getElementById(hintId);
+        if (!tabs || !input) return;
+        tabs.querySelectorAll('.kb-filetype-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabs.querySelectorAll('.kb-filetype-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                applyFileTypeTab(btn.dataset.cat, input, hint);
+            });
+        });
+    }
+
+    function applyFileTypeTab(cat, input, hint) {
+        const def = KB_FILE_CATEGORIES[cat] || KB_FILE_CATEGORIES.documents;
+        input.setAttribute('accept', def.accept);
+        if (hint) hint.textContent = def.hint + ' · max 50 MB';
+    }
+
+    // Selects a specific category tab (defaults to "documents" for an unknown/omitted category).
+    function setFileTypeTab(tabsId, inputId, hintId, cat) {
+        const tabs  = document.getElementById(tabsId);
+        const input = document.getElementById(inputId);
+        const hint  = document.getElementById(hintId);
+        if (!tabs || !input) return;
+        const category = KB_FILE_CATEGORIES[cat] ? cat : 'documents';
+        tabs.querySelectorAll('.kb-filetype-tab').forEach(b => b.classList.toggle('active', b.dataset.cat === category));
+        applyFileTypeTab(category, input, hint);
+    }
+
+    // Guesses the upload category from an existing document's filename — used so
+    // editing e.g. an .xlsx defaults the "Replace file" picker to Spreadsheets.
+    function categoryForExtension(filename) {
+        const ext = '.' + (filename || '').split('.').pop().toLowerCase();
+        if (['.xls', '.xlsx'].includes(ext)) return 'spreadsheets';
+        if (['.png', '.jpg', '.jpeg', '.bmp'].includes(ext)) return 'images';
+        return 'documents';
+    }
+
     function openUploadModal() {
         fileMissing = false;
         document.getElementById('fileMissingWarning').style.display = 'none';
@@ -1139,6 +1214,8 @@
         document.getElementById('docForm').reset();
         resetFilePicker('docFile', 'docFileLabel');
         resetFilePicker('replaceFile', 'replaceFileLabel');
+        setFileTypeTab('docFileTypeTabs', 'docFile', 'docFileHint', 'documents');
+        setFileTypeTab('replaceFileTypeTabs', 'replaceFile', 'replaceFileTypeHint', 'documents');
         if (selectedCategoryId !== null) {
             document.getElementById('docCategory').value = selectedCategoryId;
         }
@@ -1166,6 +1243,7 @@
             document.getElementById('fileGroup').style.display = 'none';
             document.getElementById('replaceFileGroup').style.display = '';
             document.getElementById('replaceFile').value = '';
+            setFileTypeTab('replaceFileTypeTabs', 'replaceFile', 'replaceFileTypeHint', categoryForExtension(doc.original_filename));
             // Rotate slug section
             document.getElementById('rotateSlugGroup').style.display = '';
             document.getElementById('currentSlugDisplay').textContent =
@@ -1389,6 +1467,12 @@
         xls:  { label: 'XLS',  bg: '#217346', color: '#fff' },
         xlsx: { label: 'XLSX', bg: '#217346', color: '#fff' },
         rtf:  { label: 'RTF',  bg: '#6c757d', color: '#fff' },
+        txt:  { label: 'TXT',  bg: '#868e96', color: '#fff' },
+        md:   { label: 'MD',   bg: '#24292e', color: '#fff' },
+        png:  { label: 'PNG',  bg: '#6f42c1', color: '#fff' },
+        jpg:  { label: 'JPG',  bg: '#fd7e14', color: '#fff' },
+        jpeg: { label: 'JPG',  bg: '#fd7e14', color: '#fff' },
+        bmp:  { label: 'BMP',  bg: '#20c997', color: '#fff' },
     };
     function fileTypeBadge(filename) {
         const ext = (filename || '').split('.').pop().toLowerCase();

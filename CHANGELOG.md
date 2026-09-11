@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.11.0] - 2026/09/11
+
+- Refactor document upload and handling: 
+- Updated API documentation and request handling to support additional file types (TXT, Markdown, PNG, JPG, BMP).
+- Enhanced front-end file upload interface with category tabs for better user experience.
+- Improved file validation to ensure correct content type matches declared types.
+- Added support for inline viewing of text and image files in the knowledge base.
+- Implemented expiry handling for documents, ensuring expired documents are not accessible.
+- Updated tests to cover new file types and expiry scenarios.
+- more gitignore
+- more gitignore
+- gitignore
+
 ## [3.10.6] - 2026/06/12
 
 - fix: update Content Security Policy to allow images from Google Cloud Storage

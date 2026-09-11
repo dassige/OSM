@@ -2842,7 +2842,7 @@
                                                   }
                                   },
                                   {
-                                      "name":  "Upload Document (PDF)",
+                                      "name":  "Upload Document",
                                       "request":  {
                                                       "method":  "POST",
                                                       "url":  {
@@ -2863,7 +2863,7 @@
                                                                                         "key":  "file",
                                                                                         "type":  "file",
                                                                                         "src":  "/path/to/document.pdf",
-                                                                                        "description":  "PDF file (max 50 MB)"
+                                                                                        "description":  "PDF, Word (.doc/.docx), Excel (.xls/.xlsx), RTF, TXT, Markdown, PNG, JPG, or BMP (max 50 MB)"
                                                                                     },
                                                                                     {
                                                                                         "key":  "title",

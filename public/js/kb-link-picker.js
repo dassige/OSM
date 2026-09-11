@@ -80,7 +80,10 @@
 
     // ── Rendering ─────────────────────────────────────────────────────────────
 
-    const TYPE_BG = { pdf:'#dc3545', doc:'#2b579a', docx:'#2b579a', xls:'#217346', xlsx:'#217346', rtf:'#6c757d' };
+    const TYPE_BG = {
+        pdf:'#dc3545', doc:'#2b579a', docx:'#2b579a', xls:'#217346', xlsx:'#217346', rtf:'#6c757d',
+        txt:'#868e96', md:'#24292e', png:'#6f42c1', jpg:'#fd7e14', jpeg:'#fd7e14', bmp:'#20c997',
+    };
 
     function badge(filename) {
         const ext = (filename || '').split('.').pop().toLowerCase();
