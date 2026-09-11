@@ -1,12 +1,12 @@
-﻿dbs:
+﻿# sessions.db is intentionally NOT replicated — session loss on cold start is
+# expected/accepted behaviour (see Installation_google_run.md), and replicating
+# it was the main driver of GCS Class A operation costs: connect-sqlite3 writes
+# to sessions.db on every authenticated request (touch/expiry update), which
+# Litestream would otherwise ship to GCS every sync interval.
+dbs:
   - path: /app/fenz.db
+    sync-interval: 60s
     replicas:
       - url: gcs://${GCS_BUCKET_NAME}/fenz.db
-    restore:
-      if-not-exists: true
-
-  - path: /app/sessions.db
-    replicas:
-      - url: gcs://${GCS_BUCKET_NAME}/sessions.db
     restore:
       if-not-exists: true
