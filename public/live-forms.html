@@ -484,7 +484,8 @@
 
             try {
                 const mRes = await fetch('/api/members');
-                const members = await mRes.json();
+                const allMembers = await mRes.json();
+                const members = allMembers.filter(m => m.enabled === true);
                 const mSel = document.getElementById('filterMember');
                 mSel.innerHTML = '<option value="">All Members</option>';
                 // Sort by rank authority then surname, display formatted name

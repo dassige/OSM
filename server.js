@@ -165,9 +165,9 @@ async function initializeProxy() {
   else if (config.proxyMode === "dynamic")
     proxyToUse = await findWorkingNZProxy(logger.info.bind(logger));
   
-  setActiveProxy(proxyToUse); 
+  setActiveProxy(proxyToUse);
 
-  await db.logEvent("System", "System", "Proxy Initialized", {
+  logger.info("[System] Proxy initialised", {
     mode: config.proxyMode,
     endpoint: proxyToUse ? "Configured" : "None/Direct",
   });
