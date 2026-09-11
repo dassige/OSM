@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.12.1] - 2026/09/11
+
+- feat: enhance Knowledge Base link picker with category filtering and improved UI
+
 ## [3.12.0] - 2026/09/11
 
 - refactor: update Litestream configuration and session handling logic
