@@ -40,6 +40,7 @@ const docsRoutes = require("./routes/api/docs");
 const apiKeyRoutes = require("./routes/api/api-keys");
 const kbRoutes            = require("./routes/api/knowledgebase");
 const remoteBackupRoutes  = require("./routes/api/remote-backup");
+const quizRoutes          = require("./routes/api/quiz");
 const authRoutes = require("./routes/auth");
 const viewRoutes = require("./routes/views");
 
@@ -191,6 +192,7 @@ app.use("/api/statistics", statisticsRoutes);
 app.use("/api/docs", docsRoutes);
 app.use("/api/api-keys", apiKeyRoutes);
 app.use("/api/knowledgebase", kbRoutes);
+app.use("/api/quiz", quizRoutes);
 app.use("/api/system/remote-backup", remoteBackupRoutes);
 
 

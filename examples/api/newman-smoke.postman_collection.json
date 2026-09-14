@@ -296,6 +296,39 @@
     },
 
     {
+      "name": "Quiz",
+      "item": [
+        {
+          "name": "List Quiz Games",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/quiz/games",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "quiz", "games"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List Quiz Games | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('List Quiz Games | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('List Quiz Games | Returns an array', () => {",
+                  "  pm.response.to.be.json;",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
       "name": "Forms",
       "item": [
         {

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <title>Quiz Preview - OpReady</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background-color: var(--bg-body);
+            padding-top: 40px;
+        }
+
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        .form-title {
+            margin: 0 0 10px 0;
+            color: var(--primary);
+        }
+
+        .form-intro {
+            color: var(--text-muted);
+        }
+
+        .question-card {
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+
+        .question-text {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--text-main);
+            font-size: 1.1em;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        .option-label.correct {
+            background-color: #d4edda !important;
+            border: 2px solid #28a745 !important;
+            color: #155724 !important;
+            font-weight: bold !important;
+        }
+
+        .reference-box {
+            background: var(--bg-hover);
+            border-left: 4px solid var(--primary);
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: var(--primary);
+        }
+
+        .preview-banner {
+            background: #ffc107;
+            color: #333;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .time-limit-badge {
+            display: inline-block;
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="previewBanner" class="preview-banner"> PREVIEW MODE — correct answers are highlighted for admins only.
+        <button onclick="window.close()"
+            style="margin-left:15px; padding:4px 10px; background:rgb(104, 5, 5); border:none; cursor:pointer; border-radius:4px; color:white;">Close
+            Window</button>
+    </div>
+
+    <div class="container">
+        <div id="loading" class="spinner" style="margin: 50px auto; display:block;"></div>
+        <div id="gameContent" class="form-container" style="display:none;">
+            <div class="form-header">
+                <h1 id="gameName" class="form-title"></h1>
+                <p id="gameDescription" class="form-intro"></p>
+            </div>
+            <div id="questionsContainer"></div>
+        </div>
+        <div id="errorBox" style="display:none; text-align:center; color:var(--danger); padding:40px;"></div>
+    </div>
+
+    <script src="help.js"></script>
+    <script>
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = String(s ?? '');
+            return d.innerHTML;
+        }
+
+        function showError(msg) {
+            document.getElementById('loading').style.display = 'none';
+            const box = document.getElementById('errorBox');
+            box.textContent = msg;
+            box.style.display = 'block';
+        }
+
+        function renderGame(game) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('gameContent').style.display = 'block';
+            document.getElementById('gameName').textContent = game.name;
+            document.getElementById('gameDescription').textContent = game.description || '';
+
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            const isTimed = game.game_type === 'timed';
+
+            (game.questions || []).forEach((field) => {
+                const div = document.createElement('div');
+                div.className = 'question-card';
+                let labelHtml = `<div class="question-text">${esc(field.description)}${isTimed ? `<span class="time-limit-badge">${field.timeLimitSeconds}s</span>` : ''}</div>`;
+
+                let inputHtml = '';
+                const correct = field.correctAnswer;
+                const corrArr = (Array.isArray(correct) ? correct : [correct]).map((v) => String(v || '').trim());
+
+                switch (field.type) {
+                    case 'text_multi':
+                        inputHtml = `<textarea rows="4" style="width:100%; box-sizing:border-box; padding:12px;" disabled></textarea>`;
+                        if (correct) inputHtml += `<div class="reference-box"><strong>Correct Answer (Reference):</strong><br>${esc(Array.isArray(correct) ? correct.join(', ') : correct)}</div>`;
+                        break;
+                    case 'radio':
+                    case 'boolean': {
+                        const opts = field.type === 'boolean' ? ['Yes', 'No'] : (field.options || []);
+                        opts.forEach((o) => {
+                            const isCorrect = corrArr.includes(o);
+                            inputHtml += `<label class="option-label ${isCorrect ? 'correct' : ''}"><input type="radio" disabled ${isCorrect ? 'checked' : ''}> ${esc(o)}</label>`;
+                        });
+                        break;
+                    }
+                    case 'checkboxes':
+                        (field.options || []).forEach((o) => {
+                            const isCorrect = corrArr.includes(o);
+                            inputHtml += `<label class="option-label ${isCorrect ? 'correct' : ''}"><input type="checkbox" disabled ${isCorrect ? 'checked' : ''}> ${esc(o)}</label>`;
+                        });
+                        break;
+                }
+
+                div.innerHTML = labelHtml + inputHtml;
+                container.appendChild(div);
+            });
+        }
+
+        (async function init() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (!id) return showError('No quiz game specified.');
+
+            try {
+                const res = await fetch(`/api/quiz/games/${id}`);
+                if (!res.ok) {
+                    if (res.status === 401 || res.status === 403) throw new Error('You do not have permission to preview this game.');
+                    throw new Error('Quiz game not found.');
+                }
+                const game = await res.json();
+                document.title = `${game.name} - Preview`;
+                renderGame(game);
+            } catch (e) {
+                showError(e.message);
+            }
+        })();
+    </script>
+</body>
+
+</html>

@@ -24,6 +24,8 @@ const AUTH_PAGES = [
   { url: '/backup-restore.html',    name: 'Backup & Restore' },
   { url: '/profile.html',           name: 'Profile' },
   { url: '/knowledgebase.html',     name: 'Knowledge Base' },
+  { url: '/quiz-games.html',        name: 'Quiz Games' },
+  { url: '/quiz-preview.html',      name: 'Quiz Preview (no ID)' },
 ];
 
 function attachErrorListeners(page) {

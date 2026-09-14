@@ -643,6 +643,53 @@ const helpContent = {
         `
     },
 
+    // --- Quiz Games ---
+    "quiz-games": {
+        title: "Quiz Games Management",
+        body: `
+            <p>Build quiz games for social learning sessions run in the social room. The layout matches <em>Manage Forms</em> — a list of games on the left, and a question editor on the right.</p>
+
+            <h3>1. Creating a Game</h3>
+            <ul>
+                <li>Click <strong>+ Add Game</strong>, give it a name and optional description.</li>
+                <li><strong>Score-based:</strong> Self-paced — behaves just like a Form: any mix of Paragraph, Single Choice, Checkboxes, or Yes/No questions, each worth a configurable number of points.</li>
+                <li><strong>Timed:</strong> Live, host-driven — every question is a fixed 4-choice question with its own time limit; scoring is based on answer speed (Kahoot-style).</li>
+                <li>The <strong>Type</strong> can only be changed while the game has no questions yet — remove all questions first if you need to switch.</li>
+                <li><strong>Active:</strong> Disable a game to hide it from use without deleting its questions.</li>
+            </ul>
+
+            <h3>2. Building Questions</h3>
+            <ul>
+                <li>Use the toolbar at the bottom of the editor to add questions — Score-based games offer all four question types; Timed games only offer 4-choice questions.</li>
+                <li>Drag the <strong>☰</strong> handle to reorder questions.</li>
+                <li>Mark the correct answer directly on each option (or Yes/No for boolean questions).</li>
+                <li><strong>Timed games:</strong> each of the 4 answer slots always carries the same number and colour — 1 Green, 2 Light Blue, 3 Red, 4 Yellow — so players can recognise their answer button at a glance once live play is available.</li>
+                <li>The header shows <strong>Max Score Achievable</strong> (score-based) or <strong>Total Time</strong> (timed) as you build.</li>
+                <li>Click <strong>Save</strong> in the toolbar to persist your changes.</li>
+            </ul>
+
+            <h3>3. Editor Toolbar</h3>
+            <ul>
+                <li><strong>Preview</strong> (Score-based only) — opens a read-only window showing exactly how the questions will appear, with correct answers highlighted. Prompts to save first if you have unsaved changes.</li>
+                <li><strong>Test</strong> (Score-based only) — opens a scoring simulator so you can answer the current (even unsaved) questions and check the point weighting works as expected.</li>
+                <li><strong>Export</strong> — downloads the game's name, description, type, and full question bank as a <code>.json</code> file.</li>
+                <li><strong>Import</strong> — loads a previously exported <code>.json</code> file into the editor. Nothing is saved until you click <strong>Save</strong>.</li>
+            </ul>
+
+            <p style="color:var(--text-muted); font-size:0.85em;">Running live sessions, team setup, and player access codes are covered in later releases of this feature.</p>
+        `
+    },
+    "quiz-preview": {
+        title: "Quiz Preview Mode",
+        body: `
+            <p><strong>Admin View:</strong> This shows how a Score-based game's questions will appear, with correct answers highlighted for your reference.</p>
+            <ul>
+                <li>Nothing on this page is saved or submitted — it's read-only.</li>
+                <li>Close this window to return to the editor.</li>
+            </ul>
+        `
+    },
+
     // --- Default / Fallback ---
     "default": {
         title: "Help",
@@ -678,6 +725,8 @@ const helpContent = {
     else if (path.includes("surveys-tracking")) key = "surveys-tracking";
     else if (path.includes("surveys-results")) key = "surveys-results";
     else if (path.includes("knowledgebase")) key = "knowledgebase";
+    else if (path.includes("quiz-preview")) key = "quiz-preview";
+    else if (path.includes("quiz-games")) key = "quiz-games";
 
     // DYNAMIC FORMS-VIEW LOGIC
     if (path.includes("forms-view")) {
@@ -773,7 +822,7 @@ const helpContent = {
         'forms-manage', 'reports', 'live-forms', 'statistics', 'surveys-manage',
         'live-surveys', 'surveys-tracking', 'surveys-results',
         'forms-view-review', 'forms-view-preview', 'surveys-view-preview',
-        'knowledgebase'
+        'knowledgebase', 'quiz-games', 'quiz-preview'
     ];
 
     // Short display titles for the banner (no app-name suffix)
@@ -801,7 +850,9 @@ const helpContent = {
         'forms-view-review': 'Form Review',
         'forms-view-preview': 'Form Preview',
         'surveys-view-preview': 'Survey Preview',
-        'knowledgebase': 'Knowledge Base'
+        'knowledgebase': 'Knowledge Base',
+        'quiz-games': 'Quiz Games',
+        'quiz-preview': 'Quiz Preview'
     };
 
     if (bannerKeys.indexOf(key) !== -1) {

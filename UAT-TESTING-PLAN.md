@@ -698,6 +698,37 @@ This section verifies the security hardening applied in Round 3 (June 2026). All
 
 ---
 
+## T27 — Quiz Games Management (Phase 1 — Question Bank)
+
+**Page:** `quiz-games.html`
+
+Layout matches Manage Forms / Manage Surveys: a game list on the left, and a question editor on the right. A Score-based game reuses the same question editor as a Form (Paragraph, Single Choice, Checkboxes, Yes/No; points per question); a Timed game is restricted to fixed 4-choice questions with a per-question time limit instead of points. Phase 1 covers game creation and question building only — live play, player access codes, and team setup are covered by later phases and are not tested here.
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T27-01 | Page load | Navigate to `quiz-games.html`. | Game list loads on the left. Selecting a game (or none) shows the editor / empty-state panel on the right. |
+| T27-02 | Create a score-based game | Click `[+ Add Game]` → enter Name = `{Test Quiz}`, leave Type = Score-based → click `[Save]`. | New game appears in the left list with a "Score-based" badge and 0 questions. Event log records "Quiz Game Created". |
+| T27-03 | Create a timed game | Click `[+ Add Game]` → enter Name, set Type = Timed → click `[Save]`. | New game appears in the list with a "Timed" badge. |
+| T27-04 | Edit a game | Select the test game → change the Name in the editor header → click `[Save]`. | Updated name appears in the left list. Event log records "Quiz Game Updated". |
+| T27-05 | Disable a game | Toggle Active to Off in the editor header (or the list-row switch). | Game is visually marked disabled. Event log records "Quiz Game Toggled" with `newState: disabled`. |
+| T27-06 | Re-enable a game | Toggle Active back to On. | Game returns to normal. Event log records `newState: enabled`. |
+| T27-07 | Add a score-based question | With a Score-based game open, click one of the toolbar buttons (`+ Radio`, `+ Checkboxes`, `+ Yes/No`, or `+ Paragraph`) → fill in the question text and options → mark the correct answer → set Points → click `[Save]`. | Question card appears in the editor with the correct answer marked. "Max Score Achievable" updates. Event log records "Quiz Game Updated". |
+| T27-08 | Add a timed question | With a Timed game open, click `[+ Add Question]` → fill in the question text and all 4 choices → mark the correct one → set Time Limit (sec) → click `[Save]`. | Question card appears with exactly 4 fixed choices (no add/remove option buttons), each prefixed with a numbered colour badge (1 Green, 2 Light Blue, 3 Red, 4 Yellow) in that fixed order. "Total Time" updates. |
+| T27-09 | Edit a question | Open an existing question card → change the question text → click `[Save]`. | Updated question text persists after reload. |
+| T27-10 | Reorder questions | With 2+ questions in a game, drag a question card by its `☰` handle to a new position → click `[Save]`. | Question order is persisted — reselecting the game shows the new order. |
+| T27-11 | Remove a question | Click the delete icon on a question card → confirm → click `[Save]`. | Question is removed from the editor and the game's question count decreases. |
+| T27-12 | Game type locked once questions exist | With a game that has 1+ questions, attempt to change its Type dropdown. | Dropdown is disabled with a tooltip explaining that all questions must be removed first. |
+| T27-13 | Delete a game | Select the test game → click the delete icon in the editor toolbar → confirm. | Game and its questions are removed from the list. Event log records "Quiz Game Deleted". |
+| T27-14 | Demo mode guard | On a demo-mode instance, attempt to save, toggle, or delete a game. | Action is blocked with a "disabled in Demo Mode" toast. No changes are saved. |
+| T27-15 | Preview a score-based game | Open a saved Score-based game with at least one question → click `[Preview]`. | A new tab opens showing the questions read-only with the correct answer highlighted on each. A "PREVIEW MODE" banner is shown. |
+| T27-16 | Preview prompts to save unsaved changes | Edit a score-based game's question text without saving → click `[Preview]` → choose to save when prompted. | Changes are saved, then the preview tab opens reflecting the latest content. |
+| T27-17 | Test scoring simulator | Open a Score-based game with 2+ questions with points assigned → click `[Test]` → answer the questions → click `[Calculate Score]`. | A modal shows the questions as answerable inputs, then displays "Score: X / Y (Z%)" matching the points and correct answers configured. |
+| T27-18 | Export a game | Open a saved game (either type) → click the export icon in the toolbar. | A `.json` file downloads containing the game's name, description, type, and question bank. |
+| T27-19 | Import a game | Click the import icon in the toolbar → select a previously exported `.json` file. | The editor populates with the imported name, description, and questions. A toast confirms the import. Nothing is saved until `[Save]` is clicked. |
+| T27-20 | Preview/Test hidden for timed games | Open a Timed game. | The `[Preview]` and `[Test]` buttons are not shown in the toolbar; `[Export]`/`[Import]` remain available. |
+
+---
+
 ## Appendix A — Test Data Setup Checklist
 
 Before starting the UAT run, ensure the following data is in place on the UAT instance:
@@ -712,6 +743,7 @@ Before starting the UAT run, ensure the following data is in place on the UAT in
 - [ ] SMTP email configured and a reachable test inbox available.
 - [ ] WhatsApp service configured with a test device (for T16 tests).
 - [ ] AI provider configured (Gemini API key or Ollama running) for T17-C tests.
+- [ ] At least **1 quiz game** of each type (score-based and timed) with 2+ questions, for reorder testing.
 
 ---
 
@@ -733,6 +765,7 @@ After completing the full UAT run, verify the Event Log (`event-log.html`) conta
 | `System` | Database Restored (if T23-05 or T23-06 was run), Events Pruned |
 | `WhatsApp` | Client Connected, Client Disconnected |
 | `Knowledge Base` | Category Created, Category Updated, Category Deleted, Document Uploaded, Document Updated, Document Toggled, Document Deleted |
+| `Quiz` | Quiz Game Created, Quiz Game Updated, Quiz Game Toggled, Quiz Game Deleted |
 
 All entries must include: a non-empty `actor` name, a timestamp, a meaningful `title`, and a populated `payload` object (never `{}`).
 

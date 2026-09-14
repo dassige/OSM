@@ -106,4 +106,43 @@ const validateSkill = (req, res, next) => {
     next();
 };
 
-module.exports = { validateForm, validateBulkData, validateMember, validateSkill };
+// ── Quiz Game ────────────────────────────────────────────────────────────────
+
+// Mirrors the forms.structure question schema (score-based games are "basically a form").
+// Timed games reuse the same shape but the UI restricts them to type 'radio' with a
+// fixed 4-option layout and uses timeLimitSeconds instead of points.
+const quizQuestionSchema = Joi.object({
+    id: Joi.string().required(),
+    type: Joi.string().valid('text_multi', 'radio', 'checkboxes', 'boolean').default('radio'),
+    description: Joi.string().required(),
+    required: Joi.boolean().default(true),
+    options: Joi.when('type', {
+        is: Joi.valid('radio', 'checkboxes'),
+        then: Joi.array().items(Joi.string()).min(1).required(),
+        otherwise: Joi.array().max(0),
+    }),
+    renderAs: Joi.string().valid('radio', 'dropdown').optional(),
+    correctAnswer: Joi.alternatives().try(Joi.string().allow('', null), Joi.array().items(Joi.string())).optional(),
+    points: Joi.number().min(0).default(1),
+    timeLimitSeconds: Joi.number().min(5).max(300).default(20),
+});
+
+const quizGameSchema = Joi.object({
+    name: Joi.string().required().trim().max(255),
+    description: Joi.string().allow('', null).max(1000).optional(),
+    game_type: Joi.string().valid('score', 'timed').required(),
+    enabled: Joi.alternatives().try(Joi.boolean(), Joi.number().valid(0, 1)).optional(),
+    questions: Joi.array().items(quizQuestionSchema).default([]),
+});
+
+const validateQuizGame = (req, res, next) => {
+    const schema = req.method === 'PUT'
+        ? quizGameSchema.fork(['name', 'game_type'], s => s.optional())
+        : quizGameSchema;
+    const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
+    if (error) return res.status(400).json({ error: 'Validation Failed', details: error.details.map(d => d.message) });
+    req.body = value;
+    next();
+};
+
+module.exports = { validateForm, validateBulkData, validateMember, validateSkill, validateQuizGame };

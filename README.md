@@ -26,6 +26,10 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **User Management:** Create multiple database-backed administrators with secure password hashing.
       * **Automatic Notifications:** New users receive a welcome email with a randomly generated temporary password.
       * **Self-Service:** Users can manage their profiles and reset forgotten passwords via a time-limited email link.
+  * **Quiz Games (Social Learning Sessions):**
+      * **Question Bank Builder:** Create multiple-choice quiz games with a 4-choice question bank per game.
+      * **Two Play Styles:** Score-based (self-paced, points per question) or Timed (live, speed-scored, Kahoot-style).
+      * **Question Ordering:** Reorder questions with up/down controls; each question carries its own points or time limit depending on game type.
   * **Web-Based Management:**
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
       * **Skills:** Configure which skills to track and mark them as Critical.
@@ -405,6 +409,22 @@ The application includes a fully anonymous survey engine for brigade feedback, e
       * View auto-generated percentage bar charts for choice questions and aggregated text responses.
       * Use the action bar to **Print**, **Export CSV**, or **Export PDF** for offline analysis and reporting.
 
+### 7\. Quiz Games Workflow (Phase 1 — Game & Question Builder)
+
+A social-quiz feature for brigade learning sessions run in the social room, built out in phases. Phase 1 covers game and question building only — no live play yet. The layout matches **Manage Forms** / **Manage Surveys**: a game list on the left, and a question editor on the right.
+
+1.  **Create a Game:**
+      * Go to **Quiz Games** → **+ Add Game**.
+      * Choose **Score-based** or **Timed**. The type can only be changed while the game has no questions yet.
+2.  **Build the Questions:**
+      * **Score-based** games reuse the exact same question editor as a Form — Paragraph, Single Choice, Checkboxes, or Yes/No questions, each worth a configurable number of points. It's basically a form, minus the passing-threshold and max-attempts settings.
+      * **Timed** games are simpler — every question is a fixed 4-choice question with its own time limit instead of points, for a live Kahoot-style round. Each of the 4 answer slots always carries the same number and colour (1 Green, 2 Light Blue, 3 Red, 4 Yellow) so the mapping stays recognisable from the builder through to the eventual player buttons.
+      * Drag questions by their handle to reorder; click **Save** to persist.
+3.  **Editor Toolbar:**
+      * **Preview** and **Test** (Score-based games only) — preview shows a read-only, correct-answer-highlighted view of the game in a new tab; Test opens a scoring simulator to check point weighting.
+      * **Export** / **Import** (both game types) — download or load a game's name, description, type, and question bank as a `.json` file.
+4.  **Coming in later phases:** self-paced play via player access codes, team setup with drag-and-drop team building, and a live Kahoot-style host/player mode over Socket.IO.
+
 ## Example Data and Configuration
 
 To facilitate a rapid setup and standardized testing, the application now includes a collection of pre-configured JSON examples located in the `./examples` directory. These files can be imported via the web interface to populate the system with actual FENZ Operational Instructions (OIs) and professionally formatted notification templates.
@@ -548,6 +568,8 @@ API keys **cannot** access HTML pages — those remain session-only. Endpoints r
 | `GET` | `/api/reports/data/by-skill` | Compliance report grouped by skill |
 | `GET` | `/api/statistics/data/compliance-overview` | Dashboard compliance stats |
 | `GET` | `/api/live-forms` | Live form submission records |
+| `GET` | `/api/quiz/games` | List quiz games (with question bank) |
+| `GET` | `/api/quiz/games/{id}/export` | Download a quiz game as a `.json` file |
 | `GET` | `/api/health` | Health check (no key required) |
 | `GET` | `/api/ready` | Readiness probe — DB + WhatsApp state (no key required) |
 

@@ -629,6 +629,189 @@
                               ]
                  },
                  {
+                     "name":  "Quiz",
+                     "description":  "Quiz game and question bank management for social learning sessions. Requires admin role.",
+                     "item":  [
+                                  {
+                                      "name":  "List Quiz Games",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/quiz/games",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "quiz",
+                                                                               "games"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Get Quiz Game",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/quiz/games/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "quiz",
+                                                                               "games",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Create Quiz Game",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/quiz/games",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "quiz",
+                                                                               "games"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"name\": \"Pump Operations Quiz\",\n  \"description\": \"Social room learning session\",\n  \"game_type\": \"score\",\n  \"enabled\": true,\n  \"questions\": [\n    {\n      \"id\": \"fld_1\",\n      \"type\": \"radio\",\n      \"description\": \"What is the correct BA cylinder pressure check interval?\",\n      \"required\": true,\n      \"options\": [\"Daily\", \"Weekly\", \"Monthly\", \"Annually\"],\n      \"correctAnswer\": \"Daily\",\n      \"points\": 1,\n      \"timeLimitSeconds\": 20\n    }\n  ]\n}"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Update Quiz Game",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/quiz/games/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "quiz",
+                                                                               "games",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"name\": \"Pump Operations Quiz\",\n  \"description\": \"Social room learning session\",\n  \"game_type\": \"score\",\n  \"enabled\": true,\n  \"questions\": []\n}"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Export Quiz Game",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/quiz/games/:id/export",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "quiz",
+                                                                               "games",
+                                                                               ":id",
+                                                                               "export"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "Downloads the game's name, description, type, and question bank as a JSON file."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Toggle Quiz Game",
+                                      "request":  {
+                                                      "method":  "PATCH",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/quiz/games/:id/toggle",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "quiz",
+                                                                               "games",
+                                                                               ":id",
+                                                                               "toggle"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Delete Quiz Game",
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/quiz/games/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "quiz",
+                                                                               "games",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  }
+                              ]
+                 },
+                 {
                      "name":  "Forms",
                      "description":  "Online verification form template management. Requires admin role.",
                      "item":  [

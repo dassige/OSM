@@ -30,7 +30,8 @@ const spec = {
         { name: 'Profile', description: 'Current user profile and MFA' },
         { name: 'System', description: 'Health, preferences, and event logs' },
         { name: 'API Keys', description: 'API key management for external integrations' },
-        { name: 'Knowledge Base', description: 'PDF document library — categories and documents with GUID-secured public viewer links' }
+        { name: 'Knowledge Base', description: 'PDF document library — categories and documents with GUID-secured public viewer links' },
+        { name: 'Quiz', description: 'Quiz game and question bank management for social learning sessions' }
     ],
     components: {
         securitySchemes: {
@@ -100,6 +101,45 @@ const spec = {
                     url: { type: 'string', nullable: true },
                     critical_skill: { type: 'integer', enum: [0, 1] },
                     enabled: { type: 'integer', enum: [0, 1] }
+                }
+            },
+            QuizQuestion: {
+                type: 'object',
+                description: 'Mirrors the Form structure question shape — a score-based game is treated as a form. Timed games are restricted by the UI to type "radio" with exactly 4 options.',
+                required: ['id', 'description'],
+                properties: {
+                    id: { type: 'string', example: 'fld_1700000000000' },
+                    type: { type: 'string', enum: ['text_multi', 'radio', 'checkboxes', 'boolean'], default: 'radio' },
+                    description: { type: 'string', example: 'What is the correct BA cylinder pressure check interval?' },
+                    required: { type: 'boolean', default: true },
+                    options: { type: 'array', items: { type: 'string' }, description: 'Required (min 1) for type radio/checkboxes; empty otherwise' },
+                    renderAs: { type: 'string', enum: ['radio', 'dropdown'] },
+                    correctAnswer: { oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }], nullable: true },
+                    points: { type: 'integer', default: 1, description: 'Used in score-based games' },
+                    timeLimitSeconds: { type: 'integer', default: 20, description: 'Used in timed games' }
+                }
+            },
+            QuizGame: {
+                type: 'object',
+                properties: {
+                    id: { type: 'integer' },
+                    name: { type: 'string', example: 'Pump Operations Quiz' },
+                    description: { type: 'string', nullable: true },
+                    game_type: { type: 'string', enum: ['score', 'timed'] },
+                    enabled: { type: 'boolean' },
+                    questions: { type: 'array', items: { $ref: '#/components/schemas/QuizQuestion' } },
+                    questionCount: { type: 'integer' }
+                }
+            },
+            QuizGameInput: {
+                type: 'object',
+                required: ['name', 'game_type'],
+                properties: {
+                    name: { type: 'string', example: 'Pump Operations Quiz', maxLength: 255 },
+                    description: { type: 'string', nullable: true },
+                    game_type: { type: 'string', enum: ['score', 'timed'] },
+                    enabled: { type: 'boolean', default: true },
+                    questions: { type: 'array', items: { $ref: '#/components/schemas/QuizQuestion' } }
                 }
             },
             CsrfTokenResponse: {
@@ -584,6 +624,83 @@ const spec = {
                 },
                 responses: {
                     200: { description: 'Imported', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+
+        // -------------------------------------------------------------------------
+        // QUIZ
+        // -------------------------------------------------------------------------
+        '/api/quiz/games': {
+            get: {
+                tags: ['Quiz'],
+                summary: 'List all quiz games',
+                responses: {
+                    200: { description: 'Array of quiz games', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/QuizGame' } } } } }
+                }
+            },
+            post: {
+                tags: ['Quiz'],
+                summary: 'Create a quiz game',
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/QuizGameInput' } } }
+                },
+                responses: {
+                    200: { description: 'New game ID', content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' } } } } } },
+                    400: { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/quiz/games/{id}': {
+            get: {
+                tags: ['Quiz'],
+                summary: 'Get a quiz game (including its question bank)',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Quiz game', content: { 'application/json': { schema: { $ref: '#/components/schemas/QuizGame' } } } },
+                    404: { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            },
+            put: {
+                tags: ['Quiz'],
+                summary: 'Update a quiz game and its question bank (all fields optional)',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/QuizGameInput' } } }
+                },
+                responses: {
+                    200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            },
+            delete: {
+                tags: ['Quiz'],
+                summary: 'Delete a quiz game',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+        '/api/quiz/games/{id}/export': {
+            get: {
+                tags: ['Quiz'],
+                summary: 'Export a quiz game as a downloadable JSON file',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'JSON file download', content: { 'application/json': { schema: { type: 'object', properties: { name: { type: 'string' }, description: { type: 'string' }, game_type: { type: 'string' }, questions: { type: 'array', items: { $ref: '#/components/schemas/QuizQuestion' } } } } } } },
+                    404: { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/quiz/games/{id}/toggle': {
+            patch: {
+                tags: ['Quiz'],
+                summary: 'Toggle a quiz game enabled/disabled',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Toggled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
                 }
             }
         },
