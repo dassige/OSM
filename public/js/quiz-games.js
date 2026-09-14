@@ -226,6 +226,124 @@ async function previewGame() {
   window.open(`quiz-preview.html?id=${currentGame.id}`, '_blank');
 }
 
+// --- Start Session (self-paced play, score-based games only) ---
+
+let allActiveMembers = [];
+
+async function openSessionModal() {
+  if (isGameDirty()) return showToast('Please save your changes before starting a session.', 'warning');
+  if (!currentGame || !currentGame.id) return showToast('Please save the game first.', 'warning');
+  if (!currentGame.questions || currentGame.questions.length === 0) {
+    return showToast('Add at least one question before starting a session.', 'warning');
+  }
+
+  document.getElementById('sessionModalTitle').innerText = `Start Session: ${currentGame.name}`;
+  document.getElementById('btnConfirmSession').disabled = false;
+  document.getElementById('btnConfirmSession').innerText = 'Start & Send';
+  document.querySelector('input[name="sessionTarget"][value="all"]').checked = true;
+  toggleSessionSelection();
+  openModal('sessionModal');
+
+  if (allActiveMembers.length === 0) {
+    try {
+      const res = await fetch('/api/members');
+      const members = await res.json();
+      allActiveMembers = members.filter((m) => m.enabled === true);
+      allActiveMembers.sort((a, b) => {
+        const pA = window.getRankPriority ? window.getRankPriority(a.rank || a.name) : 99;
+        const pB = window.getRankPriority ? window.getRankPriority(b.rank || b.name) : 99;
+        if (pA !== pB) return pA - pB;
+        const sA = (a.last_name || a.name || '').toLowerCase();
+        const sB = (b.last_name || b.name || '').toLowerCase();
+        return sA.localeCompare(sB);
+      });
+    } catch (e) {
+      console.error('Failed to load members', e);
+    }
+  }
+
+  const container = document.getElementById('sessionSelectionContainer');
+  container.innerHTML = '';
+  allActiveMembers.forEach((m) => {
+    const displayName = window.formatMemberName ? window.formatMemberName(m.rank, m.last_name, m.first_name, m.name) : m.name;
+    const rankSpan = m.rank ? `<span style="min-width:38px; font-size:0.78em; font-weight:700; color:var(--primary-purple,#4b0082); flex-shrink:0;">${esc(m.rank)}</span>` : '';
+    const li = document.createElement('label');
+    li.style.cssText = 'display:flex; align-items:center; gap:10px; padding:6px; cursor:pointer; border-bottom:1px solid rgba(0,0,0,0.05);';
+    li.innerHTML = `<input type="checkbox" class="session-member-checkbox" value="${m.id}" checked title="Include ${esc(displayName)} in this session">${rankSpan}<span style="font-weight:500;">${esc(displayName)}</span>`;
+    container.appendChild(li);
+  });
+}
+
+function toggleSessionSelection() {
+  const isSelection = document.querySelector('input[name="sessionTarget"][value="selection"]').checked;
+  const container = document.getElementById('sessionSelectionContainer');
+  container.style.display = isSelection ? 'block' : 'none';
+  document.querySelectorAll('.session-member-checkbox').forEach((cb) => (cb.checked = !isSelection));
+}
+
+async function confirmStartSession() {
+  if (uiConfig?.appMode === 'demo') return showToast('Starting a session is disabled in Demo Mode', 'warning');
+
+  const isSelection = document.querySelector('input[name="sessionTarget"][value="selection"]').checked;
+  const memberIds = [];
+  if (isSelection) {
+    document.querySelectorAll('.session-member-checkbox').forEach((cb) => { if (cb.checked) memberIds.push(parseInt(cb.value, 10)); });
+    if (memberIds.length === 0) return showToast('Please select at least one member.', 'warning');
+  } else {
+    allActiveMembers.forEach((m) => memberIds.push(m.id));
+  }
+
+  const btn = document.getElementById('btnConfirmSession');
+  btn.disabled = true;
+  btn.innerText = 'Starting...';
+
+  try {
+    showGlobalSpinner('Starting quiz session...');
+    const res = await fetch('/api/live-quiz/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId: currentGame.id, memberIds }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to start session.');
+
+    closeModal('sessionModal');
+    btn.disabled = false;
+    btn.innerText = 'Start & Send';
+
+    const withEmail = (data.players || []).filter((p) => p.email);
+    if (withEmail.length === 0) {
+      hideGlobalSpinner();
+      showToast(`Session started with ${data.players.length} player(s). View codes in Live Quiz.`, 'success');
+      return;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+    for (let i = 0; i < withEmail.length; i++) {
+      const p = withEmail[i];
+      updateGlobalSpinnerMessage(`Sending invitations... ${i + 1} of ${withEmail.length}`, `Sending to: ${p.member_name}`);
+      await new Promise((r) => requestAnimationFrame(r));
+      try {
+        const r = await fetch(`/api/live-quiz/sessions/${data.sessionId}/players/${p.id}/send`, { method: 'POST' });
+        if (r.ok) successCount++;
+        else failCount++;
+      } catch (_) {
+        failCount++;
+      }
+    }
+
+    hideGlobalSpinner();
+    if (failCount === 0) showToast(`Session started and ${successCount} invitation${successCount !== 1 ? 's' : ''} sent.`, 'success');
+    else showToast(`Session started. Sent: ${successCount}, failed: ${failCount}.`, 'warning');
+  } catch (e) {
+    showToast(e.message, 'error');
+    btn.disabled = false;
+    btn.innerText = 'Start & Send';
+    hideGlobalSpinner();
+  }
+}
+
 // --- Scoring simulator (score-based games only) ---
 
 function testScoring() {
@@ -481,10 +599,12 @@ function applyGameTypeUI() {
   document.getElementById('summaryLabel').textContent = type === 'timed' ? 'Total Time' : 'Max Score Achievable';
   document.getElementById('summaryUnit').textContent = type === 'timed' ? 'Seconds' : 'Points';
 
-  // Preview & Test are only meaningful for score-based games (a live Kahoot-style
-  // round has no static "preview" and scores by speed, not by a testable point total)
+  // Preview, Test & Start Session are only meaningful for score-based games (a live
+  // Kahoot-style round has no static preview, isn't scored by a testable point
+  // total, and self-paced play-by-code isn't its play model)
   document.getElementById('btnPreview').style.display = type === 'timed' ? 'none' : 'inline-block';
   document.getElementById('btnTest').style.display = type === 'timed' ? 'none' : 'inline-block';
+  document.getElementById('btnStartSession').style.display = type === 'timed' ? 'none' : 'inline-block';
 }
 
 function onGameTypeChange() {

@@ -1,0 +1,87 @@
+{
+  "name": "Chainsaw Operation",
+  "description": "Timed quiz on OSM Specialist Chainsaw Operation knowledge — safety features, kickback, PPE and correct procedure.",
+  "game_type": "timed",
+  "questions": [
+    {
+      "id": "fld_cso01",
+      "type": "radio",
+      "description": "What is the correct approved location for a cold start versus a warm (hot) start on a chainsaw?",
+      "required": true,
+      "options": [
+        "Cold start on the ground, warm start between the legs",
+        "Cold start between the legs, warm start on the ground",
+        "Both cold and warm start on the ground",
+        "Both cold and warm start between the legs"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Cold start on the ground, warm start between the legs",
+      "timeLimitSeconds": 20
+    },
+    {
+      "id": "fld_cso02",
+      "type": "radio",
+      "description": "Can a chainsaw be used above shoulder height?",
+      "required": true,
+      "options": [
+        "Yes, always",
+        "Never",
+        "Only with a spotter present",
+        "Only during a hot start"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Never",
+      "timeLimitSeconds": 15
+    },
+    {
+      "id": "fld_cso03",
+      "type": "radio",
+      "description": "What commonly causes chainsaw 'kickback'?",
+      "required": true,
+      "options": [
+        "Contact with the upper quadrant of the bar/chain tip",
+        "Correct chain tension",
+        "A firm two-handed grip",
+        "Cutting below waist height"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Contact with the upper quadrant of the bar/chain tip",
+      "timeLimitSeconds": 20
+    },
+    {
+      "id": "fld_cso04",
+      "type": "radio",
+      "description": "Which chainsaw safety feature stops the chain from turning when activated?",
+      "required": true,
+      "options": ["Chain Brake", "Catcher Peg", "Throttle Lockout", "Spark Arrestor"],
+      "renderAs": "radio",
+      "correctAnswer": "Chain Brake",
+      "timeLimitSeconds": 15
+    },
+    {
+      "id": "fld_cso05",
+      "type": "radio",
+      "description": "What is the mandatory item that must be carried in the first aid kit for chainsaw operators?",
+      "required": true,
+      "options": ["One large compression bandage", "A tourniquet", "Burn gel", "A splint"],
+      "renderAs": "radio",
+      "correctAnswer": "One large compression bandage",
+      "timeLimitSeconds": 15
+    },
+    {
+      "id": "fld_cso06",
+      "type": "radio",
+      "description": "When recommissioning a chainsaw after use (cleaning, sharpening, refuelling), what is the correct order?",
+      "required": true,
+      "options": [
+        "Oil first, then fuel",
+        "Fuel first, then oil",
+        "Fuel and oil at the same time",
+        "Sharpen the chain before adding any fluids"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "Oil first, then fuel",
+      "timeLimitSeconds": 20
+    }
+  ]
+}

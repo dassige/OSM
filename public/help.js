@@ -690,6 +690,54 @@ const helpContent = {
         `
     },
 
+    // --- Live Quiz ---
+    "live-quiz": {
+        title: "Live Quiz: Sessions & Results",
+        body: `
+            <p>Track quiz sessions started from <em>Quiz Games</em> and view player results.</p>
+            <h3>1. Sessions List</h3>
+            <ul>
+                <li>Each session is one "run" of a Score-based game for a chosen set of members — a snapshot of the game's questions is frozen at the moment the session starts.</li>
+                <li><strong>Progress:</strong> shows how many invited members have submitted so far.</li>
+                <li><strong>Archive:</strong> stops the session accepting further submissions without deleting its results.</li>
+                <li><strong>Delete:</strong> permanently removes the session and all player results.</li>
+            </ul>
+            <h3>2. Results</h3>
+            <ul>
+                <li>Click <strong>Results</strong> on a session to see each invited member's status (Sent / Submitted), score, and submission time.</li>
+                <li><strong>View:</strong> opens a read-only copy of a submitted member's answers, with correct answers highlighted green and incorrect ones red — only available once they've submitted.</li>
+                <li><strong>Resend:</strong> re-sends the invitation email to a member who hasn't submitted yet (only available while they have an email on file).</li>
+                <li><strong>Refresh:</strong> reloads the player list on the spot to pick up new submissions, without returning to the sessions list.</li>
+            </ul>
+            <p style="color:var(--text-muted); font-size:0.85em;">To start a new session, go to <em>Quiz Games</em>, open a Score-based game, and click <strong>Start Session</strong>.</p>
+        `
+    },
+    "quiz-play": {
+        title: "Playing a Quiz",
+        body: `
+            <p>You've been sent a link to play a quiz game. Answer each question and click <strong>Submit Answers</strong> when done.</p>
+            <ul>
+                <li>Your score is shown immediately after you submit.</li>
+                <li>Each quiz code can only be used once — reopening the link after submitting shows your result again, not a fresh attempt.</li>
+            </ul>
+        `
+    },
+
+    "quiz-play-review": {
+        title: "Quiz Submission Review - Admin Mode",
+        body: `
+            <p><strong>Reviewing a Player's Answers:</strong> This is a read-only view of one member's submitted quiz, opened from the <strong>View</strong> action in Live Quiz results.</p>
+            <ul>
+                <li><strong>Color Coding:</strong>
+                    <span style="background:#d4edda; padding:0 4px;">Green</span> indicates a correct answer;
+                    <span style="background:#f8d7da; padding:0 4px;">Red</span> indicates an incorrect one.
+                </li>
+                <li>A dashed green outline marks the correct option when the member chose a different one.</li>
+                <li>Free-text answers are shown as submitted — these are not auto-scored.</li>
+            </ul>
+        `
+    },
+
     // --- Default / Fallback ---
     "default": {
         title: "Help",
@@ -726,6 +774,8 @@ const helpContent = {
     else if (path.includes("surveys-results")) key = "surveys-results";
     else if (path.includes("knowledgebase")) key = "knowledgebase";
     else if (path.includes("quiz-preview")) key = "quiz-preview";
+    else if (path.includes("quiz-play")) key = "quiz-play";
+    else if (path.includes("live-quiz")) key = "live-quiz";
     else if (path.includes("quiz-games")) key = "quiz-games";
 
     // DYNAMIC FORMS-VIEW LOGIC
@@ -737,6 +787,11 @@ const helpContent = {
         } else if (params.has('code')) {
             key = "forms-view-live";
         }
+    }
+
+    // DYNAMIC QUIZ-PLAY LOGIC
+    if (path.includes("quiz-play") && params.has('reviewId')) {
+        key = "quiz-play-review";
     }
 
     // DYNAMIC SURVEYS-VIEW LOGIC
@@ -822,7 +877,7 @@ const helpContent = {
         'forms-manage', 'reports', 'live-forms', 'statistics', 'surveys-manage',
         'live-surveys', 'surveys-tracking', 'surveys-results',
         'forms-view-review', 'forms-view-preview', 'surveys-view-preview',
-        'knowledgebase', 'quiz-games', 'quiz-preview'
+        'knowledgebase', 'quiz-games', 'quiz-preview', 'live-quiz', 'quiz-play-review'
     ];
 
     // Short display titles for the banner (no app-name suffix)
@@ -852,7 +907,9 @@ const helpContent = {
         'surveys-view-preview': 'Survey Preview',
         'knowledgebase': 'Knowledge Base',
         'quiz-games': 'Quiz Games',
-        'quiz-preview': 'Quiz Preview'
+        'quiz-preview': 'Quiz Preview',
+        'live-quiz': 'Live Quiz',
+        'quiz-play-review': 'Quiz Review'
     };
 
     if (bannerKeys.indexOf(key) !== -1) {
@@ -863,10 +920,11 @@ const helpContent = {
         const noBack = (key === 'index');
         const backUrls = {
             'surveys-results':  '/live-surveys.html',
-            'surveys-tracking': '/live-surveys.html'
+            'surveys-tracking': '/live-surveys.html',
+            'quiz-play-review': '/live-quiz.html'
         };
         const backUrl = backUrls[key] || '/';
-        const backTitle = backUrl === '/' ? 'Back to Dashboard' : 'Back to Live Surveys';
+        const backTitle = backUrl === '/' ? 'Back to Dashboard' : (key === 'quiz-play-review' ? 'Back to Live Quiz' : 'Back to Live Surveys');
 
         const bannerEl = document.createElement('div');
         bannerEl.id = 'mobilePageBanner';

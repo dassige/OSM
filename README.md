@@ -423,7 +423,14 @@ A social-quiz feature for brigade learning sessions run in the social room, buil
 3.  **Editor Toolbar:**
       * **Preview** and **Test** (Score-based games only) — preview shows a read-only, correct-answer-highlighted view of the game in a new tab; Test opens a scoring simulator to check point weighting.
       * **Export** / **Import** (both game types) — download or load a game's name, description, type, and question bank as a `.json` file.
-4.  **Coming in later phases:** self-paced play via player access codes, team setup with drag-and-drop team building, and a live Kahoot-style host/player mode over Socket.IO.
+      * **Start Session** (Score-based games only) — starts a self-paced play session (see Phase 2 below).
+4.  **Phase 2 — Self-Paced Play:**
+      * Click **Start Session** on a saved Score-based game with at least one question. Choose all active members or a specific selection.
+      * A session snapshots the game's current questions and generates one unique access code per member. Members with an email on file are sent a link automatically; others can be given their code to enter directly.
+      * Members open their link (`quiz-play.html?code=...`), answer the questions like a form, and see their score immediately after submitting. Each code can only be used once.
+      * Track progress and results in **Live Quiz** — a list of started sessions with submitted/invited counts, and a per-session results view (member, status, score, submitted time) with a resend-invitation action.
+      * Click **View** next to a submitted player to open their answers in a read-only review, with correct answers highlighted green and incorrect ones red (mirrors the Live Forms review screen).
+5.  **Coming in later phases:** team setup with drag-and-drop team building, and a live Kahoot-style host/player mode over Socket.IO.
 
 ## Example Data and Configuration
 
@@ -570,6 +577,9 @@ API keys **cannot** access HTML pages — those remain session-only. Endpoints r
 | `GET` | `/api/live-forms` | Live form submission records |
 | `GET` | `/api/quiz/games` | List quiz games (with question bank) |
 | `GET` | `/api/quiz/games/{id}/export` | Download a quiz game as a `.json` file |
+| `GET` | `/api/live-quiz/sessions` | List quiz sessions (self-paced play instances) |
+| `GET` | `/api/live-quiz/players/{playerId}/review` | Admin: view a submitted player's answers with correctness marked |
+| `GET` | `/api/live-quiz/play/{code}` | Public: fetch a player's quiz by access code |
 | `GET` | `/api/health` | Health check (no key required) |
 | `GET` | `/api/ready` | Readiness probe — DB + WhatsApp state (no key required) |
 

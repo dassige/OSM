@@ -31,7 +31,8 @@ const spec = {
         { name: 'System', description: 'Health, preferences, and event logs' },
         { name: 'API Keys', description: 'API key management for external integrations' },
         { name: 'Knowledge Base', description: 'PDF document library — categories and documents with GUID-secured public viewer links' },
-        { name: 'Quiz', description: 'Quiz game and question bank management for social learning sessions' }
+        { name: 'Quiz', description: 'Quiz game and question bank management for social learning sessions' },
+        { name: 'Live Quiz', description: 'Self-paced quiz sessions, player access codes, and results' }
     ],
     components: {
         securitySchemes: {
@@ -140,6 +141,34 @@ const spec = {
                     game_type: { type: 'string', enum: ['score', 'timed'] },
                     enabled: { type: 'boolean', default: true },
                     questions: { type: 'array', items: { $ref: '#/components/schemas/QuizQuestion' } }
+                }
+            },
+            QuizSession: {
+                type: 'object',
+                description: 'A self-paced play instance of a Score-based quiz game — a frozen snapshot of its questions, run for a chosen set of members.',
+                properties: {
+                    id: { type: 'integer' },
+                    name: { type: 'string', example: 'Pump Operations Quiz - 2026-09-14' },
+                    game_id: { type: 'integer' },
+                    game_name: { type: 'string' },
+                    game_type: { type: 'string', enum: ['score'] },
+                    is_archived: { type: 'boolean' },
+                    created_at: { type: 'string', format: 'date-time' },
+                    total_sent: { type: 'integer' },
+                    total_submitted: { type: 'integer' }
+                }
+            },
+            QuizPlayer: {
+                type: 'object',
+                properties: {
+                    id: { type: 'integer' },
+                    access_code: { type: 'string' },
+                    status: { type: 'string', enum: ['sent', 'submitted'] },
+                    member_name: { type: 'string' },
+                    email: { type: 'string', nullable: true },
+                    achieved_score: { type: 'number', nullable: true },
+                    max_score: { type: 'number', nullable: true },
+                    submitted_at: { type: 'string', format: 'date-time', nullable: true }
                 }
             },
             CsrfTokenResponse: {
@@ -701,6 +730,120 @@ const spec = {
                 parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
                 responses: {
                     200: { description: 'Toggled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+
+        // -------------------------------------------------------------------------
+        // LIVE QUIZ (self-paced sessions)
+        // -------------------------------------------------------------------------
+        '/api/live-quiz/sessions': {
+            get: {
+                tags: ['Live Quiz'],
+                summary: 'List quiz sessions',
+                responses: {
+                    200: { description: 'Array of quiz sessions', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/QuizSession' } } } } }
+                }
+            },
+            post: {
+                tags: ['Live Quiz'],
+                summary: 'Start a quiz session — snapshots a Score-based game and generates one access code per selected member',
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: { type: 'object', required: ['gameId', 'memberIds'], properties: { gameId: { type: 'integer' }, memberIds: { type: 'array', items: { type: 'integer' } } } } } }
+                },
+                responses: {
+                    200: { description: 'Session started', content: { 'application/json': { schema: { type: 'object', properties: { sessionId: { type: 'integer' }, sessionName: { type: 'string' }, players: { type: 'array', items: { $ref: '#/components/schemas/QuizPlayer' } } } } } } },
+                    400: { description: 'Validation error (e.g. no members selected, or the game is Timed)', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/sessions/{id}': {
+            get: {
+                tags: ['Live Quiz'],
+                summary: 'Get a quiz session with its player list',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Session with players', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/QuizSession' }, { type: 'object', properties: { players: { type: 'array', items: { $ref: '#/components/schemas/QuizPlayer' } } } }] } } } },
+                    404: { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            },
+            delete: {
+                tags: ['Live Quiz'],
+                summary: 'Delete a quiz session and all its player results',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/sessions/{id}/archive': {
+            put: {
+                tags: ['Live Quiz'],
+                summary: 'Archive or unarchive a quiz session',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: { type: 'object', properties: { is_archived: { type: 'boolean' } } } } }
+                },
+                responses: {
+                    200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/sessions/{id}/players/{playerId}/send': {
+            post: {
+                tags: ['Live Quiz'],
+                summary: "Send (or resend) a player's invitation email",
+                parameters: [
+                    { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+                    { name: 'playerId', in: 'path', required: true, schema: { type: 'integer' } }
+                ],
+                responses: {
+                    200: { description: 'Sent', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'Player has no registered email', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/players/{playerId}/review': {
+            get: {
+                tags: ['Live Quiz'],
+                summary: "Admin: view a player's submitted quiz with correct/incorrect answers marked",
+                parameters: [{ name: 'playerId', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Submitted questions, answers, and score', content: { 'application/json': { schema: { type: 'object' } } } },
+                    400: { description: 'Player has not submitted yet', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Player not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/play/{code}': {
+            get: {
+                tags: ['Live Quiz'],
+                summary: "Public: fetch a player's quiz by access code (no auth)",
+                parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
+                responses: {
+                    200: { description: 'Quiz questions, or the stored score if already submitted', content: { 'application/json': { schema: { type: 'object' } } } },
+                    403: { description: 'Session archived', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/play/{code}/submit': {
+            post: {
+                tags: ['Live Quiz'],
+                summary: 'Public: submit answers for scoring (no auth)',
+                parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
+                requestBody: {
+                    required: true,
+                    description: 'Flat answer object keyed by question id (question.id[] for checkboxes) — same contract as Forms submission',
+                    content: { 'application/json': { schema: { type: 'object' } } }
+                },
+                responses: {
+                    200: { description: 'Scored', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, achievedScore: { type: 'number' }, maxScore: { type: 'number' } } } } } },
+                    400: { description: 'Already submitted or invalid data', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    403: { description: 'Session archived', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }
         },

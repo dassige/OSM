@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#17A2B8">
+    <title id="pageTitle">Quiz - OpReady</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background-color: var(--bg-body);
+            padding-top: 20px;
+        }
+
+        .form-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        .form-title {
+            margin: 0 0 10px 0;
+            color: var(--primary);
+        }
+
+        .form-intro {
+            color: var(--text-muted);
+        }
+
+        .question-card {
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+
+        .question-text {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--text-main);
+            font-size: 1.1em;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-label:hover {
+            border-color: var(--primary);
+            background: var(--bg-hover);
+        }
+
+        .btn-submit {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .public-member-header {
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+        }
+
+        /* --- REVIEW MODE STYLES (mirrors forms-view.html) --- */
+        body.review-mode .option-label.review-correct {
+            background-color: #d4edda !important;
+            border: 2px solid #28a745 !important;
+            color: #155724 !important;
+            font-weight: bold !important;
+        }
+
+        body.review-mode .option-label.review-wrong {
+            background-color: #f8d7da !important;
+            border: 2px solid #dc3545 !important;
+            color: #721c24 !important;
+        }
+
+        body.review-mode .option-label.expected-border {
+            border: 3px dashed #28a745 !important;
+            box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+        }
+
+        body.review-mode .review-unanswered {
+            background-color: #fff3cd !important;
+            border-color: #ffeeba !important;
+            color: #856404;
+        }
+
+        .reference-box {
+            background: var(--bg-hover);
+            border-left: 4px solid var(--primary);
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: var(--primary);
+        }
+
+        .review-info-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="loading" class="spinner" style="margin: 50px auto; display:block;"></div>
+        <div id="formContent" class="form-container" style="display:none;">
+            <div class="form-header">
+                <h1 id="gameName" class="form-title"></h1>
+                <p id="gameDescription" class="form-intro"></p>
+            </div>
+            <div id="publicMemberHeader" class="public-member-header" style="display:none;">
+                <p style="margin:0; font-size:0.85em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Playing as</p>
+                <p id="memberNameDisplay" style="margin:2px 0 0 0; font-size:1.2em; font-weight:bold; color:var(--primary);"></p>
+            </div>
+            <form id="quizForm">
+                <div id="questionsContainer"></div>
+                <button type="submit" class="btn-submit" id="btnSubmitAnswers">Submit Answers</button>
+            </form>
+        </div>
+        <div id="resultBox" style="display:none; text-align:center; padding:40px;">
+            <div id="resultIcon"></div>
+            <h2 id="resultTitle" style="margin-top:20px;"></h2>
+            <p id="resultScore" style="font-size:1.3em; font-weight:bold;"></p>
+        </div>
+        <div id="errorBox" style="display:none; text-align:center; color:var(--danger); padding:40px;"></div>
+    </div>
+
+    <script src="toast.js"></script>
+    <script src="theme.js"></script>
+    <script src="utils.js"></script>
+    <script src="help.js"></script>
+    <script>
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = String(s ?? '');
+            return d.innerHTML;
+        }
+
+        function showError(msg) {
+            document.getElementById('loading').style.display = 'none';
+            const box = document.getElementById('errorBox');
+            box.textContent = msg;
+            box.style.display = 'block';
+        }
+
+        function showResult(achieved, maxScore) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('formContent').style.display = 'none';
+            const pct = maxScore > 0 ? Math.round((achieved / maxScore) * 100) : 0;
+            document.getElementById('resultIcon').innerHTML =
+                '<svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#28a745" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+            document.getElementById('resultTitle').textContent = 'Quiz Complete!';
+            document.getElementById('resultScore').textContent = `You scored ${achieved} / ${maxScore} (${pct}%)`;
+            document.getElementById('resultBox').style.display = 'block';
+        }
+
+        function formatDate(dateStr, uiConfig) {
+            if (!dateStr) return '';
+            let safeDateStr = dateStr;
+            if (!safeDateStr.includes('Z')) safeDateStr = safeDateStr.replace(' ', 'T') + 'Z';
+            const locale = (uiConfig && uiConfig.locale) || navigator.language || 'en-NZ';
+            const timeZone = (uiConfig && uiConfig.timezone) || Intl.DateTimeFormat().resolvedOptions().timeZone;
+            return new Date(safeDateStr).toLocaleString(locale, { timeZone });
+        }
+
+        function renderReview(data, uiConfig) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('formContent').style.display = 'block';
+            document.body.classList.add('review-mode');
+
+            document.getElementById('gameName').textContent = data.sessionName || 'Quiz Review';
+            document.getElementById('gameDescription').textContent = '';
+            document.getElementById('publicMemberHeader').style.display = 'none';
+            document.getElementById('btnSubmitAnswers').style.display = 'none';
+
+            const pct = data.maxScore > 0 ? Math.round((data.achievedScore / data.maxScore) * 100) : 0;
+            const infoPanel = document.createElement('div');
+            infoPanel.className = 'review-info-panel';
+            infoPanel.innerHTML = `
+                <p style="margin:5px 0;"><strong>Member:</strong> ${esc(data.member)}</p>
+                <p style="margin:5px 0;"><strong>Score:</strong> ${data.achievedScore} / ${data.maxScore} points (${pct}%)</p>
+                <p style="margin:5px 0;"><strong>Submitted:</strong> ${formatDate(data.submittedAt, uiConfig)}</p>
+            `;
+            document.querySelector('.form-header').appendChild(infoPanel);
+
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+
+            (data.questions || []).forEach((field) => {
+                const div = document.createElement('div');
+                div.className = 'question-card';
+                let labelHtml = `<div class="question-text">${esc(field.description)}</div>`;
+
+                const rawSub = data.answers[field.id] || data.answers[`${field.id}[]`];
+                const subArr = (Array.isArray(rawSub) ? rawSub : [rawSub]).filter((v) => v !== undefined && v !== null && v !== '').map((v) => String(v).trim());
+                const correct = field.correctAnswer;
+                const corrArr = (Array.isArray(correct) ? correct : [correct]).filter((v) => v !== undefined && v !== null).map((v) => String(v).trim());
+                const isUnanswered = subArr.length === 0;
+
+                let inputHtml = '';
+                switch (field.type) {
+                    case 'text_multi':
+                        inputHtml = `<textarea rows="4" disabled style="width:100%; box-sizing:border-box; padding:12px;" class="${isUnanswered ? 'review-unanswered' : ''}">${esc(subArr.join('\n'))}</textarea>`;
+                        break;
+                    case 'radio':
+                    case 'boolean': {
+                        const opts = field.type === 'boolean' ? ['Yes', 'No'] : (field.options || []);
+                        opts.forEach((o) => {
+                            const val = String(o).trim();
+                            const wasSubmitted = subArr.includes(val);
+                            const isCorrectOption = corrArr.includes(val);
+                            let cls = '';
+                            if (wasSubmitted) cls = isCorrectOption ? 'review-correct' : 'review-wrong';
+                            else if (isCorrectOption) cls = 'expected-border';
+                            inputHtml += `<label class="option-label ${cls}"><input type="radio" disabled ${wasSubmitted ? 'checked' : ''}> ${esc(o)}</label>`;
+                        });
+                        break;
+                    }
+                    case 'checkboxes':
+                        (field.options || []).forEach((o) => {
+                            const val = String(o).trim();
+                            const wasSubmitted = subArr.includes(val);
+                            const isCorrectOption = corrArr.includes(val);
+                            let cls = '';
+                            if (wasSubmitted) cls = isCorrectOption ? 'review-correct' : 'review-wrong';
+                            else if (isCorrectOption) cls = 'expected-border';
+                            inputHtml += `<label class="option-label ${cls}"><input type="checkbox" disabled ${wasSubmitted ? 'checked' : ''}> ${esc(o)}</label>`;
+                        });
+                        break;
+                }
+                if (isUnanswered && field.type !== 'text_multi') {
+                    inputHtml += `<div class="reference-box">No answer submitted for this question.</div>`;
+                }
+
+                div.innerHTML = labelHtml + inputHtml;
+                container.appendChild(div);
+            });
+        }
+
+        function renderQuestions(game) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('formContent').style.display = 'block';
+            document.getElementById('gameName').textContent = game.name;
+            document.getElementById('gameDescription').textContent = game.description || '';
+
+            if (game.member) {
+                document.getElementById('memberNameDisplay').textContent = game.member;
+                document.getElementById('publicMemberHeader').style.display = 'block';
+            }
+
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+
+            (game.questions || []).forEach((field) => {
+                const div = document.createElement('div');
+                div.className = 'question-card';
+                let labelHtml = `<div class="question-text">${esc(field.description)}</div>`;
+                if (field.required) labelHtml += `<div style="text-align:right;"><span style="color:#dc3545; font-size:11px; font-weight:bold;">* Required</span></div>`;
+
+                let inputHtml = '';
+                const reqAttr = field.required ? 'required' : '';
+
+                switch (field.type) {
+                    case 'text_multi':
+                        inputHtml = `<textarea name="${field.id}" rows="4" style="width:100%; box-sizing:border-box; padding:12px;" ${reqAttr}></textarea>`;
+                        break;
+                    case 'radio':
+                    case 'boolean': {
+                        const opts = field.type === 'boolean' ? ['Yes', 'No'] : (field.options || []);
+                        opts.forEach((o) => {
+                            inputHtml += `<label class="option-label"><input type="radio" name="${field.id}" value="${esc(o)}" ${reqAttr}> ${esc(o)}</label>`;
+                        });
+                        break;
+                    }
+                    case 'checkboxes':
+                        (field.options || []).forEach((o) => {
+                            inputHtml += `<label class="option-label"><input type="checkbox" name="${field.id}[]" value="${esc(o)}"> ${esc(o)}</label>`;
+                        });
+                        break;
+                }
+
+                div.innerHTML = labelHtml + inputHtml;
+                container.appendChild(div);
+            });
+        }
+
+        (async function init() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const reviewId = params.get('reviewId');
+
+            if (reviewId) {
+                let uiConfig = {};
+                try {
+                    const uiRes = await fetch('/ui-config');
+                    uiConfig = await uiRes.json();
+                } catch (e) {}
+                try {
+                    const res = await fetch(`/api/live-quiz/players/${reviewId}/review`);
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Unable to load this submission.');
+                    document.title = `${data.sessionName || 'Quiz'} - ${data.member} - OpReady`;
+                    renderReview(data, uiConfig);
+                } catch (e) {
+                    showError(e.message);
+                }
+                return;
+            }
+
+            if (!code) return showError('No quiz code provided.');
+
+            try {
+                const res = await fetch(`/api/live-quiz/play/${code}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'This quiz link is invalid or expired.');
+
+                document.title = `${data.name || 'Quiz'} - OpReady`;
+
+                if (data.status === 'submitted') {
+                    return showResult(data.achievedScore, data.maxScore);
+                }
+
+                renderQuestions(data);
+            } catch (e) {
+                showError(e.message);
+                return;
+            }
+
+            document.getElementById('quizForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const answers = {};
+                for (const [key, value] of formData.entries()) {
+                    if (answers[key]) {
+                        if (!Array.isArray(answers[key])) answers[key] = [answers[key]];
+                        answers[key].push(value);
+                    } else {
+                        answers[key] = value;
+                    }
+                }
+
+                const btn = e.target.querySelector('.btn-submit');
+                btn.disabled = true;
+                btn.textContent = 'Submitting...';
+
+                try {
+                    const res = await fetch(`/api/live-quiz/play/${code}/submit`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(answers),
+                    });
+                    const result = await res.json();
+                    if (!res.ok) throw new Error(result.error || 'Submission failed.');
+                    showResult(result.achievedScore, result.maxScore);
+                } catch (err) {
+                    btn.disabled = false;
+                    btn.textContent = 'Submit Answers';
+                    if (window.showToast) showToast(err.message, 'error'); else console.error(err.message);
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>

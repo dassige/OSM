@@ -1,0 +1,92 @@
+{
+  "name": "Working at Height",
+  "description": "Score-based quiz covering fall-arrest classifications, edge protection distances, anchor point ratings and the hierarchy of fall-protection controls.",
+  "game_type": "score",
+  "questions": [
+    {
+      "id": "fld_woh01",
+      "type": "radio",
+      "description": "Under the 'limited free fall' fall-arrest classification, what is the maximum free-fall distance permitted?",
+      "required": true,
+      "options": ["300 mm", "600 mm", "1 m", "2 m"],
+      "renderAs": "radio",
+      "correctAnswer": "600 mm",
+      "points": 10
+    },
+    {
+      "id": "fld_woh02",
+      "type": "radio",
+      "description": "Fall protection or edge protection must be provided when an employee is required to work closer than what distance to the edge of a roof (or any point from which a fall is possible)?",
+      "required": true,
+      "options": ["1 m", "1.5 m", "2 m", "3 m"],
+      "renderAs": "radio",
+      "correctAnswer": "2 m",
+      "points": 10
+    },
+    {
+      "id": "fld_woh03",
+      "type": "radio",
+      "description": "In the hierarchy of fall-protection options, which control is the MOST preferred?",
+      "required": true,
+      "options": ["Fall restraint", "Restrained-fall arrest", "Exclusion area", "Safe systems of work"],
+      "renderAs": "radio",
+      "correctAnswer": "Fall restraint",
+      "points": 10
+    },
+    {
+      "id": "fld_woh04",
+      "type": "radio",
+      "description": "What minimum ultimate strength rating must an anchorage (or equivalent horizontal lifeline/rail) have for a full free-fall fall-arrest system limiting free fall to 2 m max?",
+      "required": true,
+      "options": ["5 kN", "10 kN", "15 kN", "21 kN"],
+      "renderAs": "radio",
+      "correctAnswer": "15 kN",
+      "points": 10
+    },
+    {
+      "id": "fld_woh05",
+      "type": "boolean",
+      "description": "True or False: if there is a possibility of the load of two persons being applied to a single anchor point, that anchor point should be able to withstand 21 kN.",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes",
+      "points": 10
+    },
+    {
+      "id": "fld_woh06",
+      "type": "radio",
+      "description": "In the hierarchy of risk controls (Elimination, Minimisation, Substitution, Isolation, Engineering controls, Administrative controls, PPE), which is considered the MOST effective?",
+      "required": true,
+      "options": ["Elimination", "Administrative controls", "Personal protective equipment (PPE)", "Isolation"],
+      "renderAs": "radio",
+      "correctAnswer": "Elimination",
+      "points": 10
+    },
+    {
+      "id": "fld_woh07",
+      "type": "radio",
+      "description": "What is the term for an assembly comprising a harness connected to an anchorage point (directly, or via a lanyard or pole strap) whose purpose is to arrest a fall?",
+      "required": true,
+      "options": ["Fall-arrest system", "Work-positioning device", "Fall restraint", "Rescue system"],
+      "renderAs": "radio",
+      "correctAnswer": "Fall-arrest system",
+      "points": 10
+    },
+    {
+      "id": "fld_woh08",
+      "type": "checkboxes",
+      "description": "Which of the following are valid ways to ELIMINATE the need to access a fall-risk area? (Select all that apply)",
+      "required": true,
+      "options": [
+        "Relocate items requiring inspection or maintenance elsewhere",
+        "Provide an alternative means of access, e.g. a walkway",
+        "Wear a harness without any training",
+        "Work faster to reduce time exposed to the risk"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": ["Relocate items requiring inspection or maintenance elsewhere", "Provide an alternative means of access, e.g. a walkway"],
+      "points": 10
+    }
+  ]
+}

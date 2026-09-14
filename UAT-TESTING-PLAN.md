@@ -729,6 +729,32 @@ Layout matches Manage Forms / Manage Surveys: a game list on the left, and a que
 
 ---
 
+## T28 — Live Quiz (Phase 2 — Self-Paced Play)
+
+**Pages:** `quiz-games.html` (Start Session), `live-quiz.html` (sessions & results), `quiz-play.html` (player access, public)
+
+Only Score-based games can be played this way — a session snapshots the game's questions at the moment it starts, so later edits to the game do not affect sessions already running. Timed games are covered by a later phase.
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T28-01 | Start a session | Open a saved Score-based game with 1+ question in `quiz-games.html` → click `[Start Session]` → choose "All Active Members" or a specific selection → click `[Start & Send]`. | Session is created. Members with an email receive an invitation email; a success toast reports how many were sent. Event log records "Quiz Session Started". |
+| T28-02 | Start Session hidden/blocked appropriately | Try to open the session modal on a game with 0 questions, or on an unsaved game. | A warning toast explains why (add a question first / save the game first) — the modal does not open. |
+| T28-03 | View sessions list | Navigate to `live-quiz.html`. | List shows each session's start date, name, linked game, Active/Archived status, and "X of Y submitted" progress. |
+| T28-04 | View session results | Click `[Results]` on a session. | A player list appears: member name, status (Sent/Submitted), score, and submitted time. Sortable by clicking column headers. |
+| T28-05 | Resend an invitation | On the results view, click the resend icon next to a member still in "Sent" status. | Toast confirms the invitation was resent. No action shown for members with no email on file. |
+| T28-06 | Archive a session | Click `[Archive]` on an active session. | Status changes to Archived. Event log records "Quiz Session Archived". |
+| T28-07 | Unarchive a session | Click `[Unarchive]` on an archived session. | Status returns to Active. Event log records "Quiz Session Unarchived". |
+| T28-08 | Delete a session | Click the delete icon on a session → confirm. | Session and all its player results are removed from the list. Event log records "Quiz Session Deleted". |
+| T28-09 | Play a quiz (member, no login) | Open a member's `quiz-play.html?code=...` link in a private/incognito window (no session). | The quiz loads without requiring login: game name, description, and questions are shown as an answerable form. |
+| T28-10 | Submit and see score immediately | Answer all questions on the play page → click `[Submit Answers]`. | A "Quiz Complete!" screen shows the score (e.g. "You scored 4 / 5 (80%)") immediately — no admin review step. |
+| T28-11 | Re-opening a submitted code | Reload the same `quiz-play.html?code=...` link after submitting. | The same score result is shown again — the quiz cannot be retaken. |
+| T28-12 | Archived session blocks submission | Archive a session that still has a pending player → open that player's play link. | An error message states the session is archived and no longer accepting responses. |
+| T28-13 | Demo mode guard | On a demo-mode instance, attempt to start a session, resend, archive, or delete. | Action is blocked with a "disabled in Demo Mode" toast. |
+| T28-14 | View a submitted player's answers | On the results view, click the "View" icon next to a member in "Submitted" status. | A new tab opens showing the member's answers alongside each question, with correct answers highlighted green, incorrect ones red, and any missed correct option outlined — plus the member name, score, and submission date/time. The "View" action is not shown for members still in "Sent" status. |
+| T28-15 | Refresh the player list | While viewing a session's results, have another member submit their quiz (e.g. from a different device/tab), then click `[Refresh]` on the results view — without leaving the page. | The player list updates to show the new submission (status, score, submitted time) and the "X of Y submitted" summary increases, with no need to go back to the sessions list and re-open Results. |
+
+---
+
 ## Appendix A — Test Data Setup Checklist
 
 Before starting the UAT run, ensure the following data is in place on the UAT instance:
@@ -744,6 +770,7 @@ Before starting the UAT run, ensure the following data is in place on the UAT in
 - [ ] WhatsApp service configured with a test device (for T16 tests).
 - [ ] AI provider configured (Gemini API key or Ollama running) for T17-C tests.
 - [ ] At least **1 quiz game** of each type (score-based and timed) with 2+ questions, for reorder testing.
+- [ ] At least **1 quiz session** started from a Score-based game with 2+ invited members, including at least one already-submitted player (for T28 results/resend testing).
 
 ---
 
@@ -765,7 +792,7 @@ After completing the full UAT run, verify the Event Log (`event-log.html`) conta
 | `System` | Database Restored (if T23-05 or T23-06 was run), Events Pruned |
 | `WhatsApp` | Client Connected, Client Disconnected |
 | `Knowledge Base` | Category Created, Category Updated, Category Deleted, Document Uploaded, Document Updated, Document Toggled, Document Deleted |
-| `Quiz` | Quiz Game Created, Quiz Game Updated, Quiz Game Toggled, Quiz Game Deleted |
+| `Quiz` | Quiz Game Created, Quiz Game Updated, Quiz Game Toggled, Quiz Game Deleted, Quiz Session Started, Quiz Session Archived, Quiz Session Unarchived, Quiz Session Deleted, Quiz Submitted & Scored |
 
 All entries must include: a non-empty `actor` name, a timestamp, a meaningful `title`, and a populated `payload` object (never `{}`).
 

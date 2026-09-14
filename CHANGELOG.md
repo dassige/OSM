@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.13.0-alpha.1] - 2026/09/14
+
+- feat: add live quiz functionality with player submission and scoring
+
+- Implemented the quiz play HTML interface for users to participate in quizzes.
+- Created API routes for managing quiz sessions, including creation, player invitations, and score submissions.
+- Developed scoring logic for quizzes, handling various question types and calculating scores based on user responses.
+- Added unit tests for the live quiz API endpoints to ensure functionality and reliability.
+- Included manual UI tests for mobile player views, ensuring proper rendering and interaction.
+- feat: add quiz games management and preview functionality
+- feat: add Water Dragon Ejector Pump questionnaire with detailed questions and options
+
 ## [3.12.1] - 2026/09/11
 
 - feat: enhance Knowledge Base link picker with category filtering and improved UI

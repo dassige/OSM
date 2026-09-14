@@ -26,6 +26,8 @@ const AUTH_PAGES = [
   { url: '/knowledgebase.html',     name: 'Knowledge Base' },
   { url: '/quiz-games.html',        name: 'Quiz Games' },
   { url: '/quiz-preview.html',      name: 'Quiz Preview (no ID)' },
+  { url: '/live-quiz.html',         name: 'Live Quiz' },
+  { url: '/quiz-play.html',         name: 'Quiz Play (no code)' },
 ];
 
 function attachErrorListeners(page) {

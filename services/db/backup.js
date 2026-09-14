@@ -185,13 +185,22 @@ async function verifyAndReplaceDb(newDbPath) {
     fs.copyFileSync(newDbPath, currentDbPath);
     logger.info("[DB] New database file placed.");
 
+    // WAL mode is required for Litestream (production). On Windows bind mounts
+    // inside Docker the shared-memory (.shm) file creation can fail — fall back
+    // gracefully (mirrors connection.js's initDB) so restore still succeeds.
     const initConn = new sqlite3.Database(currentDbPath);
-    await new Promise((resolve, reject) => {
-      initConn.run("PRAGMA journal_mode=WAL;", (err) => {
-        if (err) reject(err);
-        else { initConn.close(); resolve(); }
+    try {
+      await new Promise((resolve, reject) => {
+        initConn.run("PRAGMA journal_mode=WAL;", (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
-    });
+    } catch (walErr) {
+      logger.warn(`[DB] WAL mode failed during restore: ${walErr.message} — continuing without it. Ensure a Linux-native filesystem path in production.`);
+    } finally {
+      await new Promise((resolve) => initConn.close(resolve));
+    }
 
     if (process.env.GCS_BUCKET_NAME) {
       logger.info("[DB] Cloud environment detected. Waiting for Litestream to re-index...");

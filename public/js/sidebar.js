@@ -53,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
                               <li><a href="training-planner.html" id="navTrainingPlanner">Renewal Planner</a></li>
                               <li><a href="live-forms.html" id="navLiveForms">Live Forms</a></li>
                               <li><a href="live-surveys.html" id="navLiveSurveys">Surveys</a></li>
+                              <li><a href="live-quiz.html" id="navLiveQuiz">Live Quiz</a></li>
                           </ul>
                       </li>
   

@@ -395,6 +395,47 @@ async function sendPasswordResetLink(
   logger.info(`[SMTP] Password reset link sent to ${email}`);
 }
 
+async function sendQuizInvitation(
+  email,
+  member,
+  gameName,
+  playLink,
+  transporter,
+  appName,
+  templatePref,
+) {
+  const memberName = typeof member === 'object' && member ? member.member_name || '' : member || 'Member';
+  const memberRank      = typeof member === 'object' && member ? member.member_rank       || '' : '';
+  const memberFirstName = typeof member === 'object' && member ? member.member_first_name || '' : '';
+  const memberLastName  = typeof member === 'object' && member ? member.member_last_name  || '' : '';
+  const displayName     = formatMemberName(memberRank, memberLastName, memberFirstName, memberName);
+
+  const variables = {
+    appname:  appName || "OpReady",
+    name:     displayName || memberName || "Member",
+    gameName,
+    playLink,
+  };
+  const defaults = {
+    from: `"${variables.appname}" <noreply@opready.app>`,
+    subject: `Quiz Time: ${variables.gameName}`,
+    body: `<p>Hi <strong>{{name}}</strong>,</p><p>You've been invited to play the quiz <strong>{{gameName}}</strong>! Click the link below to play:</p><p><a href="{{playLink}}">{{playLink}}</a></p>`,
+  };
+
+  const config = templatePref && templatePref.email ? templatePref.email : defaults;
+  const from = sanitizeHeader(replaceVariables(config.from || defaults.from, variables));
+  const subject = sanitizeHeader(replaceVariables(config.subject || defaults.subject, variables));
+  const body = replaceVariables(config.body || defaults.body, escapeHtmlVars(variables));
+
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject,
+    html: body,
+    text: stripHtml(body),
+  });
+}
+
 module.exports = {
   sendNotification,
   sendPasswordReset,
@@ -402,5 +443,6 @@ module.exports = {
   sendNewAccountNotification,
   sendAccountDeletionNotification,
   sendSurveyInvitation,
+  sendQuizInvitation,
   sendSecurityAlert,
 };

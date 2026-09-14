@@ -111,6 +111,7 @@
                     </button>
                     <button id="btnPreview" onclick="previewGame()" class="btn-sm btn-informative" title="Preview how this game will appear">Preview</button>
                     <button id="btnTest" onclick="testScoring()" class="btn-sm btn-primary" title="Test scoring with sample answers">Test</button>
+                    <button id="btnStartSession" onclick="openSessionModal()" class="btn-sm btn-purple" title="Start a self-paced session and invite members">Start Session</button>
                     <button onclick="saveGame()" class="btn-sm btn-success" title="Save this quiz game">Save</button>
 
                     <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 5px;"></div>
@@ -170,6 +171,41 @@
                     <h3>Select a game to edit</h3>
                     <p>Or click "+ Add Game" to create one.</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sessionModal" class="modal">
+        <div class="modal-content"
+            style="max-width: 500px; margin-top: 5vh; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;">
+
+            <div style="flex-shrink: 0;">
+                <span class="close-btn" onclick="closeModal('sessionModal')">&times;</span>
+                <h2 style="margin-top:0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;" id="sessionModalTitle">Start Quiz Session</h2>
+
+                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+                    Starts a self-paced session from this game and sends each selected member their own access code by email. Members without an email can be given their code to type in on the spot.
+                </p>
+
+                <div style="margin-bottom: 20px; background: var(--bg-body); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <label style="display:flex; align-items:center; gap:10px; margin-bottom:15px; font-weight:bold; cursor:pointer;">
+                        <input type="radio" name="sessionTarget" value="all" checked onchange="toggleSessionSelection()">
+                        All Active Members
+                    </label>
+                    <label style="display:flex; align-items:center; gap:10px; font-weight:bold; cursor:pointer;">
+                        <input type="radio" name="sessionTarget" value="selection" onchange="toggleSessionSelection()">
+                        Specific Selection
+                    </label>
+                </div>
+            </div>
+
+            <div id="sessionSelectionContainer" style="display:none; flex-grow: 1; min-height: 0; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; border-radius: 4px; background: var(--bg-body);">
+                <div style="text-align:center; padding:10px;">Loading members...</div>
+            </div>
+
+            <div class="modal-actions-right" style="flex-shrink: 0; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1);">
+                <button onclick="closeModal('sessionModal')" class="btn-secondary">Cancel</button>
+                <button onclick="confirmStartSession()" class="btn-success" id="btnConfirmSession">Start & Send</button>
             </div>
         </div>
     </div>
