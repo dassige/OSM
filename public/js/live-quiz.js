@@ -12,6 +12,12 @@ let playersPage = 1;
 let playersLimit = 25;
 let uiConfig = {};
 
+let teamSessionTable;
+let currentTeamSessions = [];
+let teamSessionsPage = 1;
+let teamSessionsLimit = 25;
+let currentTeamDetailSessionId = null;
+
 function esc(s) {
   const d = document.createElement('div');
   d.textContent = String(s ?? '');
@@ -30,6 +36,15 @@ function formatDate(dateStr, withTime) {
     ? new Date(safeDateStr).toLocaleString(locale, { timeZone })
     : new Date(safeDateStr).toLocaleDateString(locale, { timeZone });
 }
+
+document.querySelectorAll('.lq-tab-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.lq-tab-btn').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('.lq-tab-panel').forEach((p) => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('lq-tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
 
 async function initPage() {
   try {
@@ -109,6 +124,60 @@ async function initPage() {
   });
 
   await loadSessions();
+
+  // --- Team Setups tab ---
+  let teamSessionsLimitRaw = '25';
+  try {
+    const limRes = await fetch('/api/user-preferences/liveQuizTeamsPageLimit');
+    const limData = await limRes.json();
+    if (limData.value) {
+      teamSessionsLimitRaw = limData.value;
+      teamSessionsLimit = limData.value === 'all' ? 99999 : parseInt(limData.value);
+    }
+  } catch (e) {}
+  document.getElementById('teamSessionsRowsPerPage').value = teamSessionsLimitRaw;
+  document.getElementById('teamSessionsRowsPerPageMobile').value = teamSessionsLimitRaw;
+
+  let teamInitialSort = { column: 'created_at', order: 'desc' };
+  try {
+    const prefRes = await fetch('/api/user-preferences');
+    if (prefRes.ok) {
+      const prefs = await prefRes.json();
+      if (prefs.liveQuizTeamsSort) teamInitialSort = prefs.liveQuizTeamsSort;
+    }
+  } catch (e) {}
+
+  teamSessionTable = new TableController({
+    tbodyId: 'teamSessionsTableBody',
+    emptyMessage: 'No team setups started yet.',
+    initialSort: teamInitialSort,
+    onSortChange: (newSort) => {
+      fetch('/api/user-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'liveQuizTeamsSort', value: newSort }),
+      });
+    },
+    sortFunction: (a, b, sortState) => {
+      let valA, valB;
+      if (sortState.column === 'is_archived') {
+        valA = a.is_archived ? 1 : 0;
+        valB = b.is_archived ? 1 : 0;
+      } else if (sortState.column === 'created_at') {
+        valA = a.created_at; valB = b.created_at;
+      } else {
+        valA = (a.name || '').toLowerCase();
+        valB = (b.name || '').toLowerCase();
+      }
+      if (valA < valB) return sortState.order === 'asc' ? -1 : 1;
+      if (valA > valB) return sortState.order === 'asc' ? 1 : -1;
+      return 0;
+    },
+    onRenderComplete: () => applyTeamSessionsPagination(),
+    renderRow: (s, index) => renderTeamSessionRow(s, index),
+  });
+
+  await loadTeamSessions();
 }
 
 async function loadSessions() {
@@ -137,12 +206,16 @@ function progressHtml(s) {
   return `${submitted} of ${total} submitted`;
 }
 
+function sessionTypeBadgeHtml(s) {
+  return `<span class="type-badge">${s.game_type === 'timed' ? 'Timed' : 'Score'}</span>`;
+}
+
 function renderSessionRow(s, index) {
   const tr = document.createElement('tr');
   const startedDate = formatDate(s.created_at, false);
   tr.innerHTML = `
     <td data-label="Started">${startedDate}</td>
-    <td data-label="Session"><strong>${esc(s.name)}</strong><br><span style="font-size:0.82em; color:var(--text-muted);">${esc(s.game_name)}</span></td>
+    <td data-label="Session"><strong>${esc(s.name)}</strong> ${sessionTypeBadgeHtml(s)}<br><span style="font-size:0.82em; color:var(--text-muted);">${esc(s.game_name)}</span></td>
     <td data-label="Status" class="text-center"><span class="status-badge ${s.is_archived ? 'status-archived' : 'status-active'}">${s.is_archived ? 'Archived' : 'Active'}</span></td>
     <td data-label="Progress" class="text-center">${progressHtml(s)}</td>
     <td data-label="Actions" class="text-center ws-nowrap">
@@ -187,7 +260,7 @@ function renderSessionCards(data, startIndex) {
     card.className = 'table-card';
     card.innerHTML = `
       <div class="card-header">
-        <span class="card-title">${esc(s.name)}</span>
+        <span class="card-title">${esc(s.name)} ${sessionTypeBadgeHtml(s)}</span>
         <span class="status-badge ${s.is_archived ? 'status-archived' : 'status-active'}">${s.is_archived ? 'Archived' : 'Active'}</span>
       </div>
       <div class="card-body">
@@ -515,6 +588,256 @@ async function resendInvite(playerId) {
   } catch (e) {
     showToast(e.message, 'error');
   }
+}
+
+// --- Team Setups (Phase 3 — team setup for live Timed games) ---
+
+async function loadTeamSessions() {
+  try {
+    const res = await fetch('/api/live-quiz/team-sessions');
+    if (!res.ok) throw new Error('Failed to load');
+    currentTeamSessions = await res.json();
+    teamSessionsPage = 1;
+    teamSessionTable.setData(currentTeamSessions);
+  } catch (e) {
+    showToast('Failed to load team setups', 'error');
+  }
+}
+
+function toggleTeamSessionSortBar() {
+  const bar = document.getElementById('tsl-sort-bar');
+  const btn = document.getElementById('tsSortToggleBtn');
+  const expanded = bar.classList.toggle('sort-expanded');
+  btn.classList.toggle('expanded', expanded);
+}
+function handleTeamSessionSort(column) { teamSessionTable.handleSort(column); }
+
+function teamProgressHtml(s) {
+  return `${s.total_submitted || 0} of ${s.total_teams || 0} submitted`;
+}
+
+function teamTypeBadgeHtml(s) {
+  return `<span class="type-badge">${s.game_type === 'score' ? 'Score' : 'Timed'}</span>`;
+}
+
+function renderTeamSessionRow(s, index) {
+  const tr = document.createElement('tr');
+  const startedDate = formatDate(s.created_at, false);
+  tr.innerHTML = `
+    <td data-label="Started">${startedDate}</td>
+    <td data-label="Session"><strong>${esc(s.name)}</strong> ${teamTypeBadgeHtml(s)}<br><span style="font-size:0.82em; color:var(--text-muted);">${esc(s.game_name)}</span></td>
+    <td data-label="Status" class="text-center"><span class="status-badge ${s.is_archived ? 'status-archived' : 'status-active'}">${s.is_archived ? 'Archived' : 'Active'}</span></td>
+    <td data-label="Teams / Members" class="text-center">${teamProgressHtml(s)}</td>
+    <td data-label="Actions" class="text-center ws-nowrap">
+      <button class="btn-sm btn-informative" onclick="openTeamSessionDetail(${s.id})" title="View teams and access codes">Teams</button>
+      <button class="btn-sm btn-secondary" onclick="toggleTeamSessionArchive(${s.id}, ${!s.is_archived})" title="${s.is_archived ? 'Restore this team setup to active' : 'Archive this team setup'}">${s.is_archived ? 'Unarchive' : 'Archive'}</button>
+      <button class="btn-icon delete" onclick="deleteTeamSessionRow(${s.id})" title="Permanently delete this team setup">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+      </button>
+    </td>
+  `;
+  return tr;
+}
+
+function applyTeamSessionsPagination() {
+  const allData = teamSessionTable.data;
+  const total = allData.length;
+  const effectiveLimit = teamSessionsLimit === 99999 ? total : teamSessionsLimit;
+  if (total === 0) { updateTeamSessionsPaginationUI(0, 0, 0); renderTeamSessionCards([], 0); return; }
+
+  const totalPages = Math.ceil(total / effectiveLimit);
+  if (teamSessionsPage > totalPages) teamSessionsPage = 1;
+  const start = (teamSessionsPage - 1) * effectiveLimit;
+  const end = Math.min(start + effectiveLimit, total);
+
+  const tbody = document.getElementById('teamSessionsTableBody');
+  tbody.innerHTML = '';
+  allData.slice(start, end).forEach((s, i) => tbody.appendChild(teamSessionTable.renderRow(s, start + i)));
+
+  renderTeamSessionCards(allData.slice(start, end), start);
+  updateTeamSessionsPaginationUI(total, start + 1, end);
+}
+
+function renderTeamSessionCards(data, startIndex) {
+  const container = document.getElementById('teamSessionsCardContainer');
+  container.innerHTML = '';
+  if (data.length === 0) {
+    container.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px;">No team setups started yet.</p>';
+    return;
+  }
+  data.forEach((s) => {
+    const card = document.createElement('div');
+    card.className = 'table-card';
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-title">${esc(s.name)} ${teamTypeBadgeHtml(s)}</span>
+        <span class="status-badge ${s.is_archived ? 'status-archived' : 'status-active'}">${s.is_archived ? 'Archived' : 'Active'}</span>
+      </div>
+      <div class="card-body">
+        <div class="card-row"><span class="card-label">Game:</span><span>${esc(s.game_name)}</span></div>
+        <div class="card-row"><span class="card-label">Teams:</span><span>${teamProgressHtml(s)}</span></div>
+      </div>
+      <div class="card-actions">
+        <button class="btn-informative btn-sm" onclick="openTeamSessionDetail(${s.id})" title="View teams and access codes">Teams</button>
+        <button class="btn-secondary btn-sm" onclick="toggleTeamSessionArchive(${s.id}, ${!s.is_archived})" title="Toggle archive">${s.is_archived ? 'Unarchive' : 'Archive'}</button>
+        <button class="btn-danger btn-sm" onclick="deleteTeamSessionRow(${s.id})" title="Permanently delete this team setup">Delete</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function updateTeamSessionsPaginationUI(total, start, end) {
+  const effectiveLimit = teamSessionsLimit === 99999 ? total : teamSessionsLimit;
+  const totalPages = teamSessionsLimit === 99999 ? 1 : Math.ceil(total / (effectiveLimit || 1));
+  const show = total > 0;
+  document.getElementById('teamSessionsPaginationControls').style.display = show ? 'flex' : 'none';
+  document.getElementById('teamSessionsPageInfo').textContent = `${teamSessionsPage} of ${totalPages}`;
+  document.getElementById('teamSessionsBtnFirst').disabled = teamSessionsPage <= 1;
+  document.getElementById('teamSessionsBtnPrev').disabled = teamSessionsPage <= 1;
+  document.getElementById('teamSessionsBtnNext').disabled = teamSessionsPage >= totalPages;
+  document.getElementById('teamSessionsBtnLast').disabled = teamSessionsPage >= totalPages;
+
+  document.getElementById('teamSessionsPaginationControlsMobile').style.display = show ? 'flex' : 'none';
+  document.getElementById('teamSessionsPageInfoMobile').textContent = `${teamSessionsPage} of ${totalPages}`;
+  document.getElementById('teamSessionsBtnFirstMobile').disabled = teamSessionsPage <= 1;
+  document.getElementById('teamSessionsBtnPrevMobile').disabled = teamSessionsPage <= 1;
+  document.getElementById('teamSessionsBtnNextMobile').disabled = teamSessionsPage >= totalPages;
+  document.getElementById('teamSessionsBtnLastMobile').disabled = teamSessionsPage >= totalPages;
+}
+
+function goToFirstTeamSessionsPage() { if (teamSessionsPage !== 1) { teamSessionsPage = 1; applyTeamSessionsPagination(); } }
+function goToLastTeamSessionsPage() {
+  const total = teamSessionTable.data.length;
+  const effectiveLimit = teamSessionsLimit === 99999 ? total : teamSessionsLimit;
+  const totalPages = teamSessionsLimit === 99999 ? 1 : Math.ceil(total / (effectiveLimit || 1));
+  if (teamSessionsPage !== totalPages) { teamSessionsPage = totalPages; applyTeamSessionsPagination(); }
+}
+async function changeTeamSessionsLimit(newLimit) {
+  teamSessionsLimit = newLimit === 'all' ? 99999 : parseInt(newLimit);
+  teamSessionsPage = 1;
+  document.getElementById('teamSessionsRowsPerPage').value = newLimit;
+  document.getElementById('teamSessionsRowsPerPageMobile').value = newLimit;
+  applyTeamSessionsPagination();
+  await fetch('/api/user-preferences', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key: 'liveQuizTeamsPageLimit', value: newLimit }),
+  });
+}
+function changeTeamSessionsPage(delta) {
+  const total = teamSessionTable.data.length;
+  const effectiveLimit = teamSessionsLimit === 99999 ? total : teamSessionsLimit;
+  const totalPages = teamSessionsLimit === 99999 ? 1 : Math.ceil(total / (effectiveLimit || 1));
+  const newPage = teamSessionsPage + delta;
+  if (newPage >= 1 && newPage <= totalPages) { teamSessionsPage = newPage; applyTeamSessionsPagination(); }
+}
+
+async function toggleTeamSessionArchive(id, newState) {
+  if (isDemo) return showToast('Disabled in demo mode.', 'warning');
+  try {
+    const res = await fetch(`/api/live-quiz/team-sessions/${id}/archive`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_archived: newState }),
+    });
+    if (!res.ok) throw new Error('Failed to update.');
+    await loadTeamSessions();
+    showToast(newState ? 'Team setup archived' : 'Team setup restored to active', 'success');
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function deleteTeamSessionRow(id) {
+  if (isDemo) return showToast('Disabled in demo mode.', 'warning');
+  const s = currentTeamSessions.find((x) => x.id === id);
+  const name = s ? s.name : 'this team setup';
+  if (await confirmAction('Delete Team Setup', `Delete team setup '<strong>${esc(name)}</strong>' and all its teams? This cannot be undone.`)) {
+    try {
+      const res = await fetch(`/api/live-quiz/team-sessions/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed.');
+      await loadTeamSessions();
+      showToast('Team setup deleted', 'success');
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  }
+}
+
+async function openTeamSessionDetail(id) {
+  try {
+    const res = await fetch(`/api/live-quiz/team-sessions/${id}`);
+    if (!res.ok) throw new Error('Failed to load team setup.');
+    const data = await res.json();
+    currentTeamDetailSessionId = id;
+
+    document.getElementById('teamDetailSessionName').textContent = data.name;
+    const totalMembers = (data.teams || []).reduce((sum, t) => sum + t.members.length, 0);
+    const submitted = (data.teams || []).filter((t) => t.status === 'submitted').length;
+    document.getElementById('teamDetailSummary').textContent = `${(data.teams || []).length} teams, ${totalMembers} members — ${submitted} of ${(data.teams || []).length} submitted`;
+
+    document.getElementById('teamSessionListView').style.display = 'none';
+    document.getElementById('teamSessionDetailView').style.display = 'block';
+
+    renderTeamCards(data.teams || []);
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+function backToTeamSessionList() {
+  document.getElementById('teamSessionDetailView').style.display = 'none';
+  document.getElementById('teamSessionListView').style.display = 'block';
+  loadTeamSessions();
+}
+
+function viewTeamSubmission(teamId) {
+  window.open(`quiz-play.html?reviewTeamId=${teamId}`, '_blank');
+}
+
+function renderTeamCards(teams) {
+  const grid = document.getElementById('teamCardGrid');
+  grid.innerHTML = '';
+  teams.forEach((t) => {
+    const rosterHtml = t.members.map((m) => {
+      const displayName = window.formatMemberName ? window.formatMemberName(m.rank, m.last_name, m.first_name, m.name) : m.name;
+      return `<div class="team-roster-item">${esc(displayName)}</div>`;
+    }).join('');
+
+    const statusBadge = `<span class="player-status-${t.status === 'submitted' ? 'submitted' : 'sent'}">${t.status === 'submitted' ? 'Submitted' : 'Pending'}</span>`;
+    const scoreRow = t.status === 'submitted'
+      ? `<div class="card-row"><span class="card-label">Score:</span><span>${t.achieved_score} / ${t.max_score}</span></div>`
+      : '';
+    const viewBtn = t.status === 'submitted'
+      ? `<button class="btn-informative btn-sm" onclick="viewTeamSubmission(${t.id})" title="View this team's answers">View</button>`
+      : '';
+
+    const card = document.createElement('div');
+    card.className = 'table-card';
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-title">${esc(t.name)}</span>
+        ${statusBadge}
+      </div>
+      <div class="card-body">
+        ${rosterHtml}
+        ${scoreRow}
+        <div class="team-access-code">${esc(t.access_code)}</div>
+      </div>
+      <div class="card-actions">
+        ${viewBtn}
+        <button class="btn-primary btn-sm" onclick="copyTeamCode('${t.access_code}')" title="Copy this team's access code">Copy Code</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function copyTeamCode(code) {
+  navigator.clipboard.writeText(code)
+    .then(() => showToast('Access code copied to clipboard', 'success'))
+    .catch(() => showToast('Failed to copy code', 'error'));
 }
 
 const scrollTopBtn = document.getElementById('scrollTopBtn');

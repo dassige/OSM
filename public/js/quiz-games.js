@@ -226,7 +226,7 @@ async function previewGame() {
   window.open(`quiz-preview.html?id=${currentGame.id}`, '_blank');
 }
 
-// --- Start Session (self-paced play, score-based games only) ---
+// --- Start Single (individual play, both game types) ---
 
 let allActiveMembers = [];
 
@@ -237,7 +237,10 @@ async function openSessionModal() {
     return showToast('Add at least one question before starting a session.', 'warning');
   }
 
-  document.getElementById('sessionModalTitle').innerText = `Start Session: ${currentGame.name}`;
+  document.getElementById('sessionModalTitle').innerText = `Start Single: ${currentGame.name}`;
+  document.getElementById('sessionModalIntro').textContent = currentGame.game_type === 'timed'
+    ? 'Starts an individual timed session from this game and sends each selected member their own access code by email. Members without an email can be given their code to type in on the spot. Each question is played against the clock, scored on speed and correctness.'
+    : 'Starts a self-paced session from this game and sends each selected member their own access code by email. Members without an email can be given their code to type in on the spot.';
   document.getElementById('btnConfirmSession').disabled = false;
   document.getElementById('btnConfirmSession').innerText = 'Start & Send';
   document.querySelector('input[name="sessionTarget"][value="all"]').checked = true;
@@ -341,6 +344,149 @@ async function confirmStartSession() {
     btn.disabled = false;
     btn.innerText = 'Start & Send';
     hideGlobalSpinner();
+  }
+}
+
+// --- Start Teams (Phase 3 — team setup for both game types) ---
+
+let teamColumnCount = 0;
+
+async function openTeamSetupModal() {
+  if (isGameDirty()) return showToast('Please save your changes before setting up teams.', 'warning');
+  if (!currentGame || !currentGame.id) return showToast('Please save the game first.', 'warning');
+  if (!currentGame.questions || currentGame.questions.length === 0) {
+    return showToast('Add at least one question before setting up teams.', 'warning');
+  }
+
+  document.getElementById('teamSetupModalTitle').innerText = `Start Teams: ${currentGame.name}`;
+  document.getElementById('teamSetupIntro').textContent = currentGame.game_type === 'timed'
+    ? "Drag members from the unassigned pool into a team. Each team gets one access code — the captain's device plays the timed round against the clock, and the score is attributed to the team."
+    : "Drag members from the unassigned pool into a team. Each team gets one access code — the whole team answers together on the captain's device, and the score is attributed to the team.";
+  document.getElementById('teamSetupError').textContent = '';
+  document.getElementById('teamColumnsContainer').innerHTML = '';
+  teamColumnCount = 0;
+
+  if (allActiveMembers.length === 0) {
+    try {
+      const res = await fetch('/api/members');
+      const members = await res.json();
+      allActiveMembers = members.filter((m) => m.enabled === true);
+      allActiveMembers.sort((a, b) => {
+        const pA = window.getRankPriority ? window.getRankPriority(a.rank || a.name) : 99;
+        const pB = window.getRankPriority ? window.getRankPriority(b.rank || b.name) : 99;
+        if (pA !== pB) return pA - pB;
+        const sA = (a.last_name || a.name || '').toLowerCase();
+        const sB = (b.last_name || b.name || '').toLowerCase();
+        return sA.localeCompare(sB);
+      });
+    } catch (e) {
+      console.error('Failed to load members', e);
+    }
+  }
+
+  const pool = document.getElementById('teamPool');
+  pool.innerHTML = '';
+  allActiveMembers.forEach((m) => pool.appendChild(buildTeamMemberChip(m)));
+  new Sortable(pool, { group: 'teamMembers', animation: 150, onEnd: updateTeamCounts });
+
+  addTeamColumn('Team 1');
+  addTeamColumn('Team 2');
+
+  const sidebar = document.getElementById('osm-sidebar-container');
+  document.getElementById('teamSetupModal').classList.toggle('sidebar-collapsed', !sidebar || sidebar.classList.contains('collapsed'));
+
+  openModal('teamSetupModal');
+}
+
+function buildTeamMemberChip(m) {
+  const displayName = window.formatMemberName ? window.formatMemberName(m.rank, m.last_name, m.first_name, m.name) : m.name;
+  const chip = document.createElement('div');
+  chip.className = 'team-member-chip';
+  chip.dataset.memberId = m.id;
+  chip.innerHTML = `<span>${esc(displayName)}</span>`;
+  return chip;
+}
+
+function addTeamColumn(defaultName) {
+  teamColumnCount++;
+  const col = document.createElement('div');
+  col.className = 'team-column';
+  col.innerHTML = `
+    <div class="team-column-header">
+      <input type="text" class="team-name-input" value="${esc(defaultName || `Team ${teamColumnCount}`)}" title="Team name" placeholder="Team name">
+      <span class="team-count-badge">0</span>
+      <button class="btn-icon delete" onclick="removeTeamColumn(this)" title="Remove this team" style="flex-shrink:0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="team-member-list" style="flex-grow:1; overflow-y:auto; padding:8px;"></div>
+  `;
+  document.getElementById('teamColumnsContainer').appendChild(col);
+  const list = col.querySelector('.team-member-list');
+  new Sortable(list, { group: 'teamMembers', animation: 150, onEnd: updateTeamCounts });
+}
+
+function removeTeamColumn(btn) {
+  const col = btn.closest('.team-column');
+  const pool = document.getElementById('teamPool');
+  col.querySelectorAll('.team-member-chip').forEach((chip) => pool.appendChild(chip));
+  col.remove();
+  updateTeamCounts();
+}
+
+function updateTeamCounts() {
+  document.querySelectorAll('#teamColumnsContainer .team-column').forEach((col) => {
+    const count = col.querySelectorAll('.team-member-chip').length;
+    col.querySelector('.team-count-badge').textContent = count;
+  });
+}
+
+async function confirmTeamSetup() {
+  if (uiConfig?.appMode === 'demo') return showToast('Setting up teams is disabled in Demo Mode', 'warning');
+
+  const errorEl = document.getElementById('teamSetupError');
+  errorEl.textContent = '';
+
+  const columns = Array.from(document.querySelectorAll('#teamColumnsContainer .team-column'));
+  if (columns.length < 2) {
+    errorEl.textContent = 'At least 2 teams are required.';
+    return;
+  }
+
+  const teams = columns.map((col) => ({
+    name: col.querySelector('.team-name-input').value.trim(),
+    memberIds: Array.from(col.querySelectorAll('.team-member-chip')).map((chip) => parseInt(chip.dataset.memberId, 10)),
+  }));
+
+  if (teams.some((t) => !t.name)) {
+    errorEl.textContent = 'Every team needs a name.';
+    return;
+  }
+  if (teams.some((t) => t.memberIds.length === 0)) {
+    errorEl.textContent = 'Every team needs at least one member.';
+    return;
+  }
+
+  const btn = document.getElementById('btnConfirmTeamSetup');
+  btn.disabled = true;
+  btn.innerText = 'Starting...';
+
+  try {
+    const res = await fetch('/api/live-quiz/team-sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId: currentGame.id, teams }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to setup teams.');
+
+    closeModal('teamSetupModal');
+    showToast(`Team session started with ${data.teams.length} teams — ready to play now. View codes in Live Quiz.`, 'success');
+  } catch (e) {
+    errorEl.textContent = e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Start Team Session';
   }
 }
 
@@ -599,12 +745,16 @@ function applyGameTypeUI() {
   document.getElementById('summaryLabel').textContent = type === 'timed' ? 'Total Time' : 'Max Score Achievable';
   document.getElementById('summaryUnit').textContent = type === 'timed' ? 'Seconds' : 'Points';
 
-  // Preview, Test & Start Session are only meaningful for score-based games (a live
-  // Kahoot-style round has no static preview, isn't scored by a testable point
-  // total, and self-paced play-by-code isn't its play model)
+  // Preview & Test simulate the score-weighting UI and aren't meaningful for
+  // Timed games' 4-choice/time-limit format.
   document.getElementById('btnPreview').style.display = type === 'timed' ? 'none' : 'inline-block';
   document.getElementById('btnTest').style.display = type === 'timed' ? 'none' : 'inline-block';
-  document.getElementById('btnStartSession').style.display = type === 'timed' ? 'none' : 'inline-block';
+  // Start Single and Start Teams are available for both game types. Score-based
+  // games are self-paced (answer whenever, submit once). Timed games are always
+  // played against the clock, one question at a time with a visible countdown,
+  // scored on speed + correctness — whether solo or as one team on one device.
+  document.getElementById('btnStartSession').style.display = 'inline-block';
+  document.getElementById('btnSetupTeams').style.display = 'inline-block';
 }
 
 function onGameTypeChange() {

@@ -357,6 +357,33 @@
               }
             }
           ]
+        },
+        {
+          "name": "List Team Setups",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/live-quiz/team-sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "live-quiz", "team-sessions"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List Team Setups | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('List Team Setups | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('List Team Setups | Returns an array', () => {",
+                  "  pm.response.to.be.json;",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

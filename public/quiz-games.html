@@ -20,6 +20,71 @@
         .type-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:0.75em; font-weight:600; }
         .type-badge.score { background: var(--primary); color:#fff; }
         .type-badge.timed { background:#6f42c1; color:#fff; }
+
+        .team-column {
+            width: 200px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-body);
+        }
+        .team-column-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .team-column-header input {
+            flex: 1;
+            min-width: 0;
+            font-weight: bold;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-main);
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+        .team-column-header input:focus {
+            border-color: var(--border-color);
+            background: var(--bg-card);
+            outline: none;
+        }
+        .team-member-list {
+            min-height: 60px;
+        }
+        .team-member-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            margin-bottom: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: grab;
+            font-size: 0.9em;
+        }
+        .team-member-chip.sortable-ghost { opacity: 0.4; }
+        .team-count-badge {
+            font-size: 0.75em;
+            font-weight: bold;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        /* This modal is wider than the app's other modals — wide enough that its
+           centered position can land under the fixed sidebar column (z-index
+           999999, above the modal's 10500) and swallow clicks there. Reserve
+           space for the sidebar on desktop widths so the modal centers in the
+           remaining viewport instead; JS toggles .sidebar-collapsed to match
+           the user's actual (persisted) sidebar state. */
+        @media (min-width: 769px) {
+            #teamSetupModal.modal { padding-left: calc(var(--sidebar-width, 260px) + 20px); }
+            #teamSetupModal.modal.sidebar-collapsed { padding-left: 20px; }
+        }
     </style>
 </head>
 
@@ -111,7 +176,8 @@
                     </button>
                     <button id="btnPreview" onclick="previewGame()" class="btn-sm btn-informative" title="Preview how this game will appear">Preview</button>
                     <button id="btnTest" onclick="testScoring()" class="btn-sm btn-primary" title="Test scoring with sample answers">Test</button>
-                    <button id="btnStartSession" onclick="openSessionModal()" class="btn-sm btn-purple" title="Start a self-paced session and invite members">Start Session</button>
+                    <button id="btnStartSession" onclick="openSessionModal()" class="btn-sm btn-purple" title="Start a self-paced session and invite members individually">Start Single</button>
+                    <button id="btnSetupTeams" onclick="openTeamSetupModal()" class="btn-sm btn-purple" title="Organize members into teams and start a team session">Start Teams</button>
                     <button onclick="saveGame()" class="btn-sm btn-success" title="Save this quiz game">Save</button>
 
                     <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 5px;"></div>
@@ -181,9 +247,9 @@
 
             <div style="flex-shrink: 0;">
                 <span class="close-btn" onclick="closeModal('sessionModal')">&times;</span>
-                <h2 style="margin-top:0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;" id="sessionModalTitle">Start Quiz Session</h2>
+                <h2 style="margin-top:0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;" id="sessionModalTitle">Start Single</h2>
 
-                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+                <p id="sessionModalIntro" style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
                     Starts a self-paced session from this game and sends each selected member their own access code by email. Members without an email can be given their code to type in on the spot.
                 </p>
 
@@ -206,6 +272,37 @@
             <div class="modal-actions-right" style="flex-shrink: 0; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1);">
                 <button onclick="closeModal('sessionModal')" class="btn-secondary">Cancel</button>
                 <button onclick="confirmStartSession()" class="btn-success" id="btnConfirmSession">Start & Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="teamSetupModal" class="modal">
+        <div class="modal-content"
+            style="max-width: 900px; width: 95%; margin-top: 3vh; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;">
+
+            <div style="flex-shrink: 0;">
+                <span class="close-btn" onclick="closeModal('teamSetupModal')">&times;</span>
+                <h2 style="margin-top:0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;" id="teamSetupModalTitle">Start Teams</h2>
+                <p id="teamSetupIntro" style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">
+                    Drag members from the unassigned pool into a team. Each team gets one access code — whichever device enters it first becomes that team's captain screen when hosting begins.
+                </p>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <button onclick="addTeamColumn()" class="btn-sm btn-secondary" title="Add another team">+ Add Team</button>
+                    <span id="teamSetupError" style="color:var(--danger); font-size:0.85em; font-weight:600;"></span>
+                </div>
+            </div>
+
+            <div style="flex-grow:1; min-height:0; overflow:hidden; display:flex; gap:15px;">
+                <div style="width:220px; flex-shrink:0; display:flex; flex-direction:column; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-body);">
+                    <div style="padding:8px 10px; font-weight:bold; font-size:0.85em; border-bottom:1px solid var(--border-color); color:var(--text-muted); text-transform:uppercase;">Unassigned</div>
+                    <div id="teamPool" class="team-member-list" style="flex-grow:1; overflow-y:auto; padding:8px;"></div>
+                </div>
+                <div id="teamColumnsContainer" style="flex-grow:1; overflow-x:auto; overflow-y:hidden; display:flex; gap:12px; padding-bottom:5px;"></div>
+            </div>
+
+            <div class="modal-actions-right" style="flex-shrink: 0; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1);">
+                <button onclick="closeModal('teamSetupModal')" class="btn-secondary">Cancel</button>
+                <button onclick="confirmTeamSetup()" class="btn-success" id="btnConfirmTeamSetup">Start Team Session</button>
             </div>
         </div>
     </div>

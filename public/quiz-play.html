@@ -135,6 +135,53 @@
             margin-bottom: 25px;
             box-shadow: 0 2px 8px var(--shadow);
         }
+
+        /* --- Timed play (live-clock, speed-scored) --- */
+        .timer-bar-wrap {
+            width: 100%;
+            height: 10px;
+            background: var(--bg-hover);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .timer-bar-fill {
+            height: 100%;
+            background: var(--success);
+            width: 100%;
+        }
+        #timedQuestionText {
+            font-weight: bold;
+            font-size: 1.3em;
+            text-align: center;
+            margin: 10px 0 25px 0;
+            color: var(--text-main);
+        }
+        .timed-options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 480px) {
+            .timed-options-grid { grid-template-columns: 1fr; }
+        }
+        .timed-option-btn {
+            padding: 20px 15px;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.05em;
+            font-weight: bold;
+            cursor: pointer;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .timed-option-btn:disabled { cursor: default; opacity: 0.55; }
+        .timed-option-btn.correct-flash { box-shadow: 0 0 0 4px #28a745 inset; }
+        .timed-option-btn.wrong-flash { box-shadow: 0 0 0 4px #dc3545 inset; }
     </style>
 </head>
 
@@ -147,13 +194,25 @@
                 <p id="gameDescription" class="form-intro"></p>
             </div>
             <div id="publicMemberHeader" class="public-member-header" style="display:none;">
-                <p style="margin:0; font-size:0.85em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Playing as</p>
+                <p id="playingAsLabel" style="margin:0; font-size:0.85em; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Playing as</p>
                 <p id="memberNameDisplay" style="margin:2px 0 0 0; font-size:1.2em; font-weight:bold; color:var(--primary);"></p>
             </div>
             <form id="quizForm">
                 <div id="questionsContainer"></div>
                 <button type="submit" class="btn-submit" id="btnSubmitAnswers">Submit Answers</button>
             </form>
+        </div>
+        <div id="timedPlayContainer" class="form-container" style="display:none;">
+            <div class="form-header">
+                <h1 id="timedGameName" class="form-title"></h1>
+                <p id="timedPlayingAs" class="form-intro"></p>
+            </div>
+            <div id="timedQuestionCounter" style="text-align:center; font-weight:bold; color:var(--text-muted); margin-bottom:12px;"></div>
+            <div class="timer-bar-wrap">
+                <div id="timerBarFill" class="timer-bar-fill"></div>
+            </div>
+            <div id="timedQuestionText"></div>
+            <div id="timedOptionsGrid" class="timed-options-grid"></div>
         </div>
         <div id="resultBox" style="display:none; text-align:center; padding:40px;">
             <div id="resultIcon"></div>
@@ -184,6 +243,7 @@
         function showResult(achieved, maxScore) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('formContent').style.display = 'none';
+            document.getElementById('timedPlayContainer').style.display = 'none';
             const pct = maxScore > 0 ? Math.round((achieved / maxScore) * 100) : 0;
             document.getElementById('resultIcon').innerHTML =
                 '<svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#28a745" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
@@ -212,10 +272,12 @@
             document.getElementById('btnSubmitAnswers').style.display = 'none';
 
             const pct = data.maxScore > 0 ? Math.round((data.achievedScore / data.maxScore) * 100) : 0;
+            const whoLabel = data.teamName ? 'Team' : 'Member';
+            const whoValue = data.teamName || data.member;
             const infoPanel = document.createElement('div');
             infoPanel.className = 'review-info-panel';
             infoPanel.innerHTML = `
-                <p style="margin:5px 0;"><strong>Member:</strong> ${esc(data.member)}</p>
+                <p style="margin:5px 0;"><strong>${whoLabel}:</strong> ${esc(whoValue)}</p>
                 <p style="margin:5px 0;"><strong>Score:</strong> ${data.achievedScore} / ${data.maxScore} points (${pct}%)</p>
                 <p style="margin:5px 0;"><strong>Submitted:</strong> ${formatDate(data.submittedAt, uiConfig)}</p>
             `;
@@ -275,14 +337,117 @@
             });
         }
 
+        // Timed games are always played against the clock, even solo or as one
+        // team on one device — there is no untimed mode for this type. Each
+        // question is shown one at a time with a visible countdown; the score is
+        // computed server-side from how quickly a correct answer was given.
+        const TIMED_OPTION_COLORS = ['#43a047', '#2196f3', '#e53935', '#fbc02d'];
+        let timedState = null;
+
+        function startTimedQuiz(game, playUrlBase, playCode) {
+            timedState = {
+                questions: game.questions || [],
+                index: 0,
+                answers: {},
+                locked: false,
+                timer: null,
+                questionStartTime: 0,
+                playUrlBase,
+                playCode,
+            };
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('timedPlayContainer').style.display = 'block';
+            document.getElementById('timedGameName').textContent = game.name;
+            document.getElementById('timedPlayingAs').textContent = game.team
+                ? `Playing as Team: ${game.team}`
+                : (game.member ? `Playing as: ${game.member}` : '');
+            showTimedQuestion();
+        }
+
+        function showTimedQuestion() {
+            const q = timedState.questions[timedState.index];
+            timedState.locked = false;
+            document.getElementById('timedQuestionCounter').textContent = `Question ${timedState.index + 1} of ${timedState.questions.length}`;
+            document.getElementById('timedQuestionText').textContent = q.description;
+
+            const grid = document.getElementById('timedOptionsGrid');
+            grid.innerHTML = '';
+            (q.options || []).slice(0, 4).forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'timed-option-btn';
+                btn.style.background = TIMED_OPTION_COLORS[i] || '#888';
+                btn.dataset.option = opt;
+                btn.textContent = `${i + 1}. ${opt}`;
+                btn.addEventListener('click', () => lockTimedAnswer(opt));
+                grid.appendChild(btn);
+            });
+
+            const limitMs = (parseFloat(q.timeLimitSeconds) || 20) * 1000;
+            const fill = document.getElementById('timerBarFill');
+            fill.style.transition = 'none';
+            fill.style.width = '100%';
+            fill.style.background = 'var(--success)';
+            void fill.offsetWidth; // force reflow so the transition below applies
+            fill.style.transition = `width ${limitMs}ms linear`;
+            fill.style.width = '0%';
+
+            clearTimeout(timedState.timer);
+            timedState.questionStartTime = Date.now();
+            timedState.timer = setTimeout(() => lockTimedAnswer(null), limitMs);
+        }
+
+        function lockTimedAnswer(answer) {
+            if (timedState.locked) return;
+            timedState.locked = true;
+            clearTimeout(timedState.timer);
+
+            const q = timedState.questions[timedState.index];
+            const timeTakenMs = Date.now() - timedState.questionStartTime;
+            timedState.answers[q.id] = { answer, timeTakenMs };
+
+            document.querySelectorAll('.timed-option-btn').forEach((btn) => {
+                btn.disabled = true;
+                if (btn.dataset.option === q.correctAnswer) btn.classList.add('correct-flash');
+                else if (btn.dataset.option === answer) btn.classList.add('wrong-flash');
+            });
+
+            setTimeout(() => {
+                timedState.index++;
+                if (timedState.index >= timedState.questions.length) {
+                    submitTimedQuiz();
+                } else {
+                    showTimedQuestion();
+                }
+            }, 1200);
+        }
+
+        async function submitTimedQuiz() {
+            document.getElementById('timedPlayContainer').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            try {
+                const res = await fetch(`${timedState.playUrlBase}/${timedState.playCode}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(timedState.answers),
+                });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'Submission failed.');
+                showResult(result.achievedScore, result.maxScore);
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
         function renderQuestions(game) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('formContent').style.display = 'block';
             document.getElementById('gameName').textContent = game.name;
             document.getElementById('gameDescription').textContent = game.description || '';
 
-            if (game.member) {
-                document.getElementById('memberNameDisplay').textContent = game.member;
+            if (game.member || game.team) {
+                document.getElementById('playingAsLabel').textContent = game.team ? 'Playing as Team' : 'Playing as';
+                document.getElementById('memberNameDisplay').textContent = game.team || game.member;
                 document.getElementById('publicMemberHeader').style.display = 'block';
             }
 
@@ -325,19 +490,24 @@
         (async function init() {
             const params = new URLSearchParams(window.location.search);
             const code = params.get('code');
+            const teamCode = params.get('teamCode');
             const reviewId = params.get('reviewId');
+            const reviewTeamId = params.get('reviewTeamId');
 
-            if (reviewId) {
+            if (reviewId || reviewTeamId) {
                 let uiConfig = {};
                 try {
                     const uiRes = await fetch('/ui-config');
                     uiConfig = await uiRes.json();
                 } catch (e) {}
                 try {
-                    const res = await fetch(`/api/live-quiz/players/${reviewId}/review`);
+                    const reviewUrl = reviewTeamId
+                        ? `/api/live-quiz/teams/${reviewTeamId}/review`
+                        : `/api/live-quiz/players/${reviewId}/review`;
+                    const res = await fetch(reviewUrl);
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || 'Unable to load this submission.');
-                    document.title = `${data.sessionName || 'Quiz'} - ${data.member} - OpReady`;
+                    document.title = `${data.sessionName || 'Quiz'} - ${data.teamName || data.member} - OpReady`;
                     renderReview(data, uiConfig);
                 } catch (e) {
                     showError(e.message);
@@ -345,10 +515,12 @@
                 return;
             }
 
-            if (!code) return showError('No quiz code provided.');
+            const playCode = teamCode || code;
+            const playUrlBase = teamCode ? '/api/live-quiz/team-play' : '/api/live-quiz/play';
+            if (!playCode) return showError('No quiz code provided.');
 
             try {
-                const res = await fetch(`/api/live-quiz/play/${code}`);
+                const res = await fetch(`${playUrlBase}/${playCode}`);
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'This quiz link is invalid or expired.');
 
@@ -356,6 +528,10 @@
 
                 if (data.status === 'submitted') {
                     return showResult(data.achievedScore, data.maxScore);
+                }
+
+                if (data.gameType === 'timed') {
+                    return startTimedQuiz(data, playUrlBase, playCode);
                 }
 
                 renderQuestions(data);
@@ -382,7 +558,7 @@
                 btn.textContent = 'Submitting...';
 
                 try {
-                    const res = await fetch(`/api/live-quiz/play/${code}/submit`, {
+                    const res = await fetch(`${playUrlBase}/${playCode}/submit`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(answers),

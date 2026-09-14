@@ -950,6 +950,133 @@
                                                   }
                                   },
                                   {
+                                      "name":  "List Team Setups",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/team-sessions",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "team-sessions"
+                                                                           ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Get Team Setup",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/team-sessions/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "team-sessions",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Create Team Setup",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/team-sessions",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "team-sessions"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"gameId\": 1,\n  \"teams\": [\n    { \"name\": \"Team Red\", \"memberIds\": [1, 2] },\n    { \"name\": \"Team Blue\", \"memberIds\": [3, 4] }\n  ]\n}"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Archive Team Setup",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/team-sessions/:id/archive",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "team-sessions",
+                                                                               ":id",
+                                                                               "archive"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"is_archived\": true\n}"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Delete Team Setup",
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/team-sessions/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "team-sessions",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  },
+                                  {
                                       "name":  "Review Player Submission",
                                       "request":  {
                                                       "method":  "GET",
@@ -968,6 +1095,31 @@
                                                                   "variable":  [
                                                                                    {
                                                                                        "key":  "playerId",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Review Team Submission",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/teams/:teamId/review",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "teams",
+                                                                               ":teamId",
+                                                                               "review"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "teamId",
                                                                                        "value":  "1"
                                                                                    }
                                                                                ]
@@ -1048,6 +1200,65 @@
                                                                                    {
                                                                                        "key":  "code",
                                                                                        "value":  "REPLACE_WITH_ACCESS_CODE"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"fld_1\": \"Daily\"\n}"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Play Team Quiz (public, by code, both game types)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/team-play/:code",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "team-play",
+                                                                               ":code"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "code",
+                                                                                       "value":  "REPLACE_WITH_TEAM_ACCESS_CODE"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Submit Team Quiz Answers (public, by code)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/team-play/:code/submit",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "team-play",
+                                                                               ":code",
+                                                                               "submit"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "code",
+                                                                                       "value":  "REPLACE_WITH_TEAM_ACCESS_CODE"
                                                                                    }
                                                                                ]
                                                               },

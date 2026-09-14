@@ -35,4 +35,32 @@ function calculateQuizScore(questions, submittedData) {
   return { achieved, maximum };
 }
 
-module.exports = { calculateQuizScore };
+// Timed games are always played against the clock — even solo or as one team on
+// one device, there is no untimed/self-paced mode for this type. Each question is
+// worth a fixed maximum; a correct answer earns a fraction of it based on how
+// quickly it was given (answering instantly earns the full amount, answering right
+// at the deadline earns half — the classic Kahoot-style decay), a wrong answer or a
+// timeout earns nothing. `submittedData[q.id]` is `{ answer, timeTakenMs }`.
+const TIMED_MAX_POINTS_PER_QUESTION = 1000;
+
+function calculateTimedQuizScore(questions, submittedData) {
+  let achieved = 0;
+  let maximum = 0;
+
+  for (const q of questions || []) {
+    maximum += TIMED_MAX_POINTS_PER_QUESTION;
+
+    const entry = submittedData[q.id];
+    if (!entry || entry.answer === undefined || entry.answer === null) continue;
+    if (entry.answer !== q.correctAnswer) continue;
+
+    const limitMs = (parseFloat(q.timeLimitSeconds) || 20) * 1000;
+    const takenMs = Math.max(0, Math.min(parseFloat(entry.timeTakenMs) || 0, limitMs));
+    const fraction = 1 - (takenMs / limitMs) * 0.5;
+    achieved += Math.round(TIMED_MAX_POINTS_PER_QUESTION * fraction);
+  }
+
+  return { achieved, maximum };
+}
+
+module.exports = { calculateQuizScore, calculateTimedQuizScore };

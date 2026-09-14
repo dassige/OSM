@@ -409,28 +409,34 @@ The application includes a fully anonymous survey engine for brigade feedback, e
       * View auto-generated percentage bar charts for choice questions and aggregated text responses.
       * Use the action bar to **Print**, **Export CSV**, or **Export PDF** for offline analysis and reporting.
 
-### 7\. Quiz Games Workflow (Phase 1 — Game & Question Builder)
+### 7\. Quiz Games Workflow (Phases 1–3)
 
-A social-quiz feature for brigade learning sessions run in the social room, built out in phases. Phase 1 covers game and question building only — no live play yet. The layout matches **Manage Forms** / **Manage Surveys**: a game list on the left, and a question editor on the right.
+A social-quiz feature for brigade learning sessions run in the social room, built out in phases: game/question building, individual play, and team setup are complete; a shared multi-team live leaderboard hosted over Socket.IO is a later phase. The game/question builder layout matches **Manage Forms** / **Manage Surveys**: a game list on the left, and a question editor on the right.
 
 1.  **Create a Game:**
       * Go to **Quiz Games** → **+ Add Game**.
       * Choose **Score-based** or **Timed**. The type can only be changed while the game has no questions yet.
 2.  **Build the Questions:**
-      * **Score-based** games reuse the exact same question editor as a Form — Paragraph, Single Choice, Checkboxes, or Yes/No questions, each worth a configurable number of points. It's basically a form, minus the passing-threshold and max-attempts settings.
-      * **Timed** games are simpler — every question is a fixed 4-choice question with its own time limit instead of points, for a live Kahoot-style round. Each of the 4 answer slots always carries the same number and colour (1 Green, 2 Light Blue, 3 Red, 4 Yellow) so the mapping stays recognisable from the builder through to the eventual player buttons.
+      * **Score-based** games reuse the exact same question editor as a Form — Paragraph, Single Choice, Checkboxes, or Yes/No questions, each worth a configurable number of points. It's basically a form, minus the passing-threshold and max-attempts settings. Answered at your own pace, submitted once.
+      * **Timed** games are simpler to build but always played against the clock — every question is a fixed 4-choice question with its own time limit. Each of the 4 answer slots always carries the same number and colour (1 Green, 2 Light Blue, 3 Red, 4 Yellow), matching the buttons shown during play. Scoring is speed-based: a correct answer given instantly earns full points, one given right at the deadline earns half, and a wrong answer or a timeout earns nothing.
       * Drag questions by their handle to reorder; click **Save** to persist.
 3.  **Editor Toolbar:**
       * **Preview** and **Test** (Score-based games only) — preview shows a read-only, correct-answer-highlighted view of the game in a new tab; Test opens a scoring simulator to check point weighting.
       * **Export** / **Import** (both game types) — download or load a game's name, description, type, and question bank as a `.json` file.
-      * **Start Session** (Score-based games only) — starts a self-paced play session (see Phase 2 below).
-4.  **Phase 2 — Self-Paced Play:**
-      * Click **Start Session** on a saved Score-based game with at least one question. Choose all active members or a specific selection.
+      * **Start Single** (both game types) — starts an individual play session, one access code per member (see Phase 2 below).
+      * **Start Teams** (both game types) — opens the drag-and-drop team builder, one access code per team (see Phase 3 below).
+4.  **Phase 2 — Individual Play (both game types):**
+      * Click **Start Single** on a saved game with at least one question. Choose all active members or a specific selection.
       * A session snapshots the game's current questions and generates one unique access code per member. Members with an email on file are sent a link automatically; others can be given their code to enter directly.
-      * Members open their link (`quiz-play.html?code=...`), answer the questions like a form, and see their score immediately after submitting. Each code can only be used once.
-      * Track progress and results in **Live Quiz** — a list of started sessions with submitted/invited counts, and a per-session results view (member, status, score, submitted time) with a resend-invitation action.
+      * Members open their link (`quiz-play.html?code=...`). For a **Score-based** game, they answer at their own pace and submit once. For a **Timed** game, questions appear one at a time with a visible countdown; picking an answer (or running out of time) auto-advances to the next question, and the quiz submits itself after the last one. Either way, the score is shown immediately, and each code can only be used once.
+      * Track progress and results in **Live Quiz** (**Single Sessions** tab) — a list of started sessions (with a Score/Timed type badge) with submitted/invited counts, and a per-session results view (member, status, score, submitted time) with resend-invitation and refresh actions.
       * Click **View** next to a submitted player to open their answers in a read-only review, with correct answers highlighted green and incorrect ones red (mirrors the Live Forms review screen).
-5.  **Coming in later phases:** team setup with drag-and-drop team building, and a live Kahoot-style host/player mode over Socket.IO.
+5.  **Phase 3 — Team Setup (both game types):**
+      * Click **Start Teams** on a saved game (Score-based or Timed) with at least one question. An unassigned-members pool starts alongside two blank teams — add more teams, rename them, and drag members from the pool (or between teams) to build the rosters.
+      * Every member can belong to only one team; every team needs a name and at least one member; at least 2 teams are required.
+      * Confirming snapshots the game's current questions and generates one access code per team — the captain opens `quiz-play.html?teamCode=...` and plays through it exactly like an individual session (self-paced for Score-based, against the clock for Timed), with the result attributed to the whole team.
+      * Track team setups in **Live Quiz** (**Team Setups** tab) — a list of started setups (with a Score/Timed type badge and a submitted/total progress count), and a per-setup view showing each team's roster, status, score (once submitted), and a copy-to-clipboard access code. A submitted team also gets a **View** action for a read-only, correct/incorrect-marked review of its answers.
+6.  **Coming in a later phase:** a shared, host-run live round where every team's device is synchronized over Socket.IO with a common leaderboard — right now, each Timed play (solo or one team) runs its own independent timed round.
 
 ## Example Data and Configuration
 
@@ -579,7 +585,10 @@ API keys **cannot** access HTML pages — those remain session-only. Endpoints r
 | `GET` | `/api/quiz/games/{id}/export` | Download a quiz game as a `.json` file |
 | `GET` | `/api/live-quiz/sessions` | List quiz sessions (self-paced play instances) |
 | `GET` | `/api/live-quiz/players/{playerId}/review` | Admin: view a submitted player's answers with correctness marked |
+| `GET` | `/api/live-quiz/team-sessions` | List team setups (both game types, drag-and-drop team building) |
+| `GET` | `/api/live-quiz/teams/{teamId}/review` | Admin: view a submitted team's answers with correctness marked |
 | `GET` | `/api/live-quiz/play/{code}` | Public: fetch a player's quiz by access code |
+| `GET` | `/api/live-quiz/team-play/{code}` | Public: fetch a team's quiz by access code (Score-based team setups) |
 | `GET` | `/api/health` | Health check (no key required) |
 | `GET` | `/api/ready` | Readiness probe — DB + WhatsApp state (no key required) |
 

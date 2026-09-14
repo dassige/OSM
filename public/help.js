@@ -652,8 +652,8 @@ const helpContent = {
             <h3>1. Creating a Game</h3>
             <ul>
                 <li>Click <strong>+ Add Game</strong>, give it a name and optional description.</li>
-                <li><strong>Score-based:</strong> Self-paced — behaves just like a Form: any mix of Paragraph, Single Choice, Checkboxes, or Yes/No questions, each worth a configurable number of points.</li>
-                <li><strong>Timed:</strong> Live, host-driven — every question is a fixed 4-choice question with its own time limit; scoring is based on answer speed (Kahoot-style).</li>
+                <li><strong>Score-based:</strong> Self-paced — behaves just like a Form: any mix of Paragraph, Single Choice, Checkboxes, or Yes/No questions, each worth a configurable number of points. Answer whenever, submit once.</li>
+                <li><strong>Timed:</strong> Always played against the clock, even solo or as one team on one device — every question is a fixed 4-choice question with its own time limit, shown one at a time with a visible countdown, and scored on speed plus correctness (answering instantly earns full points; answering right at the deadline earns half; a wrong answer or a timeout earns nothing).</li>
                 <li>The <strong>Type</strong> can only be changed while the game has no questions yet — remove all questions first if you need to switch.</li>
                 <li><strong>Active:</strong> Disable a game to hide it from use without deleting its questions.</li>
             </ul>
@@ -663,7 +663,7 @@ const helpContent = {
                 <li>Use the toolbar at the bottom of the editor to add questions — Score-based games offer all four question types; Timed games only offer 4-choice questions.</li>
                 <li>Drag the <strong>☰</strong> handle to reorder questions.</li>
                 <li>Mark the correct answer directly on each option (or Yes/No for boolean questions).</li>
-                <li><strong>Timed games:</strong> each of the 4 answer slots always carries the same number and colour — 1 Green, 2 Light Blue, 3 Red, 4 Yellow — so players can recognise their answer button at a glance once live play is available.</li>
+                <li><strong>Timed games:</strong> set a <strong>Time Limit</strong> per question — this drives the countdown and the speed-based scoring when played. Each of the 4 answer slots always carries the same number and colour — 1 Green, 2 Light Blue, 3 Red, 4 Yellow — matching the buttons players see during play.</li>
                 <li>The header shows <strong>Max Score Achievable</strong> (score-based) or <strong>Total Time</strong> (timed) as you build.</li>
                 <li>Click <strong>Save</strong> in the toolbar to persist your changes.</li>
             </ul>
@@ -672,11 +672,13 @@ const helpContent = {
             <ul>
                 <li><strong>Preview</strong> (Score-based only) — opens a read-only window showing exactly how the questions will appear, with correct answers highlighted. Prompts to save first if you have unsaved changes.</li>
                 <li><strong>Test</strong> (Score-based only) — opens a scoring simulator so you can answer the current (even unsaved) questions and check the point weighting works as expected.</li>
+                <li><strong>Start Single</strong> — starts an individual play session (either game type); see <em>Live Quiz &rarr; Single Sessions</em> for tracking results.</li>
+                <li><strong>Start Teams</strong> — opens the drag-and-drop team builder to organize members into teams. Each team plays together on the captain's device, and the score is attributed to the team. See <em>Live Quiz &rarr; Team Setups</em>.</li>
                 <li><strong>Export</strong> — downloads the game's name, description, type, and full question bank as a <code>.json</code> file.</li>
                 <li><strong>Import</strong> — loads a previously exported <code>.json</code> file into the editor. Nothing is saved until you click <strong>Save</strong>.</li>
             </ul>
 
-            <p style="color:var(--text-muted); font-size:0.85em;">Running live sessions, team setup, and player access codes are covered in later releases of this feature.</p>
+            <p style="color:var(--text-muted); font-size:0.85em;">A multi-team, host-run live round with a shared leaderboard across everyone's devices at once is covered in a later release of this feature — right now, every Timed play (solo or one team) runs its own independent timed round.</p>
         `
     },
     "quiz-preview": {
@@ -692,33 +694,46 @@ const helpContent = {
 
     // --- Live Quiz ---
     "live-quiz": {
-        title: "Live Quiz: Sessions & Results",
+        title: "Live Quiz: Sessions & Team Setups",
         body: `
-            <p>Track quiz sessions started from <em>Quiz Games</em> and view player results.</p>
-            <h3>1. Sessions List</h3>
+            <p>Track quiz sessions and team setups started from <em>Quiz Games</em>. This page has two tabs.</p>
+            <h3>1. Single Sessions tab</h3>
             <ul>
-                <li>Each session is one "run" of a Score-based game for a chosen set of members — a snapshot of the game's questions is frozen at the moment the session starts.</li>
+                <li>Each session is one "run" of a game (either type) for a chosen set of members, played individually — a snapshot of the game's questions is frozen at the moment the session starts. A Score/Timed badge shows which type.</li>
                 <li><strong>Progress:</strong> shows how many invited members have submitted so far.</li>
                 <li><strong>Archive:</strong> stops the session accepting further submissions without deleting its results.</li>
                 <li><strong>Delete:</strong> permanently removes the session and all player results.</li>
             </ul>
-            <h3>2. Results</h3>
+            <h3>2. Single Session Results</h3>
             <ul>
                 <li>Click <strong>Results</strong> on a session to see each invited member's status (Sent / Submitted), score, and submission time.</li>
                 <li><strong>View:</strong> opens a read-only copy of a submitted member's answers, with correct answers highlighted green and incorrect ones red — only available once they've submitted.</li>
                 <li><strong>Resend:</strong> re-sends the invitation email to a member who hasn't submitted yet (only available while they have an email on file).</li>
                 <li><strong>Refresh:</strong> reloads the player list on the spot to pick up new submissions, without returning to the sessions list.</li>
             </ul>
-            <p style="color:var(--text-muted); font-size:0.85em;">To start a new session, go to <em>Quiz Games</em>, open a Score-based game, and click <strong>Start Session</strong>.</p>
+            <p style="color:var(--text-muted); font-size:0.85em;">To start a new session, go to <em>Quiz Games</em>, open a game (either type), and click <strong>Start Single</strong>.</p>
+
+            <h3>3. Team Setups tab</h3>
+            <ul>
+                <li>Each team setup is one "run" of a game (either type), organized into named teams via a drag-and-drop builder in <em>Quiz Games</em>. It's playable right away, on both game types — the whole team answers together on the captain's device, using the team's access code, and the score is attributed to the team. Progress shows "X of Y submitted", just like Single Sessions.</li>
+                <li>For a <strong>Timed</strong> team setup, the captain's device plays the round against the clock the same way an individual would.</li>
+                <li>Click <strong>Teams</strong> on a setup to see each team's roster, status, score (once submitted), and access code.</li>
+                <li><strong>View</strong> (once a team has submitted) — opens a read-only copy of that team's answers, with correct answers highlighted green and incorrect ones red.</li>
+                <li><strong>Copy Code:</strong> copies a team's access code to the clipboard.</li>
+                <li><strong>Archive</strong> / <strong>Delete</strong> work the same way as Single Sessions.</li>
+            </ul>
+            <p style="color:var(--text-muted); font-size:0.85em;">To set up teams, go to <em>Quiz Games</em>, open any game, and click <strong>Start Teams</strong>.</p>
         `
     },
     "quiz-play": {
         title: "Playing a Quiz",
         body: `
-            <p>You've been sent a link to play a quiz game. Answer each question and click <strong>Submit Answers</strong> when done.</p>
+            <p>You've been sent a link to play a quiz game, either individually or as a team (a team plays together on one device).</p>
             <ul>
-                <li>Your score is shown immediately after you submit.</li>
-                <li>Each quiz code can only be used once — reopening the link after submitting shows your result again, not a fresh attempt.</li>
+                <li><strong>Score-based:</strong> answer each question at your own pace and click <strong>Submit Answers</strong> when done.</li>
+                <li><strong>Timed:</strong> questions appear one at a time with a countdown — pick an answer before time runs out. Answering faster earns more points; a wrong answer or a timeout earns none. The quiz submits itself automatically after the last question.</li>
+                <li>The score is shown immediately once submitted — for a team code, it's the whole team's score.</li>
+                <li>Each quiz code can only be used once — reopening the link after submitting shows the result again, not a fresh attempt.</li>
             </ul>
         `
     },
@@ -726,13 +741,13 @@ const helpContent = {
     "quiz-play-review": {
         title: "Quiz Submission Review - Admin Mode",
         body: `
-            <p><strong>Reviewing a Player's Answers:</strong> This is a read-only view of one member's submitted quiz, opened from the <strong>View</strong> action in Live Quiz results.</p>
+            <p><strong>Reviewing Submitted Answers:</strong> This is a read-only view of one member's or team's submitted quiz, opened from the <strong>View</strong> action in Live Quiz results.</p>
             <ul>
                 <li><strong>Color Coding:</strong>
                     <span style="background:#d4edda; padding:0 4px;">Green</span> indicates a correct answer;
                     <span style="background:#f8d7da; padding:0 4px;">Red</span> indicates an incorrect one.
                 </li>
-                <li>A dashed green outline marks the correct option when the member chose a different one.</li>
+                <li>A dashed green outline marks the correct option when a different one was chosen.</li>
                 <li>Free-text answers are shown as submitted — these are not auto-scored.</li>
             </ul>
         `

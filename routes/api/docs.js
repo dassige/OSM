@@ -747,14 +747,14 @@ const spec = {
             },
             post: {
                 tags: ['Live Quiz'],
-                summary: 'Start a quiz session — snapshots a Score-based game and generates one access code per selected member',
+                summary: 'Start a quiz session — snapshots a game (either type) and generates one access code per selected member',
                 requestBody: {
                     required: true,
                     content: { 'application/json': { schema: { type: 'object', required: ['gameId', 'memberIds'], properties: { gameId: { type: 'integer' }, memberIds: { type: 'array', items: { type: 'integer' } } } } } }
                 },
                 responses: {
                     200: { description: 'Session started', content: { 'application/json': { schema: { type: 'object', properties: { sessionId: { type: 'integer' }, sessionName: { type: 'string' }, players: { type: 'array', items: { $ref: '#/components/schemas/QuizPlayer' } } } } } } },
-                    400: { description: 'Validation error (e.g. no members selected, or the game is Timed)', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                    400: { description: 'Validation error (e.g. no members selected)', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }
         },
@@ -805,6 +805,74 @@ const spec = {
                 }
             }
         },
+        '/api/live-quiz/team-sessions': {
+            get: {
+                tags: ['Live Quiz'],
+                summary: 'List team setups (both game types)',
+                responses: {
+                    200: { description: 'Array of team sessions', content: { 'application/json': { schema: { type: 'array', items: { type: 'object' } } } } }
+                }
+            },
+            post: {
+                tags: ['Live Quiz'],
+                summary: 'Create a team setup (drag-and-drop team builder) — playable immediately for both game types',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    gameId: { type: 'integer' },
+                                    teams: {
+                                        type: 'array',
+                                        items: { type: 'object', properties: { name: { type: 'string' }, memberIds: { type: 'array', items: { type: 'integer' } } } }
+                                    }
+                                }
+                            },
+                            example: { gameId: 1, teams: [{ name: 'Team Red', memberIds: [1, 2] }, { name: 'Team Blue', memberIds: [3, 4] }] }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Created — one access code per team', content: { 'application/json': { schema: { type: 'object', properties: { teamSessionId: { type: 'integer' }, sessionName: { type: 'string' }, gameType: { type: 'string', enum: ['score', 'timed'] }, teams: { type: 'array', items: { type: 'object' } } } } } } },
+                    400: { description: 'Validation failed (fewer than 2 teams, empty team, duplicate member, etc.)', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/team-sessions/{id}': {
+            get: {
+                tags: ['Live Quiz'],
+                summary: 'Get a team setup with its teams and rosters',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Team session with teams array', content: { 'application/json': { schema: { type: 'object' } } } },
+                    404: { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            },
+            delete: {
+                tags: ['Live Quiz'],
+                summary: 'Delete a team setup and its teams',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/team-sessions/{id}/archive': {
+            put: {
+                tags: ['Live Quiz'],
+                summary: 'Archive or unarchive a team setup',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: { type: 'object', properties: { is_archived: { type: 'boolean' } } }, example: { is_archived: true } } }
+                },
+                responses: {
+                    200: { description: 'Updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
         '/api/live-quiz/players/{playerId}/review': {
             get: {
                 tags: ['Live Quiz'],
@@ -814,6 +882,18 @@ const spec = {
                     200: { description: 'Submitted questions, answers, and score', content: { 'application/json': { schema: { type: 'object' } } } },
                     400: { description: 'Player has not submitted yet', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     404: { description: 'Player not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/teams/{teamId}/review': {
+            get: {
+                tags: ['Live Quiz'],
+                summary: "Admin: view a team's submitted quiz with correct/incorrect answers marked (Score-based team setups)",
+                parameters: [{ name: 'teamId', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Submitted questions, answers, and score', content: { 'application/json': { schema: { type: 'object' } } } },
+                    400: { description: 'Team has not submitted yet', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Team not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }
         },
@@ -836,13 +916,43 @@ const spec = {
                 parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
                 requestBody: {
                     required: true,
-                    description: 'Flat answer object keyed by question id (question.id[] for checkboxes) — same contract as Forms submission',
+                    description: "Score-based: flat answer object keyed by question id (question.id[] for checkboxes), same contract as Forms submission. Timed: { [questionId]: { answer, timeTakenMs } } — scored on speed plus correctness.",
                     content: { 'application/json': { schema: { type: 'object' } } }
                 },
                 responses: {
                     200: { description: 'Scored', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, achievedScore: { type: 'number' }, maxScore: { type: 'number' } } } } } },
                     400: { description: 'Already submitted or invalid data', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     403: { description: 'Session archived', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/team-play/{code}': {
+            get: {
+                tags: ['Live Quiz'],
+                summary: "Public: fetch a team's quiz by access code (no auth, both game types)",
+                parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
+                responses: {
+                    200: { description: 'Quiz questions (with gameType), or the stored score if already submitted', content: { 'application/json': { schema: { type: 'object' } } } },
+                    403: { description: 'Team setup archived', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/team-play/{code}/submit': {
+            post: {
+                tags: ['Live Quiz'],
+                summary: 'Public: submit team answers for scoring (no auth, both game types)',
+                parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
+                requestBody: {
+                    required: true,
+                    description: "Score-based: flat answer object keyed by question id (question.id[] for checkboxes), same contract as Forms submission. Timed: { [questionId]: { answer, timeTakenMs } } — scored on speed plus correctness.",
+                    content: { 'application/json': { schema: { type: 'object' } } }
+                },
+                responses: {
+                    200: { description: 'Scored', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, achievedScore: { type: 'number' }, maxScore: { type: 'number' } } } } } },
+                    400: { description: 'Already submitted or invalid data', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    403: { description: 'Team setup archived', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     404: { description: 'Invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }

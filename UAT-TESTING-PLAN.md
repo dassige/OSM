@@ -729,29 +729,69 @@ Layout matches Manage Forms / Manage Surveys: a game list on the left, and a que
 
 ---
 
-## T28 — Live Quiz (Phase 2 — Self-Paced Play)
+## T28 — Live Quiz (Phase 2 — Self-Paced Individual Play, Both Game Types)
 
-**Pages:** `quiz-games.html` (Start Session), `live-quiz.html` (sessions & results), `quiz-play.html` (player access, public)
+**Pages:** `quiz-games.html` (Start Single), `live-quiz.html` (sessions & results), `quiz-play.html` (player access, public)
 
-Only Score-based games can be played this way — a session snapshots the game's questions at the moment it starts, so later edits to the game do not affect sessions already running. Timed games are covered by a later phase.
+Individual play is available for both Score-based and Timed games — a session snapshots the game's questions at the moment it starts, so later edits to the game do not affect sessions already running. **Score-based** play is self-paced: answer at your own pace, submit once. **Timed** play is always against the clock, even solo: one question at a time, a visible countdown, and a score based on speed plus correctness.
 
 | ID | Action | Steps | Expected Result |
 |----|--------|-------|----------------|
-| T28-01 | Start a session | Open a saved Score-based game with 1+ question in `quiz-games.html` → click `[Start Session]` → choose "All Active Members" or a specific selection → click `[Start & Send]`. | Session is created. Members with an email receive an invitation email; a success toast reports how many were sent. Event log records "Quiz Session Started". |
-| T28-02 | Start Session hidden/blocked appropriately | Try to open the session modal on a game with 0 questions, or on an unsaved game. | A warning toast explains why (add a question first / save the game first) — the modal does not open. |
-| T28-03 | View sessions list | Navigate to `live-quiz.html`. | List shows each session's start date, name, linked game, Active/Archived status, and "X of Y submitted" progress. |
+| T28-01 | Start a session | Open a saved game (either type) with 1+ question in `quiz-games.html` → click `[Start Single]` → choose "All Active Members" or a specific selection → click `[Start & Send]`. | Session is created. Members with an email receive an invitation email; a success toast reports how many were sent. Event log records "Quiz Session Started". |
+| T28-02 | Start Single blocked appropriately | Try to open the session modal on a game with 0 questions, or on an unsaved game. | A warning toast explains why (add a question first / save the game first) — the modal does not open. |
+| T28-03 | View sessions list | Navigate to `live-quiz.html` → **Single Sessions** tab. | List shows each session's start date, name with a Score/Timed type badge, linked game, Active/Archived status, and "X of Y submitted" progress. |
 | T28-04 | View session results | Click `[Results]` on a session. | A player list appears: member name, status (Sent/Submitted), score, and submitted time. Sortable by clicking column headers. |
 | T28-05 | Resend an invitation | On the results view, click the resend icon next to a member still in "Sent" status. | Toast confirms the invitation was resent. No action shown for members with no email on file. |
 | T28-06 | Archive a session | Click `[Archive]` on an active session. | Status changes to Archived. Event log records "Quiz Session Archived". |
 | T28-07 | Unarchive a session | Click `[Unarchive]` on an archived session. | Status returns to Active. Event log records "Quiz Session Unarchived". |
 | T28-08 | Delete a session | Click the delete icon on a session → confirm. | Session and all its player results are removed from the list. Event log records "Quiz Session Deleted". |
-| T28-09 | Play a quiz (member, no login) | Open a member's `quiz-play.html?code=...` link in a private/incognito window (no session). | The quiz loads without requiring login: game name, description, and questions are shown as an answerable form. |
-| T28-10 | Submit and see score immediately | Answer all questions on the play page → click `[Submit Answers]`. | A "Quiz Complete!" screen shows the score (e.g. "You scored 4 / 5 (80%)") immediately — no admin review step. |
-| T28-11 | Re-opening a submitted code | Reload the same `quiz-play.html?code=...` link after submitting. | The same score result is shown again — the quiz cannot be retaken. |
+| T28-09 | Play a Score-based quiz (member, no login) | Open a member's `quiz-play.html?code=...` link (from a Score-based session) in a private/incognito window (no session). | The quiz loads without requiring login: game name, description, and questions are shown as an answerable form. |
+| T28-10 | Submit and see score immediately (Score-based) | Answer all questions on the play page → click `[Submit Answers]`. | A "Quiz Complete!" screen shows the score (e.g. "You scored 4 / 5 (80%)") immediately — no admin review step. |
+| T28-11 | Re-opening a submitted code | Reload the same `quiz-play.html?code=...` link after submitting (either game type). | The same score result is shown again — the quiz cannot be retaken. |
 | T28-12 | Archived session blocks submission | Archive a session that still has a pending player → open that player's play link. | An error message states the session is archived and no longer accepting responses. |
 | T28-13 | Demo mode guard | On a demo-mode instance, attempt to start a session, resend, archive, or delete. | Action is blocked with a "disabled in Demo Mode" toast. |
 | T28-14 | View a submitted player's answers | On the results view, click the "View" icon next to a member in "Submitted" status. | A new tab opens showing the member's answers alongside each question, with correct answers highlighted green, incorrect ones red, and any missed correct option outlined — plus the member name, score, and submission date/time. The "View" action is not shown for members still in "Sent" status. |
 | T28-15 | Refresh the player list | While viewing a session's results, have another member submit their quiz (e.g. from a different device/tab), then click `[Refresh]` on the results view — without leaving the page. | The player list updates to show the new submission (status, score, submitted time) and the "X of Y submitted" summary increases, with no need to go back to the sessions list and re-open Results. |
+| T28-16 | Play a Timed quiz solo — countdown and one-at-a-time flow | Open a member's `quiz-play.html?code=...` link from a Timed session. | Only the first question is shown, with a question counter ("Question 1 of N"), a visible shrinking countdown bar, and 4 coloured answer buttons (1 Green, 2 Light Blue, 3 Red, 4 Yellow) matching the builder's convention. There is no "Submit Answers" button. |
+| T28-17 | Answer quickly and correctly | Click the correct answer well before the countdown ends. | The correct button is highlighted, the next question appears automatically after a short pause, and (once all questions are done) the final score is close to the maximum for that question. |
+| T28-18 | Answer incorrectly | Click a wrong answer. | The wrong button and the actually-correct button are both highlighted before auto-advancing; that question contributes 0 to the final score regardless of how fast it was answered. |
+| T28-19 | Let the countdown run out | Do not click any answer before the countdown reaches zero. | The question auto-advances (or auto-submits if it was the last one) as a timeout; that question contributes 0 to the final score. |
+| T28-20 | Slower-but-correct answers score less than instant ones | Answer the same question correctly near the end of its time limit in one attempt, and near the very start in another. | The near-instant correct answer earns close to the maximum for that question; the late correct answer earns roughly half — confirming the score decays with time, not just correctness. |
+| T28-21 | Timed final score display | Finish all questions of a Timed session. | The final score is shown as achieved / maximum, where maximum is 1000 points per question (e.g. a 2-question quiz maxes out at 2000). |
+
+---
+
+## T29 — Live Quiz Team Setups (Phase 3 — Drag-and-Drop Team Building, Both Game Types)
+
+**Pages:** `quiz-games.html` (Start Teams), `live-quiz.html` → **Team Setups** tab, `quiz-play.html` (team play, public)
+
+Team setup is available for both Score-based and Timed games, and **both are playable immediately** — a team session snapshots the game's questions at the moment it's set up, so later edits to the game do not affect setups already created. The whole team answers together on the captain's device via the team's access code: self-paced for a Score-based game (same flow as Phase 2), or against the clock one question at a time for a Timed game (same flow as an individual Timed session) — either way, the result is attributed to the team.
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T29-01 | Start Teams button visibility | Open a Score-based game and a Timed game in `quiz-games.html`. | `[Start Teams]` and `[Start Single]` are both visible on both game types. |
+| T29-02 | Open the team builder | On a saved game (either type) with 1+ question, click `[Start Teams]`. | A modal opens with an "Unassigned" pool of active members on the left and two blank teams ("Team 1", "Team 2") on the right, each starting empty. |
+| T29-03 | Start Teams blocked appropriately | Try to open team setup on a game with 0 questions, or on an unsaved game. | A warning toast explains why (add a question first / save the game first) — the modal does not open. |
+| T29-04 | Drag a member into a team | Drag a member chip from "Unassigned" into a team's list. | The chip moves into the team; that team's member count badge increases by one; the member disappears from "Unassigned". |
+| T29-05 | Drag a member between teams | Drag a member chip from one team directly into another team's list. | The chip moves to the new team; both teams' count badges update. |
+| T29-06 | Rename a team | Click into a team's name field and change the text. | The new name is used when the team session is created. |
+| T29-07 | Add and remove a team | Click `[+ Add Team]` to add a third team; drag a member into it; then click its remove (✕) button. | A new empty team column appears and accepts members; removing it returns its members to "Unassigned" and the column disappears. |
+| T29-08 | Validation — fewer than 2 teams | Remove teams down to only 1, then click `[Start Team Session]`. | An inline error states at least 2 teams are required; nothing is created. |
+| T29-09 | Validation — empty team | Leave a team with zero members, then click `[Start Team Session]`. | An inline error states every team needs at least one member; nothing is created. |
+| T29-10 | Confirm team setup | With 2+ named teams, each with 1+ member, click `[Start Team Session]`. | A success toast confirms the team session started and is ready to play now; the modal closes. |
+| T29-11 | View team setups list | Navigate to `live-quiz.html` → **Team Setups** tab. | List shows each setup's start date, name with a Score/Timed type badge, linked game, Active/Archived status, and an "X of Y submitted" progress count. |
+| T29-12 | View team rosters and codes | Click `[Teams]` on a setup. | A card appears per team showing its name, member roster, Pending/Submitted status, and access code. |
+| T29-13 | Copy a team's access code | Click `[Copy Code]` on a team card. | A toast confirms the code was copied to the clipboard. |
+| T29-14 | Archive / Unarchive a team setup | Click `[Archive]` on an active setup, then `[Unarchive]`. | Status toggles between Active and Archived; event log records "Quiz Team Session Archived" / "Unarchived". |
+| T29-15 | Delete a team setup | Click the delete icon on a setup → confirm. | The setup and all its teams/rosters are removed from the list. Event log records "Quiz Team Session Deleted". |
+| T29-16 | Demo mode guard | On a demo-mode instance, attempt to start a team setup, archive, or delete. | Action is blocked with a "disabled in Demo Mode" toast. |
+| T29-17 | Play a Score-based team quiz (captain, no login) | Copy a team's access code from a Score-based setup, open `quiz-play.html?teamCode=...` in a private/incognito window. | The quiz loads without requiring login, labelled "Playing as Team: &lt;team name&gt;", with the game's questions shown as an answerable form. |
+| T29-18 | Submit and see the team's score immediately (Score-based) | Answer all questions on the team play page → click `[Submit Answers]`. | A "Quiz Complete!" screen shows the team's score immediately — no admin review step. |
+| T29-19 | Play a Timed team quiz (captain, no login) | Copy a team's access code from a Timed setup, open `quiz-play.html?teamCode=...` in a private/incognito window. | The quiz loads without requiring login, labelled "Playing as Team: &lt;team name&gt;", showing one question at a time with a countdown and 4 coloured answer buttons — same as an individual Timed session. |
+| T29-20 | Re-opening a submitted team code | Reload the same `quiz-play.html?teamCode=...` link after submitting (either game type). | The same score result is shown again — the quiz cannot be retaken. |
+| T29-21 | Other teams unaffected | After one team submits, open a different team's access code from the same setup. | The other team's quiz is still answerable and unaffected by the first team's submission. |
+| T29-22 | View a submitted team's answers | On the Team Setups detail view, click `[View]` next to a team in "Submitted" status. | A new tab opens showing the team's answers alongside each question, with correct answers highlighted green, incorrect ones red, and any missed correct option outlined — plus the team name, score, and submission date/time. `[View]` is not shown for teams still "Pending". |
+| T29-23 | Archived team setup blocks submission | Archive a team setup (either game type) that still has a pending team → open that team's play link. | An error message states the setup is archived and no longer accepting responses. |
 
 ---
 
@@ -771,6 +811,9 @@ Before starting the UAT run, ensure the following data is in place on the UAT in
 - [ ] AI provider configured (Gemini API key or Ollama running) for T17-C tests.
 - [ ] At least **1 quiz game** of each type (score-based and timed) with 2+ questions, for reorder testing.
 - [ ] At least **1 quiz session** started from a Score-based game with 2+ invited members, including at least one already-submitted player (for T28 results/resend testing).
+- [ ] At least **1 Timed quiz game** with a short time limit per question (e.g. 8–10 seconds, to keep manual testing quick), and a solo session started from it (for T28-16 through T28-21 Timed solo-play testing).
+- [ ] At least **1 quiz team setup** started from a Timed game with 2+ teams and 2+ members each, including one already-submitted team (for T29 Timed team setup/play/results testing).
+- [ ] At least **1 quiz team setup** started from a Score-based game with 2+ teams, including one already-submitted team (for T29 Score-based team play/results testing).
 
 ---
 
@@ -792,7 +835,7 @@ After completing the full UAT run, verify the Event Log (`event-log.html`) conta
 | `System` | Database Restored (if T23-05 or T23-06 was run), Events Pruned |
 | `WhatsApp` | Client Connected, Client Disconnected |
 | `Knowledge Base` | Category Created, Category Updated, Category Deleted, Document Uploaded, Document Updated, Document Toggled, Document Deleted |
-| `Quiz` | Quiz Game Created, Quiz Game Updated, Quiz Game Toggled, Quiz Game Deleted, Quiz Session Started, Quiz Session Archived, Quiz Session Unarchived, Quiz Session Deleted, Quiz Submitted & Scored |
+| `Quiz` | Quiz Game Created, Quiz Game Updated, Quiz Game Toggled, Quiz Game Deleted, Quiz Session Started, Quiz Session Archived, Quiz Session Unarchived, Quiz Session Deleted, Quiz Submitted & Scored, Quiz Team Session Created, Quiz Team Session Archived, Quiz Team Session Unarchived, Quiz Team Session Deleted, Quiz Team Submitted & Scored |
 
 All entries must include: a non-empty `actor` name, a timestamp, a meaningful `title`, and a populated `payload` object (never `{}`).
 
