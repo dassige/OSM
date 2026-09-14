@@ -1,0 +1,97 @@
+{
+  "name": "Water Dragon Ejector Pump",
+  "intro": "<p>This questionnaire verifies your understanding of the Water Dragon ejector pump: its operating principles, set-up methods, and safe use, as covered in the Volunteer Pump Operator Study Guides and the OSM Specialist Knowledge - Water Dragon Ejector Pump knowledge check.</p>",
+  "status": 1,
+  "structure": [
+    {
+      "id": "fld_wdsetup",
+      "type": "checkboxes",
+      "description": "<p>Which of the following are correct ways to extend the reach of a Water Dragon to a static water supply?</p>",
+      "required": true,
+      "options": [
+        "Standard 70 mm delivery hose connected directly to the drive inlet",
+        "High-pressure hose reels, if the water supply is between 30-90 m from the appliance",
+        "The Water Dragon can only be used within 10 m of the appliance",
+        "38 mm double-jacketed drive hoses, if the water supply is within 30 m of the appliance",
+        "A combination of hose reels and 38 mm hose, extending the reach to 120 m"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "38 mm double-jacketed drive hoses, if the water supply is within 30 m of the appliance",
+        "High-pressure hose reels, if the water supply is between 30-90 m from the appliance",
+        "A combination of hose reels and 38 mm hose, extending the reach to 120 m"
+      ],
+      "points": 1
+    },
+    {
+      "id": "fld_wdpressure",
+      "type": "radio",
+      "description": "<p>What is the maximum pressure a Water Dragon operates at?</p>",
+      "required": true,
+      "options": [
+        "5000 kPa",
+        "3500 kPa",
+        "1500 kPa",
+        "2000 kPa"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "3500 kPa",
+      "points": 1
+    },
+    {
+      "id": "fld_wdprime",
+      "type": "boolean",
+      "description": "<p>The Water Dragon operates under the water surface and primes as soon as it is placed in the water.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes",
+      "points": 1
+    },
+    {
+      "id": "fld_wdoutputfactors",
+      "type": "checkboxes",
+      "description": "<p>Which of the following should be minimised or removed when establishing a Water Dragon, to maximise its return water output?</p>",
+      "required": true,
+      "options": [
+        "The number of firefighters present at the pump",
+        "Barrier head",
+        "The colour of the drive hose",
+        "Vertical lift",
+        "Kinks in the return hose"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": [
+        "Vertical lift",
+        "Kinks in the return hose",
+        "Barrier head"
+      ],
+      "points": 1
+    },
+    {
+      "id": "fld_wdejectortype",
+      "type": "radio",
+      "description": "<p>Which type of ejector pump used by Fire and Emergency NZ can only be used for salvage, and not for firefighting?</p>",
+      "required": true,
+      "options": [
+        "C-type ejector",
+        "Water Dragon",
+        "A-type ejector",
+        "B-type ejector"
+      ],
+      "renderAs": "radio",
+      "correctAnswer": "A-type ejector",
+      "points": 1
+    },
+    {
+      "id": "fld_wdflush",
+      "type": "boolean",
+      "description": "<p>After pumping contaminated water, the Water Dragon pump and appliance tank must be flushed with clean water as part of recommissioning.</p>",
+      "required": true,
+      "options": [],
+      "renderAs": "radio",
+      "correctAnswer": "Yes",
+      "points": 1
+    }
+  ]
+}
