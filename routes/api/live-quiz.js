@@ -5,7 +5,7 @@ const config = require('../../config');
 const logger = require('../../services/logger');
 const mailer = require('../../services/mailer');
 const { hasRole } = require('../../middleware/auth');
-const { publicSubmitLimiter } = require('../../middleware/rate-limiter');
+const { publicSubmitLimiter, liveQuizLimiter } = require('../../middleware/rate-limiter');
 const { formatMemberName } = require('../../services/rank-config');
 const { calculateQuizScore, scoreTimedAnswer } = require('../../services/quiz-scoring');
 const { broadcastQuizLive, getJoinedParticipantIds } = require('../../services/quiz-live-socket');
@@ -544,7 +544,7 @@ router.post('/join', publicSubmitLimiter, async (req, res) => {
 
 // ── Public: player access by code ───────────────────────────────────────────
 
-router.get('/play/:code', publicSubmitLimiter, async (req, res) => {
+router.get('/play/:code', liveQuizLimiter, async (req, res) => {
   try {
     const player = await db.getQuizPlayerByCode(req.params.code);
     if (!player) return res.status(404).json({ error: 'Invalid or unrecognized access code.' });
@@ -579,7 +579,7 @@ router.get('/play/:code', publicSubmitLimiter, async (req, res) => {
   }
 });
 
-router.post('/play/:code/live-answer', publicSubmitLimiter, (req, res) => handleLiveAnswer('individual', req, res));
+router.post('/play/:code/live-answer', liveQuizLimiter, (req, res) => handleLiveAnswer('individual', req, res));
 
 router.post('/play/:code/submit', publicSubmitLimiter, async (req, res) => {
   try {
@@ -616,7 +616,7 @@ router.post('/play/:code/submit', publicSubmitLimiter, async (req, res) => {
 
 // ── Public: team access by code (both game types) ──────────────────────────
 
-router.get('/team-play/:code', publicSubmitLimiter, async (req, res) => {
+router.get('/team-play/:code', liveQuizLimiter, async (req, res) => {
   try {
     const team = await db.getTeamByCode(req.params.code);
     if (!team) return res.status(404).json({ error: 'Invalid or unrecognized access code.' });
@@ -651,7 +651,7 @@ router.get('/team-play/:code', publicSubmitLimiter, async (req, res) => {
   }
 });
 
-router.post('/team-play/:code/live-answer', publicSubmitLimiter, (req, res) => handleLiveAnswer('team', req, res));
+router.post('/team-play/:code/live-answer', liveQuizLimiter, (req, res) => handleLiveAnswer('team', req, res));
 
 router.post('/team-play/:code/submit', publicSubmitLimiter, async (req, res) => {
   try {

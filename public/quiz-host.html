@@ -303,9 +303,10 @@
                     </div>
                 `).join('') || '<p style="text-align:center;">No answers recorded.</p>';
 
+                const isLastQuestion = data.currentQuestionIndex >= (data.totalQuestions - 1);
                 content.innerHTML = data.phase === 'finished'
                     ? `<h2 style="text-align:center; color:var(--success);">Quiz Finished!</h2>${rows}`
-                    : `${rows}<button type="button" class="btn-host-primary" id="btnNext">Next Question</button>`;
+                    : `${rows}<button type="button" class="btn-host-primary" id="btnNext">${isLastQuestion ? 'Finish Quiz' : 'Next Question'}</button>`;
 
                 if (data.phase === 'leaderboard') {
                     document.getElementById('btnNext').addEventListener('click', () => apiPost('next'));

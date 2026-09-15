@@ -57,6 +57,7 @@ jest.mock('../middleware/auth', () => ({
 }));
 jest.mock('../middleware/rate-limiter', () => ({
     publicSubmitLimiter: (req, res, next) => next(),
+    liveQuizLimiter: (req, res, next) => next(),
     apiLimiter: (req, res, next) => next(),
     loginLimiter: (req, res, next) => next(),
 }));

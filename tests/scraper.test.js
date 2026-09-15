@@ -21,6 +21,7 @@ jest.mock('../config', () => ({
         forgotPassword:{ windowMin: 30, max: 3   },
         api:           { windowMin: 1,  max: 300 },
         publicSubmit:  { windowMin: 5,  max: 30  },
+        liveQuiz:      { windowMin: 1,  max: 300 },
     },
 }));
 

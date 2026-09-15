@@ -601,7 +601,10 @@ async function finalizeLiveParticipants(kind, sessionId) {
     if (question) {
       let answer;
       try { answer = JSON.parse(row.answer); } catch (e) { answer = row.answer; }
-      entry.submittedData[question.id] = { answer, timeTakenMs: row.time_taken_ms };
+      // Stored flat (question.id -> plain value), matching the Score-based
+      // submission shape — the review UI (quiz-play.html renderReview) reads
+      // submitted_data as a flat map for both game types.
+      entry.submittedData[question.id] = answer;
     }
     entry.achieved += row.points_awarded;
   }

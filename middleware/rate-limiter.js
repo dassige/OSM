@@ -48,6 +48,18 @@ const publicSubmitLimiter = rateLimit({
     message: { error: 'Too many submission attempts. Please try again later.' },
 });
 
+// Much more generous limit for the public Timed Quiz live-play endpoints —
+// unlike a one-off form/survey submission, a live Timed quiz refetches state
+// on every host action for every joined player, and a whole crew often plays
+// from the same station IP, so the tight publicSubmit ceiling trips mid-game.
+const liveQuizLimiter = rateLimit({
+    windowMs: rateLimits.liveQuiz.windowMin * 60 * 1000,
+    max: rateLimits.liveQuiz.max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests. Please slow down.' },
+});
+
 // Tighter limit for user-creation to prevent account flooding by a rogue admin
 const createUserLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,  // 15 minutes
@@ -83,4 +95,4 @@ const aiTestLimiter = rateLimit({
     message: { error: 'Too many AI test requests. Please slow down.' },
 });
 
-module.exports = { loginLimiter, mfaLimiter, forgotPasswordLimiter, apiLimiter, publicSubmitLimiter, createUserLimiter, backupLimiter, restoreLimiter, aiTestLimiter };
+module.exports = { loginLimiter, mfaLimiter, forgotPasswordLimiter, apiLimiter, publicSubmitLimiter, liveQuizLimiter, createUserLimiter, backupLimiter, restoreLimiter, aiTestLimiter };

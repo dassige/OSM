@@ -57,6 +57,10 @@
         }
         .lb-row .name {
             flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .lb-row .badge-status {
             font-size: 0.5em;
@@ -103,6 +107,19 @@
             text-align: center;
             padding: 40px;
         }
+        @media (max-width: 480px) {
+            body { padding: 24px 12px; }
+            .lb-header h1 { font-size: 1.6em; }
+            .lb-row {
+                gap: 10px;
+                padding: 12px 14px;
+                font-size: 1em;
+            }
+            .lb-row .rank { width: 26px; }
+            .lb-row .join-code { font-size: 1.1em; margin-right: 6px; }
+            .lb-row .score { min-width: 60px; }
+            .lb-row .btn-informative { padding: 6px 10px; }
+        }
     </style>
 </head>
 
@@ -119,6 +136,7 @@
     <script src="theme.js"></script>
     <script>
         let currentKind = null;
+        let uiConfig = {};
 
         function esc(s) {
             const d = document.createElement('div');
@@ -169,7 +187,10 @@
                 </div>
             `).join('') || '<p style="text-align:center; color:var(--text-muted);">No participants found.</p>';
 
-            document.getElementById('lbUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+            const locale = uiConfig.locale || navigator.language || 'en-NZ';
+            const timeZone = uiConfig.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+            document.getElementById('lbUpdated').textContent =
+                `Last updated: ${new Date().toLocaleTimeString(locale, { timeZone })}`;
         }
 
         async function load(kind, sessionId) {
@@ -183,12 +204,17 @@
             }
         }
 
-        (function init() {
+        (async function init() {
             const params = new URLSearchParams(window.location.search);
             const kind = params.get('kind');
             const sessionId = params.get('sessionId');
             if (!kind || !sessionId) return showError('Missing session information.');
             currentKind = kind;
+
+            try {
+                const uiRes = await fetch('/ui-config');
+                uiConfig = await uiRes.json();
+            } catch (e) {}
 
             load(kind, sessionId);
             setInterval(() => load(kind, sessionId), 10000);
