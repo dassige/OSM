@@ -207,6 +207,9 @@ io.use((socket, next) => {
   else next(new Error("unauthorized"));
 });
 
+const { initQuizLiveSocket } = require("./services/quiz-live-socket");
+initQuizLiveSocket(io, sessionMiddleware, ROLES);
+
 io.on("connection", (socket) => {
   const logger = (msg) => {
     process.stdout.write(msg + "\n");

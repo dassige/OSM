@@ -63,4 +63,13 @@ function calculateTimedQuizScore(questions, submittedData) {
   return { achieved, maximum };
 }
 
-module.exports = { calculateQuizScore, calculateTimedQuizScore };
+// Scores a single live-hosted question — used by the host-driven Timed play
+// route, which records one answer at a time as questions are revealed,
+// instead of the whole-quiz submission calculateTimedQuizScore expects.
+// Reuses the same decay formula by scoring a one-question "quiz".
+function scoreTimedAnswer(question, answer, timeTakenMs) {
+  const { achieved } = calculateTimedQuizScore([question], { [question.id]: { answer, timeTakenMs } });
+  return { isCorrect: achieved > 0, points: achieved };
+}
+
+module.exports = { calculateQuizScore, calculateTimedQuizScore, scoreTimedAnswer, TIMED_MAX_POINTS_PER_QUESTION };

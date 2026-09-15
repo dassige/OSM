@@ -40,6 +40,12 @@
             color: var(--text-muted);
         }
 
+        /* Timed play is mobile-first — keep the title no bigger than the question
+           counter so the answer buttons get most of the vertical space. */
+        #timedGameName, #timedQuestionCounter {
+            font-size: 1em;
+        }
+
         .question-card {
             background: var(--bg-hover);
             border: 1px solid var(--border-color);
@@ -175,13 +181,49 @@
             cursor: pointer;
             min-height: 70px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
         }
         .timed-option-btn:disabled { cursor: default; opacity: 0.55; }
-        .timed-option-btn.correct-flash { box-shadow: 0 0 0 4px #28a745 inset; }
-        .timed-option-btn.wrong-flash { box-shadow: 0 0 0 4px #dc3545 inset; }
+        .timed-option-btn.my-answer { box-shadow: 0 0 0 4px #ffffff inset; }
+        .my-answer-label {
+            font-size: 0.7em;
+            font-weight: normal;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+        #timedWaitingMsg {
+            text-align: center;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-top: 15px;
+        }
+        .timed-leaderboard-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: var(--bg-hover);
+        }
+        .timed-leaderboard-row .rank {
+            font-weight: bold;
+            color: var(--primary);
+            width: 30px;
+        }
+        .timed-leaderboard-row .score {
+            font-weight: bold;
+        }
+        .timed-leaderboard-row .lb-join-code {
+            font-family: monospace;
+            font-weight: bold;
+            letter-spacing: 0.1em;
+            color: var(--primary);
+        }
     </style>
 </head>
 
@@ -213,6 +255,8 @@
             </div>
             <div id="timedQuestionText"></div>
             <div id="timedOptionsGrid" class="timed-options-grid"></div>
+            <div id="timedWaitingMsg" style="display:none;"></div>
+            <div id="timedLeaderboardBox" style="display:none;"></div>
         </div>
         <div id="resultBox" style="display:none; text-align:center; padding:40px;">
             <div id="resultIcon"></div>
@@ -226,7 +270,15 @@
     <script src="theme.js"></script>
     <script src="utils.js"></script>
     <script src="help.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script>
+        // Same back/forward-cache guard as quiz-join.html — a bfcache-restored
+        // play page would keep showing a stale quiz (or a finished result) instead
+        // of the next one if the player navigates back and forward between quizzes.
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) window.location.reload();
+        });
+
         function esc(s) {
             const d = document.createElement('div');
             d.textContent = String(s ?? '');
@@ -241,6 +293,8 @@
         }
 
         function showResult(achieved, maxScore) {
+            clearInterval(timedTickHandle);
+            if (timedSocket) { timedSocket.disconnect(); timedSocket = null; }
             document.getElementById('loading').style.display = 'none';
             document.getElementById('formContent').style.display = 'none';
             document.getElementById('timedPlayContainer').style.display = 'none';
@@ -337,105 +391,169 @@
             });
         }
 
-        // Timed games are always played against the clock, even solo or as one
-        // team on one device — there is no untimed mode for this type. Each
-        // question is shown one at a time with a visible countdown; the score is
-        // computed server-side from how quickly a correct answer was given.
+        // Timed games are always played live, host-driven — even solo or as one
+        // team on one device, there is no self-paced mode for this type. One
+        // question is shown at a time, in sync with a launched host screen; the
+        // score is computed server-side from how quickly a correct answer was
+        // given. This page only renders the state the server hands it and pushes
+        // the player's chosen answer — all progression (start, reveal, next
+        // question) is driven by the host, and relayed here over Socket.IO.
         const TIMED_OPTION_COLORS = ['#43a047', '#2196f3', '#e53935', '#fbc02d'];
-        let timedState = null;
+        let timedCode = null;
+        let timedPlayUrlBase = null;
+        let timedTickHandle = null;
+        let timedSocket = null;
 
-        function startTimedQuiz(game, playUrlBase, playCode) {
-            timedState = {
-                questions: game.questions || [],
-                index: 0,
-                answers: {},
-                locked: false,
-                timer: null,
-                questionStartTime: 0,
-                playUrlBase,
-                playCode,
-            };
+        function parseServerTimestamp(ts) {
+            return new Date(String(ts).replace(' ', 'T') + 'Z').getTime();
+        }
+
+        function startTimedQuiz(data, playUrlBase, playCode) {
+            timedCode = playCode;
+            timedPlayUrlBase = playUrlBase;
             document.getElementById('loading').style.display = 'none';
             document.getElementById('timedPlayContainer').style.display = 'block';
-            document.getElementById('timedGameName').textContent = game.name;
-            document.getElementById('timedPlayingAs').textContent = game.team
-                ? `Playing as Team: ${game.team}`
-                : (game.member ? `Playing as: ${game.member}` : '');
-            showTimedQuestion();
-        }
+            renderTimedState(data);
 
-        function showTimedQuestion() {
-            const q = timedState.questions[timedState.index];
-            timedState.locked = false;
-            document.getElementById('timedQuestionCounter').textContent = `Question ${timedState.index + 1} of ${timedState.questions.length}`;
-            document.getElementById('timedQuestionText').textContent = q.description;
-
-            const grid = document.getElementById('timedOptionsGrid');
-            grid.innerHTML = '';
-            (q.options || []).slice(0, 4).forEach((opt, i) => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'timed-option-btn';
-                btn.style.background = TIMED_OPTION_COLORS[i] || '#888';
-                btn.dataset.option = opt;
-                btn.textContent = `${i + 1}. ${opt}`;
-                btn.addEventListener('click', () => lockTimedAnswer(opt));
-                grid.appendChild(btn);
+            const kind = playUrlBase.includes('team-play') ? 'team' : 'individual';
+            timedSocket = io('/quiz-live');
+            timedSocket.on('connect', () => {
+                timedSocket.emit('join-player', { kind, code: playCode });
+                refreshTimedState();
             });
-
-            const limitMs = (parseFloat(q.timeLimitSeconds) || 20) * 1000;
-            const fill = document.getElementById('timerBarFill');
-            fill.style.transition = 'none';
-            fill.style.width = '100%';
-            fill.style.background = 'var(--success)';
-            void fill.offsetWidth; // force reflow so the transition below applies
-            fill.style.transition = `width ${limitMs}ms linear`;
-            fill.style.width = '0%';
-
-            clearTimeout(timedState.timer);
-            timedState.questionStartTime = Date.now();
-            timedState.timer = setTimeout(() => lockTimedAnswer(null), limitMs);
-        }
-
-        function lockTimedAnswer(answer) {
-            if (timedState.locked) return;
-            timedState.locked = true;
-            clearTimeout(timedState.timer);
-
-            const q = timedState.questions[timedState.index];
-            const timeTakenMs = Date.now() - timedState.questionStartTime;
-            timedState.answers[q.id] = { answer, timeTakenMs };
-
-            document.querySelectorAll('.timed-option-btn').forEach((btn) => {
-                btn.disabled = true;
-                if (btn.dataset.option === q.correctAnswer) btn.classList.add('correct-flash');
-                else if (btn.dataset.option === answer) btn.classList.add('wrong-flash');
+            ['question-started', 'question-revealed', 'leaderboard-shown', 'game-finished'].forEach((evt) => {
+                timedSocket.on(evt, refreshTimedState);
             });
-
-            setTimeout(() => {
-                timedState.index++;
-                if (timedState.index >= timedState.questions.length) {
-                    submitTimedQuiz();
-                } else {
-                    showTimedQuestion();
-                }
-            }, 1200);
         }
 
-        async function submitTimedQuiz() {
-            document.getElementById('timedPlayContainer').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
+        async function refreshTimedState() {
             try {
-                const res = await fetch(`${timedState.playUrlBase}/${timedState.playCode}/submit`, {
+                const res = await fetch(`${timedPlayUrlBase}/${timedCode}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'This quiz link is invalid or expired.');
+                if (data.status === 'submitted') return showResult(data.achievedScore, data.maxScore);
+                renderTimedState(data);
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        function renderTimedState(data) {
+            document.getElementById('timedGameName').textContent = data.name;
+            document.getElementById('timedPlayingAs').textContent = data.team
+                ? `Playing as Team: ${data.team}`
+                : (data.member ? `Playing as: ${data.member}` : '');
+
+            clearInterval(timedTickHandle);
+            const counter = document.getElementById('timedQuestionCounter');
+            const fill = document.getElementById('timerBarFill');
+            const qText = document.getElementById('timedQuestionText');
+            const grid = document.getElementById('timedOptionsGrid');
+            const waitingMsg = document.getElementById('timedWaitingMsg');
+            const leaderboardBox = document.getElementById('timedLeaderboardBox');
+
+            grid.style.display = 'grid';
+            waitingMsg.style.display = 'none';
+            leaderboardBox.style.display = 'none';
+
+            if (data.phase === 'lobby') {
+                counter.textContent = '';
+                fill.style.transition = 'none';
+                fill.style.width = '100%';
+                qText.textContent = '';
+                grid.innerHTML = '';
+                waitingMsg.textContent = 'Waiting for the host to start the quiz...';
+                waitingMsg.style.display = 'block';
+                return;
+            }
+
+            counter.textContent = `Question ${data.currentQuestionIndex + 1} of ${data.totalQuestions}`;
+
+            if (data.phase === 'question' || data.phase === 'reveal') {
+                const q = data.currentQuestion;
+                qText.textContent = q.description;
+                grid.innerHTML = '';
+                (q.options || []).slice(0, 4).forEach((opt, i) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'timed-option-btn';
+                    const isWrongReveal = data.phase === 'reveal' && opt !== data.correctAnswer;
+                    btn.style.background = isWrongReveal ? '#9e9e9e' : (TIMED_OPTION_COLORS[i] || '#888');
+                    btn.dataset.option = opt;
+                    const isMyAnswer = data.phase === 'reveal' && data.myAnswer !== undefined && opt === data.myAnswer;
+                    btn.innerHTML = `${i + 1}. ${esc(opt)}` + (isMyAnswer ? '<br><span class="my-answer-label">Your answer</span>' : '');
+                    if (isMyAnswer) btn.classList.add('my-answer');
+                    btn.disabled = true;
+                    grid.appendChild(btn);
+                });
+
+                if (data.phase === 'question') {
+                    const limitMs = (parseFloat(q.timeLimitSeconds) || 20) * 1000;
+                    const startedAtMs = parseServerTimestamp(data.questionStartedAt);
+                    const updateBar = () => {
+                        const remaining = Math.max(0, limitMs - (Date.now() - startedAtMs));
+                        fill.style.transition = 'none';
+                        fill.style.width = `${Math.round((remaining / limitMs) * 100)}%`;
+                    };
+                    updateBar();
+                    timedTickHandle = setInterval(updateBar, 200);
+
+                    if (data.hasAnsweredCurrent) {
+                        waitingMsg.textContent = 'Answer locked in — waiting for the timer or other players...';
+                        waitingMsg.style.display = 'block';
+                    } else {
+                        grid.querySelectorAll('.timed-option-btn').forEach((btn) => {
+                            btn.disabled = false;
+                            btn.addEventListener('click', () => submitTimedAnswer(btn.dataset.option));
+                        });
+                    }
+                } else {
+                    fill.style.transition = 'none';
+                    fill.style.width = '0%';
+                    waitingMsg.textContent = 'Waiting for the host to show the leaderboard...';
+                    waitingMsg.style.display = 'block';
+                }
+                return;
+            }
+
+            grid.style.display = 'none';
+            qText.textContent = '';
+            if (data.phase === 'leaderboard' || data.phase === 'finished') {
+                renderTimedLeaderboard(data.leaderboard || []);
+                if (data.phase === 'leaderboard') {
+                    waitingMsg.textContent = 'Waiting for the host to continue to the next question...';
+                    waitingMsg.style.display = 'block';
+                }
+            }
+        }
+
+        function renderTimedLeaderboard(leaderboard) {
+            const box = document.getElementById('timedLeaderboardBox');
+            box.style.display = 'block';
+            box.innerHTML = leaderboard.map((row, i) => `
+                <div class="timed-leaderboard-row">
+                    <span class="rank">${i + 1}.</span>
+                    <span style="flex:1; padding:0 10px;">${esc(row.name)} <span class="lb-join-code">${esc(row.accessCode)}</span></span>
+                    <span class="score">${row.score}</span>
+                </div>
+            `).join('');
+        }
+
+        async function submitTimedAnswer(answer) {
+            document.querySelectorAll('.timed-option-btn').forEach((btn) => { btn.disabled = true; });
+            try {
+                const res = await fetch(`${timedPlayUrlBase}/${timedCode}/live-answer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(timedState.answers),
+                    body: JSON.stringify({ answer }),
                 });
                 const result = await res.json();
-                if (!res.ok) throw new Error(result.error || 'Submission failed.');
-                showResult(result.achievedScore, result.maxScore);
+                if (!res.ok) throw new Error(result.error || 'Failed to submit answer.');
+                document.getElementById('timedWaitingMsg').textContent = 'Answer locked in — waiting for the timer or other players...';
+                document.getElementById('timedWaitingMsg').style.display = 'block';
             } catch (err) {
-                showError(err.message);
+                if (window.showToast) showToast(err.message, 'error'); else console.error(err.message);
+                refreshTimedState();
             }
         }
 

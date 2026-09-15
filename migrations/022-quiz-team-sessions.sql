@@ -4,15 +4,15 @@
 -- Score-based team sessions are playable immediately — the whole team answers
 -- together on the captain's device, reusing the same self-paced scoring flow
 -- as Phase 2's individual sessions, just attributed to the team. Timed team
--- sessions are setup-only for now: whichever device enters the code first
--- becomes that team's captain screen once live hosting (Phase 4) exists.
+-- sessions are played live via a launched host screen (Phase 4, migration 024)
+-- — whichever device enters the code first becomes that team's screen.
 -- Ephemeral, like quiz_sessions: not a reusable roster, just the setup for
 -- one game run.
 CREATE TABLE IF NOT EXISTS quiz_team_sessions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   game_id INTEGER NOT NULL,
   name TEXT NOT NULL,
-  game_type TEXT NOT NULL, -- 'score' | 'timed' — 'score' is playable now, 'timed' awaits live hosting
+  game_type TEXT NOT NULL, -- 'score' | 'timed' — 'score' is self-paced, 'timed' is played live (see migration 024)
   game_snapshot TEXT NOT NULL, -- JSON: { name, description, game_type, questions } frozen at setup
   is_archived INTEGER DEFAULT 0,
   created_by INTEGER,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS quiz_teams (
   team_session_id INTEGER NOT NULL,
   name TEXT NOT NULL,
   access_code TEXT UNIQUE NOT NULL,
-  status TEXT DEFAULT 'pending', -- 'pending' | 'submitted' (score-based team play, unused by Timed until live hosting)
+  status TEXT DEFAULT 'pending', -- 'pending' | 'submitted' — set once all questions are answered (Timed) or the form is submitted (Score)
   submitted_data TEXT,
   achieved_score REAL,
   max_score REAL,

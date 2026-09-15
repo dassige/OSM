@@ -1,4 +1,4 @@
-const { calculateQuizScore, calculateTimedQuizScore } = require('../services/quiz-scoring');
+const { calculateQuizScore, calculateTimedQuizScore, scoreTimedAnswer } = require('../services/quiz-scoring');
 
 describe('calculateTimedQuizScore', () => {
     const questions = [
@@ -69,6 +69,22 @@ describe('calculateTimedQuizScore', () => {
         const { achieved, maximum } = calculateTimedQuizScore(questions, {});
         expect(achieved).toBe(0);
         expect(maximum).toBe(2000);
+    });
+});
+
+describe('scoreTimedAnswer (single live-hosted question, Phase 4)', () => {
+    const question = { id: 'q1', correctAnswer: 'A', timeLimitSeconds: 20 };
+
+    it('scores a correct answer using the same decay formula', () => {
+        expect(scoreTimedAnswer(question, 'A', 10000)).toEqual({ isCorrect: true, points: 750 });
+    });
+
+    it('awards zero points for a wrong answer', () => {
+        expect(scoreTimedAnswer(question, 'B', 0)).toEqual({ isCorrect: false, points: 0 });
+    });
+
+    it('awards zero points when no answer was given (timeout)', () => {
+        expect(scoreTimedAnswer(question, null, 20000)).toEqual({ isCorrect: false, points: 0 });
     });
 });
 

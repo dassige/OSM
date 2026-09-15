@@ -200,14 +200,37 @@ function toggleSortBar() {
 }
 function handleSort(column) { sessionTable.handleSort(column); }
 
+// Timed games only flip a participant to "submitted" once the whole game
+// ends, so a submitted-count is uninformative while it's running — show which
+// question the live host is actually on instead.
+function timedProgressHtml(s) {
+  const total = s.total_questions || 0;
+  if (s.game_phase === 'finished') return `Finished — ${total} question${total === 1 ? '' : 's'}`;
+  if (!s.game_phase || s.game_phase === 'lobby') return `Not started — ${total} question${total === 1 ? '' : 's'}`;
+  return `Question ${(s.current_question_index || 0) + 1} of ${total}`;
+}
+
 function progressHtml(s) {
+  if (s.game_type === 'timed') return timedProgressHtml(s);
   const total = s.total_sent || 0;
   const submitted = s.total_submitted || 0;
   return `${submitted} of ${total} submitted`;
 }
 
 function sessionTypeBadgeHtml(s) {
-  return `<span class="type-badge">${s.game_type === 'timed' ? 'Timed' : 'Score'}</span>`;
+  return `<span class="type-badge ${s.game_type === 'timed' ? 'type-badge-timed' : 'type-badge-score'}">${s.game_type === 'timed' ? 'Timed' : 'Score'}</span>`;
+}
+
+// Launch opens a standalone, full-screen display window: a live-hosted
+// question-by-question game for Timed sessions (quiz-host.html), or a
+// polling leaderboard for self-paced Score sessions (quiz-leaderboard.html).
+function launchButtonHtml(kind, s, sizeClass) {
+  if (s.is_archived) return '';
+  const url = s.game_type === 'timed'
+    ? `/quiz-host.html?kind=${kind}&sessionId=${s.id}`
+    : `/quiz-leaderboard.html?kind=${kind}&sessionId=${s.id}`;
+  const title = s.game_type === 'timed' ? 'Launch the live-hosted quiz' : 'Open the live leaderboard';
+  return `<button class="btn-success ${sizeClass}" onclick="window.open('${url}', '_blank', 'noopener')" title="${title}">Launch</button>`;
 }
 
 function renderSessionRow(s, index) {
@@ -219,6 +242,7 @@ function renderSessionRow(s, index) {
     <td data-label="Status" class="text-center"><span class="status-badge ${s.is_archived ? 'status-archived' : 'status-active'}">${s.is_archived ? 'Archived' : 'Active'}</span></td>
     <td data-label="Progress" class="text-center">${progressHtml(s)}</td>
     <td data-label="Actions" class="text-center ws-nowrap">
+      ${launchButtonHtml('individual', s, 'btn-sm')}
       <button class="btn-sm btn-informative" onclick="openSessionDetail(${s.id})" title="View player results">Results</button>
       <button class="btn-sm btn-secondary" onclick="toggleArchive(${s.id}, ${!s.is_archived})" title="${s.is_archived ? 'Restore this session to active' : 'Archive this session'}">${s.is_archived ? 'Unarchive' : 'Archive'}</button>
       <button class="btn-icon delete" onclick="deleteSession(${s.id})" title="Permanently delete this session">
@@ -268,6 +292,7 @@ function renderSessionCards(data, startIndex) {
         <div class="card-row"><span class="card-label">Progress:</span><span>${progressHtml(s)}</span></div>
       </div>
       <div class="card-actions">
+        ${launchButtonHtml('individual', s, 'btn-sm')}
         <button class="btn-informative btn-sm" onclick="openSessionDetail(${s.id})" title="View player results">Results</button>
         <button class="btn-secondary btn-sm" onclick="toggleArchive(${s.id}, ${!s.is_archived})" title="Toggle archive">${s.is_archived ? 'Unarchive' : 'Archive'}</button>
         <button class="btn-danger btn-sm" onclick="deleteSession(${s.id})" title="Permanently delete this session">Delete</button>
@@ -480,7 +505,7 @@ function renderPlayersTableBody(pageData) {
   const tbody = document.getElementById('playersTableBody');
   tbody.innerHTML = '';
   if (pageData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">No players invited.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No players invited.</td></tr>';
     return;
   }
   pageData.forEach((p) => {
@@ -497,6 +522,12 @@ function renderPlayersTableBody(pageData) {
       <td data-label="Status" class="text-center player-status-${p.status}">${p.status === 'submitted' ? 'Submitted' : 'Sent'}</td>
       <td data-label="Score" class="text-center">${scoreText}</td>
       <td data-label="Submitted At" class="text-center">${submittedText}</td>
+      <td data-label="Code" class="text-center">
+        <span class="player-access-code">${esc(p.access_code)}</span>
+        <button class="btn-icon" onclick="copyAccessCode('${p.access_code}')" title="Copy this player's join code">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        </button>
+      </td>
       <td data-label="Actions" class="text-center">${viewBtn}${resendBtn}</td>
     `;
     tbody.appendChild(tr);
@@ -522,11 +553,13 @@ function renderPlayersCards(pageData) {
       <div class="card-body">
         <div class="card-row"><span class="card-label">Score:</span><span>${scoreText}</span></div>
         <div class="card-row"><span class="card-label">Submitted:</span><span>${submittedText}</span></div>
+        <div class="card-row"><span class="card-label">Code:</span><span class="player-access-code">${esc(p.access_code)}</span></div>
       </div>
-      ${(canView || canResend) ? `<div class="card-actions">
+      <div class="card-actions">
+        <button class="btn-primary btn-sm" onclick="copyAccessCode('${p.access_code}')" title="Copy this player's join code">Copy Code</button>
         ${canView ? `<button class="btn-informative btn-sm" onclick="viewSubmission(${p.id})" title="View submitted quiz">View</button>` : ''}
         ${canResend ? `<button class="btn-primary btn-sm" onclick="resendInvite(${p.id})" title="Resend the invitation email">Resend</button>` : ''}
-      </div>` : ''}
+      </div>
     `;
     container.appendChild(card);
   });
@@ -613,11 +646,12 @@ function toggleTeamSessionSortBar() {
 function handleTeamSessionSort(column) { teamSessionTable.handleSort(column); }
 
 function teamProgressHtml(s) {
+  if (s.game_type === 'timed') return timedProgressHtml(s);
   return `${s.total_submitted || 0} of ${s.total_teams || 0} submitted`;
 }
 
 function teamTypeBadgeHtml(s) {
-  return `<span class="type-badge">${s.game_type === 'score' ? 'Score' : 'Timed'}</span>`;
+  return `<span class="type-badge ${s.game_type === 'score' ? 'type-badge-score' : 'type-badge-timed'}">${s.game_type === 'score' ? 'Score' : 'Timed'}</span>`;
 }
 
 function renderTeamSessionRow(s, index) {
@@ -629,6 +663,7 @@ function renderTeamSessionRow(s, index) {
     <td data-label="Status" class="text-center"><span class="status-badge ${s.is_archived ? 'status-archived' : 'status-active'}">${s.is_archived ? 'Archived' : 'Active'}</span></td>
     <td data-label="Teams / Members" class="text-center">${teamProgressHtml(s)}</td>
     <td data-label="Actions" class="text-center ws-nowrap">
+      ${launchButtonHtml('team', s, 'btn-sm')}
       <button class="btn-sm btn-informative" onclick="openTeamSessionDetail(${s.id})" title="View teams and access codes">Teams</button>
       <button class="btn-sm btn-secondary" onclick="toggleTeamSessionArchive(${s.id}, ${!s.is_archived})" title="${s.is_archived ? 'Restore this team setup to active' : 'Archive this team setup'}">${s.is_archived ? 'Unarchive' : 'Archive'}</button>
       <button class="btn-icon delete" onclick="deleteTeamSessionRow(${s.id})" title="Permanently delete this team setup">
@@ -678,6 +713,7 @@ function renderTeamSessionCards(data, startIndex) {
         <div class="card-row"><span class="card-label">Teams:</span><span>${teamProgressHtml(s)}</span></div>
       </div>
       <div class="card-actions">
+        ${launchButtonHtml('team', s, 'btn-sm')}
         <button class="btn-informative btn-sm" onclick="openTeamSessionDetail(${s.id})" title="View teams and access codes">Teams</button>
         <button class="btn-secondary btn-sm" onclick="toggleTeamSessionArchive(${s.id}, ${!s.is_archived})" title="Toggle archive">${s.is_archived ? 'Unarchive' : 'Archive'}</button>
         <button class="btn-danger btn-sm" onclick="deleteTeamSessionRow(${s.id})" title="Permanently delete this team setup">Delete</button>
@@ -827,14 +863,14 @@ function renderTeamCards(teams) {
       </div>
       <div class="card-actions">
         ${viewBtn}
-        <button class="btn-primary btn-sm" onclick="copyTeamCode('${t.access_code}')" title="Copy this team's access code">Copy Code</button>
+        <button class="btn-primary btn-sm" onclick="copyAccessCode('${t.access_code}')" title="Copy this team's access code">Copy Code</button>
       </div>
     `;
     grid.appendChild(card);
   });
 }
 
-function copyTeamCode(code) {
+function copyAccessCode(code) {
   navigator.clipboard.writeText(code)
     .then(() => showToast('Access code copied to clipboard', 'success'))
     .catch(() => showToast('Failed to copy code', 'error'));

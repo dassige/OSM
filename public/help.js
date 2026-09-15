@@ -653,7 +653,7 @@ const helpContent = {
             <ul>
                 <li>Click <strong>+ Add Game</strong>, give it a name and optional description.</li>
                 <li><strong>Score-based:</strong> Self-paced — behaves just like a Form: any mix of Paragraph, Single Choice, Checkboxes, or Yes/No questions, each worth a configurable number of points. Answer whenever, submit once.</li>
-                <li><strong>Timed:</strong> Always played against the clock, even solo or as one team on one device — every question is a fixed 4-choice question with its own time limit, shown one at a time with a visible countdown, and scored on speed plus correctness (answering instantly earns full points; answering right at the deadline earns half; a wrong answer or a timeout earns nothing).</li>
+                <li><strong>Timed:</strong> Always played live, host-driven — even solo or as one team — via a launched host screen. Every question is a fixed 4-choice question with its own time limit; the host controls when each question starts and moves to the next, and everyone answers it at the same time. Scored on speed plus correctness (answering instantly earns full points; answering right at the deadline earns half; a wrong answer or a timeout earns nothing).</li>
                 <li>The <strong>Type</strong> can only be changed while the game has no questions yet — remove all questions first if you need to switch.</li>
                 <li><strong>Active:</strong> Disable a game to hide it from use without deleting its questions.</li>
             </ul>
@@ -678,7 +678,7 @@ const helpContent = {
                 <li><strong>Import</strong> — loads a previously exported <code>.json</code> file into the editor. Nothing is saved until you click <strong>Save</strong>.</li>
             </ul>
 
-            <p style="color:var(--text-muted); font-size:0.85em;">A multi-team, host-run live round with a shared leaderboard across everyone's devices at once is covered in a later release of this feature — right now, every Timed play (solo or one team) runs its own independent timed round.</p>
+            <p style="color:var(--text-muted); font-size:0.85em;">To run the game, go to <em>Live Quiz</em> and click <strong>Launch</strong> on the session or team setup — a Score game opens a live leaderboard; a Timed game opens the host screen.</p>
         `
     },
     "quiz-preview": {
@@ -697,41 +697,64 @@ const helpContent = {
         title: "Live Quiz: Sessions & Team Setups",
         body: `
             <p>Track quiz sessions and team setups started from <em>Quiz Games</em>. This page has two tabs.</p>
+            <p style="color:var(--text-muted); font-size:0.85em;">Every player and team gets a short 6-character code (shown in Results / Teams below, and on the host screen's lobby). Instead of sending a link, tell people to go to <strong>/quiz</strong> and type it in.</p>
             <h3>1. Single Sessions tab</h3>
             <ul>
                 <li>Each session is one "run" of a game (either type) for a chosen set of members, played individually — a snapshot of the game's questions is frozen at the moment the session starts. A Score/Timed badge shows which type.</li>
-                <li><strong>Progress:</strong> shows how many invited members have submitted so far.</li>
+                <li><strong>Launch:</strong> opens a standalone, full-screen window for running the game. For a <strong>Score</strong> session, it's a live leaderboard that refreshes every 10 seconds as members submit — each member still waiting to submit shows their big, bold join code in place of a status badge (so they can join straight from the shared screen), which disappears once they submit and is replaced by a <strong>View</strong> button to open their answers, correct/incorrect marked, right from the leaderboard. For a <strong>Timed</strong> session, it's the host screen — see <em>Hosting a Live Timed Quiz</em> below.</li>
+                <li><strong>Progress:</strong> for a <strong>Score</strong> session, shows how many invited members have submitted so far. For a <strong>Timed</strong> session, submissions only land at the very end, so this instead shows which question the live host screen is currently on (e.g. "Question 2 of 5"), or "Not started" / "Finished" before/after.</li>
                 <li><strong>Archive:</strong> stops the session accepting further submissions without deleting its results.</li>
                 <li><strong>Delete:</strong> permanently removes the session and all player results.</li>
             </ul>
             <h3>2. Single Session Results</h3>
             <ul>
-                <li>Click <strong>Results</strong> on a session to see each invited member's status (Sent / Submitted), score, and submission time.</li>
+                <li>Click <strong>Results</strong> on a session to see each invited member's status (Sent / Submitted), score, submission time, and their join code with a copy-to-clipboard button.</li>
                 <li><strong>View:</strong> opens a read-only copy of a submitted member's answers, with correct answers highlighted green and incorrect ones red — only available once they've submitted.</li>
-                <li><strong>Resend:</strong> re-sends the invitation email to a member who hasn't submitted yet (only available while they have an email on file).</li>
+                <li><strong>Resend:</strong> re-sends the invitation email to a member who hasn't submitted yet (only available while they have an email on file) — or just give them their join code instead.</li>
                 <li><strong>Refresh:</strong> reloads the player list on the spot to pick up new submissions, without returning to the sessions list.</li>
             </ul>
             <p style="color:var(--text-muted); font-size:0.85em;">To start a new session, go to <em>Quiz Games</em>, open a game (either type), and click <strong>Start Single</strong>.</p>
 
             <h3>3. Team Setups tab</h3>
             <ul>
-                <li>Each team setup is one "run" of a game (either type), organized into named teams via a drag-and-drop builder in <em>Quiz Games</em>. It's playable right away, on both game types — the whole team answers together on the captain's device, using the team's access code, and the score is attributed to the team. Progress shows "X of Y submitted", just like Single Sessions.</li>
-                <li>For a <strong>Timed</strong> team setup, the captain's device plays the round against the clock the same way an individual would.</li>
+                <li>Each team setup is one "run" of a game (either type), organized into named teams via a drag-and-drop builder in <em>Quiz Games</em>. Progress shows the same as Single Sessions — "X of Y submitted" for Score, or the current live question for Timed.</li>
+                <li><strong>Score</strong> team setups are playable right away — the whole team answers together on the captain's device, using the team's access code, and the score is attributed to the team.</li>
+                <li><strong>Timed</strong> team setups are played live — click <strong>Launch</strong> to open the host screen (see below); each team joins with its access code and answers together on the captain's device, in sync with the host.</li>
+                <li><strong>Launch:</strong> same as Single Sessions — a live leaderboard for Score, the host screen for Timed.</li>
                 <li>Click <strong>Teams</strong> on a setup to see each team's roster, status, score (once submitted), and access code.</li>
                 <li><strong>View</strong> (once a team has submitted) — opens a read-only copy of that team's answers, with correct answers highlighted green and incorrect ones red.</li>
                 <li><strong>Copy Code:</strong> copies a team's access code to the clipboard.</li>
                 <li><strong>Archive</strong> / <strong>Delete</strong> work the same way as Single Sessions.</li>
             </ul>
             <p style="color:var(--text-muted); font-size:0.85em;">To set up teams, go to <em>Quiz Games</em>, open any game, and click <strong>Start Teams</strong>.</p>
+
+            <h3>4. Hosting a Live Timed Quiz</h3>
+            <ul>
+                <li>Click <strong>Launch</strong> on a Timed session or team setup to open the host screen — a standalone, full-screen window meant for a shared display (projector, TV) with no side menu.</li>
+                <li>The host screen first shows every invited player/team's name alongside their join code (so people can find their own code on the shared screen), and a <strong>START</strong> button. As each person actually joins (opens their code on <strong>/quiz</strong>), their entry turns green and its code disappears — a live, at-a-glance view of who's in. Starting shows question 1 to everyone at once with a live countdown.</li>
+                <li>Once the timer runs out — or everyone has answered — every wrong option greys out, leaving the correct one in its original colour. Click the arrow button to reveal the leaderboard (which lists each player's/team's join code next to their name, in case anyone needs to rejoin), then <strong>Next Question</strong> to continue. This repeats until the last question, which ends the quiz and finalizes every score.</li>
+                <li>If the host screen is closed and reopened (or <strong>Launch</strong> is clicked again), it always resumes from the leaderboard for the last completed question — never mid-countdown — so nothing is lost.</li>
+            </ul>
+        `
+    },
+    "quiz-join": {
+        title: "Joining a Quiz",
+        body: `
+            <p>Enter the 6-character code you were given (by the host, on a shared screen, or in a message) to jump straight to your quiz — no link needed. This page is also reachable at the short address <strong>/quiz</strong>.</p>
+            <ul>
+                <li>Codes use only uppercase letters and digits — the box automatically capitalizes what you type.</li>
+                <li>The same code works whether you're joining as an individual or as a team captain — you don't need to specify which.</li>
+                <li>Once accepted, you're taken straight to the quiz — a Score-based game shows its questions, a Timed game waits for the host to start.</li>
+            </ul>
         `
     },
     "quiz-play": {
         title: "Playing a Quiz",
         body: `
-            <p>You've been sent a link to play a quiz game, either individually or as a team (a team plays together on one device).</p>
+            <p>You've been sent a link (or entered a code on the <em>Join a Quiz</em> page) to play a quiz game, either individually or as a team (a team plays together on one device).</p>
             <ul>
                 <li><strong>Score-based:</strong> answer each question at your own pace and click <strong>Submit Answers</strong> when done.</li>
-                <li><strong>Timed:</strong> questions appear one at a time with a countdown — pick an answer before time runs out. Answering faster earns more points; a wrong answer or a timeout earns none. The quiz submits itself automatically after the last question.</li>
+                <li><strong>Timed:</strong> this is a live, host-driven round — wait on this page until the host starts the quiz on the shared screen. Each question then appears here with a countdown; pick an answer before time runs out. Answering faster earns more points; a wrong answer or a timeout earns none. Once revealed, the wrong options grey out so the correct one stands out, and whichever option you picked is marked "Your answer" so you can see how you did even if you chose wrong. Between questions you'll see the leaderboard (with everyone's join code, in case you get disconnected and need to rejoin) while you wait for the host to continue.</li>
                 <li>The score is shown immediately once submitted — for a team code, it's the whole team's score.</li>
                 <li>Each quiz code can only be used once — reopening the link after submitting shows the result again, not a fresh attempt.</li>
             </ul>
@@ -789,6 +812,7 @@ const helpContent = {
     else if (path.includes("surveys-results")) key = "surveys-results";
     else if (path.includes("knowledgebase")) key = "knowledgebase";
     else if (path.includes("quiz-preview")) key = "quiz-preview";
+    else if (path.includes("quiz-join")) key = "quiz-join";
     else if (path.includes("quiz-play")) key = "quiz-play";
     else if (path.includes("live-quiz")) key = "live-quiz";
     else if (path.includes("quiz-games")) key = "quiz-games";

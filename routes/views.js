@@ -57,6 +57,11 @@ router.get("/knowledgebase/:slug", (_req, res) => {
   res.sendFile(path.join(__dirname, "../public/knowledgebase-view.html"));
 });
 
+// Short, easy-to-say slug for the quiz join landing page (e.g. "yourserver/quiz")
+router.get("/quiz", (_req, res) => {
+  res.sendFile(path.join(__dirname, "../public/quiz-join.html"));
+});
+
 // Note: You can easily add protections for /members.html, /skills.html, and /forms-manage.html here if needed.
 
 module.exports = router;

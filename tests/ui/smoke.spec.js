@@ -28,6 +28,8 @@ const AUTH_PAGES = [
   { url: '/quiz-preview.html',      name: 'Quiz Preview (no ID)' },
   { url: '/live-quiz.html',         name: 'Live Quiz' },
   { url: '/quiz-play.html',         name: 'Quiz Play (no code)' },
+  { url: '/quiz-host.html',         name: 'Quiz Host (no session)' },
+  { url: '/quiz-leaderboard.html',  name: 'Quiz Leaderboard (no session)' },
 ];
 
 function attachErrorListeners(page) {
@@ -97,5 +99,29 @@ test.describe('Smoke — public pages', () => {
     await page.waitForLoadState('domcontentloaded');
 
     expect(errors, `JS errors on KB Viewer:\n${errors.join('\n')}`).toEqual([]);
+  });
+
+  test('Quiz Join page loads without JS errors (no code)', async ({ page, context }) => {
+    // Public page — no auth required; the landing page a player/captain types a code into
+    await context.clearCookies();
+
+    const errors = attachErrorListeners(page);
+
+    await page.goto('/quiz-join.html');
+    await page.waitForLoadState('domcontentloaded');
+
+    expect(errors, `JS errors on Quiz Join:\n${errors.join('\n')}`).toEqual([]);
+  });
+
+  test('Quiz Join short slug (/quiz) loads without JS errors', async ({ page, context }) => {
+    // Same page, served at a short, easy-to-say address — no auth required
+    await context.clearCookies();
+
+    const errors = attachErrorListeners(page);
+
+    await page.goto('/quiz');
+    await page.waitForLoadState('domcontentloaded');
+
+    expect(errors, `JS errors on /quiz:\n${errors.join('\n')}`).toEqual([]);
   });
 });

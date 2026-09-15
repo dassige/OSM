@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <title id="pageTitle">Leaderboard - OpReady</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg-body);
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+        .lb-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .lb-header h1 {
+            color: var(--primary);
+            margin: 0 0 6px 0;
+            font-size: 2.2em;
+        }
+        .lb-header p {
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .lb-list {
+            width: 100%;
+            max-width: 700px;
+        }
+        .lb-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 22px;
+            margin-bottom: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px var(--shadow);
+            font-size: 1.3em;
+        }
+        .lb-row .rank {
+            font-weight: bold;
+            color: var(--primary);
+            width: 40px;
+            text-align: center;
+        }
+        .lb-row .name {
+            flex: 1;
+        }
+        .lb-row .badge-status {
+            font-size: 0.5em;
+            font-weight: bold;
+            padding: 3px 9px;
+            border-radius: 10px;
+            margin-right: 10px;
+        }
+        .lb-row .badge-submitted { background: #d4edda; color: #155724; }
+        .lb-row .join-code {
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 1.3em;
+            letter-spacing: 0.1em;
+            color: var(--primary);
+            margin-right: 10px;
+        }
+        .lb-row .score {
+            font-weight: bold;
+            min-width: 90px;
+            text-align: right;
+        }
+        .lb-row .btn-informative {
+            font-size: 0.6em;
+            padding: 6px 14px;
+            margin-left: 6px;
+            white-space: nowrap;
+        }
+        .lb-join-instructions {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+        .lb-join-instructions strong {
+            color: var(--primary);
+        }
+        .lb-updated {
+            margin-top: 24px;
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+        #errorBox {
+            color: var(--danger);
+            text-align: center;
+            padding: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="lb-header">
+        <h1 id="lbTitle">Leaderboard</h1>
+        <p id="lbSubtitle"></p>
+    </div>
+    <p id="lbJoinInstructions" class="lb-join-instructions" style="display:none;"></p>
+    <div id="lbList" class="lb-list"></div>
+    <p id="lbUpdated" class="lb-updated"></p>
+    <div id="errorBox" style="display:none;"></div>
+
+    <script src="theme.js"></script>
+    <script>
+        let currentKind = null;
+
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = String(s ?? '');
+            return d.innerHTML;
+        }
+
+        function viewSubmission(id) {
+            const param = currentKind === 'team' ? 'reviewTeamId' : 'reviewId';
+            window.open(`quiz-play.html?${param}=${id}`, '_blank');
+        }
+
+        function showError(msg) {
+            document.getElementById('lbList').style.display = 'none';
+            document.querySelector('.lb-header').style.display = 'none';
+            const box = document.getElementById('errorBox');
+            box.textContent = msg;
+            box.style.display = 'block';
+        }
+
+        function render(data) {
+            document.getElementById('lbTitle').textContent = data.sessionName || 'Leaderboard';
+            document.getElementById('lbSubtitle').textContent =
+                data.gameType === 'timed' ? 'Timed Quiz — Live Standings' : 'Score Quiz — Live Standings';
+
+            const rankings = data.rankings || [];
+            const anyPending = rankings.some((r) => r.status !== 'submitted');
+            const instructions = document.getElementById('lbJoinInstructions');
+            if (anyPending) {
+                instructions.innerHTML = `Go to <strong>${window.location.origin}/quiz</strong> and enter your code:`;
+                instructions.style.display = 'block';
+            } else {
+                instructions.style.display = 'none';
+            }
+
+            const list = document.getElementById('lbList');
+            list.innerHTML = rankings.map((r, i) => `
+                <div class="lb-row">
+                    <span class="rank">${i + 1}</span>
+                    ${r.status === 'submitted'
+                        ? `<span class="badge-status badge-submitted">Submitted</span>`
+                        : `<span class="join-code">${esc(r.accessCode)}</span>`}
+                    <span class="name">${esc(r.name)}</span>
+                    <span class="score">${r.status === 'submitted' ? `${r.achievedScore} / ${r.maxScore}` : '—'}</span>
+                    ${r.status === 'submitted'
+                        ? `<button class="btn-informative" onclick="viewSubmission(${r.id})" title="View this ${currentKind === 'team' ? 'team' : 'member'}'s answers">View</button>`
+                        : ''}
+                </div>
+            `).join('') || '<p style="text-align:center; color:var(--text-muted);">No participants found.</p>';
+
+            document.getElementById('lbUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+        }
+
+        async function load(kind, sessionId) {
+            try {
+                const res = await fetch(`/api/live-quiz/leaderboard/${kind}/${sessionId}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Unable to load leaderboard.');
+                render(data);
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        (function init() {
+            const params = new URLSearchParams(window.location.search);
+            const kind = params.get('kind');
+            const sessionId = params.get('sessionId');
+            if (!kind || !sessionId) return showError('Missing session information.');
+            currentKind = kind;
+
+            load(kind, sessionId);
+            setInterval(() => load(kind, sessionId), 10000);
+        })();
+    </script>
+</body>
+
+</html>

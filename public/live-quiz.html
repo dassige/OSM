@@ -19,7 +19,9 @@
         .status-badge { padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; }
         .status-active { background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3); }
         .status-archived { background: rgba(108, 117, 125, 0.15); color: #888; border: 1px solid rgba(108, 117, 125, 0.3); }
-        .type-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:0.75em; font-weight:600; background: var(--primary); color:#fff; }
+        .type-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:0.75em; font-weight:600; color:#fff; }
+        .type-badge-score { background: #17a2b8; }
+        .type-badge-timed { background: #fd7e14; }
         .player-status-sent { color: var(--text-muted); }
         .player-status-submitted { color: var(--success); font-weight:600; }
 
@@ -85,6 +87,11 @@
             padding: 6px 8px;
             word-break: break-all;
             margin-top: 8px;
+        }
+        .player-access-code {
+            font-family: monospace;
+            font-weight: bold;
+            letter-spacing: 0.05em;
         }
     </style>
 </head>
@@ -240,6 +247,7 @@
                             <th class="sortable text-center" onclick="handlePlayerSort('status')" style="width:120px;"><div class="th-content" style="justify-content:center;">Status <span id="picon-status" class="sort-icon"></span></div></th>
                             <th class="sortable text-center" onclick="handlePlayerSort('score')" style="width:140px;"><div class="th-content" style="justify-content:center;">Score <span id="picon-score" class="sort-icon"></span></div></th>
                             <th class="text-center" style="width:160px;">Submitted At</th>
+                            <th class="text-center" style="width:110px;">Code</th>
                             <th class="text-center" style="width:80px;">Actions</th>
                         </tr>
                     </thead>

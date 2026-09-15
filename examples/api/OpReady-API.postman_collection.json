@@ -1151,6 +1151,33 @@
                                                   }
                                   },
                                   {
+                                      "name":  "Join a Quiz by Short Code (public)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/join",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "join"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"code\": \"REPLACE_WITH_JOIN_CODE\"\n}"
+                                                               }
+                                                  }
+                                  },
+                                  {
                                       "name":  "Play Quiz (public, by code)",
                                       "request":  {
                                                       "method":  "GET",
@@ -1266,6 +1293,255 @@
                                                                    "mode":  "raw",
                                                                    "raw":  "{\n  \"fld_1\": \"Daily\"\n}"
                                                                }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Answer Live Question (Timed, public, by code)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/play/:code/live-answer",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "play",
+                                                                               ":code",
+                                                                               "live-answer"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "code",
+                                                                                       "value":  "REPLACE_WITH_ACCESS_CODE"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"answer\": \"A\"\n}"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Answer Live Team Question (Timed, public, by code)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/team-play/:code/live-answer",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "team-play",
+                                                                               ":code",
+                                                                               "live-answer"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "code",
+                                                                                       "value":  "REPLACE_WITH_TEAM_ACCESS_CODE"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"answer\": \"A\"\n}"
+                                                               }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Get Live Leaderboard (admin)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/leaderboard/:kind/:sessionId",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "leaderboard",
+                                                                               ":kind",
+                                                                               ":sessionId"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "kind",
+                                                                                       "value":  "individual"
+                                                                                   },
+                                                                                   {
+                                                                                       "key":  "sessionId",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Get Live Host State (admin)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/host/:kind/:sessionId/state",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "host",
+                                                                               ":kind",
+                                                                               ":sessionId",
+                                                                               "state"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "kind",
+                                                                                       "value":  "individual"
+                                                                                   },
+                                                                                   {
+                                                                                       "key":  "sessionId",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Start Live Quiz (admin)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/host/:kind/:sessionId/start",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "host",
+                                                                               ":kind",
+                                                                               ":sessionId",
+                                                                               "start"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "kind",
+                                                                                       "value":  "individual"
+                                                                                   },
+                                                                                   {
+                                                                                       "key":  "sessionId",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Reveal Current Question (admin)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/host/:kind/:sessionId/reveal",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "host",
+                                                                               ":kind",
+                                                                               ":sessionId",
+                                                                               "reveal"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "kind",
+                                                                                       "value":  "individual"
+                                                                                   },
+                                                                                   {
+                                                                                       "key":  "sessionId",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Show Leaderboard (admin)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/host/:kind/:sessionId/show-leaderboard",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "host",
+                                                                               ":kind",
+                                                                               ":sessionId",
+                                                                               "show-leaderboard"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "kind",
+                                                                                       "value":  "individual"
+                                                                                   },
+                                                                                   {
+                                                                                       "key":  "sessionId",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Next Question (admin)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-quiz/host/:kind/:sessionId/next",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-quiz",
+                                                                               "host",
+                                                                               ":kind",
+                                                                               ":sessionId",
+                                                                               "next"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "kind",
+                                                                                       "value":  "individual"
+                                                                                   },
+                                                                                   {
+                                                                                       "key":  "sessionId",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              }
                                                   }
                                   }
                               ]

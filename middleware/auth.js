@@ -59,7 +59,10 @@ const globalAuthGuard = async (req, res, next) => {
       '/surveys-tracking.html',
       '/surveys-results.html',
       '/knowledgebase-view.html',
-      '/quiz-play.html'
+      '/quiz-play.html',
+      '/quiz-join.html',
+      '/quiz',
+      '/api/live-quiz/join'
     ];
 
     if (

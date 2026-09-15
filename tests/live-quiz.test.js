@@ -29,10 +29,25 @@ jest.mock('../services/db', () => ({
     getTeamByCode:                   jest.fn(),
     submitTeamResponse:              jest.fn().mockResolvedValue(),
     getTeamReview:                   jest.fn(),
+    getLiveSession:                  jest.fn(),
+    getLiveRoster:                   jest.fn(),
+    startLiveGame:                   jest.fn(),
+    recordLiveAnswer:                jest.fn(),
+    getAnsweredParticipantIds:       jest.fn().mockResolvedValue([]),
+    getParticipantAnswer:            jest.fn().mockResolvedValue(undefined),
+    revealCurrentQuestion:           jest.fn(),
+    advanceToLeaderboard:            jest.fn(),
+    getLiveLeaderboard:              jest.fn().mockResolvedValue([]),
+    advanceToNextQuestion:           jest.fn(),
 }));
 
 jest.mock('../services/mailer', () => ({
     sendQuizInvitation: jest.fn().mockResolvedValue(),
+}));
+
+jest.mock('../services/quiz-live-socket', () => ({
+    broadcastQuizLive: jest.fn(),
+    getJoinedParticipantIds: jest.fn().mockReturnValue([]),
 }));
 
 // Bypass RBAC and rate limiting for functional testing
@@ -48,6 +63,7 @@ jest.mock('../middleware/rate-limiter', () => ({
 
 const db = require('../services/db');
 const mailer = require('../services/mailer');
+const { broadcastQuizLive, getJoinedParticipantIds } = require('../services/quiz-live-socket');
 const liveQuizRoutes = require('../routes/api/live-quiz');
 
 const app = createTestApp({ path: '/api/live-quiz', router: liveQuizRoutes });
@@ -59,6 +75,11 @@ const sampleQuestions = [
 const timedQuestions = [
     { id: 'tq1', type: 'radio', description: 'Timed Q1', options: ['A', 'B', 'C', 'D'], correctAnswer: 'A', timeLimitSeconds: 20 },
 ];
+
+// SQLite-style "YYYY-MM-DD HH:MM:SS" timestamp, offset from now — mirrors CURRENT_TIMESTAMP.
+function sqliteTimestamp(offsetMs) {
+    return new Date(Date.now() + offsetMs).toISOString().slice(0, 19).replace('T', ' ');
+}
 
 describe('Live Quiz API Endpoints (Isolated)', () => {
     beforeEach(() => {
@@ -348,17 +369,70 @@ describe('Live Quiz API Endpoints (Isolated)', () => {
             expect(response.status).toBe(404);
         });
 
-        it('passes through the game type so the client can render the timed play UI', async () => {
+        it('returns the live host state (not the raw question list) for a Timed player', async () => {
             db.getQuizPlayerByCode.mockResolvedValue({
-                status: 'sent', is_archived: false, session_name: 'Radio Check - 2026-09-14',
+                id: 5, session_id: 1, status: 'sent', is_archived: false, session_name: 'Radio Check - 2026-09-14',
                 member_name: 'Alice', member_rank: null, member_first_name: null, member_last_name: null,
                 snapshot: { description: '', game_type: 'timed', questions: timedQuestions },
+            });
+            db.getLiveSession.mockResolvedValue({
+                name: 'Radio Check - 2026-09-14', game_type: 'timed', game_phase: 'lobby',
+                current_question_index: -1, snapshot: { questions: timedQuestions },
             });
 
             const response = await request(app).get('/api/live-quiz/play/abc123');
 
             expect(response.status).toBe(200);
             expect(response.body.gameType).toBe('timed');
+            expect(response.body.status).toBe('live');
+            expect(response.body.phase).toBe('lobby');
+            expect(response.body.totalQuestions).toBe(1);
+            expect(response.body.questions).toBeUndefined();
+        });
+
+        it('strips the correct answer from the live question while it is still open', async () => {
+            db.getQuizPlayerByCode.mockResolvedValue({
+                id: 5, session_id: 1, status: 'sent', is_archived: false, session_name: 'Radio Check',
+                member_name: 'Alice', member_rank: null, member_first_name: null, member_last_name: null,
+                snapshot: { description: '', game_type: 'timed', questions: timedQuestions },
+            });
+            db.getLiveSession.mockResolvedValue({
+                name: 'Radio Check', game_type: 'timed', game_phase: 'question',
+                current_question_index: 0, question_started_at: sqliteTimestamp(-2000),
+                snapshot: { questions: timedQuestions },
+            });
+            db.getParticipantAnswer.mockResolvedValue(undefined);
+
+            const response = await request(app).get('/api/live-quiz/play/abc123');
+
+            expect(response.status).toBe(200);
+            expect(response.body.phase).toBe('question');
+            expect(response.body.currentQuestion.correctAnswer).toBeUndefined();
+            expect(response.body.hasAnsweredCurrent).toBe(false);
+            expect(response.body.myAnswer).toBeUndefined();
+        });
+
+        it('reveals both the correct answer and what the player themselves picked', async () => {
+            db.getQuizPlayerByCode.mockResolvedValue({
+                id: 5, session_id: 1, status: 'sent', is_archived: false, session_name: 'Radio Check',
+                member_name: 'Alice', member_rank: null, member_first_name: null, member_last_name: null,
+                snapshot: { description: '', game_type: 'timed', questions: timedQuestions },
+            });
+            db.getLiveSession.mockResolvedValue({
+                name: 'Radio Check', game_type: 'timed', game_phase: 'reveal',
+                current_question_index: 0, question_started_at: sqliteTimestamp(-2000),
+                snapshot: { questions: timedQuestions },
+            });
+            db.getParticipantAnswer.mockResolvedValue('C');
+
+            const response = await request(app).get('/api/live-quiz/play/abc123');
+
+            expect(response.status).toBe(200);
+            expect(response.body.phase).toBe('reveal');
+            expect(response.body.correctAnswer).toBe('A');
+            expect(response.body.myAnswer).toBe('C');
+            expect(response.body.hasAnsweredCurrent).toBe(true);
+            expect(db.getParticipantAnswer).toHaveBeenCalledWith('individual', 1, 5, 0);
         });
     });
 
@@ -378,7 +452,7 @@ describe('Live Quiz API Endpoints (Isolated)', () => {
             expect(db.submitQuizPlayerResponse).toHaveBeenCalledWith('abc123', { fld_1: 'A' }, 2, 2);
         });
 
-        it('scores a Timed submission on speed + correctness, not a flat point value', async () => {
+        it('rejects a whole-quiz submission for a Timed session — those are answered live, one question at a time', async () => {
             db.getQuizPlayerByCode.mockResolvedValue({
                 status: 'sent', is_archived: false,
                 snapshot: { game_type: 'timed', questions: timedQuestions },
@@ -388,9 +462,8 @@ describe('Live Quiz API Endpoints (Isolated)', () => {
                 .post('/api/live-quiz/play/abc123/submit')
                 .send({ tq1: { answer: 'A', timeTakenMs: 0 } });
 
-            expect(response.status).toBe(200);
-            expect(response.body).toEqual({ success: true, achievedScore: 1000, maxScore: 1000 });
-            expect(db.submitQuizPlayerResponse).toHaveBeenCalledWith('abc123', { tq1: { answer: 'A', timeTakenMs: 0 } }, 1000, 1000);
+            expect(response.status).toBe(400);
+            expect(db.submitQuizPlayerResponse).not.toHaveBeenCalled();
         });
 
         it('returns 400 when already submitted', async () => {
@@ -439,17 +512,24 @@ describe('Live Quiz API Endpoints (Isolated)', () => {
             expect(response.body).toEqual({ status: 'submitted', achievedScore: 2, maxScore: 2 });
         });
 
-        it('returns the questions for a pending Timed team, with the game type passed through', async () => {
+        it('returns the live host state for a pending Timed team', async () => {
             db.getTeamByCode.mockResolvedValue({
-                status: 'pending', is_archived: false, game_type: 'timed', session_name: 'Radio Check - 2026-09-14',
-                name: 'Team Red', snapshot: { description: '', questions: timedQuestions },
+                id: 10, team_session_id: 1, status: 'pending', is_archived: false, game_type: 'timed',
+                session_name: 'Radio Check - 2026-09-14', name: 'Team Red',
+                snapshot: { description: '', questions: timedQuestions },
+            });
+            db.getLiveSession.mockResolvedValue({
+                name: 'Radio Check - 2026-09-14', game_type: 'timed', game_phase: 'lobby',
+                current_question_index: -1, snapshot: { questions: timedQuestions },
             });
 
             const response = await request(app).get('/api/live-quiz/team-play/abc123');
 
             expect(response.status).toBe(200);
             expect(response.body.gameType).toBe('timed');
-            expect(response.body.questions).toEqual(timedQuestions);
+            expect(response.body.status).toBe('live');
+            expect(response.body.phase).toBe('lobby');
+            expect(response.body.team).toBe('Team Red');
         });
 
         it('returns 404 for an invalid code', async () => {
@@ -477,7 +557,7 @@ describe('Live Quiz API Endpoints (Isolated)', () => {
             expect(db.submitTeamResponse).toHaveBeenCalledWith('abc123', { fld_1: 'A' }, 2, 2);
         });
 
-        it('scores a Timed team submission on speed + correctness', async () => {
+        it('rejects a whole-quiz submission for a Timed team — answered live, one question at a time', async () => {
             db.getTeamByCode.mockResolvedValue({
                 status: 'pending', is_archived: false, game_type: 'timed', team_session_id: 1, name: 'Team Red',
                 snapshot: { questions: timedQuestions },
@@ -487,9 +567,8 @@ describe('Live Quiz API Endpoints (Isolated)', () => {
                 .post('/api/live-quiz/team-play/abc123/submit')
                 .send({ tq1: { answer: 'A', timeTakenMs: 20000 } });
 
-            expect(response.status).toBe(200);
-            expect(response.body).toEqual({ success: true, achievedScore: 500, maxScore: 1000 });
-            expect(db.submitTeamResponse).toHaveBeenCalledWith('abc123', { tq1: { answer: 'A', timeTakenMs: 20000 } }, 500, 1000);
+            expect(response.status).toBe(400);
+            expect(db.submitTeamResponse).not.toHaveBeenCalled();
         });
 
         it('returns 400 when already submitted', async () => {
@@ -533,6 +612,350 @@ describe('Live Quiz API Endpoints (Isolated)', () => {
             const response = await request(app).get('/api/live-quiz/teams/999/review');
 
             expect(response.status).toBe(404);
+        });
+    });
+
+    describe('POST /api/live-quiz/join', () => {
+        it('resolves an individual player code', async () => {
+            db.getQuizPlayerByCode.mockResolvedValue({ id: 5, is_archived: false });
+
+            const response = await request(app)
+                .post('/api/live-quiz/join')
+                .send({ code: 'abc123' });
+
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({ kind: 'individual', code: 'ABC123' });
+            expect(db.getQuizPlayerByCode).toHaveBeenCalledWith('ABC123');
+        });
+
+        it('resolves a team code when no player matches', async () => {
+            db.getQuizPlayerByCode.mockResolvedValue(undefined);
+            db.getTeamByCode.mockResolvedValue({ id: 10, is_archived: false });
+
+            const response = await request(app)
+                .post('/api/live-quiz/join')
+                .send({ code: 'xyz789' });
+
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({ kind: 'team', code: 'XYZ789' });
+        });
+
+        it('returns 403 for an archived session', async () => {
+            db.getQuizPlayerByCode.mockResolvedValue({ id: 5, is_archived: true });
+
+            const response = await request(app)
+                .post('/api/live-quiz/join')
+                .send({ code: 'ABC123' });
+
+            expect(response.status).toBe(403);
+        });
+
+        it('returns 404 when the code matches nothing', async () => {
+            db.getQuizPlayerByCode.mockResolvedValue(undefined);
+            db.getTeamByCode.mockResolvedValue(undefined);
+
+            const response = await request(app)
+                .post('/api/live-quiz/join')
+                .send({ code: 'NOPE00' });
+
+            expect(response.status).toBe(404);
+        });
+
+        it('returns 400 when no code is submitted', async () => {
+            const response = await request(app)
+                .post('/api/live-quiz/join')
+                .send({});
+
+            expect(response.status).toBe(400);
+            expect(db.getQuizPlayerByCode).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('POST /api/live-quiz/play/:code/live-answer', () => {
+        it('scores the answer, records it, and reveals once everyone has answered', async () => {
+            db.getQuizPlayerByCode.mockResolvedValue({
+                id: 5, session_id: 1, is_archived: false, snapshot: { game_type: 'timed', questions: timedQuestions },
+            });
+            db.getLiveSession.mockResolvedValue({
+                game_phase: 'question', current_question_index: 0, question_started_at: sqliteTimestamp(-2000),
+                snapshot: { questions: timedQuestions },
+            });
+            db.recordLiveAnswer.mockResolvedValue(true);
+            db.getLiveRoster.mockResolvedValue([{ id: 5, name: 'Alice' }]);
+            db.getAnsweredParticipantIds.mockResolvedValue([5]);
+            db.revealCurrentQuestion.mockResolvedValue(true);
+
+            const response = await request(app)
+                .post('/api/live-quiz/play/abc123/live-answer')
+                .send({ answer: 'A' });
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.isCorrect).toBe(true);
+            expect(db.recordLiveAnswer).toHaveBeenCalledWith('individual', 1, 5, 0, 'A', expect.any(Number), true, expect.any(Number));
+            expect(broadcastQuizLive).toHaveBeenCalledWith('individual', 1, 'answer-progress', { answeredCount: 1, totalCount: 1 });
+            expect(broadcastQuizLive).toHaveBeenCalledWith('individual', 1, 'question-revealed', expect.objectContaining({ questionIndex: 0, correctAnswer: 'A' }));
+        });
+
+        it('returns 400 when the player has already answered this question', async () => {
+            db.getQuizPlayerByCode.mockResolvedValue({
+                id: 5, session_id: 1, is_archived: false, snapshot: { game_type: 'timed', questions: timedQuestions },
+            });
+            db.getLiveSession.mockResolvedValue({
+                game_phase: 'question', current_question_index: 0, question_started_at: sqliteTimestamp(-2000),
+                snapshot: { questions: timedQuestions },
+            });
+            db.recordLiveAnswer.mockResolvedValue(false);
+
+            const response = await request(app)
+                .post('/api/live-quiz/play/abc123/live-answer')
+                .send({ answer: 'A' });
+
+            expect(response.status).toBe(400);
+        });
+
+        it('returns 400 when no question is currently live', async () => {
+            db.getQuizPlayerByCode.mockResolvedValue({
+                id: 5, session_id: 1, is_archived: false, snapshot: { game_type: 'timed', questions: timedQuestions },
+            });
+            db.getLiveSession.mockResolvedValue({ game_phase: 'lobby', current_question_index: -1, snapshot: { questions: timedQuestions } });
+
+            const response = await request(app)
+                .post('/api/live-quiz/play/abc123/live-answer')
+                .send({ answer: 'A' });
+
+            expect(response.status).toBe(400);
+            expect(db.recordLiveAnswer).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('POST /api/live-quiz/team-play/:code/live-answer', () => {
+        it('scores the team answer', async () => {
+            db.getTeamByCode.mockResolvedValue({
+                id: 10, team_session_id: 1, is_archived: false, game_type: 'timed', name: 'Team Red',
+            });
+            db.getLiveSession.mockResolvedValue({
+                game_phase: 'question', current_question_index: 0, question_started_at: sqliteTimestamp(-1000),
+                snapshot: { questions: timedQuestions },
+            });
+            db.recordLiveAnswer.mockResolvedValue(true);
+            db.getLiveRoster.mockResolvedValue([{ id: 10, name: 'Team Red' }, { id: 11, name: 'Team Blue' }]);
+            db.getAnsweredParticipantIds.mockResolvedValue([10]);
+
+            const response = await request(app)
+                .post('/api/live-quiz/team-play/abc123/live-answer')
+                .send({ answer: 'B' });
+
+            expect(response.status).toBe(200);
+            expect(response.body.isCorrect).toBe(false);
+            expect(db.recordLiveAnswer).toHaveBeenCalledWith('team', 1, 10, 0, 'B', expect.any(Number), false, 0);
+            expect(db.revealCurrentQuestion).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('GET /api/live-quiz/host/:kind/:sessionId/state', () => {
+        it('returns the lobby roster before the game starts', async () => {
+            db.getLiveSession.mockResolvedValue({
+                name: 'Radio Check', game_type: 'timed', game_phase: 'lobby',
+                current_question_index: -1, snapshot: { questions: timedQuestions },
+            });
+            db.getLiveRoster.mockResolvedValue([{ id: 1, name: 'Alice', access_code: 'x' }]);
+
+            const response = await request(app).get('/api/live-quiz/host/individual/1/state');
+
+            expect(response.status).toBe(200);
+            expect(response.body.phase).toBe('lobby');
+            expect(response.body.roster).toEqual([{ id: 1, name: 'Alice', accessCode: 'x', joined: false }]);
+        });
+
+        it('marks a roster entry as joined when their socket is connected to the room', async () => {
+            db.getLiveSession.mockResolvedValue({
+                name: 'Radio Check', game_type: 'timed', game_phase: 'lobby',
+                current_question_index: -1, snapshot: { questions: timedQuestions },
+            });
+            db.getLiveRoster.mockResolvedValue([
+                { id: 1, name: 'Alice', access_code: 'x' },
+                { id: 2, name: 'Bob', access_code: 'y' },
+            ]);
+            getJoinedParticipantIds.mockReturnValueOnce([1]);
+
+            const response = await request(app).get('/api/live-quiz/host/individual/1/state');
+
+            expect(response.status).toBe(200);
+            expect(response.body.roster).toEqual([
+                { id: 1, name: 'Alice', accessCode: 'x', joined: true },
+                { id: 2, name: 'Bob', accessCode: 'y', joined: false },
+            ]);
+        });
+
+        it('collapses an in-progress question to the leaderboard when explicitly resuming (?resume=1)', async () => {
+            db.getLiveSession.mockResolvedValue({
+                name: 'Radio Check', game_type: 'timed', game_phase: 'question',
+                current_question_index: 0, snapshot: { questions: timedQuestions },
+            });
+            db.getLiveRoster.mockResolvedValue([]);
+            db.revealCurrentQuestion.mockResolvedValue(true);
+            db.advanceToLeaderboard.mockResolvedValue(true);
+            db.getLiveLeaderboard.mockResolvedValue([{ id: 1, name: 'Alice', score: 500 }]);
+
+            const response = await request(app).get('/api/live-quiz/host/individual/1/state?resume=1');
+
+            expect(response.status).toBe(200);
+            expect(db.revealCurrentQuestion).toHaveBeenCalledWith('individual', '1');
+            expect(db.advanceToLeaderboard).toHaveBeenCalledWith('individual', '1');
+            expect(response.body.phase).toBe('leaderboard');
+            expect(response.body.leaderboard).toEqual([{ id: 1, name: 'Alice', score: 500 }]);
+        });
+
+        it('does NOT collapse an in-progress question on a routine refetch without ?resume=1 — regression guard', async () => {
+            // This is exactly what happens after clicking START: the host's own
+            // socket receives 'question-started' and calls loadHostState() again.
+            // That refetch must see the live question, not instantly collapse it.
+            db.getLiveSession.mockResolvedValue({
+                name: 'Radio Check', game_type: 'timed', game_phase: 'question',
+                current_question_index: 0, question_started_at: '2026-01-01 00:00:00',
+                snapshot: { questions: timedQuestions },
+            });
+            db.getLiveRoster.mockResolvedValue([{ id: 1, name: 'Alice', access_code: 'x' }]);
+            db.getAnsweredParticipantIds.mockResolvedValue([]);
+
+            const response = await request(app).get('/api/live-quiz/host/individual/1/state');
+
+            expect(response.status).toBe(200);
+            expect(db.revealCurrentQuestion).not.toHaveBeenCalled();
+            expect(db.advanceToLeaderboard).not.toHaveBeenCalled();
+            expect(response.body.phase).toBe('question');
+            expect(response.body.currentQuestion).toBeDefined();
+        });
+
+        it('returns 400 for a Score-based session — hosting is Timed-only', async () => {
+            db.getLiveSession.mockResolvedValue({ name: 'Pump Ops', game_type: 'score', snapshot: { questions: sampleQuestions } });
+
+            const response = await request(app).get('/api/live-quiz/host/individual/1/state');
+
+            expect(response.status).toBe(400);
+        });
+
+        it('returns 400 for an invalid kind', async () => {
+            const response = await request(app).get('/api/live-quiz/host/bogus/1/state');
+            expect(response.status).toBe(400);
+        });
+    });
+
+    describe('POST /api/live-quiz/host/:kind/:sessionId/start', () => {
+        it('starts the game and broadcasts the first question', async () => {
+            db.getLiveSession.mockResolvedValue({
+                name: 'Radio Check', game_type: 'timed', snapshot: { questions: timedQuestions },
+            });
+            db.startLiveGame.mockResolvedValue(true);
+
+            const response = await request(app).post('/api/live-quiz/host/individual/1/start');
+
+            expect(response.status).toBe(200);
+            expect(broadcastQuizLive).toHaveBeenCalledWith('individual', '1', 'question-started', expect.objectContaining({ questionIndex: 0 }));
+            expect(db.logEvent).toHaveBeenCalled();
+        });
+
+        it('returns 400 when the game has already started', async () => {
+            db.getLiveSession.mockResolvedValue({ name: 'Radio Check', game_type: 'timed', snapshot: { questions: timedQuestions } });
+            db.startLiveGame.mockResolvedValue(false);
+
+            const response = await request(app).post('/api/live-quiz/host/individual/1/start');
+
+            expect(response.status).toBe(400);
+        });
+    });
+
+    describe('POST /api/live-quiz/host/:kind/:sessionId/reveal', () => {
+        it('reveals the current question and broadcasts the correct answer', async () => {
+            db.getLiveSession.mockResolvedValue({
+                current_question_index: 0, snapshot: { questions: timedQuestions },
+            });
+            db.revealCurrentQuestion.mockResolvedValue(true);
+
+            const response = await request(app).post('/api/live-quiz/host/individual/1/reveal');
+
+            expect(response.status).toBe(200);
+            expect(broadcastQuizLive).toHaveBeenCalledWith('individual', '1', 'question-revealed', { questionIndex: 0, correctAnswer: 'A' });
+        });
+    });
+
+    describe('POST /api/live-quiz/host/:kind/:sessionId/show-leaderboard', () => {
+        it('advances to the leaderboard and broadcasts it', async () => {
+            db.advanceToLeaderboard.mockResolvedValue(true);
+            db.getLiveLeaderboard.mockResolvedValue([{ id: 1, name: 'Alice', score: 900 }]);
+
+            const response = await request(app).post('/api/live-quiz/host/individual/1/show-leaderboard');
+
+            expect(response.status).toBe(200);
+            expect(broadcastQuizLive).toHaveBeenCalledWith('individual', '1', 'leaderboard-shown', { leaderboard: [{ id: 1, name: 'Alice', score: 900 }] });
+        });
+    });
+
+    describe('POST /api/live-quiz/host/:kind/:sessionId/next', () => {
+        it('broadcasts the next question when more remain', async () => {
+            db.getLiveSession.mockResolvedValue({ current_question_index: 0, snapshot: { questions: [...timedQuestions, { ...timedQuestions[0], id: 'tq2' }] } });
+            db.advanceToNextQuestion.mockResolvedValue('question');
+
+            const response = await request(app).post('/api/live-quiz/host/individual/1/next');
+
+            expect(response.status).toBe(200);
+            expect(response.body.phase).toBe('question');
+            expect(broadcastQuizLive).toHaveBeenCalledWith('individual', '1', 'question-started', expect.objectContaining({ questionIndex: 1 }));
+        });
+
+        it('broadcasts game-finished on the last question', async () => {
+            db.getLiveSession.mockResolvedValue({ current_question_index: 0, snapshot: { questions: timedQuestions } });
+            db.advanceToNextQuestion.mockResolvedValue('finished');
+            db.getLiveLeaderboard.mockResolvedValue([{ id: 1, name: 'Alice', score: 900 }]);
+
+            const response = await request(app).post('/api/live-quiz/host/individual/1/next');
+
+            expect(response.status).toBe(200);
+            expect(response.body.phase).toBe('finished');
+            expect(broadcastQuizLive).toHaveBeenCalledWith('individual', '1', 'game-finished', { leaderboard: [{ id: 1, name: 'Alice', score: 900 }] });
+            expect(db.logEvent).toHaveBeenCalledWith('Test Admin', 'Quiz', 'Live Quiz Finished', expect.any(Object));
+        });
+
+        it('returns 400 when the leaderboard has not been shown yet', async () => {
+            db.getLiveSession.mockResolvedValue({ current_question_index: 0, snapshot: { questions: timedQuestions } });
+            db.advanceToNextQuestion.mockResolvedValue(null);
+
+            const response = await request(app).post('/api/live-quiz/host/individual/1/next');
+
+            expect(response.status).toBe(400);
+        });
+    });
+
+    describe('GET /api/live-quiz/leaderboard/:kind/:sessionId', () => {
+        it('ranks players by achieved score, highest first', async () => {
+            db.getLiveSession.mockResolvedValue({ name: 'Pump Ops', game_type: 'score' });
+            db.getQuizSessionPlayers.mockResolvedValue([
+                { id: 1, member_name: 'Alice', status: 'submitted', achieved_score: 5, max_score: 10, access_code: 'AAA111' },
+                { id: 2, member_name: 'Bob', status: 'submitted', achieved_score: 8, max_score: 10, access_code: 'BBB222' },
+                { id: 3, member_name: 'Carl', status: 'sent', achieved_score: null, max_score: null, access_code: 'CCC333' },
+            ]);
+
+            const response = await request(app).get('/api/live-quiz/leaderboard/individual/1');
+
+            expect(response.status).toBe(200);
+            expect(response.body.rankings.map((r) => r.name)).toEqual(['Bob', 'Alice', 'Carl']);
+            expect(response.body.rankings.find((r) => r.name === 'Carl').accessCode).toBe('CCC333');
+            expect(response.body.rankings.find((r) => r.name === 'Bob').id).toBe(2);
+        });
+
+        it('ranks teams by achieved score for a team session', async () => {
+            db.getLiveSession.mockResolvedValue({ name: 'Pump Ops', game_type: 'score' });
+            db.getTeamSessionTeams.mockResolvedValue([
+                { id: 10, name: 'Team Red', status: 'submitted', achieved_score: 3, max_score: 10 },
+                { id: 11, name: 'Team Blue', status: 'submitted', achieved_score: 9, max_score: 10 },
+            ]);
+
+            const response = await request(app).get('/api/live-quiz/leaderboard/team/1');
+
+            expect(response.status).toBe(200);
+            expect(response.body.rankings.map((r) => r.name)).toEqual(['Team Blue', 'Team Red']);
+            expect(response.body.rankings.find((r) => r.name === 'Team Blue').id).toBe(11);
         });
     });
 });

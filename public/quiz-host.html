@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <title id="pageTitle">Live Quiz Host - OpReady</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg-body);
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            box-sizing: border-box;
+        }
+        .host-container {
+            width: 100%;
+            max-width: 900px;
+        }
+        .host-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .host-header h1 {
+            color: var(--primary);
+            margin: 0 0 4px 0;
+        }
+        .host-header p {
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .btn-host-primary {
+            display: block;
+            margin: 30px auto 0 auto;
+            background: var(--success);
+            color: #fff;
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.4em;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .btn-host-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 25px auto 0 auto;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 16px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .roster-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .roster-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px 18px;
+            font-weight: bold;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .roster-chip.joined {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .roster-code {
+            color: var(--primary);
+            font-family: monospace;
+            font-size: 1.3em;
+            font-weight: bold;
+            letter-spacing: 0.15em;
+            margin-left: 8px;
+        }
+        .join-instructions {
+            text-align: center;
+            color: var(--text-muted);
+        }
+        .join-instructions strong {
+            color: var(--primary);
+        }
+        .host-counter {
+            text-align: center;
+            font-weight: bold;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .timer-bar-wrap {
+            width: 100%;
+            height: 14px;
+            background: var(--bg-hover);
+            border-radius: 7px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+        .timer-bar-fill {
+            height: 100%;
+            background: var(--success);
+            width: 100%;
+        }
+        .host-question-text {
+            font-weight: bold;
+            font-size: 1.7em;
+            text-align: center;
+            margin: 10px 0 30px 0;
+            color: var(--text-main);
+        }
+        .host-options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 600px) {
+            .host-options-grid { grid-template-columns: 1fr; }
+        }
+        .host-option-box {
+            padding: 24px 18px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.2em;
+            font-weight: bold;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .host-answered-count {
+            text-align: center;
+            color: var(--text-muted);
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+        .host-leaderboard-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 20px;
+            margin-bottom: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1.2em;
+        }
+        .host-leaderboard-row .rank { font-weight: bold; color: var(--primary); width: 34px; }
+        .host-leaderboard-row .name { flex: 1; }
+        .host-leaderboard-row .score { font-weight: bold; }
+        #errorBox {
+            color: var(--danger);
+            text-align: center;
+            padding: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="host-container">
+        <div class="host-header">
+            <h1 id="hostTitle">Live Quiz</h1>
+            <p id="hostSubtitle"></p>
+        </div>
+        <div id="hostContent"></div>
+    </div>
+    <div id="errorBox" style="display:none;"></div>
+
+    <script src="toast.js"></script>
+    <script src="theme.js"></script>
+    <script src="utils.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const TIMED_OPTION_COLORS = ['#43a047', '#2196f3', '#e53935', '#fbc02d'];
+
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = String(s ?? '');
+            return d.innerHTML;
+        }
+
+        function showError(msg) {
+            document.querySelector('.host-container').style.display = 'none';
+            const box = document.getElementById('errorBox');
+            box.textContent = msg;
+            box.style.display = 'block';
+        }
+
+        function parseServerTimestamp(ts) {
+            return new Date(String(ts).replace(' ', 'T') + 'Z').getTime();
+        }
+
+        let hostKind, hostSessionId, hostSocket, hostTickHandle;
+
+        async function apiPost(action) {
+            try {
+                const res = await fetch(`/api/live-quiz/host/${hostKind}/${hostSessionId}/${action}`, { method: 'POST' });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'Action failed.');
+            } catch (e) {
+                if (window.showToast) showToast(e.message, 'error'); else console.error(e.message);
+            }
+        }
+
+        async function loadHostState(resume) {
+            try {
+                const url = `/api/live-quiz/host/${hostKind}/${hostSessionId}/state${resume ? '?resume=1' : ''}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Unable to load this session.');
+                document.title = `${data.sessionName} - Host - OpReady`;
+                document.getElementById('hostTitle').textContent = data.sessionName;
+                render(data);
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        function render(data) {
+            clearInterval(hostTickHandle);
+            const content = document.getElementById('hostContent');
+            const subtitle = document.getElementById('hostSubtitle');
+
+            if (data.phase === 'lobby') {
+                const joinedCount = data.roster.filter((p) => p.joined).length;
+                subtitle.textContent = `${joinedCount} of ${data.roster.length} joined — ${data.totalQuestions} questions`;
+                content.innerHTML = `
+                    <p class="join-instructions">Go to <strong>${window.location.origin}/quiz</strong> and enter your code:</p>
+                    <div class="roster-list">${data.roster.map((p) => `
+                        <span class="roster-chip ${p.joined ? 'joined' : ''}">${esc(p.name)}${p.joined ? '' : ` <span class="roster-code">${esc(p.accessCode)}</span>`}</span>
+                    `).join('') || '<em>No one has joined yet.</em>'}</div>
+                    <button type="button" class="btn-host-primary" id="btnStart">START</button>
+                `;
+                document.getElementById('btnStart').addEventListener('click', () => apiPost('start'));
+                return;
+            }
+
+            subtitle.textContent = `Question ${data.currentQuestionIndex + 1} of ${data.totalQuestions}`;
+
+            if (data.phase === 'question' || data.phase === 'reveal') {
+                const q = data.currentQuestion;
+                const optionsHtml = (q.options || []).slice(0, 4).map((opt, i) => {
+                    const isWrongReveal = data.phase === 'reveal' && opt !== q.correctAnswer;
+                    const bg = isWrongReveal ? '#9e9e9e' : (TIMED_OPTION_COLORS[i] || '#888');
+                    return `<div class="host-option-box" style="background:${bg}">${i + 1}. ${esc(opt)}</div>`;
+                }).join('');
+
+                content.innerHTML = `
+                    <div class="timer-bar-wrap"><div id="hostTimerFill" class="timer-bar-fill"></div></div>
+                    <div class="host-question-text">${esc(q.description)}</div>
+                    <div class="host-options-grid">${optionsHtml}</div>
+                    <div class="host-answered-count" id="hostAnsweredCount"></div>
+                    <div id="hostRevealAction"></div>
+                `;
+
+                if (data.phase === 'question') {
+                    document.getElementById('hostAnsweredCount').textContent = `${data.answeredCount} of ${data.roster ? data.roster.length : ''} answered`;
+                    const limitMs = (parseFloat(q.timeLimitSeconds) || 20) * 1000;
+                    const startedAtMs = parseServerTimestamp(data.questionStartedAt);
+                    const fill = document.getElementById('hostTimerFill');
+                    const tick = () => {
+                        const remaining = Math.max(0, limitMs - (Date.now() - startedAtMs));
+                        fill.style.width = `${Math.round((remaining / limitMs) * 100)}%`;
+                        if (remaining <= 0) {
+                            clearInterval(hostTickHandle);
+                            apiPost('reveal');
+                        }
+                    };
+                    tick();
+                    hostTickHandle = setInterval(tick, 200);
+                } else {
+                    document.getElementById('hostTimerFill').style.width = '0%';
+                    document.getElementById('hostRevealAction').innerHTML = `
+                        <button type="button" class="btn-host-arrow" id="btnAdvance">Show Leaderboard &#8594;</button>
+                    `;
+                    document.getElementById('btnAdvance').addEventListener('click', () => apiPost('show-leaderboard'));
+                }
+                return;
+            }
+
+            if (data.phase === 'leaderboard' || data.phase === 'finished') {
+                const rows = (data.leaderboard || []).map((row, i) => `
+                    <div class="host-leaderboard-row">
+                        <span class="rank">${i + 1}.</span>
+                        <span class="name">${esc(row.name)} <span class="roster-code">${esc(row.accessCode)}</span></span>
+                        <span class="score">${row.score}</span>
+                    </div>
+                `).join('') || '<p style="text-align:center;">No answers recorded.</p>';
+
+                content.innerHTML = data.phase === 'finished'
+                    ? `<h2 style="text-align:center; color:var(--success);">Quiz Finished!</h2>${rows}`
+                    : `${rows}<button type="button" class="btn-host-primary" id="btnNext">Next Question</button>`;
+
+                if (data.phase === 'leaderboard') {
+                    document.getElementById('btnNext').addEventListener('click', () => apiPost('next'));
+                }
+            }
+        }
+
+        (function init() {
+            const params = new URLSearchParams(window.location.search);
+            hostKind = params.get('kind');
+            hostSessionId = params.get('sessionId');
+            if (!hostKind || !hostSessionId) return showError('Missing session information.');
+
+            // Only this very first load may collapse an in-progress question to the
+            // leaderboard (a genuine page open/reload) — every later refresh, whether
+            // from a reconnect or a live event, must reflect the real current phase.
+            loadHostState(true);
+
+            hostSocket = io('/quiz-live');
+            hostSocket.on('connect', () => {
+                hostSocket.emit('join-host', { kind: hostKind, sessionId: hostSessionId });
+                loadHostState();
+            });
+            ['question-started', 'question-revealed', 'leaderboard-shown', 'game-finished', 'lobby-update'].forEach((evt) => {
+                hostSocket.on(evt, () => loadHostState());
+            });
+            hostSocket.on('answer-progress', (payload) => {
+                const el = document.getElementById('hostAnsweredCount');
+                if (el) el.textContent = `${payload.answeredCount} of ${payload.totalCount} answered`;
+            });
+        })();
+    </script>
+</body>
+
+</html>

@@ -145,17 +145,20 @@ const spec = {
             },
             QuizSession: {
                 type: 'object',
-                description: 'A self-paced play instance of a Score-based quiz game — a frozen snapshot of its questions, run for a chosen set of members.',
+                description: 'An individual play instance of a quiz game (either type) — a frozen snapshot of its questions, run for a chosen set of members. For a Timed session, game_phase/current_question_index/total_questions track the live host-driven progress; for a Score session these stay at their defaults and total_sent/total_submitted are the meaningful progress fields.',
                 properties: {
                     id: { type: 'integer' },
                     name: { type: 'string', example: 'Pump Operations Quiz - 2026-09-14' },
                     game_id: { type: 'integer' },
                     game_name: { type: 'string' },
-                    game_type: { type: 'string', enum: ['score'] },
+                    game_type: { type: 'string', enum: ['score', 'timed'] },
                     is_archived: { type: 'boolean' },
                     created_at: { type: 'string', format: 'date-time' },
                     total_sent: { type: 'integer' },
-                    total_submitted: { type: 'integer' }
+                    total_submitted: { type: 'integer' },
+                    game_phase: { type: 'string', enum: ['lobby', 'question', 'reveal', 'leaderboard', 'finished'] },
+                    current_question_index: { type: 'integer' },
+                    total_questions: { type: 'integer' }
                 }
             },
             QuizPlayer: {
@@ -897,13 +900,29 @@ const spec = {
                 }
             }
         },
+        '/api/live-quiz/join': {
+            post: {
+                tags: ['Live Quiz'],
+                summary: 'Public: resolve a short join code (no auth) to a kind and code for redirecting to quiz-play.html',
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: { type: 'object', required: ['code'], properties: { code: { type: 'string' } } }, example: { code: 'K3P9XZ' } } }
+                },
+                responses: {
+                    200: { description: 'Resolved', content: { 'application/json': { schema: { type: 'object', properties: { kind: { type: 'string', enum: ['individual', 'team'] }, code: { type: 'string' } } } } } },
+                    400: { description: 'No code submitted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    403: { description: 'This session is archived', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Code not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
         '/api/live-quiz/play/{code}': {
             get: {
                 tags: ['Live Quiz'],
                 summary: "Public: fetch a player's quiz by access code (no auth)",
                 parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
                 responses: {
-                    200: { description: 'Quiz questions, or the stored score if already submitted', content: { 'application/json': { schema: { type: 'object' } } } },
+                    200: { description: "Score-based: the question list. Timed: the live host state (status: 'live') — phase, currentQuestionIndex, totalQuestions, and (while a question is open) currentQuestion with the correct answer stripped out until revealed — once revealed, correctAnswer and myAnswer (this participant's own recorded pick, if any) are included too. Either type: the stored score if already submitted.", content: { 'application/json': { schema: { type: 'object' } } } },
                     403: { description: 'Session archived', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     404: { description: 'Invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
@@ -912,17 +931,33 @@ const spec = {
         '/api/live-quiz/play/{code}/submit': {
             post: {
                 tags: ['Live Quiz'],
-                summary: 'Public: submit answers for scoring (no auth)',
+                summary: 'Public: submit a whole Score-based quiz for scoring (no auth) — Timed quizzes are answered live, one question at a time, via live-answer',
                 parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
                 requestBody: {
                     required: true,
-                    description: "Score-based: flat answer object keyed by question id (question.id[] for checkboxes), same contract as Forms submission. Timed: { [questionId]: { answer, timeTakenMs } } — scored on speed plus correctness.",
+                    description: 'Flat answer object keyed by question id (question.id[] for checkboxes), same contract as Forms submission.',
                     content: { 'application/json': { schema: { type: 'object' } } }
                 },
                 responses: {
                     200: { description: 'Scored', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, achievedScore: { type: 'number' }, maxScore: { type: 'number' } } } } } },
-                    400: { description: 'Already submitted or invalid data', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    400: { description: 'Already submitted, invalid data, or this is a Timed session', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     403: { description: 'Session archived', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/play/{code}/live-answer': {
+            post: {
+                tags: ['Live Quiz'],
+                summary: 'Public: answer the current live-hosted question (Timed only, no auth) — scored server-side from how quickly it was given',
+                parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: { type: 'object', properties: { answer: { type: 'string' } } }, example: { answer: 'A' } } }
+                },
+                responses: {
+                    200: { description: 'Answer recorded', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, isCorrect: { type: 'boolean' }, points: { type: 'number' } } } } } },
+                    400: { description: 'No question is currently live, already answered, or not a Timed session', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     404: { description: 'Invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }
@@ -933,7 +968,7 @@ const spec = {
                 summary: "Public: fetch a team's quiz by access code (no auth, both game types)",
                 parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
                 responses: {
-                    200: { description: 'Quiz questions (with gameType), or the stored score if already submitted', content: { 'application/json': { schema: { type: 'object' } } } },
+                    200: { description: "Score-based: the question list. Timed: the live host state (status: 'live') — phase, currentQuestionIndex, totalQuestions, and (while a question is open) currentQuestion with the correct answer stripped out until revealed — once revealed, correctAnswer and myAnswer (this participant's own recorded pick, if any) are included too. Either type: the stored score if already submitted.", content: { 'application/json': { schema: { type: 'object' } } } },
                     403: { description: 'Team setup archived', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     404: { description: 'Invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
@@ -942,18 +977,121 @@ const spec = {
         '/api/live-quiz/team-play/{code}/submit': {
             post: {
                 tags: ['Live Quiz'],
-                summary: 'Public: submit team answers for scoring (no auth, both game types)',
+                summary: 'Public: submit a whole Score-based team quiz for scoring (no auth) — Timed quizzes are answered live, one question at a time, via live-answer',
                 parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
                 requestBody: {
                     required: true,
-                    description: "Score-based: flat answer object keyed by question id (question.id[] for checkboxes), same contract as Forms submission. Timed: { [questionId]: { answer, timeTakenMs } } — scored on speed plus correctness.",
+                    description: 'Flat answer object keyed by question id (question.id[] for checkboxes), same contract as Forms submission.',
                     content: { 'application/json': { schema: { type: 'object' } } }
                 },
                 responses: {
                     200: { description: 'Scored', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, achievedScore: { type: 'number' }, maxScore: { type: 'number' } } } } } },
-                    400: { description: 'Already submitted or invalid data', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    400: { description: 'Already submitted, invalid data, or this is a Timed session', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     403: { description: 'Team setup archived', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     404: { description: 'Invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/team-play/{code}/live-answer': {
+            post: {
+                tags: ['Live Quiz'],
+                summary: 'Public: answer the current live-hosted question for a team (Timed only, no auth)',
+                parameters: [{ name: 'code', in: 'path', required: true, schema: { type: 'string' } }],
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: { type: 'object', properties: { answer: { type: 'string' } } }, example: { answer: 'A' } } }
+                },
+                responses: {
+                    200: { description: 'Answer recorded', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, isCorrect: { type: 'boolean' }, points: { type: 'number' } } } } } },
+                    400: { description: 'No question is currently live, already answered, or not a Timed session', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/leaderboard/{kind}/{sessionId}': {
+            get: {
+                tags: ['Live Quiz'],
+                summary: 'Admin: live standings for the standalone Launch leaderboard window (either game type)',
+                parameters: [
+                    { name: 'kind', in: 'path', required: true, schema: { type: 'string', enum: ['individual', 'team'] } },
+                    { name: 'sessionId', in: 'path', required: true, schema: { type: 'integer' } }
+                ],
+                responses: {
+                    200: { description: 'Ranked standings', content: { 'application/json': { schema: { type: 'object', properties: { sessionName: { type: 'string' }, gameType: { type: 'string', enum: ['score', 'timed'] }, rankings: { type: 'array', items: { type: 'object', properties: { id: { type: 'integer' }, name: { type: 'string' }, status: { type: 'string' }, achievedScore: { type: 'number' }, maxScore: { type: 'number' }, accessCode: { type: 'string' } } } } } } } } },
+                    400: { description: 'Invalid kind', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Session not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/host/{kind}/{sessionId}/state': {
+            get: {
+                tags: ['Live Quiz'],
+                summary: 'Admin: current state for the Launch host screen (Timed only) — pass resume=1 on an actual page (re)open to collapse an in-progress question straight to the leaderboard instead of resuming mid-question; omitted on routine live-event refetches so an active question is not collapsed the instant it starts',
+                parameters: [
+                    { name: 'kind', in: 'path', required: true, schema: { type: 'string', enum: ['individual', 'team'] } },
+                    { name: 'sessionId', in: 'path', required: true, schema: { type: 'integer' } },
+                    { name: 'resume', in: 'query', required: false, schema: { type: 'string', enum: ['1'] }, description: 'Pass 1 only on a genuine page (re)open' }
+                ],
+                responses: {
+                    200: { description: 'Host state — phase, roster, and (depending on phase) the current question or leaderboard', content: { 'application/json': { schema: { type: 'object' } } } },
+                    400: { description: 'Invalid kind, or the session is not a Timed session', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Session not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/host/{kind}/{sessionId}/start': {
+            post: {
+                tags: ['Live Quiz'],
+                summary: 'Admin: start the live-hosted game — moves the lobby to question 1 and broadcasts it to every joined player/team',
+                parameters: [
+                    { name: 'kind', in: 'path', required: true, schema: { type: 'string', enum: ['individual', 'team'] } },
+                    { name: 'sessionId', in: 'path', required: true, schema: { type: 'integer' } }
+                ],
+                responses: {
+                    200: { description: 'Started', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'Already started, invalid kind, or not a Timed session', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Session not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/host/{kind}/{sessionId}/reveal': {
+            post: {
+                tags: ['Live Quiz'],
+                summary: 'Admin: reveal the correct answer for the current question — also triggered automatically once every participant has answered',
+                parameters: [
+                    { name: 'kind', in: 'path', required: true, schema: { type: 'string', enum: ['individual', 'team'] } },
+                    { name: 'sessionId', in: 'path', required: true, schema: { type: 'integer' } }
+                ],
+                responses: {
+                    200: { description: 'Revealed (or already revealed — idempotent)', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/host/{kind}/{sessionId}/show-leaderboard': {
+            post: {
+                tags: ['Live Quiz'],
+                summary: 'Admin: advance from the answer reveal to the leaderboard',
+                parameters: [
+                    { name: 'kind', in: 'path', required: true, schema: { type: 'string', enum: ['individual', 'team'] } },
+                    { name: 'sessionId', in: 'path', required: true, schema: { type: 'integer' } }
+                ],
+                responses: {
+                    200: { description: 'Leaderboard shown', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } }
+                }
+            }
+        },
+        '/api/live-quiz/host/{kind}/{sessionId}/next': {
+            post: {
+                tags: ['Live Quiz'],
+                summary: 'Admin: advance from the leaderboard to the next question, or finish the game and finalize every score on the last question',
+                parameters: [
+                    { name: 'kind', in: 'path', required: true, schema: { type: 'string', enum: ['individual', 'team'] } },
+                    { name: 'sessionId', in: 'path', required: true, schema: { type: 'integer' } }
+                ],
+                responses: {
+                    200: { description: 'Advanced', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, phase: { type: 'string', enum: ['question', 'finished'] } } } } } },
+                    400: { description: 'The leaderboard has not been shown yet', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Session not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }
         },
