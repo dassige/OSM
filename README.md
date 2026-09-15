@@ -445,6 +445,7 @@ A social-quiz feature for brigade learning sessions run in the social room: game
       * A question ends automatically once the timer runs out or everyone has answered — every wrong option greys out, leaving the correct one in its original colour; on each player's own screen, whichever option they picked is also marked "Your answer" so they can see how they did even if they chose wrong. A big tick icon appears in the upper-left corner of the correct option if they got it right, or a big X icon in the upper-left corner of their own (wrong) pick if they didn't. The host then advances to a leaderboard (which lists each player's/team's join code next to their name, so anyone who disconnects — or if the quiz resumes after a long pause — can rejoin from `/quiz`), and clicks **Next Question** to continue. On the final question's leaderboard the button instead reads **Finish Quiz**. This repeats until the last question, which finalizes every participant's score exactly like the self-paced flow (so **Live Quiz** results/review screens, including the correct/incorrect-marked **View** answers page, work unchanged).
       * Since a Timed participant only flips to "submitted" at the very end, the **Live Quiz** list's Progress column shows the live question the host is on instead (e.g. "Question 2 of 5") rather than a submission count, which stays for Score sessions. On the player's/team's own `quiz-play.html` screen, the progress bar under the question counter switches the same way — it counts down the current question's time limit while a question is live, then between questions (leaderboard) and once finished it instead fills to reflect how many of the total questions are done (e.g. "Question 2 of 6" fills to ~33%, and "Finished" fills to 100%).
       * If the host screen is closed and reopened (or **Launch** clicked again), it always resumes from the leaderboard for the last completed question rather than mid-countdown, so no progress is lost.
+      * Host presence is tracked over the same Socket.IO channel as the lobby's join indicators. If the host's tab disconnects mid-game (closed, crashed, lost network) while any player/team is mid-question or waiting on a leaderboard, every joined player's screen immediately shows a "Host disconnected — waiting for them to reconnect..." banner instead of silently freezing — including a player who joins/reloads *after* the disconnect already happened. The banner clears automatically the moment any host tab (the same one, or a fresh **Launch**) reconnects, and is suppressed once the quiz has finished.
 
 ## Example Data and Configuration
 
@@ -917,7 +918,7 @@ See the full [Cloudflare Tunnel Guide](cloudflared-tunnel.md) for step-by-step i
 
 ## Google Cloud Run Deployment
 
-Supports stateless deployment using **Litestream** to replicate the database to Google Cloud Storage.
+Supports stateless deployment using **Litestream** to replicate the database to Google Cloud Storage. Must be deployed with `--max-instances 1` — the real-time Quiz Games live-hosting feature (Socket.IO) and the SQLite/Litestream setup both assume a single running instance.
 
 See [Installation on Google Cloud Run](Installation_google_run.md) for details.
 

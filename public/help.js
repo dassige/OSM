@@ -481,6 +481,11 @@ const helpContent = {
                 <li><strong>Survey Response Log:</strong> A chronological log of individual survey submissions for a configurable lookback period. Anonymous survey respondents are shown as <em>Anonymous</em>.</li>
             </ul>
 
+            <h3>Quiz Reports</h3>
+            <ul>
+                <li><strong>Quiz Performance:</strong> For each Quiz Game with activity in a configurable lookback period — sessions run, members/teams invited vs. submitted, average/best/worst score, and that game's most-missed questions (lowest correct-answer rate) across both individual sessions and team setups.</li>
+            </ul>
+
             <h3>Export Options</h3>
             <ul>
                 <li><strong>Print:</strong> Opens the browser print dialog with an A4-optimised layout.</li>
@@ -757,6 +762,7 @@ const helpContent = {
                 <li><strong>Timed:</strong> this is a live, host-driven round — wait on this page until the host starts the quiz on the shared screen. Each question then appears here with a countdown; pick an answer before time runs out. Answering faster earns more points; a wrong answer or a timeout earns none. Once revealed, the wrong options grey out so the correct one stands out, and whichever option you picked is marked "Your answer" so you can see how you did even if you chose wrong — a big tick appears on the correct option if you got it right, or a big X on your own pick if you didn't. Between questions you'll see the leaderboard (with everyone's join code, in case you get disconnected and need to rejoin) while you wait for the host to continue — the progress bar above the question switches from a per-question countdown to showing how many of the total questions are done.</li>
                 <li>The score is shown immediately once submitted — for a team code, it's the whole team's score.</li>
                 <li>Each quiz code can only be used once — reopening the link after submitting shows the result again, not a fresh attempt.</li>
+                <li>For Timed games, if the host's screen loses connection mid-game, a "Host disconnected — waiting for them to reconnect..." banner appears here — nothing is lost, the quiz simply pauses until the host reconnects and continues.</li>
             </ul>
         `
     },

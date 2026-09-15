@@ -42,6 +42,8 @@ router.get("/data/:type", hasRole("admin"), async (req, res) => {
       res.json(await reportService.getSurveyParticipation());
     else if (type === "survey-response-log")
       res.json(await reportService.getSurveyResponseLog(days));
+    else if (type === "quiz-performance")
+      res.json(await reportService.getQuizPerformance(days));
     else
       res.status(400).json({ error: "Unknown report type" });
   } catch (e) {

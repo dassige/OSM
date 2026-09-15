@@ -596,6 +596,34 @@
               }
             }
           ]
+        },
+        {
+          "name": "Quiz Performance",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/data/quiz-performance?days=90",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "data", "quiz-performance"],
+              "query": [{ "key": "days", "value": "90" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Quiz Performance | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Quiz Performance | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('Quiz Performance | Valid JSON with items array', () => {",
+                  "  pm.response.to.be.json;",
+                  "  pm.expect(pm.response.json()).to.have.property('items').that.is.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

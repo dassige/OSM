@@ -2283,6 +2283,31 @@
                                                   }
                                   },
                                   {
+                                      "name":  "Report — Quiz Performance",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/reports/data/quiz-performance?days=90",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "reports",
+                                                                               "data",
+                                                                               "quiz-performance"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "days",
+                                                                                    "value":  "90"
+                                                                                }
+                                                                            ]
+                                                              },
+                                                      "description":  "Per-game quiz participation and scoring across Quiz Games sessions and team setups in the last N days, plus each game's most-missed questions."
+                                                  }
+                                  },
+                                  {
                                       "name":  "Generate PDF",
                                       "request":  {
                                                       "method":  "POST",

@@ -1424,7 +1424,7 @@ const spec = {
                         required: true,
                         schema: {
                             type: 'string',
-                            enum: ['by-member', 'by-skill', 'planned-sessions', 'critical-overdue', 'compliance-matrix', 'verification-history', 'training-attendance', 'survey-participation', 'survey-response-log']
+                            enum: ['by-member', 'by-skill', 'planned-sessions', 'critical-overdue', 'compliance-matrix', 'verification-history', 'training-attendance', 'survey-participation', 'survey-response-log', 'quiz-performance']
                         }
                     },
                     {
@@ -1432,7 +1432,7 @@ const spec = {
                         in: 'query',
                         required: false,
                         schema: { type: 'integer', minimum: 1, maximum: 3650, default: 30 },
-                        description: 'Look-back window in days for time-filtered reports (by-member, by-skill, verification-history, survey-response-log). Clamped server-side to 1–3650. Defaults to 30 when omitted.'
+                        description: 'Look-back window in days for time-filtered reports (by-member, by-skill, verification-history, survey-response-log, quiz-performance — defaults to 90 for quiz-performance). Clamped server-side to 1–3650. Defaults to 30 when omitted.'
                     }
                 ],
                 responses: {

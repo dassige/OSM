@@ -281,6 +281,157 @@ async function getSurveyResponseLog(days = 30) {
     return { items: rows, meta: { generated: getGeneratedDate(), days } };
 }
 
+// A question is "correct" when the submitted value matches correctAnswer —
+// checkboxes compare as an unordered set, everything else as an exact value.
+// submitted_data is a flat { questionId: value } map for both Score-based and
+// Timed games (Timed live answers are flattened to this shape once the game
+// finishes), so one comparison covers both.
+function isAnswerCorrect(question, submitted) {
+    if (submitted === undefined || submitted === null || submitted === '') return { answered: false, correct: false };
+    if (Array.isArray(question.correctAnswer)) {
+        const subArr = Array.isArray(submitted) ? submitted : [submitted];
+        const correctArr = question.correctAnswer;
+        const same = correctArr.length === subArr.length && correctArr.every((v) => subArr.includes(v));
+        return { answered: true, correct: same };
+    }
+    return { answered: true, correct: submitted === question.correctAnswer };
+}
+
+async function getQuizPerformance(days = 90) {
+    const database = await db.initDB();
+
+    const games = await database.all(`SELECT id, name, game_type, enabled, questions FROM quiz_games ORDER BY name ASC`);
+
+    const individualStats = await database.all(`
+        SELECT qs.game_id as gameId,
+               COUNT(DISTINCT qs.id) as sessions,
+               COUNT(qp.id) as totalInvited,
+               SUM(CASE WHEN qp.status = 'submitted' THEN 1 ELSE 0 END) as totalSubmitted,
+               SUM(CASE WHEN qp.status = 'submitted' THEN qp.achieved_score ELSE 0 END) as scoreSum,
+               SUM(CASE WHEN qp.status = 'submitted' THEN qp.max_score ELSE 0 END) as maxScoreSum,
+               MAX(CASE WHEN qp.status = 'submitted' AND qp.max_score > 0 THEN qp.achieved_score * 100.0 / qp.max_score END) as bestPct,
+               MIN(CASE WHEN qp.status = 'submitted' AND qp.max_score > 0 THEN qp.achieved_score * 100.0 / qp.max_score END) as worstPct
+        FROM quiz_sessions qs
+        LEFT JOIN quiz_players qp ON qp.session_id = qs.id
+        WHERE qs.created_at >= datetime('now', '-' || ? || ' days')
+        GROUP BY qs.game_id
+    `, [days]);
+
+    const teamStats = await database.all(`
+        SELECT qts.game_id as gameId,
+               COUNT(DISTINCT qts.id) as sessions,
+               COUNT(qt.id) as totalInvited,
+               SUM(CASE WHEN qt.status = 'submitted' THEN 1 ELSE 0 END) as totalSubmitted,
+               SUM(CASE WHEN qt.status = 'submitted' THEN qt.achieved_score ELSE 0 END) as scoreSum,
+               SUM(CASE WHEN qt.status = 'submitted' THEN qt.max_score ELSE 0 END) as maxScoreSum,
+               MAX(CASE WHEN qt.status = 'submitted' AND qt.max_score > 0 THEN qt.achieved_score * 100.0 / qt.max_score END) as bestPct,
+               MIN(CASE WHEN qt.status = 'submitted' AND qt.max_score > 0 THEN qt.achieved_score * 100.0 / qt.max_score END) as worstPct
+        FROM quiz_team_sessions qts
+        LEFT JOIN quiz_teams qt ON qt.team_session_id = qts.id
+        WHERE qts.created_at >= datetime('now', '-' || ? || ' days')
+        GROUP BY qts.game_id
+    `, [days]);
+
+    const individualSubmissions = await database.all(`
+        SELECT qs.game_id as gameId, qp.submitted_data as submittedData
+        FROM quiz_players qp
+        JOIN quiz_sessions qs ON qp.session_id = qs.id
+        WHERE qp.status = 'submitted' AND qs.created_at >= datetime('now', '-' || ? || ' days')
+    `, [days]);
+
+    const teamSubmissions = await database.all(`
+        SELECT qts.game_id as gameId, qt.submitted_data as submittedData
+        FROM quiz_teams qt
+        JOIN quiz_team_sessions qts ON qt.team_session_id = qts.id
+        WHERE qt.status = 'submitted' AND qts.created_at >= datetime('now', '-' || ? || ' days')
+    `, [days]);
+
+    const statsByGame = new Map();
+    function ensureStats(gameId) {
+        if (!statsByGame.has(gameId)) {
+            statsByGame.set(gameId, {
+                sessions: 0, totalInvited: 0, totalSubmitted: 0,
+                scoreSum: 0, maxScoreSum: 0, bestPct: null, worstPct: null,
+            });
+        }
+        return statsByGame.get(gameId);
+    }
+    for (const row of [...individualStats, ...teamStats]) {
+        const s = ensureStats(row.gameId);
+        s.sessions += row.sessions || 0;
+        s.totalInvited += row.totalInvited || 0;
+        s.totalSubmitted += row.totalSubmitted || 0;
+        s.scoreSum += row.scoreSum || 0;
+        s.maxScoreSum += row.maxScoreSum || 0;
+        if (row.bestPct != null) s.bestPct = s.bestPct == null ? row.bestPct : Math.max(s.bestPct, row.bestPct);
+        if (row.worstPct != null) s.worstPct = s.worstPct == null ? row.worstPct : Math.min(s.worstPct, row.worstPct);
+    }
+
+    const submissionsByGame = new Map();
+    for (const row of [...individualSubmissions, ...teamSubmissions]) {
+        if (!submissionsByGame.has(row.gameId)) submissionsByGame.set(row.gameId, []);
+        let parsed;
+        try { parsed = JSON.parse(row.submittedData || '{}'); } catch (e) { parsed = {}; }
+        submissionsByGame.get(row.gameId).push(parsed);
+    }
+
+    const items = [];
+    for (const game of games) {
+        const stats = statsByGame.get(game.id);
+        if (!stats || stats.sessions === 0) continue;
+
+        let questions = [];
+        try { questions = JSON.parse(game.questions || '[]'); } catch (e) { questions = []; }
+        const submissions = submissionsByGame.get(game.id) || [];
+
+        const questionStats = questions
+            .filter((q) => q.type !== 'text_multi')
+            .map((q) => {
+                let answered = 0;
+                let correct = 0;
+                for (const submittedData of submissions) {
+                    const { answered: wasAnswered, correct: wasCorrect } = isAnswerCorrect(q, submittedData[q.id]);
+                    if (wasAnswered) {
+                        answered += 1;
+                        if (wasCorrect) correct += 1;
+                    }
+                }
+                return { id: q.id, description: q.description, answered, correct };
+            })
+            .filter((q) => q.answered > 0);
+
+        const worstQuestions = questionStats
+            .map((q) => ({ ...q, correctRate: q.correct / q.answered }))
+            .sort((a, b) => a.correctRate - b.correctRate)
+            .slice(0, 3)
+            .map((q) => ({
+                description: q.description,
+                correctCount: q.correct,
+                answeredCount: q.answered,
+                correctPct: Math.round(q.correctRate * 100),
+            }));
+
+        items.push({
+            gameId: game.id,
+            gameName: game.name,
+            gameType: game.game_type,
+            enabled: !!game.enabled,
+            sessions: stats.sessions,
+            totalInvited: stats.totalInvited,
+            totalSubmitted: stats.totalSubmitted,
+            totalPending: stats.totalInvited - stats.totalSubmitted,
+            avgScorePct: stats.maxScoreSum > 0 ? Math.round((stats.scoreSum / stats.maxScoreSum) * 100) : null,
+            bestScorePct: stats.bestPct != null ? Math.round(stats.bestPct) : null,
+            worstScorePct: stats.worstPct != null ? Math.round(stats.worstPct) : null,
+            worstQuestions,
+        });
+    }
+
+    items.sort((a, b) => b.totalSubmitted - a.totalSubmitted);
+
+    return { items, meta: { generated: getGeneratedDate(), days } };
+}
+
 module.exports = {
     getGroupedByMember,
     getGroupedBySkill,
@@ -290,5 +441,6 @@ module.exports = {
     getVerificationHistory,
     getTrainingAttendance,
     getSurveyParticipation,
-    getSurveyResponseLog
+    getSurveyResponseLog,
+    getQuizPerformance,
 };

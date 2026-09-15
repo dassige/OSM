@@ -11,6 +11,7 @@ jest.mock('../services/report-service', () => ({
     getTrainingAttendance:  jest.fn(),
     getSurveyParticipation: jest.fn(),
     getSurveyResponseLog:   jest.fn(),
+    getQuizPerformance:     jest.fn(),
 }));
 
 jest.mock('../services/proxy-manager', () => ({
@@ -157,6 +158,30 @@ describe('Reports API Endpoints', () => {
             await request(app).get('/api/reports/data/survey-response-log');
 
             expect(reportService.getSurveyResponseLog).toHaveBeenCalledWith(undefined);
+        });
+    });
+
+    describe('GET /api/reports/data/quiz-performance', () => {
+        it('returns 200 with quiz performance data and passes days param', async () => {
+            const mockData = {
+                items: [{ gameId: 1, gameName: 'Radio Check', gameType: 'timed', sessions: 2, totalInvited: 5, totalSubmitted: 4, totalPending: 1, avgScorePct: 72, bestScorePct: 95, worstScorePct: 40, worstQuestions: [] }],
+                meta: { generated: 'Monday, 12 May 2025', days: 90 }
+            };
+            reportService.getQuizPerformance.mockResolvedValue(mockData);
+
+            const res = await request(app).get('/api/reports/data/quiz-performance?days=90');
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual(mockData);
+            expect(reportService.getQuizPerformance).toHaveBeenCalledWith(90);
+        });
+
+        it('uses undefined days when no param provided', async () => {
+            reportService.getQuizPerformance.mockResolvedValue({ items: [], meta: {} });
+
+            await request(app).get('/api/reports/data/quiz-performance');
+
+            expect(reportService.getQuizPerformance).toHaveBeenCalledWith(undefined);
         });
     });
 

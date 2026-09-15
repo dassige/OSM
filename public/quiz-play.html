@@ -46,6 +46,17 @@
             font-size: 1em;
         }
 
+        .host-disconnected-banner {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            text-align: center;
+            font-weight: bold;
+        }
+
         .question-card {
             background: var(--bg-hover);
             border: 1px solid var(--border-color);
@@ -262,6 +273,7 @@
                 <h1 id="timedGameName" class="form-title"></h1>
                 <p id="timedPlayingAs" class="form-intro"></p>
             </div>
+            <div id="hostDisconnectedBanner" class="host-disconnected-banner" style="display:none;">Host disconnected — waiting for them to reconnect...</div>
             <div id="timedQuestionCounter" style="text-align:center; font-weight:bold; color:var(--text-muted); margin-bottom:12px;"></div>
             <div class="timer-bar-wrap">
                 <div id="timerBarFill" class="timer-bar-fill"></div>
@@ -416,6 +428,7 @@
         let timedPlayUrlBase = null;
         let timedTickHandle = null;
         let timedSocket = null;
+        let currentTimedPhase = null;
 
         function parseServerTimestamp(ts) {
             return new Date(String(ts).replace(' ', 'T') + 'Z').getTime();
@@ -437,6 +450,10 @@
             ['question-started', 'question-revealed', 'leaderboard-shown', 'game-finished'].forEach((evt) => {
                 timedSocket.on(evt, refreshTimedState);
             });
+            timedSocket.on('host-status', (data) => {
+                const banner = document.getElementById('hostDisconnectedBanner');
+                banner.style.display = (!data.connected && currentTimedPhase !== 'finished') ? 'block' : 'none';
+            });
         }
 
         async function refreshTimedState() {
@@ -452,6 +469,8 @@
         }
 
         function renderTimedState(data) {
+            currentTimedPhase = data.phase;
+            if (data.phase === 'finished') document.getElementById('hostDisconnectedBanner').style.display = 'none';
             document.getElementById('timedGameName').textContent = data.name;
             document.getElementById('timedPlayingAs').textContent = data.team
                 ? `Playing as Team: ${data.team}`

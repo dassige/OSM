@@ -25,7 +25,11 @@ function initQuizLiveSocket(io, sessionMiddleware, ROLES) {
       const role = socket.request.session?.user?.role;
       if ((ROLES[role] || 0) < ROLES.admin) return;
       if (kind !== "individual" && kind !== "team") return;
+      socket.data.isHost = true;
+      socket.data.kind = kind;
+      socket.data.sessionId = sessionId;
       socket.join(roomName(kind, sessionId));
+      broadcastHostStatus(kind, sessionId);
     });
 
     // Player/team: no login required — the access code itself is the credential,
@@ -43,17 +47,44 @@ function initQuizLiveSocket(io, sessionMiddleware, ROLES) {
         socket.data.participantId = participant.id;
         socket.join(roomName(kind, sessionId));
         broadcastLobbyUpdate(kind, sessionId);
+        // Tell this player the host's current connection status right away —
+        // they may be joining/reconnecting after the host already dropped out,
+        // with no broadcast to have caught in the meantime.
+        socket.emit("host-status", { connected: isHostConnected(kind, sessionId) });
       } catch (e) {
         logger.error("[QuizLive] join-player failed", { error: e.message });
       }
     });
 
     socket.on("disconnect", () => {
-      if (socket.data.kind && socket.data.sessionId != null) {
+      if (socket.data.participantId != null && socket.data.kind && socket.data.sessionId != null) {
         broadcastLobbyUpdate(socket.data.kind, socket.data.sessionId);
+      }
+      // A live Timed quiz only progresses when the host clicks Reveal/Next —
+      // if their tab closes mid-question, players would otherwise be stuck
+      // staring at a frozen countdown with no explanation. isHostConnected()
+      // re-checks the room *after* Socket.IO has already removed this socket,
+      // so a second open host tab correctly keeps the status "connected".
+      if (socket.data.isHost && socket.data.kind && socket.data.sessionId != null) {
+        broadcastHostStatus(socket.data.kind, socket.data.sessionId);
       }
     });
   });
+}
+
+function isHostConnected(kind, sessionId) {
+  if (!quizNamespace) return false;
+  const room = quizNamespace.adapter.rooms.get(roomName(kind, sessionId));
+  if (!room) return false;
+  for (const socketId of room) {
+    const sock = quizNamespace.sockets.get(socketId);
+    if (sock && sock.data && sock.data.isHost) return true;
+  }
+  return false;
+}
+
+function broadcastHostStatus(kind, sessionId) {
+  broadcastQuizLive(kind, sessionId, "host-status", { connected: isHostConnected(kind, sessionId) });
 }
 
 function getJoinedParticipantIds(kind, sessionId) {
@@ -77,4 +108,4 @@ function broadcastQuizLive(kind, sessionId, event, payload) {
   quizNamespace.to(roomName(kind, sessionId)).emit(event, payload);
 }
 
-module.exports = { initQuizLiveSocket, broadcastQuizLive, getJoinedParticipantIds };
+module.exports = { initQuizLiveSocket, broadcastQuizLive, getJoinedParticipantIds, isHostConnected };

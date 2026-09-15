@@ -17,6 +17,18 @@ The application stores user sessions in a separate SQLite file (`sessions.db`) l
 
 This means that on a cold container start (e.g., after a scale-to-zero event), all active user sessions are lost and users must log in again. Application data in `fenz.db` is fully preserved. This is expected behaviour for a stateless Cloud Run deployment and has no impact on data integrity.
 
+### ⚠️ Real-Time Quiz Feature Requires `--max-instances=1`
+
+The **Quiz Games** live-hosting feature (Timed quizzes, `quiz-host.html` / `quiz-play.html`) pushes state to the host and every joined player over a Socket.IO channel (`services/quiz-live-socket.js`). This channel keeps room membership and host/player presence **in that process's memory only** — there is no Redis (or other) adapter configured, and no session affinity is set up.
+
+This means the feature **only works correctly with a single running instance**. If Cloud Run is ever allowed to scale beyond one instance (`--max-instances` raised above `1`, or the flag removed), a host and a player can land on two different instances that don't share any socket state:
+
+* The host clicking **Start**, **Reveal**, or **Next Question** would never reach a player on a different instance — their screen just stops updating.
+* The host's lobby "who has joined" indicator, and the host-disconnect banner shown to players, both rely on the same in-memory presence tracking and would misbehave the same way (e.g. a player could see a false "Host disconnected" banner simply because they landed on a different instance than the host).
+* The underlying quiz data itself is **not** at risk — every mutation (start, answer, reveal, next, submit) goes through normal REST routes backed by `fenz.db`, which Litestream keeps consistent. A manual page reload always shows the correct, current state; the socket layer only carries the automatic "please refresh" push.
+
+**As long as this deployment is kept at `--max-instances=1`, none of the above applies.** If horizontal scaling is ever needed for a much larger deployment, the Socket.IO layer would need a shared adapter (e.g. `@socket.io/redis-adapter`) and Cloud Run session affinity enabled first.
+
 ## 2. Architecture: Handling Geoblocking (The AWS Lambda Pattern)
 
 The live OSM Dashboard is geoblocked to New Zealand IP addresses. If your Cloud Run service is deployed in a region outside of NZ, live scraping will fail.
@@ -91,6 +103,7 @@ gcloud run deploy OpReady \
   --source . \
   --region australia-southeast1 \
   --allow-unauthenticated \
+  --max-instances 1 \
   --set-env-vars DB_PATH=/app/fenz.db \
   --set-env-vars GCS_BUCKET_NAME=opready-production-data \
   --set-env-vars APP_MODE=gcs \
@@ -100,6 +113,8 @@ gcloud run deploy OpReady \
   --set-env-vars SESSION_SECRET=your_random_secret_string \
   --set-env-vars UI_LOGIN_TITLE="Station 44 OSM Manager"
 ```
+
+`--max-instances 1` is required — see the Real-Time Quiz Feature note above, and the SQLite single-writer caveat inherent to the Litestream setup. Do not remove this flag without first adding a shared Socket.IO adapter.
 
 ## 6. Critical Resource Configuration (WhatsApp Support)
 
