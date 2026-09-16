@@ -489,6 +489,14 @@ These examples provide structured logic for the `mailer.js` and `whatsapp-servic
 
   * **Implementation:** These can be imported into the **Templates** editor using the **Import JSON** feature.
 
+### 3\. Quiz Game Examples (`/examples/quiz/`)
+
+Ready-made games covering both Quiz Games types, importable via the **Import** button in `quiz-games.html`.
+
+  * `quiz-chainsaw-operation.json`: A **Timed** game on OSM Specialist Chainsaw Operation (safety features, kickback, PPE, correct procedure).
+  * `quiz-working-at-height.json`: A **Score-based** game on fall-arrest classifications, edge protection distances, anchor ratings, and the hierarchy of fall-protection controls.
+  * **Demo mode:** these two are automatically seeded into `demo.db` by `scripts/generate-demo-db.js` (since Quiz Games is new and has no real production data to sanitise-and-copy) — visible via Preview/Test on the demo instance, since starting a session is disabled in demo mode.
+
 ### Technical Schema Reference
 
 Both forms and templates utilize a strict JSON schema validated by the backend.

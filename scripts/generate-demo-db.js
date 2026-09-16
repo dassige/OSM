@@ -9,6 +9,9 @@
  *  - Mirrors the name/email replacements into email_history
  *  - Scrubs real emails from event_log security-event payloads
  *  - Replaces sender name and email in all notification templates (preferences)
+ *  - Seeds example Quiz Games from examples/quiz/ (skipped if quiz_games is
+ *    already non-empty) — Quiz Games sessions/teams are never seeded, since
+ *    starting a session is blocked in demo mode; only Preview/Test apply
  *  - Deletes all rows from: users, user_preferences, api_keys
  *
  * Usage:
@@ -232,7 +235,37 @@ async function main() {
   console.log(`Updated  ${prefsUpdated} preference rows  (sender name/email replaced)`);
 
   // -------------------------------------------------------------------------
-  // 6. Delete users, user_preferences, api_keys
+  // 6. Seed demo Quiz Games — Quiz Games is a new feature with no real
+  //    curated content to sanitise-and-copy from a source fenz.db the way
+  //    every other step here does, so instead we seed the example games from
+  //    examples/quiz/ directly (same JSON shape as the app's own game
+  //    create/import payload). Idempotent: skipped if quiz_games already has
+  //    rows (e.g. re-running against a DB that already carried real quiz
+  //    data through, or was already seeded once).
+  //    Sessions are intentionally NOT seeded — Start Single/Teams stay
+  //    blocked in demo mode, so these are look-but-don't-play via the
+  //    Preview/Test buttons only.
+  // -------------------------------------------------------------------------
+  const QUIZ_EXAMPLES_DIR = path.join(ROOT, 'examples', 'quiz');
+  const existingQuizGames = (await db.get(`SELECT COUNT(*) as c FROM quiz_games`)).c;
+  let quizGamesSeeded = 0;
+  if (existingQuizGames === 0 && fs.existsSync(QUIZ_EXAMPLES_DIR)) {
+    const quizFiles = fs.readdirSync(QUIZ_EXAMPLES_DIR).filter(f => f.endsWith('.json'));
+    for (const file of quizFiles) {
+      const game = JSON.parse(fs.readFileSync(path.join(QUIZ_EXAMPLES_DIR, file), 'utf8'));
+      await db.run(
+        `INSERT INTO quiz_games (name, description, game_type, enabled, questions) VALUES (?, ?, ?, 1, ?)`,
+        [game.name, game.description, game.game_type, JSON.stringify(game.questions)]
+      );
+      quizGamesSeeded++;
+    }
+    console.log(`Seeded   ${quizGamesSeeded} demo quiz game(s) from examples/quiz/`);
+  } else {
+    console.log(`Skipped  quiz game seeding (${existingQuizGames} already present)`);
+  }
+
+  // -------------------------------------------------------------------------
+  // 7. Delete users, user_preferences, api_keys
   // -------------------------------------------------------------------------
   const { changes: usersDeleted }   = await db.run(`DELETE FROM users`);
   const { changes: prefsDeleted }   = await db.run(`DELETE FROM user_preferences`);
@@ -240,7 +273,7 @@ async function main() {
   console.log(`Deleted  ${usersDeleted} users,  ${prefsDeleted} user_preferences,  ${apiKeysDeleted} api_keys`);
 
   // -------------------------------------------------------------------------
-  // 6. Vacuum
+  // 8. Vacuum
   // -------------------------------------------------------------------------
   await db.run(`VACUUM`);
   console.log(`VACUUM complete`);

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.13.1] - 2026/09/16
+
+- feat: add example quiz games seeding to demo database script
+- feat: enhance live quiz session management with email notification options
+- feat: update cache version to v6 for service worker
+- feat: add quiz performance report and host disconnection handling
+- feat: implement live quiz rate limiting and enhance quiz functionality
+- feat: Implement live-hosted timed quiz functionality (Phase 4)
+- feat: Implement team session management for both score-based and timed quizzes
+
 ## [3.13.0] - 2026/09/16
 
 - feat: enhance live quiz session management with email notification options

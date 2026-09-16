@@ -381,10 +381,11 @@ node scripts/generate-demo-db.js
 | 2 | `email_history` | Mirrors the same name and email replacements, matched by `recipient_name` |
 | 3 | `event_log` | Replaces real email addresses found in `Security` event payloads with `demo@starwars.demo` |
 | 4 | `preferences` | Replaces the sender name and email in all notification templates with `Rebel Alliance Training <training@rebels.starwars.demo>` |
-| 5 | `users` | Deletes all rows |
-| 6 | `user_preferences` | Deletes all rows |
-| 7 | `api_keys` | Deletes all rows |
-| 8 | *(all tables)* | Runs `VACUUM` to compact the file |
+| 5 | `quiz_games` | Seeds the example games from `examples/quiz/` (skipped if `quiz_games` is already non-empty — idempotent). No sessions/teams are seeded — Start Single/Teams stay blocked in demo mode, so these games are look-but-don't-play via Preview/Test only |
+| 6 | `users` | Deletes all rows |
+| 7 | `user_preferences` | Deletes all rows |
+| 8 | `api_keys` | Deletes all rows |
+| 9 | *(all tables)* | Runs `VACUUM` to compact the file |
 
 **Name assignment**
 
