@@ -677,7 +677,7 @@ const helpContent = {
             <ul>
                 <li><strong>Preview</strong> (Score-based only) — opens a read-only window showing exactly how the questions will appear, with correct answers highlighted. Prompts to save first if you have unsaved changes.</li>
                 <li><strong>Test</strong> (Score-based only) — opens a scoring simulator so you can answer the current (even unsaved) questions and check the point weighting works as expected.</li>
-                <li><strong>Start Single</strong> — starts an individual play session (either game type); see <em>Live Quiz &rarr; Single Sessions</em> for tracking results.</li>
+                <li><strong>Start Single</strong> — starts an individual play session (either game type); an access code is always generated for each selected member, and an optional checkbox in the modal controls whether an invitation email is sent for each one. See <em>Live Quiz &rarr; Single Sessions</em> for tracking results.</li>
                 <li><strong>Start Teams</strong> — opens the drag-and-drop team builder to organize members into teams. Each team plays together on the captain's device, and the score is attributed to the team. See <em>Live Quiz &rarr; Team Setups</em>.</li>
                 <li><strong>Export</strong> — downloads the game's name, description, type, and full question bank as a <code>.json</code> file.</li>
                 <li><strong>Import</strong> — loads a previously exported <code>.json</code> file into the editor. Nothing is saved until you click <strong>Save</strong>.</li>

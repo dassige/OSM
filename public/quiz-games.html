@@ -269,9 +269,16 @@
                 <div style="text-align:center; padding:10px;">Loading members...</div>
             </div>
 
+            <div style="flex-shrink: 0; margin-top: 15px;">
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal; cursor:pointer;" title="Email each selected member their access code immediately after starting">
+                    <input type="checkbox" id="sessionSendEmails" checked>
+                    Send email notification to invited members
+                </label>
+            </div>
+
             <div class="modal-actions-right" style="flex-shrink: 0; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1);">
                 <button onclick="closeModal('sessionModal')" class="btn-secondary">Cancel</button>
-                <button onclick="confirmStartSession()" class="btn-success" id="btnConfirmSession">Start & Send</button>
+                <button onclick="confirmStartSession()" class="btn-success" id="btnConfirmSession">Start</button>
             </div>
         </div>
     </div>

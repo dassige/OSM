@@ -239,11 +239,12 @@ async function openSessionModal() {
 
   document.getElementById('sessionModalTitle').innerText = `Start Single: ${currentGame.name}`;
   document.getElementById('sessionModalIntro').textContent = currentGame.game_type === 'timed'
-    ? 'Starts an individual timed session from this game and sends each selected member their own access code by email. Members without an email can be given their code to type in on the spot. Each question is played against the clock, scored on speed and correctness.'
-    : 'Starts a self-paced session from this game and sends each selected member their own access code by email. Members without an email can be given their code to type in on the spot.';
+    ? 'Starts an individual timed session from this game and generates each selected member their own access code. Members without an email can be given their code to type in on the spot. Each question is played against the clock, scored on speed and correctness.'
+    : 'Starts a self-paced session from this game and generates each selected member their own access code. Members without an email can be given their code to type in on the spot.';
   document.getElementById('btnConfirmSession').disabled = false;
-  document.getElementById('btnConfirmSession').innerText = 'Start & Send';
+  document.getElementById('btnConfirmSession').innerText = 'Start';
   document.querySelector('input[name="sessionTarget"][value="all"]').checked = true;
+  document.getElementById('sessionSendEmails').checked = true;
   toggleSessionSelection();
   openModal('sessionModal');
 
@@ -296,6 +297,7 @@ async function confirmStartSession() {
     allActiveMembers.forEach((m) => memberIds.push(m.id));
   }
 
+  const sendEmails = document.getElementById('sessionSendEmails').checked;
   const btn = document.getElementById('btnConfirmSession');
   btn.disabled = true;
   btn.innerText = 'Starting...';
@@ -312,9 +314,9 @@ async function confirmStartSession() {
 
     closeModal('sessionModal');
     btn.disabled = false;
-    btn.innerText = 'Start & Send';
+    btn.innerText = 'Start';
 
-    const withEmail = (data.players || []).filter((p) => p.email);
+    const withEmail = sendEmails ? (data.players || []).filter((p) => p.email) : [];
     if (withEmail.length === 0) {
       hideGlobalSpinner();
       showToast(`Session started with ${data.players.length} player(s). View codes in Live Quiz.`, 'success');
@@ -342,7 +344,7 @@ async function confirmStartSession() {
   } catch (e) {
     showToast(e.message, 'error');
     btn.disabled = false;
-    btn.innerText = 'Start & Send';
+    btn.innerText = 'Start';
     hideGlobalSpinner();
   }
 }
