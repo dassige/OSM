@@ -32,3 +32,7 @@ KnowledgeBase/
 # Local-only: references TEST environment access details (URLs, hosts, SSH aliases)
 .claude/skills/opready-tst-env/
 
+# Guide builder — intermediate screenshots and scratch DB copies; only the
+# final PDF under docs/guides/ is committed.
+scripts/guide-builder/output/
+

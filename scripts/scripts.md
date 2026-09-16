@@ -351,6 +351,64 @@ The script exits with code `1` if any page fails; all other pages are still atte
 
 ---
 
+## guide-builder/ (PDF feature guides)
+
+A reusable framework for generating full PDF user guides — cover page, table of contents, written sections, and real screenshots captured by driving the actual app with Playwright. Currently has one guide (Quiz Games); see `.claude/skills/pdf-guide-builder/SKILL.md` for how to add another.
+
+**npm shortcut**
+
+```powershell
+npm run guide:quiz
+```
+
+**Direct invocation**
+
+```powershell
+node scripts/guide-builder/build-quiz-guide.js
+```
+
+**Prerequisites**
+
+- `demo.db` must exist at the project root (`npm run generate-demo-db` creates it) — the guide builder copies it to a scratch file and never touches the original.
+- Playwright (`@playwright/test`) must be installed — it is a dev dependency of this project.
+- Nothing else needs to be running — the script starts and stops its own disposable server instance.
+
+**What it does**
+
+1. Copies `demo.db` to a scratch file under the OS temp directory and seeds the two example quiz games into it if not already present (same idempotent logic as `generate-demo-db.js`) — the real `demo.db` and `fenz.db` are never opened for writing.
+2. Starts a disposable `node server.js` instance on `APP_MODE=development` (not `demo`) pointed at that scratch DB, on port 3098 by default — `development` mode is required because the demo-mode guard blocks Start Single/Teams and live hosting, which this guide must actually exercise. SMTP is pointed at an invalid host so any invitation-email attempt fails harmlessly.
+3. Drives the real UI with Playwright, as an admin (desktop viewport) and as two mobile players/teams (`devices['iPhone 13']`), through the full Quiz Games lifecycle — creating games, starting a Single session, starting a Team session, hosting a live Timed round question-by-question, and playing both a Timed team round and a self-paced Score quiz to completion — saving a screenshot at each step.
+4. Renders those screenshots plus written guide content (in `quiz/content.js`) into a single PDF via Playwright's own print pipeline (`lib/pdf-renderer.js`) — no PDF library dependency.
+5. Shuts down the scratch server and deletes the scratch DB.
+
+**Structure**
+
+```
+scripts/guide-builder/
+  lib/
+    prepare-db.js     — scratch DB copy + quiz-game seeding
+    demo-server.js    — disposable server.js bootstrap/teardown
+    guide-html.js     — shared branding, cover page, section/figure HTML helpers
+    pdf-renderer.js   — HTML → PDF via a headless Chromium page.pdf()
+  quiz/
+    capture.js        — Playwright walkthrough + screenshot capture for the Quiz feature
+    content.js         — written guide content for the Quiz feature
+  build-quiz-guide.js  — orchestrates the above for the Quiz guide
+  output/              — gitignored: scratch DB copy, screenshots, working files
+```
+
+**Environment variables**
+
+| Variable | Default | Description |
+|---|---|---|
+| `GUIDE_BUILDER_PORT` | `3098` | Port for the disposable capture server |
+
+**Output**
+
+`docs/guides/OpReady-Quiz-Feature-Guide.pdf` (committed to the repo — regenerate and commit again whenever the Quiz feature's UI changes materially). Intermediate screenshots live under `scripts/guide-builder/output/` and are not committed.
+
+---
+
 ## generate-demo-db.js
 
 Creates a sanitised demo copy of `fenz.db` → `fenz_demo.db` in the project root. Safe to share or commit as sample data.

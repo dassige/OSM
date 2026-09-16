@@ -496,6 +496,7 @@ Ready-made games covering both Quiz Games types, importable via the **Import** b
   * `quiz-chainsaw-operation.json`: A **Timed** game on OSM Specialist Chainsaw Operation (safety features, kickback, PPE, correct procedure).
   * `quiz-working-at-height.json`: A **Score-based** game on fall-arrest classifications, edge protection distances, anchor ratings, and the hierarchy of fall-protection controls.
   * **Demo mode:** these two are automatically seeded into `demo.db` by `scripts/generate-demo-db.js` (since Quiz Games is new and has no real production data to sanitise-and-copy) — visible via Preview/Test on the demo instance, since starting a session is disabled in demo mode.
+  * **Full guide:** `docs/guides/OpReady-Quiz-Feature-Guide.pdf` is a complete illustrated Administrator and Player/Team guide for the Quiz Games feature, with real screenshots (desktop for admin, mobile for players/teams) generated end-to-end by `npm run guide:quiz` — see `scripts/scripts.md` for how it works and `.claude/skills/pdf-guide-builder/SKILL.md` for how to build a similar guide for another feature.
 
 ### Technical Schema Reference
 
