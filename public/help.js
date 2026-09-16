@@ -201,7 +201,10 @@ const helpContent = {
                 <li><strong>App Hosted Form:</strong> Select a form created in the <em>Forms Manager</em>. This enables the full tracking, scoring, and review lifecycle.</li>
             </ul>
 
-            <h3>3. Visibility</h3>
+            <h3>3. Refresher Material</h3>
+            <p>Optionally link a <strong>Knowledge Base Document</strong> under Refresher Material. It's sent alongside the member's expiry notification (email and WhatsApp) so they can review it before a practical, in-person assessment — most useful for skills with no online form. Click <strong>Select Document</strong> to pick from the Knowledge Base, or <strong>Clear</strong> to unlink it.</p>
+
+            <h3>4. Visibility</h3>
             <p>Use the <strong>Enabled</strong> toggle to hide skills you don't want to track (e.g., administrative items) without deleting them from the database.</p>
         `
     },
@@ -227,7 +230,7 @@ const helpContent = {
             
             <h3>Template Types</h3>
             <ul>
-                <li><strong>Expiring Skills:</strong> The primary notification listing all due competencies.</li>
+                <li><strong>Expiring Skills:</strong> The primary notification listing all due competencies. Drag the <strong>KB Refresher Link</strong> chip into a Skill Row to include the skill's linked Knowledge Base document (set on the Skills page) — it renders blank automatically for skills with no document linked.</li>
                 <li><strong>Form Accepted:</strong> Sent when a Live Form submission is approved.</li>
                 <li><strong>Form Rejected:</strong> Sent when a submission fails. Includes logic for "Retry Links" if a new attempt was generated.</li>
                 <li><strong>Survey Invitations:</strong> Sent when an anonymous survey is published or a reminder is triggered.</li>

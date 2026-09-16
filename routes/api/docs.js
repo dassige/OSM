@@ -90,7 +90,9 @@ const spec = {
                     url_type: { type: 'string', enum: ['internal', 'external', 'none'] },
                     url: { type: 'string', nullable: true },
                     critical_skill: { type: 'integer', enum: [0, 1] },
-                    enabled: { type: 'integer', enum: [0, 1] }
+                    enabled: { type: 'integer', enum: [0, 1] },
+                    kb_document_id: { type: 'integer', nullable: true, description: 'Linked Knowledge Base document (refresher material) sent with expiry notifications' },
+                    kb_document_title: { type: 'string', nullable: true, description: 'Read-only — title of the linked KB document, if any' }
                 }
             },
             SkillInput: {
@@ -101,7 +103,8 @@ const spec = {
                     url_type: { type: 'string', enum: ['internal', 'external', 'none'] },
                     url: { type: 'string', nullable: true },
                     critical_skill: { type: 'integer', enum: [0, 1] },
-                    enabled: { type: 'integer', enum: [0, 1] }
+                    enabled: { type: 'integer', enum: [0, 1] },
+                    kb_document_id: { type: 'integer', nullable: true, description: 'Knowledge Base document id to link as refresher material, or null to unlink' }
                 }
             },
             QuizQuestion: {

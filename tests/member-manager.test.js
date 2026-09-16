@@ -82,4 +82,58 @@ describe('Member Manager - processMemberSkills', () => {
         }
     });
 
+    it('attaches a resolved kbLink/kbTitle when the skill has an active, unexpired linked KB document', () => {
+        const dbMembers = [{ id: 4, name: 'FF Jane Roe', enabled: 1 }];
+        const dbSkills = [{
+            id: 12, name: 'Ladders', url_type: 'external', url: 'https://forms.example.com/ladders', enabled: 1,
+            kb_document_id: 7, kb_document_title: 'Ladder Safety Guide', kb_document_slug: 'ABC123',
+            kb_document_active: 1, kb_document_expires_at: null,
+        }];
+        const rawScrapedData = [{ name: 'FF Jane Roe', skill: 'Ladders', dueDate: '01/01/2020' }];
+
+        const result = processMemberSkills(dbMembers, rawScrapedData, dbSkills, 30, {}, {}, 'https://app.example.com');
+
+        const skill = result[0].expiringSkills[0];
+        expect(skill.kbLink).toBe('https://app.example.com/knowledgebase/ABC123');
+        expect(skill.kbTitle).toBe('Ladder Safety Guide');
+    });
+
+    it('does not attach a kbLink when the linked KB document is inactive', () => {
+        const dbMembers = [{ id: 5, name: 'FF Sam Poe', enabled: 1 }];
+        const dbSkills = [{
+            id: 13, name: 'Pumps', url_type: 'external', url: 'https://forms.example.com/pumps', enabled: 1,
+            kb_document_id: 8, kb_document_title: 'Pump Guide', kb_document_slug: 'DEF456',
+            kb_document_active: 0, kb_document_expires_at: null,
+        }];
+        const rawScrapedData = [{ name: 'FF Sam Poe', skill: 'Pumps', dueDate: '01/01/2020' }];
+
+        const result = processMemberSkills(dbMembers, rawScrapedData, dbSkills, 30, {}, {}, 'https://app.example.com');
+
+        expect(result[0].expiringSkills[0].kbLink).toBeNull();
+    });
+
+    it('does not attach a kbLink when the linked KB document has expired', () => {
+        const dbMembers = [{ id: 6, name: 'FF Alex Fox', enabled: 1 }];
+        const dbSkills = [{
+            id: 14, name: 'Ropes', url_type: 'external', url: 'https://forms.example.com/ropes', enabled: 1,
+            kb_document_id: 9, kb_document_title: 'Rope Guide', kb_document_slug: 'GHI789',
+            kb_document_active: 1, kb_document_expires_at: '2000-01-01',
+        }];
+        const rawScrapedData = [{ name: 'FF Alex Fox', skill: 'Ropes', dueDate: '01/01/2020' }];
+
+        const result = processMemberSkills(dbMembers, rawScrapedData, dbSkills, 30, {}, {}, 'https://app.example.com');
+
+        expect(result[0].expiringSkills[0].kbLink).toBeNull();
+    });
+
+    it('leaves kbLink null when the skill has no linked KB document', () => {
+        const dbMembers = [{ id: 7, name: 'FF Sky Lane', enabled: 1 }];
+        const dbSkills = [{ id: 15, name: 'Knots', url_type: 'none', enabled: 1 }];
+        const rawScrapedData = [{ name: 'FF Sky Lane', skill: 'Knots', dueDate: '01/01/2020' }];
+
+        const result = processMemberSkills(dbMembers, rawScrapedData, dbSkills, 30, {}, {}, 'https://app.example.com');
+
+        expect(result[0].expiringSkills[0].kbLink).toBeNull();
+    });
+
 });

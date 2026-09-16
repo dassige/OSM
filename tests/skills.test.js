@@ -120,6 +120,23 @@ describe('Skills API Endpoints (Isolated)', () => {
             });
         });
 
+        it('should accept an internal (App Hosted Form) skill whose url is a form public_id, not a URI', async () => {
+            db.addSkill.mockResolvedValue(7);
+
+            const response = await request(app)
+                .post('/api/skills')
+                .send({
+                    name: 'Breathing Apparatus',
+                    url_type: 'internal',
+                    url: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+                });
+
+            expect(response.status).toBe(200);
+            expect(db.addSkill).toHaveBeenCalledWith(
+                expect.objectContaining({ url: '3fa85f64-5717-4562-b3fc-2c963f66afa6' }),
+            );
+        });
+
         it('should return 400 when required fields are missing', async () => {
             const response = await request(app)
                 .post('/api/skills')
@@ -128,6 +145,32 @@ describe('Skills API Endpoints (Isolated)', () => {
             expect(response.status).toBe(400);
             expect(response.body).toHaveProperty('error', 'Validation Failed');
             expect(response.body).toHaveProperty('details');
+            expect(db.addSkill).not.toHaveBeenCalled();
+        });
+
+        it('should accept and persist a linked kb_document_id', async () => {
+            db.addSkill.mockResolvedValue(6);
+
+            const response = await request(app)
+                .post('/api/skills')
+                .send({
+                    name: 'BA Renewal',
+                    url_type: 'none',
+                    kb_document_id: 4,
+                });
+
+            expect(response.status).toBe(200);
+            expect(db.addSkill).toHaveBeenCalledWith(
+                expect.objectContaining({ kb_document_id: 4 }),
+            );
+        });
+
+        it('should return 400 for a non-numeric kb_document_id', async () => {
+            const response = await request(app)
+                .post('/api/skills')
+                .send({ name: 'Bad Skill', url_type: 'none', kb_document_id: 'not-a-number' });
+
+            expect(response.status).toBe(400);
             expect(db.addSkill).not.toHaveBeenCalled();
         });
     });
@@ -178,6 +221,40 @@ describe('Skills API Endpoints (Isolated)', () => {
             
             // Prove that the router extracted the ID from the URL and passed the payload
             expect(db.updateSkill).toHaveBeenCalledWith("1", updatePayload);
+        });
+
+        it('should re-save an existing internal (App Hosted Form) skill unchanged without a 400', async () => {
+            db.updateSkill.mockResolvedValue();
+
+            const response = await request(app)
+                .put('/api/skills/3')
+                .send({
+                    name: 'Breathing Apparatus',
+                    url_type: 'internal',
+                    url: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+                    critical_skill: false,
+                    enabled: true,
+                });
+
+            expect(response.status).toBe(200);
+            expect(db.updateSkill).toHaveBeenCalledWith(
+                "3",
+                expect.objectContaining({ url: '3fa85f64-5717-4562-b3fc-2c963f66afa6' }),
+            );
+        });
+
+        it('should allow unlinking a kb_document_id by sending null', async () => {
+            db.updateSkill.mockResolvedValue();
+
+            const response = await request(app)
+                .put('/api/skills/1')
+                .send({ url_type: 'external', url: 'http://external.site/form', kb_document_id: null });
+
+            expect(response.status).toBe(200);
+            expect(db.updateSkill).toHaveBeenCalledWith(
+                "1",
+                expect.objectContaining({ kb_document_id: null }),
+            );
         });
     });
 

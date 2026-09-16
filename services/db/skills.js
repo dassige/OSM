@@ -1,8 +1,18 @@
 const { initDB } = require("./connection");
 
+// Joined so callers get the linked KB document's title/slug/validity alongside each
+// skill without a second round trip (kb_document_id alone isn't enough to build a link
+// or render a title — see member-manager.js's expiry-notification enrichment).
+const SKILLS_SELECT = `
+  SELECT s.*, kb.title AS kb_document_title, kb.slug AS kb_document_slug,
+         kb.is_active AS kb_document_active, kb.expires_at AS kb_document_expires_at
+    FROM skills s
+    LEFT JOIN knowledgebase_documents kb ON kb.id = s.kb_document_id
+`;
+
 async function getSkills() {
   const db = await initDB();
-  const skills = await db.all("SELECT * FROM skills ORDER BY name ASC");
+  const skills = await db.all(`${SKILLS_SELECT} ORDER BY s.name ASC`);
   return skills.map((s) => ({
     ...s,
     critical_skill: !!s.critical_skill,
@@ -15,14 +25,15 @@ async function addSkill(skill) {
   const db = await initDB();
   return (
     await db.run(
-      `INSERT INTO skills (name, url, critical_skill, enabled, url_type, skill_osm_id, skill_category)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO skills (name, url, critical_skill, enabled, url_type, skill_osm_id, skill_category, kb_document_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       skill.name, skill.url || '',
       skill.critical_skill ? 1 : 0,
       skill.enabled !== false ? 1 : 0,
       skill.url_type  || 'external',
       skill.skill_osm_id  || null,
       skill.skill_category || null,
+      skill.kb_document_id || null,
     )
   ).lastID;
 }
@@ -60,11 +71,12 @@ async function updateSkill(id, skill) {
   const etlClause = etlCols.length ? ', ' + etlCols.join(', ') : '';
 
   await db.run(
-    `UPDATE skills SET name = ?, url = ?, critical_skill = ?, enabled = ?, url_type = ?${etlClause} WHERE id = ?`,
+    `UPDATE skills SET name = ?, url = ?, critical_skill = ?, enabled = ?, url_type = ?, kb_document_id = ?${etlClause} WHERE id = ?`,
     skill.name, skill.url || '',
     skill.critical_skill ? 1 : 0,
     skill.enabled ? 1 : 0,
     skill.url_type || 'external',
+    skill.kb_document_id || null,
     ...etlVals,
     id,
   );
@@ -72,7 +84,7 @@ async function updateSkill(id, skill) {
 
 async function getSkillById(id) {
   const db = await initDB();
-  return db.get("SELECT * FROM skills WHERE id = ?", id);
+  return db.get(`${SKILLS_SELECT} WHERE s.id = ?`, id);
 }
 
 async function deleteSkill(id) {
@@ -103,12 +115,12 @@ async function getSkillsPage({ limit, offset = 0, search, sortBy = 'name', sortD
   const db = await initDB();
   const col = SKILL_SORT_COLS.has(sortBy) ? sortBy : 'name';
   const dir = sortDir === 'desc' ? 'DESC' : 'ASC';
-  const whereClause = search ? 'WHERE name LIKE ?' : '';
+  const whereClause = search ? 'WHERE s.name LIKE ?' : '';
   const filterParams = search ? [`%${search}%`] : [];
 
-  const { n: total } = await db.get(`SELECT COUNT(*) as n FROM skills ${whereClause}`, ...filterParams);
+  const { n: total } = await db.get(`SELECT COUNT(*) as n FROM skills s ${whereClause}`, ...filterParams);
   const rows = await db.all(
-    `SELECT * FROM skills ${whereClause} ORDER BY ${col} ${dir} LIMIT ? OFFSET ?`,
+    `${SKILLS_SELECT} ${whereClause} ORDER BY s.${col} ${dir} LIMIT ? OFFSET ?`,
     ...filterParams, Number(limit), Number(offset),
   );
   return {

@@ -716,6 +716,12 @@ When editing a form or survey in the TinyMCE editor, the green **KB Link** butto
 
 The integer `id` (`42`) is the stable anchor — not the slug. When the form or survey is rendered for a member, the placeholder is resolved to the current public URL automatically. This means **rotating slugs does not break embedded links**.
 
+### Linking a document to a skill (refresher material)
+
+On the **Skills** page, each skill has an optional **Refresher Material** field. Click **Select Document** (same document picker used in forms/surveys) to link a Knowledge Base document to that skill, or **Clear** to unlink it. This is most useful for skills verified in person (no online form) — members can review the document before their practical assessment.
+
+When a member's expiring-skills notification is generated, any linked document is resolved to its current public `/knowledgebase/{slug}` link and made available to the Skills email/WhatsApp templates (**Notification Templates** page) as the `{{kb-link}}` placeholder — it renders as a ready-to-use link and is left blank automatically for skills with no document linked. A document that has been disabled or has passed its expiry date is treated as unlinked for notification purposes, even though it remains linked on the skill (an admin can re-enable or extend it at any time).
+
 ### Rotating slugs (security)
 
 Go to **System Tools → Rotate Document Links** and confirm with the keyword `ROTATE`. Every document is assigned a new UUID immediately. All previously shared `/knowledgebase/<guid>` URLs stop working. Embedded links in forms and surveys are unaffected.

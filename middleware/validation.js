@@ -87,13 +87,21 @@ const validateMember = (req, res, next) => {
 const skillSchema = Joi.object({
     name: Joi.string().required().trim().max(255),
     url_type: Joi.string().valid('internal', 'external', 'none').required(),
-    // M-09: Restrict URL scheme to http/https to prevent javascript: URIs.
-    url: Joi.string().uri({ scheme: ['http', 'https'] }).allow('', null).optional(),
+    // M-09: Restrict URL scheme to http/https to prevent javascript: URIs — only applies
+    // when url_type is 'external'. For 'internal' skills, `url` holds the linked form's
+    // public_id (a UUID, not a URL), so it just needs to be a non-empty string.
+    url: Joi.when('url_type', {
+        is: 'external',
+        then: Joi.string().uri({ scheme: ['http', 'https'] }).allow('', null).optional(),
+        otherwise: Joi.string().allow('', null).optional(),
+    }),
     critical_skill: Joi.alternatives().try(Joi.boolean(), Joi.number().valid(0, 1)).optional(),
     enabled: Joi.alternatives().try(Joi.boolean(), Joi.number().valid(0, 1)).optional(),
     // ETL enrichment fields
     skill_osm_id:  Joi.string().allow('', null).max(255).optional(),
     skill_category: Joi.string().allow('', null).max(100).optional(),
+    // Linked refresher material — a Knowledge Base document id (see kb-link-picker.js)
+    kb_document_id: Joi.number().integer().allow(null, '').optional(),
 });
 
 const validateSkill = (req, res, next) => {

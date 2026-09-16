@@ -103,6 +103,8 @@
 | T04-10 | Bulk import discovered skills | Select all → click `[Import]`. | New skills are added to the list. Toast confirms count. |
 | T04-11 | Bulk delete skills | Select multiple test skills → click `[Bulk Delete]` → confirm. | Skills removed. Event log records bulk deletion. |
 | T04-12 | Reject invalid external URL scheme | Click `[Edit]` on a skill → choose URL type = External → enter `javascript:alert(1)` as the URL → click `[Save]`. | HTTP 400 response. Toast shows a validation error. Skill is not saved with the invalid URL. |
+| T04-13 | Link a Knowledge Base document to a skill | Click `[Edit]` on a skill → under **Refresher Material**, click `[Select Document]` → choose a document from the Knowledge Base picker → click `[Save]`. | The document title appears next to "Select Document". Skill list/cards show the linked document title under the Form Link column. Event log records "Skill Updated" including the linked document. |
+| T04-14 | Unlink a Knowledge Base document from a skill | Click `[Edit]` on a skill that has a linked document → click `[Clear]` → click `[Save]`. | The Refresher Material field shows "No document selected". The document title no longer appears in the skill list/cards. |
 
 ---
 
@@ -275,6 +277,8 @@
 | T13-04 | Edit WhatsApp template | Click `[Edit]` on a WhatsApp template → update the markdown body text → click `[Save]`. | Template is saved. Toast confirms. |
 | T13-05 | Verify template is used in notifications | Send a test notification from the Dashboard → check recipient's inbox. | The email received reflects the edited template content and correctly substituted variable values. |
 | T13-06 | Forgot Password template tab | Click the **Forgot Password** tab in `templates.html` → edit the body to include the `{{resetlink}}` chip → click `[Save All Templates]` → trigger a forgot-password request from the login page. | The received email renders `{{resetlink}}` as a clickable "Reset link" anchor. `{{password}}` is not available in this tab's variable palette. |
+| T13-07 | KB Refresher Link placeholder in expiring-skills notification | On a skill with a linked Knowledge Base document (T04-13), drag the **KB Refresher Link** chip into the Skills email "Repeated Skill Row" and the WhatsApp "Row" templates → save → send a test expiring-skills notification to a member due for that skill. | The received email shows a "Refresher material" link that opens the linked document. The WhatsApp message shows a "Refresher:" line with the document's public link. |
+| T13-08 | KB Refresher Link renders blank when unset | Send a test expiring-skills notification for a skill with no linked Knowledge Base document. | The notification renders normally with no "Refresher material" line or blank space — the placeholder produces no visible artifact. |
 
 ---
 
@@ -824,7 +828,8 @@ Team setup is available for both Score-based and Timed games — a team session 
 Before starting the UAT run, ensure the following data is in place on the UAT instance:
 
 - [ ] At least **10 members** imported or created, with varied expiry dates (some overdue, some expiring soon, some current).
-- [ ] At least **5 skills** configured; at least 1 marked critical; at least 1 linked to a form; at least 1 linked to an external URL.
+- [ ] At least **5 skills** configured; at least 1 marked critical; at least 1 linked to a form; at least 1 linked to an external URL; at least 1 linked to a Knowledge Base document (for T04-13/T04-14 and T13-07/T13-08).
+- [ ] At least **1 Knowledge Base document** uploaded and active (for the skill Refresher Material link above).
 - [ ] At least **2 form templates** with mixed question types (MC, text, checkbox); 1 enabled, 1 disabled.
 - [ ] At least **1 live form record** in `Submitted` status, ready for review.
 - [ ] At least **1 survey template** (anonymous) with 3+ questions; 1 published instance.

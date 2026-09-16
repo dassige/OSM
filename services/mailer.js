@@ -94,10 +94,10 @@ async function sendNotification(
       `<p>Hello <strong>{{name}}</strong>,</p><p>You have expiring skills in OSM. Please complete them ASAP.</p>`,
     rowHtml:
       templateConfig.rowHtml ||
-      `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} <br> <a href="{{url}}">Form Link</a></li>`,
+      `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} <br> <a href="{{url}}">Form Link</a>{{kb-link}}</li>`,
     rowHtmlNoUrl:
       templateConfig.rowHtmlNoUrl ||
-      `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} (No online form available)</li>`,
+      `<li><strong>{{skill}}</strong> - Expires: {{date}} {{critical}} (No online form available){{kb-link}}</li>`,
   };
 
   const from = sanitizeHeader(replaceVariables(defaults.from, globalVars));
@@ -124,12 +124,18 @@ async function sendNotification(
     }
 
     const criticalLabel = skill.isCritical ? "(CRITICAL)" : "";
+    // Ready-to-use HTML fragment, empty when the skill has no linked KB document —
+    // same "pre-rendered value, blank when absent" convention as {{next-planned-dates}}.
+    const kbHtml = skill.kbLink
+      ? ` <br>&#128214; Refresher material: <a href="${escapeHtml(skill.kbLink)}">${escapeHtml(skill.kbTitle || "View document")}</a>`
+      : "";
     let row = templateToUse
       .replace(/{{skill}}/g, escapeHtml(skill.skill))
       .replace(/{{date}}/g, escapeHtml(skill.dueDate))
       .replace(/{{critical}}/g, criticalLabel)
       .replace(/{{url}}/g, escapeHtml(fullUrl))
-      .replace(/{{next-planned-dates}}/g, escapeHtml(skill.nextPlannedDates || "None"));
+      .replace(/{{next-planned-dates}}/g, escapeHtml(skill.nextPlannedDates || "None"))
+      .replace(/{{kb-link}}/g, kbHtml);
 
     rowsHtml += row;
     plainTextList += `- ${skill.skill} (${skill.dueDate}) [Next: ${skill.nextPlannedDates}]\n`;

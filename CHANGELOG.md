@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.13.2] - 2026/09/16
+
+- feat: add support for linking Knowledge Base documents to skills as refresher material
+
+- Updated UAT testing plan to include new test cases for linking and unlinking Knowledge Base documents.
+- Modified API to accept `kb_document_id` for skills, allowing optional linking to refresher materials.
+- Enhanced validation to ensure proper handling of `kb_document_id`.
+- Updated mailer service to include refresher material links in notifications for expiring skills.
+- Added UI components for selecting and displaying linked Knowledge Base documents in the skills management interface.
+- Implemented database migration to add `kb_document_id` column to the skills table.
+- Created tests to verify the functionality of the new refresher material feature in member notifications and skills management.
+- feat(guide-builder): implement PDF generation for Quiz Games guide
+- feat: Add PDF rendering and quiz capture functionality for guide builder
+
 ## [3.13.1] - 2026/09/16
 
 - feat: add example quiz games seeding to demo database script

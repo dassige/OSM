@@ -46,6 +46,13 @@ function isExpired(dueDateStr) {
   // Zero-padded YYYY-MM-DD is lexicographically sortable, so string comparison is correct
   return cleanDue < todayStr;
 }
+// Mirrors routes/api/knowledgebase.js's isKbDocExpired() — duplicated rather than imported
+// since services must not depend on route modules.
+function isKbDocumentExpired(expiresAt) {
+  if (!expiresAt) return false;
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: config.timezone });
+  return String(expiresAt).slice(0, 10) < today;
+}
 function isExpiring(dueDateStr, daysThreshold) {
   const expiryDate = parseDate(dueDateStr);
   if (!expiryDate) return false;
@@ -98,6 +105,16 @@ function processMemberSkills(
           }
 
           skill.isCritical = config.critical_skill;
+
+          // Refresher material — only offer the link while the KB document is still
+          // active and unexpired (an admin may disable/expire it without unlinking it).
+          if (config.kb_document_id && config.kb_document_active && !isKbDocumentExpired(config.kb_document_expires_at)) {
+            skill.kbLink = `${appBaseUrl}/knowledgebase/${config.kb_document_slug}`;
+            skill.kbTitle = config.kb_document_title;
+          } else {
+            skill.kbLink = null;
+            skill.kbTitle = null;
+          }
 
           const dates = trainingMap[skill.skill] || [];
           skill.nextPlannedDates =

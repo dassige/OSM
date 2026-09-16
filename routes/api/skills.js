@@ -46,6 +46,7 @@ router.post('/', hasRole('admin'), validateSkill, async (req, res) => {
       skillName: req.body.name,
       critical: !!req.body.critical_skill,
       urlType: req.body.url_type || 'external',
+      kbDocumentId: req.body.kb_document_id || null,
     });
     res.json({ id });
   } catch (e) {
@@ -64,6 +65,7 @@ router.put('/:id', hasRole('admin'), validateSkill, async (req, res) => {
       enabled: req.body.enabled,
       critical: !!req.body.critical_skill,
       urlType: req.body.url_type,
+      kbDocumentId: req.body.kb_document_id || null,
     });
     res.json({ success: true });
   } catch (e) {

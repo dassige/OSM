@@ -495,7 +495,7 @@
                                                               },
                                                       "body":  {
                                                                    "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"BA Renewal\",\n  \"code\": \"BA\",\n  \"expiry_months\": 12,\n  \"active\": 1\n}"
+                                                                   "raw":  "{\n  \"name\": \"BA Renewal\",\n  \"url_type\": \"external\",\n  \"url\": \"https://forms.example.com/ba-renewal\",\n  \"critical_skill\": 1,\n  \"enabled\": 1,\n  \"kb_document_id\": null\n}"
                                                                }
                                                   }
                                   },
@@ -528,7 +528,7 @@
                                                               },
                                                       "body":  {
                                                                    "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"BA Renewal\",\n  \"code\": \"BA\",\n  \"expiry_months\": 12,\n  \"active\": 1\n}"
+                                                                   "raw":  "{\n  \"name\": \"BA Renewal\",\n  \"url_type\": \"external\",\n  \"url\": \"https://forms.example.com/ba-renewal\",\n  \"critical_skill\": 1,\n  \"enabled\": 1,\n  \"kb_document_id\": 4\n}"
                                                                }
                                                   }
                                   },

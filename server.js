@@ -380,7 +380,18 @@ async function handleQueueProcessing(socket, targets, days, logger) {
 
       if (targetInfo.sendEmail && member.email) {
         try {
-          await sendNotification(member, prefs, config.transporter, isDemo, logger, config.ui.loginTitle);
+          // Map the flat `emailXxx` preference keys (saved by templates.html) onto the
+          // property names sendNotification()/mailer.js expects — mirrors the waTemplate
+          // mapping below for WhatsApp, which was already correct.
+          const emailTemplate = {
+            from: prefs.emailFrom,
+            subject: prefs.emailSubject,
+            intro: prefs.emailIntro,
+            rowHtml: prefs.emailRow,
+            rowHtmlNoUrl: prefs.emailRowNoUrl,
+            filterOnlyWithUrl: prefs.emailOnlyWithUrl,
+          };
+          await sendNotification(member, emailTemplate, config.transporter, isDemo, logger, config.ui.loginTitle);
           if (isDemo) logger(`  [DEMO] Email simulated for ${member.name}. Skipping SMTP transmission.`);
           else await db.logEmailAction(member, "SENT", "Email notification sent");
         } catch (e) {
@@ -406,8 +417,10 @@ async function handleQueueProcessing(socket, targets, days, logger) {
             if (s.isSubmitted) {
               row = `- *${s.skill}*: Form submitted and awaiting review.`;
             } else {
-              const tpl = s.url ? waTemplate.row || "- {{skill}} {{url}}" : waTemplate.rowNoUrl || "- {{skill}}";
-              row = tpl.replace("{{skill}}", s.skill).replace("{{date}}", s.dueDate).replace("{{url}}", s.url || "").replace("{{critical}}", s.isCritical ? "!" : "");
+              const tpl = s.url ? waTemplate.row || "- {{skill}} {{url}}{{kb-link}}" : waTemplate.rowNoUrl || "- {{skill}}{{kb-link}}";
+              // Plain-text equivalent of mailer.js's {{kb-link}} — empty when no KB document is linked.
+              const kbText = s.kbLink ? ` (Refresher: ${s.kbLink})` : "";
+              row = tpl.replace("{{skill}}", s.skill).replace("{{date}}", s.dueDate).replace("{{url}}", s.url || "").replace("{{critical}}", s.isCritical ? "!" : "").replace("{{kb-link}}", kbText);
             }
             msg += `\n${row}`;
           });
