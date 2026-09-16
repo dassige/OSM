@@ -2,7 +2,7 @@
   "name": "opready",
   "version": "3.13.1",
   "description": "OpReady — Operational Readiness Manager",
-  "versionDate": "2026/09/16 12:41",
+  "versionDate": "2026/09/16 13:34",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -19,6 +19,7 @@
     "test:api:report": "newman run examples/api/newman-smoke.postman_collection.json --environment examples/api/newman-environment.local.json --reporters cli,json --reporter-json-export newman-report.json",
     "test:all": "jest --detectOpenHandles --forceExit && playwright test",
     "screenshots": "node scripts/take-screenshots.js",
+    "guide:quiz": "node scripts/guide-builder/build-quiz-guide.js",
     "generate-demo-db": "node scripts/generate-demo-db.js",
     "setup-env": "node scripts/setup-env.js",
     "release": "node scripts/release.js",
@@ -83,5 +84,5 @@
     "sharp": "^0.34.5",
     "supertest": "^7.2.2"
   },
-  "git-parentCommit-ID": "962943d71dd3b745f18793c05e8b2fd7ab7ffef8"
+  "git-parentCommit-ID": "80f248941919c3a7db67ea098e9dba4e4bf65f8a"
 }
