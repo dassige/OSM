@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.13.6] - 2026/09/18
+
+- feat: enhance full backup restore functionality with Knowledge Base document reconciliation for S3/GCS storage
+
+## [3.13.5] - 2026/09/18
+
+- fix: full backup restore now reconciles Knowledge Base documents when restoring into S3/GCS storage too, not just local — every bundled file is uploaded into this environment's own bucket and its record repointed, regardless of the source backup's storage type or bucket
+- fix: `replaceFile()` in `services/knowledgebase-storage.js` referenced an undefined `gcsParts()` function in its GCS branch, breaking the "replace document file" admin feature for any GCS-backed environment
+
 ## [3.13.4] - 2026/09/17
 
 - feat: implement full backup restore with knowledge base storage reconciliation

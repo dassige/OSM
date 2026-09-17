@@ -209,7 +209,7 @@ async function replaceFile(storageType, storagePath, buffer, mimeType) {
         const { Storage } = require('@google-cloud/storage');
         const gcsCfg = config.kbStorage.gcs;
         const storage = new Storage(gcsCfg.keyFilename ? { keyFilename: gcsCfg.keyFilename } : {});
-        await storage.bucket(gcsParts().bucketName).file(storagePath).save(buffer, { contentType: mimeType });
+        await storage.bucket(parseBucketConfig(gcsCfg.bucket).bucketName).file(storagePath).save(buffer, { contentType: mimeType });
     } else {
         const filePath = resolveAndCheck(storagePath);
         fs.writeFileSync(filePath, buffer);

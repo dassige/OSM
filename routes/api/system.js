@@ -7,6 +7,7 @@ const path     = require("path");
 const archiver = require("archiver");
 const unzipper = require("unzipper");
 const axios    = require("axios");
+const { v4: uuidv4 } = require("uuid");
 
 const db = require("../../services/db");
 const { validateSqlDump } = require("../../services/db/backup");
@@ -350,6 +351,38 @@ router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.sin
       if (kbReconciled > 0) {
         logger.info('[Restore] Reconciled KB document storage metadata to local', { kbReconciled });
       }
+    } else if (kbType === 's3' || kbType === 'gcs') {
+      // The backup already bundled every KB file's bytes into the zip regardless of
+      // the SOURCE environment's backend (see GET /system/backup). Restoring the DB
+      // rows alone would leave them pointing at whatever bucket/keys the source used
+      // (e.g. PROD's bucket), which this environment has no access to. Push each
+      // bundled file into THIS environment's own bucket and repoint the record.
+      const kbFiles = directory.files.filter(f =>
+        f.path.startsWith('storage/knowledgebase/') && f.type === 'File'
+      );
+      const bufferByBasename = new Map();
+      for (const entry of kbFiles) {
+        bufferByBasename.set(path.basename(entry.path), await entry.buffer());
+      }
+
+      const kbDocs = await db.getKbDocuments();
+      for (const doc of kbDocs) {
+        const buffer = bufferByBasename.get(path.basename(doc.storage_path || ''));
+        if (!buffer) continue;
+        try {
+          const { storageType, storagePath } = await kbStorage.upload(
+            uuidv4().toUpperCase(), doc.original_filename, buffer, doc.mime_type
+          );
+          await db.updateKbDocumentStorage(doc.id, storageType, storagePath);
+          kbRestored++;
+          kbReconciled++;
+        } catch (e) {
+          logger.warn('[Restore] Failed to upload KB file to this environment\'s storage', { documentId: doc.id, error: e.message });
+        }
+      }
+      if (kbReconciled > 0) {
+        logger.info('[Restore] Uploaded and reconciled KB documents to this environment\'s cloud storage', { kbReconciled });
+      }
     }
 
     await db.logEvent(actor, "System", "Full Backup Restored", {
@@ -362,11 +395,9 @@ router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.sin
 
     req.session?.destroy?.(() => {});
 
-    const kbNote = kbType !== 'local' && (manifest.kbFileCount > 0)
-      ? ` Knowledge Base documents were not restored (cloud storage — manage via your provider).`
-      : kbRestored > 0
-        ? ` ${kbRestored} Knowledge Base document${kbRestored !== 1 ? 's' : ''} restored${kbReconciled > 0 ? ' (storage metadata updated to match this environment)' : ''}.`
-        : '';
+    const kbNote = kbRestored > 0
+      ? ` ${kbRestored} Knowledge Base document${kbRestored !== 1 ? 's' : ''} restored${kbReconciled > 0 ? ' (storage metadata updated to match this environment)' : ''}.`
+      : '';
 
     res.json({ message: `Database reconstructed successfully.${kbNote} Please log in again.` });
 

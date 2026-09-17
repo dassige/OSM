@@ -311,7 +311,7 @@ const helpContent = {
             <h3>2. Restore</h3>
             <p>Upload a backup file to restore the system. <strong style="color:red;">Warning:</strong> This completely overwrites the current data and cannot be undone.</p>
             <ul>
-                <li>Upload a <code>.zip</code> (Full Backup) to restore the database and Knowledge Base documents. If this environment stores documents locally, the files are written to local storage automatically — including documents that were originally on S3/GCS on the environment the backup came from; their records are repointed to the restored local copy so they keep working. If this environment stores documents in S3/GCS, only the database is restored — re-upload or sync the documents to the bucket separately.</li>
+                <li>Upload a <code>.zip</code> (Full Backup) to restore the database and Knowledge Base documents. Every bundled document is written into <em>this</em> environment's own configured storage (local disk, or your own S3/GCS bucket) and its record is repointed accordingly — this works even when the backup came from an environment using a different storage type or a different bucket (e.g. restoring a PROD backup onto UAT).</li>
                 <li>Upload a <code>.sql</code> (Database Only) to restore the database only — Knowledge Base document records are restored, but no files move. Use <strong>Find Documents with Missing Files</strong> (System Tools &rarr; Knowledge Base tab) afterwards to see which documents need their file re-uploaded.</li>
             </ul>
             <p>The backup must have been created by the same or an earlier version of OpReady. All active sessions are cleared after restore — everyone must log in again.</p>

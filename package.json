@@ -1,8 +1,8 @@
 {
   "name": "opready",
-  "version": "3.13.4",
+  "version": "3.13.6",
   "description": "OpReady — Operational Readiness Manager",
-  "versionDate": "2026/09/17 16:55",
+  "versionDate": "2026/09/18 09:49",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -85,5 +85,5 @@
     "sharp": "^0.34.5",
     "supertest": "^7.2.2"
   },
-  "git-parentCommit-ID": "6dca38e681f4ce6fbb222585200ae21b2cc9ef5a"
+  "git-parentCommit-ID": "67550dfab1cfb7bdde9a88270fc4752a02dd76af"
 }
