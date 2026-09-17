@@ -1,0 +1,39 @@
+{
+  "actionButtons": {
+    "defaultColor": "white",
+    "loadNpmCommands": false,
+    "reloadButton": "♻️",
+    "commands": [
+      {
+        "name": "▶ Release",
+        "color": "lightgreen",
+        "singleInstance": true,
+        "command": "npm run release"
+      },
+      {
+        "name": "⚙ Setup Env",
+        "color": "yellow",
+        "singleInstance": true,
+        "command": "npm run setup-env"
+      },
+      {
+        "name": "🚀 Dev Server",
+        "color": "cyan",
+        "singleInstance": true,
+        "command": "npm run dev"
+      },
+      {
+        "name": "🧪 Test",
+        "color": "white",
+        "singleInstance": true,
+        "command": "npm test"
+      },
+      {
+        "name": "🧪 UI Tests",
+        "color": "white",
+        "singleInstance": true,
+        "command": "npm run test:ui"
+      }
+    ]
+  }
+}
