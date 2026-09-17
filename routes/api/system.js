@@ -305,6 +305,7 @@ router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.sin
     const kbType  = config.kbStorage?.type || 'local';
     const kbPath  = config.kbStorage?.localPath;
     let   kbRestored = 0;
+    let   kbReconciled = 0;
 
     if (kbType === 'local' && kbPath) {
       fs.mkdirSync(kbPath, { recursive: true });
@@ -312,8 +313,10 @@ router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.sin
         f.path.startsWith('storage/knowledgebase/') && f.type === 'File'
       );
       const resolvedKbPath = path.resolve(kbPath);
+      const restoredBasenames = new Set();
       for (const entry of kbFiles) {
-        const dest = path.resolve(kbPath, path.basename(entry.path));
+        const basename = path.basename(entry.path);
+        const dest = path.resolve(kbPath, basename);
         // M-11: Zip slip guard — reject any entry whose resolved path escapes kbPath.
         if (!dest.startsWith(resolvedKbPath + path.sep) && dest !== resolvedKbPath) {
           logger.warn('[Restore] Skipping KB entry with traversal path', { entryPath: entry.path });
@@ -327,6 +330,25 @@ router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.sin
             .on('error', reject);
         });
         kbRestored++;
+        restoredBasenames.add(basename);
+      }
+
+      // The just-restored knowledgebase_documents rows still carry whatever
+      // storage_type/storage_path the SOURCE environment used. If that backup was
+      // taken on a different storage backend (e.g. PROD on GCS, this environment on
+      // local), the files above land correctly on local disk but the DB still points
+      // at the old backend — the app can't find a file it just wrote. Repoint every
+      // document whose file we actually restored to the local path it now lives at.
+      const kbDocs = await db.getKbDocuments();
+      for (const doc of kbDocs) {
+        const basename = path.basename(doc.storage_path || '');
+        if (!restoredBasenames.has(basename)) continue;
+        if (doc.storage_type === 'local' && doc.storage_path === basename) continue;
+        await db.updateKbDocumentStorage(doc.id, 'local', basename);
+        kbReconciled++;
+      }
+      if (kbReconciled > 0) {
+        logger.info('[Restore] Reconciled KB document storage metadata to local', { kbReconciled });
       }
     }
 
@@ -335,6 +357,7 @@ router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.sin
       backupVersion:  manifest.appVersion,
       backupDate:     manifest.date,
       kbFilesRestored: kbRestored,
+      kbStorageReconciled: kbReconciled,
     });
 
     req.session?.destroy?.(() => {});
@@ -342,7 +365,7 @@ router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.sin
     const kbNote = kbType !== 'local' && (manifest.kbFileCount > 0)
       ? ` Knowledge Base documents were not restored (cloud storage — manage via your provider).`
       : kbRestored > 0
-        ? ` ${kbRestored} Knowledge Base document${kbRestored !== 1 ? 's' : ''} restored.`
+        ? ` ${kbRestored} Knowledge Base document${kbRestored !== 1 ? 's' : ''} restored${kbReconciled > 0 ? ' (storage metadata updated to match this environment)' : ''}.`
         : '';
 
     res.json({ message: `Database reconstructed successfully.${kbNote} Please log in again.` });

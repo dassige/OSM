@@ -304,15 +304,15 @@ const helpContent = {
             <h3>1. Backup</h3>
             <p>Two backup types are available:</p>
             <ul>
-                <li><strong>Full Backup</strong> — downloads a <code>.zip</code> file containing the complete database <em>and</em> all uploaded Knowledge Base documents (local storage only). Use this for a complete disaster-recovery snapshot.</li>
-                <li><strong>Database Only</strong> — downloads a <code>.sql</code> file containing the database alone. Use this when Knowledge Base documents are stored in S3 or GCS (managed separately by the cloud provider).</li>
+                <li><strong>Full Backup</strong> — downloads a <code>.zip</code> file containing the complete database <em>and</em> every uploaded Knowledge Base document, regardless of whether they're stored locally or in S3/GCS. Use this for a complete disaster-recovery snapshot.</li>
+                <li><strong>Database Only</strong> — downloads a <code>.sql</code> file containing the database alone. Faster when you don't need a fresh copy of the Knowledge Base files themselves.</li>
             </ul>
 
             <h3>2. Restore</h3>
             <p>Upload a backup file to restore the system. <strong style="color:red;">Warning:</strong> This completely overwrites the current data and cannot be undone.</p>
             <ul>
-                <li>Upload a <code>.zip</code> (Full Backup) to restore both the database and local Knowledge Base documents.</li>
-                <li>Upload a <code>.sql</code> (Database Only) to restore the database only.</li>
+                <li>Upload a <code>.zip</code> (Full Backup) to restore the database and Knowledge Base documents. If this environment stores documents locally, the files are written to local storage automatically — including documents that were originally on S3/GCS on the environment the backup came from; their records are repointed to the restored local copy so they keep working. If this environment stores documents in S3/GCS, only the database is restored — re-upload or sync the documents to the bucket separately.</li>
+                <li>Upload a <code>.sql</code> (Database Only) to restore the database only — Knowledge Base document records are restored, but no files move. Use <strong>Find Documents with Missing Files</strong> (System Tools &rarr; Knowledge Base tab) afterwards to see which documents need their file re-uploaded.</li>
             </ul>
             <p>The backup must have been created by the same or an earlier version of OpReady. All active sessions are cleared after restore — everyone must log in again.</p>
 

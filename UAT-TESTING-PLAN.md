@@ -560,6 +560,7 @@
 | T23-22 | Disable schedule | Toggle [Enable scheduled backups] to off. Click [Save Schedule]. | Toast confirms "Schedule disabled." Event log records "Scheduled Backup Disabled". No further automatic backups run. |
 | T23-23 | Demo mode blocks Save and Run | On a demo-mode instance, try to save schedule or run now. | Both actions return a toast: "Disabled in demo mode." No changes made. |
 | T23-24 | History — mobile cards | View the page on a screen ≤ 768 px with existing history entries. | History renders as cards (not a table). Each card shows Date/Time, Type, Filename, Size, Cleaned, and Status. |
+| T23-25 | Restore a Full Backup taken on a different Knowledge Base storage backend | On an environment configured for local Knowledge Base storage, restore a Full Backup `.zip` that was generated on an environment using S3 or GCS storage (or the reverse). | Every Knowledge Base document whose file was included in the backup opens correctly afterwards — no "Document Not Available" error. Event log's "Full Backup Restored" entry shows a non-zero reconciled-documents count. |
 
 ---
 

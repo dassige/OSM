@@ -145,6 +145,19 @@ async function updateKbDocumentFile(id, fileData) {
     );
 }
 
+// Repoints a document's storage backend/location without touching its metadata.
+// Used by the full-backup restore flow to reconcile documents that were backed up
+// from a different storage backend (e.g. PROD on GCS) than the one now restoring
+// them locally — the file lands on disk under a new path, but the restored SQL dump
+// still carries the source environment's storage_type/storage_path.
+async function updateKbDocumentStorage(id, storageType, storagePath) {
+    const db = await initDB();
+    await db.run(
+        'UPDATE knowledgebase_documents SET storage_type = ?, storage_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        storageType, storagePath, id,
+    );
+}
+
 async function rotateKbDocumentSlug(id) {
     const db = await initDB();
     const newSlug = crypto.randomUUID().toUpperCase();
@@ -203,6 +216,7 @@ module.exports = {
     toggleKbDocument,
     deleteKbDocument,
     updateKbDocumentFile,
+    updateKbDocumentStorage,
     rotateKbDocumentSlug,
     rotateAllKbSlugs,
 };

@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.13.4] - 2026/09/17
+
+- feat: implement full backup restore with knowledge base storage reconciliation
+
 ## [3.13.3] - 2026/09/17
 
 - feat: add HTML sanitizer for rich text fields
