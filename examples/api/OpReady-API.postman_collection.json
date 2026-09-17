@@ -3569,7 +3569,7 @@
                                                                    "mode":  "raw",
                                                                    "raw":  "{\n  \"enabled\": true,\n  \"scheduleType\": \"daily\",\n  \"scheduleTime\": \"02:00\",\n  \"scheduleDays\": \"[1]\",\n  \"intervalValue\": 6,\n  \"backupType\": \"db\",\n  \"backupLocation\": \"/backups/opready\",\n  \"retentionType\": \"count\",\n  \"retentionValue\": 10\n}"
                                                                },
-                                                      "description":  "Superadmin only — saves scheduled backup configuration and restarts the scheduler. Disabled in demo mode and on ephemeral deployments."
+                                                      "description":  "Superadmin only — saves scheduled backup configuration and restarts the scheduler. Disabled in demo mode and on ephemeral deployments. backupLocation must resolve inside the configured backup root (BACKUP_ROOT_DIR) — returns 400 otherwise; leave empty to use the default location."
                                                   }
                                   },
                                   {

@@ -36,3 +36,4 @@ KnowledgeBase/
 # final PDF under docs/guides/ is committed.
 scripts/guide-builder/output/
 
+tmp/

@@ -1,5 +1,16 @@
 const crypto = require("crypto");
 const { initDB } = require("./connection");
+const { sanitizeRichText, sanitizeQuestionStructure } = require("../html-sanitizer");
+
+// H-05/N-XSS-3: sanitize a question structure that may arrive already stringified
+// (route bodies) or as an object (bulk import), returning a JSON string either way.
+function sanitizeStructureJson(structureJson) {
+  let structure = structureJson;
+  if (typeof structure === "string") {
+    try { structure = JSON.parse(structure); } catch { structure = []; }
+  }
+  return JSON.stringify(sanitizeQuestionStructure(structure || []));
+}
 
 async function createSurvey(name, introText, status, structureJson, createdBy, isAnonymous = 1) {
   const db = await initDB();
@@ -7,7 +18,7 @@ async function createSurvey(name, introText, status, structureJson, createdBy, i
   const result = await db.run(
     `INSERT INTO surveys (public_id, name, intro_text, status, structure, created_by, is_anonymous)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    publicId, name, introText, status || 0, structureJson, createdBy, isAnonymous,
+    publicId, name, sanitizeRichText(introText), status || 0, sanitizeStructureJson(structureJson), createdBy, isAnonymous,
   );
   return { id: result.lastID, publicId };
 }
@@ -16,7 +27,7 @@ async function updateSurvey(id, name, introText, status, structureJson, isAnonym
   const db = await initDB();
   await db.run(
     `UPDATE surveys SET name = ?, intro_text = ?, status = ?, structure = ?, is_anonymous = ? WHERE id = ?`,
-    name, introText, status || 0, structureJson, isAnonymous, id,
+    name, sanitizeRichText(introText), status || 0, sanitizeStructureJson(structureJson), isAnonymous, id,
   );
   return true;
 }
@@ -213,10 +224,10 @@ async function importAllSurveys(surveysData, createdByUserId) {
       "INSERT INTO surveys (public_id, name, intro_text, status, structure, created_by, is_anonymous) VALUES (?, ?, ?, ?, ?, ?, ?)",
     );
     for (const s of surveysData) {
-      const structure = typeof s.structure === "object" ? JSON.stringify(s.structure) : s.structure;
+      const structure = sanitizeStructureJson(s.structure);
       const newPublicId = crypto.randomUUID();
       const isAnonymous = s.is_anonymous != null ? s.is_anonymous : 1;
-      await stmt.run(newPublicId, s.name, s.intro_text || s.intro || "", s.status || 0, structure, createdByUserId, isAnonymous);
+      await stmt.run(newPublicId, s.name, sanitizeRichText(s.intro_text || s.intro || ""), s.status || 0, structure, createdByUserId, isAnonymous);
     }
     await stmt.finalize();
     await db.exec("COMMIT");

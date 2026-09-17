@@ -19,7 +19,7 @@ const { generateCsrfToken } = require("../../middleware/csrf");
 const { backupLimiter, restoreLimiter, aiTestLimiter } = require("../../middleware/rate-limiter");
 const { version } = require("../../package.json");
 const logger = require("../../services/logger");
-const { assertSafeUrl } = require("../../services/url-utils");
+const { assertSafeUrl, assertSafeBackupLocation } = require("../../services/url-utils");
 
 const upload = multer({ dest: "uploads/", limits: { fileSize: 500 * 1024 * 1024 } });
 
@@ -411,6 +411,11 @@ router.post("/system/scheduled-backup", hasRole("superadmin"), async (req, res) 
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   if (!config.scheduledBackupSupported) return res.status(403).json({ error: 'Scheduled backups are not supported on this deployment type.' });
   try {
+    // N-BR-2: reject a backup location outside the configured backup root — the
+    // same guard already applied to the Remote Servers backup path.
+    try { assertSafeBackupLocation(req.body.backupLocation, config.backupRootDir); } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
     await db.saveScheduledBackupConfig(req.body);
     const scheduledBackupService = require('../../services/scheduled-backup-service');
     await scheduledBackupService.restart();

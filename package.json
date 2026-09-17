@@ -1,8 +1,8 @@
 {
   "name": "opready",
-  "version": "3.13.2",
+  "version": "3.13.3",
   "description": "OpReady — Operational Readiness Manager",
-  "versionDate": "2026/09/16 14:30",
+  "versionDate": "2026/09/17 14:35",
   "author": "Gerardo Dassi",
   "repository": "https://github.com/dassige/OSM",
   "bugs": "https://github.com/dassige/OSM/issues",
@@ -21,6 +21,7 @@
     "screenshots": "node scripts/take-screenshots.js",
     "guide:quiz": "node scripts/guide-builder/build-quiz-guide.js",
     "generate-demo-db": "node scripts/generate-demo-db.js",
+    "sanitize-prod-copy": "node scripts/sanitize-prod-copy.js",
     "setup-env": "node scripts/setup-env.js",
     "release": "node scripts/release.js",
     "build:setup-env": "node scripts/build-setup-env.js"
@@ -84,5 +85,5 @@
     "sharp": "^0.34.5",
     "supertest": "^7.2.2"
   },
-  "git-parentCommit-ID": "12d3e05b28fd0ef73bafb5dcb0fd9312afaf0402"
+  "git-parentCommit-ID": "455ec96c60ee1ce57e4b0f8a2d442c62f8bb7ca6"
 }

@@ -350,7 +350,26 @@ describe('Live Quiz API Endpoints (Isolated)', () => {
 
             expect(response.status).toBe(200);
             expect(response.body.status).toBe('sent');
-            expect(response.body.questions).toEqual(sampleQuestions);
+            expect(response.body.questions).toHaveLength(1);
+            expect(response.body.questions[0]).toMatchObject({ id: 'fld_1', type: 'radio', options: ['A', 'B'], points: 2 });
+        });
+
+        // N-PUB-1: Score mode must never leak correctAnswer to an unauthenticated player
+        // before they submit — same protection Timed mode already had.
+        it('strips correctAnswer from every question for a Score-mode player (N-PUB-1)', async () => {
+            db.getQuizPlayerByCode.mockResolvedValue({
+                status: 'sent', is_archived: false, session_name: 'Pump Ops - 2026-09-14',
+                member_name: 'Alice', member_rank: null, member_first_name: null, member_last_name: null,
+                snapshot: { description: 'Have fun!', questions: sampleQuestions },
+            });
+
+            const response = await request(app).get('/api/live-quiz/play/abc123');
+
+            expect(response.status).toBe(200);
+            expect(response.body.questions).toHaveLength(1);
+            response.body.questions.forEach(q => expect(q.correctAnswer).toBeUndefined());
+            // Every other field must survive the strip.
+            expect(response.body.questions[0]).toMatchObject({ id: 'fld_1', type: 'radio', options: ['A', 'B'], points: 2 });
         });
 
         it('returns the stored score when already submitted', async () => {
@@ -501,7 +520,21 @@ describe('Live Quiz API Endpoints (Isolated)', () => {
             expect(response.status).toBe(200);
             expect(response.body.status).toBe('sent');
             expect(response.body.team).toBe('Team Red');
-            expect(response.body.questions).toEqual(sampleQuestions);
+            expect(response.body.questions).toHaveLength(1);
+            expect(response.body.questions[0]).toMatchObject({ id: 'fld_1', type: 'radio', options: ['A', 'B'], points: 2 });
+        });
+
+        // N-PUB-1: same protection as the individual /play/:code endpoint.
+        it('strips correctAnswer from every question for a Score-mode team (N-PUB-1)', async () => {
+            db.getTeamByCode.mockResolvedValue({
+                status: 'pending', is_archived: false, game_type: 'score', session_name: 'Radio Check - 2026-09-14',
+                name: 'Team Red', snapshot: { description: 'Have fun!', questions: sampleQuestions },
+            });
+
+            const response = await request(app).get('/api/live-quiz/team-play/abc123');
+
+            expect(response.status).toBe(200);
+            response.body.questions.forEach(q => expect(q.correctAnswer).toBeUndefined());
         });
 
         it('returns the stored score when already submitted', async () => {

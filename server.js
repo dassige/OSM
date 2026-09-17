@@ -125,8 +125,6 @@ app.get('/manifest.json', (req, res) => {
   res.json(manifest);
 });
 
-app.use(express.static("public"));
-
 const io = new Server(server, {
   // Same-origin deployment: origin: false. Set CORS_ORIGIN env var only when the
   // frontend is served from a separate domain (rare for this self-hosted app).
@@ -152,7 +150,17 @@ const sessionMiddleware = session({
   }),
 });
 
+// F-01: sessionMiddleware and viewRoutes (which enforces requirePageAccess() role
+// checks on system-tools.html, backup-restore.html, users.html, etc.) must run
+// BEFORE express.static, or express.static serves those gated HTML files straight
+// off disk and the guard below never executes. viewRoutes' handful of specific-path
+// routes fall through to express.static via next() once the guard passes, so every
+// other request (JS/CSS/images/unguarded pages) is unaffected and still served by
+// the static middleware exactly as before.
 app.use(sessionMiddleware);
+app.use("/", viewRoutes);
+app.use(express.static("public"));
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
@@ -176,7 +184,6 @@ async function initializeProxy() {
 }
 
 app.use("/", authRoutes);
-app.use("/", viewRoutes); 
 
 app.use("/api/members", memberRoutes);
 app.use("/api/skills", skillRoutes);

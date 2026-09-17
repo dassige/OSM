@@ -1,6 +1,5 @@
 // routes/api/remote-backup.js
 const express = require('express');
-const path    = require('path');
 const router  = express.Router();
 
 const db                  = require('../../services/db');
@@ -8,21 +7,13 @@ const config              = require('../../config');
 const remoteBackupService = require('../../services/remote-backup-service');
 const { hasRole }         = require('../../middleware/auth');
 const logger              = require('../../services/logger');
-const { assertSafeUrl }   = require('../../services/url-utils');
+const { assertSafeUrl, assertSafeBackupLocation: assertSafeBackupLocationShared } = require('../../services/url-utils');
 
 const MAX_SERVERS = 5;
 
 // M-07: Validate that a user-supplied backup save path stays within the allowed root.
 function assertSafeBackupLocation(location) {
-    if (!location || !location.trim()) return; // empty → service uses its own safe default
-    const resolved = path.resolve(location.trim());
-    const root     = path.resolve(config.backupRootDir);
-    if (!resolved.startsWith(root + path.sep) && resolved !== root) {
-        throw new Error(
-            `Backup location must be inside the configured backup root (${root}). ` +
-            `Received: ${resolved}`
-        );
-    }
+    assertSafeBackupLocationShared(location, config.backupRootDir);
 }
 
 // ── List all remote servers ───────────────────────────────────────────────────

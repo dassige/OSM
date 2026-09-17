@@ -11,6 +11,7 @@ jest.mock('../services/db', () => ({
     getKbDocuments:        jest.fn(),
     getKbDocumentById:     jest.fn().mockResolvedValue({ id: 1, title: 'Test Doc', slug: 'SLUG-001', is_active: 1, storage_type: 'local', storage_path: 'SLUG-001.pdf', original_filename: 'test.pdf', mime_type: 'application/pdf', file_size: 1024 }),
     getKbDocumentBySlug:   jest.fn(),
+    getKbDocumentByResolverToken: jest.fn(),
     createKbDocument:      jest.fn(),
     updateKbDocument:      jest.fn(),
     updateKbDocumentFile:  jest.fn(),
@@ -561,34 +562,35 @@ describe('POST /api/knowledgebase/rotate-slugs', () => {
 
 // ── Public endpoints ──────────────────────────────────────────────────────────
 
-describe('GET /api/knowledgebase/resolve/:id (public)', () => {
-    it('returns id, slug, title for active document', async () => {
-        db.getKbDocumentById.mockResolvedValue({
+describe('GET /api/knowledgebase/resolve/:token (public)', () => {
+    it('returns slug, title for active document, looked up by resolver_token not sequential id', async () => {
+        db.getKbDocumentByResolverToken.mockResolvedValue({
             id: 5, slug: 'SOME-GUID', title: 'Fire SOP', is_active: 1,
-            storage_type: 'local', storage_path: 'key.pdf', original_filename: 'fire.pdf', mime_type: 'application/pdf', file_size: 100,
         });
-        const res = await request(app).get('/api/knowledgebase/resolve/5');
+        const res = await request(app).get('/api/knowledgebase/resolve/abc123token');
         expect(res.status).toBe(200);
-        expect(res.body).toEqual({ id: 5, slug: 'SOME-GUID', title: 'Fire SOP' });
+        expect(res.body).toEqual({ slug: 'SOME-GUID', title: 'Fire SOP' });
+        // N-PUB-2/N-AUTH-1: must resolve via the opaque token, never the sequential id.
+        expect(db.getKbDocumentByResolverToken).toHaveBeenCalledWith('abc123token');
     });
 
     it('returns 404 for inactive document', async () => {
-        db.getKbDocumentById.mockResolvedValue({ id: 5, is_active: 0 });
-        const res = await request(app).get('/api/knowledgebase/resolve/5');
+        db.getKbDocumentByResolverToken.mockResolvedValue({ id: 5, is_active: 0 });
+        const res = await request(app).get('/api/knowledgebase/resolve/abc123token');
         expect(res.status).toBe(404);
     });
 
     it('returns 404 when not found', async () => {
-        db.getKbDocumentById.mockResolvedValue(null);
-        const res = await request(app).get('/api/knowledgebase/resolve/999');
+        db.getKbDocumentByResolverToken.mockResolvedValue(null);
+        const res = await request(app).get('/api/knowledgebase/resolve/does-not-exist');
         expect(res.status).toBe(404);
     });
 
     it('returns 404 for an expired document', async () => {
-        db.getKbDocumentById.mockResolvedValue({
+        db.getKbDocumentByResolverToken.mockResolvedValue({
             id: 5, slug: 'SOME-GUID', title: 'Fire SOP', is_active: 1, expires_at: '2000-01-01',
         });
-        const res = await request(app).get('/api/knowledgebase/resolve/5');
+        const res = await request(app).get('/api/knowledgebase/resolve/abc123token');
         expect(res.status).toBe(404);
     });
 });

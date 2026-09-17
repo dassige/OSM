@@ -2220,7 +2220,7 @@ const spec = {
                                     scheduleDays:   { type: 'string', example: '[1]', description: 'JSON array of day numbers (0=Sun … 6=Sat)' },
                                     intervalValue:  { type: 'integer', example: 6 },
                                     backupType:     { type: 'string', enum: ['db', 'full'] },
-                                    backupLocation: { type: 'string', example: '/backups/opready' },
+                                    backupLocation: { type: 'string', example: '/backups/opready', description: 'Must resolve inside the configured backup root (BACKUP_ROOT_DIR); leave empty to use the default location.' },
                                     retentionType:  { type: 'string', enum: ['count', 'days', 'none'] },
                                     retentionValue: { type: 'integer', example: 10 }
                                 }
@@ -2230,6 +2230,7 @@ const spec = {
                 },
                 responses: {
                     200: { description: 'Configuration saved', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'backupLocation resolves outside the configured backup root' },
                     403: { description: 'Demo mode or ephemeral deployment' },
                     500: { description: 'Save failed' }
                 }

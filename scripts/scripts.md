@@ -466,6 +466,102 @@ The script is **non-destructive** to `fenz.db` — it copies it first and only m
 
 ---
 
+## sanitize-prod-copy.js
+
+Sanitizes a copy of the production database before it is used to refresh a TEST/UAT/DEV environment, so the app running there can never send a real email or WhatsApp message to a real member or admin. Works on a raw SQLite file (`fenz.db`), an OpReady "DB-only SQL" export (the format produced by the Backup & Restore page / `services/db/backup.js` `generateSqlDump()`), or a "full backup" `.zip` (produced by `GET /system/backup` or `services/scheduled-backup-service.js`). In `.zip` mode only the `database.sql` entry inside the archive is rewritten — `manifest.json` and every `storage/knowledgebase/*` file are carried over byte-for-byte, so the sanitized zip restores the same way a real backup does via `POST /system/restore`.
+
+**npm shortcut**
+
+```powershell
+npm run sanitize-prod-copy -- <input> <output> <email-domain> <mobile-number> [--env=CODE] [--force]
+```
+
+**Direct invocation**
+
+```powershell
+node scripts/sanitize-prod-copy.js <input> <output> <email-domain> <mobile-number> [--env=CODE] [--force]
+
+# Or with no arguments at all to be prompted interactively for each value:
+node scripts/sanitize-prod-copy.js
+```
+
+Leaving out any of the four required arguments (not just running with zero args) switches the whole run to interactive mode — the script prompts for each missing value, including `--env` and an overwrite confirmation if the output file already exists. The `--env` prompt lists the environment codes actually found in `keys/api-keys.env` (e.g. `[DEV/PRD/TST/UAT]`), derived from its `*_API_KEY` variable names. Non-interactive runs (all four args given on the command line) never prompt — an existing output file without `--force` fails immediately, so it's safe to use in CI/automation.
+
+**Prerequisites**
+
+- `sqlite` and `sqlite3` npm packages must be installed (regular dependencies of this project) — only used for `.db` mode.
+- `archiver` and `unzipper` npm packages must be installed (regular dependencies of this project) — only used for `.zip` mode.
+- No running server needed.
+- `<input>` and `<output>` must be the same format: both `.db`, both `.sql`, or both `.zip` — the script does not convert between formats. Use the app's own Backup & Restore page first if you need to switch formats.
+
+**Arguments**
+
+| Argument | Description |
+|---|---|
+| `<input>` | Path to the source `.db`, `.sql`, or `.zip` file (a copy of production data). Never modified. |
+| `<output>` | Path to write the sanitized result. May be the same path as `<input>` to sanitize in place (e.g. after `scp`/`rsync`-ing a prod copy onto a test server as `fenz.db`). |
+| `<email-domain>` | Domain used for every generated member email (leading `@` optional). |
+| `<mobile-number>` | Value written into every member's `mobile` column (same value for every member). |
+| `--env=CODE` | Restore one working API key for destination environment `CODE` instead of deleting all of them — see below. |
+| `--force` | Overwrite `<output>` if it already exists and differs from `<input>`. |
+
+**What it changes**
+
+| Table | Action |
+|---|---|
+| `members` | `email` → `<first-name>.<last-name>+info@<domain>`; `mobile` → `<mobile-number>`; `messengerId` → `NULL` (stored WhatsApp JID tied to the real number) |
+| `users` | All rows deleted (admin/superadmin accounts) |
+| `user_preferences` | All rows deleted (orphaned once `users` is emptied) |
+| `api_keys` | All rows deleted — **unless `--env=CODE` is given**, in which case one row is restored (see below) |
+| `email_history` | All rows deleted (log of real past sends to real addresses) |
+| `event_log` | All rows deleted (audit payloads can embed member name/email/mobile per the Event Log convention) |
+| `remote_backup_servers` | All rows deleted (holds a live API key + URL for another OpReady environment) |
+| `remote_backup_log` | All rows deleted (references the rows above) |
+| `surveys.created_by`, `survey_live.published_by`, `quiz_sessions.created_by`, `quiz_team_sessions.created_by` | Set to `NULL` (would otherwise dangle once the referenced `users` row is gone) |
+
+Tables that don't exist yet in an older dump are skipped automatically (checked via `sqlite_master` in `.db` mode). In `.zip` mode the same table-level changes are applied to the embedded `database.sql`; `.zip` mode requires `database.sql` to be present in the archive (matching the same requirement the app's own restore route enforces) and errors out otherwise.
+
+**`--env=CODE` — restoring a working API key instead of deleting them all**
+
+`keys/api-keys.env` (gitignored, local-only — see the file itself) holds, per test environment: one raw API key (e.g. `UAT_BACKUP_API_KEY`, `DEV_TEST_API_KEY`) and that same environment's own HMAC secret as `<ENV>_API_KEY_HASH_SECRET` (e.g. `UAT_API_KEY_HASH_SECRET`, `DEV_API_KEY_HASH_SECRET`) — each environment has a different secret, matching its own `API_KEY_HASH_SECRET` (or `SESSION_SECRET`, its fallback — see `config.js`). `--env=UAT` finds the raw-key variable starting with `UAT_` and ending in `_API_KEY`, and the `UAT_API_KEY_HASH_SECRET` variable, then inserts a fresh `api_keys` row with `key_hash = HMAC-SHA256(rawKey, thatEnvironmentsSecret)` — the exact algorithm `hashKey()` in `services/db/api-keys.js` uses — so that raw key keeps authenticating once this sanitized copy is deployed to that environment. `key_prefix` and `role` (`superadmin`) are set the same way `generateApiKey()` does.
+
+An unrecognised `--env`, or one missing its `<ENV>_API_KEY_HASH_SECRET`, fails fast (before any file is touched or written) with the list of environment variables actually found in `keys/api-keys.env`.
+
+Never paste a live secret into a chat/terminal session with an AI assistant to fill these in — for an environment reachable via SSH, extract the value with a targeted, output-redirected command (e.g. `docker exec <container> sh -c 'printf "%s" "${API_KEY_HASH_SECRET:-$SESSION_SECRET}"' >> keys/api-keys.env`, appending directly to the file) so the value is never displayed or echoed back.
+
+**Deliberately not touched** (residual, low-risk PII surface — see the header comment in the script for the full rationale)
+
+- Free-text answer fields (`live_forms.form_submitted_data`, `survey_responses.submitted_data`, `quiz_players.submitted_data`) — a member could in theory type their own contact details into a free-text answer; not scrubbed because it would require unreliable text scanning.
+- `preferences` notification template sender identity — organisational contact info, not personal member data.
+- `sessions.db` — a **separate SQLite file** (the `connect-sqlite3` session store, not part of `fenz.db`). Don't copy it alongside the DB when refreshing an environment; if you do, run `DELETE FROM sessions` on it separately.
+- `api_call_log` (`origin_ip`, `geo_location`) — operational telemetry, not member/user PII.
+- `storage/knowledgebase/*` files inside a `.zip` backup — Knowledge Base documents (policies, training material), not member contact info; copied through unchanged.
+
+**Output**
+
+Prints a per-table summary of rows updated/deleted, then the path and size (`.db`/`.zip` mode) of the sanitized file. `.zip` mode also prints the count of knowledge-base files carried over unchanged. Exits with code `1` and the error on failure.
+
+**Example**
+
+```powershell
+# Sanitize a prod copy already placed on the test server as fenz.db, in place
+node scripts/sanitize-prod-copy.js fenz.db fenz.db test.opready.local +64000000000 --force
+
+# Sanitize a "DB-only SQL" export into a new file
+node scripts/sanitize-prod-copy.js prod-export.sql sanitized-import.sql uat.opready.local +64000000000
+
+# Sanitize a full backup .zip (downloaded from GET /system/backup) into a new file
+node scripts/sanitize-prod-copy.js prod-backup.zip sanitized-backup.zip uat.opready.local +64000000000
+
+# Same, but restore a working UAT API key instead of deleting all of them
+node scripts/sanitize-prod-copy.js prod-backup.zip sanitized-backup.zip uat.opready.local +64000000000 --env=UAT
+
+# Interactive — prompts for input/output/domain/mobile/environment one at a time
+node scripts/sanitize-prod-copy.js
+```
+
+---
+
 ## generate-icons.js
 
 Generates all PWA icon PNG files (9 sizes) from `public/resources/favicon.png` and writes them to `public/icons/`. Run once after initial setup, and again any time the favicon is replaced.

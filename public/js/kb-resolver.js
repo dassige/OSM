@@ -1,15 +1,17 @@
 /**
  * kb-resolver.js
- * Resolves {{kb:N}} placeholders inserted by the TinyMCE KB Link button.
+ * Resolves {{kb:<token>}} placeholders inserted by the TinyMCE KB Link button.
  *
  * Placeholder format stored in DB:
- *   <a href="{{kb:123}}" data-kb-id="123" class="kb-doc-link">Title</a>
+ *   <a href="{{kb:<resolverToken>}}" data-kb-id="<resolverToken>" class="kb-doc-link">Title</a>
  *
  * Exposes:
  *   window.resolveKbLinks(containerElement) — async, mutates hrefs in the DOM
  *
  * Called by forms-view.html and surveys-view.html after injecting HTML into the DOM.
- * Uses the document's integer id (not the slug) so links survive slug rotation.
+ * Uses the document's random resolver_token (not the sequential id, which would let an
+ * unauthenticated caller enumerate every KB document — see N-PUB-2/N-AUTH-1 — and not the
+ * slug, so links keep working across a slug rotation).
  */
 window.resolveKbLinks = async function (container) {
     if (!container) return;

@@ -1,4 +1,5 @@
-const { assertSafeUrl } = require('../services/url-utils');
+const path = require('path');
+const { assertSafeUrl, assertSafeBackupLocation } = require('../services/url-utils');
 
 describe('assertSafeUrl', () => {
 
@@ -91,5 +92,39 @@ describe('assertSafeUrl', () => {
         it('rejects 100.100.100.200 (Alibaba Cloud metadata)', () => {
             expect(() => assertSafeUrl('http://100.100.100.200')).toThrow('Endpoint not reachable');
         });
+    });
+});
+
+describe('assertSafeBackupLocation (M-07 / N-BR-2)', () => {
+    const root = path.resolve('/opt/opready/backups');
+
+    it('accepts an empty location (caller falls back to its own default)', () => {
+        expect(() => assertSafeBackupLocation('', root)).not.toThrow();
+        expect(() => assertSafeBackupLocation('   ', root)).not.toThrow();
+        expect(() => assertSafeBackupLocation(undefined, root)).not.toThrow();
+    });
+
+    it('accepts the root itself', () => {
+        expect(() => assertSafeBackupLocation(root, root)).not.toThrow();
+    });
+
+    it('accepts a subdirectory of the root', () => {
+        expect(() => assertSafeBackupLocation(path.join(root, 'scheduled'), root)).not.toThrow();
+    });
+
+    it('rejects a path outside the root via traversal (N-BR-2 exploit: pointing at the public web root)', () => {
+        expect(() => assertSafeBackupLocation(path.join(root, '..', '..', 'public'), root))
+            .toThrow(/Backup location must be inside the configured backup root/);
+    });
+
+    it('rejects a completely unrelated absolute path', () => {
+        expect(() => assertSafeBackupLocation(path.resolve('/etc'), root))
+            .toThrow(/Backup location must be inside the configured backup root/);
+    });
+
+    it('rejects a sibling directory that merely shares the root as a string prefix', () => {
+        // e.g. root "/opt/opready/backups" vs "/opt/opready/backups-evil" — must not pass a naive startsWith check
+        expect(() => assertSafeBackupLocation(root + '-evil', root))
+            .toThrow(/Backup location must be inside the configured backup root/);
     });
 });

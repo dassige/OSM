@@ -3,7 +3,7 @@
  * Shared modal for inserting Knowledge Base document links into TinyMCE editors.
  *
  * Exposes:
- *   window.openKbLinkPicker(callback)  — opens the picker; calls callback({ id, title }) on Insert
+ *   window.openKbLinkPicker(callback)  — opens the picker; calls callback({ id, title, resolverToken }) on Insert
  *   window.closeKbPicker()             — closes without selection
  *   window.kbPickerInsert()            — called by the Insert button; confirms the highlighted row
  */
@@ -236,7 +236,7 @@
         // Store id and title in data-* attributes — never in inline onclick strings,
         // which would break when the title contains quotes or other special characters.
         list.innerHTML = docs.map(d => `
-            <div data-kb-row-id="${d.id}" data-kb-title="${esc(d.title)}"
+            <div data-kb-row-id="${d.id}" data-kb-title="${esc(d.title)}" data-kb-resolver="${esc(d.resolver_token)}"
                 style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;cursor:pointer;
                        border:1px solid var(--border-color);border-radius:6px;transition:background 0.12s, border-color 0.12s;"
                 title="Click to select, double-click to insert immediately">
@@ -273,8 +273,9 @@
         row.style.borderColor = 'var(--primary, #007bff)';
 
         highlighted = {
-            id:    parseInt(row.dataset.kbRowId, 10),
-            title: row.dataset.kbTitle,
+            id:            parseInt(row.dataset.kbRowId, 10),
+            title:         row.dataset.kbTitle,
+            resolverToken: row.dataset.kbResolver,
         };
         updateInsertBtn();
     }

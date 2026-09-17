@@ -177,13 +177,17 @@ router.get('/file/:slug', async (req, res) => {
     }
 });
 
-// ── Public: resolve document id → slug (used by viewer pages to expand {{kb:N}} placeholders) ──
+// ── Public: resolve a document's resolver_token → slug (used by viewer pages to expand
+//    {{kb:<token>}} placeholders). N-PUB-2 / N-AUTH-1: this used to accept the document's
+//    sequential auto-increment id, letting an unauthenticated caller enumerate every active
+//    KB document's slug/title. resolver_token is a random 128-bit value — same "GUID is the
+//    security" guarantee as the slug itself, but stable across a slug rotation. ──
 
-router.get('/resolve/:id', async (req, res) => {
+router.get('/resolve/:token', async (req, res) => {
     try {
-        const doc = await db.getKbDocumentById(req.params.id);
+        const doc = await db.getKbDocumentByResolverToken(req.params.token);
         if (!doc || !doc.is_active || isKbDocExpired(doc)) return res.status(404).json({ error: 'Document not found.' });
-        res.json({ id: doc.id, slug: doc.slug, title: doc.title });
+        res.json({ slug: doc.slug, title: doc.title });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

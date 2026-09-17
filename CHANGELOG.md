@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.13.3] - 2026/09/17
+
+- feat: add HTML sanitizer for rich text fields
+
+- Implemented a new service for sanitizing TinyMCE-authored rich text to prevent XSS vulnerabilities.
+- Added `sanitizeRichText` function to clean HTML input by stripping out dangerous tags and attributes.
+- Introduced `sanitizeQuestionStructure` function to sanitize the `description` field of questions in forms/surveys.
+- Created unit tests for both sanitization functions to ensure proper functionality and security.
+- Added a migration to introduce a `resolver_token` column in the `knowledgebase_documents` table to enhance security.
+- Developed a script to sanitize production database copies for testing environments, ensuring no real user data is exposed.
+
 ## [3.13.2] - 2026/09/16
 
 - feat: add support for linking Knowledge Base documents to skills as refresher material

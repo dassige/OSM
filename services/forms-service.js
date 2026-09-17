@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const aiService = require("./ai-service");
 const { aiConfig } = require("../config");
 const logger = require("./logger");
+const { sanitizeRichText, sanitizeQuestionStructure } = require("./html-sanitizer");
 
 async function getAllForms() {
   const database = await db.initDB();
@@ -34,10 +35,11 @@ async function importBulkForms(formsArray) {
       `INSERT INTO forms (public_id, name, status, intro, structure, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
     );
     for (const f of formsArray) {
-      const structureStr =
+      const structure =
         typeof f.structure === "string"
-          ? f.structure
-          : JSON.stringify(f.structure || []);
+          ? (() => { try { return JSON.parse(f.structure); } catch { return []; } })()
+          : (f.structure || []);
+      const structureStr = JSON.stringify(sanitizeQuestionStructure(structure));
       const pubId = f.public_id || crypto.randomUUID();
       const status = f.status !== undefined ? f.status : 0;
       const createdAt = f.created_at || new Date().toISOString();
@@ -45,7 +47,7 @@ async function importBulkForms(formsArray) {
         pubId,
         f.name,
         status,
-        f.intro || "",
+        sanitizeRichText(f.intro || ""),
         structureStr,
         createdAt,
       );
@@ -90,14 +92,16 @@ async function getFormById(id) {
 
 async function createForm(name, status = 0, intro = "", structure = []) {
   const database = await db.initDB();
-  const jsonStructure = JSON.stringify(structure);
+  // H-04/N-XSS-1: sanitize rich text at write time so every consumer of this
+  // form (forms-view.html's public rendering, exports, reports) reads safe HTML.
+  const jsonStructure = JSON.stringify(sanitizeQuestionStructure(structure));
   const publicId = crypto.randomUUID();
   const result = await database.run(
     `INSERT INTO forms (public_id, name, status, intro, structure) VALUES (?, ?, ?, ?, ?)`,
     publicId,
     name,
     status ? 1 : 0,
-    intro,
+    sanitizeRichText(intro),
     jsonStructure,
   );
   return result.lastID;
@@ -126,11 +130,11 @@ async function updateForm(id, data) {
   }
   if (intro !== undefined) {
     updates.push("intro = ?");
-    params.push(intro);
+    params.push(sanitizeRichText(intro));
   }
   if (structure !== undefined) {
     updates.push("structure = ?");
-    params.push(JSON.stringify(structure));
+    params.push(JSON.stringify(sanitizeQuestionStructure(structure)));
   }
   if (min_score !== undefined) {
     updates.push("min_score = ?");

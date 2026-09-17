@@ -1,5 +1,7 @@
 'use strict';
 
+const path = require('path');
+
 /**
  * Validates that a URL is safe for outbound HTTP requests.
  * Blocks loopback addresses, cloud metadata endpoints, RFC-1918 private ranges,
@@ -26,4 +28,26 @@ function assertSafeUrl(url) {
     if (blocked) throw new Error('Endpoint not reachable');
 }
 
-module.exports = { assertSafeUrl };
+/**
+ * Validates that a user-supplied backup save location resolves inside the
+ * configured backup root, blocking path traversal / arbitrary-directory writes
+ * (e.g. pointing a scheduled backup at the app's own static web root).
+ * Shared by every backup-writing route — do not re-implement locally.
+ *
+ * @param {string} location
+ * @param {string} backupRootDir
+ * @throws {Error} if the resolved path escapes backupRootDir
+ */
+function assertSafeBackupLocation(location, backupRootDir) {
+    if (!location || !location.trim()) return; // empty → caller uses its own safe default
+    const resolved = path.resolve(location.trim());
+    const root     = path.resolve(backupRootDir);
+    if (!resolved.startsWith(root + path.sep) && resolved !== root) {
+        throw new Error(
+            `Backup location must be inside the configured backup root (${root}). ` +
+            `Received: ${resolved}`
+        );
+    }
+}
+
+module.exports = { assertSafeUrl, assertSafeBackupLocation };

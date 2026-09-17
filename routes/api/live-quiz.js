@@ -572,7 +572,8 @@ router.get('/play/:code', liveQuizLimiter, async (req, res) => {
       member: formatMemberName(player.member_rank, player.member_last_name, player.member_first_name, player.member_name),
       description: player.snapshot.description,
       gameType: player.snapshot.game_type,
-      questions: player.snapshot.questions,
+      // N-PUB-1: strip correctAnswer before it reaches the unauthenticated player, same as Timed mode.
+      questions: (player.snapshot.questions || []).map(stripCorrectAnswer),
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -644,7 +645,8 @@ router.get('/team-play/:code', liveQuizLimiter, async (req, res) => {
       team: team.name,
       description: team.snapshot.description,
       gameType: team.game_type,
-      questions: team.snapshot.questions,
+      // N-PUB-1: strip correctAnswer before it reaches the unauthenticated team, same as Timed mode.
+      questions: (team.snapshot.questions || []).map(stripCorrectAnswer),
     });
   } catch (e) {
     res.status(500).json({ error: e.message });

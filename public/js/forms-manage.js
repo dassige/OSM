@@ -92,7 +92,7 @@ function kbLinkSetup(editor) {
       window.openKbLinkPicker(function (doc) {
         var title = doc.title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         editor.insertContent(
-          '<a href="{{kb:' + doc.id + '}}" data-kb-id="' + doc.id + '" class="kb-doc-link">' + title + '</a>'
+          '<a href="{{kb:' + doc.resolverToken + '}}" data-kb-id="' + doc.resolverToken + '" class="kb-doc-link">' + title + '</a>'
         );
       });
     }

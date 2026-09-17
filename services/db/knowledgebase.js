@@ -84,13 +84,26 @@ async function getKbDocumentBySlug(slug) {
     );
 }
 
+// N-PUB-2 / N-AUTH-1: resolver_token is the opaque, non-enumerable identifier embedded
+// in {{kb:<token>}} rich-text placeholders — unlike the sequential id, it can't be
+// walked, and unlike slug, it survives a slug rotation (its whole purpose).
+async function getKbDocumentByResolverToken(token) {
+    const db = await initDB();
+    return db.get(
+        'SELECT id, slug, title, is_active, expires_at FROM knowledgebase_documents WHERE resolver_token = ?',
+        token,
+    );
+}
+
 async function createKbDocument(data) {
     const db = await initDB();
+    const resolverToken = crypto.randomUUID().replace(/-/g, '');
     const result = await db.run(
         `INSERT INTO knowledgebase_documents
-           (slug, title, description, category_id, original_filename, file_size, mime_type, storage_type, storage_path, is_active, uploaded_by, expires_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+           (slug, resolver_token, title, description, category_id, original_filename, file_size, mime_type, storage_type, storage_path, is_active, uploaded_by, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
         data.slug,
+        resolverToken,
         data.title,
         data.description || null,
         data.category_id || null,
@@ -184,6 +197,7 @@ module.exports = {
     getKbDocuments,
     getKbDocumentById,
     getKbDocumentBySlug,
+    getKbDocumentByResolverToken,
     createKbDocument,
     updateKbDocument,
     toggleKbDocument,
