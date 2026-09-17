@@ -29,6 +29,8 @@ Automated coverage already run and passing: `npm test` (445/445), `npm run test:
 
 ## 1. Scheduled Backup Path Guard (N-BR-2)
 
+**Only applies to TST/DEMO (Docker) or PROD-if-not-Cloud-Run.** Confirmed via `/ui-config`: `scheduledBackupSupported` is `false` on UAT (`deploymentType: cloud-run`) — the feature is disabled entirely on ephemeral deployments, so this section is not testable/applicable there.
+
 | # | Environment | Step | Expected Result |
 |---|---|---|---|
 | 1.1 | TEST | As superadmin, `POST /api/system/scheduled-backup` with `backupLocation` left empty | `200 { success: true }` — falls back to the default location, unchanged from before |
@@ -92,7 +94,7 @@ Highest blast-radius change — test broadly across roles.
 | 4.4 | TEST | With an **`admin`-role** session cookie, `curl system-tools.html` and `backup-restore.html` | Still 302 (superadmin-only) |
 | 4.5 | TEST | With an **`admin`-role** session cookie, `curl users.html`, `event-log.html`, `live-forms.html`, etc. (admin-and-above pages) | **200** |
 | 4.6 | TEST | With a **`superadmin`** session cookie, `curl` all 11 gated pages | **200** for all |
-| 4.7 | TEST | With **no session**, `curl login.html`, `forms-view.html`, `surveys-view.html`, `quiz-play.html`, `quiz-join.html`, `knowledgebase-view.html`, `live-surveys.html` | **200** for all — these must remain public |
+| 4.7 | TEST | With **no session**, `curl login.html`, `forms-view.html`, `surveys-view.html`, `quiz-play.html`, `quiz-join.html`, `knowledgebase-view.html` | **200** for all — these must remain public. (`live-surveys.html` is the *admin* survey-tracking page, gated via `requirePageAccess(adminAndSuper)` — it belongs in row 4.1, not here; correctly returns 302.) |
 | 4.8 | TEST | With **no session**, `curl` a handful of static assets: `styles.css`, `utils.js`, `theme.js`, `app.js`, an image under `/icons/` | **200** for all — unaffected |
 | 4.9 | UAT | Log in as `simple`, `admin`, and `superadmin` (three separate sessions/browsers) and **type the URL directly** in the address bar for a page above your role (e.g. simple user typing `/users.html`) | Redirected to the dashboard, no error page, no leaked content |
 | 4.10 | UAT | Log in as `superadmin` and click through every item in the left-hand navigation | Every page loads fully styled with no blank/broken layout |
@@ -131,3 +133,28 @@ All of the following must be true before promoting to PROD:
 - [ ] Section 5 (rich-text sanitization) — all TEST + UAT rows pass, with no unexpected formatting loss reported
 - [ ] `npm test` green and `npm run test:ui` green on the exact commit being promoted
 - [ ] No new errors in the application log (Winston) during the full UAT pass
+
+---
+
+## Execution Log — 2026-09-17/18
+
+All TEST-level (API/curl) rows executed live against the real TST environment (`opready`
+container, https://tst-opready.dassi.net) using a temporary, purpose-built superadmin API
+key (created and deleted within this session). UAT (Cloud Run) was checked for the
+read-only/anonymous rows only. All test data created on TST (1 quiz session, 1 KB
+document, 1 form, 1 API key) was deleted afterward and verified back to baseline
+(27 KB documents, 0 quiz sessions, original scheduled-backup config restored).
+
+| Section | TST | UAT | Notes |
+|---|---|---|---|
+| 0 — Pre-flight | ✅ pass | not independently checkable (no DB access) | 0/27 null, 27/27 unique resolver_token |
+| 1 — Backup path guard | ✅ pass (1.1–1.3) | N/A | `scheduledBackupSupported: false` on Cloud Run — feature disabled by design. 1.4/1.8 (run-now) skipped — doesn't exercise the fix, only generic backup mechanics |
+| 2 — Quiz answer leak | ✅ pass | not run | Used the real "Working at Height" (Score mode) game; `GET /play/:code` returned 0 questions leaking `correctAnswer`; correct-answer submission scored 80/80, proving server-side scoring is unaffected |
+| 3 — KB resolver_token | ✅ pass | not run | Sequential-id resolve → 404; token resolve → 200; **slug rotated → same token resolved to the new slug** (the core guarantee); file still servable at new slug. Did not test the TinyMCE picker → embedded-link UI flow itself (no browser tool available) |
+| 4 — Static serving reorder (4.1/4.7/4.8) | ✅ pass | ✅ pass | All 11 gated pages → 302 unauthenticated on both; all public pages → 200 on both; static assets → 200 on both |
+| 4 — Role matrix (4.2–4.6) | **not run** | not run | Requires session cookies for simple/admin/superadmin roles. Deliberately skipped rather than creating throwaway users, since that triggers a real account-notification email attempt (`sendNewAccountNotification`) and this fix didn't change `requirePageAccess`'s role-comparison logic — only *when* it runs, already proven by 4.1. Revisit if full role-matrix coverage is required for sign-off |
+| 5 — Rich-text sanitization | ✅ pass, 1 finding → fixed | not run | `<script>` and `onerror` handlers correctly stripped from both `intro` and question `description`; `<strong>` and the link's `href` preserved. **Finding (now fixed in `services/html-sanitizer.js`, not yet deployed):** `target="_blank"` was silently stripped from `<a>` tags. Fix adds `ADD_ATTR: ['target']` and a DOMPurify `afterSanitizeAttributes` hook that forces `rel="noopener noreferrer"` on any `target="_blank"` link (reverse-tabnabbing guard) — a `javascript:` URI inside such a link is still stripped. Covered by 3 new unit tests in `tests/html-sanitizer.test.js`; `npm test` green (468/468). Re-run test-plan row 5.4/5.6 live once this fix is deployed to TST |
+
+**Also confirmed:** UAT is running commit `9136c6f`, a descendant of the fix commits (`6dca38e` etc.) — all 5 fixes are live on both TST and UAT.
+
+**Out-of-band finding (unrelated to these 5 fixes):** the read-only `claude-uat-debug` GCP service account can read the full UAT Cloud Run env spec via `gcloud run services describe`, which exposes plaintext secrets (admin password, session secret, SMTP password, proxy credentials) because they're set as plain env vars rather than Secret Manager references. Recommend rotating those credentials and migrating to Secret Manager.

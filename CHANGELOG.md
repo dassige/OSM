@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.13.9] - 2026/09/18
+
+- Add Penetration Test Report (Pass 4) for OpReady application
+
+This commit introduces a comprehensive security assessment report detailing findings from the fourth penetration test of the OpReady application. The report includes an executive summary, scope and methodology, re-verification of previous findings, and a detailed account of new vulnerabilities identified during the assessment. Key highlights include the remediation status of prior findings, the discovery of new high-severity issues, and recommendations for immediate fixes to enhance application security.
+
 ## [3.13.8] - 2026/09/18
 
 - feat: implement chunked restore functionality for large backups

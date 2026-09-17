@@ -29,6 +29,26 @@ describe('sanitizeRichText', () => {
     it('treats an empty string as empty', () => {
         expect(sanitizeRichText('')).toBe('');
     });
+
+    it('preserves target="_blank" on links and forces rel="noopener noreferrer" (reverse-tabnabbing guard)', () => {
+        const dirty = '<a href="https://example.com" target="_blank">Safety brief</a>';
+        const clean = sanitizeRichText(dirty);
+        expect(clean).toContain('target="_blank"');
+        expect(clean).toContain('rel="noopener noreferrer"');
+        expect(clean).toContain('href="https://example.com"');
+    });
+
+    it('does not add rel to a link with no target', () => {
+        const dirty = '<a href="https://example.com">Safety brief</a>';
+        const clean = sanitizeRichText(dirty);
+        expect(clean).not.toContain('rel=');
+    });
+
+    it('still strips a javascript: URI even inside a target="_blank" link', () => {
+        const dirty = '<a href="javascript:alert(1)" target="_blank">click</a>';
+        const clean = sanitizeRichText(dirty);
+        expect(clean).not.toMatch(/javascript:/i);
+    });
 });
 
 describe('sanitizeQuestionStructure', () => {
