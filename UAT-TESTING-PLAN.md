@@ -561,6 +561,7 @@
 | T23-23 | Demo mode blocks Save and Run | On a demo-mode instance, try to save schedule or run now. | Both actions return a toast: "Disabled in demo mode." No changes made. |
 | T23-24 | History — mobile cards | View the page on a screen ≤ 768 px with existing history entries. | History renders as cards (not a table). Each card shows Date/Time, Type, Filename, Size, Cleaned, and Status. |
 | T23-25 | Restore a Full Backup taken on a different Knowledge Base storage backend or bucket | Restore a Full Backup `.zip` that was generated on an environment with a different Knowledge Base storage configuration than this one — e.g. local → S3/GCS, S3/GCS → local, or S3/GCS → a different bucket (such as restoring a PROD backup onto UAT). | Every Knowledge Base document whose file was included in the backup opens correctly afterwards — no "Document Not Available" error — regardless of the storage type or bucket mismatch between the backup's source and this environment. Event log's "Full Backup Restored" entry shows a non-zero reconciled-documents count. |
+| T23-26 | Restore a large Full Backup (Cloud Run) | On a Cloud Run deployment, select a Full Backup `.zip` larger than ~20MB and click Restore. | The spinner shows upload progress ("Chunk X of Y") followed by a "Finalizing..." message. The restore completes successfully with no "Unexpected token '<'" or similar JSON-parse error, even though the file exceeds Cloud Run's ~32MB single-request limit. |
 
 ---
 

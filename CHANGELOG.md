@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.13.8] - 2026/09/18
+
+- feat: implement chunked restore functionality for large backups
+
+- Added support for chunked uploads of backup files exceeding 32MB limit.
+- Introduced new endpoints: /api/system/restore/chunk and /api/system/restore/finalize.
+- Updated existing restore logic to handle .sql and .zip files, including Knowledge Base documents.
+- Enhanced rate limiting for chunk uploads.
+- Updated frontend to manage chunked uploads automatically.
+- Improved documentation and help content regarding backup restoration.
+- Added tests for chunked restore functionality.
+
+## [3.13.7] - 2026/09/18
+
+- feat: chunked upload for large full-backup restores — Cloud Run enforces a hard ~32MB request-body limit at the platform layer, which a full backup with a healthy Knowledge Base easily exceeds. The Backup & Restore UI now automatically splits large `.zip` files into chunks (`POST /api/system/restore/chunk`) and reassembles them server-side (`POST /api/system/restore/finalize`) before running the normal restore. Small files and direct API callers are unaffected.
+
 ## [3.13.6] - 2026/09/18
 
 - feat: enhance full backup restore functionality with Knowledge Base document reconciliation for S3/GCS storage

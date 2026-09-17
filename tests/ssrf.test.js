@@ -8,9 +8,10 @@ jest.mock('../middleware/auth', () => ({
 }));
 
 jest.mock('../middleware/rate-limiter', () => ({
-    backupLimiter:  (req, res, next) => next(),
-    restoreLimiter: (req, res, next) => next(),
-    aiTestLimiter:  (req, res, next) => next(),
+    backupLimiter:       (req, res, next) => next(),
+    restoreLimiter:      (req, res, next) => next(),
+    restoreChunkLimiter: (req, res, next) => next(),
+    aiTestLimiter:       (req, res, next) => next(),
 }));
 
 jest.mock('../services/db', () => ({

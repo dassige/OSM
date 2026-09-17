@@ -1845,8 +1845,8 @@ const spec = {
         '/api/system/restore': {
             post: {
                 tags: ['System'],
-                summary: 'Restore from SQL backup (superadmin)',
-                description: 'Uploads a `.sql` dump file and fully replaces the database. All active sessions are invalidated after restore. Disabled in demo mode. Irreversible.',
+                summary: 'Restore from a backup file (superadmin)',
+                description: 'Uploads a `.sql` dump (database only) or a `.zip` full backup (database + Knowledge Base documents) and fully replaces the current data. Every Knowledge Base document bundled in a `.zip` is written into this environment\'s own configured storage (local disk, or its own S3/GCS bucket) and its record repointed, regardless of what storage backend or bucket the backup was taken from. All active sessions are invalidated after restore. Disabled in demo mode. Irreversible. For files too large for a single request (Cloud Run enforces a ~32MB request-body limit), use `/api/system/restore/chunk` + `/api/system/restore/finalize` instead — the browser UI does this automatically.',
                 requestBody: {
                     required: true,
                     content: {
@@ -1855,7 +1855,7 @@ const spec = {
                                 type: 'object',
                                 required: ['databaseFile'],
                                 properties: {
-                                    databaseFile: { type: 'string', format: 'binary', description: 'SQL dump file (.sql) to restore from' }
+                                    databaseFile: { type: 'string', format: 'binary', description: 'Backup file to restore from — .sql (database only) or .zip (full backup)' }
                                 }
                             }
                         }
@@ -1863,7 +1863,68 @@ const spec = {
                 },
                 responses: {
                     200: { description: 'Restored', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
-                    400: { description: 'No file provided or invalid SQL' },
+                    400: { description: 'No file provided or invalid backup file' },
+                    403: { description: 'Insufficient role or demo mode' },
+                    429: { description: 'Rate limit exceeded — max 3 restores per hour' },
+                    500: { description: 'Restore failed' }
+                }
+            }
+        },
+        '/api/system/restore/chunk': {
+            post: {
+                tags: ['System'],
+                summary: 'Upload one chunk of a large restore file (superadmin)',
+                description: 'Accepts one chunk of a backup file too large for a single request (Cloud Run enforces a ~32MB request-body limit at the platform layer). Chunks are staged on disk keyed by `uploadId` until `/api/system/restore/finalize` reassembles and restores them. Used internally by the Backup & Restore UI; small backups should just use `/api/system/restore` directly.',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'multipart/form-data': {
+                            schema: {
+                                type: 'object',
+                                required: ['chunk', 'uploadId', 'chunkIndex', 'totalChunks'],
+                                properties: {
+                                    chunk:       { type: 'string', format: 'binary', description: 'Raw bytes of this chunk (max 20MB each)' },
+                                    uploadId:    { type: 'string', description: 'Client-generated UUID identifying this upload session' },
+                                    chunkIndex:  { type: 'integer', description: 'Zero-based index of this chunk' },
+                                    totalChunks: { type: 'integer', description: 'Total number of chunks in this upload' }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Chunk accepted', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, received: { type: 'integer' }, total: { type: 'integer' } } } } } },
+                    400: { description: 'No chunk provided, or invalid uploadId/chunkIndex/totalChunks' },
+                    403: { description: 'Insufficient role or demo mode' },
+                    429: { description: 'Rate limit exceeded — max 150 chunk uploads per hour' },
+                    500: { description: 'Chunk upload failed' }
+                }
+            }
+        },
+        '/api/system/restore/finalize': {
+            post: {
+                tags: ['System'],
+                summary: 'Reassemble uploaded chunks and run the restore (superadmin)',
+                description: 'Concatenates every chunk previously uploaded for `uploadId` in order, then runs the exact same restore logic as `/api/system/restore` against the reassembled file. Disabled in demo mode. Irreversible.',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['uploadId', 'filename', 'totalChunks'],
+                                properties: {
+                                    uploadId:    { type: 'string', description: 'The uploadId used for the preceding chunk uploads' },
+                                    filename:    { type: 'string', description: 'Original filename (its extension determines .sql vs .zip handling)' },
+                                    totalChunks: { type: 'integer', description: 'Total number of chunks that were uploaded' }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Restored', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'Invalid uploadId/filename/totalChunks, or chunks missing/expired' },
                     403: { description: 'Insufficient role or demo mode' },
                     429: { description: 'Rate limit exceeded — max 3 restores per hour' },
                     500: { description: 'Restore failed' }

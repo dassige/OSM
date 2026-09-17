@@ -1100,6 +1100,8 @@ curl -X POST \
 
 > **Warning:** restore replaces the entire database and invalidates all active sessions.
 
+> **Large full backups on Cloud Run:** the curl example above sends the whole file in one request. Cloud Run enforces a hard ~32MB request-body limit at the platform layer — a `.sql` dump rarely hits this, but a full `.zip` backup with a healthy Knowledge Base often does. The Backup & Restore UI handles this automatically by splitting large uploads into chunks (`POST /api/system/restore/chunk` + `POST /api/system/restore/finalize`); a script or scheduler restoring a large `.zip` directly via curl on Cloud Run should do the same, or restore the `.sql` (database only) instead.
+
 #### Using Google Cloud Scheduler instead of a local machine
 
 If you prefer a fully cloud-native solution, create a Cloud Scheduler job targeting the same endpoint:

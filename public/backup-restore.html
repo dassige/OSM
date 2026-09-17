@@ -1106,6 +1106,60 @@
             }, 1000);
         }
 
+        // Cloud Run (and similarly restrictive proxies) enforce a hard ~32MB request-body
+        // limit at the platform layer, well below the app itself. Anything larger than
+        // this is split into chunks and reassembled server-side — see
+        // POST /api/system/restore/chunk + /api/system/restore/finalize.
+        const RESTORE_CHUNK_THRESHOLD = 20 * 1024 * 1024; // 20MB
+        const RESTORE_CHUNK_SIZE      = 15 * 1024 * 1024; // 15MB — comfortably under both limits
+
+        async function restoreDirect(file) {
+            const formData = new FormData();
+            formData.append('databaseFile', file);
+            const res    = await fetch('/api/system/restore', { method: 'POST', body: formData });
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error || 'Unknown error occurred');
+            return result;
+        }
+
+        async function restoreChunked(file) {
+            const uploadId    = crypto.randomUUID();
+            const totalChunks = Math.ceil(file.size / RESTORE_CHUNK_SIZE);
+
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * RESTORE_CHUNK_SIZE;
+                const chunk = file.slice(start, start + RESTORE_CHUNK_SIZE);
+
+                if (window.updateGlobalSpinnerMessage) {
+                    const pct = Math.round((i / totalChunks) * 100);
+                    updateGlobalSpinnerMessage('Uploading backup...', `Chunk ${i + 1} of ${totalChunks} (${pct}%)`);
+                }
+
+                const formData = new FormData();
+                formData.append('chunk', chunk, file.name);
+                formData.append('uploadId', uploadId);
+                formData.append('chunkIndex', String(i));
+                formData.append('totalChunks', String(totalChunks));
+
+                const res    = await fetch('/api/system/restore/chunk', { method: 'POST', body: formData });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'Chunk upload failed');
+            }
+
+            if (window.updateGlobalSpinnerMessage) {
+                updateGlobalSpinnerMessage('Restoring database and documents...', 'Finalizing upload — this can take a while for large backups');
+            }
+
+            const res    = await fetch('/api/system/restore/finalize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uploadId, filename: file.name, totalChunks }),
+            });
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error || 'Unknown error occurred');
+            return result;
+        }
+
         document.getElementById('restoreForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (isDemo) { showToast('Disabled in demo mode.', 'warning'); return; }
@@ -1126,21 +1180,15 @@
             const spinMsg = isZip ? 'Restoring database and documents...' : 'Restoring database from backup...';
             if (window.showGlobalSpinner) showGlobalSpinner(spinMsg);
 
-            const formData = new FormData();
-            formData.append('databaseFile', file);
-
             try {
-                const res    = await fetch('/api/system/restore', { method: 'POST', body: formData });
-                const result = await res.json();
+                const result = file.size > RESTORE_CHUNK_THRESHOLD
+                    ? await restoreChunked(file)
+                    : await restoreDirect(file);
 
-                if (res.ok) {
-                    fileInput.value = '';
-                    updateRestoreBtn(fileInput);
-                    resetFilePicker('dbFile', 'dbFileLabel');
-                    showRestoreSuccess(result.message);
-                } else {
-                    throw new Error(result.error || 'Unknown error occurred');
-                }
+                fileInput.value = '';
+                updateRestoreBtn(fileInput);
+                resetFilePicker('dbFile', 'dbFileLabel');
+                showRestoreSuccess(result.message);
 
             } catch (err) {
                 statusBox.style.display = 'block';

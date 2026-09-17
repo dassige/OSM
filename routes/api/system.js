@@ -17,7 +17,7 @@ const aiService = require("../../services/ai-service");
 const whatsappService = require("../../services/whatsapp-service");
 const { hasRole } = require("../../middleware/auth");
 const { generateCsrfToken } = require("../../middleware/csrf");
-const { backupLimiter, restoreLimiter, aiTestLimiter } = require("../../middleware/rate-limiter");
+const { backupLimiter, restoreLimiter, restoreChunkLimiter, aiTestLimiter } = require("../../middleware/rate-limiter");
 const { version } = require("../../package.json");
 const logger = require("../../services/logger");
 const { assertSafeUrl, assertSafeBackupLocation } = require("../../services/url-utils");
@@ -260,152 +260,250 @@ router.get("/system/backup", hasRole("superadmin"), backupLimiter, async (req, r
 });
 
 // ── Restore ───────────────────────────────────────────────────────────────────
-// Accepts: .sql (DB-only restore) or .zip (full restore — DB + KB files)
+// Shared by the direct single-request endpoint below and the chunked-upload
+// finalize endpoint (large backups can't fit in one Cloud Run request — see
+// POST /system/restore/chunk). Throws with `.status` set for a 4xx-worthy
+// failure (bad file); any other error is a 500.
+async function performRestore(req, filePath, originalFilename) {
+  const actor = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
+  const ext   = path.extname(originalFilename).toLowerCase();
+  const isZip = ext === '.zip';
+
+  if (!isZip) {
+    // ── SQL-only restore ──────────────────────────────────────────────
+    if (ext !== '.sql') {
+      const e = new Error('Unsupported file type. Upload a .sql or .zip backup file.');
+      e.status = 400;
+      throw e;
+    }
+    const sqlContent = fs.readFileSync(filePath, 'utf8');
+    try {
+      validateSqlDump(sqlContent);
+    } catch (ve) {
+      ve.status = 400;
+      throw ve;
+    }
+    await db.restoreFromSqlDump(sqlContent);
+    await db.logEvent(actor, "System", "Database Restored via SQL", { sourceFile: originalFilename });
+    req.session?.destroy?.(() => {});
+    return { message: "Database reconstructed successfully. Please log in again." };
+  }
+
+  // ── Full ZIP restore ───────────────────────────────────────────────
+  const directory  = await unzipper.Open.file(filePath);
+  const manifestEntry = directory.files.find(f => f.path === 'manifest.json');
+  const sqlEntry      = directory.files.find(f => f.path === 'database.sql');
+
+  if (!sqlEntry) {
+    const e = new Error('Invalid backup file: database.sql not found in ZIP.');
+    e.status = 400;
+    throw e;
+  }
+
+  // Parse manifest (optional — older zips may not have it)
+  let manifest = {};
+  if (manifestEntry) {
+    try { manifest = JSON.parse((await manifestEntry.buffer()).toString('utf8')); }
+    catch { /* ignore malformed manifest */ }
+  }
+
+  // Restore database
+  const sqlContent = (await sqlEntry.buffer()).toString('utf8');
+  await db.restoreFromSqlDump(sqlContent);
+
+  // Restore local KB files (only when our storage is also local)
+  const kbType  = config.kbStorage?.type || 'local';
+  const kbPath  = config.kbStorage?.localPath;
+  let   kbRestored = 0;
+  let   kbReconciled = 0;
+
+  if (kbType === 'local' && kbPath) {
+    fs.mkdirSync(kbPath, { recursive: true });
+    const kbFiles = directory.files.filter(f =>
+      f.path.startsWith('storage/knowledgebase/') && f.type === 'File'
+    );
+    const resolvedKbPath = path.resolve(kbPath);
+    const restoredBasenames = new Set();
+    for (const entry of kbFiles) {
+      const basename = path.basename(entry.path);
+      const dest = path.resolve(kbPath, basename);
+      // M-11: Zip slip guard — reject any entry whose resolved path escapes kbPath.
+      if (!dest.startsWith(resolvedKbPath + path.sep) && dest !== resolvedKbPath) {
+        logger.warn('[Restore] Skipping KB entry with traversal path', { entryPath: entry.path });
+        entry.autodrain();
+        continue;
+      }
+      await new Promise((resolve, reject) => {
+        entry.stream()
+          .pipe(fs.createWriteStream(dest))
+          .on('finish', resolve)
+          .on('error', reject);
+      });
+      kbRestored++;
+      restoredBasenames.add(basename);
+    }
+
+    // The just-restored knowledgebase_documents rows still carry whatever
+    // storage_type/storage_path the SOURCE environment used. If that backup was
+    // taken on a different storage backend (e.g. PROD on GCS, this environment on
+    // local), the files above land correctly on local disk but the DB still points
+    // at the old backend — the app can't find a file it just wrote. Repoint every
+    // document whose file we actually restored to the local path it now lives at.
+    const kbDocs = await db.getKbDocuments();
+    for (const doc of kbDocs) {
+      const basename = path.basename(doc.storage_path || '');
+      if (!restoredBasenames.has(basename)) continue;
+      if (doc.storage_type === 'local' && doc.storage_path === basename) continue;
+      await db.updateKbDocumentStorage(doc.id, 'local', basename);
+      kbReconciled++;
+    }
+    if (kbReconciled > 0) {
+      logger.info('[Restore] Reconciled KB document storage metadata to local', { kbReconciled });
+    }
+  } else if (kbType === 's3' || kbType === 'gcs') {
+    // The backup already bundled every KB file's bytes into the zip regardless of
+    // the SOURCE environment's backend (see GET /system/backup). Restoring the DB
+    // rows alone would leave them pointing at whatever bucket/keys the source used
+    // (e.g. PROD's bucket), which this environment has no access to. Push each
+    // bundled file into THIS environment's own bucket and repoint the record.
+    const kbFiles = directory.files.filter(f =>
+      f.path.startsWith('storage/knowledgebase/') && f.type === 'File'
+    );
+    const bufferByBasename = new Map();
+    for (const entry of kbFiles) {
+      bufferByBasename.set(path.basename(entry.path), await entry.buffer());
+    }
+
+    const kbDocs = await db.getKbDocuments();
+    for (const doc of kbDocs) {
+      const buffer = bufferByBasename.get(path.basename(doc.storage_path || ''));
+      if (!buffer) continue;
+      try {
+        const { storageType, storagePath } = await kbStorage.upload(
+          uuidv4().toUpperCase(), doc.original_filename, buffer, doc.mime_type
+        );
+        await db.updateKbDocumentStorage(doc.id, storageType, storagePath);
+        kbRestored++;
+        kbReconciled++;
+      } catch (e) {
+        logger.warn('[Restore] Failed to upload KB file to this environment\'s storage', { documentId: doc.id, error: e.message });
+      }
+    }
+    if (kbReconciled > 0) {
+      logger.info('[Restore] Uploaded and reconciled KB documents to this environment\'s cloud storage', { kbReconciled });
+    }
+  }
+
+  await db.logEvent(actor, "System", "Full Backup Restored", {
+    sourceFile:     originalFilename,
+    backupVersion:  manifest.appVersion,
+    backupDate:     manifest.date,
+    kbFilesRestored: kbRestored,
+    kbStorageReconciled: kbReconciled,
+  });
+
+  req.session?.destroy?.(() => {});
+
+  const kbNote = kbRestored > 0
+    ? ` ${kbRestored} Knowledge Base document${kbRestored !== 1 ? 's' : ''} restored${kbReconciled > 0 ? ' (storage metadata updated to match this environment)' : ''}.`
+    : '';
+
+  return { message: `Database reconstructed successfully.${kbNote} Please log in again.` };
+}
+
 router.post("/system/restore", hasRole("superadmin"), restoreLimiter, upload.single("databaseFile"), async (req, res) => {
   if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
   if (!req.file)                return res.status(400).json({ error: "No file uploaded." });
 
-  const actor    = (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
-  const ext      = path.extname(req.file.originalname).toLowerCase();
-  const isZip    = ext === '.zip' || req.file.mimetype === 'application/zip';
-
   try {
-    if (!isZip) {
-      // ── SQL-only restore (existing behaviour) ──────────────────────────
-      if (ext !== '.sql') throw new Error('Unsupported file type. Upload a .sql or .zip backup file.');
-      const sqlContent = fs.readFileSync(req.file.path, 'utf8');
-      try { validateSqlDump(sqlContent); } catch (ve) {
-        fs.unlinkSync(req.file.path);
-        return res.status(400).json({ error: ve.message });
-      }
-      await db.restoreFromSqlDump(sqlContent);
-      await db.logEvent(actor, "System", "Database Restored via SQL", { sourceFile: req.file.originalname });
-      req.session?.destroy?.(() => {});
-      return res.json({ message: "Database reconstructed successfully. Please log in again." });
-    }
-
-    // ── Full ZIP restore ───────────────────────────────────────────────
-    const directory  = await unzipper.Open.file(req.file.path);
-    const manifestEntry = directory.files.find(f => f.path === 'manifest.json');
-    const sqlEntry      = directory.files.find(f => f.path === 'database.sql');
-
-    if (!sqlEntry) throw new Error('Invalid backup file: database.sql not found in ZIP.');
-
-    // Parse manifest (optional — older zips may not have it)
-    let manifest = {};
-    if (manifestEntry) {
-      try { manifest = JSON.parse((await manifestEntry.buffer()).toString('utf8')); }
-      catch { /* ignore malformed manifest */ }
-    }
-
-    // Restore database
-    const sqlContent = (await sqlEntry.buffer()).toString('utf8');
-    await db.restoreFromSqlDump(sqlContent);
-
-    // Restore local KB files (only when our storage is also local)
-    const kbType  = config.kbStorage?.type || 'local';
-    const kbPath  = config.kbStorage?.localPath;
-    let   kbRestored = 0;
-    let   kbReconciled = 0;
-
-    if (kbType === 'local' && kbPath) {
-      fs.mkdirSync(kbPath, { recursive: true });
-      const kbFiles = directory.files.filter(f =>
-        f.path.startsWith('storage/knowledgebase/') && f.type === 'File'
-      );
-      const resolvedKbPath = path.resolve(kbPath);
-      const restoredBasenames = new Set();
-      for (const entry of kbFiles) {
-        const basename = path.basename(entry.path);
-        const dest = path.resolve(kbPath, basename);
-        // M-11: Zip slip guard — reject any entry whose resolved path escapes kbPath.
-        if (!dest.startsWith(resolvedKbPath + path.sep) && dest !== resolvedKbPath) {
-          logger.warn('[Restore] Skipping KB entry with traversal path', { entryPath: entry.path });
-          entry.autodrain();
-          continue;
-        }
-        await new Promise((resolve, reject) => {
-          entry.stream()
-            .pipe(fs.createWriteStream(dest))
-            .on('finish', resolve)
-            .on('error', reject);
-        });
-        kbRestored++;
-        restoredBasenames.add(basename);
-      }
-
-      // The just-restored knowledgebase_documents rows still carry whatever
-      // storage_type/storage_path the SOURCE environment used. If that backup was
-      // taken on a different storage backend (e.g. PROD on GCS, this environment on
-      // local), the files above land correctly on local disk but the DB still points
-      // at the old backend — the app can't find a file it just wrote. Repoint every
-      // document whose file we actually restored to the local path it now lives at.
-      const kbDocs = await db.getKbDocuments();
-      for (const doc of kbDocs) {
-        const basename = path.basename(doc.storage_path || '');
-        if (!restoredBasenames.has(basename)) continue;
-        if (doc.storage_type === 'local' && doc.storage_path === basename) continue;
-        await db.updateKbDocumentStorage(doc.id, 'local', basename);
-        kbReconciled++;
-      }
-      if (kbReconciled > 0) {
-        logger.info('[Restore] Reconciled KB document storage metadata to local', { kbReconciled });
-      }
-    } else if (kbType === 's3' || kbType === 'gcs') {
-      // The backup already bundled every KB file's bytes into the zip regardless of
-      // the SOURCE environment's backend (see GET /system/backup). Restoring the DB
-      // rows alone would leave them pointing at whatever bucket/keys the source used
-      // (e.g. PROD's bucket), which this environment has no access to. Push each
-      // bundled file into THIS environment's own bucket and repoint the record.
-      const kbFiles = directory.files.filter(f =>
-        f.path.startsWith('storage/knowledgebase/') && f.type === 'File'
-      );
-      const bufferByBasename = new Map();
-      for (const entry of kbFiles) {
-        bufferByBasename.set(path.basename(entry.path), await entry.buffer());
-      }
-
-      const kbDocs = await db.getKbDocuments();
-      for (const doc of kbDocs) {
-        const buffer = bufferByBasename.get(path.basename(doc.storage_path || ''));
-        if (!buffer) continue;
-        try {
-          const { storageType, storagePath } = await kbStorage.upload(
-            uuidv4().toUpperCase(), doc.original_filename, buffer, doc.mime_type
-          );
-          await db.updateKbDocumentStorage(doc.id, storageType, storagePath);
-          kbRestored++;
-          kbReconciled++;
-        } catch (e) {
-          logger.warn('[Restore] Failed to upload KB file to this environment\'s storage', { documentId: doc.id, error: e.message });
-        }
-      }
-      if (kbReconciled > 0) {
-        logger.info('[Restore] Uploaded and reconciled KB documents to this environment\'s cloud storage', { kbReconciled });
-      }
-    }
-
-    await db.logEvent(actor, "System", "Full Backup Restored", {
-      sourceFile:     req.file.originalname,
-      backupVersion:  manifest.appVersion,
-      backupDate:     manifest.date,
-      kbFilesRestored: kbRestored,
-      kbStorageReconciled: kbReconciled,
-    });
-
-    req.session?.destroy?.(() => {});
-
-    const kbNote = kbRestored > 0
-      ? ` ${kbRestored} Knowledge Base document${kbRestored !== 1 ? 's' : ''} restored${kbReconciled > 0 ? ' (storage metadata updated to match this environment)' : ''}.`
-      : '';
-
-    res.json({ message: `Database reconstructed successfully.${kbNote} Please log in again.` });
-
+    const result = await performRestore(req, req.file.path, req.file.originalname);
+    res.json(result);
   } catch (e) {
     logger.error('[Restore] Failed', { error: e.message });
-    res.status(500).json({ error: e.message });
+    res.status(e.status || 500).json({ error: e.message });
   } finally {
     if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+  }
+});
+
+// ── Chunked restore upload (large backups on Cloud Run) ────────────────────────
+// Cloud Run enforces a hard ~32MB request-body limit at the load-balancer layer,
+// below the app entirely — a full backup with a healthy Knowledge Base easily
+// exceeds that. The browser splits large files into chunks and POSTs each one
+// here, then calls /system/restore/finalize to reassemble and run the normal
+// restore. Small files (the common case, and any non-browser API caller) keep
+// using the single-request /system/restore endpoint above unchanged.
+const UPLOAD_ID_RE = /^[a-f0-9-]{36}$/i;
+const chunkUpload = multer({
+  dest: "uploads/chunks/",
+  limits: { fileSize: 20 * 1024 * 1024 }, // one chunk only — comfortably under the 32MB platform ceiling
+});
+
+function chunkDir(uploadId) {
+  return path.join("uploads", "chunks", uploadId);
+}
+
+router.post("/system/restore/chunk", hasRole("superadmin"), restoreChunkLimiter, chunkUpload.single("chunk"), async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
+
+  const { uploadId, chunkIndex, totalChunks } = req.body;
+  const cleanup = () => { if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path); };
+
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No chunk uploaded.' });
+    if (!UPLOAD_ID_RE.test(uploadId || '')) { cleanup(); return res.status(400).json({ error: 'Invalid uploadId.' }); }
+    const index = parseInt(chunkIndex, 10);
+    const total = parseInt(totalChunks, 10);
+    if (!Number.isInteger(index) || index < 0 || !Number.isInteger(total) || total < 1 || total > 200 || index >= total) {
+      cleanup();
+      return res.status(400).json({ error: 'Invalid chunkIndex/totalChunks.' });
+    }
+
+    const dir = chunkDir(uploadId);
+    fs.mkdirSync(dir, { recursive: true });
+    // Zero-padded so a plain lexical directory listing sorts chunks in upload order.
+    fs.renameSync(req.file.path, path.join(dir, String(index).padStart(5, '0')));
+    res.json({ success: true, received: index + 1, total });
+  } catch (e) {
+    cleanup();
+    logger.error('[Restore] Chunk upload failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post("/system/restore/finalize", hasRole("superadmin"), restoreLimiter, async (req, res) => {
+  if (config.appMode === 'demo') return res.status(403).json({ error: 'Disabled in demo mode.' });
+
+  const { uploadId, filename, totalChunks } = req.body || {};
+  if (!UPLOAD_ID_RE.test(uploadId || '')) return res.status(400).json({ error: 'Invalid uploadId.' });
+  const total = parseInt(totalChunks, 10);
+  if (!Number.isInteger(total) || total < 1 || total > 200) return res.status(400).json({ error: 'Invalid totalChunks.' });
+  if (!filename || typeof filename !== 'string') return res.status(400).json({ error: 'Missing filename.' });
+
+  const dir = chunkDir(uploadId);
+  const reassembledPath = path.join("uploads", `${uploadId}-reassembled${path.extname(filename).toLowerCase()}`);
+
+  try {
+    if (!fs.existsSync(dir)) return res.status(400).json({ error: 'Unknown or expired uploadId.' });
+    const parts = Array.from({ length: total }, (_, i) => path.join(dir, String(i).padStart(5, '0')));
+    const missing = parts.find(p => !fs.existsSync(p));
+    if (missing) return res.status(400).json({ error: `Missing chunk(s) — upload did not complete (expected ${total}).` });
+
+    const outFd = fs.openSync(reassembledPath, 'w');
+    try {
+      for (const part of parts) fs.writeSync(outFd, fs.readFileSync(part));
+    } finally {
+      fs.closeSync(outFd);
+    }
+
+    const result = await performRestore(req, reassembledPath, filename);
+    res.json(result);
+  } catch (e) {
+    logger.error('[Restore] Finalize failed', { error: e.message });
+    res.status(e.status || 500).json({ error: e.message });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+    if (fs.existsSync(reassembledPath)) fs.unlinkSync(reassembledPath);
   }
 });
 

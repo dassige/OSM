@@ -87,6 +87,18 @@ const restoreLimiter = rateLimit({
     message: { error: 'Too many restore attempts. Please wait before trying again.' },
 });
 
+// A single large-backup restore can legitimately mean dozens of chunk uploads
+// (e.g. a 400MB backup at 20MB/chunk is 20 requests) — this only gates the
+// chunk-receiving endpoint, not the restore itself (that's still restoreLimiter,
+// applied at /system/restore/finalize).
+const restoreChunkLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,  // 1 hour
+    max: 150,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many chunk uploads. Please wait before trying again.' },
+});
+
 const aiTestLimiter = rateLimit({
     windowMs: 60 * 1000,  // 1 minute
     max: 10,
@@ -95,4 +107,4 @@ const aiTestLimiter = rateLimit({
     message: { error: 'Too many AI test requests. Please slow down.' },
 });
 
-module.exports = { loginLimiter, mfaLimiter, forgotPasswordLimiter, apiLimiter, publicSubmitLimiter, liveQuizLimiter, createUserLimiter, backupLimiter, restoreLimiter, aiTestLimiter };
+module.exports = { loginLimiter, mfaLimiter, forgotPasswordLimiter, apiLimiter, publicSubmitLimiter, liveQuizLimiter, createUserLimiter, backupLimiter, restoreLimiter, restoreChunkLimiter, aiTestLimiter };

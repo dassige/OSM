@@ -315,6 +315,7 @@ const helpContent = {
                 <li>Upload a <code>.sql</code> (Database Only) to restore the database only — Knowledge Base document records are restored, but no files move. Use <strong>Find Documents with Missing Files</strong> (System Tools &rarr; Knowledge Base tab) afterwards to see which documents need their file re-uploaded.</li>
             </ul>
             <p>The backup must have been created by the same or an earlier version of OpReady. All active sessions are cleared after restore — everyone must log in again.</p>
+            <p>Large backup files are uploaded in the background automatically — no action needed. This matters most on Cloud Run deployments, which reject any single upload over ~32MB at the platform level.</p>
 
             <h3>3. Scheduled Backup</h3>
             <p>Automatically create and save backup files on a repeating schedule. Set the frequency, backup type, save location, and retention policy.</p>

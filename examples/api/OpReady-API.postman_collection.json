@@ -3210,11 +3210,88 @@
                                                                                         "key":  "databaseFile",
                                                                                         "type":  "file",
                                                                                         "src":  "/path/to/fenz_backup_YYYY-MM-DD.sql",
-                                                                                        "description":  "The .sql dump file to restore from"
+                                                                                        "description":  "The .sql (database only) or .zip (full backup) file to restore from"
                                                                                     }
                                                                                 ]
                                                                },
-                                                      "description":  "Superadmin only — uploads a `.sql` dump file and replaces the entire database. Disabled in demo mode. All active sessions are invalidated after restore. Use with extreme caution — this is irreversible."
+                                                      "description":  "Superadmin only — uploads a `.sql` dump (database only) or `.zip` full backup (database + Knowledge Base documents) and replaces the entire database. Every Knowledge Base document bundled in a `.zip` is written into this environment's own storage and its record repointed, regardless of the backup's original storage backend or bucket. Disabled in demo mode. All active sessions are invalidated after restore. Use with extreme caution — this is irreversible. For files too large for one request (Cloud Run's ~32MB request-body limit), use the chunked-upload endpoints below instead."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Upload Restore Chunk (large backups)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/system/restore/chunk",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "system",
+                                                                               "restore",
+                                                                               "chunk"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "formdata",
+                                                                   "formdata":  [
+                                                                                    {
+                                                                                        "key":  "chunk",
+                                                                                        "type":  "file",
+                                                                                        "src":  "/path/to/chunk-0000",
+                                                                                        "description":  "Raw bytes of this chunk (max 20MB each)"
+                                                                                    },
+                                                                                    {
+                                                                                        "key":  "uploadId",
+                                                                                        "value":  "<uuid>",
+                                                                                        "description":  "Client-generated UUID identifying this upload session"
+                                                                                    },
+                                                                                    {
+                                                                                        "key":  "chunkIndex",
+                                                                                        "value":  "0",
+                                                                                        "description":  "Zero-based index of this chunk"
+                                                                                    },
+                                                                                    {
+                                                                                        "key":  "totalChunks",
+                                                                                        "value":  "3",
+                                                                                        "description":  "Total number of chunks in this upload"
+                                                                                    }
+                                                                                ]
+                                                               },
+                                                      "description":  "Superadmin only — accepts one chunk of a backup file too large for a single request. Chunks are staged on disk keyed by `uploadId` until Finalize Chunked Restore reassembles and restores them. Used internally by the Backup & Restore UI for large backups; small backups should just use Restore from SQL Backup directly."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Finalize Chunked Restore",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/system/restore/finalize",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "system",
+                                                                               "restore",
+                                                                               "finalize"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"uploadId\": \"<uuid>\",\n  \"filename\": \"opready-full-backup-2026-09-17.zip\",\n  \"totalChunks\": 3\n}"
+                                                               },
+                                                      "description":  "Superadmin only — concatenates every chunk previously uploaded for `uploadId` in order, then runs the exact same restore logic as Restore from SQL Backup against the reassembled file. Disabled in demo mode. All active sessions are invalidated after restore. Use with extreme caution — this is irreversible."
                                                   }
                                   },
                                   {
