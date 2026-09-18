@@ -40,3 +40,6 @@ KnowledgeBase/
 scripts/guide-builder/output/
 
 tmp/
+.vscode/
+
+
