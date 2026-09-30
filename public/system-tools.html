@@ -168,6 +168,7 @@
                             title="Select the AI provider to use for evaluation">
                             <option value="gemini">Google Gemini</option>
                             <option value="ollama">Ollama (Local)</option>
+                            <option value="jev">TypeSafe Jev</option>
                         </select>
                     </div>
 
@@ -416,6 +417,11 @@
                 geminiInput.style.display = 'block';
                 ollamaSelect.style.display = 'none';
             }
+
+            geminiInput.placeholder = (provider === 'jev') ? 'e.g. jev-latest' : 'e.g. gemini-1.5-pro';
+            geminiInput.title = (provider === 'jev')
+                ? 'Jev model name, e.g. jev-latest'
+                : 'AI model name to use for evaluation, e.g. gemini-1.5-pro';
         }
 
         async function refreshOllamaModels() {
@@ -629,7 +635,8 @@
                     provider: provider,
                     model: model,
                     ollamaUrl: document.getElementById('testOllamaUrl').value,
-                    geminiKey: "USE_SERVER_DEFAULT"
+                    geminiKey: "USE_SERVER_DEFAULT",
+                    jevKey: "USE_SERVER_DEFAULT"
                 }
             };
 
@@ -645,6 +652,9 @@
                 if (data.success) {
                     log.innerHTML += `<span style="color:white; font-weight:bold;">> SCORE ACHIEVED: ${data.result.score}/${payload.maxPoints}</span><br>`;
                     log.innerHTML += `> JUSTIFICATION: ${data.result.justification}<br>`;
+                    if (typeof data.result.confidence === 'number') {
+                        log.innerHTML += `> CONFIDENCE: ${Math.round(data.result.confidence * 100)}%${data.result.reviewSuggested ? ' <span style="color:#ffc107;">(below threshold — manual review suggested)</span>' : ''}<br>`;
+                    }
                     log.innerHTML += `> LATENCY: ${data.metadata.duration}<br>`;
                     log.innerHTML += `<hr style="border-color:#333; margin: 10px 0; border-style: dashed;">`;
                     log.innerHTML += `> RAW PROVIDER RESPONSE:<br><span style="color:#888;">${data.raw}</span><br>`;

@@ -39,7 +39,7 @@ const OPTIONS = {
     NODE_ENV:               ['development', 'production'],
     LOG_LEVEL:              ['info', 'error', 'warn', 'debug'],
     PROXY_MODE:             ['none', 'fixed', 'dynamic'],
-    AI_PROVIDER:            ['gemini', 'ollama'],
+    AI_PROVIDER:            ['gemini', 'ollama', 'jev'],
     DEFAULT_MIN_SCORE_TYPE: ['percentage', 'number'],
     TRAINING_DAY_OF_WEEK:   ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     COOKIE_SECURE:          ['false', 'true'],

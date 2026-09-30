@@ -157,6 +157,10 @@ router.post("/system/ai-test", hasRole("superadmin"), aiTestLimiter, async (req,
     configOverride.geminiKey = config.aiConfig.geminiKey;
   }
 
+  if (configOverride.provider === "jev" && configOverride.jevKey === "USE_SERVER_DEFAULT") {
+    configOverride.jevKey = config.aiConfig.jevKey;
+  }
+
   try {
     const start = Date.now();
     const evaluation = await aiService.evaluateTextAnswer(

@@ -30,6 +30,18 @@ function validateEnv(config) {
       "GEMINI_API_KEY is required when ENABLE_AI_EVALUATION=true and AI_PROVIDER=gemini"
     );
 
+  // --- Fatal: Jev key required when AI is enabled with Jev provider ---
+  if (config.aiConfig.enabled && config.aiConfig.provider === "jev") {
+    if (!config.aiConfig.jevKey)
+      errors.push(
+        "JEV_API_KEY is required when ENABLE_AI_EVALUATION=true and AI_PROVIDER=jev"
+      );
+    if (!String(config.aiConfig.model).startsWith("jev"))
+      warnings.push(
+        `AI_MODEL=${config.aiConfig.model} does not look like a Jev model — use jev-latest (or unset AI_MODEL) when AI_PROVIDER=jev.`
+      );
+  }
+
   // --- SESSION_SECRET: fatal in production, warning in demo ---
   if (!process.env.SESSION_SECRET) {
     if (isProduction)

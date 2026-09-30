@@ -86,6 +86,37 @@ describe('calculateFormScore', () => {
             expect(result.maximum).toBe(5);
             expect(result.feedback.q1.reason).toMatch(/manual review/i);
         });
+
+        describe('with AI enabled', () => {
+            const config = require('../config');
+            const aiService = require('../services/ai-service');
+            const structure = [{
+                id: 'q1', type: 'text_multi', points: '3',
+                correctAnswer: 'Expected answer', description: 'Explain this'
+            }];
+
+            beforeEach(() => { config.aiConfig.enabled = true; });
+            afterEach(() => { config.aiConfig.enabled = false; });
+
+            it('passes the review-suggested flag through to the stored feedback', async () => {
+                aiService.evaluateTextAnswer.mockResolvedValueOnce({
+                    result: { score: 2.5, justification: 'Closest match: "Mostly correct"', reviewSuggested: true },
+                });
+                const result = await calculateFormScore(structure, { q1: 'my answer' }, false);
+                expect(result.achieved).toBe(2.5);
+                expect(result.feedback.q1).toEqual({
+                    score: 2.5, reason: 'Closest match: "Mostly correct"', reviewSuggested: true,
+                });
+            });
+
+            it('omits the flag when the AI is confident', async () => {
+                aiService.evaluateTextAnswer.mockResolvedValueOnce({
+                    result: { score: 3, justification: 'Correct', reviewSuggested: false },
+                });
+                const result = await calculateFormScore(structure, { q1: 'my answer' }, false);
+                expect(result.feedback.q1).toEqual({ score: 3, reason: 'Correct' });
+            });
+        });
     });
 
     describe('Mixed field sets', () => {

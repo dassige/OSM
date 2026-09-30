@@ -7,7 +7,7 @@ You are a Node.js developer building the **OpReady** web application — a compr
 ## Project Purpose & Goals
 
 - **Competency Tracking:** Scrape the OI dashboard (live via NZ proxy, GCS download, or demo file) to import current skill expiry dates; enrich with status, urgency flags, and linked training.
-- **Skill Verification — Online Forms:** Issue access-coded, snapshot-versioned forms to members; AI evaluates written answers against rubrics (Gemini or Ollama) and calculates scores; admins accept or reject submissions.
+- **Skill Verification — Online Forms:** Issue access-coded, snapshot-versioned forms to members; AI evaluates written answers against rubrics (Gemini, Ollama, or TypeSafe Jev) and calculates scores; admins accept or reject submissions.
 - **Skill Verification — In-Person Training:** Create and manage training sessions linked to specific skills; track planned dates, locations, and attendance.
 - **Survey Campaigns:** Publish multi-question surveys (anonymous or identified) to members; collect, review, and archive responses via a dedicated tracking UI.
 - **Compliance Reporting:** Seven report views (by member, by skill, by training date, compliance matrix, critical overdue, verification history, attendance) give administrators a complete readiness picture.
@@ -15,7 +15,7 @@ You are a Node.js developer building the **OpReady** web application — a compr
 - **Data Persistence:** SQLite database for all member data, skill statuses, forms, surveys, training, and configuration.
 - **Dynamic Management:** Administrators manage members, skills, forms, surveys, training, and app configuration entirely through the secure web UI — no code editing required.
 - **External Integration:** REST API with API key authentication allows external systems to read/write data without a browser session.
-- **AI Evaluation:** Text-based form answers are scored automatically by an AI provider (Google Gemini or local Ollama) against configurable rubrics.
+- **AI Evaluation:** Text-based form answers are scored automatically by an AI provider (Google Gemini, local Ollama, or TypeSafe Jev) against configurable rubrics.
 
 ---
 
@@ -63,7 +63,7 @@ services/
     users.js  members.js  skills.js  preferences.js
     events.js  training.js  backup.js  surveys.js
     api-keys.js                  — API key CRUD + hashing
-  ai-service.js                  — AI text-answer grading (Gemini or local Ollama)
+  ai-service.js                  — AI text-answer grading (Gemini, local Ollama, or TypeSafe Jev)
   env-validator.js               — Startup environment / config validation
   forms-service.js               — Form lifecycle: issue, score, accept/reject, bulk import
   logger.js                      — Winston logger

@@ -577,6 +577,7 @@ async function calculateFormScore(structure, submittedData, skipAi = false) {
             score: evalResult.score || 0,
             reason: evalResult.justification,
           };
+          if (evalResult.reviewSuggested) aiFeedback[field.id].reviewSuggested = true;
         } catch (e) {
           logger.error("AI Eval Failed", e);
           aiFeedback[field.id] = { score: 0, reason: "AI Service Unavailable" };

@@ -202,9 +202,13 @@ Open the `.env` file and configure the following parameters:
 
 #### **AI Evaluation Configuration (Optional)**
   * `ENABLE_AI_EVALUATION`: Set to `true` to enable AI-based paragraph grading.
-  * `AI_PROVIDER`: `gemini` or `ollama`.
-  * `AI_MODEL`: E.g., `gemini-1.5-pro` or `llama3`.
+  * `AI_PROVIDER`: `gemini`, `ollama`, or `jev` (TypeSafe AI).
+  * `AI_MODEL`: E.g., `gemini-1.5-pro`, `llama3`, or `jev-latest` (the default when the provider is `jev` and `AI_MODEL` is unset).
   * `GEMINI_API_KEY`: Required if provider is Gemini.
+  * `JEV_API_KEY`: Required if provider is Jev. Requests go only to `https://api.typesafe.ai`.
+  * `JEV_MIN_CONFIDENCE`: Jev confidence threshold, 0–1 (default `0.6`). Lower-confidence scores are tagged **Review suggested** on the submission review screen; `0` disables the tag.
+
+  **About Jev:** Jev is a structured scoring model. It rates each answer against a fixed five-level scale (incorrect → fully correct against the reference answer); the result is scaled to the question's points and rounded to the nearest half point. It doesn't generate free text, so the justification admins see is the closest scale level plus a confidence percentage. It is much faster and cheaper than an LLM, and member answers cannot steer its output through instructions embedded in the answer.
 
 #### **Extraction Engine**
 
@@ -380,7 +384,7 @@ The application includes a self-contained form system designed to replace extern
 
 5.  **Form Validation:** \* Administrators can "Test the Form" in Demo Mode directly from the management table to verify layout and variables before final approval.
 
-6.  **Scoring Simulator:** Use the **Test** button to simulate submissions and verify point weighting.
+6.  **Scoring Simulator:** Use the **Test** button to simulate submissions and verify point weighting. When `ENABLE_AI_EVALUATION=true`, paragraph questions with a reference answer can also be answered and are graded by the configured AI provider via `POST /api/forms/test-score`, using the same scoring as a live submission (shares the 10/min AI test rate limit).
 
 7.  **Auto-Grading:** Upon submission, the system calculates the score. If the member passes, it is marked `Accepted`. If they fail but have tries left, it resets to `Sent` for a retry.
 
@@ -1180,7 +1184,7 @@ The WhatsApp service includes built-in fault tolerance:
 │   │   ├── html-scraper.plugin.js  # Default plugin — scrapes the OI HTML dashboard
 │   │   ├── rest-api.plugin.js      # Stub — future REST API data source
 │   │   └── name-parser.js          # Parses raw OI name strings → rank/lastName/firstName
-│   ├── ai-service.js           # AI text-answer grading (Gemini or local Ollama)
+│   ├── ai-service.js           # AI text-answer grading (Gemini, local Ollama, or TypeSafe Jev)
 │   ├── env-validator.js        # Startup environment / config validation
 │   ├── extraction-engine.js    # ETL orchestrator — plugin loader, cache, unified entry point
 │   ├── forms-service.js        # Form lifecycle: issue, score, accept/reject, bulk import

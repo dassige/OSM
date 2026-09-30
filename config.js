@@ -140,12 +140,18 @@ const cookieSecure = process.env.COOKIE_SECURE !== 'false';
 // a separate domain. Leave unset for the typical same-origin deployment.
 const corsOrigin = process.env.CORS_ORIGIN || null;
 
+const aiProvider = process.env.AI_PROVIDER || "gemini";
+const jevMinConfidence = parseFloat(process.env.JEV_MIN_CONFIDENCE);
+
 const aiConfig = {
   enabled: process.env.ENABLE_AI_EVALUATION === "true",
-  provider: process.env.AI_PROVIDER || "gemini",
-  model: process.env.AI_MODEL || "gemini-1.5-pro",
+  provider: aiProvider,
+  model: process.env.AI_MODEL || (aiProvider === "jev" ? "jev-latest" : "gemini-1.5-pro"),
   geminiKey: process.env.GEMINI_API_KEY,
   ollamaUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
+  jevKey: process.env.JEV_API_KEY,
+  // Jev scores below this confidence (0–1) are flagged "manual review suggested"
+  jevMinConfidence: Number.isFinite(jevMinConfidence) ? jevMinConfidence : 0.6,
 };
 
 // Deployment platform — determines whether the scheduled backup feature is available.

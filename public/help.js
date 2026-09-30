@@ -71,6 +71,7 @@ const helpContent = {
                         <li><em>Paragraph:</em> Requires manual review or <strong>AI Evaluation</strong>.</li>
                     </ul>
                 </li>
+                <li><strong>Test:</strong> Opens the Scoring Simulator — answer the current (even unsaved) questions and click <strong>Calculate Score</strong> to check the weighting and pass threshold. When AI evaluation is enabled on the server, paragraph questions with a reference answer get an answer box and are graded by AI, showing the points and reasoning (and a <strong>Review suggested</strong> tag when the AI is unsure). Limited to 10 AI tests per minute.</li>
             </ul>
 
             <h3>4. AI Assistance</h3>
@@ -93,7 +94,7 @@ const helpContent = {
             </ul>
 
             <h3>2. AI Evaluation</h3>
-            <p>If enabled in <code>.env</code>, paragraph answers are analyzed by AI. It compares the member's text against the <strong>Reference Answer</strong> you provided in the builder and suggests a score (e.g., <em>"Score: 4/5. Reasoning: Covers main points but misses safety check."</em>).</p>
+            <p>If enabled in <code>.env</code>, paragraph answers are analyzed by AI. It compares the member's text against the <strong>Reference Answer</strong> you provided in the builder and suggests a score (e.g., <em>"Score: 4/5. Reasoning: Covers main points but misses safety check."</em>). With the <strong>TypeSafe Jev</strong> provider the reasoning names the closest grading level instead, and low-confidence scores are tagged <strong>Review suggested</strong>.</p>
 
             <h3>3. Admin Actions</h3>
             <ul>
@@ -356,7 +357,8 @@ const helpContent = {
             <h3>AI tab</h3>
             <p>Ad-hoc sandbox for testing the AI grading logic against custom question/answer pairs before enabling it for live forms. Settings auto-save to your user profile.</p>
             <ul>
-                <li>Select the AI provider (Google Gemini or local Ollama) and model.</li>
+                <li>Select the AI provider (Google Gemini, local Ollama, or TypeSafe Jev) and model. For Jev use the model name <code>jev-latest</code>.</li>
+                <li>Jev also reports a <strong>confidence</strong> percentage; results below the server's threshold are marked for manual review.</li>
                 <li>Enter a question, rubric (reference text), and a candidate answer.</li>
                 <li>Click <strong>Execute Evaluation Test</strong> to see the score, justification, and raw provider response in the terminal log.</li>
                 <li><strong>Rate limit:</strong> AI test evaluations are limited to <strong>10 per minute</strong> per IP to control AI provider costs. If you hit this limit, wait 60 seconds before retrying.</li>
@@ -531,6 +533,7 @@ const helpContent = {
                     <span style="background:#f8d7da; padding:0 4px;">Red</span> indicates an error.
                 </li>
                 <li><strong>Reference Answers:</strong> Admins can see the 'Correct' key below member answers to facilitate manual grading of text fields.</li>
+                <li><strong>AI Evaluation:</strong> Paragraph answers show the AI's suggested points and reasoning. A yellow <strong>Review suggested</strong> tag means the AI was not confident in that score — read the answer yourself before accepting.</li>
                 <li><strong>Management Bar:</strong> Use the black bar at the top to <strong>Accept</strong> (verify skill), <strong>Reject</strong> (optionally generate a fresh retry link), or <strong>Archive</strong> (remove from active list).</li>
             </ul>
         `

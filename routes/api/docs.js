@@ -1144,6 +1144,60 @@ const spec = {
                 }
             }
         },
+        '/api/forms/test-score': {
+            post: {
+                tags: ['Forms'],
+                summary: 'Scoring simulator — score sample answers against a form structure (admin)',
+                description: 'Scores sample answers against a (possibly unsaved) form structure using the same logic as a live submission. When ENABLE_AI_EVALUATION is true, paragraph (`text_multi`) answers with a reference answer are graded by the configured AI provider. Nothing is stored. Shares the AI test rate limit (10 requests per minute).',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['structure', 'answers'],
+                                properties: {
+                                    structure: { type: 'array', minItems: 1, maxItems: 200, description: 'Form questions, same shape as a saved form structure', items: { type: 'object' } },
+                                    answers:   { type: 'object', description: 'Sample answers keyed by question id — string for radio/boolean/text_multi, array of strings for checkboxes', additionalProperties: true }
+                                }
+                            }
+                        }
+                    }
+                },
+                responses: {
+                    200: {
+                        description: 'Simulated score',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        achieved:  { type: 'number' },
+                                        maximum:   { type: 'number' },
+                                        aiEnabled: { type: 'boolean' },
+                                        feedback:  {
+                                            type: 'object',
+                                            description: 'Per paragraph question id',
+                                            additionalProperties: {
+                                                type: 'object',
+                                                properties: {
+                                                    score:           { type: 'number' },
+                                                    reason:          { type: 'string' },
+                                                    reviewSuggested: { type: 'boolean', description: 'Present (true) only for low-confidence Jev scores' }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    400: { description: 'Invalid structure or answers' },
+                    429: { description: 'Rate limit exceeded — max 10 AI test requests per minute' },
+                    500: { description: 'Scoring failed' }
+                }
+            }
+        },
         '/api/forms/export/all': {
             get: {
                 tags: ['Forms'],
@@ -1935,7 +1989,7 @@ const spec = {
             post: {
                 tags: ['System'],
                 summary: 'Run a one-off AI evaluation test (superadmin)',
-                description: 'Submits a question/rubric/answer triple to the configured AI provider and returns the score and justification. Used to verify AI scoring configuration before enabling it for live forms. Rate-limited to 10 requests per minute.',
+                description: 'Submits a question/rubric/answer triple to the configured AI provider and returns the score and justification. Used to verify AI scoring configuration before enabling it for live forms. With provider `jev` (TypeSafe AI) the score is rounded to the nearest half point, the justification names the closest rubric level, and `confidence` / `reviewSuggested` are also returned. Rate-limited to 10 requests per minute.',
                 requestBody: {
                     required: true,
                     content: {
@@ -1952,10 +2006,11 @@ const spec = {
                                         type: 'object',
                                         description: 'AI provider settings to use for this test',
                                         properties: {
-                                            provider:  { type: 'string', enum: ['gemini', 'ollama'] },
+                                            provider:  { type: 'string', enum: ['gemini', 'ollama', 'jev'] },
                                             geminiKey: { type: 'string', description: 'Pass "USE_SERVER_DEFAULT" to use the server key' },
+                                            jevKey:    { type: 'string', description: 'TypeSafe Jev API key. Pass "USE_SERVER_DEFAULT" to use the server key' },
                                             ollamaUrl: { type: 'string' },
-                                            model:     { type: 'string' }
+                                            model:     { type: 'string', description: 'e.g. gemini-1.5-pro, qwen3:1.7b, jev-latest' }
                                         }
                                     }
                                 }
@@ -1971,9 +2026,18 @@ const spec = {
                                 schema: {
                                     type: 'object',
                                     properties: {
-                                        success:       { type: 'boolean' },
-                                        score:         { type: 'number' },
-                                        justification: { type: 'string' }
+                                        success: { type: 'boolean' },
+                                        result: {
+                                            type: 'object',
+                                            properties: {
+                                                score:           { type: 'number' },
+                                                justification:   { type: 'string' },
+                                                confidence:      { type: 'number', description: 'Jev only — model certainty, 0–1' },
+                                                reviewSuggested: { type: 'boolean', description: 'Jev only — true when confidence is below JEV_MIN_CONFIDENCE' }
+                                            }
+                                        },
+                                        raw:      { type: 'string', description: 'Raw provider response' },
+                                        metadata: { type: 'object', properties: { duration: { type: 'string', example: '245ms' } } }
                                     }
                                 }
                             }

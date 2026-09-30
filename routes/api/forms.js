@@ -10,6 +10,8 @@ const config = require("../../config");
 const formsService = require("../../services/forms-service");
 const { hasRole } = require("../../middleware/auth");
 const { validateForm, validateBulkData } = require("../../middleware/validation");
+const { aiTestLimiter } = require("../../middleware/rate-limiter");
+const logger = require("../../services/logger");
 
 const upload = multer({ dest: "uploads/" });
 
@@ -17,6 +19,33 @@ router.get("/", hasRole("admin"), async (req, res) => {
   try {
     res.json(await formsService.getAllForms());
   } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Scoring Simulator (Manage Forms → Test). Scores an unsaved form structure with the same
+// logic as a live submission, including AI evaluation of paragraph answers when enabled.
+// Read-only: nothing is stored, so no event log entry.
+router.post("/test-score", hasRole("admin"), aiTestLimiter, async (req, res) => {
+  try {
+    const { structure, answers } = req.body || {};
+    if (!Array.isArray(structure) || structure.length === 0 || structure.length > 200)
+      return res.status(400).json({ error: "structure must be an array of 1–200 questions." });
+    if (!answers || typeof answers !== "object" || Array.isArray(answers))
+      return res.status(400).json({ error: "answers must be an object keyed by question id." });
+
+    const aiEnabled = config.aiConfig.enabled;
+    const { achieved, maximum, feedback } = await formsService.calculateFormScore(structure, answers, !aiEnabled);
+
+    logger.info("[Forms] Scoring simulation run", {
+      questions: structure.length,
+      aiEvaluated: aiEnabled ? Object.keys(feedback).length : 0,
+      provider: aiEnabled ? config.aiConfig.provider : null,
+      user: (req.apiKeyUser || req.session?.user)?.name || "Unknown",
+    });
+    res.json({ achieved, maximum, feedback, aiEnabled });
+  } catch (e) {
+    logger.error("[Forms] Scoring simulation failed", { error: e.message });
     res.status(500).json({ error: e.message });
   }
 });

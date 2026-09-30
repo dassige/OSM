@@ -32,7 +32,7 @@ jest.mock('../services/logger', () => ({
 
 jest.mock('../config', () => ({
     appMode:        'production',
-    aiConfig:       { ollamaUrl: 'http://localhost:11434', geminiKey: null },
+    aiConfig:       { ollamaUrl: 'http://localhost:11434', geminiKey: null, jevKey: 'server-jev-key' },
     ui:             { loginTitle: 'TestApp' },
     enableWhatsApp: false,
 }));
@@ -123,6 +123,34 @@ describe('SSRF Prevention (F16 / F25)', () => {
             expect(res.status).toBe(400);
             expect(res.body.error).toMatch(/invalid ollama url/i);
             expect(aiService.evaluateTextAnswer).not.toHaveBeenCalled();
+        });
+
+        it('substitutes the server Jev key for USE_SERVER_DEFAULT', async () => {
+            const res = await request(app)
+                .post('/api/system/ai-test')
+                .send({
+                    ...validBody(),
+                    configOverride: { provider: 'jev', model: 'jev-latest', jevKey: 'USE_SERVER_DEFAULT' },
+                });
+
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(true);
+            const override = aiService.evaluateTextAnswer.mock.calls[0][4];
+            expect(override.jevKey).toBe('server-jev-key');
+        });
+
+        it('returns 500 without leaking details when the Jev call fails', async () => {
+            aiService.evaluateTextAnswer.mockRejectedValueOnce(new Error('Request failed with status code 401'));
+
+            const res = await request(app)
+                .post('/api/system/ai-test')
+                .send({
+                    ...validBody(),
+                    configOverride: { provider: 'jev', model: 'jev-latest', jevKey: 'USE_SERVER_DEFAULT' },
+                });
+
+            expect(res.status).toBe(500);
+            expect(res.body.error).toBe('AI evaluation failed.');
         });
     });
 });

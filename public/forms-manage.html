@@ -283,7 +283,7 @@ The output must be a single JSON object with these keys:
             <span class="close-btn" onclick="closeModal('testScoringModal')">&times;</span>
             <h2 style="margin-top:0; color:var(--info);">Scoring Simulator</h2>
             <p style="font-size:0.9em; color:var(--text-muted); margin-bottom:20px;">
-                Fill out the form below to test your point weighting and balanced checkbox penalties.
+                Fill out the form below to test your point weighting and balanced checkbox penalties. When AI evaluation is enabled, paragraph answers are graded by AI too.
             </p>
             
             <div id="testResultBanner" style="display:none; padding:15px; border-radius:6px; margin-bottom:20px; text-align:center;">
@@ -295,8 +295,8 @@ The output must be a single JSON object with these keys:
             </div>
 
             <div class="modal-actions-right">
-                <button onclick="closeModal('testScoringModal')" class="btn-secondary">Close</button>
-                <button onclick="runScoringSimulation()" class="btn-success">Calculate Score</button>
+                <button onclick="closeModal('testScoringModal')" class="btn-secondary" title="Close the scoring simulator">Close</button>
+                <button id="btnRunScoringSimulation" onclick="runScoringSimulation()" class="btn-success" title="Score the sample answers (paragraph answers are graded by AI when enabled)">Calculate Score</button>
             </div>
         </div>
     </div>

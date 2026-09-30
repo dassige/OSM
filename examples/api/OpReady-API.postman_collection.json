@@ -1649,6 +1649,34 @@
                                                   }
                                   },
                                   {
+                                      "name":  "Scoring Simulator (Test Score)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/forms/test-score",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "forms",
+                                                                               "test-score"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"structure\": [\n    { \"id\": \"q1\", \"type\": \"radio\", \"description\": \"Minimum approach distance to downed lines?\", \"points\": \"1\", \"options\": [\"2 m\", \"8 m\"], \"correctAnswer\": \"8 m\" },\n    { \"id\": \"q2\", \"type\": \"text_multi\", \"description\": \"Why must you stay back from downed lines?\", \"points\": \"3\", \"correctAnswer\": \"Ground gradient / step potential and the risk of re-energisation.\" }\n  ],\n  \"answers\": {\n    \"q1\": \"8 m\",\n    \"q2\": \"The ground around it can be live and the line can come back on.\"\n  }\n}"
+                                                               },
+                                                      "description":  "Admin — scores sample answers against a form structure (saved or not) using the same logic as a live submission. Paragraph answers are graded by the configured AI provider when ENABLE_AI_EVALUATION=true. Returns `{ achieved, maximum, feedback, aiEnabled }`. Nothing is stored. Shares the AI test rate limit (10/min)."
+                                                  }
+                                  },
+                                  {
                                       "name":  "Export All Forms",
                                       "request":  {
                                                       "method":  "GET",
@@ -3685,6 +3713,34 @@
                                                                            ]
                                                               },
                                                       "description":  "Superadmin only — deletes all scheduled backup history log entries."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Run AI Evaluation Test",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/system/ai-test",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "system",
+                                                                               "ai-test"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"question\": \"What is the minimum approach distance for firefighters near downed overhead power lines, and why?\",\n  \"reference\": \"Stay at least 8 metres away until the lines company confirms the lines are de-energised, because of ground gradient and the risk of re-energisation.\",\n  \"answer\": \"8m away till the lines company says its dead because the ground around it can be live\",\n  \"maxPoints\": 3,\n  \"configOverride\": {\n    \"enabled\": true,\n    \"provider\": \"jev\",\n    \"model\": \"jev-latest\",\n    \"jevKey\": \"USE_SERVER_DEFAULT\"\n  }\n}"
+                                                               },
+                                                      "description":  "Superadmin only — grades one answer with the given AI provider settings and returns `{ success, result: { score, justification }, raw, metadata }`. Providers: `gemini` (`geminiKey`), `ollama` (`ollamaUrl`, SSRF-checked), `jev` (`jevKey`; also returns `result.confidence` and `result.reviewSuggested`). Pass `USE_SERVER_DEFAULT` as the key to use the server's configured key. Rate-limited to 10 requests per minute. Does not modify any data."
                                                   }
                                   }
                               ]

@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.14.0] - 2026/09/30
+
+- feat: Implement AI evaluation for scoring simulator and enhance feedback
+
+- Added support for AI evaluation in the scoring simulator, allowing paragraph answers to be graded by AI when enabled.
+- Updated UI to reflect AI evaluation capabilities, including tooltips for buttons and additional information in help sections.
+- Enhanced feedback display for AI evaluations, indicating when manual review is suggested due to low confidence scores.
+- Introduced TypeSafe Jev as a new AI provider, including necessary configurations and validations.
+- Updated API documentation to include new endpoints and response structures for AI evaluations.
+- Implemented tests for the new AI evaluation features, ensuring proper functionality and error handling.
+- chore: add .vscode directory to .gitignore
+- chore: remove VSCode configuration files for action buttons and tasks
+- feat: add VSCode configuration files for action buttons and tasks
+
 ## [3.13.9] - 2026/09/18
 
 - Add Penetration Test Report (Pass 4) for OpReady application

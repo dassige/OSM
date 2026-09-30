@@ -975,8 +975,15 @@ function testScoring() {
       field.options.forEach((opt) => {
         html += `<label style="display:block; margin:5px 0; cursor:pointer;"><input type="checkbox" name="test_${field.id}" value="${opt}"> ${opt}</label>`;
       });
+    } else if (field.type === "text_multi" && uiConfig?.aiEnabled && field.correctAnswer) {
+      html += `<textarea name="test_${field.id}" rows="3" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main);"
+                  placeholder="Type a sample member answer..." title="Sample answer to be scored by the AI evaluator"></textarea>
+               <div style="font-size:0.85em; color:var(--text-muted); margin-top:4px;">Scored by AI against the reference answer.</div>
+               <div class="test-ai-feedback" id="test_ai_${field.id}"></div>`;
+    } else if (field.type === "text_multi" && uiConfig?.aiEnabled) {
+      html += `<div style="font-style:italic; color:#999;">No reference answer — this question needs manual review and is not auto-scored.</div>`;
     } else {
-      html += `<div style="font-style:italic; color:#999;">Text fields are excluded from auto-scoring.</div>`;
+      html += `<div style="font-style:italic; color:#999;">Text fields are excluded from auto-scoring (AI evaluation is disabled on this server).</div>`;
     }
 
     div.innerHTML = html;
@@ -988,9 +995,54 @@ function testScoring() {
 
 /**
  * Calculates the score of the simulated attempt and displays result.
+ * With AI evaluation enabled, the whole attempt is scored server-side (same logic as a
+ * live submission) so paragraph answers are graded too.
  */
-function runScoringSimulation() {
+async function runScoringSimulation() {
   const data = getFormData();
+
+  if (uiConfig?.aiEnabled) {
+    const answers = {};
+    data.structure.forEach((field) => {
+      const inputs = Array.from(document.getElementsByName(`test_${field.id}`));
+      if (field.type === "checkboxes") {
+        const selected = inputs.filter((i) => i.checked).map((i) => i.value);
+        if (selected.length) answers[field.id] = selected;
+      } else if (field.type === "text_multi") {
+        const value = inputs[0]?.value.trim();
+        if (value) answers[field.id] = value;
+      } else {
+        const selected = inputs.find((i) => i.checked);
+        if (selected) answers[field.id] = selected.value;
+      }
+    });
+
+    const btn = document.getElementById("btnRunScoringSimulation");
+    if (btn) btn.disabled = true;
+    if (window.showGlobalSpinner) showGlobalSpinner("AI is evaluating the answers...");
+    try {
+      const res = await fetch("/api/forms/test-score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ structure: data.structure, answers }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Scoring failed");
+
+      data.structure.forEach((field) => {
+        const box = document.getElementById(`test_ai_${field.id}`);
+        if (box) renderTestAiFeedback(box, result.feedback[field.id], field.points);
+      });
+      showSimulationResult(result.achieved, result.maximum, data);
+    } catch (e) {
+      showToast("Scoring simulation failed: " + e.message, "error");
+    } finally {
+      if (btn) btn.disabled = false;
+      if (window.hideGlobalSpinner) hideGlobalSpinner();
+    }
+    return;
+  }
+
   let achieved = 0;
   let maximum = 0;
 
@@ -1023,7 +1075,35 @@ function runScoringSimulation() {
     }
   });
 
-  // Display Result
+  showSimulationResult(achieved, maximum, data);
+}
+
+/**
+ * Shows the AI's points and reasoning under a simulated paragraph answer.
+ * Built with textContent — the reason text comes from the AI provider.
+ */
+function renderTestAiFeedback(box, fb, points) {
+  box.innerHTML = "";
+  if (!fb) return;
+  box.style.cssText = "margin-top:8px; padding:8px 10px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-card); font-size:0.9em;";
+
+  const head = document.createElement("strong");
+  head.textContent = `AI: ${fb.score} / ${points} pts`;
+  const reason = document.createElement("div");
+  reason.style.fontStyle = "italic";
+  reason.textContent = fb.reason || "";
+  box.append(head, reason);
+
+  if (fb.reviewSuggested) {
+    const tag = document.createElement("span");
+    tag.textContent = "Review suggested";
+    tag.title = "The AI was not confident in this score";
+    tag.style.cssText = "display:inline-block; margin-top:4px; background:var(--warning); color:#212529; padding:1px 6px; border-radius:4px; font-size:0.85em; font-weight:bold;";
+    box.appendChild(tag);
+  }
+}
+
+function showSimulationResult(achieved, maximum, data) {
   const banner = document.getElementById("testResultBanner");
   const scoreText = document.getElementById("testScoreText");
   const statusText = document.getElementById("testStatusText");
