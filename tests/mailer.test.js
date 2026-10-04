@@ -48,3 +48,38 @@ describe('mailer - sendNotification KB refresher link', () => {
         expect(result.html).toContain('https://app.example.com/knowledgebase/DEF456');
     });
 });
+
+describe('mailer - booking invitations', () => {
+    const { sendBookingInvitation, buildBookingWhatsAppMessage } = require('../services/mailer');
+    const member = { member_name: 'Alice', member_rank: 'FF', member_last_name: 'Smith', member_first_name: 'Alice' };
+    const details = { eventName: 'Nurse <Check>', link: 'https://host/booking/pub?code=c', dates: 'Tue, 10 Nov 2026', location: 'Station', accessType: 'personal' };
+
+    it('sends the personal body with escaped variables by default', async () => {
+        const transporter = { sendMail: jest.fn().mockResolvedValue() };
+        await sendBookingInvitation('a@example.test', member, details, transporter, 'OpReady', null);
+        const mail = transporter.sendMail.mock.calls[0][0];
+        expect(mail.to).toBe('a@example.test');
+        expect(mail.subject).toBe('Book your slot: Nurse <Check>');
+        expect(mail.html).toContain('FF Smith, Alice');
+        expect(mail.html).toContain('Nurse &lt;Check&gt;');
+        expect(mail.html).toContain('personal link');
+        expect(mail.from).toContain('OpReady');
+    });
+
+    it('uses the general body, a custom template and a reminder prefix', async () => {
+        const transporter = { sendMail: jest.fn().mockResolvedValue() };
+        const tpl = { email: { subject: 'Health check: {{eventName}}', bodyGeneral: '<p>Pick: {{link}}</p>' } };
+        await sendBookingInvitation('a@example.test', member, { ...details, accessType: 'general', isReminder: true }, transporter, 'OpReady', tpl);
+        const mail = transporter.sendMail.mock.calls[0][0];
+        expect(mail.subject).toBe('Reminder: Health check: Nurse <Check>');
+        expect(mail.html).toBe('<p>Pick: https://host/booking/pub?code=c</p>');
+    });
+
+    it('builds a plain-text WhatsApp message with fallback to defaults for empty template bodies', () => {
+        const text = buildBookingWhatsAppMessage(member, { ...details, isReminder: true }, 'OpReady', { whatsapp: { bodyPersonal: '' } });
+        expect(text.startsWith('*Reminder*')).toBe(true);
+        expect(text).toContain('FF Smith, Alice');
+        expect(text).toContain('https://host/booking/pub?code=c');
+        expect(text).not.toContain('&lt;');
+    });
+});

@@ -1547,6 +1547,479 @@
                               ]
                  },
                  {
+                     "name":  "Bookings",
+                     "description":  "Booking event templates and published booking events (e.g. the annual nurse health screening). Templates are configured and duplicated, then published as live events with a GUID link — general (one shared link, members pick their name) or personal (one link per member). Slot dates/times are local brigade time.",
+                     "item":  [
+                                  {
+                                      "name":  "List Booking Templates",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/templates",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "templates"
+                                                                           ]
+                                                              },
+                                                      "description":  "Returns all booking templates with a computed `slot_count`."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Get Booking Template",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/templates/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "templates",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "Returns one booking template including its schedule and fields."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Create Booking Template",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/templates",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "templates"
+                                                                           ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"name\": \"Nurse Health Screening\",\n  \"description\": \"\u003cp\u003eAnnual personal health check with the visiting nurse.\u003c/p\u003e\",\n  \"location\": \"Station meeting room\",\n  \"contact_info\": \"Chief Fire Officer — 021 000 0000\",\n  \"slot_minutes\": 15,\n  \"slot_capacity\": 1,\n  \"schedule\": [\n    {\n      \"date\": \"2026-11-10\",\n      \"windows\": [\n        {\n          \"start\": \"09:00\",\n          \"end\": \"12:00\"\n        },\n        {\n          \"start\": \"13:00\",\n          \"end\": \"16:00\"\n        }\n      ]\n    },\n    {\n      \"date\": \"2026-11-11\",\n      \"windows\": [\n        {\n          \"start\": \"18:00\",\n          \"end\": \"21:00\"\n        }\n      ]\n    }\n  ],\n  \"fields\": [\n    {\n      \"id\": \"phone\",\n      \"label\": \"Mobile phone\",\n      \"type\": \"tel\",\n      \"required\": true\n    },\n    {\n      \"id\": \"notes\",\n      \"label\": \"Anything the nurse should know?\",\n      \"type\": \"textarea\",\n      \"required\": false\n    }\n  ],\n  \"access_type\": \"personal\",\n  \"show_booked_names\": false,\n  \"allow_cancel\": true\n}"
+                                                               },
+                                                      "description":  "Creates a booking template. Returns 400 for invalid dates/times, overlapping windows, or values outside the limits."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Update Booking Template",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/templates/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "templates",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"name\": \"Nurse Health Screening\",\n  \"description\": \"\u003cp\u003eAnnual personal health check with the visiting nurse.\u003c/p\u003e\",\n  \"location\": \"Station meeting room\",\n  \"contact_info\": \"Chief Fire Officer — 021 000 0000\",\n  \"slot_minutes\": 15,\n  \"slot_capacity\": 1,\n  \"schedule\": [\n    {\n      \"date\": \"2026-11-10\",\n      \"windows\": [\n        {\n          \"start\": \"09:00\",\n          \"end\": \"12:00\"\n        },\n        {\n          \"start\": \"13:00\",\n          \"end\": \"16:00\"\n        }\n      ]\n    },\n    {\n      \"date\": \"2026-11-11\",\n      \"windows\": [\n        {\n          \"start\": \"18:00\",\n          \"end\": \"21:00\"\n        }\n      ]\n    }\n  ],\n  \"fields\": [\n    {\n      \"id\": \"phone\",\n      \"label\": \"Mobile phone\",\n      \"type\": \"tel\",\n      \"required\": true\n    },\n    {\n      \"id\": \"notes\",\n      \"label\": \"Anything the nurse should know?\",\n      \"type\": \"textarea\",\n      \"required\": false\n    }\n  ],\n  \"access_type\": \"personal\",\n  \"show_booked_names\": false,\n  \"allow_cancel\": true\n}"
+                                                               },
+                                                      "description":  "Replaces a booking template. Published events are not affected (they are snapshots)."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Delete Booking Template",
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/templates/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "templates",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "Deletes a booking template. Published events are kept. Disabled in demo mode."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Duplicate Booking Template",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/templates/:id/duplicate",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "templates",
+                                                                               ":id",
+                                                                               "duplicate"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "Copies a template (name + \" (Copy)\") with an empty schedule, ready for new dates."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Publish Booking Template",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/templates/:id/publish",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "templates",
+                                                                               ":id",
+                                                                               "publish"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"name\": \"Nurse Health Screening 2026\",\n  \"access_type\": \"personal\",\n  \"show_booked_names\": false,\n  \"allow_cancel\": true,\n  \"memberIds\": [\n    1,\n    2,\n    3\n  ],\n  \"notify\": {\n    \"email\": true,\n    \"whatsapp\": true\n  }\n}"
+                                                               },
+                                                      "description":  "Publishes the template as a live event, generates slots and the invite roster, and notifies members on the selected channels (filtered by each member preference; simulated in demo mode). Returns the event id, public GUID, shared link (general access only) and a notification summary."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "List Booking Events",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "events"
+                                                                           ]
+                                                              },
+                                                      "description":  "Returns all published booking events with invited/booked counts, capacity and date range."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Get Booking Event Dashboard",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "events",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "Returns event info, status, stats, slots, the invited roster (booked / not booked, personal links) and all bookings with collected answers."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Lock or Unlock Booking Event",
+                                      "request":  {
+                                                      "method":  "PATCH",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id/lock",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "events",
+                                                                               ":id",
+                                                                               "lock"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"locked\": true\n}"
+                                                               },
+                                                      "description":  "When locked, members can still view the event but cannot book, change or cancel."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Enable or Disable Booking Event",
+                                      "request":  {
+                                                      "method":  "PATCH",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id/enable",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "events",
+                                                                               ":id",
+                                                                               "enable"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"enabled\": false\n}"
+                                                               },
+                                                      "description":  "Disables (or re-enables) the public link. Not allowed on archived events."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Archive Booking Event",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id/archive",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "events",
+                                                                               ":id",
+                                                                               "archive"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "One-way: the public link stops working permanently. Disabled in demo mode."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Delete Booking Event",
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "events",
+                                                                               ":id"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "Deletes an archived event with all its slots and bookings. Returns 400 if the event is not archived. Disabled in demo mode."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Book Member (Admin)",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id/bookings/:memberId",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "events",
+                                                                               ":id",
+                                                                               "bookings",
+                                                                               ":memberId"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   },
+                                                                                   {
+                                                                                       "key":  "memberId",
+                                                                                       "value":  "2"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"slotId\": 12,\n  \"fieldValues\": {\n    \"phone\": \"021 123 4567\"\n  }\n}"
+                                                               },
+                                                      "description":  "Books or moves a booking on behalf of an invited member. Allowed while locked, not once archived. Required fields are not enforced; formats are. Returns 409 if the slot is full."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Cancel Member Booking (Admin)",
+                                      "request":  {
+                                                      "method":  "DELETE",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id/bookings/:memberId",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "events",
+                                                                               ":id",
+                                                                               "bookings",
+                                                                               ":memberId"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   },
+                                                                                   {
+                                                                                       "key":  "memberId",
+                                                                                       "value":  "2"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "Cancels a member\u0027s booking and frees the slot."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Send Booking Reminders",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id/remind",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "events",
+                                                                               ":id",
+                                                                               "remind"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"notify\": {\n    \"email\": true,\n    \"whatsapp\": true\n  }\n}"
+                                                               },
+                                                      "description":  "Reminds every invited member without a booking, or a single member when `memberId` is supplied. Only while the event is open."
+                                                  }
+                                  }
+                              ]
+                 },
+                 {
                      "name":  "Forms",
                      "description":  "Online verification form template management. Requires admin role.",
                      "item":  [

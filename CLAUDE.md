@@ -336,6 +336,7 @@ Use these consistently:
 | `Live Forms` | Form sent, submitted, accepted, rejected, archived, purged |
 | `Surveys` | Survey publish, template create/update/delete, instance archive/delete |
 | `Training` | Session created/deleted |
+| `Bookings` | Booking template create/update/delete/duplicate; event publish, lock/enable toggle, archive, delete; admin book/cancel; reminders; public member bookings |
 
 ### Example — delete with pre-fetch
 ```js

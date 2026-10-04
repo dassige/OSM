@@ -1,4 +1,4 @@
-// services/db.js — backwards-compatible facade
+// services/db.js â€” backwards-compatible facade
 const { initDB, closeDB, getDbPath } = require("./db/connection");
 const users = require("./db/users");
 const members = require("./db/members");
@@ -13,6 +13,7 @@ const knowledgebase = require("./db/knowledgebase");
 const scheduledBackup = require("./db/scheduled-backup");
 const remoteBackupServers = require("./db/remote-backup-servers");
 const quiz = require("./db/quiz");
+const bookings = require("./db/bookings");
 
 module.exports = {
   initDB,
@@ -31,4 +32,5 @@ module.exports = {
   ...scheduledBackup,
   ...remoteBackupServers,
   ...quiz,
+  ...bookings,
 };

@@ -442,7 +442,66 @@ async function sendQuizInvitation(
   });
 }
 
+// ── Booking Events ──────────────────────────────────────────────────────────
+// Template pref key: tpl_bookings = { email: { from, subject, bodyGeneral, bodyPersonal },
+//                                     whatsapp: { bodyGeneral, bodyPersonal } }
+// Variables: {{name}} {{appname}} {{eventName}} {{link}} {{dates}} {{location}}
+const BOOKING_TEMPLATE_DEFAULTS = {
+  email: {
+    from: `"{{appname}}" <noreply@opready.app>`,
+    subject: `Book your slot: {{eventName}}`,
+    bodyGeneral: `<p>Hi <strong>{{name}}</strong>,</p><p>Bookings are now open for <strong>{{eventName}}</strong>.</p><p>When: {{dates}}<br>Where: {{location}}</p><p>Choose your slot here: <a href="{{link}}">{{link}}</a></p><p>You will be asked to select your name when booking.</p>`,
+    bodyPersonal: `<p>Hi <strong>{{name}}</strong>,</p><p>Bookings are now open for <strong>{{eventName}}</strong>.</p><p>When: {{dates}}<br>Where: {{location}}</p><p>Choose your slot using your personal link: <a href="{{link}}">{{link}}</a></p><p>Please do not share this link — it identifies you.</p>`,
+  },
+  whatsapp: {
+    bodyGeneral: `Hi {{name}}, bookings are now open for *{{eventName}}*.\nWhen: {{dates}}\nWhere: {{location}}\nChoose your slot here: {{link}}`,
+    bodyPersonal: `Hi {{name}}, bookings are now open for *{{eventName}}*.\nWhen: {{dates}}\nWhere: {{location}}\nYour personal booking link (please don't share it): {{link}}`,
+  },
+};
+
+function bookingVariables(member, details, appName) {
+  const m = member || {};
+  const displayName = formatMemberName(m.member_rank, m.member_last_name, m.member_first_name, m.member_name);
+  return {
+    appname: appName || "OpReady",
+    name: displayName || m.member_name || "Member",
+    eventName: details.eventName || "",
+    link: details.link || "",
+    dates: details.dates || "",
+    location: details.location || "",
+  };
+}
+
+/**
+ * Email a booking invitation (or reminder) to one member.
+ * @param {object} details { eventName, link, dates, location, accessType: 'general'|'personal', isReminder }
+ */
+async function sendBookingInvitation(email, member, details, transporter, appName, templatePref) {
+  const variables = bookingVariables(member, details, appName);
+  const tpl = { ...BOOKING_TEMPLATE_DEFAULTS.email, ...((templatePref && templatePref.email) || {}) };
+  const bodyKey = details.accessType === "general" ? "bodyGeneral" : "bodyPersonal";
+
+  const from = sanitizeHeader(replaceVariables(tpl.from || BOOKING_TEMPLATE_DEFAULTS.email.from, variables));
+  let subject = sanitizeHeader(replaceVariables(tpl.subject || BOOKING_TEMPLATE_DEFAULTS.email.subject, variables));
+  if (details.isReminder) subject = `Reminder: ${subject}`;
+  const body = replaceVariables(tpl[bodyKey] || BOOKING_TEMPLATE_DEFAULTS.email[bodyKey], escapeHtmlVars(variables));
+
+  await transporter.sendMail({ from, to: email, subject, html: body, text: stripHtml(body) });
+}
+
+// Plain-text WhatsApp message for a booking invitation (or reminder).
+function buildBookingWhatsAppMessage(member, details, appName, templatePref) {
+  const variables = bookingVariables(member, details, appName);
+  const tpl = { ...BOOKING_TEMPLATE_DEFAULTS.whatsapp, ...((templatePref && templatePref.whatsapp) || {}) };
+  const bodyKey = details.accessType === "general" ? "bodyGeneral" : "bodyPersonal";
+  const text = replaceVariables(tpl[bodyKey] || BOOKING_TEMPLATE_DEFAULTS.whatsapp[bodyKey], variables);
+  return details.isReminder ? `*Reminder* — ${text}` : text;
+}
+
 module.exports = {
+  BOOKING_TEMPLATE_DEFAULTS,
+  sendBookingInvitation,
+  buildBookingWhatsAppMessage,
   sendNotification,
   sendPasswordReset,
   sendPasswordResetLink,
