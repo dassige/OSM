@@ -2020,6 +2020,155 @@
                               ]
                  },
                  {
+                     "name":  "Live Bookings (Public)",
+                     "description":  "Unauthenticated booking-page endpoints used by /booking/{publicId}. The event GUID is the access control; personal links also pass the member access code, general links pass the memberId picked from the roster. Rate-limited per IP (RATE_LIMIT_PUBLIC_BOOKING_*).",
+                     "item":  [
+                                  {
+                                      "name":  "Load Booking Page (Personal Link)",
+                                      "request":  {
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-bookings/:publicId?code=e581aac2-0cab-4de0-b2cc-df3a470117bc",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-bookings",
+                                                                               ":publicId"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "code",
+                                                                                    "value":  "e581aac2-0cab-4de0-b2cc-df3a470117bc"
+                                                                                }
+                                                                            ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "publicId",
+                                                                                       "value":  "3115fc90-5c05-4ba5-bdcf-6b5a341b87bc"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "Returns event info, slots (availability, is_past, is_mine, booked_names when enabled) and the member\u0027s own booking including their answers. Archived/unknown links return 404, disabled 403."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Load Booking Page (General Link)",
+                                      "request":  {
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "method":  "GET",
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-bookings/:publicId?memberId=2",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-bookings",
+                                                                               ":publicId"
+                                                                           ],
+                                                                  "query":  [
+                                                                                {
+                                                                                    "key":  "memberId",
+                                                                                    "value":  "2",
+                                                                                    "disabled":  true
+                                                                                }
+                                                                            ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "publicId",
+                                                                                       "value":  "3115fc90-5c05-4ba5-bdcf-6b5a341b87bc"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "description":  "Returns event info, slots and the invited roster (names + hasBooked). Enable `memberId` after the member picks their name to get their own booking (answers are never returned on general links)."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Book or Change Slot",
+                                      "request":  {
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-bookings/:publicId/book",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-bookings",
+                                                                               ":publicId",
+                                                                               "book"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "publicId",
+                                                                                       "value":  "3115fc90-5c05-4ba5-bdcf-6b5a341b87bc"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"code\": \"e581aac2-0cab-4de0-b2cc-df3a470117bc\",\n  \"slotId\": 12,\n  \"fieldValues\": {\n    \"phone\": \"021 123 4567\"\n  }\n}"
+                                                               },
+                                                      "description":  "Creates the booking, or moves/updates it when the event allows changes. Use `memberId` instead of `code` on general links. 409 if the slot is full or changes are not allowed; 400 if the slot has already started; 403 if locked."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Cancel Booking",
+                                      "request":  {
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-bookings/:publicId/cancel",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-bookings",
+                                                                               ":publicId",
+                                                                               "cancel"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "publicId",
+                                                                                       "value":  "3115fc90-5c05-4ba5-bdcf-6b5a341b87bc"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"code\": \"e581aac2-0cab-4de0-b2cc-df3a470117bc\"\n}"
+                                                               },
+                                                      "description":  "Cancels the member booking when the event allows cancelling, is not locked, and the appointment has not started. Use `memberId` instead of `code` on general links."
+                                                  }
+                                  }
+                              ]
+                 },
+                 {
                      "name":  "Forms",
                      "description":  "Online verification form template management. Requires admin role.",
                      "item":  [

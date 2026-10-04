@@ -456,6 +456,43 @@
               }
             }
           ]
+        },
+        {
+          "name": "Unknown Public Booking Link Returns 404",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/live-bookings/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "live-bookings",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            },
+            "description": "Public booking-page endpoint without credentials and with a GUID that matches no event. Must reach the public route (not 401) and answer 404 JSON without exposing data. Safe on any environment — no real event is needed."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Unknown Public Booking Link Returns 404 | Status 404 (public route reachable, unknown link)', () => pm.response.to.have.status(404));",
+                  "pm.test('Unknown Public Booking Link Returns 404 | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('Unknown Public Booking Link Returns 404 | Valid JSON error', () => {",
+                  "  pm.response.to.be.json;",
+                  "  pm.expect(pm.response.json()).to.have.property('error');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

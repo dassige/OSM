@@ -44,6 +44,7 @@ jest.mock('../config', () => ({
         api:           { windowMin: 1,  max: 300 },
         publicSubmit:  { windowMin: 5,  max: 30  },
         liveQuiz:      { windowMin: 1,  max: 300 },
+        publicBooking: { windowMin: 5,  max: 150 },
     },
     kbStorage: { type: 'local', localPath: '/tmp/kb-test' },
     timezone: 'Pacific/Auckland',
@@ -542,7 +543,7 @@ describe('POST /api/knowledgebase/rotate-slugs', () => {
         jest.resetModules();
         jest.doMock('../config', () => ({
             appMode: 'demo',
-            rateLimits: { login:{windowMin:15,max:10}, mfa:{windowMin:5,max:5}, forgotPassword:{windowMin:30,max:3}, api:{windowMin:1,max:300}, publicSubmit:{windowMin:5,max:30}, liveQuiz:{windowMin:1,max:300} },
+            rateLimits: { login:{windowMin:15,max:10}, mfa:{windowMin:5,max:5}, forgotPassword:{windowMin:30,max:3}, api:{windowMin:1,max:300}, publicSubmit:{windowMin:5,max:30}, liveQuiz:{windowMin:1,max:300}, publicBooking:{windowMin:5,max:150} },
             kbStorage: { type: 'local', localPath: '/tmp/kb-test' },
         }));
         const demoRoutes = require('../routes/api/knowledgebase');

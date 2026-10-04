@@ -32,6 +32,7 @@ jest.mock('../config', () => ({
         api:           { windowMin: 1,  max: 300 },
         publicSubmit:  { windowMin: 5,  max: 30  },
         liveQuiz:      { windowMin: 1,  max: 300 },
+        publicBooking: { windowMin: 5,  max: 150 },
     },
 }));
 jest.mock('../services/whatsapp-service', () => ({ logout: jest.fn() }));

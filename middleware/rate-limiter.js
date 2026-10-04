@@ -35,7 +35,8 @@ const apiLimiter = rateLimit({
     skip: (req) =>
         req.path.startsWith('/api/live-forms/access/') ||
         req.path.startsWith('/api/live-forms/submit/') ||
-        req.path.startsWith('/api/live-surveys/'),
+        req.path.startsWith('/api/live-surveys/') ||
+        req.path.startsWith('/api/live-bookings/'),
     message: { error: 'Too many requests. Please slow down.' },
 });
 
@@ -58,6 +59,18 @@ const liveQuizLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Too many requests. Please slow down.' },
+});
+
+// Public booking-page endpoints (view, book, change, cancel). A booking campaign
+// often sees a whole crew book from the same station Wi-Fi on drill night, each
+// member making several requests (load, pick name, book, refresh), so the tight
+// publicSubmit ceiling would lock members out.
+const publicBookingLimiter = rateLimit({
+    windowMs: rateLimits.publicBooking.windowMin * 60 * 1000,
+    max: rateLimits.publicBooking.max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many booking requests. Please try again in a few minutes.' },
 });
 
 // Tighter limit for user-creation to prevent account flooding by a rogue admin
@@ -107,4 +120,4 @@ const aiTestLimiter = rateLimit({
     message: { error: 'Too many AI test requests. Please slow down.' },
 });
 
-module.exports = { loginLimiter, mfaLimiter, forgotPasswordLimiter, apiLimiter, publicSubmitLimiter, liveQuizLimiter, createUserLimiter, backupLimiter, restoreLimiter, restoreChunkLimiter, aiTestLimiter };
+module.exports = { loginLimiter, mfaLimiter, forgotPasswordLimiter, apiLimiter, publicSubmitLimiter, liveQuizLimiter, publicBookingLimiter, createUserLimiter, backupLimiter, restoreLimiter, restoreChunkLimiter, aiTestLimiter };

@@ -33,7 +33,8 @@ const spec = {
         { name: 'Knowledge Base', description: 'PDF document library — categories and documents with GUID-secured public viewer links' },
         { name: 'Quiz', description: 'Quiz game and question bank management for social learning sessions' },
         { name: 'Live Quiz', description: 'Self-paced quiz sessions, player access codes, and results' },
-        { name: 'Bookings', description: 'Booking event templates and published booking events (slot scheduling, e.g. health screenings)' }
+        { name: 'Bookings', description: 'Booking event templates and published booking events (slot scheduling, e.g. health screenings)' },
+        { name: 'Live Bookings (Public)', description: 'Unauthenticated booking-page endpoints — the event GUID (plus a per-member code for personal links) is the access control' }
     ],
     components: {
         securitySchemes: {
@@ -1028,6 +1029,126 @@ const spec = {
                     200: { description: 'Processed', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, notifications: { $ref: '#/components/schemas/BookingNotificationSummary' } } } } } },
                     400: { description: 'Event not open, member already booked, or everyone has booked', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     404: { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+
+        // -------------------------------------------------------------------------
+        // LIVE BOOKINGS (public booking page — no auth)
+        // -------------------------------------------------------------------------
+        '/api/live-bookings/{publicId}': {
+            get: {
+                tags: ['Live Bookings (Public)'],
+                summary: 'Load a booking page (public)',
+                description: 'Personal links must pass `code`. General links return the invited roster (names only); pass `memberId` once the member has picked their name to get their own booking. Archived and unknown links return 404, disabled links 403. Answers are only echoed back on personal links. Slot times are local to `event.timezone`; `is_past` is true once a slot has started.',
+                security: [],
+                parameters: [
+                    { name: 'publicId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+                    { name: 'code', in: 'query', required: false, schema: { type: 'string', format: 'uuid' }, description: 'Personal access code (personal links only)' },
+                    { name: 'memberId', in: 'query', required: false, schema: { type: 'integer' }, description: 'Selected member (general links only)' }
+                ],
+                responses: {
+                    200: {
+                        description: 'Booking page data',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        event: {
+                                            type: 'object',
+                                            properties: {
+                                                name: { type: 'string' }, description: { type: 'string' }, location: { type: 'string' }, contact_info: { type: 'string' },
+                                                slot_minutes: { type: 'integer' }, access_type: { type: 'string', enum: ['general', 'personal'] },
+                                                show_booked_names: { type: 'boolean' }, allow_cancel: { type: 'boolean' }, is_locked: { type: 'boolean' },
+                                                fields: { type: 'array', items: { $ref: '#/components/schemas/BookingField' } },
+                                                timezone: { type: 'string', example: 'Pacific/Auckland' }
+                                            }
+                                        },
+                                        slots: {
+                                            type: 'array',
+                                            items: {
+                                                type: 'object',
+                                                properties: {
+                                                    id: { type: 'integer' }, slot_date: { type: 'string', format: 'date' }, start_time: { type: 'string' }, end_time: { type: 'string' },
+                                                    capacity: { type: 'integer' }, available: { type: 'integer' }, is_blocked: { type: 'boolean' }, is_past: { type: 'boolean' },
+                                                    is_mine: { type: 'boolean' },
+                                                    booked_names: { type: 'array', items: { type: 'string' }, description: 'Only when show_booked_names is on' }
+                                                }
+                                            }
+                                        },
+                                        me: {
+                                            type: 'object', nullable: true,
+                                            properties: {
+                                                memberId: { type: 'integer' }, displayName: { type: 'string' },
+                                                booking: { type: 'object', nullable: true, properties: { slotId: { type: 'integer' }, slot_date: { type: 'string' }, start_time: { type: 'string' }, end_time: { type: 'string' }, field_values: { type: 'object', description: 'Personal links only' } } }
+                                            }
+                                        },
+                                        roster: {
+                                            type: 'array', description: 'General links only',
+                                            items: { type: 'object', properties: { memberId: { type: 'integer' }, displayName: { type: 'string' }, hasBooked: { type: 'boolean' } } }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    400: { description: 'Selected member is not invited (general links)', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    403: { description: 'Booking page disabled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Unknown/archived link, or missing/invalid personal code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    429: { description: 'Rate limited', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-bookings/{publicId}/book': {
+            post: {
+                tags: ['Live Bookings (Public)'],
+                summary: 'Book, change or update a booking (public)',
+                description: 'Creates the member booking, or moves/updates it when the event allows changes (`allow_cancel`). Required fields are enforced. Refused while locked or for slots that have already started.',
+                security: [],
+                parameters: [{ name: 'publicId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object', required: ['slotId'],
+                                properties: {
+                                    code: { type: 'string', description: 'Personal links' },
+                                    memberId: { type: 'integer', description: 'General links' },
+                                    slotId: { type: 'integer' },
+                                    fieldValues: { type: 'object', additionalProperties: { type: 'string' } }
+                                }
+                            },
+                            example: { code: 'e581aac2-0cab-4de0-b2cc-df3a470117bc', slotId: 12, fieldValues: { phone: '021 123 4567' } }
+                        }
+                    }
+                },
+                responses: {
+                    200: { description: 'Saved', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, booking: { type: 'object', properties: { slotId: { type: 'integer' }, slot_date: { type: 'string' }, start_time: { type: 'string' }, end_time: { type: 'string' } } } } } } } },
+                    400: { description: 'Invalid slot, slot already started, missing name, or invalid answer', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    403: { description: 'Event locked or disabled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Unknown/archived link or invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    409: { description: 'Slot full, or already booked and changes not allowed', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/live-bookings/{publicId}/cancel': {
+            post: {
+                tags: ['Live Bookings (Public)'],
+                summary: 'Cancel my booking (public)',
+                description: 'Only when the event allows cancelling, is not locked, and the appointment has not started.',
+                security: [],
+                parameters: [{ name: 'publicId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: { type: 'object', properties: { code: { type: 'string' }, memberId: { type: 'integer' } } }, example: { code: 'e581aac2-0cab-4de0-b2cc-df3a470117bc' } } }
+                },
+                responses: {
+                    200: { description: 'Cancelled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'Appointment already started or missing name', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    403: { description: 'Cancelling not allowed, or event locked/disabled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'No booking, unknown/archived link, or invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }
         },

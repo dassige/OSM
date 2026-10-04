@@ -73,6 +73,7 @@ const globalAuthGuard = async (req, res, next) => {
       req.path.startsWith('/api/live-forms/access/') ||
       req.path.startsWith('/api/live-forms/submit/') ||
       req.path.startsWith('/api/live-surveys/') ||
+      req.path.startsWith('/api/live-bookings/') ||
       req.path.startsWith('/api/live-quiz/play/') ||
       req.path.startsWith('/api/live-quiz/team-play/') ||
       req.path.startsWith('/api/knowledgebase/file/') ||

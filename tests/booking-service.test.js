@@ -207,3 +207,27 @@ describe('booking-service — notification helpers', () => {
         expect(() => validateFieldValues(fields, { phone: 'x' }, { enforceRequired: false })).toThrow(/valid phone/);
     });
 });
+
+describe('booking-service — local time helpers', () => {
+    const { localNow, isSlotPast } = require('../services/booking-service');
+
+    it('renders the wall-clock time in the brigade timezone, including DST', () => {
+        // 2026-01-15T00:30Z = 13:30 NZDT (UTC+13)
+        expect(localNow('Pacific/Auckland', new Date('2026-01-15T00:30:00Z'))).toBe('2026-01-15 13:30');
+        // 2026-07-15T00:30Z = 12:30 NZST (UTC+12)
+        expect(localNow('Pacific/Auckland', new Date('2026-07-15T00:30:00Z'))).toBe('2026-07-15 12:30');
+        // Crosses the date line relative to UTC
+        expect(localNow('Pacific/Auckland', new Date('2026-07-14T23:00:00Z'))).toBe('2026-07-15 11:00');
+    });
+
+    it('uses 00 rather than 24 for midnight', () => {
+        expect(localNow('UTC', new Date('2026-07-15T00:05:00Z'))).toBe('2026-07-15 00:05');
+    });
+
+    it('treats a slot as past once its start time is reached', () => {
+        const slot = { slot_date: '2026-11-10', start_time: '09:00' };
+        expect(isSlotPast(slot, '2026-11-10 08:59')).toBe(false);
+        expect(isSlotPast(slot, '2026-11-10 09:00')).toBe(true);
+        expect(isSlotPast(slot, '2026-11-11 00:00')).toBe(true);
+    });
+});

@@ -233,6 +233,25 @@ function formatBookingDates(dates, locale = "en-NZ") {
     .join(", ");
 }
 
+/**
+ * Current local wall-clock time in the given IANA timezone as 'YYYY-MM-DD HH:MM',
+ * directly comparable with a slot's `${slot_date} ${start_time}`.
+ */
+function localNow(timeZone = "Pacific/Auckland", now = new Date()) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone, year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    }).formatToParts(now).map((p) => [p.type, p.value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+}
+
+// A slot is "past" once its start time has been reached in brigade local time.
+function isSlotPast(slot, nowLocal) {
+  return `${slot.slot_date} ${slot.start_time}` <= nowLocal;
+}
+
 // Member notificationPreference values: 'email' | 'whatsapp' | 'email,whatsapp' | 'both' | 'none'
 function memberChannels(preference) {
   const p = String(preference || "email").toLowerCase();
@@ -259,6 +278,8 @@ module.exports = {
   generateSlots,
   validateFieldValues,
   formatBookingDates,
+  localNow,
+  isSlotPast,
   memberChannels,
   bookingLink,
 };

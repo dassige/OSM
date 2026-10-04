@@ -130,6 +130,7 @@ const rateLimits = {
   api:           { windowMin: parseInt(process.env.RATE_LIMIT_API_WINDOW_MIN)            || 1,   max: parseInt(process.env.RATE_LIMIT_API_MAX)            || 300 },
   publicSubmit:  { windowMin: parseInt(process.env.RATE_LIMIT_PUBLIC_SUBMIT_WINDOW_MIN)  || 5,   max: parseInt(process.env.RATE_LIMIT_PUBLIC_SUBMIT_MAX)  || 30  },
   liveQuiz:      { windowMin: parseInt(process.env.RATE_LIMIT_LIVE_QUIZ_WINDOW_MIN)      || 1,   max: parseInt(process.env.RATE_LIMIT_LIVE_QUIZ_MAX)      || 300 },
+  publicBooking: { windowMin: parseInt(process.env.RATE_LIMIT_PUBLIC_BOOKING_WINDOW_MIN) || 5,   max: parseInt(process.env.RATE_LIMIT_PUBLIC_BOOKING_MAX) || 150 },
 };
 
 // Default true so production (always behind HTTPS proxy) works out of the box.
