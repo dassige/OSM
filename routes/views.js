@@ -50,6 +50,8 @@ router.get("/live-forms.html", requirePageAccess(adminAndSuper));
 router.get("/live-surveys.html", requirePageAccess(adminAndSuper));
 router.get("/live-quiz.html", requirePageAccess(adminAndSuper));
 router.get("/bookings-manage.html", requirePageAccess(adminAndSuper));
+router.get("/live-bookings.html", requirePageAccess(adminAndSuper));
+router.get("/bookings-dashboard.html", requirePageAccess(adminAndSuper));
 router.get("/statistics.html", requirePageAccess(allAuthenticated));
 router.get("/knowledgebase.html", requirePageAccess(adminAndSuper));
 

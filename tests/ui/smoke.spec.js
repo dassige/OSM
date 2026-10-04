@@ -31,6 +31,8 @@ const AUTH_PAGES = [
   { url: '/quiz-host.html',         name: 'Quiz Host (no session)' },
   { url: '/quiz-leaderboard.html',  name: 'Quiz Leaderboard (no session)' },
   { url: '/bookings-manage.html',   name: 'Bookings Manage' },
+  { url: '/live-bookings.html',     name: 'Live Bookings' },
+  { url: '/bookings-dashboard.html', name: 'Bookings Dashboard (no ID)' },
 ];
 
 function attachErrorListeners(page) {

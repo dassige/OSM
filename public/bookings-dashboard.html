@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="resources/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#17A2B8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OpReady">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <title id="pageTitle">Booking Event - OpReady</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/sidebar.css">
+    <style>
+        .bk-status { display:inline-block; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; color:#fff; white-space:nowrap; }
+        .bk-status.open { background: var(--success); }
+        .bk-status.locked { background: var(--warning); color: #212529; }
+        .bk-status.disabled { background: var(--danger); }
+        .bk-status.archived { background: var(--text-muted); }
+        .access-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:0.75em; font-weight:600; color:#fff; }
+        .access-badge.general { background: var(--info); }
+        .access-badge.personal { background: var(--primary); }
+        .source-badge { display:inline-block; padding:2px 7px; border-radius:10px; font-size:0.75em; border:1px solid var(--border-color); color: var(--text-muted); }
+
+        .bk-top { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom: 15px; }
+        .bk-top-badges { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .bk-panel {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px;
+            box-shadow: 0 2px 5px var(--shadow); padding: 18px 20px; margin-bottom: 20px;
+        }
+        .bk-panel h2 { margin: 0 0 12px; font-size: 1.15em; color: var(--text-main); }
+        .bk-grid { display:grid; grid-template-columns: 1.3fr 1fr; gap: 20px; }
+        .bk-info-row { display:flex; gap:10px; padding: 6px 0; border-bottom: 1px solid var(--border-color); font-size: 0.92em; }
+        .bk-info-row:last-child { border-bottom: none; }
+        .bk-info-label { width: 140px; flex-shrink:0; color: var(--text-muted); font-weight: 600; }
+        .bk-info-value { flex:1; min-width:0; word-break: break-word; }
+        .bk-description { font-size: 0.92em; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); }
+
+        .bk-stats { display:grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+        .bk-stat { text-align:center; padding: 10px 6px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-body); }
+        .bk-stat-num { font-size: 1.7em; font-weight: 700; color: var(--text-main); line-height: 1.1; }
+        .bk-stat-label { font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+        .progress-bar { height: 10px; background: var(--border-color); border-radius: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--success); }
+
+        .bk-toggle-row { display:flex; align-items:center; justify-content:space-between; gap: 15px; padding: 8px 0; }
+        .bk-toggle-row small { display:block; color: var(--text-muted); }
+        .bk-toggle-row .switch { flex-shrink: 0; }
+        .bk-buttons { display:flex; gap:8px; flex-wrap:wrap; margin-top: 12px; }
+        .bk-archived-note { background: var(--bg-hover); border: 1px solid var(--border-color); border-left: 4px solid var(--text-muted); padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; }
+        .bk-link-box { display:flex; gap:8px; align-items:center; }
+        .bk-link-box input { flex:1; min-width:0; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-main); font-family: monospace; font-size: 0.82em; }
+        .bk-actions { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+        .bk-muted { color: var(--text-muted); font-size: 0.85em; }
+
+        /* On-screen preview of the printable sheet (forced light, like Reports) */
+        .bk-sheet-paper { background: #fff; color: #000; padding: 20px; border-radius: 6px; border: 1px solid var(--border-color); overflow-x: auto; }
+        .bk-sheet-paper h1 { font-size: 1.4em; margin: 0 0 6px; color: #000; }
+        .bk-sheet-paper p { margin: 2px 0; color: #333; font-size: 12px; }
+        .bk-free { color: #888; font-style: italic; }
+        /* Keep the preview legible on phones: scroll sideways inside the paper box */
+        .bk-sheet-paper .rpt-table { min-width: 560px; }
+
+        /* Modal form */
+        .bk-modal-field { margin-bottom: 12px; }
+        .bk-modal-field label { display:block; font-weight: 600; margin-bottom: 4px; }
+        .bk-modal-field input, .bk-modal-field select, .bk-modal-field textarea {
+            width: 100%; padding: 7px 9px; border: 1px solid var(--border-color); border-radius: 4px;
+            background: var(--input-bg); color: var(--text-main); box-sizing: border-box;
+        }
+
+        #printArea { display: none; }
+        @media print {
+            body > *:not(#printArea) { display: none !important; }
+            #printArea { display: block !important; }
+            /* The sidebar pads <body>; the printed sheet must start at the page edge */
+            body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+            #printArea .bk-sheet-paper { padding: 0; }
+        }
+        .bk-sheet-paper .bk-time { white-space: nowrap; }
+
+        @media (max-width: 768px) {
+            .bk-grid { grid-template-columns: 1fr; }
+            .bk-stats { grid-template-columns: repeat(2, 1fr); }
+            .bk-info-label { width: 105px; }
+            .bk-buttons button { flex: 1 1 auto; }
+            .bk-panel { padding: 14px; }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="demoBanner" class="demo-banner" style="display:none;">DEMO VERSION</div>
+
+    <a href="/" class="back-btn back-dashboard-btn" title="Back to Dashboard">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+    </a>
+
+    <div class="container">
+        <h1 id="pageHeader" class="text-center" style="margin-top:0;">Booking Event</h1>
+
+        <div class="bk-top">
+            <button onclick="window.location.href='live-bookings.html'" class="btn-sm btn-secondary" title="Back to the list of booking events">&larr; All booking events</button>
+            <div class="bk-top-badges" id="topBadges"></div>
+            <button onclick="loadEvent()" class="btn-sm btn-primary" title="Reload this event's bookings">Refresh</button>
+        </div>
+
+        <div id="archivedNote" class="bk-archived-note" style="display:none;">
+            This event is <strong>archived</strong> — the booking link no longer works and bookings can't be changed. You can still view, print or export the bookings, or delete the event.
+        </div>
+
+        <div class="bk-grid">
+            <div class="bk-panel">
+                <h2 id="eventName">Loading…</h2>
+                <div id="eventInfo"></div>
+            </div>
+
+            <div>
+                <div class="bk-panel">
+                    <h2>Progress</h2>
+                    <div class="bk-stats">
+                        <div class="bk-stat" title="Members invited to this event"><div class="bk-stat-num" id="statInvited">0</div><div class="bk-stat-label">Invited</div></div>
+                        <div class="bk-stat" title="Invited members with a booking"><div class="bk-stat-num" id="statBooked" style="color:var(--success);">0</div><div class="bk-stat-label">Booked</div></div>
+                        <div class="bk-stat" title="Invited members without a booking"><div class="bk-stat-num" id="statNotBooked" style="color:var(--danger);">0</div><div class="bk-stat-label">Not booked</div></div>
+                        <div class="bk-stat" title="Places still free across all slots"><div class="bk-stat-num" id="statFree">0</div><div class="bk-stat-label">Free places</div></div>
+                    </div>
+                    <div class="progress-bar" title="Share of invited members who have booked"><div class="progress-fill" id="progressFill" style="width:0%;"></div></div>
+                </div>
+
+                <div class="bk-panel">
+                    <h2>Controls</h2>
+                    <div class="bk-toggle-row">
+                        <span><strong>Locked</strong><small>Members can view the event but can't book, change or cancel.</small></span>
+                        <label class="switch" title="Lock or unlock bookings for members">
+                            <input type="checkbox" id="toggleLocked" onchange="setLocked(this)"><span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="bk-toggle-row">
+                        <span><strong>Booking link enabled</strong><small>When off, the link shows "currently unavailable".</small></span>
+                        <label class="switch" title="Switch the booking link on or off">
+                            <input type="checkbox" id="toggleEnabled" onchange="setEnabled(this)"><span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="bk-buttons">
+                        <button id="btnRemindAll" onclick="openRemindModal()" class="btn-sm btn-primary" title="Send a reminder to everyone who hasn't booked">Send reminders</button>
+                        <button onclick="printSheet()" class="btn-sm btn-primary" title="Print the booking sheet">Print</button>
+                        <button id="btnExportPdf" onclick="exportPdf()" class="btn-sm btn-primary" title="Download the booking sheet as a PDF file">Export PDF</button>
+                        <button id="btnArchive" onclick="archiveEvent()" class="btn-sm btn-danger" title="Archive this event — the booking link stops working permanently">Archive</button>
+                        <button id="btnDelete" onclick="deleteEvent()" class="btn-sm btn-danger" style="display:none;" title="Permanently delete this archived event and its bookings">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bk-panel">
+            <h2 id="bookedTitle">Booked</h2>
+            <div id="bookedTable"></div>
+        </div>
+
+        <div class="bk-panel">
+            <h2 id="pendingTitle">Not booked yet</h2>
+            <div id="pendingTable"></div>
+        </div>
+
+        <div class="bk-panel">
+            <h2>Booking sheet</h2>
+            <p class="bk-muted" style="margin-top:-6px;">The printable schedule for the day — every slot with who booked it and the collected answers. Use <strong>Print</strong> or <strong>Export PDF</strong> to hand it over.</p>
+            <div class="bk-sheet-paper" id="sheetPreview"></div>
+        </div>
+    </div>
+
+    <!-- Admin book / move modal -->
+    <div id="bookModal" class="modal">
+        <div class="modal-content" style="max-width: 480px; max-height: 90vh; overflow-y: auto;">
+            <span class="close-btn" onclick="closeModal('bookModal')" title="Close">&times;</span>
+            <h2 style="margin-top:0;" id="bookModalTitle">Book a slot</h2>
+            <p class="bk-muted" id="bookModalIntro"></p>
+            <div class="bk-modal-field">
+                <label for="bookSlot">Slot</label>
+                <select id="bookSlot" title="Choose the appointment slot"></select>
+            </div>
+            <div id="bookFields"></div>
+            <p class="bk-muted">Required answers are optional when booking on a member's behalf.</p>
+            <div class="modal-actions-right">
+                <button onclick="closeModal('bookModal')" class="btn-secondary" title="Close without saving">Cancel</button>
+                <button onclick="saveAdminBooking()" class="btn-success" id="btnSaveBooking" title="Save this booking">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reminder modal -->
+    <div id="remindModal" class="modal">
+        <div class="modal-content" style="max-width: 440px;">
+            <span class="close-btn" onclick="closeModal('remindModal')" title="Close">&times;</span>
+            <h2 style="margin-top:0;">Send reminder</h2>
+            <p id="remindIntro"></p>
+            <label class="bk-modal-field" style="display:flex; align-items:center; gap:8px; cursor:pointer;" title="Send the reminder by email">
+                <input type="checkbox" id="remindEmail" checked style="width:auto;"> Email
+            </label>
+            <label class="bk-modal-field" style="display:flex; align-items:center; gap:8px; cursor:pointer;" title="Send the reminder by WhatsApp">
+                <input type="checkbox" id="remindWhatsapp" checked style="width:auto;"> WhatsApp
+            </label>
+            <p class="bk-muted">Each member is only contacted on the channels ticked here that their own notification preference allows.</p>
+            <p id="remindDemoNote" class="bk-muted" style="display:none; color:var(--warning);">Demo mode: notifications are simulated — nothing is sent.</p>
+            <div class="modal-actions-right">
+                <button onclick="closeModal('remindModal')" class="btn-secondary" title="Close without sending">Cancel</button>
+                <button onclick="sendReminders()" class="btn-primary" id="btnSendRemind" title="Send the reminder now">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printArea"></div>
+
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Go to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
+
+    <script src="utils.js"></script>
+    <script src="toast.js"></script>
+    <script src="theme.js"></script>
+    <script src="help.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script src="js/booking-table.js"></script>
+    <script src="js/bookings-dashboard.js"></script>
+    <script>
+        const scrollTopBtn = document.getElementById("scrollTopBtn");
+        window.onscroll = function () { if (scrollTopBtn) scrollTopBtn.style.display = (window.scrollY > 200) ? "flex" : "none"; };
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    </script>
+    <script src="/js/pwa.js"></script>
+</body>
+
+</html>

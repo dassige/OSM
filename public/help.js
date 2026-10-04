@@ -733,6 +733,48 @@ const helpContent = {
             </ul>
         `
     },
+    "live-bookings": {
+        title: "Booking Events",
+        body: `
+            <p>All published booking events. Create and publish new events from <strong>Manage Bookings</strong> (booking templates).</p>
+            <h3>Status</h3>
+            <ul>
+                <li><strong>Open</strong> — members can book, change and cancel (if allowed).</li>
+                <li><strong>Locked</strong> — members can view the event but not change anything.</li>
+                <li><strong>Disabled</strong> — the booking link shows "currently unavailable".</li>
+                <li><strong>Archived</strong> — the link no longer works, permanently.</li>
+            </ul>
+            <h3>Actions</h3>
+            <ul>
+                <li><strong>Open</strong> shows the event dashboard; <strong>Copy link</strong> copies a general event's shared link.</li>
+                <li><strong>Delete</strong> is only available once an event is archived.</li>
+                <li>Filter by name, status, link type or event dates. Sorting and rows per page are remembered.</li>
+            </ul>
+        `
+    },
+    "bookings-dashboard": {
+        title: "Booking Event Dashboard",
+        body: `
+            <p>Everything about one booking event: who has booked, who hasn't, and the controls to manage it.</p>
+            <h3>Controls</h3>
+            <ul>
+                <li><strong>Locked</strong> — stop members booking, changing or cancelling. You can still edit bookings here.</li>
+                <li><strong>Booking link enabled</strong> — switch the link off temporarily.</li>
+                <li><strong>Send reminders</strong> — email/WhatsApp everyone who hasn't booked (only while open).</li>
+                <li><strong>Archive</strong> — closes the event for good; the link never works again. <strong>Delete</strong> is then available.</li>
+            </ul>
+            <h3>Bookings</h3>
+            <ul>
+                <li><strong>Book</strong> / <strong>Change</strong> — book or move a member's slot on their behalf (e.g. after a phone call). Required answers are optional here.</li>
+                <li><strong>Cancel booking</strong> frees the slot. <strong>Copy link</strong> copies a member's personal link (personal events).</li>
+            </ul>
+            <h3>Booking sheet</h3>
+            <ul>
+                <li>The schedule for the day, with every slot, who booked it and their answers — ready to hand to the organiser or nurse.</li>
+                <li>Use <strong>Print</strong> or <strong>Export PDF</strong>. Times are local to the brigade's timezone.</li>
+            </ul>
+        `
+    },
     "quiz-preview": {
         title: "Quiz Preview Mode",
         body: `
@@ -870,6 +912,8 @@ const helpContent = {
     else if (path.includes("live-quiz")) key = "live-quiz";
     else if (path.includes("quiz-games")) key = "quiz-games";
     else if (path.includes("bookings-manage")) key = "bookings-manage";
+    else if (path.includes("live-bookings")) key = "live-bookings";
+    else if (path.includes("bookings-dashboard")) key = "bookings-dashboard";
 
     // DYNAMIC FORMS-VIEW LOGIC
     if (path.includes("forms-view")) {
@@ -971,7 +1015,7 @@ const helpContent = {
         'live-surveys', 'surveys-tracking', 'surveys-results',
         'forms-view-review', 'forms-view-preview', 'surveys-view-preview',
         'knowledgebase', 'quiz-games', 'quiz-preview', 'live-quiz', 'quiz-play-review',
-        'bookings-manage'
+        'bookings-manage', 'live-bookings', 'bookings-dashboard'
     ];
 
     // Short display titles for the banner (no app-name suffix)
@@ -1004,7 +1048,9 @@ const helpContent = {
         'quiz-preview': 'Quiz Preview',
         'live-quiz': 'Live Quiz',
         'quiz-play-review': 'Quiz Review',
-        'bookings-manage': 'Booking Templates'
+        'bookings-manage': 'Booking Templates',
+        'live-bookings': 'Booking Events',
+        'bookings-dashboard': 'Booking Event'
     };
 
     if (bannerKeys.indexOf(key) !== -1) {
@@ -1016,10 +1062,14 @@ const helpContent = {
         const backUrls = {
             'surveys-results':  '/live-surveys.html',
             'surveys-tracking': '/live-surveys.html',
-            'quiz-play-review': '/live-quiz.html'
+            'quiz-play-review': '/live-quiz.html',
+            'bookings-dashboard': '/live-bookings.html'
         };
         const backUrl = backUrls[key] || '/';
-        const backTitle = backUrl === '/' ? 'Back to Dashboard' : (key === 'quiz-play-review' ? 'Back to Live Quiz' : 'Back to Live Surveys');
+        const backTitle = backUrl === '/' ? 'Back to Dashboard'
+            : key === 'quiz-play-review' ? 'Back to Live Quiz'
+            : key === 'bookings-dashboard' ? 'Back to Booking Events'
+            : 'Back to Live Surveys';
 
         const bannerEl = document.createElement('div');
         bannerEl.id = 'mobilePageBanner';
