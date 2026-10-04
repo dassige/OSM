@@ -62,7 +62,8 @@ const globalAuthGuard = async (req, res, next) => {
       '/quiz-play.html',
       '/quiz-join.html',
       '/quiz',
-      '/api/live-quiz/join'
+      '/api/live-quiz/join',
+      '/bookings-view.html'
     ];
 
     if (
@@ -79,7 +80,8 @@ const globalAuthGuard = async (req, res, next) => {
       req.path.startsWith('/api/knowledgebase/file/') ||
       req.path.startsWith('/api/knowledgebase/resolve/') ||
       req.path.startsWith('/api/knowledgebase/doc/') ||
-      req.path.startsWith('/knowledgebase/')
+      req.path.startsWith('/knowledgebase/') ||
+      req.path.startsWith('/booking/')
     ) {
       return next();
     }

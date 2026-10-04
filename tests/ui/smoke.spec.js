@@ -116,6 +116,33 @@ test.describe('Smoke — public pages', () => {
     expect(errors, `JS errors on Quiz Join:\n${errors.join('\n')}`).toEqual([]);
   });
 
+  test('Booking page loads without JS errors (no link — shows invalid state)', async ({ page, context }) => {
+    // Public page — the static shell without a GUID must show its invalid-link message, not throw
+    await context.clearCookies();
+
+    const errors = attachErrorListeners(page);
+
+    await page.goto('/bookings-view.html');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.locator('#errorBox')).toBeVisible();
+
+    expect(errors, `JS errors on Booking page:\n${errors.join('\n')}`).toEqual([]);
+  });
+
+  test('Booking short link (/booking/<slug>) serves the public page without login', async ({ page, context }) => {
+    // A malformed slug is rejected in the browser, so no API request (and no 404 console noise) is made
+    await context.clearCookies();
+
+    const errors = attachErrorListeners(page);
+
+    await page.goto('/booking/not-a-real-link');
+    await page.waitForLoadState('domcontentloaded');
+    expect(page.url(), 'Public booking link redirected to login').not.toContain('/login.html');
+    await expect(page.locator('#errorBox')).toContainText('not valid');
+
+    expect(errors, `JS errors on /booking/<slug>:\n${errors.join('\n')}`).toEqual([]);
+  });
+
   test('Quiz Join short slug (/quiz) loads without JS errors', async ({ page, context }) => {
     // Same page, served at a short, easy-to-say address — no auth required
     await context.clearCookies();

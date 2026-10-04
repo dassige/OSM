@@ -733,6 +733,19 @@ const helpContent = {
             </ul>
         `
     },
+    "bookings-view": {
+        title: "Booking Your Slot",
+        body: `
+            <ul>
+                <li>If you opened a shared link, first <strong>select your name</strong> from the list.</li>
+                <li>Tap a free slot, fill in any details asked for, and press <strong>Book this slot</strong>.</li>
+                <li>Your appointment then appears at the top. If the organiser allows it, you can <strong>Change</strong> or <strong>Cancel</strong> it until bookings close.</li>
+                <li>Slots marked <strong>Full</strong> or <strong>Started</strong> can't be booked.</li>
+                <li>All times are local to where the appointments take place.</li>
+                <li>Need help or a change after bookings close? Contact the organiser shown at the top of the page.</li>
+            </ul>
+        `
+    },
     "live-bookings": {
         title: "Booking Events",
         body: `
@@ -885,7 +898,9 @@ const helpContent = {
     let key = "default";
 
     // Standard routing
-    if (path === "/" || path.endsWith("index.html")) key = "index";
+    // Public booking page (/booking/<guid>) — checked first: a GUID could contain any letters
+    if (path.startsWith("/booking/") || path.includes("bookings-view")) key = "bookings-view";
+    else if (path === "/" || path.endsWith("index.html")) key = "index";
     else if (path.includes("members")) key = "members";
     else if (path.includes("skills")) key = "skills";
     else if (path.includes("templates")) key = "templates";

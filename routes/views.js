@@ -60,6 +60,11 @@ router.get("/knowledgebase/:slug", (_req, res) => {
   res.sendFile(path.join(__dirname, "../public/knowledgebase-view.html"));
 });
 
+// Public booking page — no auth; the event GUID (plus a personal code) is the access control
+router.get("/booking/:slug", (_req, res) => {
+  res.sendFile(path.join(__dirname, "../public/bookings-view.html"));
+});
+
 // Short, easy-to-say slug for the quiz join landing page (e.g. "yourserver/quiz")
 router.get("/quiz", (_req, res) => {
   res.sendFile(path.join(__dirname, "../public/quiz-join.html"));
