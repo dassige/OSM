@@ -693,6 +693,46 @@ const helpContent = {
             <p style="color:var(--text-muted); font-size:0.85em;">To run the game, go to <em>Live Quiz</em> and click <strong>Launch</strong> on the session or team setup — a Score game opens a live leaderboard; a Timed game opens the host screen.</p>
         `
     },
+    // --- Booking Events ---
+    "bookings-manage": {
+        title: "Booking Templates",
+        body: `
+            <p>Set up booking events where members pick an appointment slot — for example the annual nurse health screening. Configure a template here, then <strong>Publish</strong> it as a live event.</p>
+
+            <h3>1. Event details</h3>
+            <ul>
+                <li><strong>Location</strong> and <strong>Contact info</strong> are shown on the booking page.</li>
+                <li><strong>Information for members</strong> — instructions such as what to bring.</li>
+            </ul>
+
+            <h3>2. Days &amp; slots</h3>
+            <ul>
+                <li>Set the <strong>slot length</strong> and how many <strong>places per slot</strong> (usually 1).</li>
+                <li>Add each day with one or more <strong>time windows</strong> — use two windows to leave a lunch break.</li>
+                <li>Slots are generated automatically; the preview shows every slot and warns about past dates, duplicates and overlapping windows.</li>
+                <li>All dates and times are local to the brigade's timezone.</li>
+            </ul>
+
+            <h3>3. Information to collect</h3>
+            <ul>
+                <li>The member's name is always recorded. Add questions such as a phone number, and mark them <strong>Required</strong> if needed.</li>
+            </ul>
+
+            <h3>4. Publishing</h3>
+            <ul>
+                <li><strong>Personal links</strong> — each member gets their own link and is identified automatically.</li>
+                <li><strong>General link</strong> — one shared link (e.g. for a group chat); members pick their name when booking.</li>
+                <li><strong>Show names</strong> lets members see who booked each slot; <strong>Members can change or cancel</strong> lets them move or cancel their own booking.</li>
+                <li>When publishing you choose the members to invite and whether to notify them by email and/or WhatsApp. Each member is only contacted on channels their notification preference allows.</li>
+            </ul>
+
+            <h3>5. Re-using a template</h3>
+            <ul>
+                <li><strong>Duplicate</strong> copies everything except the dates — add the new days and save.</li>
+                <li>Deleting a template never affects events already published from it.</li>
+            </ul>
+        `
+    },
     "quiz-preview": {
         title: "Quiz Preview Mode",
         body: `
@@ -829,6 +869,7 @@ const helpContent = {
     else if (path.includes("quiz-play")) key = "quiz-play";
     else if (path.includes("live-quiz")) key = "live-quiz";
     else if (path.includes("quiz-games")) key = "quiz-games";
+    else if (path.includes("bookings-manage")) key = "bookings-manage";
 
     // DYNAMIC FORMS-VIEW LOGIC
     if (path.includes("forms-view")) {
@@ -929,7 +970,8 @@ const helpContent = {
         'forms-manage', 'reports', 'live-forms', 'statistics', 'surveys-manage',
         'live-surveys', 'surveys-tracking', 'surveys-results',
         'forms-view-review', 'forms-view-preview', 'surveys-view-preview',
-        'knowledgebase', 'quiz-games', 'quiz-preview', 'live-quiz', 'quiz-play-review'
+        'knowledgebase', 'quiz-games', 'quiz-preview', 'live-quiz', 'quiz-play-review',
+        'bookings-manage'
     ];
 
     // Short display titles for the banner (no app-name suffix)
@@ -961,7 +1003,8 @@ const helpContent = {
         'quiz-games': 'Quiz Games',
         'quiz-preview': 'Quiz Preview',
         'live-quiz': 'Live Quiz',
-        'quiz-play-review': 'Quiz Review'
+        'quiz-play-review': 'Quiz Review',
+        'bookings-manage': 'Booking Templates'
     };
 
     if (bannerKeys.indexOf(key) !== -1) {

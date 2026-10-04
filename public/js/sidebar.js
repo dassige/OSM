@@ -48,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                       <li><a href="forms-manage.html" id="navManageForms">Manage Forms</a></li>
                                       <li><a href="surveys-manage.html" id="navManageSurveys">Manage Surveys</a></li>
                                       <li><a href="quiz-games.html" id="navQuizGames">Quiz Games</a></li>
+                                      <li><a href="bookings-manage.html" id="navManageBookings">Manage Bookings</a></li>
                                   </ul>
                               </li>
                               <li><a href="training-planner.html" id="navTrainingPlanner">Renewal Planner</a></li>
