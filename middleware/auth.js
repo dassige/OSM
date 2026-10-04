@@ -117,6 +117,13 @@ const globalAuthGuard = async (req, res, next) => {
 
     if (req.session && req.session.loggedIn) return next();
 
+    // Public pages (booking, survey and form links) load utils.js, whose fetch wrapper
+    // asks for a CSRF token before every POST. Anonymous visitors don't need one —
+    // csrfProtection skips requests without a logged-in user — so answer with a null
+    // token instead of a 401 (which logs a console error), without creating a session.
+    if (req.path === '/api/csrf-token' && req.method === 'GET')
+      return res.json({ token: null });
+
     if (req.path.startsWith('/api/'))
       return res.status(401).json({ error: 'Unauthorized' });
 

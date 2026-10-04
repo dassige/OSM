@@ -3508,7 +3508,7 @@
                                                                                "csrf-token"
                                                                            ]
                                                               },
-                                                      "description":  "Returns a 64-character hex CSRF token tied to the current session. Include as `X-CSRF-Token` header on all POST/PUT/DELETE requests when authenticating with session cookies. The frontend fetch interceptor in utils.js handles this automatically."
+                                                      "description":  "Returns a 64-character hex CSRF token tied to the current session. Include as `X-CSRF-Token` header on all POST/PUT/DELETE requests when authenticating with session cookies. The frontend fetch interceptor in utils.js handles this automatically. Anonymous callers (no session, no API key) receive `{ \"token\": null }` with status 200."
                                                   }
                                   },
                                   {

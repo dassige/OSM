@@ -3237,7 +3237,9 @@ input:checked + .slider:before { transform: translateX(14px); }
 
 @media (max-width: 768px) {
     /* Planner layout */
-    .planner-layout    { flex-direction: column; gap: 12px; }
+    /* align-items: stretch — with the desktop flex-start, .planner-main sized itself to
+       its content (the 400px day strip) and pushed the page wider than the screen */
+    .planner-layout    { flex-direction: column; gap: 12px; align-items: stretch; }
     .planner-sidebar   { width: 100%; position: static; max-height: none; }
 
     /* Week nav controls: week strip on top, Today + filter toggle below */
@@ -3249,6 +3251,8 @@ input:checked + .slider:before { transform: translateX(14px); }
     /* Hide desktop calendar grid; show mobile alternatives */
     .weekly-grid                 { display: none; }
     .mobile-day-picker           { display: flex; min-width: 0; }
+    /* Share the width so all 7 days (incl. today) are visible without scrolling */
+    .mobile-day-chip             { flex: 1 1 0; min-width: 0; padding: 8px 2px; }
     .mobile-selected-day-panel   { display: block; min-width: 0; }
 
     /* Hide desktop list content; show mobile cards */
@@ -3959,6 +3963,14 @@ input:checked + .slider:before { transform: translateX(14px); }
     body {
         padding-left: 12px !important;
         padding-right: 12px !important;
+    }
+
+    /* The demo banner bleeds to the page edges with negative margins equal to the
+       body padding — match the 12px above, or it overflows and the page scrolls sideways.
+       Pages with the sidebar override this to 16px in sidebar.css. */
+    .demo-banner {
+        margin-left: -12px;
+        margin-right: -12px;
     }
 
     /* Single-column stat cards on small phones */

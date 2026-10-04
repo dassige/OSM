@@ -327,6 +327,14 @@ body.osm-no-margin .back-dashboard-btn {
         overflow-x: hidden !important;
     }
 
+    /* The demo banner bleeds to the page edges with negative margins equal to the
+       body padding above (styles.css assumes 20px, which overflows here). The extra
+       "body" keeps this ahead of styles.css whichever stylesheet a page loads first. */
+    body .demo-banner {
+        margin-left: -16px;
+        margin-right: -16px;
+    }
+
     /* Sidebar: overlay drawer, 85 % of screen width, capped at 300 px */
     #osm-sidebar-container {
         width: min(85vw, 300px) !important;

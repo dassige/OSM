@@ -282,6 +282,9 @@
 | T13-06 | Forgot Password template tab | Click the **Forgot Password** tab in `templates.html` → edit the body to include the `{{resetlink}}` chip → click `[Save All Templates]` → trigger a forgot-password request from the login page. | The received email renders `{{resetlink}}` as a clickable "Reset link" anchor. `{{password}}` is not available in this tab's variable palette. |
 | T13-07 | KB Refresher Link placeholder in expiring-skills notification | On a skill with a linked Knowledge Base document (T04-13), drag the **KB Refresher Link** chip into the Skills email "Repeated Skill Row" and the WhatsApp "Row" templates → save → send a test expiring-skills notification to a member due for that skill. | The received email shows a "Refresher material" link that opens the linked document. The WhatsApp message shows a "Refresher:" line with the document's public link. |
 | T13-08 | KB Refresher Link renders blank when unset | Send a test expiring-skills notification for a skill with no linked Knowledge Base document. | The notification renders normally with no "Refresher material" line or blank space — the placeholder produces no visible artifact. |
+| T13-09 | Booking Invitations template | Open the **Booking Invitations** tab → in **Email Template** set the Subject to `Health check: {{eventName}}`, drag `{{name}}`, `{{dates}}`, `{{location}}` and `{{link}}` chips into both the **General link** and **Personal link** bodies → switch to **WhatsApp Template** and edit both bodies → click `[Save All Templates]` → publish one personal and one general booking event to yourself with Email (and WhatsApp) ticked. | Toast confirms the save and the edits are still there after a reload. The personal event's email uses the Personal-link body with your own personal link; the general event's email uses the General-link body with the shared link. All placeholders are replaced with real values; the WhatsApp messages match the WhatsApp bodies. |
+| T13-10 | Booking Invitations fall back to defaults | In the **Booking Invitations** tab clear the Subject and all four bodies → `[Save All Templates]` → publish a booking event to yourself with Email ticked. | The invitation still arrives, using the built-in wording ("Book your slot: …" with the event name, dates, location and booking link) — blank fields never produce an empty email. |
+| T13-11 | Booking Invitations export / import | In the **Booking Invitations** tab click `[Export]` → change the subject → click `[Import]` and choose the exported file → `[Save All Templates]`. Then try importing a file exported from the **Form Accepted** tab. | The exported JSON restores the original subject and bodies. Importing a file that is not a booking template shows a "not a booking invitation template" warning and changes nothing. |
 
 ---
 
@@ -684,7 +687,7 @@ This section verifies the security hardening applied in Round 3 (June 2026). All
 | T26-13 | Restore rate limit | Using a superadmin API key, call `POST /api/system/restore` 4 times in rapid succession (with a valid SQL file each time). | The 4th call returns HTTP 429. Earlier calls proceed normally. |
 | T26-14 | AI-test rate limit | Using a superadmin API key, call `POST /api/system/ai-test` 11 times within 60 seconds. | The 11th call returns HTTP 429. The window resets after 1 minute. |
 | T26-15 | User creation rate limit | Using an admin API key, call `POST /api/users` 11 times within 15 minutes (use unique email addresses each time, then clean up). | The 11th call returns HTTP 429. |
-| T26-16 | Timed Quiz live-play traffic is not throttled during normal play | Play through a Timed quiz with several questions (individual or team) end-to-end — including the host revealing each question and showing the leaderboard — without long pauses between steps. | The player's/team's screen keeps updating normally throughout (question, reveal, leaderboard, next question, finish) with no "Too many submission attempts" error, even though this generates many state refreshes per question. Using a REST client, `POST /api/live-quiz/join` still returns HTTP 429 after roughly 30 attempts within 5 minutes, since join-code guessing remains tightly rate-limited. |
+| T26-27 | Timed Quiz live-play traffic is not throttled during normal play | Play through a Timed quiz with several questions (individual or team) end-to-end — including the host revealing each question and showing the leaderboard — without long pauses between steps. | The player's/team's screen keeps updating normally throughout (question, reveal, leaderboard, next question, finish) with no "Too many submission attempts" error, even though this generates many state refreshes per question. Using a REST client, `POST /api/live-quiz/join` still returns HTTP 429 after roughly 30 attempts within 5 minutes, since join-code guessing remains tightly rate-limited. |
 
 ### T26-E — Restricted Audit Log Categories
 
@@ -708,6 +711,14 @@ This section verifies the security hardening applied in Round 3 (June 2026). All
 |----|--------|-------|----------------|
 | T26-22 | CSP header present | Load any authenticated page and open DevTools → Network. Inspect the response headers for the HTML page. | `Content-Security-Policy` header is present with `frame-ancestors 'none'`, `object-src 'none'`, `form-action 'self'`, and `connect-src 'self' ws: wss:`. |
 | T26-23 | Clickjacking prevention | Attempt to embed any OpReady page in an `<iframe>` on a different origin. | Browser blocks the frame load due to `frame-ancestors 'none'`. |
+
+### T26-H — Booking Events Access Control
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T26-24 | Booking admin pages and API need login | Log out (or use a private window) and open `bookings-manage.html`, `live-bookings.html` and `bookings-dashboard.html`; then call `GET /api/bookings/events` without a session or API key. | Each page redirects to the login page. The API call returns 401 Unauthorized — no booking data is exposed. |
+| T26-25 | Public booking page needs no login | In a private window open a booking link (`/booking/<link>`) from a published event. | The booking page loads without asking for a login. |
+| T26-26 | Anonymous CSRF token request is quiet | In a private window (not logged in) open `/api/csrf-token`. Then, still anonymous, book a slot on a public booking page with DevTools → Console open. | The response is `{"token":null}` with status 200 (not 401). Booking succeeds and the console shows no "401 Unauthorized" error. |
 
 ---
 
@@ -830,6 +841,90 @@ Team setup is available for both Score-based and Timed games — a team session 
 
 ---
 
+## T30 — Booking Events
+
+**Pages:** `bookings-manage.html` (templates), `live-bookings.html` (published events), `bookings-dashboard.html` (event dashboard), `/booking/<link>` (public booking page), `templates.html` → **Booking Invitations** (see T13-09 to T13-11)
+
+Booking Events let members pick an appointment slot — for example the annual nurse health screening. A **template** holds the configuration (days, time windows, slot length, places per slot, questions, publishing defaults) and is **published** as a live event with its own link: a **general** link shared by everyone (members pick their name) or **personal** links (members are identified automatically). All slot dates and times are local to the brigade's timezone.
+
+### T30-A — Booking Templates (Configure & Publish)
+
+**Page:** `bookings-manage.html`
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T30-01 | Page load | Navigate to **Operations → Maintenance → Manage Bookings**. | The page opens with a template list on the left (or "No booking templates yet") and "Select a template to edit" on the right. |
+| T30-02 | Create a booking template | Click `[+ Add Template]` → enter a name (e.g. "Nurse Health Screening"), Location, Contact info and some instructions in **Information for members** → click `[Save]`. | ✅ Toast "Booking template saved". The template appears in the list with a "Personal links" badge and its day/slot count. Event log records **Booking Template Created**. |
+| T30-03 | Schedule and slot preview | Set **Slot length** to 20 and **Places per slot** to 1. On the first day pick a future date, keep 09:00–12:00 and click `[+ Add time window]` for 13:00–16:00. Click `[+ Add Day]` and add a second future date. | The preview lists every slot per day in local time format (e.g. "9:00 am", "9:20 am" …), 9 + 9 slots on the first day, with the totals "N slots across 2 days — N places in total". The section header shows "Times are local (<brigade timezone>)". |
+| T30-04 | Schedule validation warnings | Add a day dated in the past, a second day with the same date as another, a day with overlapping windows (09:00–12:00 and 11:00–13:00), and a window that ends before it starts. Then click `[Save]`. | Each problem day shows a red warning ("Date is in the past", "Duplicate date", "Time windows overlap", "… ends before it starts") and the summary turns red. Saving duplicate dates, overlapping or reversed windows is refused with a clear error toast; a past date only warns. |
+| T30-05 | Information to collect | Keep the default "Mobile phone" (Phone number, Required) and click `[+ Add Field]` → enter "Anything the nurse should know?", type Long text, not required → `[Save]` → select another template and back. | Both questions are kept in order with their type and Required setting. |
+| T30-06 | Publishing defaults | Select **General link**, switch **Show names on booked slots** on and **Members can change or cancel** off → `[Save]` → reopen the template. | The settings are kept, and the list badge now shows "General link". |
+| T30-07 | Unsaved changes guard | Edit the template name without saving → click another template in the list (on mobile: click `[List]`). | A confirmation dialog warns about unsaved changes; Cancel keeps you in the editor, Confirm discards the changes. |
+| T30-08 | Duplicate a template | Open a saved template with days → click `[Duplicate]`. | ✅ A new template "<name> (Copy)" opens with **no days**, and the same details, questions and publishing defaults. Event log records **Booking Template Duplicated**. |
+| T30-09 | Publish requires a saved template with slots | On a new unsaved template click `[Publish]`; then save a template that has no days and click `[Publish]`. | A warning asks you to save first; then a warning asks you to add at least one day with a time window. No event is created. |
+| T30-10 | Publish with personal links | On a saved template with future slots click `[Publish]` → keep **Personal links**, **All Active Members**, tick **Email** → `[Publish]` → confirm. | ✅ The result window shows how many members were invited and how many emails were sent (or "Would have sent" in demo). Each member receives an email with their own personal link. `[Open Dashboard]` opens the event. Event log records **Booking Event Published**. |
+| T30-11 | Publish with a general link | Publish again choosing **General link**, **Specific Selection** of 3 members → `[Publish]` → confirm → click `[Copy]` in the result window. | The result window shows the shared booking link; Copy shows "Booking link copied". Only the 3 selected members are invited. |
+| T30-12 | Channels respect member preferences | Set one member's notification preference to WhatsApp only and another to Email only. Publish to both with only **Email** ticked. | The Email-only member receives an email; the WhatsApp-only member is not contacted and is counted as "not notified" in the result summary. |
+| T30-13 | Delete a template | Select a template that has already been published → click `[Delete]` → confirm. | ✅ The template disappears from the list. The events published from it are still listed in **Operations → Bookings**. Event log records **Booking Template Deleted**. |
+| T30-14 | Demo mode guard (templates) | On a demo instance open a template. | The `[Delete]` button is disabled with the tooltip "Disabled in demo mode". Publishing works but the result says notifications were simulated. |
+| T30-15 | Mobile layout (templates) | At 375 px width open **Manage Bookings** and tap a template. | The list and the editor are separate screens with a `[List]` back button; Save/Duplicate/Publish are icon buttons; each time window fits on one line; no sideways scrolling. |
+
+### T30-B — Booking Events List
+
+**Page:** `live-bookings.html`
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T30-16 | Page load | Navigate to **Operations → Bookings**. | A table lists published events with Published date, Event name with a General/Personal badge, Dates, Status badge (Open / Locked / Disabled / Archived), Booked x / y with a progress bar, Free places and actions. |
+| T30-17 | Filters | Filter by part of a name, then Status = Locked, then Access = General link, then an event-date range → click `[Reset]`. | The table narrows correctly for each filter (Status "Not archived" is the default). Reset restores the default list. |
+| T30-18 | Sorting and rows per page are remembered | Click the **Event** column header twice, set **Rows per page** to 10 → reload the page. | The ▲/▼ indicator and order follow each click; after reload the same sort and rows per page are restored. |
+| T30-19 | Copy a shared link | On a general event row click `[Copy link]`. | Toast "Link copied to the clipboard"; pasting gives `/booking/<link>`. Personal events have no Copy link button here. |
+| T30-20 | Delete only archived events | Check that open events have no Delete button. On an archived event click `[Delete]` → confirm. | ✅ The event is removed. Event log records **Booking Event Deleted** with the number of bookings deleted. |
+| T30-21 | Mobile layout (list) | At 375 px width open **Bookings**. | Each event is a card with the same details and actions; **Filters** (with active-count badge) and **Sort by** are collapsible sections; a pagination bar is shown under the cards. |
+
+### T30-C — Booking Event Dashboard
+
+**Page:** `bookings-dashboard.html`
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T30-22 | Dashboard overview | From the Bookings list click `[Open]` on an event. | Shows status and link-type badges, dates with each day's times, location, contact, slot setup (with timezone), member options, who published it and when, the description, and Invited / Booked / Not booked / Free places with a progress bar. General events show the shared link with `[Copy]`. |
+| T30-23 | Booked and not-booked lists | Review **Booked** and **Not booked yet**. | Booked rows show slot date/time, member, one column per question with the answers, when it was booked and whether by Member or Admin. Not-booked rows show contact details available and when the member was last notified (and by which channel). |
+| T30-24 | Book on a member's behalf | In **Not booked yet** click `[Book]` → choose a slot (full slots are greyed out) → leave the required phone blank → `[Save]`. | ✅ "Booking saved"; the member moves to **Booked** marked "Admin" and the counts update. Required answers are not enforced for admins. Event log records **Booking Created By Admin**. |
+| T30-25 | Change a booking | In **Booked** click `[Change]` → pick a different free slot and edit an answer → `[Save]`. | The booking moves to the new slot with the edited answer; the old slot is free again. Event log records **Booking Changed By Admin**. |
+| T30-26 | Cancel a booking | Click `[Cancel booking]` on a booked member → confirm. | The member moves back to **Not booked yet** and the slot is free. Event log records **Booking Cancelled By Admin**. |
+| T30-27 | Copy a personal link | On a personal event click `[Copy link]` next to a member and open it in a private window. | The booking page opens already identified as that member ("Booking for <name>"). |
+| T30-28 | Send reminders | On an open event click `[Send reminders]` → keep Email and WhatsApp ticked → `[Send]`; then click `[Remind]` on one member. | ✅ A toast summarises how many emails/WhatsApp messages were sent (or simulated). Only members who have not booked are contacted; the email subject starts with "Reminder:". "Last notified" updates. Event log records **Booking Reminders Sent**. |
+| T30-29 | Lock bookings | Switch **Locked** on → confirm. Check `[Send reminders]` and the public booking page. Then switch it off again. | The status badge shows **Locked**, reminders are disabled, and the public page shows "Bookings are closed" with no selectable slots. Admins can still Book/Change/Cancel. Event log records **Booking Event Lock Toggled** with the new state. |
+| T30-30 | Disable the booking link | Switch **Booking link enabled** off → confirm → open the public link. Switch it back on. | The public link shows "This booking page is currently unavailable"; after re-enabling it works again. Event log records **Booking Event Access Toggled** with the new state. |
+| T30-31 | Print the booking sheet | Click `[Print]`. | The print preview contains only the booking sheet: the event header, then for each day every slot in order with the booked member, their answers and a ✓ column, "free" rows for empty slots, and a "Not booked" list. Times are in local format; nothing else from the page is printed. |
+| T30-32 | Export the booking sheet to PDF | Click `[Export PDF]`. | A file "Booking-sheet-<event name>.pdf" downloads with the same content as the printed sheet. |
+| T30-33 | Archive an event | Click `[Archive]` → read the warning → confirm. Open the public link. | The status becomes **Archived**, a note explains the link no longer works, the toggles and booking actions are disabled and `[Delete]` appears. The public link shows "not valid or is no longer available". There is no way to un-archive. Event log records **Booking Event Archived**. |
+| T30-34 | Delete an archived event | On the archived event click `[Delete]` → confirm. | You are returned to the Bookings list and the event is gone. Event log records **Booking Event Deleted**. |
+| T30-35 | Demo mode guard (dashboard) | On a demo instance open an event dashboard. | `[Archive]` and `[Delete]` are disabled with the tooltip "Disabled in demo mode"; reminders are simulated. |
+| T30-36 | Mobile layout (dashboard) | At 375 px width open an event dashboard. | The panels stack vertically; Booked and Not booked yet show as cards with all actions, their own Sort by sections and pagination; the booking sheet scrolls sideways inside its box; no page-level sideways scrolling. |
+
+### T30-D — Public Booking Page (Members, no login)
+
+**Page:** `/booking/<link>` (`bookings-view.html`) — test in a private/incognito window
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T30-37 | Personal link identifies the member | Open a member's personal link. | The page shows the event name, location, contact, appointment length, instructions and "All times are local time (<timezone>)", then "Booking for <member name>" and the slots grouped by day with "Available", "Full", "Started" or "Your booking". |
+| T30-38 | Book a slot | Tap a free slot → leave the required phone blank → `[Book this slot]`; then fill it in and book again. | First a "… is required" warning; then ✅ "Booked: <day, time>" and a **Your appointment** card. The admin dashboard shows the booking with source Member. Event log records **Booking Created** with actor System and the member's name. |
+| T30-39 | Change my booking | On an event that allows changes click `[Change]` → tap a different free slot → `[Move my booking]`. | The appointment card shows the new slot, the answers typed earlier are kept, and the old slot is free again. Event log records **Booking Changed**. |
+| T30-40 | Cancel my booking | Click `[Cancel booking]` → confirm. | The appointment card disappears and the slot is available again. Event log records **Booking Cancelled**. |
+| T30-41 | Changes not allowed | On an event with **Members can change or cancel** off, book a slot. | No Change or Cancel buttons are shown; the card says to contact the organiser to change or cancel. |
+| T30-42 | Full slots and race conditions | With two private windows (two members), both select the same 1-place slot and book at nearly the same time. | Only one booking succeeds; the other gets "This slot has just been fully booked. Please choose another." and the slot list refreshes showing the slot as Full. |
+| T30-43 | General link name selection | Open a general link → try to tap a slot → choose your name from **Who are you?** → reload the page. | Slots can't be selected until a name is chosen ("Select your name above…"). Names that already booked show "(booked)". After reload the chosen name is remembered on this device. |
+| T30-44 | Show names on booked slots | Compare an event with **Show names** on and one with it off after a few bookings. | With the option on, booked slots list the members' names; with it off, only availability is shown. Answers (e.g. phone numbers) are never shown to other members. |
+| T30-45 | Locked, disabled, archived and unknown links | Open links for a locked event, a disabled event, an archived event, a made-up GUID, and `/booking/not-a-real-link`. | Locked: "Bookings are closed" with the schedule read-only. Disabled: "currently unavailable". Archived and made-up GUID: "not valid or is no longer available". Malformed link: "not valid" — and no browser console errors. |
+| T30-46 | Slots that have already started | Publish an event that includes a slot earlier today (local time) and open its link. | That slot shows "Started" and cannot be booked; a booking already in a started slot can no longer be changed or cancelled. |
+| T30-47 | Mobile and dark mode | Open a booking link on a phone (or at 375 px) with dark mode on. | Slots show in a two-column grid, buttons are full-width and easy to tap, text is readable in dark mode, no sideways scrolling. |
+| T30-48 | Booking while logged in as an admin | While logged in to OpReady, open a personal booking link in the same browser and book a slot. | The booking succeeds normally (no "Invalid or missing CSRF token" error). |
+
+---
+
 ## Appendix A — Test Data Setup Checklist
 
 Before starting the UAT run, ensure the following data is in place on the UAT instance:
@@ -851,6 +946,9 @@ Before starting the UAT run, ensure the following data is in place on the UAT in
 - [ ] At least **1 Timed quiz game** with a short time limit per question (e.g. 8–10 seconds, to keep manual testing quick), 2+ questions, and an individual session started from it with 2+ invited members (for T28-16 through T28-24 live-hosting testing) — plus a second browser/device per member to act as their player screen alongside the host screen.
 - [ ] At least **1 quiz team setup** started from that same (or another) Timed game with 2+ teams and 2+ members each, including one already-submitted team (for T29 Timed team setup/play/results and live-hosting testing).
 - [ ] At least **1 quiz team setup** started from a Score-based game with 2+ teams, including one already-submitted team (for T29 Score-based team play/results testing).
+- [ ] At least **5 members** with a mix of notification preferences (Email only, WhatsApp only, both) and with email addresses/mobile numbers you can receive, for Booking Events invitations and reminders (T30).
+- [ ] At least **1 booking template** with two future days (one with a lunch break) and a required "Mobile phone" question, published once with personal links and once with a general link, with a few bookings already made (for T30-B to T30-D).
+- [ ] A second browser profile or private window, and a phone (or browser at 375 px), for testing the public booking page as a member (T30-D).
 
 ---
 
@@ -873,6 +971,7 @@ After completing the full UAT run, verify the Event Log (`event-log.html`) conta
 | `WhatsApp` | Client Connected, Client Disconnected |
 | `Knowledge Base` | Category Created, Category Updated, Category Deleted, Document Uploaded, Document Updated, Document Toggled, Document Deleted |
 | `Quiz` | Quiz Game Created, Quiz Game Updated, Quiz Game Toggled, Quiz Game Deleted, Quiz Session Started, Quiz Session Archived, Quiz Session Unarchived, Quiz Session Deleted, Quiz Submitted & Scored, Quiz Team Session Created, Quiz Team Session Archived, Quiz Team Session Unarchived, Quiz Team Session Deleted, Quiz Team Submitted & Scored |
+| `Bookings` | Booking Template Created, Booking Template Updated, Booking Template Duplicated, Booking Template Deleted, Booking Event Published, Booking Event Lock Toggled, Booking Event Access Toggled, Booking Event Archived, Booking Event Deleted, Booking Created By Admin, Booking Changed By Admin, Booking Cancelled By Admin, Booking Reminders Sent, Booking Created, Booking Changed, Booking Details Updated, Booking Cancelled (member actions — actor `System`) |
 
 All entries must include: a non-empty `actor` name, a timestamp, a meaningful `title`, and a populated `payload` object (never `{}`).
 

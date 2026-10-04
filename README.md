@@ -30,11 +30,17 @@ It automates the process of checking a dashboard for expiring skills, persists d
       * **Question Bank Builder:** Create multiple-choice quiz games with a 4-choice question bank per game.
       * **Two Play Styles:** Score-based (self-paced, points per question) or Timed (live, speed-scored, Kahoot-style).
       * **Question Ordering:** Reorder questions with up/down controls; each question carries its own points or time limit depending on game type.
+  * **Booking Events (Appointment Scheduling):**
+      * **Templates:** Configure days, time windows (e.g. a lunch break), slot length, places per slot and the information to collect (phone number etc.); duplicate a template to re-run the event with new dates.
+      * **Two Link Types:** **General** — one shared link (e.g. for a group chat), members pick their name; **Personal** — one link per member, identified automatically.
+      * **Member Options:** Per event, show or hide the names on booked slots and allow or block members changing/cancelling their own booking.
+      * **Notifications:** Email and/or WhatsApp invitations and reminders using a dedicated, editable template.
+      * **Event Dashboard:** Who has and hasn't booked, lock / disable / one-way archive, book or move members on their behalf, and a printable / PDF booking sheet to hand to the organiser (e.g. the visiting nurse).
   * **Web-Based Management:**
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
       * **Skills:** Configure which skills to track and mark them as Critical.
       * **Smart Form Links:** Define Online Form URLs with dynamic placeholders (e.g., `{{member-name}}`) to pre-fill member details automatically.
-      * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, Surveys, New Users, Password Resets, Forgot Password reset links, and Account Deletions.
+      * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, Surveys, Booking Invitations, New Users, Password Resets, Forgot Password reset links, and Account Deletions.
   * **Reports Console:**
       * **Flexible Reporting:** Generate comprehensive reports grouped by **Member** (for individual follow-up) or **Skill** (for planning training blocks).
       * **Export Options:** Includes built-in support for browser Printing (A4 optimized) and direct **PDF Export**.
@@ -270,7 +276,7 @@ All rate-limited responses return HTTP **429** with a JSON body containing a hum
 
 #### **CSRF Protection**
 
-All state-changing requests (POST, PUT, DELETE) made by a logged-in browser session require a `X-CSRF-Token` header. The token is obtained from `GET /api/csrf-token` and is stable for the life of the session. The `utils.js` fetch interceptor bundled into every authenticated page handles this automatically — no frontend changes are needed for new pages that use the standard `fetch` API. API key-authenticated requests and unauthenticated public endpoints (form/survey submissions) are exempt.
+All state-changing requests (POST, PUT, DELETE) made by a logged-in browser session require a `X-CSRF-Token` header. The token is obtained from `GET /api/csrf-token` and is stable for the life of the session. The `utils.js` fetch interceptor bundled into every authenticated page handles this automatically — no frontend changes are needed for new pages that use the standard `fetch` API. API key-authenticated requests and unauthenticated public endpoints (form/survey submissions, public booking pages) are exempt. Anonymous visitors calling `GET /api/csrf-token` receive `{ "token": null }` (status 200) rather than a 401, so public pages that load `utils.js` don't log console errors; no session is created for them.
 
 #### **Input Validation**
 
@@ -452,6 +458,28 @@ A social-quiz feature for brigade learning sessions run in the social room: game
       * If the host screen is closed and reopened (or **Launch** clicked again), it always resumes from the leaderboard for the last completed question rather than mid-countdown, so no progress is lost.
       * Host presence is tracked over the same Socket.IO channel as the lobby's join indicators. If the host's tab disconnects mid-game (closed, crashed, lost network) while any player/team is mid-question or waiting on a leaderboard, every joined player's screen immediately shows a "Host disconnected — waiting for them to reconnect..." banner instead of silently freezing — including a player who joins/reloads *after* the disconnect already happened. The banner clears automatically the moment any host tab (the same one, or a fresh **Launch**) reconnects, and is suppressed once the quiz has finished.
 
+### 8\. Booking Events Workflow
+
+Slot booking for scheduled appointments — for example the annual personal health screening when a nurse visits the station for a couple of days. Like Surveys, it is split into a **template** (configure and publish) and a **live event** (manage bookings).
+
+1.  **Create a Template** (**Operations → Maintenance → Manage Bookings**):
+      * **+ Add Template**, give it a name, location, contact info and instructions for members (rich text).
+      * Set the **slot length** and **places per slot**, then add each **day** with one or more **time windows** (two windows leave a lunch break). A live preview lists every slot and warns about past dates, duplicate dates and overlapping windows.
+      * Add the **information to collect** (short text, phone, email or long text; optionally required). The member's name is always recorded.
+      * Choose the **publishing defaults**: personal or general link, show names on booked slots, members can change/cancel.
+      * **Duplicate** copies everything except the dates — the quickest way to set up next year's event.
+2.  **Publish:**
+      * Click **Publish**, adjust the event name/options if needed, choose all active members or a specific selection, and tick **Email** and/or **WhatsApp**. Each member is only contacted on the ticked channels their own notification preference allows (simulated in demo mode).
+      * General events give you one shared link to copy; personal events give each member their own link (copyable from the dashboard).
+3.  **Members book** at `/booking/<link>` (no login): general-link visitors first pick their name; everyone then taps a free slot, answers the questions and confirms. If allowed, members can change or cancel until bookings are locked. Slots that have already started can't be booked, moved or cancelled. All slot times are local to `APP_TIMEZONE`.
+4.  **Manage** (**Operations → Bookings** → **Open**):
+      * See invited / booked / not booked / free places, and the booked and not-booked lists.
+      * **Locked** stops member changes (admins can still edit); **Booking link enabled** switches the link off temporarily; **Send reminders** emails/WhatsApps everyone who hasn't booked.
+      * **Book**, **Change** or **Cancel booking** on a member's behalf (e.g. after a phone call) and copy personal links.
+      * **Print** or **Export PDF** the booking sheet — every slot of every day with who booked it and their answers, plus a ✓ column.
+      * **Archive** closes the event for good (the link never works again); an archived event can then be **Deleted**.
+5.  **Invitation wording** is edited in **Communication → Templates → Booking Invitations** (separate email and WhatsApp bodies for general and personal links, with `{{name}}`, `{{eventName}}`, `{{dates}}`, `{{location}}`, `{{link}}` and `{{appname}}` placeholders). Blank fields fall back to the built-in wording.
+
 ## Example Data and Configuration
 
 To facilitate a rapid setup and standardized testing, the application now includes a collection of pre-configured JSON examples located in the `./examples` directory. These files can be imported via the web interface to populate the system with actual FENZ Operational Instructions (OIs) and professionally formatted notification templates.
@@ -612,6 +640,11 @@ API keys **cannot** access HTML pages — those remain session-only. Endpoints r
 | `GET` | `/api/live-quiz/teams/{teamId}/review` | Admin: view a submitted team's answers with correctness marked |
 | `GET` | `/api/live-quiz/play/{code}` | Public: fetch a player's quiz by access code |
 | `GET` | `/api/live-quiz/team-play/{code}` | Public: fetch a team's quiz by access code (Score-based team setups) |
+| `GET` | `/api/bookings/templates` | List booking templates (with computed slot count) |
+| `POST` | `/api/bookings/templates/{id}/publish` | Publish a booking template as a live event and notify members |
+| `GET` | `/api/bookings/events` | List published booking events with booked/invited counts |
+| `GET` | `/api/bookings/events/{id}` | Booking event dashboard: stats, slots, roster, bookings |
+| `GET` | `/api/live-bookings/{publicId}` | Public: load a booking page (`?code=` for personal links) |
 | `GET` | `/api/health` | Health check (no key required) |
 | `GET` | `/api/ready` | Readiness probe — DB + WhatsApp state (no key required) |
 
@@ -1146,18 +1179,20 @@ The WhatsApp service includes built-in fault tolerance:
 ├── migrations/                 # Auto-applied SQL migrations (numeric order)
 │   ├── 001-baseline.sql
 │   ├── ...
-│   └── 010-etl-plugin-fields.sql
+│   └── 027-bookings.sql        # Booking Events tables
 ├── middleware/
 │   ├── auth.js                 # globalAuthGuard, hasRole(), ROLES, X-API-Key check
-│   └── rate-limiter.js         # apiLimiter, loginLimiter, publicSubmitLimiter
+│   └── rate-limiter.js         # apiLimiter, loginLimiter, publicSubmitLimiter, publicBookingLimiter
 ├── routes/
 │   ├── auth.js                 # /login, /logout, /forgot-password
 │   ├── views.js                # HTML page serving
 │   └── api/
 │       ├── api-keys.js         # API key CRUD
+│       ├── bookings.js         # Booking templates + live events (admin)
 │       ├── docs.js             # Swagger UI + OpenAPI spec (/api/docs)
 │       ├── forms.js            # Form template management
 │       ├── live-forms.js       # Form issue / submit / accept / reject
+│       ├── live-bookings.js    # Public booking page API (/api/live-bookings)
 │       ├── live-surveys.js     # Survey instance tracking
 │       ├── members.js          # Member CRUD + import
 │       ├── profile.js          # Current-user profile
@@ -1174,6 +1209,7 @@ The WhatsApp service includes built-in fault tolerance:
 │   │   ├── connection.js       # initDB(); delegates migrations to migration-runner.js
 │   │   ├── api-keys.js         # API key CRUD + hashing
 │   │   ├── backup.js           # generateSqlDump(), restoreFromSqlDump()
+│   │   ├── bookings.js         # Booking templates, events, slots, invites, bookings
 │   │   ├── events.js           # Event log CRUD
 │   │   ├── members.js          # Member queries
 │   │   ├── preferences.js      # System & user preferences
@@ -1186,6 +1222,8 @@ The WhatsApp service includes built-in fault tolerance:
 │   │   ├── rest-api.plugin.js      # Stub — future REST API data source
 │   │   └── name-parser.js          # Parses raw OI name strings → rank/lastName/firstName
 │   ├── ai-service.js           # AI text-answer grading (Gemini, local Ollama, or TypeSafe Jev)
+│   ├── booking-notifier.js     # Booking invitations/reminders (email + WhatsApp)
+│   ├── booking-service.js      # Booking validation, slot generation, local-time helpers
 │   ├── env-validator.js        # Startup environment / config validation
 │   ├── extraction-engine.js    # ETL orchestrator — plugin loader, cache, unified entry point
 │   ├── forms-service.js        # Form lifecycle: issue, score, accept/reject, bulk import
@@ -1209,6 +1247,10 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── skills.html             # Skill management
 │   ├── live-forms.html         # Live form tracking
 │   ├── live-surveys.html       # Live survey tracking
+│   ├── bookings-manage.html    # Booking templates (configure + publish)
+│   ├── live-bookings.html      # Published booking events list
+│   ├── bookings-dashboard.html # Booking event dashboard + printable sheet
+│   ├── bookings-view.html      # Public booking page (served at /booking/<link>)
 │   ├── surveys-manage.html     # Survey template management
 │   ├── surveys-view.html       # Public survey submission page
 │   ├── surveys-results.html    # Survey results viewer

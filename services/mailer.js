@@ -468,7 +468,8 @@ function bookingVariables(member, details, appName) {
     eventName: details.eventName || "",
     link: details.link || "",
     dates: details.dates || "",
-    location: details.location || "",
+    // Shown on its own line in the default wording, so never leave it blank
+    location: details.location || "—",
   };
 }
 

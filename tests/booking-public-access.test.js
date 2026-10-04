@@ -59,3 +59,33 @@ describe('globalAuthGuard — Booking Events public surface', () => {
         expect(res.status).toBe(200);
     });
 });
+
+describe('globalAuthGuard — CSRF token for anonymous visitors', () => {
+    it('answers anonymous GET /api/csrf-token with a null token instead of 401', async () => {
+        const session = {};
+        const res = await request(buildApp(session)).get('/api/csrf-token');
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ token: null });
+        // No token (and therefore no session state) is created for anonymous visitors
+        expect(session).toEqual({});
+    });
+
+    it('passes logged-in sessions through to the real token route', async () => {
+        const res = await request(buildApp({ loggedIn: true, user: { role: 'simple' } })).get('/api/csrf-token');
+        expect(res.status).toBe(200);
+        expect(res.body.reached).toBe('/api/csrf-token');
+    });
+
+    it('passes API-key callers through to the real token route', async () => {
+        const { getApiKeyByHash } = require('../services/db/api-keys');
+        getApiKeyByHash.mockResolvedValueOnce({ id: 1, name: 'Smoke', role: 'admin', active: 1, key_prefix: 'osm_abcd' });
+        const res = await request(buildApp()).get('/api/csrf-token').set('X-API-Key', 'osm_test');
+        expect(res.status).toBe(200);
+        expect(res.body.reached).toBe('/api/csrf-token');
+    });
+
+    it('still rejects other anonymous API calls', async () => {
+        const res = await request(buildApp()).post('/api/csrf-token');
+        expect(res.status).toBe(401);
+    });
+});

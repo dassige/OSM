@@ -55,6 +55,7 @@ routes/
     surveys.js  live-surveys.js  training.js
     reports.js  statistics.js  users.js  profile.js
     system.js   api-keys.js
+    bookings.js  live-bookings.js — Booking Events (admin API / public booking-page API)
     docs.js                      — Swagger UI + OpenAPI spec
 services/
   db.js                          — Barrel export of all DB modules
@@ -63,7 +64,10 @@ services/
     users.js  members.js  skills.js  preferences.js
     events.js  training.js  backup.js  surveys.js
     api-keys.js                  — API key CRUD + hashing
+    bookings.js                  — Booking templates, events, slots, invites, entries
   ai-service.js                  — AI text-answer grading (Gemini, local Ollama, or TypeSafe Jev)
+  booking-service.js             — Booking validation, slot generation, local-time helpers (pure)
+  booking-notifier.js            — Booking invitations/reminders (email + WhatsApp, demo-simulated)
   env-validator.js               — Startup environment / config validation
   forms-service.js               — Form lifecycle: issue, score, accept/reject, bulk import
   logger.js                      — Winston logger
@@ -849,6 +853,8 @@ const time = myPicker.value(); // e.g. '14:30'
 - Fully themed with CSS variables; works in light and dark mode
 - Closes any other open time picker when opened
 
+**Existing copies:** `public/backup-restore.html` (canonical) and `public/js/bookings-manage.js` (adds an optional third `onChange` argument used to refresh the slot preview).
+
 **When to extract to a shared file:** if a third page needs a time picker, extract `createTimePicker` and its CSS into `public/timepicker.js` following the same auto-attach pattern as `datepicker.js`.
 
 ---
@@ -1170,6 +1176,8 @@ async function changeLimit(newLimit) {
 | `live-forms.html` | `liveFormsLimit` |
 | `live-surveys.html` | `liveSurveyItemsPerPage` |
 | `training-planner.html` | `trainingListLimit` (via Socket.IO) |
+| `live-bookings.html` | `liveBookingsLimit` |
+| `bookings-dashboard.html` | `bookingDashBookedLimit`, `bookingDashPendingLimit` |
 
 ---
 
@@ -1262,6 +1270,10 @@ function updateSortHeaders() {
 | `skills.html` | `skillsSort` |
 | `live-forms.html` | `liveFormsSort` |
 | `event-log.html` | `eventLogSort` |
+| `live-bookings.html` | `liveBookingsSort` |
+| `bookings-dashboard.html` | `bookingDashBookedSort`, `bookingDashPendingSort` |
+
+The three Booking Events tables are rendered by the shared `public/js/booking-table.js` (`BookingTable`), which implements pagination, sortable headers, mobile cards, the mobile sort accordion and both preference keys in one place — reuse it for new client-side tables rather than re-implementing the pattern.
 
 ---
 
@@ -1596,6 +1608,7 @@ Most pages navigate back to `/` (dashboard). Exceptions are declared in the `bac
 |---|---|
 | `surveys-results` | `/live-surveys.html` |
 | `surveys-tracking` | `/live-surveys.html` |
+| `bookings-dashboard` | `/live-bookings.html` |
 | *(all others)* | `/` |
 
 To add a new exception, insert an entry in the `backUrls` object inside the banner-injection block of `help.js`.

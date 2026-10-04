@@ -329,7 +329,7 @@ const spec = {
             CsrfTokenResponse: {
                 type: 'object',
                 properties: {
-                    token: { type: 'string', description: '64-character hex CSRF token. Include as `X-CSRF-Token` header on all mutating requests.', example: 'a3f8b1...' }
+                    token: { type: 'string', nullable: true, description: '64-character hex CSRF token. Include as `X-CSRF-Token` header on all mutating requests. `null` for anonymous visitors, who do not need one.', example: 'a3f8b1...' }
                 }
             },
             Form: {
@@ -2230,8 +2230,8 @@ const spec = {
             get: {
                 tags: ['System'],
                 summary: 'Get a CSRF token for the current session',
-                description: 'Returns a 64-character hex token tied to the current session. Include it as the `X-CSRF-Token` header on all POST, PUT, PATCH, and DELETE requests made by a logged-in user. The `utils.js` fetch interceptor on authenticated pages handles this automatically.',
-                security: [{ sessionCookie: [] }],
+                description: 'Returns a 64-character hex token tied to the current session. Include it as the `X-CSRF-Token` header on all POST, PUT, PATCH, and DELETE requests made by a logged-in user. The `utils.js` fetch interceptor on authenticated pages handles this automatically. Anonymous visitors (public booking, survey and form pages) receive `{ "token": null }` with status 200 — they do not need a token, and no session is created for them.',
+                security: [{ sessionCookie: [] }, {}],
                 responses: {
                     200: { description: 'CSRF token', content: { 'application/json': { schema: { $ref: '#/components/schemas/CsrfTokenResponse' } } } }
                 }
