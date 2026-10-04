@@ -183,7 +183,8 @@ const spec = {
                     fields: { type: 'array', maxItems: 20, items: { $ref: '#/components/schemas/BookingField' } },
                     access_type: { type: 'string', enum: ['general', 'personal'], default: 'personal' },
                     show_booked_names: { type: 'boolean', default: false, description: "Show other members' names on booked slots" },
-                    allow_cancel: { type: 'boolean', default: true, description: 'Members may cancel/change their own booking' }
+                    allow_cancel: { type: 'boolean', default: true, description: 'Members may cancel/change their own booking' },
+                    max_bookings: { type: 'integer', minimum: 1, maximum: 20, default: 1, description: 'Maximum number of slots one member may book (admins are not limited)' }
                 }
             },
             BookingTemplate: {
@@ -212,6 +213,7 @@ const spec = {
                     access_type: { type: 'string', enum: ['general', 'personal'] },
                     show_booked_names: { type: 'boolean' },
                     allow_cancel: { type: 'boolean' },
+                    max_bookings: { type: 'integer', description: 'Maximum bookings per member' },
                     is_locked: { type: 'boolean' },
                     is_enabled: { type: 'boolean' },
                     is_archived: { type: 'boolean' },
@@ -219,7 +221,8 @@ const spec = {
                     published_by: { type: 'string', nullable: true },
                     published_at: { type: 'string' },
                     invited_count: { type: 'integer' },
-                    booked_count: { type: 'integer' },
+                    booked_count: { type: 'integer', description: 'Members with at least one booking' },
+                    entry_count: { type: 'integer', description: 'Total bookings' },
                     slot_count: { type: 'integer' },
                     total_capacity: { type: 'integer' },
                     first_date: { type: 'string', format: 'date' },
@@ -252,6 +255,7 @@ const spec = {
                                 type: 'object',
                                 properties: {
                                     invited: { type: 'integer' }, booked: { type: 'integer' }, notBooked: { type: 'integer' },
+                                    bookings: { type: 'integer', description: 'Total bookings (a member may hold several)' },
                                     slotCount: { type: 'integer' }, totalCapacity: { type: 'integer' }, freePlaces: { type: 'integer' }
                                 }
                             },
@@ -265,8 +269,7 @@ const spec = {
                                         member_id: { type: 'integer' }, display_name: { type: 'string' },
                                         email: { type: 'string', nullable: true }, mobile: { type: 'string', nullable: true },
                                         notified_at: { type: 'string', nullable: true }, notified_via: { type: 'string', nullable: true },
-                                        entry_id: { type: 'integer', nullable: true }, slot_id: { type: 'integer', nullable: true },
-                                        slot_date: { type: 'string', nullable: true }, start_time: { type: 'string', nullable: true },
+                                        booking_count: { type: 'integer', description: 'Bookings held by this member' },
                                         personal_link: { type: 'string', nullable: true, description: 'Personal access only' }
                                     }
                                 }
@@ -894,11 +897,12 @@ const spec = {
                                     access_type: { type: 'string', enum: ['general', 'personal'] },
                                     show_booked_names: { type: 'boolean' },
                                     allow_cancel: { type: 'boolean' },
+                                    max_bookings: { type: 'integer', minimum: 1, maximum: 20, description: 'Defaults to the template value' },
                                     memberIds: { type: 'array', items: { type: 'integer' } },
                                     notify: { type: 'object', properties: { email: { type: 'boolean' }, whatsapp: { type: 'boolean' } } }
                                 }
                             },
-                            example: { name: 'Nurse Health Screening 2026', access_type: 'personal', show_booked_names: false, allow_cancel: true, memberIds: [1, 2, 3], notify: { email: true, whatsapp: true } }
+                            example: { name: 'Nurse Health Screening 2026', access_type: 'personal', show_booked_names: false, allow_cancel: true, max_bookings: 1, memberIds: [1, 2, 3], notify: { email: true, whatsapp: true } }
                         }
                     }
                 },
@@ -907,7 +911,7 @@ const spec = {
                         description: 'Published',
                         content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' }, publicId: { type: 'string' }, link: { type: 'string', nullable: true }, notifications: { $ref: '#/components/schemas/BookingNotificationSummary' } } } } }
                     },
-                    400: { description: 'No members, unknown members, invalid access type, or no slots', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    400: { description: 'No members, unknown members, invalid access type, invalid maximum, or no slots', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     404: { description: 'Template not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }
@@ -982,36 +986,53 @@ const spec = {
                 }
             }
         },
-        '/api/bookings/events/{id}/bookings/{memberId}': {
+        '/api/bookings/events/{id}/bookings': {
+            post: {
+                tags: ['Bookings'],
+                summary: 'Add a booking on behalf of an invited member (allowed while locked, not once archived). Required fields and the per-member maximum are not enforced.',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: { type: 'object', required: ['memberId', 'slotId'], properties: { memberId: { type: 'integer' }, slotId: { type: 'integer' }, fieldValues: { type: 'object', additionalProperties: { type: 'string' } } } }, example: { memberId: 2, slotId: 12, fieldValues: { phone: '021 123 4567' } } } }
+                },
+                responses: {
+                    201: { description: 'Created — returns the booking (entry) id', content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'integer' } } } } } },
+                    400: { description: 'Missing/invalid slot, invalid field value, or archived event', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    404: { description: 'Event not found or member not invited', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    409: { description: 'Slot is full, or the member already holds this slot', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
+        '/api/bookings/events/{id}/bookings/{entryId}': {
             put: {
                 tags: ['Bookings'],
-                summary: 'Book or move a booking on behalf of an invited member (allowed while locked, not once archived). Required fields are not enforced.',
+                summary: 'Move a booking to another slot and/or update its answers (admin). A failed move leaves the booking where it was.',
                 parameters: [
                     { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
-                    { name: 'memberId', in: 'path', required: true, schema: { type: 'integer' } }
+                    { name: 'entryId', in: 'path', required: true, schema: { type: 'integer' }, description: 'Booking id (entries[].id in the event dashboard)' }
                 ],
                 requestBody: {
                     required: true,
-                    content: { 'application/json': { schema: { type: 'object', required: ['slotId'], properties: { slotId: { type: 'integer' }, fieldValues: { type: 'object', additionalProperties: { type: 'string' } } } }, example: { slotId: 12, fieldValues: { phone: '021 123 4567' } } } }
+                    content: { 'application/json': { schema: { type: 'object', required: ['slotId'], properties: { slotId: { type: 'integer' }, fieldValues: { type: 'object', additionalProperties: { type: 'string' } } } }, example: { slotId: 13, fieldValues: { phone: '021 123 4567' } } } }
                 },
                 responses: {
                     200: { description: 'Saved', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
                     400: { description: 'Missing/invalid slot, invalid field value, or archived event', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-                    404: { description: 'Event not found or member not invited', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-                    409: { description: 'Slot is full', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                    404: { description: 'Event not found or booking does not belong to it', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    409: { description: 'Target slot is full, or the member already holds it', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             },
             delete: {
                 tags: ['Bookings'],
-                summary: "Cancel a member's booking",
+                summary: 'Cancel one booking (admin)',
                 parameters: [
                     { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
-                    { name: 'memberId', in: 'path', required: true, schema: { type: 'integer' } }
+                    { name: 'entryId', in: 'path', required: true, schema: { type: 'integer' } }
                 ],
                 responses: {
                     200: { description: 'Cancelled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
                     400: { description: 'Archived event', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-                    404: { description: 'Event not found or member has no booking', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                    404: { description: 'Event not found or booking does not belong to it', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }
         },
@@ -1060,7 +1081,7 @@ const spec = {
                                             properties: {
                                                 name: { type: 'string' }, description: { type: 'string' }, location: { type: 'string' }, contact_info: { type: 'string' },
                                                 slot_minutes: { type: 'integer' }, access_type: { type: 'string', enum: ['general', 'personal'] },
-                                                show_booked_names: { type: 'boolean' }, allow_cancel: { type: 'boolean' }, is_locked: { type: 'boolean' },
+                                                show_booked_names: { type: 'boolean' }, allow_cancel: { type: 'boolean' }, max_bookings: { type: 'integer' }, is_locked: { type: 'boolean' },
                                                 fields: { type: 'array', items: { $ref: '#/components/schemas/BookingField' } },
                                                 timezone: { type: 'string', example: 'Pacific/Auckland' }
                                             }
@@ -1081,7 +1102,7 @@ const spec = {
                                             type: 'object', nullable: true,
                                             properties: {
                                                 memberId: { type: 'integer' }, displayName: { type: 'string' },
-                                                booking: { type: 'object', nullable: true, properties: { slotId: { type: 'integer' }, slot_date: { type: 'string' }, start_time: { type: 'string' }, end_time: { type: 'string' }, field_values: { type: 'object', description: 'Personal links only' } } }
+                                                bookings: { type: 'array', description: 'The member\'s bookings in slot order', items: { type: 'object', properties: { entryId: { type: 'integer' }, slotId: { type: 'integer' }, slot_date: { type: 'string' }, start_time: { type: 'string' }, end_time: { type: 'string' }, field_values: { type: 'object', description: 'Personal links only' } } } }
                                             }
                                         },
                                         roster: {
@@ -1103,8 +1124,8 @@ const spec = {
         '/api/live-bookings/{publicId}/book': {
             post: {
                 tags: ['Live Bookings (Public)'],
-                summary: 'Book, change or update a booking (public)',
-                description: 'Creates the member booking, or moves/updates it when the event allows changes (`allow_cancel`). Required fields are enforced. Refused while locked or for slots that have already started.',
+                summary: 'Book a slot, or change one of my bookings (public)',
+                description: 'Without `entryId`: adds a booking, up to the event\'s `max_bookings` per member. With `entryId`: moves that booking or updates its answers (only when the event allows changes, `allow_cancel`). Required fields are enforced. Refused while locked or for slots that have already started.',
                 security: [],
                 parameters: [{ name: 'publicId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
                 requestBody: {
@@ -1116,6 +1137,7 @@ const spec = {
                                 properties: {
                                     code: { type: 'string', description: 'Personal links' },
                                     memberId: { type: 'integer', description: 'General links' },
+                                    entryId: { type: 'integer', description: 'One of my bookings, to move/update it' },
                                     slotId: { type: 'integer' },
                                     fieldValues: { type: 'object', additionalProperties: { type: 'string' } }
                                 }
@@ -1125,28 +1147,28 @@ const spec = {
                     }
                 },
                 responses: {
-                    200: { description: 'Saved', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, booking: { type: 'object', properties: { slotId: { type: 'integer' }, slot_date: { type: 'string' }, start_time: { type: 'string' }, end_time: { type: 'string' } } } } } } } },
+                    200: { description: 'Saved', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, booking: { type: 'object', properties: { entryId: { type: 'integer' }, slotId: { type: 'integer' }, slot_date: { type: 'string' }, start_time: { type: 'string' }, end_time: { type: 'string' } } } } } } } },
                     400: { description: 'Invalid slot, slot already started, missing name, or invalid answer', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     403: { description: 'Event locked or disabled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     404: { description: 'Unknown/archived link or invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-                    409: { description: 'Slot full, or already booked and changes not allowed', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                    409: { description: 'Slot full, slot already held by me, maximum bookings reached, or changes not allowed', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }
             }
         },
         '/api/live-bookings/{publicId}/cancel': {
             post: {
                 tags: ['Live Bookings (Public)'],
-                summary: 'Cancel my booking (public)',
-                description: 'Only when the event allows cancelling, is not locked, and the appointment has not started.',
+                summary: 'Cancel one of my bookings (public)',
+                description: 'Only when the event allows cancelling, is not locked, and the appointment has not started. `entryId` is required when the member holds more than one booking.',
                 security: [],
                 parameters: [{ name: 'publicId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
                 requestBody: {
                     required: true,
-                    content: { 'application/json': { schema: { type: 'object', properties: { code: { type: 'string' }, memberId: { type: 'integer' } } }, example: { code: 'e581aac2-0cab-4de0-b2cc-df3a470117bc' } } }
+                    content: { 'application/json': { schema: { type: 'object', properties: { code: { type: 'string' }, memberId: { type: 'integer' }, entryId: { type: 'integer' } } }, example: { code: 'e581aac2-0cab-4de0-b2cc-df3a470117bc', entryId: 21 } } }
                 },
                 responses: {
                     200: { description: 'Cancelled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
-                    400: { description: 'Appointment already started or missing name', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+                    400: { description: 'Appointment already started, missing name, or entryId needed (several bookings)', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     403: { description: 'Cancelling not allowed, or event locked/disabled', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
                     404: { description: 'No booking, unknown/archived link, or invalid code', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
                 }

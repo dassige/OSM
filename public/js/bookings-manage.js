@@ -62,20 +62,27 @@ function todayLocal() {
 const toMinutes = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
 const toHHMM = (mins) => `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
 
-// Mirrors services/booking-service.js generateSlots(): whole slots inside each window.
+// Mirrors services/booking-service.js generateSlots(): whole slots inside each window,
+// recalculated from scratch on every change. A date/start time is only ever produced
+// once, so overlapping windows or a repeated date can't duplicate slots (they are still
+// flagged as problems in the day labels).
 function generateSlots(schedule, slotMinutes) {
   const slots = [];
+  const seen = new Set();
   if (!(slotMinutes >= 5)) return slots;
   schedule.forEach((day) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day.date || '')) return;
     day.windows.forEach((w) => {
       const end = toMinutes(w.end);
       for (let t = toMinutes(w.start); t + slotMinutes <= end; t += slotMinutes) {
+        const key = `${day.date} ${toHHMM(t)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
         slots.push({ date: day.date, start: toHHMM(t), end: toHHMM(t + slotMinutes) });
       }
     });
   });
-  return slots;
+  return slots.sort((a, b) => `${a.date} ${a.start}`.localeCompare(`${b.date} ${b.start}`));
 }
 
 // ── Custom Time Picker (copied from backup-restore.html, plus an optional onChange) ──
@@ -258,6 +265,7 @@ function getTemplateData() {
     access_type: document.querySelector('input[name="bkAccessType"]:checked').value,
     show_booked_names: document.getElementById('bkShowNames').checked,
     allow_cancel: document.getElementById('bkAllowCancel').checked,
+    max_bookings: parseInt(document.getElementById('bkMaxBookings').value, 10),
   };
 }
 
@@ -300,8 +308,23 @@ function removeDay(btn) {
   schedulePreview();
 }
 
+// A new window starts where the day's latest window ends and lasts as long as that
+// window (e.g. 09:00–12:00 → 12:00–15:00), so adding windows never duplicates slots.
+function nextWindowFor(dayEl) {
+  const windows = Array.from(dayEl.querySelectorAll('.bk-window')).map((w) => ({
+    start: toMinutes(w.querySelector('.bk-tp-start')._tp.getValue()),
+    end: toMinutes(w.querySelector('.bk-tp-end')._tp.getValue()),
+  }));
+  if (windows.length === 0) return { start: '09:00', end: '12:00' };
+  const last = windows.reduce((a, b) => (b.end > a.end ? b : a));
+  const latest = 23 * 60 + 55;
+  const start = Math.min(last.end, latest - 5);
+  const length = Math.max(last.end - last.start, 5);
+  return { start: toHHMM(start), end: toHHMM(Math.min(start + length, latest)) };
+}
+
 function addWindow(dayEl, win) {
-  const w = win || { start: '13:00', end: '16:00' };
+  const w = win || nextWindowFor(dayEl);
   const row = document.createElement('div');
   row.className = 'bk-window';
   row.innerHTML = `
@@ -413,6 +436,7 @@ async function saveTemplate() {
   const data = getTemplateData();
   if (!data.name) return showToast('Event name is required.', 'error');
   if (data.fields.some((f) => !f.label)) return showToast('Every field needs a question label.', 'error');
+  if (!(data.max_bookings >= 1 && data.max_bookings <= 20)) return showToast('Bookings per member must be between 1 and 20.', 'error');
 
   const isNew = !(currentTemplate && currentTemplate.id);
   try {
@@ -536,6 +560,7 @@ async function createNewTemplate() {
     access_type: 'personal',
     show_booked_names: false,
     allow_cancel: true,
+    max_bookings: 1,
   });
 }
 
@@ -568,6 +593,7 @@ function loadEditor(t) {
   document.querySelector(`input[name="bkAccessType"][value="${t.access_type === 'general' ? 'general' : 'personal'}"]`).checked = true;
   document.getElementById('bkShowNames').checked = !!t.show_booked_names;
   document.getElementById('bkAllowCancel').checked = t.allow_cancel !== false;
+  document.getElementById('bkMaxBookings').value = t.max_bookings || 1;
 
   document.getElementById('daysList').innerHTML = '';
   (t.schedule || []).forEach((d) => addDay(d));
@@ -619,6 +645,7 @@ async function openPublishModal() {
   document.querySelector(`input[name="pubAccessType"][value="${data.access_type}"]`).checked = true;
   document.getElementById('pubShowNames').checked = data.show_booked_names;
   document.getElementById('pubAllowCancel').checked = data.allow_cancel;
+  document.getElementById('pubMaxBookings').value = data.max_bookings || 1;
   document.getElementById('pubNotifyEmail').checked = true;
   document.getElementById('pubNotifyWhatsapp').checked = false;
   document.getElementById('pubDemoNote').style.display = isDemo() ? 'block' : 'none';
@@ -661,6 +688,8 @@ async function confirmPublish() {
   const name = document.getElementById('pubName').value.trim();
   if (!name) return showToast('Event name is required.', 'error');
   const accessType = document.querySelector('input[name="pubAccessType"]:checked').value;
+  const maxBookings = parseInt(document.getElementById('pubMaxBookings').value, 10);
+  if (!(maxBookings >= 1 && maxBookings <= 20)) return showToast('Bookings per member must be between 1 and 20.', 'error');
   const notify = {
     email: document.getElementById('pubNotifyEmail').checked,
     whatsapp: document.getElementById('pubNotifyWhatsapp').checked,
@@ -684,6 +713,7 @@ async function confirmPublish() {
         access_type: accessType,
         show_booked_names: document.getElementById('pubShowNames').checked,
         allow_cancel: document.getElementById('pubAllowCancel').checked,
+        max_bookings: maxBookings,
         memberIds,
         notify,
       }),

@@ -16,6 +16,7 @@ const LIMITS = {
   minSlotMinutes: 5,
   maxSlotMinutes: 480,
   maxSlotCapacity: 50,
+  maxBookingsPerMember: 20,
   maxDays: 60,
   maxWindowsPerDay: 10,
   maxSlots: 2000,
@@ -162,6 +163,7 @@ function normaliseTemplate(input) {
     access_type: accessType,
     show_booked_names: toFlag(body.show_booked_names, 0),
     allow_cancel: toFlag(body.allow_cancel, 1),
+    max_bookings: toInt(body.max_bookings, 1, 1, LIMITS.maxBookingsPerMember, "Maximum bookings per member"),
   };
 
   const slots = generateSlots(template.schedule, template.slot_minutes, template.slot_capacity);
@@ -177,10 +179,14 @@ function normaliseTemplate(input) {
  */
 function generateSlots(schedule, slotMinutes, capacity = 1) {
   const slots = [];
+  const seen = new Set(); // defensive: a date/start time is never produced twice
   for (const day of schedule || []) {
     for (const w of day.windows || []) {
       const end = toMinutes(w.end);
       for (let t = toMinutes(w.start); t + slotMinutes <= end; t += slotMinutes) {
+        const key = `${day.date} ${toHHMM(t)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
         slots.push({
           slot_date: day.date,
           start_time: toHHMM(t),

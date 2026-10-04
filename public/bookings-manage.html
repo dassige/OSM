@@ -76,6 +76,10 @@
         .bk-toggle-row { display:flex; align-items:center; justify-content:space-between; gap: 15px; margin-bottom: 12px; }
         .bk-toggle-row small { display:block; color: var(--text-muted); }
         .bk-toggle-row .switch, .bk-icon-btn { flex-shrink: 0; }
+        .bk-max-input {
+            width: 80px; flex-shrink: 0; padding: 6px 8px; border: 1px solid var(--border-color);
+            border-radius: 4px; background: var(--input-bg); color: var(--text-main);
+        }
         .bk-window .time-picker-display { margin: 0; }
 
         /* Publish result */
@@ -308,11 +312,15 @@
                                     <input type="checkbox" id="bkShowNames"><span class="slider"></span>
                                 </label>
                             </div>
-                            <div class="bk-toggle-row" style="margin-bottom:0;">
+                            <div class="bk-toggle-row">
                                 <span><strong>Members can change or cancel</strong><small>Allow members to move or cancel their own booking until the event is locked.</small></span>
                                 <label class="switch" title="Allow members to change or cancel their booking">
                                     <input type="checkbox" id="bkAllowCancel" checked><span class="slider"></span>
                                 </label>
+                            </div>
+                            <div class="bk-toggle-row" style="margin-bottom:0;">
+                                <span><strong>Bookings per member</strong><small>How many slots each member may book (1–20). Use 1 for one appointment each.</small></span>
+                                <input type="number" id="bkMaxBookings" class="bk-max-input" min="1" max="20" step="1" value="1" title="Maximum number of slots one member may book (1–20)">
                             </div>
                         </div>
                     </div>
@@ -362,6 +370,10 @@
                     <label class="switch" title="Allow members to change or cancel their booking">
                         <input type="checkbox" id="pubAllowCancel"><span class="slider"></span>
                     </label>
+                </div>
+                <div class="bk-toggle-row">
+                    <span><strong>Bookings per member</strong></span>
+                    <input type="number" id="pubMaxBookings" class="bk-max-input" min="1" max="20" step="1" value="1" title="Maximum number of slots one member may book (1–20)">
                 </div>
 
                 <div style="margin: 15px 0; background: var(--bg-body); padding: 12px 15px; border-radius: 6px; border: 1px solid var(--border-color);">

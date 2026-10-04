@@ -8,6 +8,7 @@ const logger = require("../../services/logger");
 const { formatMemberName } = require("../../services/rank-config");
 const {
   ACCESS_TYPES,
+  LIMITS,
   BookingValidationError,
   normaliseTemplate,
   generateSlots,
@@ -38,7 +39,7 @@ function memberDisplayName(row) {
 function sendError(res, e, fallback) {
   if (e instanceof BookingValidationError) return res.status(400).json({ error: e.message });
   const { BOOKING_ERRORS } = db;
-  if (BOOKING_ERRORS && (e.code === BOOKING_ERRORS.SLOT_FULL || e.code === BOOKING_ERRORS.ALREADY_BOOKED)) {
+  if (BOOKING_ERRORS && [BOOKING_ERRORS.SLOT_FULL, BOOKING_ERRORS.ALREADY_BOOKED, BOOKING_ERRORS.MAX_REACHED].includes(e.code)) {
     return res.status(409).json({ error: e.message });
   }
   if (BOOKING_ERRORS && (e.code === BOOKING_ERRORS.SLOT_NOT_FOUND || e.code === BOOKING_ERRORS.SLOT_BLOCKED)) {
@@ -61,7 +62,7 @@ async function buildEventDetail(event, baseUrl) {
   const personal = event.access_type === "personal";
   const openSlots = slots.filter((s) => !s.is_blocked);
   const totalCapacity = openSlots.reduce((sum, s) => sum + s.capacity, 0);
-  const bookedCount = roster.filter((r) => r.entry_id).length;
+  const bookedCount = roster.filter((r) => r.booking_count > 0).length;
 
   return {
     ...event,
@@ -70,6 +71,7 @@ async function buildEventDetail(event, baseUrl) {
       invited: roster.length,
       booked: bookedCount,
       notBooked: roster.length - bookedCount,
+      bookings: entries.length,
       slotCount: openSlots.length,
       totalCapacity,
       freePlaces: totalCapacity - entries.length,
@@ -199,7 +201,15 @@ router.post("/templates/:id/publish", hasRole("admin"), async (req, res) => {
       access_type: accessType,
       show_booked_names: body.show_booked_names !== undefined ? !!body.show_booked_names : template.show_booked_names,
       allow_cancel: body.allow_cancel !== undefined ? !!body.allow_cancel : template.allow_cancel,
+      max_bookings: template.max_bookings || 1,
     };
+    if (body.max_bookings !== undefined) {
+      const max = Number(body.max_bookings);
+      if (!Number.isInteger(max) || max < 1 || max > LIMITS.maxBookingsPerMember) {
+        return res.status(400).json({ error: `Maximum bookings per member must be a whole number between 1 and ${LIMITS.maxBookingsPerMember}.` });
+      }
+      options.max_bookings = max;
+    }
 
     const actor = actorOf(req);
     const { eventId, publicId } = await db.publishBookingEvent(template, options, slots, memberIds, actor);
@@ -212,6 +222,7 @@ router.post("/templates/:id/publish", hasRole("admin"), async (req, res) => {
       eventName: name,
       templateId: id,
       accessType,
+      maxBookings: options.max_bookings,
       membersInvited: invites.length,
       slotCount: slots.length,
       emailSent: notifications.emailSent,
@@ -338,65 +349,108 @@ router.delete("/events/:id", hasRole("admin"), async (req, res) => {
   }
 });
 
-// Admin books or moves a booking on a member's behalf. Allowed while locked
-// (admin override) but not once archived. Required fields are not enforced —
-// the admin may not have the member's details to hand.
-router.put("/events/:id/bookings/:memberId", hasRole("admin"), async (req, res) => {
-  try {
-    const id = parseId(req.params.id);
-    const memberId = parseId(req.params.memberId);
-    const event = id && (await db.getBookingEventById(id));
-    if (!event) return res.status(404).json({ error: "Booking event not found." });
-    if (event.is_archived) return res.status(400).json({ error: "Archived events cannot be changed." });
+// Admin bookings on a member's behalf. Allowed while locked (admin override) but
+// not once archived. Required fields and the per-member maximum are not enforced —
+// the admin may not have the member's details to hand, and may need to override.
 
-    const invite = memberId && (await db.getBookingInviteForMember(id, memberId));
+async function loadOpenForAdmin(req, res) {
+  const id = parseId(req.params.id);
+  const event = id && (await db.getBookingEventById(id));
+  if (!event) { res.status(404).json({ error: "Booking event not found." }); return null; }
+  if (event.is_archived) { res.status(400).json({ error: "Archived events cannot be changed." }); return null; }
+  return event;
+}
+
+async function loadEntry(req, res, event) {
+  const entryId = parseId(req.params.entryId);
+  const entry = entryId && (await db.getBookingEntryById(entryId));
+  if (!entry || entry.event_id !== event.id) { res.status(404).json({ error: "Booking not found for this event." }); return null; }
+  return entry;
+}
+
+router.post("/events/:id/bookings", hasRole("admin"), async (req, res) => {
+  try {
+    const event = await loadOpenForAdmin(req, res);
+    if (!event) return;
+    const memberId = parseId(req.body?.memberId);
+    const invite = memberId && (await db.getBookingInviteForMember(event.id, memberId));
     if (!invite) return res.status(404).json({ error: "This member is not invited to the event." });
 
     const slotId = parseId(req.body?.slotId);
     if (!slotId) return res.status(400).json({ error: "A slot must be selected." });
     const fieldValues = validateFieldValues(event.fields, req.body?.fieldValues, { enforceRequired: false });
 
-    const { previousSlotId } = await db.saveBooking(id, memberId, slotId, fieldValues, "admin");
-    const entry = await db.getBookingEntryForMember(id, memberId);
+    const entryId = await db.createBooking(event.id, memberId, slotId, fieldValues, "admin", null);
+    const entry = await db.getBookingEntryById(entryId);
     const actor = actorOf(req);
-    await db.logEvent(actor, "Bookings", previousSlotId ? "Booking Changed By Admin" : "Booking Created By Admin", {
-      eventId: id,
+    await db.logEvent(actor, "Bookings", "Booking Created By Admin", {
+      eventId: event.id,
       eventName: event.name,
+      entryId,
       memberId,
       memberName: memberDisplayName(invite),
       slotDate: entry?.slot_date,
       startTime: entry?.start_time,
     });
-    logger.info("[Bookings] Admin booking saved", { eventId: id, memberId, slotId });
+    logger.info("[Bookings] Admin booking created", { eventId: event.id, memberId, slotId, entryId });
+    res.status(201).json({ id: entryId });
+  } catch (e) {
+    sendError(res, e, "Failed to save booking.");
+  }
+});
+
+router.put("/events/:id/bookings/:entryId", hasRole("admin"), async (req, res) => {
+  try {
+    const event = await loadOpenForAdmin(req, res);
+    if (!event) return;
+    const entry = await loadEntry(req, res, event);
+    if (!entry) return;
+
+    const slotId = parseId(req.body?.slotId);
+    if (!slotId) return res.status(400).json({ error: "A slot must be selected." });
+    const fieldValues = validateFieldValues(event.fields, req.body?.fieldValues, { enforceRequired: false });
+
+    await db.moveBooking(entry.id, slotId, fieldValues, "admin");
+    const updated = await db.getBookingEntryById(entry.id);
+    const invite = await db.getBookingInviteForMember(event.id, entry.member_id);
+    const actor = actorOf(req);
+    await db.logEvent(actor, "Bookings", "Booking Changed By Admin", {
+      eventId: event.id,
+      eventName: event.name,
+      entryId: entry.id,
+      memberId: entry.member_id,
+      memberName: invite ? memberDisplayName(invite) : undefined,
+      slotDate: updated?.slot_date,
+      startTime: updated?.start_time,
+      ...(updated && updated.slot_id !== entry.slot_id ? { previousSlotDate: entry.slot_date, previousStartTime: entry.start_time } : {}),
+    });
+    logger.info("[Bookings] Admin booking changed", { eventId: event.id, entryId: entry.id, slotId });
     res.json({ success: true });
   } catch (e) {
     sendError(res, e, "Failed to save booking.");
   }
 });
 
-router.delete("/events/:id/bookings/:memberId", hasRole("admin"), async (req, res) => {
+router.delete("/events/:id/bookings/:entryId", hasRole("admin"), async (req, res) => {
   try {
-    const id = parseId(req.params.id);
-    const memberId = parseId(req.params.memberId);
-    const event = id && (await db.getBookingEventById(id));
-    if (!event) return res.status(404).json({ error: "Booking event not found." });
-    if (event.is_archived) return res.status(400).json({ error: "Archived events cannot be changed." });
+    const event = await loadOpenForAdmin(req, res);
+    if (!event) return;
+    const entry = await loadEntry(req, res, event);
+    if (!entry) return;
+    const invite = await db.getBookingInviteForMember(event.id, entry.member_id);
 
-    const entry = memberId && (await db.getBookingEntryForMember(id, memberId));
-    if (!entry) return res.status(404).json({ error: "This member has no booking for the event." });
-    const invite = await db.getBookingInviteForMember(id, memberId);
-
-    await db.cancelBooking(id, memberId);
+    await db.cancelBookingEntry(entry.id);
     const actor = actorOf(req);
     await db.logEvent(actor, "Bookings", "Booking Cancelled By Admin", {
-      eventId: id,
+      eventId: event.id,
       eventName: event.name,
-      memberId,
+      entryId: entry.id,
+      memberId: entry.member_id,
       memberName: invite ? memberDisplayName(invite) : undefined,
       slotDate: entry.slot_date,
       startTime: entry.start_time,
     });
-    logger.info("[Bookings] Admin booking cancelled", { eventId: id, memberId });
+    logger.info("[Bookings] Admin booking cancelled", { eventId: event.id, entryId: entry.id });
     res.json({ success: true });
   } catch (e) {
     sendError(res, e, "Failed to cancel booking.");
@@ -414,7 +468,7 @@ router.post("/events/:id/remind", hasRole("admin"), async (req, res) => {
     }
 
     const roster = await db.getBookingInvites(id);
-    let targets = roster.filter((r) => !r.entry_id);
+    let targets = roster.filter((r) => !r.booking_count);
     if (req.body?.memberId !== undefined) {
       const memberId = parseId(req.body.memberId);
       targets = targets.filter((r) => r.member_id === memberId);

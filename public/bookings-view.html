@@ -37,7 +37,9 @@
 
         .bv-select { width: 100%; padding: 10px 12px; font-size: 1em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--input-bg); color: var(--text-main); }
 
-        .bv-mine { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+        .bv-mine { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding: 8px 0; }
+        .bv-mine + .bv-mine { border-top: 1px solid var(--border-color); }
+        .bv-mine.changing .bv-mine-when { color: var(--primary); }
         .bv-mine-when { font-size: 1.15em; font-weight: 700; color: var(--text-main); }
         .bv-mine-actions { display:flex; gap:8px; flex-wrap:wrap; }
 
@@ -115,14 +117,8 @@
             </div>
 
             <div class="bv-card" id="myBookingCard" style="display:none;">
-                <h2 class="bv-h2">Your appointment</h2>
-                <div class="bv-mine">
-                    <div class="bv-mine-when" id="myBookingWhen"></div>
-                    <div class="bv-mine-actions">
-                        <button id="btnChange" class="btn-primary" onclick="startChange()" title="Choose a different slot or update your details">Change</button>
-                        <button id="btnCancel" class="btn-danger" onclick="cancelMyBooking()" title="Cancel your appointment and free the slot">Cancel booking</button>
-                    </div>
-                </div>
+                <h2 class="bv-h2" id="myBookingTitle">Your appointment</h2>
+                <div id="myBookingList"></div>
                 <div class="bv-note" id="myBookingNote"></div>
             </div>
 

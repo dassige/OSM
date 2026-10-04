@@ -2,12 +2,13 @@ const crypto = require("crypto");
 const { initDB } = require("./connection");
 const { sanitizeRichText } = require("../html-sanitizer");
 
-// Error codes thrown by saveBooking() — routes map these to 4xx responses.
+// Error codes thrown by createBooking()/moveBooking() — routes map these to 4xx responses.
 const BOOKING_ERRORS = {
   SLOT_NOT_FOUND: "SLOT_NOT_FOUND",
   SLOT_BLOCKED: "SLOT_BLOCKED",
   SLOT_FULL: "SLOT_FULL",
   ALREADY_BOOKED: "ALREADY_BOOKED",
+  MAX_REACHED: "MAX_REACHED",
 };
 
 function bookingError(code, message) {
@@ -66,11 +67,11 @@ async function createBookingTemplate(t, createdBy) {
   const result = await db.run(
     `INSERT INTO booking_templates
        (name, description, location, contact_info, slot_minutes, slot_capacity, schedule, fields,
-        access_type, show_booked_names, allow_cancel, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        access_type, show_booked_names, allow_cancel, max_bookings, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     t.name, sanitizeRichText(t.description || ""), t.location || "", t.contact_info || "",
     t.slot_minutes, t.slot_capacity, JSON.stringify(t.schedule || []), JSON.stringify(t.fields || []),
-    t.access_type, t.show_booked_names ? 1 : 0, t.allow_cancel ? 1 : 0, createdBy || null,
+    t.access_type, t.show_booked_names ? 1 : 0, t.allow_cancel ? 1 : 0, t.max_bookings || 1, createdBy || null,
   );
   return result.lastID;
 }
@@ -81,11 +82,11 @@ async function updateBookingTemplate(id, t) {
     `UPDATE booking_templates SET
        name = ?, description = ?, location = ?, contact_info = ?, slot_minutes = ?, slot_capacity = ?,
        schedule = ?, fields = ?, access_type = ?, show_booked_names = ?, allow_cancel = ?,
-       updated_at = CURRENT_TIMESTAMP
+       max_bookings = ?, updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`,
     t.name, sanitizeRichText(t.description || ""), t.location || "", t.contact_info || "",
     t.slot_minutes, t.slot_capacity, JSON.stringify(t.schedule || []), JSON.stringify(t.fields || []),
-    t.access_type, t.show_booked_names ? 1 : 0, t.allow_cancel ? 1 : 0, id,
+    t.access_type, t.show_booked_names ? 1 : 0, t.allow_cancel ? 1 : 0, t.max_bookings || 1, id,
   );
   return result.changes;
 }
@@ -105,11 +106,11 @@ async function duplicateBookingTemplate(id, createdBy) {
   const result = await db.run(
     `INSERT INTO booking_templates
        (name, description, location, contact_info, slot_minutes, slot_capacity, schedule, fields,
-        access_type, show_booked_names, allow_cancel, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, '[]', ?, ?, ?, ?, ?)`,
+        access_type, show_booked_names, allow_cancel, max_bookings, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, '[]', ?, ?, ?, ?, ?, ?)`,
     `${src.name} (Copy)`.slice(0, 200), src.description, src.location, src.contact_info,
     src.slot_minutes, src.slot_capacity, src.fields,
-    src.access_type, src.show_booked_names, src.allow_cancel, createdBy || null,
+    src.access_type, src.show_booked_names, src.allow_cancel, src.max_bookings || 1, createdBy || null,
   );
   return result.lastID;
 }
@@ -119,7 +120,7 @@ async function duplicateBookingTemplate(id, createdBy) {
 /**
  * Snapshot a template into a live event with its slots and invite roster.
  * @param {object} template  parsed template row
- * @param {object} options   { name, access_type, show_booked_names, allow_cancel }
+ * @param {object} options   { name, access_type, show_booked_names, allow_cancel, max_bookings }
  * @param {Array}  slots     output of bookingService.generateSlots()
  * @param {number[]} memberIds
  * @param {string} publishedBy actor name
@@ -132,31 +133,39 @@ async function publishBookingEvent(template, options, slots, memberIds, publishe
     const eventResult = await db.run(
       `INSERT INTO booking_events
          (template_id, public_id, name, description, location, contact_info, slot_minutes, fields,
-          access_type, show_booked_names, allow_cancel, published_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          access_type, show_booked_names, allow_cancel, max_bookings, published_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       template.id, publicId, options.name || template.name, sanitizeRichText(template.description || ""),
       template.location || "", template.contact_info || "", template.slot_minutes,
       JSON.stringify(template.fields || []), options.access_type,
-      options.show_booked_names ? 1 : 0, options.allow_cancel ? 1 : 0, publishedBy || null,
+      options.show_booked_names ? 1 : 0, options.allow_cancel ? 1 : 0, options.max_bookings || 1, publishedBy || null,
     );
     const eventId = eventResult.lastID;
 
+    // Statements are finalized even when an insert fails, otherwise the rollback
+    // leaves them open and the connection can no longer be closed cleanly.
     const slotStmt = await db.prepare(
       "INSERT INTO booking_slots (event_id, slot_date, start_time, end_time, capacity) VALUES (?, ?, ?, ?, ?)",
     );
-    for (const s of slots) {
-      await slotStmt.run(eventId, s.slot_date, s.start_time, s.end_time, s.capacity);
+    try {
+      for (const s of slots) {
+        await slotStmt.run(eventId, s.slot_date, s.start_time, s.end_time, s.capacity);
+      }
+    } finally {
+      await slotStmt.finalize();
     }
-    await slotStmt.finalize();
 
     const personal = options.access_type === "personal";
     const inviteStmt = await db.prepare(
       "INSERT INTO booking_invites (event_id, member_id, access_code) VALUES (?, ?, ?)",
     );
-    for (const memberId of [...new Set(memberIds)]) {
-      await inviteStmt.run(eventId, memberId, personal ? crypto.randomUUID() : null);
+    try {
+      for (const memberId of [...new Set(memberIds)]) {
+        await inviteStmt.run(eventId, memberId, personal ? crypto.randomUUID() : null);
+      }
+    } finally {
+      await inviteStmt.finalize();
     }
-    await inviteStmt.finalize();
 
     await db.exec("COMMIT");
     return { eventId, publicId };
@@ -172,10 +181,11 @@ async function getBookingEvents() {
   const db = await initDB();
   return db.all(`
     SELECT e.id, e.template_id, e.public_id, e.name, e.location, e.access_type,
-           e.show_booked_names, e.allow_cancel, e.is_locked, e.is_enabled, e.is_archived,
+           e.show_booked_names, e.allow_cancel, e.max_bookings, e.is_locked, e.is_enabled, e.is_archived,
            e.archived_at, e.published_by, e.published_at,
            (SELECT COUNT(*) FROM booking_invites i WHERE i.event_id = e.id) AS invited_count,
-           (SELECT COUNT(*) FROM booking_entries b WHERE b.event_id = e.id) AS booked_count,
+           (SELECT COUNT(DISTINCT b.member_id) FROM booking_entries b WHERE b.event_id = e.id) AS booked_count,
+           (SELECT COUNT(*) FROM booking_entries b WHERE b.event_id = e.id) AS entry_count,
            (SELECT COUNT(*) FROM booking_slots s WHERE s.event_id = e.id AND s.is_blocked = 0) AS slot_count,
            (SELECT COALESCE(SUM(s.capacity), 0) FROM booking_slots s WHERE s.event_id = e.id AND s.is_blocked = 0) AS total_capacity,
            (SELECT MIN(s.slot_date) FROM booking_slots s WHERE s.event_id = e.id) AS first_date,
@@ -209,7 +219,9 @@ async function getBookingSlots(eventId) {
   );
 }
 
-// Roster: every invited member with their booking (if any).
+// Roster: one row per invited member, with how many bookings they hold. (A member
+// may hold several bookings, so they are counted rather than joined — a join would
+// repeat the member and, for example, notify them twice.)
 async function getBookingInvites(eventId) {
   const db = await initDB();
   return db.all(
@@ -217,12 +229,9 @@ async function getBookingInvites(eventId) {
             m.name AS member_name, m.rank AS member_rank,
             m.first_name AS member_first_name, m.last_name AS member_last_name,
             m.email, m.mobile, m.notificationPreference AS notification_preference,
-            b.id AS entry_id, b.slot_id, b.booked_at,
-            s.slot_date, s.start_time, s.end_time
+            (SELECT COUNT(*) FROM booking_entries b WHERE b.event_id = i.event_id AND b.member_id = i.member_id) AS booking_count
      FROM booking_invites i
      JOIN members m ON m.id = i.member_id
-     LEFT JOIN booking_entries b ON b.event_id = i.event_id AND b.member_id = i.member_id
-     LEFT JOIN booking_slots s ON s.id = b.slot_id
      WHERE i.event_id = ?
      ORDER BY m.name COLLATE NOCASE ASC`,
     eventId,
@@ -273,78 +282,141 @@ async function getBookingInviteForMember(eventId, memberId) {
   );
 }
 
-async function getBookingEntryForMember(eventId, memberId) {
-  const db = await initDB();
-  const row = await db.get(
-    `SELECT b.id, b.slot_id, b.member_id, b.field_values, b.source, b.booked_at, b.updated_at,
-            s.slot_date, s.start_time, s.end_time
-     FROM booking_entries b
-     JOIN booking_slots s ON s.id = b.slot_id
-     WHERE b.event_id = ? AND b.member_id = ?`,
-    eventId, memberId,
-  );
+const ENTRY_COLUMNS = `b.id, b.event_id, b.slot_id, b.member_id, b.field_values, b.source, b.booked_at, b.updated_at,
+            s.slot_date, s.start_time, s.end_time`;
+
+function parseEntry(row) {
   return row ? { ...row, field_values: parseJson(row.field_values, {}) } : row;
 }
 
-/**
- * Create or move a member's booking. Capacity is enforced inside the single
- * INSERT/UPDATE statement (the count subquery and the write are atomic in
- * SQLite), so two members racing for the last place cannot both win — and no
- * explicit transaction is needed on the shared connection.
- * @returns {{ entryId: number, previousSlotId: number|null }}
- */
-async function saveBooking(eventId, memberId, slotId, fieldValues, source = "member") {
+// All bookings a member holds for an event, in slot order.
+async function getBookingEntriesForMember(eventId, memberId) {
   const db = await initDB();
+  const rows = await db.all(
+    `SELECT ${ENTRY_COLUMNS}
+     FROM booking_entries b
+     JOIN booking_slots s ON s.id = b.slot_id
+     WHERE b.event_id = ? AND b.member_id = ?
+     ORDER BY s.slot_date ASC, s.start_time ASC`,
+    eventId, memberId,
+  );
+  return rows.map(parseEntry);
+}
+
+async function getBookingEntryById(entryId) {
+  const db = await initDB();
+  return parseEntry(await db.get(
+    `SELECT ${ENTRY_COLUMNS}
+     FROM booking_entries b
+     JOIN booking_slots s ON s.id = b.slot_id
+     WHERE b.id = ?`,
+    entryId,
+  ));
+}
+
+// Capacity check shared by create/move: the count subquery and the write run in
+// one SQLite statement, so two members racing for the last place can't both win.
+const HAS_ROOM = `(SELECT COUNT(*) FROM booking_entries WHERE slot_id = ?) <
+                  (SELECT capacity FROM booking_slots WHERE id = ? AND is_blocked = 0)`;
+
+async function assertSlotBookable(db, eventId, slotId) {
   const slot = await db.get("SELECT id, is_blocked FROM booking_slots WHERE id = ? AND event_id = ?", slotId, eventId);
   if (!slot) throw bookingError(BOOKING_ERRORS.SLOT_NOT_FOUND, "Slot not found.");
   if (slot.is_blocked) throw bookingError(BOOKING_ERRORS.SLOT_BLOCKED, "This slot is not available.");
+}
 
-  const valuesJson = JSON.stringify(fieldValues || {});
-  const hasRoom = `(SELECT COUNT(*) FROM booking_entries WHERE slot_id = ?) <
-                   (SELECT capacity FROM booking_slots WHERE id = ? AND is_blocked = 0)`;
+function isSameSlotConflict(e) {
+  return /UNIQUE constraint failed/i.test(e.message);
+}
 
-  const existing = await db.get(
-    "SELECT id, slot_id FROM booking_entries WHERE event_id = ? AND member_id = ?",
-    eventId, memberId,
-  );
+const SAME_SLOT_MESSAGE = "This slot is already booked by this member.";
 
-  if (existing) {
-    if (existing.slot_id === Number(slotId)) {
-      await db.run(
-        "UPDATE booking_entries SET field_values = ?, source = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-        valuesJson, source, existing.id,
-      );
-      return { entryId: existing.id, previousSlotId: existing.slot_id };
-    }
-    const result = await db.run(
-      `UPDATE booking_entries SET slot_id = ?, field_values = ?, source = ?, updated_at = CURRENT_TIMESTAMP
-       WHERE id = ? AND ${hasRoom}`,
-      slotId, valuesJson, source, existing.id, slotId, slotId,
-    );
-    if (result.changes === 0) throw bookingError(BOOKING_ERRORS.SLOT_FULL, "This slot has just been fully booked. Please choose another.");
-    return { entryId: existing.id, previousSlotId: existing.slot_id };
-  }
+// Checked before the capacity test, so a member re-selecting a slot they already
+// hold gets "already booked" rather than "slot full" (full only because of them).
+async function assertNotHoldingSlot(db, memberId, slotId) {
+  const held = await db.get("SELECT 1 FROM booking_entries WHERE slot_id = ? AND member_id = ?", slotId, memberId);
+  if (held) throw bookingError(BOOKING_ERRORS.ALREADY_BOOKED, SAME_SLOT_MESSAGE);
+}
+
+/**
+ * Add a booking for a member. When maxBookings is set, the member's booking count
+ * is checked in the same statement as the insert (null = no limit, e.g. admins).
+ * @returns {Promise<number>} new entry id
+ */
+async function createBooking(eventId, memberId, slotId, fieldValues, source = "member", maxBookings = null) {
+  const db = await initDB();
+  await assertSlotBookable(db, eventId, slotId);
+  await assertNotHoldingSlot(db, memberId, slotId);
+  const underMax = maxBookings
+    ? "AND (SELECT COUNT(*) FROM booking_entries WHERE event_id = ? AND member_id = ?) < ?"
+    : "";
+  const params = [eventId, slotId, memberId, JSON.stringify(fieldValues || {}), source, slotId, slotId];
+  if (maxBookings) params.push(eventId, memberId, maxBookings);
 
   let result;
   try {
     result = await db.run(
       `INSERT INTO booking_entries (event_id, slot_id, member_id, field_values, source)
-       SELECT ?, ?, ?, ?, ? WHERE ${hasRoom}`,
-      eventId, slotId, memberId, valuesJson, source, slotId, slotId,
+       SELECT ?, ?, ?, ?, ? WHERE ${HAS_ROOM} ${underMax}`,
+      ...params,
     );
   } catch (e) {
-    if (/UNIQUE constraint failed/i.test(e.message)) {
-      throw bookingError(BOOKING_ERRORS.ALREADY_BOOKED, "This member already has a booking for this event.");
+    if (isSameSlotConflict(e)) throw bookingError(BOOKING_ERRORS.ALREADY_BOOKED, SAME_SLOT_MESSAGE);
+    throw e;
+  }
+  if (result.changes === 0) {
+    if (maxBookings) {
+      const { n } = await db.get("SELECT COUNT(*) AS n FROM booking_entries WHERE event_id = ? AND member_id = ?", eventId, memberId);
+      if (n >= maxBookings) {
+        throw bookingError(BOOKING_ERRORS.MAX_REACHED, maxBookings === 1
+          ? "You already have a booking for this event."
+          : `You already have the maximum of ${maxBookings} bookings for this event.`);
+      }
     }
+    throw bookingError(BOOKING_ERRORS.SLOT_FULL, "This slot has just been fully booked. Please choose another.");
+  }
+  return result.lastID;
+}
+
+/**
+ * Move a booking to another slot and/or update its answers. A failed move leaves
+ * the booking where it was.
+ * @returns {Promise<{ previousSlotId: number }>}
+ */
+async function moveBooking(entryId, slotId, fieldValues, source = "member") {
+  const db = await initDB();
+  const entry = await db.get("SELECT id, event_id, slot_id, member_id FROM booking_entries WHERE id = ?", entryId);
+  if (!entry) throw bookingError(BOOKING_ERRORS.SLOT_NOT_FOUND, "Booking not found.");
+  const valuesJson = JSON.stringify(fieldValues || {});
+
+  if (entry.slot_id === Number(slotId)) {
+    await db.run(
+      "UPDATE booking_entries SET field_values = ?, source = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      valuesJson, source, entryId,
+    );
+    return { previousSlotId: entry.slot_id };
+  }
+
+  await assertSlotBookable(db, entry.event_id, slotId);
+  await assertNotHoldingSlot(db, entry.member_id, slotId);
+  let result;
+  try {
+    result = await db.run(
+      `UPDATE booking_entries SET slot_id = ?, field_values = ?, source = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND ${HAS_ROOM}`,
+      slotId, valuesJson, source, entryId, slotId, slotId,
+    );
+  } catch (e) {
+    if (isSameSlotConflict(e)) throw bookingError(BOOKING_ERRORS.ALREADY_BOOKED, SAME_SLOT_MESSAGE);
     throw e;
   }
   if (result.changes === 0) throw bookingError(BOOKING_ERRORS.SLOT_FULL, "This slot has just been fully booked. Please choose another.");
-  return { entryId: result.lastID, previousSlotId: null };
+  return { previousSlotId: entry.slot_id };
 }
 
-async function cancelBooking(eventId, memberId) {
+async function cancelBookingEntry(entryId) {
   const db = await initDB();
-  const result = await db.run("DELETE FROM booking_entries WHERE event_id = ? AND member_id = ?", eventId, memberId);
+  const result = await db.run("DELETE FROM booking_entries WHERE id = ?", entryId);
   return result.changes;
 }
 
@@ -399,9 +471,11 @@ module.exports = {
   getBookingEntries,
   getBookingInviteByCode,
   getBookingInviteForMember,
-  getBookingEntryForMember,
-  saveBooking,
-  cancelBooking,
+  getBookingEntriesForMember,
+  getBookingEntryById,
+  createBooking,
+  moveBooking,
+  cancelBookingEntry,
   setBookingEventLocked,
   setBookingEventEnabled,
   archiveBookingEvent,

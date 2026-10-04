@@ -1616,7 +1616,7 @@
                                                               },
                                                       "body":  {
                                                                    "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"Nurse Health Screening\",\n  \"description\": \"\u003cp\u003eAnnual personal health check with the visiting nurse.\u003c/p\u003e\",\n  \"location\": \"Station meeting room\",\n  \"contact_info\": \"Chief Fire Officer — 021 000 0000\",\n  \"slot_minutes\": 15,\n  \"slot_capacity\": 1,\n  \"schedule\": [\n    {\n      \"date\": \"2026-11-10\",\n      \"windows\": [\n        {\n          \"start\": \"09:00\",\n          \"end\": \"12:00\"\n        },\n        {\n          \"start\": \"13:00\",\n          \"end\": \"16:00\"\n        }\n      ]\n    },\n    {\n      \"date\": \"2026-11-11\",\n      \"windows\": [\n        {\n          \"start\": \"18:00\",\n          \"end\": \"21:00\"\n        }\n      ]\n    }\n  ],\n  \"fields\": [\n    {\n      \"id\": \"phone\",\n      \"label\": \"Mobile phone\",\n      \"type\": \"tel\",\n      \"required\": true\n    },\n    {\n      \"id\": \"notes\",\n      \"label\": \"Anything the nurse should know?\",\n      \"type\": \"textarea\",\n      \"required\": false\n    }\n  ],\n  \"access_type\": \"personal\",\n  \"show_booked_names\": false,\n  \"allow_cancel\": true\n}"
+                                                                   "raw":  "{\n  \"name\": \"Nurse Health Screening\",\n  \"description\": \"\u003cp\u003eAnnual personal health check with the visiting nurse.\u003c/p\u003e\",\n  \"location\": \"Station meeting room\",\n  \"contact_info\": \"Chief Fire Officer — 021 000 0000\",\n  \"slot_minutes\": 15,\n  \"slot_capacity\": 1,\n  \"schedule\": [\n    {\n      \"date\": \"2026-11-10\",\n      \"windows\": [\n        {\n          \"start\": \"09:00\",\n          \"end\": \"12:00\"\n        },\n        {\n          \"start\": \"13:00\",\n          \"end\": \"16:00\"\n        }\n      ]\n    },\n    {\n      \"date\": \"2026-11-11\",\n      \"windows\": [\n        {\n          \"start\": \"18:00\",\n          \"end\": \"21:00\"\n        }\n      ]\n    }\n  ],\n  \"fields\": [\n    {\n      \"id\": \"phone\",\n      \"label\": \"Mobile phone\",\n      \"type\": \"tel\",\n      \"required\": true\n    },\n    {\n      \"id\": \"notes\",\n      \"label\": \"Anything the nurse should know?\",\n      \"type\": \"textarea\",\n      \"required\": false\n    }\n  ],\n  \"access_type\": \"personal\",\n  \"show_booked_names\": false,\n  \"allow_cancel\": true,\n  \"max_bookings\": 1\n}"
                                                                },
                                                       "description":  "Creates a booking template. Returns 400 for invalid dates/times, overlapping windows, or values outside the limits."
                                                   }
@@ -1651,7 +1651,7 @@
                                                               },
                                                       "body":  {
                                                                    "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"Nurse Health Screening\",\n  \"description\": \"\u003cp\u003eAnnual personal health check with the visiting nurse.\u003c/p\u003e\",\n  \"location\": \"Station meeting room\",\n  \"contact_info\": \"Chief Fire Officer — 021 000 0000\",\n  \"slot_minutes\": 15,\n  \"slot_capacity\": 1,\n  \"schedule\": [\n    {\n      \"date\": \"2026-11-10\",\n      \"windows\": [\n        {\n          \"start\": \"09:00\",\n          \"end\": \"12:00\"\n        },\n        {\n          \"start\": \"13:00\",\n          \"end\": \"16:00\"\n        }\n      ]\n    },\n    {\n      \"date\": \"2026-11-11\",\n      \"windows\": [\n        {\n          \"start\": \"18:00\",\n          \"end\": \"21:00\"\n        }\n      ]\n    }\n  ],\n  \"fields\": [\n    {\n      \"id\": \"phone\",\n      \"label\": \"Mobile phone\",\n      \"type\": \"tel\",\n      \"required\": true\n    },\n    {\n      \"id\": \"notes\",\n      \"label\": \"Anything the nurse should know?\",\n      \"type\": \"textarea\",\n      \"required\": false\n    }\n  ],\n  \"access_type\": \"personal\",\n  \"show_booked_names\": false,\n  \"allow_cancel\": true\n}"
+                                                                   "raw":  "{\n  \"name\": \"Nurse Health Screening\",\n  \"description\": \"\u003cp\u003eAnnual personal health check with the visiting nurse.\u003c/p\u003e\",\n  \"location\": \"Station meeting room\",\n  \"contact_info\": \"Chief Fire Officer — 021 000 0000\",\n  \"slot_minutes\": 15,\n  \"slot_capacity\": 1,\n  \"schedule\": [\n    {\n      \"date\": \"2026-11-10\",\n      \"windows\": [\n        {\n          \"start\": \"09:00\",\n          \"end\": \"12:00\"\n        },\n        {\n          \"start\": \"13:00\",\n          \"end\": \"16:00\"\n        }\n      ]\n    },\n    {\n      \"date\": \"2026-11-11\",\n      \"windows\": [\n        {\n          \"start\": \"18:00\",\n          \"end\": \"21:00\"\n        }\n      ]\n    }\n  ],\n  \"fields\": [\n    {\n      \"id\": \"phone\",\n      \"label\": \"Mobile phone\",\n      \"type\": \"tel\",\n      \"required\": true\n    },\n    {\n      \"id\": \"notes\",\n      \"label\": \"Anything the nurse should know?\",\n      \"type\": \"textarea\",\n      \"required\": false\n    }\n  ],\n  \"access_type\": \"personal\",\n  \"show_booked_names\": false,\n  \"allow_cancel\": true,\n  \"max_bookings\": 1\n}"
                                                                },
                                                       "description":  "Replaces a booking template. Published events are not affected (they are snapshots)."
                                                   }
@@ -1738,7 +1738,7 @@
                                                               },
                                                       "body":  {
                                                                    "mode":  "raw",
-                                                                   "raw":  "{\n  \"name\": \"Nurse Health Screening 2026\",\n  \"access_type\": \"personal\",\n  \"show_booked_names\": false,\n  \"allow_cancel\": true,\n  \"memberIds\": [\n    1,\n    2,\n    3\n  ],\n  \"notify\": {\n    \"email\": true,\n    \"whatsapp\": true\n  }\n}"
+                                                                   "raw":  "{\n  \"name\": \"Nurse Health Screening 2026\",\n  \"access_type\": \"personal\",\n  \"show_booked_names\": false,\n  \"allow_cancel\": true,\n  \"max_bookings\": 1,\n  \"memberIds\": [\n    1,\n    2,\n    3\n  ],\n  \"notify\": {\n    \"email\": true,\n    \"whatsapp\": true\n  }\n}"
                                                                },
                                                       "description":  "Publishes the template as a live event, generates slots and the invite roster, and notifies members on the selected channels (filtered by each member preference; simulated in demo mode). Returns the event id, public GUID, shared link (general access only) and a notification summary."
                                                   }
@@ -1912,6 +1912,42 @@
                                   {
                                       "name":  "Book Member (Admin)",
                                       "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id/bookings",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "bookings",
+                                                                               "events",
+                                                                               ":id",
+                                                                               "bookings"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "id",
+                                                                                       "value":  "1"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"memberId\": 2,\n  \"slotId\": 12,\n  \"fieldValues\": {\n    \"phone\": \"021 123 4567\"\n  }\n}"
+                                                               },
+                                                      "description":  "Adds a booking for an invited member. Allowed while locked, not once archived. Required fields and the per-member maximum are not enforced; formats are. Returns the new booking (entry) id. 409 if the slot is full or the member already holds it."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Change Booking (Admin)",
+                                      "request":  {
                                                       "method":  "PUT",
                                                       "header":  [
                                                                      {
@@ -1920,7 +1956,7 @@
                                                                      }
                                                                  ],
                                                       "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id/bookings/:memberId",
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id/bookings/:entryId",
                                                                   "host":  [
                                                                                "{{baseUrl}}"
                                                                            ],
@@ -1930,7 +1966,7 @@
                                                                                "events",
                                                                                ":id",
                                                                                "bookings",
-                                                                               ":memberId"
+                                                                               ":entryId"
                                                                            ],
                                                                   "variable":  [
                                                                                    {
@@ -1938,24 +1974,24 @@
                                                                                        "value":  "1"
                                                                                    },
                                                                                    {
-                                                                                       "key":  "memberId",
-                                                                                       "value":  "2"
+                                                                                       "key":  "entryId",
+                                                                                       "value":  "21"
                                                                                    }
                                                                                ]
                                                               },
                                                       "body":  {
                                                                    "mode":  "raw",
-                                                                   "raw":  "{\n  \"slotId\": 12,\n  \"fieldValues\": {\n    \"phone\": \"021 123 4567\"\n  }\n}"
+                                                                   "raw":  "{\n  \"slotId\": 13,\n  \"fieldValues\": {\n    \"phone\": \"021 123 4567\"\n  }\n}"
                                                                },
-                                                      "description":  "Books or moves a booking on behalf of an invited member. Allowed while locked, not once archived. Required fields are not enforced; formats are. Returns 409 if the slot is full."
+                                                      "description":  "Moves one booking to another slot and/or updates its answers. Use the booking id from entries[].id in the event dashboard. A failed move leaves the booking where it was."
                                                   }
                                   },
                                   {
-                                      "name":  "Cancel Member Booking (Admin)",
+                                      "name":  "Cancel Booking (Admin)",
                                       "request":  {
                                                       "method":  "DELETE",
                                                       "url":  {
-                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id/bookings/:memberId",
+                                                                  "raw":  "{{baseUrl}}/api/bookings/events/:id/bookings/:entryId",
                                                                   "host":  [
                                                                                "{{baseUrl}}"
                                                                            ],
@@ -1965,7 +2001,7 @@
                                                                                "events",
                                                                                ":id",
                                                                                "bookings",
-                                                                               ":memberId"
+                                                                               ":entryId"
                                                                            ],
                                                                   "variable":  [
                                                                                    {
@@ -1973,12 +2009,12 @@
                                                                                        "value":  "1"
                                                                                    },
                                                                                    {
-                                                                                       "key":  "memberId",
-                                                                                       "value":  "2"
+                                                                                       "key":  "entryId",
+                                                                                       "value":  "21"
                                                                                    }
                                                                                ]
                                                               },
-                                                      "description":  "Cancels a member\u0027s booking and frees the slot."
+                                                      "description":  "Cancels one booking and frees the slot."
                                                   }
                                   },
                                   {
@@ -2053,7 +2089,7 @@
                                                                                    }
                                                                                ]
                                                               },
-                                                      "description":  "Returns event info, slots (availability, is_past, is_mine, booked_names when enabled) and the member\u0027s own booking including their answers. Archived/unknown links return 404, disabled 403."
+                                                      "description":  "Returns event info (including max_bookings), slots (availability, is_past, is_mine, booked_names when enabled) and the member\u0027s own bookings (me.bookings, with answers). Archived/unknown links return 404, disabled 403."
                                                   }
                                   },
                                   {
@@ -2091,7 +2127,7 @@
                                                   }
                                   },
                                   {
-                                      "name":  "Book or Change Slot",
+                                      "name":  "Book a Slot",
                                       "request":  {
                                                       "auth":  {
                                                                    "type":  "noauth"
@@ -2125,11 +2161,49 @@
                                                                    "mode":  "raw",
                                                                    "raw":  "{\n  \"code\": \"e581aac2-0cab-4de0-b2cc-df3a470117bc\",\n  \"slotId\": 12,\n  \"fieldValues\": {\n    \"phone\": \"021 123 4567\"\n  }\n}"
                                                                },
-                                                      "description":  "Creates the booking, or moves/updates it when the event allows changes. Use `memberId` instead of `code` on general links. 409 if the slot is full or changes are not allowed; 400 if the slot has already started; 403 if locked."
+                                                      "description":  "Adds a booking, up to the event\u0027s max_bookings per member. Use `memberId` instead of `code` on general links. 409 if the slot is full, already held by the member, or the maximum is reached; 400 if the slot has already started; 403 if locked."
                                                   }
                                   },
                                   {
-                                      "name":  "Cancel Booking",
+                                      "name":  "Change One of My Bookings",
+                                      "request":  {
+                                                      "auth":  {
+                                                                   "type":  "noauth"
+                                                               },
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/live-bookings/:publicId/book",
+                                                                  "host":  [
+                                                                               "{{baseUrl}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "api",
+                                                                               "live-bookings",
+                                                                               ":publicId",
+                                                                               "book"
+                                                                           ],
+                                                                  "variable":  [
+                                                                                   {
+                                                                                       "key":  "publicId",
+                                                                                       "value":  "3115fc90-5c05-4ba5-bdcf-6b5a341b87bc"
+                                                                                   }
+                                                                               ]
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"code\": \"e581aac2-0cab-4de0-b2cc-df3a470117bc\",\n  \"entryId\": 21,\n  \"slotId\": 13,\n  \"fieldValues\": {\n    \"phone\": \"021 123 4567\"\n  }\n}"
+                                                               },
+                                                      "description":  "Moves the booking identified by `entryId` (from me.bookings[].entryId) to another slot, or updates its answers when slotId is unchanged. Only when the event allows changes."
+                                                  }
+                                  },
+                                  {
+                                      "name":  "Cancel One of My Bookings",
                                       "request":  {
                                                       "auth":  {
                                                                    "type":  "noauth"
@@ -2161,9 +2235,9 @@
                                                               },
                                                       "body":  {
                                                                    "mode":  "raw",
-                                                                   "raw":  "{\n  \"code\": \"e581aac2-0cab-4de0-b2cc-df3a470117bc\"\n}"
+                                                                   "raw":  "{\n  \"code\": \"e581aac2-0cab-4de0-b2cc-df3a470117bc\",\n  \"entryId\": 21\n}"
                                                                },
-                                                      "description":  "Cancels the member booking when the event allows cancelling, is not locked, and the appointment has not started. Use `memberId` instead of `code` on general links."
+                                                      "description":  "Cancels the booking identified by `entryId` when the event allows cancelling, is not locked, and the appointment has not started. `entryId` may be omitted when the member holds a single booking."
                                                   }
                                   }
                               ]

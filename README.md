@@ -33,7 +33,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **Booking Events (Appointment Scheduling):**
       * **Templates:** Configure days, time windows (e.g. a lunch break), slot length, places per slot and the information to collect (phone number etc.); duplicate a template to re-run the event with new dates.
       * **Two Link Types:** **General** — one shared link (e.g. for a group chat), members pick their name; **Personal** — one link per member, identified automatically.
-      * **Member Options:** Per event, show or hide the names on booked slots and allow or block members changing/cancelling their own booking.
+      * **Member Options:** Per event, show or hide the names on booked slots, allow or block members changing/cancelling their own bookings, and set how many slots each member may book (1–20).
       * **Notifications:** Email and/or WhatsApp invitations and reminders using a dedicated, editable template.
       * **Event Dashboard:** Who has and hasn't booked, lock / disable / one-way archive, book or move members on their behalf, and a printable / PDF booking sheet to hand to the organiser (e.g. the visiting nurse).
   * **Web-Based Management:**
@@ -464,18 +464,18 @@ Slot booking for scheduled appointments — for example the annual personal heal
 
 1.  **Create a Template** (**Operations → Maintenance → Manage Bookings**):
       * **+ Add Template**, give it a name, location, contact info and instructions for members (rich text).
-      * Set the **slot length** and **places per slot**, then add each **day** with one or more **time windows** (two windows leave a lunch break). A live preview lists every slot and warns about past dates, duplicate dates and overlapping windows.
+      * Set the **slot length** and **places per slot**, then add each **day** with one or more **time windows** (two windows leave a lunch break). A new window starts where the day's previous window ends. A live preview recalculates every slot from scratch on each change (a date/time is never listed twice) and warns about past dates, duplicate dates and overlapping windows.
       * Add the **information to collect** (short text, phone, email or long text; optionally required). The member's name is always recorded.
-      * Choose the **publishing defaults**: personal or general link, show names on booked slots, members can change/cancel.
+      * Choose the **publishing defaults**: personal or general link, show names on booked slots, members can change/cancel, and **bookings per member** (default 1).
       * **Duplicate** copies everything except the dates — the quickest way to set up next year's event.
 2.  **Publish:**
       * Click **Publish**, adjust the event name/options if needed, choose all active members or a specific selection, and tick **Email** and/or **WhatsApp**. Each member is only contacted on the ticked channels their own notification preference allows (simulated in demo mode).
       * General events give you one shared link to copy; personal events give each member their own link (copyable from the dashboard).
-3.  **Members book** at `/booking/<link>` (no login): general-link visitors first pick their name; everyone then taps a free slot, answers the questions and confirms. If allowed, members can change or cancel until bookings are locked. Slots that have already started can't be booked, moved or cancelled. All slot times are local to `APP_TIMEZONE`.
+3.  **Members book** at `/booking/<link>` (no login): general-link visitors first pick their name; everyone then taps a free slot, answers the questions and confirms — up to the event's bookings-per-member limit (a member can never book the same slot twice). If allowed, members can change or cancel each booking until bookings are locked. Slots that have already started can't be booked, moved or cancelled. All slot times are local to `APP_TIMEZONE`.
 4.  **Manage** (**Operations → Bookings** → **Open**):
       * See invited / booked / not booked / free places, and the booked and not-booked lists.
       * **Locked** stops member changes (admins can still edit); **Booking link enabled** switches the link off temporarily; **Send reminders** emails/WhatsApps everyone who hasn't booked.
-      * **Book**, **Change** or **Cancel booking** on a member's behalf (e.g. after a phone call) and copy personal links.
+      * **Book**, **Change** or **Cancel booking** on a member's behalf (e.g. after a phone call) and copy personal links. Each booked row is one booking; when members may book several slots, **Book another** adds an extra one (admins are not limited by the maximum).
       * **Print** or **Export PDF** the booking sheet — every slot of every day with who booked it and their answers, plus a ✓ column.
       * **Archive** closes the event for good (the link never works again); an archived event can then be **Deleted**.
 5.  **Invitation wording** is edited in **Communication → Templates → Booking Invitations** (separate email and WhatsApp bodies for general and personal links, with `{{name}}`, `{{eventName}}`, `{{dates}}`, `{{location}}`, `{{link}}` and `{{appname}}` placeholders). Blank fields fall back to the built-in wording.
@@ -1012,6 +1012,8 @@ Icons are written to `public/icons/`. The manifest references them at `/icons/ic
 | HTML page navigations | Network-first; falls back to cached page, then `/offline.html` |
 | Static assets (other images, fonts) | Stale-while-revalidate |
 | `/api/*` requests | Network-only (never cached) |
+
+> **Releasing changes to shell files:** `/js/sidebar.js`, `/styles.css`, `/sidebar.css`, `/utils.js` and `/toast.js` are served cache-first, so browsers keep the old copy until the service worker updates. Bump `CACHE_VERSION` in `public/sw.js` whenever one of them changes (e.g. a new menu item in `sidebar.js`), otherwise users on non-localhost hosts will not see the change. On `localhost` the service worker skips caching entirely.
 
 ---
 

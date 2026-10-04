@@ -52,7 +52,7 @@ async function publish(accessType, members = memberIds) {
     const slots = generateSlots(template.schedule, template.slot_minutes, template.slot_capacity);
     return bookings.publishBookingEvent(
         template,
-        { name: 'Nurse Check 2026', access_type: accessType, show_booked_names: 0, allow_cancel: 1 },
+        { name: 'Nurse Check 2026', access_type: accessType, show_booked_names: 0, allow_cancel: 1, max_bookings: 1 },
         slots, members, 'Admin',
     );
 }
@@ -114,7 +114,21 @@ describe('publishing', () => {
     });
 });
 
-describe('saveBooking / cancelBooking', () => {
+// Publishes an event with explicit slots (e.g. several places / a higher maximum)
+async function publishWith(slotsSpec, options = {}, members = memberIds) {
+    const template = await bookings.getBookingTemplateById(templateId);
+    return bookings.publishBookingEvent(
+        template,
+        { name: 'Custom', access_type: 'personal', show_booked_names: 0, allow_cancel: 1, max_bookings: 1, ...options },
+        slotsSpec, members, 'Admin',
+    );
+}
+
+const fourSlots = ['09:00', '09:30', '10:00', '10:30'].map((t, i) => ({
+    slot_date: '2026-11-10', start_time: t, end_time: ['09:30', '10:00', '10:30', '11:00'][i], capacity: 1,
+}));
+
+describe('createBooking / moveBooking / cancelBookingEntry', () => {
     let eventId;
     let slots;
 
@@ -124,43 +138,48 @@ describe('saveBooking / cancelBooking', () => {
     });
 
     it('books a free slot', async () => {
-        const r = await bookings.saveBooking(eventId, memberIds[0], slots[0].id, { phone: '021' });
-        expect(r.previousSlotId).toBeNull();
-        const entry = await bookings.getBookingEntryForMember(eventId, memberIds[0]);
-        expect(entry.slot_id).toBe(slots[0].id);
+        const entryId = await bookings.createBooking(eventId, memberIds[0], slots[0].id, { phone: '021' }, 'member', 1);
+        const entry = await bookings.getBookingEntryById(entryId);
+        expect(entry).toMatchObject({ event_id: eventId, member_id: memberIds[0], slot_id: slots[0].id, start_time: '09:00' });
         expect(entry.field_values).toEqual({ phone: '021' });
     });
 
     it('refuses a slot that is already at capacity', async () => {
-        await expect(bookings.saveBooking(eventId, memberIds[1], slots[0].id, {}))
+        await expect(bookings.createBooking(eventId, memberIds[1], slots[0].id, {}, 'member', 1))
             .rejects.toMatchObject({ code: bookings.BOOKING_ERRORS.SLOT_FULL });
     });
 
-    it('moves an existing booking to another free slot', async () => {
-        const r = await bookings.saveBooking(eventId, memberIds[0], slots[1].id, { phone: '022' }, 'admin');
-        expect(r.previousSlotId).toBe(slots[0].id);
-        const entry = await bookings.getBookingEntryForMember(eventId, memberIds[0]);
-        expect(entry.slot_id).toBe(slots[1].id);
-        expect(entry.source).toBe('admin');
+    it('refuses a second booking once the member reaches the maximum', async () => {
+        await expect(bookings.createBooking(eventId, memberIds[0], slots[1].id, {}, 'member', 1))
+            .rejects.toMatchObject({ code: bookings.BOOKING_ERRORS.MAX_REACHED });
     });
 
-    it('updates field values when re-booking the same slot', async () => {
-        await bookings.saveBooking(eventId, memberIds[0], slots[1].id, { phone: '023' });
-        const entry = await bookings.getBookingEntryForMember(eventId, memberIds[0]);
-        expect(entry.field_values.phone).toBe('023');
+    it('moves a booking to another free slot and updates its answers', async () => {
+        const [entry] = await bookings.getBookingEntriesForMember(eventId, memberIds[0]);
+        const r = await bookings.moveBooking(entry.id, slots[1].id, { phone: '022' }, 'admin');
+        expect(r.previousSlotId).toBe(slots[0].id);
+        const moved = await bookings.getBookingEntryById(entry.id);
+        expect(moved).toMatchObject({ slot_id: slots[1].id, source: 'admin' });
+        expect(moved.field_values.phone).toBe('022');
+    });
+
+    it('updates answers when "moving" to the same slot', async () => {
+        const [entry] = await bookings.getBookingEntriesForMember(eventId, memberIds[0]);
+        await bookings.moveBooking(entry.id, slots[1].id, { phone: '023' });
+        expect((await bookings.getBookingEntryById(entry.id)).field_values.phone).toBe('023');
     });
 
     it('refuses a move into a full slot and keeps the original booking', async () => {
-        await bookings.saveBooking(eventId, memberIds[1], slots[0].id, {});
-        await expect(bookings.saveBooking(eventId, memberIds[1], slots[1].id, {}))
+        const otherId = await bookings.createBooking(eventId, memberIds[1], slots[0].id, {}, 'member', 1);
+        await expect(bookings.moveBooking(otherId, slots[1].id, {}))
             .rejects.toMatchObject({ code: bookings.BOOKING_ERRORS.SLOT_FULL });
-        expect((await bookings.getBookingEntryForMember(eventId, memberIds[1])).slot_id).toBe(slots[0].id);
+        expect((await bookings.getBookingEntryById(otherId)).slot_id).toBe(slots[0].id);
     });
 
     it('rejects a slot from another event', async () => {
         const other = await publish('general');
         const otherSlots = await bookings.getBookingSlots(other.eventId);
-        await expect(bookings.saveBooking(eventId, memberIds[2], otherSlots[0].id, {}))
+        await expect(bookings.createBooking(eventId, memberIds[2], otherSlots[0].id, {}, 'member', 1))
             .rejects.toMatchObject({ code: bookings.BOOKING_ERRORS.SLOT_NOT_FOUND });
     });
 
@@ -168,15 +187,72 @@ describe('saveBooking / cancelBooking', () => {
         const s = await bookings.getBookingSlots(eventId);
         expect(s.map(x => x.booked_count)).toEqual([1, 1]);
         const invites = await bookings.getBookingInvites(eventId);
-        expect(invites.filter(i => i.entry_id).length).toBe(2);
+        expect(invites).toHaveLength(3);
+        expect(invites.filter(i => i.booking_count > 0).length).toBe(2);
         const entries = await bookings.getBookingEntries(eventId);
         expect(entries.map(e => e.start_time)).toEqual(['09:00', '09:30']);
     });
 
     it('cancels a booking and frees the slot', async () => {
-        expect(await bookings.cancelBooking(eventId, memberIds[1])).toBe(1);
-        await bookings.saveBooking(eventId, memberIds[2], slots[0].id, {});
-        expect((await bookings.getBookingEntryForMember(eventId, memberIds[2])).slot_id).toBe(slots[0].id);
+        const [entry] = await bookings.getBookingEntriesForMember(eventId, memberIds[1]);
+        expect(await bookings.cancelBookingEntry(entry.id)).toBe(1);
+        await bookings.createBooking(eventId, memberIds[2], slots[0].id, {}, 'member', 1);
+        const [mine] = await bookings.getBookingEntriesForMember(eventId, memberIds[2]);
+        expect(mine.slot_id).toBe(slots[0].id);
+    });
+});
+
+describe('several bookings per member', () => {
+    let eventId;
+    let slots;
+
+    beforeAll(async () => {
+        ({ eventId } = await publishWith(fourSlots, { max_bookings: 2 }));
+        slots = await bookings.getBookingSlots(eventId);
+    });
+
+    it('stores the maximum on the event', async () => {
+        expect((await bookings.getBookingEventById(eventId)).max_bookings).toBe(2);
+    });
+
+    it('lets a member book up to the maximum, then refuses', async () => {
+        await bookings.createBooking(eventId, memberIds[0], slots[2].id, {}, 'member', 2);
+        await bookings.createBooking(eventId, memberIds[0], slots[0].id, {}, 'member', 2);
+        await expect(bookings.createBooking(eventId, memberIds[0], slots[3].id, {}, 'member', 2))
+            .rejects.toMatchObject({ code: bookings.BOOKING_ERRORS.MAX_REACHED, message: expect.stringMatching(/maximum of 2/) });
+        const mine = await bookings.getBookingEntriesForMember(eventId, memberIds[0]);
+        expect(mine.map(e => e.start_time)).toEqual(['09:00', '10:00']); // slot order
+    });
+
+    it('never lets a member book the same slot twice', async () => {
+        const db = await initDB();
+        await db.run('UPDATE booking_slots SET capacity = 3 WHERE id = ?', slots[1].id);
+        await bookings.createBooking(eventId, memberIds[1], slots[1].id, {}, 'member', 2);
+        await expect(bookings.createBooking(eventId, memberIds[1], slots[1].id, {}, 'member', 2))
+            .rejects.toMatchObject({ code: bookings.BOOKING_ERRORS.ALREADY_BOOKED });
+    });
+
+    it('refuses to move a booking onto a slot the member already holds', async () => {
+        const mine = await bookings.getBookingEntriesForMember(eventId, memberIds[0]);
+        await expect(bookings.moveBooking(mine[0].id, mine[1].slot_id, {}))
+            .rejects.toMatchObject({ code: bookings.BOOKING_ERRORS.ALREADY_BOOKED });
+    });
+
+    it('lets admins exceed the maximum (no limit passed)', async () => {
+        await bookings.createBooking(eventId, memberIds[0], slots[3].id, {}, 'admin', null);
+        expect(await bookings.getBookingEntriesForMember(eventId, memberIds[0])).toHaveLength(3);
+    });
+
+    it('counts each member once in the roster and the event list', async () => {
+        const roster = await bookings.getBookingInvites(eventId);
+        expect(roster).toHaveLength(3); // no duplicate rows for members with several bookings
+        expect(roster.find(r => r.member_id === memberIds[0]).booking_count).toBe(3);
+        const listed = (await bookings.getBookingEvents()).find(e => e.id === eventId);
+        expect(listed).toMatchObject({ booked_count: 2, entry_count: 4, max_bookings: 2 });
+    });
+
+    it('rejects two slots with the same date and start time in one event', async () => {
+        await expect(publishWith([fourSlots[0], { ...fourSlots[0] }])).rejects.toThrow(/UNIQUE/);
     });
 });
 
@@ -184,7 +260,7 @@ describe('event lifecycle', () => {
     it('locks, disables, archives, lists and deletes with cascade', async () => {
         const { eventId, publicId } = await publish('personal');
         const slots = await bookings.getBookingSlots(eventId);
-        await bookings.saveBooking(eventId, memberIds[0], slots[0].id, {});
+        await bookings.createBooking(eventId, memberIds[0], slots[0].id, {}, 'member', 1);
 
         await bookings.setBookingEventLocked(eventId, true);
         await bookings.setBookingEventEnabled(eventId, false);

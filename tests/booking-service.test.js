@@ -231,3 +231,27 @@ describe('booking-service — local time helpers', () => {
         expect(isSlotPast(slot, '2026-11-11 00:00')).toBe(true);
     });
 });
+
+describe('booking-service — maximum bookings and duplicate-free slots', () => {
+    it('defaults max_bookings to 1 and accepts 1–20', () => {
+        expect(normaliseTemplate({ name: 'X' }).max_bookings).toBe(1);
+        expect(normaliseTemplate({ name: 'X', max_bookings: 3 }).max_bookings).toBe(3);
+        expect(normaliseTemplate({ name: 'X', max_bookings: '20' }).max_bookings).toBe(20);
+    });
+
+    it('rejects an out-of-range or fractional maximum', () => {
+        expect(() => normaliseTemplate({ name: 'X', max_bookings: 0 })).toThrow(/Maximum bookings per member/);
+        expect(() => normaliseTemplate({ name: 'X', max_bookings: 21 })).toThrow(/Maximum bookings per member/);
+        expect(() => normaliseTemplate({ name: 'X', max_bookings: 1.5 })).toThrow(/whole number/);
+    });
+
+    it('never produces the same date and start time twice', () => {
+        // Overlapping windows are rejected by normaliseSchedule, but generation is
+        // defensive on its own: identical windows yield each slot only once.
+        const slots = generateSlots(
+            [{ date: '2026-11-10', windows: [{ start: '13:00', end: '14:00' }, { start: '13:00', end: '14:00' }, { start: '13:30', end: '14:30' }] }],
+            30,
+        );
+        expect(slots.map(s => s.start_time)).toEqual(['13:00', '13:30', '14:00']);
+    });
+});

@@ -6,7 +6,7 @@ let uiConfig = null;
 let ev = null;
 let bookedTable = null;
 let pendingTable = null;
-let bookTarget = null;   // member_id being booked/moved in the modal
+let bookTarget = null;   // { memberId, entryId } — entryId set when changing an existing booking
 let remindTarget = null; // member_id for a single reminder, null = everyone not booked
 
 const locale = () => uiConfig?.locale || 'en-NZ';
@@ -130,7 +130,7 @@ function render() {
     infoRow('Location', U.esc(ev.location) || '—'),
     infoRow('Contact', U.esc(ev.contact_info) || '—'),
     infoRow('Slots', `${ev.stats.slotCount} × ${ev.slot_minutes} min, ${capacity} place${capacity === 1 ? '' : 's'} each <span class="bk-muted">(times local to ${U.esc(timezone())})</span>`),
-    infoRow('Member options', `Names on booked slots: <strong>${ev.show_booked_names ? 'shown' : 'hidden'}</strong><br>Change / cancel: <strong>${ev.allow_cancel ? 'allowed' : 'not allowed'}</strong>`),
+    infoRow('Member options', `Bookings per member: <strong>up to ${ev.max_bookings || 1}</strong><br>Names on booked slots: <strong>${ev.show_booked_names ? 'shown' : 'hidden'}</strong><br>Change / cancel: <strong>${ev.allow_cancel ? 'allowed' : 'not allowed'}</strong>`),
     infoRow('Published', `${U.esc(U.formatDateTime(ev.published_at, locale(), timezone()))}${ev.published_by ? ` by ${U.esc(ev.published_by)}` : ''}`),
     ev.archived_at ? infoRow('Archived', U.esc(U.formatDateTime(ev.archived_at, locale(), timezone()))) : '',
     infoRow('Booking link', linkHtml),
@@ -163,9 +163,12 @@ function render() {
 
   // Tables
   const rosterByMember = Object.fromEntries(ev.roster.map((r) => [r.member_id, r]));
-  document.getElementById('bookedTitle').textContent = `Booked (${ev.entries.length})`;
+  const membersBooked = ev.roster.filter((r) => r.booking_count > 0).length;
+  document.getElementById('bookedTitle').textContent = (ev.max_bookings || 1) > 1
+    ? `Booked (${ev.entries.length} booking${ev.entries.length === 1 ? '' : 's'} by ${membersBooked} member${membersBooked === 1 ? '' : 's'})`
+    : `Booked (${ev.entries.length})`;
   bookedTable.setRows(ev.entries.map((e) => ({ ...e, invite: rosterByMember[e.member_id] || {} })));
-  const pending = ev.roster.filter((r) => !r.entry_id);
+  const pending = ev.roster.filter((r) => !r.booking_count);
   document.getElementById('pendingTitle').textContent = `Not booked yet (${pending.length})`;
   pendingTable.setRows(pending);
 
@@ -188,8 +191,12 @@ function copyLinkButton(row) {
 
 function bookedActions(row) {
   if (ev.is_archived) return copyLinkButton(row);
-  return `<button class="btn-sm btn-primary" onclick="openBookModal(${row.member_id})" title="Move this booking or edit the answers">Change</button>
-    <button class="btn-sm btn-danger" onclick="cancelBooking(${row.member_id})" title="Cancel this member's booking">Cancel booking</button>
+  const another = (ev.max_bookings || 1) > 1
+    ? `<button class="btn-sm btn-success" onclick="openBookModal(${row.member_id}, null)" title="Book an additional slot for this member">Book another</button>`
+    : '';
+  return `<button class="btn-sm btn-primary" onclick="openBookModal(${row.member_id}, ${row.id})" title="Move this booking or edit the answers">Change</button>
+    <button class="btn-sm btn-danger" onclick="cancelBooking(${row.id})" title="Cancel this booking">Cancel booking</button>
+    ${another}
     ${copyLinkButton(row)}`;
 }
 
@@ -238,7 +245,7 @@ function notifiedText(r) {
 
 function pendingActions(r) {
   if (ev.is_archived) return copyLinkButton(r);
-  return `<button class="btn-sm btn-success" onclick="openBookModal(${r.member_id})" title="Book a slot on this member's behalf">Book</button>
+  return `<button class="btn-sm btn-success" onclick="openBookModal(${r.member_id}, null)" title="Book a slot on this member's behalf">Book</button>
     <button class="btn-sm btn-primary" onclick="openRemindModal(${r.member_id})" ${isOpen() ? 'title="Send this member a reminder"' : 'disabled title="Reminders can only be sent while the event is open"'}>Remind</button>
     ${copyLinkButton(r)}`;
 }
@@ -268,7 +275,7 @@ function buildSheet() {
   const entriesBySlot = {};
   ev.entries.forEach((e) => (entriesBySlot[e.slot_id] = entriesBySlot[e.slot_id] || []).push(e));
   const blank = `<td></td>`.repeat(fields.length);
-  const pending = ev.roster.filter((r) => !r.entry_id).map((r) => r.display_name).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  const pending = ev.roster.filter((r) => !r.booking_count).map((r) => r.display_name).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
   let html = `
     <div class="rpt-header">
@@ -427,33 +434,41 @@ async function deleteEvent() {
 
 // --- Admin booking (book / move / edit answers) ---
 
-function openBookModal(memberId) {
+// entryId given → change that booking; otherwise add a new booking for the member
+function openBookModal(memberId, entryId) {
   const member = ev.roster.find((r) => r.member_id === memberId);
   if (!member) return;
-  const entry = ev.entries.find((e) => e.member_id === memberId);
-  bookTarget = memberId;
+  const entry = entryId ? ev.entries.find((e) => e.id === entryId) : null;
+  const memberSlots = new Set(ev.entries.filter((e) => e.member_id === memberId).map((e) => e.slot_id));
+  bookTarget = { memberId, entryId: entry ? entry.id : null };
+  const count = memberSlots.size;
+  const max = ev.max_bookings || 1;
   document.getElementById('bookModalTitle').textContent = entry ? 'Change booking' : 'Book a slot';
   document.getElementById('bookModalIntro').textContent = entry
     ? `${member.display_name} is booked for ${dayShort(entry.slot_date)} ${timeRange(entry)}.`
-    : `Book a slot on behalf of ${member.display_name}.`;
+    : `Book a slot on behalf of ${member.display_name}${count ? ` (already holds ${count} of ${max})` : ''}.`;
 
   const now = `${U.todayLocal(timezone())}`;
   const select = document.getElementById('bookSlot');
   const days = [...new Set(ev.slots.map((s) => s.slot_date))].sort();
   select.innerHTML = days.map((d) => `<optgroup label="${U.esc(dayLong(d))}">${ev.slots.filter((s) => s.slot_date === d && !s.is_blocked).map((s) => {
-    const mine = entry && entry.slot_id === s.id;
+    const current = entry && entry.slot_id === s.id;
+    const heldElsewhere = memberSlots.has(s.id) && !current; // another booking of the same member
     const free = s.capacity - s.booked_count;
-    const full = free <= 0 && !mine;
-    const notes = [mine ? 'current' : full ? 'full' : `${free} free`];
+    const full = free <= 0 && !current;
+    const unavailable = full || heldElsewhere;
+    const notes = [current ? 'current' : heldElsewhere ? 'already booked by this member' : full ? 'full' : `${free} free`];
     if (d < now) notes.push('past');
-    return `<option value="${s.id}" ${full ? 'disabled' : ''} ${mine ? 'selected' : ''}>${U.esc(timeRange(s))} · ${notes.join(' · ')}</option>`;
+    return `<option value="${s.id}" ${unavailable ? 'disabled' : ''} ${current ? 'selected' : ''}>${U.esc(timeRange(s))} · ${notes.join(' · ')}</option>`;
   }).join('')}</optgroup>`).join('');
   if (!entry) {
     const firstFree = select.querySelector('option:not([disabled])');
     if (firstFree) firstFree.selected = true;
   }
 
-  const values = entry ? entry.field_values || {} : {};
+  // New bookings start from the member's latest answers (e.g. their phone number)
+  const latest = ev.entries.filter((e) => e.member_id === memberId).slice(-1)[0];
+  const values = (entry || latest || {}).field_values || {};
   document.getElementById('bookFields').innerHTML = (ev.fields || []).map((f) => {
     const input = f.type === 'textarea'
       ? `<textarea id="bookField-${U.esc(f.id)}" rows="3" title="${U.esc(f.label)}">${U.esc(values[f.id] || '')}</textarea>`
@@ -475,11 +490,17 @@ async function saveAdminBooking() {
   const btn = document.getElementById('btnSaveBooking');
   btn.disabled = true;
   try {
-    const res = await fetch(`/api/bookings/events/${eventId}/bookings/${bookTarget}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slotId, fieldValues }),
-    });
+    const res = bookTarget.entryId
+      ? await fetch(`/api/bookings/events/${eventId}/bookings/${bookTarget.entryId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slotId, fieldValues }),
+      })
+      : await fetch(`/api/bookings/events/${eventId}/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId: bookTarget.memberId, slotId, fieldValues }),
+      });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Booking failed');
     closeModal('bookModal');
@@ -492,14 +513,14 @@ async function saveAdminBooking() {
   }
 }
 
-async function cancelBooking(memberId) {
-  const entry = ev.entries.find((e) => e.member_id === memberId);
+async function cancelBooking(entryId) {
+  const entry = ev.entries.find((e) => e.id === entryId);
   if (!entry) return;
   const ok = await confirmAction('Cancel Booking',
     `Cancel the booking for <strong>${U.esc(entry.display_name)}</strong> on ${U.esc(dayShort(entry.slot_date))} ${U.esc(timeRange(entry))}? The slot becomes free again.`);
   if (!ok) return;
   try {
-    const res = await fetch(`/api/bookings/events/${eventId}/bookings/${memberId}`, { method: 'DELETE' });
+    const res = await fetch(`/api/bookings/events/${eventId}/bookings/${entryId}`, { method: 'DELETE' });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Cancel failed');
     showToast('Booking cancelled', 'success');
@@ -514,7 +535,7 @@ async function cancelBooking(memberId) {
 function openRemindModal(memberId) {
   if (!isOpen()) return showToast('Reminders can only be sent while the event is open.', 'warning');
   remindTarget = memberId || null;
-  const pending = ev.roster.filter((r) => !r.entry_id);
+  const pending = ev.roster.filter((r) => !r.booking_count);
   const member = memberId ? ev.roster.find((r) => r.member_id === memberId) : null;
   document.getElementById('remindIntro').innerHTML = member
     ? `Send <strong>${U.esc(member.display_name)}</strong> a reminder to book.`

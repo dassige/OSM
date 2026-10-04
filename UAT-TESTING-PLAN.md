@@ -486,6 +486,7 @@
 | T21-13 | Help content for PWA | Open System Tools page. Click the **?** help button. | The help modal includes a section titled *Install as App (PWA)* describing how to install on each platform. |
 | T21-14 | Banner does not show on login | Open `/login.html` in a fresh browser session. | No install banner appears on the login page. |
 | T21-15 | Banner hidden when already installed | Open the app from the installed PWA shortcut. | No install banner is shown (app is already installed, `display-mode: standalone` matches). |
+| T21-16 | Updated menu appears after a new release | On a deployed (non-localhost) instance that you have visited before, deploy a version that adds menu items (e.g. **Manage Bookings** / **Bookings**) → reload the page twice. | The new menu items appear without clearing the browser cache manually. |
 
 ---
 
@@ -855,7 +856,7 @@ Booking Events let members pick an appointment slot — for example the annual n
 |----|--------|-------|----------------|
 | T30-01 | Page load | Navigate to **Operations → Maintenance → Manage Bookings**. | The page opens with a template list on the left (or "No booking templates yet") and "Select a template to edit" on the right. |
 | T30-02 | Create a booking template | Click `[+ Add Template]` → enter a name (e.g. "Nurse Health Screening"), Location, Contact info and some instructions in **Information for members** → click `[Save]`. | ✅ Toast "Booking template saved". The template appears in the list with a "Personal links" badge and its day/slot count. Event log records **Booking Template Created**. |
-| T30-03 | Schedule and slot preview | Set **Slot length** to 20 and **Places per slot** to 1. On the first day pick a future date, keep 09:00–12:00 and click `[+ Add time window]` for 13:00–16:00. Click `[+ Add Day]` and add a second future date. | The preview lists every slot per day in local time format (e.g. "9:00 am", "9:20 am" …), 9 + 9 slots on the first day, with the totals "N slots across 2 days — N places in total". The section header shows "Times are local (<brigade timezone>)". |
+| T30-03 | Schedule and slot preview | Set **Slot length** to 20 and **Places per slot** to 1. On the first day pick a future date, keep 09:00–12:00 and click `[+ Add time window]`, then change the new window to start at 13:00. Click `[+ Add Day]` and add a second future date. | The new window initially starts at 12:00 (where the previous one ends). The preview lists every slot per day in local time format (e.g. "9:00 am", "9:20 am" …), 9 + 9 slots on the first day, with the totals "N slots across 2 days — N places in total". The section header shows "Times are local (<brigade timezone>)". |
 | T30-04 | Schedule validation warnings | Add a day dated in the past, a second day with the same date as another, a day with overlapping windows (09:00–12:00 and 11:00–13:00), and a window that ends before it starts. Then click `[Save]`. | Each problem day shows a red warning ("Date is in the past", "Duplicate date", "Time windows overlap", "… ends before it starts") and the summary turns red. Saving duplicate dates, overlapping or reversed windows is refused with a clear error toast; a past date only warns. |
 | T30-05 | Information to collect | Keep the default "Mobile phone" (Phone number, Required) and click `[+ Add Field]` → enter "Anything the nurse should know?", type Long text, not required → `[Save]` → select another template and back. | Both questions are kept in order with their type and Required setting. |
 | T30-06 | Publishing defaults | Select **General link**, switch **Show names on booked slots** on and **Members can change or cancel** off → `[Save]` → reopen the template. | The settings are kept, and the list badge now shows "General link". |
@@ -868,6 +869,8 @@ Booking Events let members pick an appointment slot — for example the annual n
 | T30-13 | Delete a template | Select a template that has already been published → click `[Delete]` → confirm. | ✅ The template disappears from the list. The events published from it are still listed in **Operations → Bookings**. Event log records **Booking Template Deleted**. |
 | T30-14 | Demo mode guard (templates) | On a demo instance open a template. | The `[Delete]` button is disabled with the tooltip "Disabled in demo mode". Publishing works but the result says notifications were simulated. |
 | T30-15 | Mobile layout (templates) | At 375 px width open **Manage Bookings** and tap a template. | The list and the editor are separate screens with a `[List]` back button; Save/Duplicate/Publish are icon buttons; each time window fits on one line; no sideways scrolling. |
+| T30-49 | New time windows follow on — no duplicate slots | On a day with 09:00–12:00 click `[+ Add time window]` twice. Then change the slot length from 20 to 30 and back, and edit a window's times a few times. | The new windows are 12:00–15:00 and 15:00–18:00 (each starts where the previous ends, same length). The preview is recalculated after every change and never lists the same time twice; the slot count always matches the windows. |
+| T30-50 | Bookings per member setting | In **Publishing defaults** set **Bookings per member** to 2 → `[Save]` → reopen the template → click `[Publish]`. Then try 0 and 25. | The value 2 is kept and pre-filled in the publish window (where it can be changed for that event). Values outside 1–20 are refused with an error. |
 
 ### T30-B — Booking Events List
 
@@ -903,6 +906,7 @@ Booking Events let members pick an appointment slot — for example the annual n
 | T30-34 | Delete an archived event | On the archived event click `[Delete]` → confirm. | You are returned to the Bookings list and the event is gone. Event log records **Booking Event Deleted**. |
 | T30-35 | Demo mode guard (dashboard) | On a demo instance open an event dashboard. | `[Archive]` and `[Delete]` are disabled with the tooltip "Disabled in demo mode"; reminders are simulated. |
 | T30-36 | Mobile layout (dashboard) | At 375 px width open an event dashboard. | The panels stack vertically; Booked and Not booked yet show as cards with all actions, their own Sort by sections and pagination; the booking sheet scrolls sideways inside its box; no page-level sideways scrolling. |
+| T30-51 | Several bookings per member (dashboard) | Open an event published with **Bookings per member** = 2 that has at least one booking. Click `[Book another]` on a booked member twice, then use `[Change]` and `[Cancel booking]` on one of that member's rows. | Each booking is its own row. The Book dialog greys out slots the member already holds and says how many they hold (e.g. "already holds 1 of 2"); admins can go past the maximum. The title reads "Booked (N bookings by M members)", Change/Cancel affect only that row, and **Not booked yet** lists only members with no booking. The info panel shows "Bookings per member: up to 2". |
 
 ### T30-D — Public Booking Page (Members, no login)
 
@@ -922,6 +926,9 @@ Booking Events let members pick an appointment slot — for example the annual n
 | T30-46 | Slots that have already started | Publish an event that includes a slot earlier today (local time) and open its link. | That slot shows "Started" and cannot be booked; a booking already in a started slot can no longer be changed or cancelled. |
 | T30-47 | Mobile and dark mode | Open a booking link on a phone (or at 375 px) with dark mode on. | Slots show in a two-column grid, buttons are full-width and easy to tap, text is readable in dark mode, no sideways scrolling. |
 | T30-48 | Booking while logged in as an admin | While logged in to OpReady, open a personal booking link in the same browser and book a slot. | The booking succeeds normally (no "Invalid or missing CSRF token" error). |
+| T30-52 | Book more than one slot (member) | Open a personal link for an event with **Bookings per member** = 2. Book one slot, then a second, then try a third. | "Your appointments (1 of 2)" with "You can book 1 more slot", then "(2 of 2)". At the maximum no further slots can be selected and the hint says to use Change. Each appointment has its own Change and Cancel buttons. |
+| T30-53 | Change or cancel one of several bookings | With two bookings, click `[Change]` on the second → pick another free slot → `[Move my booking]`; then `[Cancel booking]` on the first → confirm. | While changing, the member's other booked slot stays unselectable and the answers are pre-filled. Only the chosen booking moves; cancelling removes only that one and the page shows "You can book 1 more slot". |
+| T30-54 | One booking per member (default) | On an event with the default **Bookings per member** = 1, book a slot. | Exactly as before: "Your appointment" (singular), no further slots selectable, and the hint says to use Change to move the booking. |
 
 ---
 
@@ -949,6 +956,7 @@ Before starting the UAT run, ensure the following data is in place on the UAT in
 - [ ] At least **5 members** with a mix of notification preferences (Email only, WhatsApp only, both) and with email addresses/mobile numbers you can receive, for Booking Events invitations and reminders (T30).
 - [ ] At least **1 booking template** with two future days (one with a lunch break) and a required "Mobile phone" question, published once with personal links and once with a general link, with a few bookings already made (for T30-B to T30-D).
 - [ ] A second browser profile or private window, and a phone (or browser at 375 px), for testing the public booking page as a member (T30-D).
+- [ ] At least **1 booking event** published with **Bookings per member** set to 2 (for T30-50 to T30-53).
 
 ---
 

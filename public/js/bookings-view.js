@@ -13,7 +13,7 @@
   let data = null;         // last GET payload
   let memberId = null;     // selected member (general links)
   let selectedSlotId = null;
-  let changing = false;    // member chose "Change" on an existing booking
+  let changingEntryId = null; // booking being moved after the member pressed "Change"
 
   const locale = () => uiConfig?.locale || 'en-NZ';
   const $ = (id) => document.getElementById(id);
@@ -130,7 +130,7 @@
     }
 
     renderIdentity();
-    renderMyBooking();
+    renderMyBookings();
     renderSlots();
     renderForm();
   }
@@ -149,32 +149,55 @@
       memberId = select.value ? parseInt(select.value, 10) : null;
       lsSet(memberStorageKey, memberId ? String(memberId) : '');
       selectedSlotId = null;
-      changing = false;
+      changingEntryId = null;
       load();
     };
   }
 
-  function renderMyBooking() {
-    const booking = data.me && data.me.booking;
-    $('myBookingCard').style.display = booking ? 'block' : 'none';
-    if (!booking) return;
-    const slot = data.slots.find((s) => s.id === booking.slotId);
-    $('myBookingWhen').textContent = slotLabel(booking);
-    const started = slot && slot.is_past;
-    const allowed = canChange() && !started;
-    $('btnChange').style.display = allowed && !changing ? '' : 'none';
-    $('btnCancel').style.display = allowed ? '' : 'none';
+  const myBookings = () => (data.me && data.me.bookings) || [];
+  const maxBookings = () => data.event.max_bookings || 1;
+  const changingEntry = () => myBookings().find((b) => b.entryId === changingEntryId) || null;
+
+  function renderMyBookings() {
+    const list = myBookings();
+    $('myBookingCard').style.display = list.length ? 'block' : 'none';
+    if (!list.length) return;
+    const max = maxBookings();
+    $('myBookingTitle').textContent = max > 1
+      ? `Your appointments (${list.length} of ${max})`
+      : 'Your appointment';
+
+    $('myBookingList').innerHTML = list.map((b) => {
+      const slot = data.slots.find((x) => x.id === b.slotId);
+      const allowed = canChange() && !(slot && slot.is_past);
+      const isChanging = b.entryId === changingEntryId;
+      return `<div class="bv-mine ${isChanging ? 'changing' : ''}">
+          <div class="bv-mine-when">${esc(slotLabel(b))}${slot && slot.is_past ? ' <span class="bv-note">(started)</span>' : ''}</div>
+          ${allowed ? `<div class="bv-mine-actions">
+            ${isChanging ? '' : `<button class="btn-primary" data-change="${b.entryId}" title="Choose a different slot or update your details">Change</button>`}
+            <button class="btn-danger" data-cancel="${b.entryId}" title="Cancel this appointment and free the slot">Cancel booking</button>
+          </div>` : ''}
+        </div>`;
+    }).join('');
+    $('myBookingList').querySelectorAll('[data-change]').forEach((btn) =>
+      btn.addEventListener('click', () => startChange(parseInt(btn.dataset.change, 10))));
+    $('myBookingList').querySelectorAll('[data-cancel]').forEach((btn) =>
+      btn.addEventListener('click', () => cancelMyBooking(parseInt(btn.dataset.cancel, 10))));
+
     let note = '';
-    if (started) note = 'Your appointment has already started.';
-    else if (data.event.is_locked) note = 'Bookings are closed — contact the organiser to make changes.';
-    else if (!data.event.allow_cancel) note = 'To change or cancel this appointment, please contact the organiser.';
-    else if (changing) note = 'Choose a new slot below, then confirm.';
+    if (data.event.is_locked) note = 'Bookings are closed — contact the organiser to make changes.';
+    else if (!data.event.allow_cancel) note = `To change or cancel ${list.length > 1 ? 'these appointments' : 'this appointment'}, please contact the organiser.`;
+    else if (changingEntryId) note = 'Choose a new slot below, then confirm.';
+    else if (list.length < max) note = `You can book ${max - list.length} more slot${max - list.length === 1 ? '' : 's'}.`;
     $('myBookingNote').textContent = note;
   }
 
   function slotState(s) {
-    const mine = s.is_mine;
-    if (mine) return { disabled: !changing, info: 'Your booking' };
+    const changing = changingEntry();
+    if (s.is_mine) {
+      // While changing a booking, only that booking's own slot stays selectable (to update details)
+      return { disabled: !(changing && changing.slotId === s.id), info: 'Your booking' };
+    }
     if (s.is_blocked) return { disabled: true, info: 'Unavailable' };
     if (s.is_past) return { disabled: true, info: 'Started' };
     if (s.available <= 0) return { disabled: true, info: 'Full' };
@@ -184,14 +207,20 @@
   function renderSlots() {
     const ev = data.event;
     const personal = ev.access_type === 'personal';
-    const hasBooking = !!(data.me && data.me.booking);
+    const count = myBookings().length;
+    const max = maxBookings();
     const needName = !personal && !data.me;
-    const bookable = !ev.is_locked && !needName && (!hasBooking || changing);
+    const canAddMore = count < max;
+    const bookable = !ev.is_locked && !needName && (!!changingEntryId || canAddMore);
 
-    $('slotsTitle').textContent = hasBooking && !changing ? 'Schedule' : 'Choose a slot';
+    $('slotsTitle').textContent = bookable ? 'Choose a slot' : 'Schedule';
     let hint = '';
     if (needName) hint = 'Select your name above to book a slot.';
-    else if (bookable) hint = hasBooking ? 'Tap a new slot to move your booking.' : 'Tap a free slot to book it.';
+    else if (changingEntryId) hint = 'Tap a new slot to move this booking.';
+    else if (bookable) hint = count ? 'Tap a free slot to book another appointment.' : 'Tap a free slot to book it.';
+    else if (!ev.is_locked && count >= max && ev.allow_cancel) {
+      hint = max > 1 ? `You've booked the maximum of ${max} slots. Use Change to move one.` : 'Use Change above to move your booking.';
+    }
     $('slotsHint').textContent = hint;
     $('slotsHint').style.display = hint ? 'block' : 'none';
 
@@ -235,15 +264,17 @@
     const slot = selectedSlotId && data.slots.find((s) => s.id === selectedSlotId);
     $('formCard').style.display = slot ? 'block' : 'none';
     if (!slot) return;
-    const booking = data.me && data.me.booking;
-    $('formTitle').textContent = booking ? 'Confirm your change' : 'Confirm your booking';
-    $('btnBook').textContent = booking ? (slot.id === booking.slotId ? 'Update my details' : 'Move my booking') : 'Book this slot';
+    const changing = changingEntry();
+    $('formTitle').textContent = changing ? 'Confirm your change' : 'Confirm your booking';
+    $('btnBook').textContent = changing ? (slot.id === changing.slotId ? 'Update my details' : 'Move my booking') : 'Book this slot';
     $('formSlot').textContent = slotLabel(slot);
 
-    // Keep anything already typed when the slot changes
+    // Keep anything already typed; otherwise start from this booking's answers, or the
+    // latest booking's answers for a new booking (answers are only sent on personal links)
     const typed = {};
     $('formFields').querySelectorAll('[data-field]').forEach((el) => { typed[el.dataset.field] = el.value; });
-    const saved = (booking && booking.field_values) || {};
+    const source = changing || myBookings().slice(-1)[0] || {};
+    const saved = source.field_values || {};
     $('formFields').innerHTML = (data.event.fields || []).map((f) => {
       const value = typed[f.id] ?? saved[f.id] ?? '';
       const id = `fld_${esc(f.id)}`;
@@ -259,19 +290,21 @@
 
   window.clearSelection = function () {
     selectedSlotId = null;
-    if (changing) changing = false;
-    renderMyBooking();
+    changingEntryId = null;
+    renderMyBookings();
     renderSlots();
     renderForm();
   };
 
-  window.startChange = function () {
-    changing = true;
-    renderMyBooking();
+  function startChange(entryId) {
+    const booking = myBookings().find((b) => b.entryId === entryId);
+    if (!booking) return;
+    changingEntryId = entryId;
+    renderMyBookings();
     renderSlots();
     // Pre-select the current slot so details can be updated without moving
-    selectSlot(data.me.booking.slotId);
-  };
+    selectSlot(booking.slotId);
+  }
 
   function identity() {
     return data.event.access_type === 'personal' ? { code: accessCode } : { memberId };
@@ -294,17 +327,17 @@
       const res = await fetch(`/api/live-bookings/${publicId}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...identity(), slotId: selectedSlotId, fieldValues }),
+        body: JSON.stringify({ ...identity(), slotId: selectedSlotId, fieldValues, ...(changingEntryId ? { entryId: changingEntryId } : {}) }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
         showToast(body.error || 'Booking failed. Please try again.', 'error');
-        if (res.status === 409) { selectedSlotId = null; await load(); }
+        if (res.status === 409) { selectedSlotId = null; changingEntryId = null; await load(); }
         return;
       }
       showToast(`Booked: ${slotLabel(body.booking)}`, 'success');
       selectedSlotId = null;
-      changing = false;
+      changingEntryId = null;
       await load();
       $('myBookingCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch {
@@ -314,8 +347,8 @@
     }
   };
 
-  window.cancelMyBooking = async function () {
-    const booking = data.me && data.me.booking;
+  async function cancelMyBooking(entryId) {
+    const booking = myBookings().find((b) => b.entryId === entryId);
     if (!booking) return;
     const ok = await confirmAction('Cancel Booking', `Cancel your appointment on <strong>${esc(slotLabel(booking))}</strong>? The slot will be released for someone else.`);
     if (!ok) return;
@@ -323,16 +356,16 @@
       const res = await fetch(`/api/live-bookings/${publicId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(identity()),
+        body: JSON.stringify({ ...identity(), entryId }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) return showToast(body.error || 'Cancelling failed.', 'error');
       showToast('Your booking has been cancelled.', 'success');
       selectedSlotId = null;
-      changing = false;
+      changingEntryId = null;
       load();
     } catch {
       showToast('Unable to reach the booking service. Please try again.', 'error');
     }
-  };
+  }
 })();

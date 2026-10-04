@@ -708,7 +708,7 @@ const helpContent = {
             <h3>2. Days &amp; slots</h3>
             <ul>
                 <li>Set the <strong>slot length</strong> and how many <strong>places per slot</strong> (usually 1).</li>
-                <li>Add each day with one or more <strong>time windows</strong> — use two windows to leave a lunch break.</li>
+                <li>Add each day with one or more <strong>time windows</strong> — use two windows to leave a lunch break. A new window starts where the previous one ends; adjust it as needed.</li>
                 <li>Slots are generated automatically; the preview shows every slot and warns about past dates, duplicates and overlapping windows.</li>
                 <li>All dates and times are local to the brigade's timezone.</li>
             </ul>
@@ -723,6 +723,7 @@ const helpContent = {
                 <li><strong>Personal links</strong> — each member gets their own link and is identified automatically.</li>
                 <li><strong>General link</strong> — one shared link (e.g. for a group chat); members pick their name when booking.</li>
                 <li><strong>Show names</strong> lets members see who booked each slot; <strong>Members can change or cancel</strong> lets them move or cancel their own booking.</li>
+                <li><strong>Bookings per member</strong> sets how many slots each member may book (1–20). It can be changed for each event when publishing.</li>
                 <li>When publishing you choose the members to invite and whether to notify them by email and/or WhatsApp. Each member is only contacted on channels their notification preference allows.</li>
             </ul>
 
@@ -740,6 +741,7 @@ const helpContent = {
                 <li>If you opened a shared link, first <strong>select your name</strong> from the list.</li>
                 <li>Tap a free slot, fill in any details asked for, and press <strong>Book this slot</strong>.</li>
                 <li>Your appointment then appears at the top. If the organiser allows it, you can <strong>Change</strong> or <strong>Cancel</strong> it until bookings close.</li>
+                <li>Some events let you book more than one slot — the page shows how many more you can book, and each appointment has its own Change and Cancel buttons.</li>
                 <li>Slots marked <strong>Full</strong> or <strong>Started</strong> can't be booked.</li>
                 <li>All times are local to where the appointments take place.</li>
                 <li>Need help or a change after bookings close? Contact the organiser shown at the top of the page.</li>
@@ -779,6 +781,7 @@ const helpContent = {
             <h3>Bookings</h3>
             <ul>
                 <li><strong>Book</strong> / <strong>Change</strong> — book or move a member's slot on their behalf (e.g. after a phone call). Required answers are optional here.</li>
+                <li>Each row in <strong>Booked</strong> is one booking. When members may book more than one slot, <strong>Book another</strong> adds an extra booking — admins are not limited by the maximum.</li>
                 <li><strong>Cancel booking</strong> frees the slot. <strong>Copy link</strong> copies a member's personal link (personal events).</li>
             </ul>
             <h3>Booking sheet</h3>

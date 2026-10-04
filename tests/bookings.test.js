@@ -6,6 +6,7 @@ const BOOKING_ERRORS = {
     SLOT_BLOCKED: 'SLOT_BLOCKED',
     SLOT_FULL: 'SLOT_FULL',
     ALREADY_BOOKED: 'ALREADY_BOOKED',
+    MAX_REACHED: 'MAX_REACHED',
 };
 
 jest.mock('../services/db', () => ({
@@ -14,6 +15,7 @@ jest.mock('../services/db', () => ({
         SLOT_BLOCKED: 'SLOT_BLOCKED',
         SLOT_FULL: 'SLOT_FULL',
         ALREADY_BOOKED: 'ALREADY_BOOKED',
+        MAX_REACHED: 'MAX_REACHED',
     },
     getBookingTemplates: jest.fn(),
     getBookingTemplateById: jest.fn(),
@@ -29,9 +31,10 @@ jest.mock('../services/db', () => ({
     getBookingInvites: jest.fn(),
     getBookingEntries: jest.fn(),
     getBookingInviteForMember: jest.fn(),
-    getBookingEntryForMember: jest.fn(),
-    saveBooking: jest.fn(),
-    cancelBooking: jest.fn().mockResolvedValue(1),
+    getBookingEntryById: jest.fn(),
+    createBooking: jest.fn(),
+    moveBooking: jest.fn(),
+    cancelBookingEntry: jest.fn().mockResolvedValue(1),
     setBookingEventLocked: jest.fn().mockResolvedValue(),
     setBookingEventEnabled: jest.fn().mockResolvedValue(),
     archiveBookingEvent: jest.fn().mockResolvedValue(),
@@ -200,7 +203,7 @@ describe('Publishing', () => {
         expect(res.body.notifications).toEqual(NOTIFY_SUMMARY);
 
         const [, options, slots, memberIds, actor] = db.publishBookingEvent.mock.calls[0];
-        expect(options).toEqual({ name: 'Nurse Check', access_type: 'general', show_booked_names: true, allow_cancel: false });
+        expect(options).toEqual({ name: 'Nurse Check', access_type: 'general', show_booked_names: true, allow_cancel: false, max_bookings: 1 });
         expect(slots).toHaveLength(2);
         expect(memberIds).toEqual([1, 2]);
         expect(actor).toBe('Test Admin');
@@ -213,7 +216,23 @@ describe('Publishing', () => {
         expect(res.status).toBe(201);
         expect(res.body.link).toBeNull();
         const [, options] = db.publishBookingEvent.mock.calls[0];
-        expect(options).toMatchObject({ access_type: 'personal', show_booked_names: false, allow_cancel: true });
+        expect(options).toMatchObject({ access_type: 'personal', show_booked_names: false, allow_cancel: true, max_bookings: 1 });
+    });
+
+    it('uses the template maximum by default and accepts an override', async () => {
+        db.getBookingTemplateById.mockResolvedValue({ ...TEMPLATE, max_bookings: 3 });
+        await request(app).post('/api/bookings/templates/1/publish').send({ memberIds: [1] });
+        expect(db.publishBookingEvent.mock.calls[0][1].max_bookings).toBe(3);
+        await request(app).post('/api/bookings/templates/1/publish').send({ memberIds: [1], max_bookings: 2 });
+        expect(db.publishBookingEvent.mock.calls[1][1].max_bookings).toBe(2);
+        expect(db.logEvent).toHaveBeenCalledWith('Test Admin', 'Bookings', 'Booking Event Published', expect.objectContaining({ maxBookings: 2 }));
+    });
+
+    it('rejects an out-of-range maximum', async () => {
+        const res = await request(app).post('/api/bookings/templates/1/publish').send({ memberIds: [1], max_bookings: 0 });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/Maximum bookings per member/);
+        expect(db.publishBookingEvent).not.toHaveBeenCalled();
     });
 
     it('requires at least one member', async () => {
@@ -269,15 +288,19 @@ describe('Live events', () => {
             { id: 3, capacity: 1, is_blocked: 1, booked_count: 0 },
         ]);
         db.getBookingInvites.mockResolvedValue([
-            { member_id: 1, member_name: 'Alice', member_last_name: 'Smith', member_first_name: 'Alice', member_rank: 'FF', access_code: 'code-1', entry_id: 10 },
-            { member_id: 2, member_name: 'Bob', access_code: 'code-2', entry_id: null },
+            { member_id: 1, member_name: 'Alice', member_last_name: 'Smith', member_first_name: 'Alice', member_rank: 'FF', access_code: 'code-1', booking_count: 2 },
+            { member_id: 2, member_name: 'Bob', access_code: 'code-2', booking_count: 0 },
         ]);
-        db.getBookingEntries.mockResolvedValue([{ id: 10, member_id: 1, member_name: 'Alice', field_values: {} }]);
+        db.getBookingEntries.mockResolvedValue([
+            { id: 10, member_id: 1, member_name: 'Alice', field_values: {} },
+            { id: 11, member_id: 1, member_name: 'Alice', field_values: {} },
+        ]);
 
         const res = await request(app).get('/api/bookings/events/7');
         expect(res.status).toBe(200);
         expect(res.body.link).toBeNull();
-        expect(res.body.stats).toEqual({ invited: 2, booked: 1, notBooked: 1, slotCount: 2, totalCapacity: 3, freePlaces: 2 });
+        // Alice holds two bookings: she counts once as "booked", both bookings use places
+        expect(res.body.stats).toEqual({ invited: 2, booked: 1, notBooked: 1, bookings: 2, slotCount: 2, totalCapacity: 3, freePlaces: 1 });
         expect(res.body.roster[0].display_name).toBe('FF Smith, Alice');
         expect(res.body.roster[1].personal_link).toMatch(/\/booking\/pub-guid\?code=code-2$/);
     });
@@ -362,81 +385,109 @@ describe('Live events', () => {
 
 describe('Admin bookings', () => {
     const INVITE = { member_id: 3, member_name: 'Carol', member_last_name: 'White', member_first_name: 'Carol', member_rank: '' };
+    const ENTRY = { id: 21, event_id: 7, member_id: 3, slot_id: 1, slot_date: '2026-11-10', start_time: '09:00' };
 
     beforeEach(() => {
         db.getBookingEventById.mockResolvedValue(EVENT);
         db.getBookingInviteForMember.mockResolvedValue(INVITE);
-        db.getBookingEntryForMember.mockResolvedValue({ slot_id: 2, slot_date: '2026-11-10', start_time: '09:30' });
+        db.getBookingEntryById.mockResolvedValue(ENTRY);
+        db.createBooking.mockResolvedValue(21);
+        db.moveBooking.mockResolvedValue({ previousSlotId: 1 });
     });
 
-    it('PUT books a member without enforcing required fields', async () => {
-        db.saveBooking.mockResolvedValue({ entryId: 1, previousSlotId: null });
-        const res = await request(app).put('/api/bookings/events/7/bookings/3').send({ slotId: 2, fieldValues: {} });
-        expect(res.status).toBe(200);
-        expect(db.saveBooking).toHaveBeenCalledWith(7, 3, 2, { phone: '' }, 'admin');
-        expect(db.logEvent).toHaveBeenCalledWith('Test Admin', 'Bookings', 'Booking Created By Admin', expect.objectContaining({ memberName: 'White, Carol', slotDate: '2026-11-10', startTime: '09:30' }));
+    it('POST books a member without enforcing required fields or the maximum', async () => {
+        const res = await request(app).post('/api/bookings/events/7/bookings').send({ memberId: 3, slotId: 2, fieldValues: {} });
+        expect(res.status).toBe(201);
+        expect(res.body).toEqual({ id: 21 });
+        expect(db.createBooking).toHaveBeenCalledWith(7, 3, 2, { phone: '' }, 'admin', null);
+        expect(db.logEvent).toHaveBeenCalledWith('Test Admin', 'Bookings', 'Booking Created By Admin', expect.objectContaining({ entryId: 21, memberName: 'White, Carol', slotDate: '2026-11-10' }));
     });
 
-    it('PUT logs a change when the booking moved', async () => {
-        db.saveBooking.mockResolvedValue({ entryId: 1, previousSlotId: 1 });
-        await request(app).put('/api/bookings/events/7/bookings/3').send({ slotId: 2 });
-        expect(db.logEvent).toHaveBeenCalledWith('Test Admin', 'Bookings', 'Booking Changed By Admin', expect.any(Object));
-    });
-
-    it('PUT still validates field formats', async () => {
-        const res = await request(app).put('/api/bookings/events/7/bookings/3').send({ slotId: 2, fieldValues: { phone: 'not a phone' } });
+    it('POST still validates field formats', async () => {
+        const res = await request(app).post('/api/bookings/events/7/bookings').send({ memberId: 3, slotId: 2, fieldValues: { phone: 'not a phone' } });
         expect(res.status).toBe(400);
-        expect(db.saveBooking).not.toHaveBeenCalled();
+        expect(db.createBooking).not.toHaveBeenCalled();
     });
 
-    it('PUT returns 409 when the slot is full', async () => {
-        db.saveBooking.mockRejectedValue(Object.assign(new Error('Slot full'), { code: BOOKING_ERRORS.SLOT_FULL }));
-        const res = await request(app).put('/api/bookings/events/7/bookings/3').send({ slotId: 2 });
+    it('POST returns 409 when the slot is full or already held by the member', async () => {
+        db.createBooking.mockRejectedValueOnce(Object.assign(new Error('Slot full'), { code: BOOKING_ERRORS.SLOT_FULL }));
+        expect((await request(app).post('/api/bookings/events/7/bookings').send({ memberId: 3, slotId: 2 })).status).toBe(409);
+        db.createBooking.mockRejectedValueOnce(Object.assign(new Error('Already'), { code: BOOKING_ERRORS.ALREADY_BOOKED }));
+        expect((await request(app).post('/api/bookings/events/7/bookings').send({ memberId: 3, slotId: 2 })).status).toBe(409);
+    });
+
+    it('POST returns 400 for a slot from another event', async () => {
+        db.createBooking.mockRejectedValue(Object.assign(new Error('Slot not found.'), { code: BOOKING_ERRORS.SLOT_NOT_FOUND }));
+        const res = await request(app).post('/api/bookings/events/7/bookings').send({ memberId: 3, slotId: 99 });
+        expect(res.status).toBe(400);
+    });
+
+    it('POST requires a slot', async () => {
+        const res = await request(app).post('/api/bookings/events/7/bookings').send({ memberId: 3 });
+        expect(res.status).toBe(400);
+    });
+
+    it('POST returns 404 for a member who is not invited', async () => {
+        db.getBookingInviteForMember.mockResolvedValue(undefined);
+        const res = await request(app).post('/api/bookings/events/7/bookings').send({ memberId: 3, slotId: 2 });
+        expect(res.status).toBe(404);
+    });
+
+    it('POST refuses archived events', async () => {
+        db.getBookingEventById.mockResolvedValue({ ...EVENT, is_archived: true });
+        const res = await request(app).post('/api/bookings/events/7/bookings').send({ memberId: 3, slotId: 2 });
+        expect(res.status).toBe(400);
+    });
+
+    it('PUT moves a booking and logs the previous slot', async () => {
+        db.getBookingEntryById
+            .mockResolvedValueOnce(ENTRY)
+            .mockResolvedValueOnce({ ...ENTRY, slot_id: 2, start_time: '09:30' });
+        const res = await request(app).put('/api/bookings/events/7/bookings/21').send({ slotId: 2, fieldValues: { phone: '021 123 4567' } });
+        expect(res.status).toBe(200);
+        expect(db.moveBooking).toHaveBeenCalledWith(21, 2, { phone: '021 123 4567' }, 'admin');
+        expect(db.logEvent).toHaveBeenCalledWith('Test Admin', 'Bookings', 'Booking Changed By Admin', expect.objectContaining({ entryId: 21, startTime: '09:30', previousStartTime: '09:00' }));
+    });
+
+    it('PUT returns 404 for a booking from another event', async () => {
+        db.getBookingEntryById.mockResolvedValue({ ...ENTRY, event_id: 99 });
+        const res = await request(app).put('/api/bookings/events/7/bookings/21').send({ slotId: 2 });
+        expect(res.status).toBe(404);
+        expect(db.moveBooking).not.toHaveBeenCalled();
+    });
+
+    it('PUT returns 409 when the target slot is full', async () => {
+        db.moveBooking.mockRejectedValue(Object.assign(new Error('Slot full'), { code: BOOKING_ERRORS.SLOT_FULL }));
+        const res = await request(app).put('/api/bookings/events/7/bookings/21').send({ slotId: 2 });
         expect(res.status).toBe(409);
     });
 
-    it('PUT returns 400 for a slot from another event', async () => {
-        db.saveBooking.mockRejectedValue(Object.assign(new Error('Slot not found.'), { code: BOOKING_ERRORS.SLOT_NOT_FOUND }));
-        const res = await request(app).put('/api/bookings/events/7/bookings/3').send({ slotId: 99 });
-        expect(res.status).toBe(400);
-    });
-
-    it('PUT requires a slot', async () => {
-        const res = await request(app).put('/api/bookings/events/7/bookings/3').send({});
-        expect(res.status).toBe(400);
-    });
-
-    it('PUT returns 404 for a member who is not invited', async () => {
-        db.getBookingInviteForMember.mockResolvedValue(undefined);
-        const res = await request(app).put('/api/bookings/events/7/bookings/3').send({ slotId: 2 });
-        expect(res.status).toBe(404);
-    });
-
-    it('PUT refuses archived events', async () => {
-        db.getBookingEventById.mockResolvedValue({ ...EVENT, is_archived: true });
-        const res = await request(app).put('/api/bookings/events/7/bookings/3').send({ slotId: 2 });
-        expect(res.status).toBe(400);
-    });
-
-    it('DELETE cancels a booking and logs it', async () => {
-        const res = await request(app).delete('/api/bookings/events/7/bookings/3');
+    it('DELETE cancels one booking and logs it', async () => {
+        const res = await request(app).delete('/api/bookings/events/7/bookings/21');
         expect(res.status).toBe(200);
-        expect(db.cancelBooking).toHaveBeenCalledWith(7, 3);
-        expect(db.logEvent).toHaveBeenCalledWith('Test Admin', 'Bookings', 'Booking Cancelled By Admin', expect.objectContaining({ memberId: 3, slotDate: '2026-11-10' }));
+        expect(db.cancelBookingEntry).toHaveBeenCalledWith(21);
+        expect(db.logEvent).toHaveBeenCalledWith('Test Admin', 'Bookings', 'Booking Cancelled By Admin', expect.objectContaining({ entryId: 21, memberId: 3, slotDate: '2026-11-10' }));
     });
 
-    it('DELETE returns 404 when the member has no booking', async () => {
-        db.getBookingEntryForMember.mockResolvedValue(undefined);
-        const res = await request(app).delete('/api/bookings/events/7/bookings/3');
+    it('DELETE returns 404 for an unknown booking', async () => {
+        db.getBookingEntryById.mockResolvedValue(undefined);
+        const res = await request(app).delete('/api/bookings/events/7/bookings/999');
         expect(res.status).toBe(404);
+    });
+
+    it('DELETE refuses archived events', async () => {
+        db.getBookingEventById.mockResolvedValue({ ...EVENT, is_archived: true });
+        const res = await request(app).delete('/api/bookings/events/7/bookings/21');
+        expect(res.status).toBe(400);
+        expect(db.cancelBookingEntry).not.toHaveBeenCalled();
     });
 });
 
 describe('Reminders', () => {
     const ROSTER = [
-        { invite_id: 1, member_id: 1, entry_id: 5 },
-        { invite_id: 2, member_id: 2, entry_id: null },
-        { invite_id: 3, member_id: 3, entry_id: null },
+        { invite_id: 1, member_id: 1, booking_count: 1 },
+        { invite_id: 2, member_id: 2, booking_count: 0 },
+        { invite_id: 3, member_id: 3, booking_count: 0 },
     ];
 
     beforeEach(() => {
@@ -475,7 +526,7 @@ describe('Reminders', () => {
     });
 
     it('refuses when everyone has booked', async () => {
-        db.getBookingInvites.mockResolvedValue([{ invite_id: 1, member_id: 1, entry_id: 5 }]);
+        db.getBookingInvites.mockResolvedValue([{ invite_id: 1, member_id: 1, booking_count: 1 }]);
         const res = await request(app).post('/api/bookings/events/7/remind').send({});
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/already booked/);

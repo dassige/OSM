@@ -136,6 +136,7 @@ When implementing **any** new feature or modifying an existing one, work through
 | 14 | **.example.env** — add the new variable with a descriptive comment explaining its purpose and default value. The `npm run setup-env` tool parses this file dynamically — keeping it updated keeps the setup tool current automatically. | Any new environment variable added to `config.js` |
 | 15 | **UAT Testing Plan** — update both `UAT-TESTING-PLAN.md` and `UAT-TESTING-PLAN.csv` to reflect the change | New page, new feature, renamed feature, removed feature, changed operation, or changed expected behaviour |
 | 16 | **Scripts index** — update `scripts/scripts.md` to document the script's purpose, invocation, prerequisites, and options | Any script added to or modified in `scripts/` |
+| 17 | **Service worker cache** — bump `CACHE_VERSION` in `public/sw.js` | Any change to a cache-first shell file: `js/sidebar.js` (menu items), `styles.css`, `sidebar.css`, `utils.js`, `toast.js` |
 
 ---
 

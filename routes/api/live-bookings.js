@@ -41,7 +41,7 @@ function sendError(res, e, fallback) {
   if (e instanceof AccessError) return res.status(e.status).json({ error: e.message });
   if (e instanceof BookingValidationError) return res.status(400).json({ error: e.message });
   const { BOOKING_ERRORS } = db;
-  if (e.code === BOOKING_ERRORS.SLOT_FULL || e.code === BOOKING_ERRORS.ALREADY_BOOKED) {
+  if ([BOOKING_ERRORS.SLOT_FULL, BOOKING_ERRORS.ALREADY_BOOKED, BOOKING_ERRORS.MAX_REACHED].includes(e.code)) {
     return res.status(409).json({ error: e.message });
   }
   if (e.code === BOOKING_ERRORS.SLOT_NOT_FOUND || e.code === BOOKING_ERRORS.SLOT_BLOCKED) {
@@ -85,8 +85,30 @@ async function identifyMember(event, { code, memberId }, required) {
   return invite;
 }
 
-function slotSummary(entry) {
-  return { slotId: entry.slot_id, slot_date: entry.slot_date, start_time: entry.start_time, end_time: entry.end_time };
+function bookingSummary(entry, withAnswers) {
+  return {
+    entryId: entry.id,
+    slotId: entry.slot_id,
+    slot_date: entry.slot_date,
+    start_time: entry.start_time,
+    end_time: entry.end_time,
+    ...(withAnswers ? { field_values: entry.field_values } : {}),
+  };
+}
+
+// Resolves which of the member's bookings a change/cancel refers to. Without an
+// entryId it is only unambiguous when the member holds exactly one booking.
+async function resolveMyEntry(event, member, entryIdRaw, verb = "change") {
+  const mine = await db.getBookingEntriesForMember(event.id, member.member_id);
+  if (entryIdRaw !== undefined && entryIdRaw !== null && entryIdRaw !== '') {
+    const entryId = parseId(entryIdRaw);
+    const entry = mine.find((e) => e.id === entryId);
+    if (!entry) throw new AccessError(404, "That booking was not found.");
+    return { entry, mine };
+  }
+  if (mine.length === 1) return { entry: mine[0], mine };
+  if (mine.length === 0) throw new AccessError(404, `You have no booking to ${verb}.`);
+  throw new AccessError(400, `Please choose which booking to ${verb}.`);
 }
 
 router.get("/:publicId", async (req, res) => {
@@ -95,12 +117,13 @@ router.get("/:publicId", async (req, res) => {
     const member = await identifyMember(event, { code: req.query.code, memberId: req.query.memberId }, false);
     const personal = event.access_type === "personal";
 
-    const [slots, entries, roster, myEntry] = await Promise.all([
+    const [slots, entries, roster, myEntries] = await Promise.all([
       db.getBookingSlots(event.id),
       event.show_booked_names ? db.getBookingEntries(event.id) : Promise.resolve([]),
       personal ? Promise.resolve([]) : db.getBookingInvites(event.id),
-      member ? db.getBookingEntryForMember(event.id, member.member_id) : Promise.resolve(null),
+      member ? db.getBookingEntriesForMember(event.id, member.member_id) : Promise.resolve([]),
     ]);
+    const mySlotIds = new Set(myEntries.map((e) => e.slot_id));
 
     const namesBySlot = {};
     for (const e of entries) (namesBySlot[e.slot_id] = namesBySlot[e.slot_id] || []).push(displayName(e));
@@ -116,6 +139,7 @@ router.get("/:publicId", async (req, res) => {
         access_type: event.access_type,
         show_booked_names: event.show_booked_names,
         allow_cancel: event.allow_cancel,
+        max_bookings: event.max_bookings || 1,
         is_locked: event.is_locked,
         fields: event.fields,
         timezone: config.timezone,
@@ -129,7 +153,7 @@ router.get("/:publicId", async (req, res) => {
         available: Math.max(0, s.capacity - s.booked_count),
         is_blocked: !!s.is_blocked,
         is_past: isSlotPast(s, now),
-        is_mine: !!(myEntry && myEntry.slot_id === s.id),
+        is_mine: mySlotIds.has(s.id),
         ...(event.show_booked_names ? { booked_names: namesBySlot[s.id] || [] } : {}),
       })),
       me: member
@@ -138,13 +162,13 @@ router.get("/:publicId", async (req, res) => {
             displayName: displayName(member),
             // Answers (phone etc.) are only echoed back on personal links — on a
             // shared link anyone could pick this name and read them.
-            booking: myEntry ? { ...slotSummary(myEntry), ...(personal ? { field_values: myEntry.field_values } : {}) } : null,
+            bookings: myEntries.map((e) => bookingSummary(e, personal)),
           }
         : null,
       roster: personal
         ? undefined
         : roster
-            .map((r) => ({ memberId: r.member_id, displayName: displayName(r), hasBooked: !!r.entry_id }))
+            .map((r) => ({ memberId: r.member_id, displayName: displayName(r), hasBooked: r.booking_count > 0 }))
             .sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: "base" })),
     });
   } catch (e) {
@@ -166,33 +190,53 @@ router.post("/:publicId/book", async (req, res) => {
     const now = localNow(config.timezone);
     if (isSlotPast(slot, now)) throw new AccessError(400, "This slot has already started. Please choose a later one.");
 
-    const existing = await db.getBookingEntryForMember(event.id, member.member_id);
-    if (existing) {
+    const fieldValues = validateFieldValues(event.fields, body.fieldValues);
+    let title;
+    let entryId;
+    let previous = null;
+
+    if (body.entryId !== undefined && body.entryId !== null && body.entryId !== '') {
+      // Move / update one of my bookings
       if (!event.allow_cancel) {
-        throw new AccessError(409, "You already have a booking for this event. Please contact the organiser to change it.");
+        throw new AccessError(409, "Bookings for this event can't be changed. Please contact the organiser.");
       }
-      if (isSlotPast(existing, now)) throw new AccessError(400, "Your appointment has already started and can no longer be changed.");
+      const { entry } = await resolveMyEntry(event, member, body.entryId);
+      if (isSlotPast(entry, now)) throw new AccessError(400, "This appointment has already started and can no longer be changed.");
+      await db.moveBooking(entry.id, slotId, fieldValues, "member");
+      entryId = entry.id;
+      title = entry.slot_id === slotId ? "Booking Details Updated" : "Booking Changed";
+      if (entry.slot_id !== slotId) previous = entry;
+    } else {
+      // New booking — the per-member maximum is enforced atomically in createBooking
+      const max = event.max_bookings || 1;
+      try {
+        entryId = await db.createBooking(event.id, member.member_id, slotId, fieldValues, "member", max);
+      } catch (e) {
+        if (e.code === db.BOOKING_ERRORS.MAX_REACHED) {
+          const hint = event.allow_cancel ? " Use Change to move a booking instead." : " Please contact the organiser to change it.";
+          throw new AccessError(409, `${e.message}${hint}`);
+        }
+        throw e;
+      }
+      title = "Booking Created";
     }
 
-    const fieldValues = validateFieldValues(event.fields, body.fieldValues);
-    await db.saveBooking(event.id, member.member_id, slotId, fieldValues, "member");
-
-    const title = !existing ? "Booking Created" : existing.slot_id === slotId ? "Booking Details Updated" : "Booking Changed";
     await db.logEvent("System", "Bookings", title, {
       eventId: event.id,
       eventName: event.name,
       accessType: event.access_type,
+      entryId,
       memberId: member.member_id,
       memberName: displayName(member),
       slotDate: slot.slot_date,
       startTime: slot.start_time,
-      ...(existing && existing.slot_id !== slotId ? { previousSlotDate: existing.slot_date, previousStartTime: existing.start_time } : {}),
+      ...(previous ? { previousSlotDate: previous.slot_date, previousStartTime: previous.start_time } : {}),
     });
-    logger.info("[Bookings] Member booking saved", { eventId: event.id, memberId: member.member_id, slotId });
+    logger.info("[Bookings] Member booking saved", { eventId: event.id, memberId: member.member_id, slotId, entryId });
 
     res.json({
       success: true,
-      booking: { slotId: slot.id, slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time },
+      booking: { entryId, slotId: slot.id, slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time },
     });
   } catch (e) {
     sendError(res, e, "Failed to save booking.");
@@ -206,23 +250,23 @@ router.post("/:publicId/cancel", async (req, res) => {
     if (!event.allow_cancel) throw new AccessError(403, "Cancelling is not allowed for this event. Please contact the organiser.");
     const member = await identifyMember(event, req.body || {}, true);
 
-    const existing = await db.getBookingEntryForMember(event.id, member.member_id);
-    if (!existing) throw new AccessError(404, "You have no booking to cancel.");
+    const { entry: existing } = await resolveMyEntry(event, member, (req.body || {}).entryId, "cancel");
     if (isSlotPast(existing, localNow(config.timezone))) {
-      throw new AccessError(400, "Your appointment has already started and can no longer be cancelled.");
+      throw new AccessError(400, "This appointment has already started and can no longer be cancelled.");
     }
 
-    await db.cancelBooking(event.id, member.member_id);
+    await db.cancelBookingEntry(existing.id);
     await db.logEvent("System", "Bookings", "Booking Cancelled", {
       eventId: event.id,
       eventName: event.name,
       accessType: event.access_type,
+      entryId: existing.id,
       memberId: member.member_id,
       memberName: displayName(member),
       slotDate: existing.slot_date,
       startTime: existing.start_time,
     });
-    logger.info("[Bookings] Member booking cancelled", { eventId: event.id, memberId: member.member_id });
+    logger.info("[Bookings] Member booking cancelled", { eventId: event.id, memberId: member.member_id, entryId: existing.id });
     res.json({ success: true });
   } catch (e) {
     sendError(res, e, "Failed to cancel booking.");
