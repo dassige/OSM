@@ -1188,6 +1188,36 @@
               }
             }
           ]
+        },
+        {
+          "name": "List Member Name Matches",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/extraction/name-matches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "extraction",
+                "name-matches"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List Member Name Matches | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('List Member Name Matches | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('List Member Name Matches | Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

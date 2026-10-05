@@ -78,6 +78,15 @@
             <div id="currentReport"><p class="ds-muted">Loading…</p></div>
         </div>
 
+        <div class="system-card" id="namesCard" style="display:none;">
+            <h2>Member Name Matching</h2>
+            <p>The report names members in full (e.g. "Andrew Keith"). Each name must be linked to a member so their
+                skills count for the right person. A name is matched automatically when exactly one member has the same
+                surname and first initial — match the others yourself.</p>
+            <div id="namesSummary" style="margin-bottom:14px;"></div>
+            <div id="namesTable"></div>
+        </div>
+
         <div class="system-card">
             <h2>Upload a Report</h2>
             <p>Upload the latest <strong>Skills Expiring in the Next Six Months</strong> PDF. It is checked and becomes the
@@ -112,6 +121,24 @@
             <p>The newest report is the current data. Deleting it makes the previous report current again. Up to
                 <span id="retentionCount">24</span> reports are kept; older ones are removed automatically.</p>
             <div id="historyTable"></div>
+        </div>
+    </div>
+
+    <div id="matchModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:520px;">
+            <h2 style="margin-top:0;">Match Report Name</h2>
+            <p>Report name: <strong id="matchSourceName"></strong></p>
+            <div class="form-group">
+                <label for="matchMember">Member</label>
+                <select id="matchMember" title="The member this report name belongs to" style="width:100%;"></select>
+            </div>
+            <p class="ds-muted">Not in the list? Add the member in <strong>Manage Members</strong> first, then come back.
+                If the member only has an initial as first name, the full first name from the report is saved too.</p>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+                <button type="button" class="btn-secondary" onclick="closeMatchModal()" title="Close without saving">Cancel</button>
+                <button type="button" class="btn-success" id="matchSaveBtn" onclick="saveMatch()"
+                    title="Link this report name to the selected member">Save Match</button>
+            </div>
         </div>
     </div>
 

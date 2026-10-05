@@ -5042,6 +5042,78 @@
                        },
                        "description": "Delete a stored report. Deleting the current report makes the previous one current. Disabled in demo mode."
                      }
+                   },
+                   {
+                     "name": "List Member Name Matches",
+                     "request": {
+                       "method": "GET",
+                       "url": {
+                         "raw": "{{baseUrl}}/api/extraction/name-matches",
+                         "host": [
+                           "{{baseUrl}}"
+                         ],
+                         "path": [
+                           "api",
+                           "extraction",
+                           "name-matches"
+                         ]
+                       },
+                       "description": "How each member name in the current report is matched to a member: manual, auto, suggested (will be matched automatically), ambiguous or unmatched — with candidate members."
+                     }
+                   },
+                   {
+                     "name": "Match Member Name",
+                     "request": {
+                       "method": "POST",
+                       "url": {
+                         "raw": "{{baseUrl}}/api/extraction/name-matches",
+                         "host": [
+                           "{{baseUrl}}"
+                         ],
+                         "path": [
+                           "api",
+                           "extraction",
+                           "name-matches"
+                         ]
+                       },
+                       "description": "Link a report name to a member (replaces any existing match for that name). Stores the full first name when the member only has an initial. Disabled in demo mode.",
+                       "header": [
+                         {
+                           "key": "Content-Type",
+                           "value": "application/json"
+                         }
+                       ],
+                       "body": {
+                         "mode": "raw",
+                         "raw": "{\n  \"sourceName\": \"Andrew Keith\",\n  \"memberId\": 12\n}"
+                       }
+                     }
+                   },
+                   {
+                     "name": "Remove Member Name Match",
+                     "request": {
+                       "method": "DELETE",
+                       "url": {
+                         "raw": "{{baseUrl}}/api/extraction/name-matches/:id",
+                         "host": [
+                           "{{baseUrl}}"
+                         ],
+                         "path": [
+                           "api",
+                           "extraction",
+                           "name-matches",
+                           ":id"
+                         ],
+                         "variable": [
+                           {
+                             "key": "id",
+                             "value": "1",
+                             "description": "aliasId from List Member Name Matches"
+                           }
+                         ]
+                       },
+                       "description": "Remove a name match; automatic matching applies to the name again. Disabled in demo mode."
+                     }
                    }
                  ]
                }

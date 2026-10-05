@@ -39,7 +39,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **Web-Based Management:**
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
       * **Skills:** Configure which skills to track and mark them as Critical.
-      * **Skills Data Source:** Upload the "Skills Expiring in the Next Six Months" PDF (or let it be picked up from Google Cloud Storage / a local file), see how current it is, and keep a history of past reports.
+      * **Skills Data Source:** Upload the "Skills Expiring in the Next Six Months" PDF (or let it be picked up from Google Cloud Storage / a local file), see how current it is, keep a history of past reports, and match the report's member names to member records.
       * **Smart Form Links:** Define Online Form URLs with dynamic placeholders (e.g., `{{member-name}}`) to pre-fill member details automatically.
       * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, Surveys, Booking Invitations, New Users, Password Resets, Forgot Password reset links, and Account Deletions.
   * **Reports Console:**
@@ -241,7 +241,12 @@ Open the `.env` file and configure the following parameters:
   How the report maps onto skill expiry data:
   * The report lists only skills that are **lapsed or expire within six months**, by month only. Due dates are derived from the report's `Created:` date: *Lapsed* → last day of the previous month; the report's own month → last day of that month; next month → the 1st for names highlighted orange (expiring within a month of the report date), otherwise the report's day-of-month; later months → the 1st.
   * Skill categories come from the report's category bands (`B.A`, `Driving`, `Haz Subs` …).
-  * Members appear by full name without rank, so they must be matched to existing member records (in progress — until then this plugin is for evaluation only).
+  * Members appear by full name without rank ("Andrew Keith"), so each name is matched to a member record (e.g. "QFF Keith, A") before the data is used:
+      * **Automatically** when exactly one member has the same surname and first initial (compound surnames and accents are handled). Members already linked to a different report name, and names that would land on the same member, are left for an admin.
+      * **By an admin** on **Skills Data Source → Member Name Matching**, which lists every name in the current report with its status (matched automatically / by admin, will match automatically, needs review, not found) and lets you match, change or unlink.
+      * Matches are saved and reused for every future report. When a matched member only has an initial as first name, the full first name from the report is stored (display becomes "QFF Keith, Andrew"); an existing full first name is never overwritten, and an OI dashboard import never downgrades it back to the initial.
+      * Skills of unmatched names are not counted for anyone until they are matched. New members must be added in **Manage Members** first.
+  * Skill names are matched to configured skills ignoring differences in spacing, dashes and case; the configured spelling is kept.
   * The PDF is parsed with `pdfjs-dist` with script evaluation disabled; files without a `%PDF-` header or over the size limit are rejected. The report is confidential — keep it out of the repository and do not use this plugin in demo mode.
 
 #### **OSM Dashboard Connection** *(html-scraper plugin)*
@@ -671,6 +676,7 @@ API keys **cannot** access HTML pages — those remain session-only. Endpoints r
 | `GET` | `/api/live-bookings/{publicId}` | Public: load a booking page (`?code=` for personal links) |
 | `GET` | `/api/extraction/status` | Skills data source status: current PDF report, staleness, last automatic check |
 | `POST` | `/api/extraction/upload` | Upload a Skills Expiring in the Next Six Months PDF report (multipart `file`) |
+| `GET` | `/api/extraction/name-matches` | How each member name in the current PDF report is matched to a member |
 | `GET` | `/api/health` | Health check (no key required) |
 | `GET` | `/api/ready` | Readiness probe — DB + WhatsApp state (no key required) |
 
@@ -1208,7 +1214,8 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── 001-baseline.sql
 │   ├── ...
 │   ├── 027-bookings.sql        # Booking Events tables
-│   └── 029-extraction-snapshots.sql  # Skills report snapshots (pdf-report plugin)
+│   ├── 029-extraction-snapshots.sql  # Skills report snapshots (pdf-report plugin)
+│   └── 030-member-source-aliases.sql # Report name → member matches (pdf-report plugin)
 ├── middleware/
 │   ├── auth.js                 # globalAuthGuard, hasRole(), ROLES, X-API-Key check
 │   └── rate-limiter.js         # apiLimiter, loginLimiter, publicSubmitLimiter, publicBookingLimiter
@@ -1242,6 +1249,7 @@ The WhatsApp service includes built-in fault tolerance:
 │   │   ├── bookings.js         # Booking templates, events, slots, invites, bookings
 │   │   ├── events.js           # Event log CRUD
 │   │   ├── extraction-snapshots.js  # Stored skills reports (PDF + parsed records)
+│   │   ├── member-source-aliases.js # Report name → member matches
 │   │   ├── members.js          # Member queries
 │   │   ├── preferences.js      # System & user preferences
 │   │   ├── skills.js           # Skill queries
@@ -1265,6 +1273,7 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── logger.js               # Winston logger
 │   ├── mailer.js               # SMTP notification service
 │   ├── member-manager.js       # Skill expiry enrichment, status mapping, date parsing
+│   ├── member-name-resolver.js # Matches report member/skill names onto member and skill records
 │   ├── migration-runner.js     # Applies migrations/NNN-*.sql in numeric order
 │   ├── pdf-report-service.js   # Skills report ingestion: upload, GCS/local pickup, snapshots
 │   ├── proxy-manager.js        # NZ proxy sourcing and verification for the scraper

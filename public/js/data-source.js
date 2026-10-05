@@ -128,15 +128,171 @@ function renderCard(s) {
   };
 }
 
+// ── Member name matching ───────────────────────────────────────────────────
+
+let nameMatches = [];
+let namesTable = null;
+let allMembers = null;
+let matchingName = null;
+
+const MATCH_STATUS = {
+  ambiguous: { order: 0, cls: 'stale', label: 'Needs review', tip: 'More than one member could be this person — choose one' },
+  unmatched: { order: 1, cls: 'problem', label: 'Not found', tip: 'No member has this surname and first initial' },
+  suggested: { order: 2, cls: 'neutral', label: 'Will match automatically', tip: 'Saved automatically the next time skill data refreshes' },
+  auto: { order: 3, cls: 'ok', label: 'Matched automatically', tip: 'Matched by surname and first initial' },
+  manual: { order: 4, cls: 'ok', label: 'Matched by admin', tip: 'Linked by an administrator' },
+};
+const needsAttention = (m) => m.status === 'ambiguous' || m.status === 'unmatched';
+
+function matchBadge(m) {
+  const s = MATCH_STATUS[m.status] || MATCH_STATUS.unmatched;
+  return `<span class="ds-badge ${s.cls}" style="margin-left:0;" title="${s.tip}">${s.label}</span>`;
+}
+
+function matchedMember(m) {
+  if (m.member) {
+    const full = m.member.firstName && m.member.firstName.length > 1 ? ` <span class="ds-muted">(${U.esc(m.member.firstName)})</span>` : '';
+    return `${U.esc(m.member.name)}${full}${m.member.enabled ? '' : ' <span class="ds-muted">— disabled</span>'}`;
+  }
+  if (m.candidates.length) return `<span class="ds-muted">Possible: ${m.candidates.map((c) => U.esc(c.name)).join('; ')}</span>`;
+  return '<span class="ds-muted">—</span>';
+}
+
+function matchActions(m) {
+  const disabled = isDemo() ? ' disabled title="Disabled in demo mode"' : '';
+  const label = m.member ? 'Change' : 'Match';
+  const tip = m.member ? 'Link this report name to a different member' : 'Choose the member this report name belongs to';
+  let html = `<button class="btn-sm btn-primary" onclick="openMatchModal(${nameMatches.indexOf(m)})"${disabled || ` title="${tip}"`}>${label}</button>`;
+  if (m.status === 'manual') {
+    html += `<button class="btn-sm btn-danger" onclick="removeMatch(${m.aliasId})"${disabled || ' title="Remove this match — automatic matching applies again"'}>Unlink</button>`;
+  }
+  return html;
+}
+
+const NAME_COLUMNS = [
+  { key: 'sourceName', label: 'Report Name', sortable: true, render: (m) => `<strong>${U.esc(m.sourceName)}</strong>` },
+  { key: 'status', label: 'Status', sortable: true, sortValue: (m) => MATCH_STATUS[m.status]?.order ?? 9, render: matchBadge },
+  { key: 'member', label: 'Member', sortable: true, sortValue: (m) => m.member?.name || '', render: matchedMember },
+  { key: 'entryCount', label: 'Entries', sortable: true, tdStyle: 'text-align:center;' },
+  { key: 'actions', label: 'Actions', sortable: false, thStyle: 'text-align:center;',
+    render: (m) => `<div class="ds-actions">${matchActions(m)}</div>` },
+];
+
+function renderNameCard(m) {
+  return {
+    title: U.esc(m.sourceName),
+    badge: matchBadge(m),
+    rows: [['Member', matchedMember(m)], ['Entries', String(m.entryCount)]],
+    actions: matchActions(m),
+  };
+}
+
+function renderNames() {
+  const card = document.getElementById('namesCard');
+  card.style.display = status?.latest ? '' : 'none';
+  if (!status?.latest) return;
+  const attention = nameMatches.filter(needsAttention).length;
+  const matched = nameMatches.filter((m) => m.member).length;
+  document.getElementById('namesSummary').innerHTML =
+    `${nameMatches.length} names in the current report — <strong>${matched} matched</strong>` +
+    (attention
+      ? `, <span class="ds-badge problem" style="margin-left:0;">${attention} need${attention === 1 ? 's' : ''} attention</span> <span class="ds-muted">Their skills are not counted until they are matched.</span>`
+      : '. <span class="ds-badge ok" style="margin-left:0;">All matched</span>');
+  namesTable.setRows(nameMatches);
+}
+
+async function loadMembers() {
+  if (allMembers) return allMembers;
+  const res = await fetch('/api/members');
+  if (!res.ok) throw new Error('Failed to load members');
+  allMembers = (await res.json()).slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  return allMembers;
+}
+
+async function openMatchModal(index) {
+  if (isDemo()) return showToast('Disabled in Demo Mode', 'warning');
+  const m = nameMatches[index];
+  if (!m) return;
+  try {
+    const members = await loadMembers();
+    matchingName = m;
+    document.getElementById('matchSourceName').textContent = m.sourceName;
+    const candidateIds = new Set(m.candidates.map((c) => c.id));
+    const option = (mem) => `<option value="${mem.id}">${U.esc(mem.name)}${mem.enabled ? '' : ' (disabled)'}</option>`;
+    const suggested = members.filter((mem) => candidateIds.has(mem.id));
+    document.getElementById('matchMember').innerHTML =
+      '<option value="">— Choose a member —</option>' +
+      (suggested.length ? `<optgroup label="Possible matches">${suggested.map(option).join('')}</optgroup>` : '') +
+      `<optgroup label="All members">${members.map(option).join('')}</optgroup>`;
+    document.getElementById('matchMember').value = m.member ? String(m.member.id) : '';
+    document.getElementById('matchModal').style.display = 'block';
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+function closeMatchModal() {
+  document.getElementById('matchModal').style.display = 'none';
+  matchingName = null;
+}
+
+async function saveMatch() {
+  const memberId = Number(document.getElementById('matchMember').value);
+  if (!matchingName) return;
+  if (!memberId) return showToast('Choose a member first.', 'warning');
+  const btn = document.getElementById('matchSaveBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/extraction/name-matches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceName: matchingName.sourceName, memberId }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || 'Could not save the match');
+    showToast(`${matchingName.sourceName} matched${body.firstNameStored ? ` — first name saved as ${body.firstNameStored}` : ''}.`, 'success');
+    closeMatchModal();
+    allMembers = null;
+    loadAll();
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function removeMatch(aliasId) {
+  if (isDemo()) return showToast('Disabled in Demo Mode', 'warning');
+  const m = nameMatches.find((x) => x.aliasId === aliasId);
+  if (!m) return;
+  const ok = await confirmAction('Unlink Name',
+    `Remove the match between <strong>${U.esc(m.sourceName)}</strong> and <strong>${U.esc(m.member?.name || '')}</strong>? ` +
+    'Automatic matching will apply to this name again.');
+  if (!ok) return;
+  try {
+    const res = await fetch(`/api/extraction/name-matches/${aliasId}`, { method: 'DELETE' });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || 'Could not remove the match');
+    showToast('Match removed', 'success');
+    loadAll();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
 // ── Data loading ───────────────────────────────────────────────────────────
 
 async function loadAll() {
   try {
-    const [statusRes, listRes] = await Promise.all([fetch('/api/extraction/status'), fetch('/api/extraction/snapshots')]);
-    if (!statusRes.ok || !listRes.ok) throw new Error('Failed to load the skills data source');
+    const [statusRes, listRes, namesRes] = await Promise.all([
+      fetch('/api/extraction/status'), fetch('/api/extraction/snapshots'), fetch('/api/extraction/name-matches'),
+    ]);
+    if (!statusRes.ok || !listRes.ok || !namesRes.ok) throw new Error('Failed to load the skills data source');
     status = await statusRes.json();
     snapshots = await listRes.json();
+    nameMatches = await namesRes.json();
     renderCurrent();
+    renderNames();
     table.setRows(snapshots);
   } catch (e) {
     showToast(e.message, 'error');
@@ -289,6 +445,16 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCard,
       });
       await table.init();
+      namesTable = new BookingTable({
+        root: document.getElementById('namesTable'),
+        idPrefix: 'dsn',
+        prefKey: 'dataSourceNames',
+        columns: NAME_COLUMNS,
+        defaultSort: { col: 'status', dir: 'asc' },
+        emptyMessage: 'No names in the current report.',
+        renderCard: renderNameCard,
+      });
+      await namesTable.init();
       loadAll();
     })
     .catch(() => (window.location.href = '/login.html'));

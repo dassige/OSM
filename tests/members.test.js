@@ -192,6 +192,22 @@ describe('Members API Endpoints (Isolated)', () => {
             expect(response.body.new).toHaveLength(0);
             expect(response.body.changed).toHaveLength(0);
         });
+
+        it('keeps a full first name (from the PDF report) when the source only has the initial', async () => {
+            extractionEngine.extractData.mockResolvedValue([
+                { name: 'QFF Smith, J', rank: 'QFF', lastName: 'Smith', firstName: 'J', memberOsmId: 'QFF Smith, J', skill: 'First Aid', skillOsmId: 'First Aid', skillCategory: 'First Aid', dueDate: '2026-01-01' },
+                { name: 'FF Jones, T', rank: 'SFF', lastName: 'Jones', firstName: 'T', memberOsmId: 'FF Jones, T', skill: 'First Aid', skillOsmId: 'First Aid', skillCategory: 'First Aid', dueDate: '2026-01-01' },
+            ]);
+            db.getMembers.mockResolvedValue([
+                { id: 1, name: 'QFF Smith, J', member_osm_id: 'QFF Smith, J', rank: 'QFF', first_name: 'John', last_name: 'Smith' },
+                { id: 2, name: 'FF Jones, T', member_osm_id: 'FF Jones, T', rank: 'FF', first_name: 'Tom', last_name: 'Jones' },
+            ]);
+
+            const response = await request(app).get('/api/members/discover');
+
+            // Smith: initial agrees with "John" → unchanged. Jones: rank changed → update keeps "Tom".
+            expect(response.body.changed).toEqual([expect.objectContaining({ dbId: 2, rank: 'SFF', firstName: 'Tom', currentFirstName: 'Tom' })]);
+        });
     });
 
     describe('POST /api/members/sync', () => {

@@ -778,6 +778,13 @@ const helpContent = {
                 <li>The report lists only skills that are lapsed or expire within six months, by month. A skill not in the report is current for more than six months.</li>
                 <li><strong>Automatic pickup</strong> shows where new reports are collected from, if anywhere. <strong>Check Source Now</strong> looks for a new one immediately.</li>
             </ul>
+            <h3>Member Name Matching</h3>
+            <ul>
+                <li>The report uses full names (e.g. "Andrew Keith"). Each name must be linked to a member — skills of an unmatched name are not counted for anyone.</li>
+                <li>Names match automatically when exactly one member has the same surname and first initial. <strong>Needs review</strong> means several members fit; <strong>Not found</strong> means none does.</li>
+                <li>Use <strong>Match</strong> / <strong>Change</strong> to pick the member. New members must be added in Manage Members first. <strong>Unlink</strong> removes your choice so automatic matching applies again.</li>
+                <li>Matches are remembered for future reports. If the member only has an initial as first name, the full first name from the report is saved.</li>
+            </ul>
             <h3>Upload a Report</h3>
             <ul>
                 <li>Choose or drop the PDF and click <strong>Upload Report</strong>. It is checked first — a file that isn't a readable report is refused and nothing changes.</li>

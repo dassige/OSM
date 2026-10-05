@@ -28,6 +28,12 @@ jest.mock('../services/db', () => ({
     createExtractionSnapshot: jest.fn(),
     pruneExtractionSnapshots: jest.fn(),
     getLatestExtractionRecords: jest.fn(),
+    // member-name-resolver (called by the plugin's extract)
+    getMembers: jest.fn().mockResolvedValue([]),
+    getMemberSourceAliases: jest.fn().mockResolvedValue([]),
+    getSkills: jest.fn().mockResolvedValue([]),
+    createAutoMemberSourceAlias: jest.fn().mockResolvedValue(true),
+    updateMemberFirstName: jest.fn().mockResolvedValue(),
     logEvent: jest.fn().mockResolvedValue(),
 }));
 // pdfjs-dist is ESM-only — the loader is mocked and fed the anonymised fixture pages.
@@ -335,13 +341,21 @@ describe('pdf-report plugin', () => {
     describe('extract', () => {
         const log = jest.fn();
 
-        it('returns the records of the newest report', async () => {
+        it('returns the newest report with member names resolved', async () => {
             config.pdfReport.source = 'upload';
-            const records = [{ name: 'Obi-Wan Kenobi', skill: 'BA - Search & Rescue', dueDate: '2026-12-01' }];
+            const kenobi = { id: 3, name: 'SO Kenobi, O', rank: 'SO', first_name: 'O', last_name: 'Kenobi', member_osm_id: null };
+            db.getMembers.mockResolvedValueOnce([kenobi]);
+            const records = [
+                { name: 'Obi-Wan Kenobi', sourceName: 'Obi-Wan Kenobi', skill: 'BA - Search & Rescue', dueDate: '2026-12-01' },
+                { name: 'Han Solo', sourceName: 'Han Solo', skill: 'BA - Search & Rescue', dueDate: '2027-01-01' },
+            ];
             db.getLatestExtractionRecords.mockResolvedValue({ snapshot: snapshotRow(), records });
 
-            expect(await plugin.extract(config, log)).toBe(records);
+            const out = await plugin.extract(config, log);
+            expect(out[0]).toMatchObject({ name: 'SO Kenobi, O', memberId: 3, firstName: 'Obi-Wan', sourceName: 'Obi-Wan Kenobi' });
+            expect(out[1]).toMatchObject({ name: 'Han Solo', unresolved: true });
             expect(log).toHaveBeenCalledWith(expect.stringMatching(/Using the report created on 2026-10-05 \(249 records, 15 members, 32 skills\)/));
+            expect(log).toHaveBeenCalledWith(expect.stringMatching(/Member names: 1 of 2 matched/));
         });
 
         it('logs a warning when the source check found a problem', async () => {

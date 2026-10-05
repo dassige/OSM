@@ -11,18 +11,20 @@
 //     a skill missing from the report means "current for more than six months".
 //   • Expiry is a month, not a date — see grid-parser.js deriveDueDate() for the
 //     agreed rules (orange names = expiring within one month of the Created date).
-//   • Members appear by full name ("Andrew Keith") with no rank, so `name` and
-//     `memberOsmId` carry the source name until member matching maps them onto
-//     existing member records.
+//   • Members appear by full name ("Andrew Keith") with no rank, so every record
+//     is resolved onto a member record by services/member-name-resolver.js before
+//     it is returned; names that cannot be matched keep the report name and are
+//     flagged `unresolved` (consumers simply find no member for them).
 //
 // Output record shape (one entry per member × skill):
 //   { name, rank, lastName, firstName, memberOsmId, skill, skillOsmId, skillCategory, dueDate,
-//     dueMonth, lapsed, withinOneMonth, sourceName, reportCreatedDate }
+//     dueMonth, lapsed, withinOneMonth, sourceName, reportCreatedDate, memberId?, unresolved? }
 
 'use strict';
 
 const db = require('../db');
 const pdfReportService = require('../pdf-report-service');
+const { resolveRecords } = require('../member-name-resolver');
 
 const SOURCES = ['local', 'gcs', 'upload'];
 
@@ -65,9 +67,10 @@ const plugin = {
         if (!latest) {
             throw new Error('No skills report has been imported yet — upload the latest PDF on the Skills Data Source page.');
         }
-        const { snapshot, records } = latest;
+        const { snapshot } = latest;
         log(`[pdf-report] Using the report created on ${snapshot.report_created_date} ` +
             `(${snapshot.record_count} records, ${snapshot.member_count} members, ${snapshot.skill_count} skills).`);
+        const { records } = await resolveRecords(latest.records, { log });
         return records;
     },
 };

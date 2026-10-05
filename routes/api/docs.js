@@ -81,6 +81,28 @@ const spec = {
                     created_at:          { type: 'string', example: '2026-10-05 01:00:00', description: 'UTC' }
                 }
             },
+            MemberNameMatch: {
+                type: 'object',
+                properties: {
+                    sourceName: { type: 'string', example: 'Andrew Keith', description: 'Name as it appears in the report' },
+                    entryCount: { type: 'integer', example: 17, description: 'Skill entries for this name in the current report' },
+                    status:     { type: 'string', enum: ['manual', 'auto', 'suggested', 'ambiguous', 'unmatched'], description: 'manual/auto = saved match; suggested = will be matched automatically; ambiguous = several possible members; unmatched = no member found' },
+                    aliasId:    { type: 'integer', nullable: true, description: 'Saved match id (manual/auto)' },
+                    member:     { allOf: [{ $ref: '#/components/schemas/MemberNameMatchMember' }], nullable: true },
+                    candidates: { type: 'array', items: { $ref: '#/components/schemas/MemberNameMatchMember' }, description: 'Members whose surname and first initial agree' }
+                }
+            },
+            MemberNameMatchMember: {
+                type: 'object',
+                properties: {
+                    id:        { type: 'integer', example: 12 },
+                    name:      { type: 'string', example: 'QFF Keith, A' },
+                    rank:      { type: 'string', nullable: true, example: 'QFF' },
+                    firstName: { type: 'string', nullable: true, example: 'Andrew' },
+                    lastName:  { type: 'string', nullable: true, example: 'Keith' },
+                    enabled:   { type: 'boolean', example: true }
+                }
+            },
             ExtractionSyncResult: {
                 type: 'object',
                 description: 'Outcome of an automatic or manual source check (all fields null before the first check)',
@@ -3451,6 +3473,56 @@ const spec = {
                     403: { description: 'Forbidden or demo mode' },
                     409: { description: 'Report is older than the current report — resend with force=true to accept it' },
                     413: { description: 'File is larger than PDF_MAX_SIZE_MB' }
+                }
+            }
+        },
+        '/api/extraction/name-matches': {
+            get: {
+                tags: ['Skills Data Source'],
+                summary: 'How each member name in the current report is matched to a member',
+                description: 'The report names members in full ("Andrew Keith"). Names are matched automatically when exactly one member has the same surname and first initial; the rest need an admin. Read-only — automatic matches are saved when skill data is next extracted.',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                responses: { 200: { description: 'One entry per name in the current report (empty when no report has been imported)', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/MemberNameMatch' } } } } } }
+            },
+            post: {
+                tags: ['Skills Data Source'],
+                summary: 'Link a report name to a member (disabled in demo mode)',
+                description: 'Replaces any existing match for the name. When the member only has an initial as first name, the full first name from the report is stored.',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                requestBody: {
+                    required: true,
+                    content: { 'application/json': { schema: {
+                        type: 'object',
+                        required: ['sourceName', 'memberId'],
+                        properties: {
+                            sourceName: { type: 'string', maxLength: 200, example: 'Andrew Keith' },
+                            memberId:   { type: 'integer', example: 12 }
+                        }
+                    } } }
+                },
+                responses: {
+                    200: { description: 'Matched', content: { 'application/json': { schema: { type: 'object', properties: {
+                        success: { type: 'boolean', example: true },
+                        id: { type: 'integer', description: 'Match (alias) id' },
+                        firstNameStored: { type: 'string', nullable: true, example: 'Andrew', description: 'First name saved on the member, or null when unchanged' }
+                    } } } } },
+                    400: { description: 'Missing sourceName or memberId' },
+                    403: { description: 'Forbidden or demo mode' },
+                    404: { description: 'Member not found' }
+                }
+            }
+        },
+        '/api/extraction/name-matches/{id}': {
+            delete: {
+                tags: ['Skills Data Source'],
+                summary: 'Remove a name match — automatic matching applies to the name again (disabled in demo mode)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' }, description: 'aliasId from GET /api/extraction/name-matches' }],
+                responses: {
+                    200: { description: 'Removed', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'Invalid id' },
+                    403: { description: 'Forbidden or demo mode' },
+                    404: { description: 'Name match not found' }
                 }
             }
         },

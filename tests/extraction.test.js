@@ -23,6 +23,14 @@ jest.mock('../services/db', () => ({
     getExtractionSnapshotById: jest.fn(),
     getExtractionSnapshotFile: jest.fn(),
     deleteExtractionSnapshot: jest.fn().mockResolvedValue(1),
+    getLatestExtractionRecords: jest.fn(),
+    getMembers: jest.fn(),
+    getMemberById: jest.fn(),
+    getMemberSourceAliases: jest.fn(),
+    getMemberSourceAliasById: jest.fn(),
+    saveManualMemberSourceAlias: jest.fn(),
+    deleteMemberSourceAlias: jest.fn().mockResolvedValue(1),
+    updateMemberFirstName: jest.fn().mockResolvedValue(),
     logEvent: jest.fn().mockResolvedValue(),
 }));
 jest.mock('../middleware/auth', () => ({
@@ -261,6 +269,135 @@ describe('POST /api/extraction/sync', () => {
         config.appMode = 'demo';
         expect((await request(app).post('/api/extraction/sync')).status).toBe(403);
         expect(pdfReportService.syncFromSource).not.toHaveBeenCalled();
+    });
+});
+
+// ── Member name matching ────────────────────────────────────────────────────
+
+describe('GET /api/extraction/name-matches', () => {
+    const keith = { id: 1, name: 'QFF Keith, A', rank: 'QFF', first_name: 'A', last_name: 'Keith', enabled: 1 };
+    const robertsA = { id: 2, name: 'FF Roberts, G', rank: 'FF', first_name: 'G', last_name: 'Roberts', enabled: 1 };
+    const robertsB = { id: 3, name: 'QFF Roberts, G', rank: 'QFF', first_name: 'G', last_name: 'Roberts', enabled: 0 };
+    const rec = (sourceName) => ({ name: sourceName, sourceName, skill: 'S' });
+
+    it('describes how each name in the current report is matched', async () => {
+        db.getLatestExtractionRecords.mockResolvedValue({
+            snapshot: snapshotRow(),
+            records: [rec('Andrew Keith'), rec('Andrew Keith'), rec('Geoff Roberts'), rec('Emma Ryan')],
+        });
+        db.getMembers.mockResolvedValue([keith, robertsA, robertsB]);
+        db.getMemberSourceAliases.mockResolvedValue([]);
+
+        const res = await request(app).get('/api/extraction/name-matches');
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual([
+            {
+                sourceName: 'Andrew Keith', entryCount: 2, status: 'suggested', aliasId: null,
+                member: { id: 1, name: 'QFF Keith, A', rank: 'QFF', firstName: 'A', lastName: 'Keith', enabled: true },
+                candidates: [expect.objectContaining({ id: 1 })],
+            },
+            {
+                sourceName: 'Geoff Roberts', entryCount: 1, status: 'ambiguous', aliasId: null, member: null,
+                candidates: [expect.objectContaining({ id: 2 }), expect.objectContaining({ id: 3, enabled: false })],
+            },
+            { sourceName: 'Emma Ryan', entryCount: 1, status: 'unmatched', aliasId: null, member: null, candidates: [] },
+        ]);
+        expect(db.saveManualMemberSourceAlias).not.toHaveBeenCalled();
+    });
+
+    it('returns an empty list when no report has been imported', async () => {
+        db.getLatestExtractionRecords.mockResolvedValue(null);
+        const res = await request(app).get('/api/extraction/name-matches');
+        expect(res.body).toEqual([]);
+    });
+
+    it('returns 500 on a database error', async () => {
+        db.getLatestExtractionRecords.mockRejectedValue(new Error('db down'));
+        expect((await request(app).get('/api/extraction/name-matches')).status).toBe(500);
+    });
+});
+
+describe('POST /api/extraction/name-matches', () => {
+    it('links a name to a member, stores the full first name and logs it', async () => {
+        db.getMemberById.mockResolvedValue({ id: 4, name: 'FF Whybrow, R', first_name: 'R', last_name: 'Whybrow' });
+        db.saveManualMemberSourceAlias.mockResolvedValue(21);
+
+        const res = await request(app).post('/api/extraction/name-matches').send({ sourceName: '  Rob   Whybrow ', memberId: 4 });
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ success: true, id: 21, firstNameStored: 'Rob' });
+        expect(db.saveManualMemberSourceAlias).toHaveBeenCalledWith({
+            sourceName: 'Rob Whybrow', sourceKey: 'rob whybrow', memberId: 4, createdBy: 'Test Admin',
+        });
+        expect(db.updateMemberFirstName).toHaveBeenCalledWith(4, 'Rob');
+        expect(extractionEngine.clearCache).toHaveBeenCalled();
+        expect(db.logEvent).toHaveBeenCalledWith('Test Admin', 'Member', 'Member Name Matched', {
+            aliasId: 21, sourceName: 'Rob Whybrow', memberId: 4, memberName: 'FF Whybrow, R', firstNameStored: 'Rob',
+        });
+    });
+
+    it('keeps an existing full first name', async () => {
+        db.getMemberById.mockResolvedValue({ id: 4, name: 'FF Smith, R', first_name: 'Robert', last_name: 'Smith' });
+        db.saveManualMemberSourceAlias.mockResolvedValue(22);
+        const res = await request(app).post('/api/extraction/name-matches').send({ sourceName: 'Bob Smith', memberId: 4 });
+        expect(res.body.firstNameStored).toBeNull();
+        expect(db.updateMemberFirstName).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        [{ memberId: 4 }, /sourceName is required/],
+        [{ sourceName: 'x'.repeat(201), memberId: 4 }, /sourceName is required/],
+        [{ sourceName: 'Rob Whybrow' }, /memberId is required/],
+        [{ sourceName: 'Rob Whybrow', memberId: 'abc' }, /memberId is required/],
+    ])('returns 400 for %p', async (body, message) => {
+        const res = await request(app).post('/api/extraction/name-matches').send(body);
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(message);
+    });
+
+    it('returns 404 for an unknown member', async () => {
+        db.getMemberById.mockResolvedValue(undefined);
+        const res = await request(app).post('/api/extraction/name-matches').send({ sourceName: 'Rob Whybrow', memberId: 99 });
+        expect(res.status).toBe(404);
+        expect(db.saveManualMemberSourceAlias).not.toHaveBeenCalled();
+    });
+
+    it('returns 500 on a database error', async () => {
+        db.getMemberById.mockRejectedValue(new Error('db down'));
+        expect((await request(app).post('/api/extraction/name-matches').send({ sourceName: 'Rob Whybrow', memberId: 4 })).status).toBe(500);
+    });
+
+    it('is disabled in demo mode', async () => {
+        config.appMode = 'demo';
+        expect((await request(app).post('/api/extraction/name-matches').send({ sourceName: 'Rob Whybrow', memberId: 4 })).status).toBe(403);
+    });
+});
+
+describe('DELETE /api/extraction/name-matches/:id', () => {
+    it('removes a match and logs it', async () => {
+        db.getMemberSourceAliasById.mockResolvedValue({
+            id: 21, source_name: 'Rob Whybrow', member_id: 4, member_name: 'FF Whybrow, R', match_type: 'manual',
+        });
+        const res = await request(app).delete('/api/extraction/name-matches/21');
+
+        expect(res.status).toBe(200);
+        expect(db.deleteMemberSourceAlias).toHaveBeenCalledWith(21);
+        expect(extractionEngine.clearCache).toHaveBeenCalled();
+        expect(db.logEvent).toHaveBeenCalledWith('Test Admin', 'Member', 'Member Name Match Removed', {
+            aliasId: 21, sourceName: 'Rob Whybrow', memberId: 4, memberName: 'FF Whybrow, R', matchType: 'manual',
+        });
+    });
+
+    it('returns 404 for an unknown match and 400 for a bad id', async () => {
+        db.getMemberSourceAliasById.mockResolvedValue(undefined);
+        expect((await request(app).delete('/api/extraction/name-matches/99')).status).toBe(404);
+        expect((await request(app).delete('/api/extraction/name-matches/x')).status).toBe(400);
+        expect(db.deleteMemberSourceAlias).not.toHaveBeenCalled();
+    });
+
+    it('is disabled in demo mode', async () => {
+        config.appMode = 'demo';
+        expect((await request(app).delete('/api/extraction/name-matches/21')).status).toBe(403);
     });
 });
 

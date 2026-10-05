@@ -961,7 +961,17 @@ Skill expiry data can come from the **Skills Expiring in the Next Six Months** P
 | T31-19 | Upload through the API (automation) | From a terminal, run `curl -H "X-API-Key: <admin key>" -F "file=@OSM-Status-6-months.pdf" <server>/api/extraction/upload` with a newer report. | The JSON response contains `"status":"imported"` and the report date. Refreshing the page shows the report as current, imported by the API key's name. Sending the same file again returns `"status":"unchanged"`. |
 | T31-20 | History table sorting and paging | With 3+ reports, click the **Report Date**, **Imported** and **Entries** headers; change **Rows per page** to 10; reload the page. | Rows re-sort with ▲/▼ indicators; after reloading, the sort and rows per page are remembered. |
 | T31-21 | Mobile layout | At 375 px width open the page. | The toolbar uses icon buttons; Current Report details stack one per line; the history shows as cards (report date title, Current badge, Download and Delete buttons) with a collapsible **Sort by** section and the pagination bar; no sideways scrolling. |
-| T31-22 | Demo mode guard | On a demo instance open **Skills Data Source**. | `[Choose PDF]`, `[Upload Report]`, `[Check Source Now]` and every `[Delete]` button are disabled with the tooltip "Disabled in demo mode". |
+| T31-22 | Demo mode guard | On a demo instance open **Skills Data Source**. | `[Choose PDF]`, `[Upload Report]`, `[Check Source Now]`, every `[Delete]` button and every name-matching `[Match]` / `[Change]` / `[Unlink]` button are disabled with the tooltip "Disabled in demo mode". |
+| T31-23 | Member name matching overview | With a current report in place, look at the **Member Name Matching** section. | Every member name in the report is listed once with its number of skill entries and a status: **Matched automatically**, **Matched by admin**, **Will match automatically**, **Needs review** or **Not found**. The summary line reads "N names in the current report — M matched" and, when some names need attention, a red badge with the count. Names needing attention are listed first. |
+| T31-24 | Automatic matching | Make sure a member exists as e.g. "QFF Keith, A" (first name "A") and the report contains "Andrew Keith". Open the **Dashboard** (which refreshes the skill data), then return to **Skills Data Source**. | "Andrew Keith" shows **Matched automatically** with the member "QFF Keith, A (Andrew)". In **Manage Members** the member's first name is now "Andrew". Event log records **Member Name Matched Automatically** (actor System). |
+| T31-25 | Name that needs review | Create two members with the same surname and initial (e.g. "FF Roberts, G" and "QFF Roberts, G") for a name in the report. Refresh the page → click `[Match]` on that name → choose the right member in **Possible matches** → `[Save Match]`. | Before matching, the name shows **Needs review** and "Possible: FF Roberts, G; QFF Roberts, G". After saving: toast "<name> matched — first name saved as Geoff.", status **Matched by admin**. Event log records **Member Name Matched**. |
+| T31-26 | Name not found | For a report name with no matching member, click `[Match]` → pick a member from **All members** → `[Save Match]`. | The status changes to **Matched by admin** and the summary's attention count drops by one. |
+| T31-27 | Full first name is never overwritten | Give a member a full first name (e.g. "Robert") in **Manage Members**, then match a report name with a different first name (e.g. "Bob Smith") to them. | The toast does not mention a first name. The member's first name stays "Robert". |
+| T31-28 | Change a match | On a **Matched automatically** name click `[Change]` → choose a different member → `[Save Match]`. | The name now shows **Matched by admin** with the new member. |
+| T31-29 | Unlink a match | On a **Matched by admin** name click `[Unlink]` → confirm. | ✅ Toast "Match removed". The name goes back to automatic matching (**Will match automatically**, **Needs review** or **Not found**). Event log records **Member Name Match Removed**. `[Unlink]` is not offered on automatic matches. |
+| T31-30 | Matched names drive the skill data | With the PDF report plugin active, open the **Dashboard** and view expiring skills for a matched member; then for a name still **Not found**. | The matched member's expiring skills appear with due dates from the report. Nobody receives the skills of the unmatched name. |
+| T31-31 | Matches are remembered for the next report | Upload a newer report containing the same people. | Names matched before keep their match (automatic or by admin); only new names in the new report need attention. |
+| T31-32 | Mobile layout (name matching) | At 375 px width open the page. | Each name is a card with its status badge, member, entries and Match/Change/Unlink buttons; the match window fits the screen. |
 
 ---
 
@@ -992,6 +1002,7 @@ Before starting the UAT run, ensure the following data is in place on the UAT in
 - [ ] At least **1 booking event** published with **Bookings per member** set to 2 (for T30-50 to T30-53).
 - [ ] Two **Skills Expiring in the Next Six Months** PDF reports — the current one and an older one — plus a text file renamed to `.pdf`, an unrelated PDF and a PDF larger than the upload limit (for T31). Keep the reports out of shared folders: they contain confidential member data.
 - [ ] For T31-15 to T31-17: write access to the report object in the server's Cloud Storage bucket (UAT) or to the local report file. For T31-19: an admin-role API key.
+- [ ] For T31-23 to T31-31: members named in the OI dashboard format (e.g. "QFF Keith, A") for most people in the report; for one name two members with the same surname and initial, one name with no member at all, and one member with a full first name already set.
 
 ---
 
@@ -1001,7 +1012,7 @@ After completing the full UAT run, verify the Event Log (`event-log.html`) conta
 
 | Category | Expected entries |
 |----------|-----------------|
-| `Member` | Created, Updated, Deleted, Bulk Deleted |
+| `Member` | Created, Updated, Deleted, Bulk Deleted, Member Name Matched Automatically (actor `System`), Member Name Matched, Member Name Match Removed |
 | `Skill` | Created, Updated, Deleted |
 | `Forms` | Created, Updated, Deleted, Imported |
 | `Live Forms` | Accepted, Rejected, Archived, Deleted, Purged |

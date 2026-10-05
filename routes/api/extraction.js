@@ -15,6 +15,7 @@ const logger = require('../../services/logger');
 const { hasRole } = require('../../middleware/auth');
 const extractionEngine = require('../../services/extraction-engine');
 const pdfReportService = require('../../services/pdf-report-service');
+const nameResolver = require('../../services/member-name-resolver');
 
 const actorOf = (req) => (req.apiKeyUser || req.session?.user)?.name || 'Unknown';
 
@@ -181,6 +182,97 @@ router.delete('/snapshots/:id', hasRole('admin'), rejectInDemo, async (req, res)
         res.json({ success: true });
     } catch (e) {
         logger.error('[PDF Report] Delete failed', { snapshotId: id, error: e.message });
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ── Member name matching ───────────────────────────────────────────────────
+// The report names members by full name ("Andrew Keith"); each name must be
+// linked to a member record before its skills count for that member.
+
+const memberSummary = (m) => ({
+    id: m.id,
+    name: m.name,
+    rank: m.rank || null,
+    firstName: m.first_name || null,
+    lastName: m.last_name || null,
+    enabled: !!m.enabled,
+});
+
+// GET /api/extraction/name-matches — how each name in the current report is matched
+router.get('/name-matches', hasRole('admin'), async (req, res) => {
+    try {
+        const latest = await db.getLatestExtractionRecords();
+        if (!latest) return res.json([]);
+        const counts = new Map();
+        for (const r of latest.records) {
+            const name = r.sourceName || r.name;
+            counts.set(name, (counts.get(name) || 0) + 1);
+        }
+        const [members, aliases] = await Promise.all([db.getMembers(), db.getMemberSourceAliases()]);
+        const analysis = nameResolver.analyseNames([...counts.keys()], members, aliases);
+        res.json([...analysis].map(([sourceName, r]) => ({
+            sourceName,
+            entryCount: counts.get(sourceName),
+            status: r.status,
+            aliasId: r.aliasId,
+            member: r.member ? memberSummary(r.member) : null,
+            candidates: r.candidates.map(memberSummary),
+        })));
+    } catch (e) {
+        logger.error('[Name Matching] List failed', { error: e.message });
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// POST /api/extraction/name-matches — { sourceName, memberId }: link a report name to a member
+router.post('/name-matches', hasRole('admin'), rejectInDemo, async (req, res) => {
+    const sourceName = typeof req.body?.sourceName === 'string' ? req.body.sourceName.replace(/\s+/g, ' ').trim() : '';
+    const memberId = parseId(req.body?.memberId);
+    if (!sourceName || sourceName.length > 200) return res.status(400).json({ error: 'sourceName is required (max 200 characters).' });
+    if (!memberId) return res.status(400).json({ error: 'memberId is required.' });
+    try {
+        const member = await db.getMemberById(memberId);
+        if (!member) return res.status(404).json({ error: 'Member not found.' });
+
+        const actor = actorOf(req);
+        const id = await db.saveManualMemberSourceAlias({
+            sourceName, sourceKey: nameResolver.normaliseKey(sourceName), memberId, createdBy: actor,
+        });
+        const firstNameStored = await nameResolver.upgradeFirstName(member, nameResolver.givenNameFor(sourceName, member));
+        extractionEngine.clearCache();
+
+        await db.logEvent(actor, 'Member', 'Member Name Matched', {
+            aliasId: id, sourceName, memberId, memberName: member.name, firstNameStored,
+        });
+        logger.info('[Name Matching] Name matched manually', { aliasId: id, memberId, by: actor });
+        res.json({ success: true, id, firstNameStored });
+    } catch (e) {
+        logger.error('[Name Matching] Match failed', { memberId, error: e.message });
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// DELETE /api/extraction/name-matches/:id — remove a link (automatic matching applies again)
+router.delete('/name-matches/:id', hasRole('admin'), rejectInDemo, async (req, res) => {
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid match id.' });
+    try {
+        const alias = await db.getMemberSourceAliasById(id);
+        if (!alias) return res.status(404).json({ error: 'Name match not found.' });
+
+        await db.deleteMemberSourceAlias(id);
+        extractionEngine.clearCache();
+
+        const actor = actorOf(req);
+        await db.logEvent(actor, 'Member', 'Member Name Match Removed', {
+            aliasId: id, sourceName: alias.source_name, memberId: alias.member_id,
+            memberName: alias.member_name, matchType: alias.match_type,
+        });
+        logger.info('[Name Matching] Name match removed', { aliasId: id, by: actor });
+        res.json({ success: true });
+    } catch (e) {
+        logger.error('[Name Matching] Remove failed', { aliasId: id, error: e.message });
         res.status(500).json({ error: e.message });
     }
 });
