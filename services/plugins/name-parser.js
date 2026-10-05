@@ -56,4 +56,20 @@ function parseMemberName(rawName) {
     };
 }
 
-module.exports = { parseMemberName };
+/**
+ * Split a full "FirstName LastName" string (pdf-report source) into parts.
+ * The first word is the given name and the rest is the surname, so compound
+ * surnames ("Jan van der Merwe") stay intact.  Multi-word given names are
+ * ambiguous here; member matching tries every split instead of trusting this.
+ *
+ * @param {string} fullName  e.g. "Andrew Keith"
+ * @returns {{ firstName: string, lastName: string }}
+ */
+function parseFullName(fullName) {
+    const parts = (fullName || '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return { firstName: '', lastName: '' };
+    if (parts.length === 1) return { firstName: '', lastName: parts[0] };
+    return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
+}
+
+module.exports = { parseMemberName, parseFullName };

@@ -218,7 +218,18 @@ Open the `.env` file and configure the following parameters:
 
 #### **Extraction Engine**
 
-  * `EXTRACTION_PLUGIN`: Which ETL plugin to use for fetching member skill expiry data. `html-scraper` (default) scrapes the OI HTML dashboard. Additional plugins can be added as `services/plugins/<name>.plugin.js`.
+  * `EXTRACTION_PLUGIN`: Which ETL plugin to use for fetching member skill expiry data. `html-scraper` (default) scrapes the OI HTML dashboard; `pdf-report` parses the FENZ "Skills Expiring in the Next Six Months" PDF. Additional plugins can be added as `services/plugins/<name>.plugin.js`.
+
+#### **PDF Report Source** *(pdf-report plugin)*
+
+  * `PDF_LOCAL_PATH`: Path of the PDF report to read (Default: `./storage/extraction/OSM-Status-6-months.pdf`). Drop a newer report over it; it is re-read when the extraction cache expires.
+  * `PDF_MAX_SIZE_MB`: Largest report accepted before parsing (Default: `10`).
+
+  How the report maps onto skill expiry data:
+  * The report lists only skills that are **lapsed or expire within six months**, by month only. Due dates are derived from the report's `Created:` date: *Lapsed* → last day of the previous month; the report's own month → last day of that month; next month → the 1st for names highlighted orange (expiring within a month of the report date), otherwise the report's day-of-month; later months → the 1st.
+  * Skill categories come from the report's category bands (`B.A`, `Driving`, `Haz Subs` …).
+  * Members appear by full name without rank, so they must be matched to existing member records (in progress — until then this plugin is for evaluation only).
+  * The PDF is parsed with `pdfjs-dist` with script evaluation disabled; files without a `%PDF-` header or over the size limit are rejected. The report is confidential — keep it out of the repository and do not use this plugin in demo mode.
 
 #### **OSM Dashboard Connection** *(html-scraper plugin)*
 
@@ -1221,8 +1232,12 @@ The WhatsApp service includes built-in fault tolerance:
 │   │   └── users.js            # Admin user queries
 │   ├── plugins/
 │   │   ├── html-scraper.plugin.js  # Default plugin — scrapes the OI HTML dashboard
+│   │   ├── pdf-report.plugin.js    # Parses the FENZ six-month expiry PDF report
+│   │   ├── pdf/
+│   │   │   ├── pdf-text.js         # PDF → positioned text runs (pdfjs-dist, eval disabled)
+│   │   │   └── grid-parser.js      # Report grid → member × skill records + due-date rules
 │   │   ├── rest-api.plugin.js      # Stub — future REST API data source
-│   │   └── name-parser.js          # Parses raw OI name strings → rank/lastName/firstName
+│   │   └── name-parser.js          # Parses OI "RANK Last, I" and full "First Last" names
 │   ├── ai-service.js           # AI text-answer grading (Gemini, local Ollama, or TypeSafe Jev)
 │   ├── booking-notifier.js     # Booking invitations/reminders (email + WhatsApp)
 │   ├── booking-service.js      # Booking validation, slot generation, local-time helpers

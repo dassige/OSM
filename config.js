@@ -61,8 +61,14 @@ if (appMode === "demo") {
 const scrapingInterval = parseInt(process.env.SCRAPING_INTERVAL) || 60;
 
 // ETL plugin selection — determines which services/plugins/<name>.plugin.js is loaded.
-// Available: html-scraper (default) | rest-api (stub, not yet implemented)
+// Available: html-scraper (default) | pdf-report | rest-api (stub, not yet implemented)
 const extractionPlugin = process.env.EXTRACTION_PLUGIN || 'html-scraper';
+
+// pdf-report plugin — FENZ "Skills Expiring in the Next Six Months" PDF
+const pdfReport = {
+  localPath: process.env.PDF_LOCAL_PATH || path.join(__dirname, 'storage', 'extraction', 'OSM-Status-6-months.pdf'),
+  maxSizeMb: parseInt(process.env.PDF_MAX_SIZE_MB) || 10,
+};
 
 const transporter = nodemailer.createTransport({
   service: process.env.SMTP_SERVICE || "gmail",
@@ -177,6 +183,7 @@ module.exports = {
   url,
   scrapingInterval,
   extractionPlugin,
+  pdfReport,
   transporter,
   proxyMode,
   fixedProxyUrl,

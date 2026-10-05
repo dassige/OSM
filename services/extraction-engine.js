@@ -9,6 +9,8 @@
 //
 // Extracted record shape (contract between engine and all consumers):
 //   { name, rank, lastName, firstName, memberOsmId, skill, skillOsmId, skillCategory, dueDate }
+// Plugins may add source-specific fields (pdf-report adds dueMonth, lapsed,
+// withinOneMonth, sourceName, reportCreatedDate); consumers must not require them.
 
 'use strict';
 
