@@ -44,6 +44,7 @@ const quizRoutes          = require("./routes/api/quiz");
 const liveQuizRoutes      = require("./routes/api/live-quiz");
 const bookingRoutes       = require("./routes/api/bookings");
 const liveBookingRoutes   = require("./routes/api/live-bookings");
+const extractionRoutes    = require("./routes/api/extraction");
 const authRoutes = require("./routes/auth");
 const viewRoutes = require("./routes/views");
 
@@ -206,6 +207,7 @@ app.use("/api/quiz", quizRoutes);
 app.use("/api/live-quiz", liveQuizRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/live-bookings", liveBookingRoutes);
+app.use("/api/extraction", extractionRoutes);
 app.use("/api/system/remote-backup", remoteBackupRoutes);
 
 

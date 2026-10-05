@@ -4896,6 +4896,154 @@
                                                   }
                                   }
                               ]
-                 }
+                 },
+               {
+                 "name": "Skills Data Source",
+                 "description": "Skills Expiring in the Next Six Months PDF reports used by the pdf-report extraction plugin. The newest accepted report is the current skill expiry data.",
+                 "item": [
+                   {
+                     "name": "Get Data Source Status",
+                     "request": {
+                       "method": "GET",
+                       "url": {
+                         "raw": "{{baseUrl}}/api/extraction/status",
+                         "host": [
+                           "{{baseUrl}}"
+                         ],
+                         "path": [
+                           "api",
+                           "extraction",
+                           "status"
+                         ]
+                       },
+                       "description": "Active plugin, configured source, current report summary, staleness and the last automatic check."
+                     }
+                   },
+                   {
+                     "name": "List Reports",
+                     "request": {
+                       "method": "GET",
+                       "url": {
+                         "raw": "{{baseUrl}}/api/extraction/snapshots",
+                         "host": [
+                           "{{baseUrl}}"
+                         ],
+                         "path": [
+                           "api",
+                           "extraction",
+                           "snapshots"
+                         ]
+                       },
+                       "description": "All stored reports, newest first (without the PDF or parsed records)."
+                     }
+                   },
+                   {
+                     "name": "Download Report PDF",
+                     "request": {
+                       "method": "GET",
+                       "url": {
+                         "raw": "{{baseUrl}}/api/extraction/snapshots/:id/file",
+                         "host": [
+                           "{{baseUrl}}"
+                         ],
+                         "path": [
+                           "api",
+                           "extraction",
+                           "snapshots",
+                           ":id",
+                           "file"
+                         ],
+                         "variable": [
+                           {
+                             "key": "id",
+                             "value": "1",
+                             "description": "Report (snapshot) ID from List Reports"
+                           }
+                         ]
+                       },
+                       "description": "The original PDF of a stored report."
+                     }
+                   },
+                   {
+                     "name": "Upload Report",
+                     "request": {
+                       "method": "POST",
+                       "url": {
+                         "raw": "{{baseUrl}}/api/extraction/upload",
+                         "host": [
+                           "{{baseUrl}}"
+                         ],
+                         "path": [
+                           "api",
+                           "extraction",
+                           "upload"
+                         ]
+                       },
+                       "description": "Upload a Skills Expiring in the Next Six Months PDF. 200 status \"imported\" or \"unchanged\" (identical to the current report); 400 not a readable report; 409 older than the current report (resend with force=true); 413 too large. Disabled in demo mode.",
+                       "body": {
+                         "mode": "formdata",
+                         "formdata": [
+                           {
+                             "key": "file",
+                             "type": "file",
+                             "src": "/path/to/OSM-Status-6-months.pdf",
+                             "description": "The PDF report (max PDF_MAX_SIZE_MB, default 10 MB)"
+                           },
+                           {
+                             "key": "force",
+                             "value": "false",
+                             "type": "text",
+                             "description": "\"true\" to accept a report older than the current one"
+                           }
+                         ]
+                       }
+                     }
+                   },
+                   {
+                     "name": "Check Source Now",
+                     "request": {
+                       "method": "POST",
+                       "url": {
+                         "raw": "{{baseUrl}}/api/extraction/sync",
+                         "host": [
+                           "{{baseUrl}}"
+                         ],
+                         "path": [
+                           "api",
+                           "extraction",
+                           "sync"
+                         ]
+                       },
+                       "description": "Check the configured source (PDF_SOURCE=gcs or local) for a newer report now and import it. Disabled in demo mode."
+                     }
+                   },
+                   {
+                     "name": "Delete Report",
+                     "request": {
+                       "method": "DELETE",
+                       "url": {
+                         "raw": "{{baseUrl}}/api/extraction/snapshots/:id",
+                         "host": [
+                           "{{baseUrl}}"
+                         ],
+                         "path": [
+                           "api",
+                           "extraction",
+                           "snapshots",
+                           ":id"
+                         ],
+                         "variable": [
+                           {
+                             "key": "id",
+                             "value": "1",
+                             "description": "Report (snapshot) ID from List Reports"
+                           }
+                         ]
+                       },
+                       "description": "Delete a stored report. Deleting the current report makes the previous one current. Disabled in demo mode."
+                     }
+                   }
+                 ]
+               }
              ]
 }

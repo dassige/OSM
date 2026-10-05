@@ -932,6 +932,39 @@ Booking Events let members pick an appointment slot — for example the annual n
 
 ---
 
+## T31 — Skills Data Source
+
+**Page:** `data-source.html` (**Operations → Maintenance → Skills Data Source**) — admin and superadmin only
+
+Skill expiry data can come from the **Skills Expiring in the Next Six Months** PDF report. Each accepted report is kept in a history; the newest one is the current data. Reports arrive by upload on this page, by upload through the API (e.g. an n8n workflow that receives the report email), or automatically from Google Cloud Storage or a local file, depending on the server's configuration.
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T31-01 | Page load | Log in as an admin → navigate to **Operations → Maintenance → Skills Data Source**. | The page shows three sections: **Current Report**, **Upload a Report** and **Report History**. With no report yet, Current Report says "No report has been imported yet" and the history says "No reports imported yet". |
+| T31-02 | Access restricted to admins | Log in as a **simple** user → open `/data-source.html` directly. | You are redirected to the dashboard. The menu item is not shown to simple users. |
+| T31-03 | Note when the PDF plugin is not active | On a server whose extraction plugin is not the PDF report plugin, open the page. | A blue note says which plugin is active and that uploaded reports are kept but only used when the PDF report plugin is active. |
+| T31-04 | Upload a report | Click `[Choose PDF]` → pick the current six-month report PDF → click `[Upload Report]`. | ✅ Toast "Report from <date> imported: N entries, M members". Current Report shows the report date with "(N days ago)", "Imported … by <your name> — Upload, <file name>", the counts of entries, members and skills, and "Parser warnings: None". The history has one row with a green **Current** badge. Event log records **Skills Report Uploaded** (category System). |
+| T31-05 | Drag and drop | Drag the PDF file from your desktop onto the dashed upload area. | The area highlights while dragging; after dropping, the file name appears next to `[Choose PDF]` and `[Upload Report]` becomes enabled. |
+| T31-06 | Upload the same file again | Upload exactly the same PDF a second time. | Info toast "This report is identical to the current one — nothing changed." No new history row and no new event log entry. |
+| T31-07 | Not a PDF | Rename a text file to `test.pdf` and upload it. | Error toast "File is not a PDF (missing %PDF- header)." The current report and history are unchanged. |
+| T31-08 | A PDF that is not the report | Upload any other PDF (e.g. a Knowledge Base document). | Error toast starting "Not a readable skills report". The current report and history are unchanged. |
+| T31-09 | Older report needs confirmation | With a current report in place, upload an older six-month report. → Click **Cancel**. → Upload it again and click **Confirm**. | A confirmation dialog explains the report was created before the current one. Cancel changes nothing. Confirm imports it and it becomes the current report (Current badge moves to it). |
+| T31-10 | File too large | Upload a PDF larger than the size shown under the upload area ("PDF only, up to N MB"). | Error toast "PDF file is larger than the N MB limit." Nothing changes. |
+| T31-11 | Out-of-date warning | Make the current report one whose date is more than the configured number of days ago (default 35) — e.g. upload an old report and confirm. | Current Report shows a yellow **Out of date** badge next to the report date; hovering explains a newer report is probably available. |
+| T31-12 | Download a report | In Report History click `[Download]` on any row. | The original PDF downloads and opens normally. |
+| T31-13 | Delete an older report | Click `[Delete]` on a row that is **not** current → confirm. | ✅ Toast "Report deleted". The row disappears; the current report is unchanged. Event log records **Skills Report Deleted**. |
+| T31-14 | Delete the current report | Click `[Delete]` on the row with the **Current** badge → confirm. | The confirmation warns that the previous report will become the current data. After deleting, the previous report has the **Current** badge and Current Report shows its details. |
+| T31-15 | Automatic pickup from Google Cloud Storage (UAT/PROD) | On a server configured for Cloud Storage pickup, replace the report object in the bucket with a newer report → click `[Check Source Now]`. | Toast "Imported the report created on <date>." **Last check** shows a green **Imported** badge with the time. The new report is current and was imported by your name with source "Google Cloud Storage". Event log records **Skills Report Imported**. Without clicking the button, the same happens automatically (imported by System) the next time skill data refreshes. |
+| T31-16 | No new report at the source | Click `[Check Source Now]` again without changing the bucket object (or local file). | Info toast "No new report since the last import." Last check shows **No change**. |
+| T31-17 | Bad file at the source | Put a non-report PDF in place of the report object (or local file) → click `[Check Source Now]`. | Error toast with the reason; Last check shows a red **Rejected** badge with the reason. The current report is unchanged. Event log records **Skills Report Rejected**. Restore the real report afterwards. |
+| T31-18 | Upload-only configuration | On a server configured for upload-only (no automatic pickup), open the page. | `[Check Source Now]` is not shown; **Automatic pickup** says "Off — reports arrive by upload". |
+| T31-19 | Upload through the API (automation) | From a terminal, run `curl -H "X-API-Key: <admin key>" -F "file=@OSM-Status-6-months.pdf" <server>/api/extraction/upload` with a newer report. | The JSON response contains `"status":"imported"` and the report date. Refreshing the page shows the report as current, imported by the API key's name. Sending the same file again returns `"status":"unchanged"`. |
+| T31-20 | History table sorting and paging | With 3+ reports, click the **Report Date**, **Imported** and **Entries** headers; change **Rows per page** to 10; reload the page. | Rows re-sort with ▲/▼ indicators; after reloading, the sort and rows per page are remembered. |
+| T31-21 | Mobile layout | At 375 px width open the page. | The toolbar uses icon buttons; Current Report details stack one per line; the history shows as cards (report date title, Current badge, Download and Delete buttons) with a collapsible **Sort by** section and the pagination bar; no sideways scrolling. |
+| T31-22 | Demo mode guard | On a demo instance open **Skills Data Source**. | `[Choose PDF]`, `[Upload Report]`, `[Check Source Now]` and every `[Delete]` button are disabled with the tooltip "Disabled in demo mode". |
+
+---
+
 ## Appendix A — Test Data Setup Checklist
 
 Before starting the UAT run, ensure the following data is in place on the UAT instance:
@@ -957,6 +990,8 @@ Before starting the UAT run, ensure the following data is in place on the UAT in
 - [ ] At least **1 booking template** with two future days (one with a lunch break) and a required "Mobile phone" question, published once with personal links and once with a general link, with a few bookings already made (for T30-B to T30-D).
 - [ ] A second browser profile or private window, and a phone (or browser at 375 px), for testing the public booking page as a member (T30-D).
 - [ ] At least **1 booking event** published with **Bookings per member** set to 2 (for T30-50 to T30-53).
+- [ ] Two **Skills Expiring in the Next Six Months** PDF reports — the current one and an older one — plus a text file renamed to `.pdf`, an unrelated PDF and a PDF larger than the upload limit (for T31). Keep the reports out of shared folders: they contain confidential member data.
+- [ ] For T31-15 to T31-17: write access to the report object in the server's Cloud Storage bucket (UAT) or to the local report file. For T31-19: an admin-role API key.
 
 ---
 
@@ -975,7 +1010,7 @@ After completing the full UAT run, verify the Event Log (`event-log.html`) conta
 | `User Mgmt` | User Created, Updated, Deleted, Password Reset |
 | `Security` | Account Unblocked (if T14-08 was run) |
 | `API Keys` | Key Created, Key Toggled, Key Deleted, API Call Log Purged |
-| `System` | Database Restored (if T23-05 or T23-06 was run), Events Pruned |
+| `System` | Database Restored (if T23-05 or T23-06 was run), Events Pruned, Skills Report Uploaded, Skills Report Imported, Skills Report Rejected, Skills Report Deleted |
 | `WhatsApp` | Client Connected, Client Disconnected |
 | `Knowledge Base` | Category Created, Category Updated, Category Deleted, Document Uploaded, Document Updated, Document Toggled, Document Deleted |
 | `Quiz` | Quiz Game Created, Quiz Game Updated, Quiz Game Toggled, Quiz Game Deleted, Quiz Session Started, Quiz Session Archived, Quiz Session Unarchived, Quiz Session Deleted, Quiz Submitted & Scored, Quiz Team Session Created, Quiz Team Session Archived, Quiz Team Session Unarchived, Quiz Team Session Deleted, Quiz Team Submitted & Scored |

@@ -767,6 +767,29 @@ const helpContent = {
             </ul>
         `
     },
+    "data-source": {
+        title: "Skills Data Source",
+        body: `
+            <p>Where skill expiry data comes from when the app reads the <strong>Skills Expiring in the Next Six Months</strong> PDF report.</p>
+            <h3>Current Report</h3>
+            <ul>
+                <li>The newest accepted report is the data used everywhere (dashboard, notifications, reports).</li>
+                <li><strong>Out of date</strong> appears when the report is older than the configured number of days — upload a newer one.</li>
+                <li>The report lists only skills that are lapsed or expire within six months, by month. A skill not in the report is current for more than six months.</li>
+                <li><strong>Automatic pickup</strong> shows where new reports are collected from, if anywhere. <strong>Check Source Now</strong> looks for a new one immediately.</li>
+            </ul>
+            <h3>Upload a Report</h3>
+            <ul>
+                <li>Choose or drop the PDF and click <strong>Upload Report</strong>. It is checked first — a file that isn't a readable report is refused and nothing changes.</li>
+                <li>Uploading the same file again changes nothing. A report older than the current one asks for confirmation.</li>
+            </ul>
+            <h3>Report History</h3>
+            <ul>
+                <li><strong>Download</strong> gets the original PDF. <strong>Delete</strong> removes a report; deleting the current one makes the previous report current again.</li>
+                <li>Uploads, imports, refusals and deletions are recorded in the Event Log.</li>
+            </ul>
+        `
+    },
     "bookings-dashboard": {
         title: "Booking Event Dashboard",
         body: `
@@ -932,6 +955,7 @@ const helpContent = {
     else if (path.includes("bookings-manage")) key = "bookings-manage";
     else if (path.includes("live-bookings")) key = "live-bookings";
     else if (path.includes("bookings-dashboard")) key = "bookings-dashboard";
+    else if (path.includes("data-source")) key = "data-source";
 
     // DYNAMIC FORMS-VIEW LOGIC
     if (path.includes("forms-view")) {
@@ -1033,7 +1057,7 @@ const helpContent = {
         'live-surveys', 'surveys-tracking', 'surveys-results',
         'forms-view-review', 'forms-view-preview', 'surveys-view-preview',
         'knowledgebase', 'quiz-games', 'quiz-preview', 'live-quiz', 'quiz-play-review',
-        'bookings-manage', 'live-bookings', 'bookings-dashboard'
+        'bookings-manage', 'live-bookings', 'bookings-dashboard', 'data-source'
     ];
 
     // Short display titles for the banner (no app-name suffix)
@@ -1068,7 +1092,8 @@ const helpContent = {
         'quiz-play-review': 'Quiz Review',
         'bookings-manage': 'Booking Templates',
         'live-bookings': 'Booking Events',
-        'bookings-dashboard': 'Booking Event'
+        'bookings-dashboard': 'Booking Event',
+        'data-source': 'Skills Data Source'
     };
 
     if (bannerKeys.indexOf(key) !== -1) {

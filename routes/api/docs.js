@@ -34,7 +34,8 @@ const spec = {
         { name: 'Quiz', description: 'Quiz game and question bank management for social learning sessions' },
         { name: 'Live Quiz', description: 'Self-paced quiz sessions, player access codes, and results' },
         { name: 'Bookings', description: 'Booking event templates and published booking events (slot scheduling, e.g. health screenings)' },
-        { name: 'Live Bookings (Public)', description: 'Unauthenticated booking-page endpoints — the event GUID (plus a per-member code for personal links) is the access control' }
+        { name: 'Live Bookings (Public)', description: 'Unauthenticated booking-page endpoints — the event GUID (plus a per-member code for personal links) is the access control' },
+        { name: 'Skills Data Source', description: 'Skills Expiring in the Next Six Months PDF reports for the pdf-report extraction plugin — upload, automatic pickup (GCS / local file) and report history' }
     ],
     components: {
         securitySchemes: {
@@ -59,6 +60,37 @@ const spec = {
             Error: {
                 type: 'object',
                 properties: { error: { type: 'string', example: 'An error occurred' } }
+            },
+            ExtractionSnapshot: {
+                type: 'object',
+                description: 'A stored Skills Expiring in the Next Six Months report (without the PDF bytes or parsed records)',
+                properties: {
+                    id:                  { type: 'integer', example: 12 },
+                    plugin:              { type: 'string', example: 'pdf-report' },
+                    source:              { type: 'string', enum: ['upload', 'gcs', 'local'] },
+                    source_ref:          { type: 'string', nullable: true, description: 'GCS object generation or local file mtime:size' },
+                    file_name:           { type: 'string', nullable: true, example: 'OSM-Status-6-months.pdf' },
+                    file_hash:           { type: 'string', description: 'SHA-256 of the PDF' },
+                    file_size:           { type: 'integer', example: 193625 },
+                    report_created_date: { type: 'string', format: 'date', example: '2026-10-05' },
+                    record_count:        { type: 'integer', example: 249 },
+                    member_count:        { type: 'integer', example: 15 },
+                    skill_count:         { type: 'integer', example: 32 },
+                    warnings:            { type: 'array', items: { type: 'string' } },
+                    created_by:          { type: 'string', example: 'System' },
+                    created_at:          { type: 'string', example: '2026-10-05 01:00:00', description: 'UTC' }
+                }
+            },
+            ExtractionSyncResult: {
+                type: 'object',
+                description: 'Outcome of an automatic or manual source check (all fields null before the first check)',
+                properties: {
+                    at:         { type: 'string', format: 'date-time', nullable: true },
+                    source:     { type: 'string', enum: ['local', 'gcs', 'upload'], nullable: true },
+                    status:     { type: 'string', enum: ['imported', 'unchanged', 'missing', 'rejected', 'error', 'skipped'], nullable: true },
+                    message:    { type: 'string', nullable: true },
+                    snapshotId: { type: 'integer', nullable: true }
+                }
             },
             Member: {
                 type: 'object',
@@ -3323,6 +3355,113 @@ const spec = {
                 responses: {
                     200: { description: 'File binary stream — Content-Type reflects the stored document (PDF, Word, Excel, RTF, TXT, Markdown, PNG, JPG, or BMP)', content: { 'application/pdf': {}, 'image/png': {}, 'image/jpeg': {} } },
                     404: { description: 'Not found, inactive, or expired' }
+                }
+            }
+        },
+        '/api/extraction/status': {
+            get: {
+                tags: ['Skills Data Source'],
+                summary: 'Data source status — active plugin, configured source, current report and last automatic check',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                responses: {
+                    200: { description: 'Status', content: { 'application/json': { schema: {
+                        type: 'object',
+                        properties: {
+                            activePlugin:   { type: 'object', properties: { name: { type: 'string', example: 'pdf-report' }, description: { type: 'string' } } },
+                            source:         { type: 'string', enum: ['local', 'gcs', 'upload'], description: 'PDF_SOURCE — where new reports are picked up from automatically' },
+                            sourceLocation: { type: 'string', nullable: true, example: 'gs://my-bucket/OSM-Status-6-months.pdf' },
+                            maxSizeMb:      { type: 'integer', example: 10 },
+                            staleWarnDays:  { type: 'integer', example: 35 },
+                            retention:      { type: 'integer', example: 24, description: 'Number of reports kept' },
+                            latest:         { allOf: [{ $ref: '#/components/schemas/ExtractionSnapshot' }], nullable: true },
+                            ageDays:        { type: 'integer', nullable: true, description: 'Days since the current report was created' },
+                            isStale:        { type: 'boolean', description: 'ageDays is greater than staleWarnDays' },
+                            lastSync:       { $ref: '#/components/schemas/ExtractionSyncResult' }
+                        }
+                    } } } }
+                }
+            }
+        },
+        '/api/extraction/snapshots': {
+            get: {
+                tags: ['Skills Data Source'],
+                summary: 'List stored reports, newest first (the first one is the current data)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                responses: { 200: { description: 'Array of reports', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/ExtractionSnapshot' } } } } } }
+            }
+        },
+        '/api/extraction/snapshots/{id}': {
+            delete: {
+                tags: ['Skills Data Source'],
+                summary: 'Delete a stored report — deleting the current one makes the previous report current (disabled in demo mode)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'Deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/Success' } } } },
+                    400: { description: 'Invalid id' },
+                    403: { description: 'Forbidden or demo mode' },
+                    404: { description: 'Report not found' }
+                }
+            }
+        },
+        '/api/extraction/snapshots/{id}/file': {
+            get: {
+                tags: ['Skills Data Source'],
+                summary: 'Download the original PDF of a stored report',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'PDF file (attachment)', content: { 'application/pdf': { schema: { type: 'string', format: 'binary' } } } },
+                    404: { description: 'Report not found' }
+                }
+            }
+        },
+        '/api/extraction/upload': {
+            post: {
+                tags: ['Skills Data Source'],
+                summary: 'Upload a Skills Expiring in the Next Six Months PDF report (disabled in demo mode)',
+                description: 'The report is parsed before it is accepted. An identical file returns status "unchanged". A report created before the current one is refused with 409 unless force=true. Suitable for automations (e.g. n8n) using an X-API-Key header.',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                requestBody: {
+                    required: true,
+                    content: { 'multipart/form-data': { schema: {
+                        type: 'object',
+                        required: ['file'],
+                        properties: {
+                            file:  { type: 'string', format: 'binary', description: 'The PDF report (max PDF_MAX_SIZE_MB, default 10 MB)' },
+                            force: { type: 'string', enum: ['true', 'false'], default: 'false', description: '"true" accepts a report older than the current one' }
+                        }
+                    } } }
+                },
+                responses: {
+                    200: { description: 'Imported or unchanged', content: { 'application/json': { schema: {
+                        type: 'object',
+                        properties: {
+                            success:           { type: 'boolean', example: true },
+                            status:            { type: 'string', enum: ['imported', 'unchanged'] },
+                            id:                { type: 'integer', example: 12 },
+                            reportCreatedDate: { type: 'string', format: 'date', example: '2026-10-05' },
+                            recordCount:       { type: 'integer', example: 249, description: 'Imported only' },
+                            memberCount:       { type: 'integer', example: 15, description: 'Imported only' },
+                            skillCount:        { type: 'integer', example: 32, description: 'Imported only' },
+                            warnings:          { type: 'array', items: { type: 'string' }, description: 'Imported only — parser warnings' }
+                        }
+                    } } } },
+                    400: { description: 'No file, not a PDF, or not a readable skills report' },
+                    403: { description: 'Forbidden or demo mode' },
+                    409: { description: 'Report is older than the current report — resend with force=true to accept it' },
+                    413: { description: 'File is larger than PDF_MAX_SIZE_MB' }
+                }
+            }
+        },
+        '/api/extraction/sync': {
+            post: {
+                tags: ['Skills Data Source'],
+                summary: 'Check the configured source (PDF_SOURCE=gcs or local) for a newer report now (disabled in demo mode)',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                responses: {
+                    200: { description: 'Outcome of the check', content: { 'application/json': { schema: { $ref: '#/components/schemas/ExtractionSyncResult' } } } },
+                    403: { description: 'Forbidden or demo mode' }
                 }
             }
         }

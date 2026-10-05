@@ -1,24 +1,15 @@
 // tests/pdf-report.test.js
-// Tests for the pdf-report ETL plugin: operator-list walker, grid parser,
-// due-date rules, full-name splitting and the plugin wrapper.
+// Tests for the pdf-report parsing layer: operator-list walker, grid parser,
+// due-date rules and full-name splitting.  Ingestion and the plugin wrapper are
+// covered in pdf-report-service.test.js.
 //
 // The fixture is an anonymised dump of a real report's text items (names
 // replaced) — the confidential PDF itself is never stored in the repo.
 
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
-// pdfjs-dist is ESM-only; mock the loader but keep the pure operator-list walker.
-jest.mock('../services/plugins/pdf/pdf-text', () => ({
-    ...jest.requireActual('../services/plugins/pdf/pdf-text'),
-    extractTextItems: jest.fn(),
-}));
-
-const { extractTextItems, walkOperatorList } = require('../services/plugins/pdf/pdf-text');
+// walkOperatorList is pure; pdfjs-dist itself (ESM-only) is never loaded here.
+const { walkOperatorList } = require('../services/plugins/pdf/pdf-text');
 const { parseGrid, deriveDueDate } = require('../services/plugins/pdf/grid-parser');
 const { parseFullName } = require('../services/plugins/name-parser');
-const pdfReportPlugin = require('../services/plugins/pdf-report.plugin');
 
 const fixture = require('./fixtures/pdf-report/six-month-report.items.json');
 
@@ -337,109 +328,5 @@ describe('parseFullName', () => {
         [undefined, { firstName: '', lastName: '' }],
     ])('splits %p', (input, expected) => {
         expect(parseFullName(input)).toEqual(expected);
-    });
-});
-
-// ── pdf-report plugin ───────────────────────────────────────────────────────
-
-describe('pdf-report plugin', () => {
-    let tmpDir;
-    const log = jest.fn();
-    const configFor = (localPath, extra = {}) => ({ appMode: 'production', pdfReport: { localPath, maxSizeMb: 1 }, ...extra });
-
-    beforeAll(() => { tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-report-test-')); });
-    afterAll(() => { fs.rmSync(tmpDir, { recursive: true, force: true }); });
-    beforeEach(() => {
-        jest.clearAllMocks();
-        extractTextItems.mockResolvedValue({ pageCount: fixture.pages.length, pages: fixture.pages });
-    });
-
-    describe('validateConfig', () => {
-        it('accepts a configured local path', () => {
-            expect(pdfReportPlugin.validateConfig(configFor('/data/report.pdf'))).toEqual({ valid: true, errors: [] });
-        });
-
-        it('reports a missing local path and refuses demo mode', () => {
-            const { valid, errors } = pdfReportPlugin.validateConfig({ appMode: 'demo', pdfReport: {} });
-            expect(valid).toBe(false);
-            expect(errors).toEqual([
-                expect.stringMatching(/PDF_LOCAL_PATH/),
-                expect.stringMatching(/demo mode/),
-            ]);
-        });
-    });
-
-    describe('assertPdfBuffer', () => {
-        it.each([
-            ['an empty buffer', Buffer.alloc(0), /empty/],
-            ['a non-PDF file', Buffer.from('<html>not a pdf</html>'), /not a PDF/],
-            ['an oversized file', Buffer.concat([Buffer.from('%PDF-1.7\n'), Buffer.alloc(1024 * 1024)]), /1 MB limit/],
-        ])('rejects %s', (_label, buffer, message) => {
-            expect(() => pdfReportPlugin.assertPdfBuffer(buffer, 1)).toThrow(message);
-        });
-
-        it('accepts a PDF header', () => {
-            expect(() => pdfReportPlugin.assertPdfBuffer(Buffer.from('%PDF-1.7\n...'), 1)).not.toThrow();
-        });
-    });
-
-    describe('extract', () => {
-        it('returns extraction-contract records from the report', async () => {
-            const file = path.join(tmpDir, 'report.pdf');
-            fs.writeFileSync(file, '%PDF-1.7\nfake body');
-
-            const records = await pdfReportPlugin.extract(configFor(file), log);
-
-            expect(extractTextItems).toHaveBeenCalledWith(Buffer.from('%PDF-1.7\nfake body'));
-            expect(records).toHaveLength(249);
-            expect(records.find((r) => r.sourceName === 'Obi-Wan Kenobi' && r.skill === 'BA - Search & Rescue')).toEqual({
-                name: 'Obi-Wan Kenobi',
-                rank: '',
-                lastName: 'Kenobi',
-                firstName: 'Obi-Wan',
-                memberOsmId: 'Obi-Wan Kenobi',
-                skill: 'BA - Search & Rescue',
-                skillOsmId: 'BA - Search & Rescue',
-                skillCategory: 'B.A',
-                dueDate: '2026-12-01',
-                dueMonth: '2026-12',
-                lapsed: false,
-                withinOneMonth: false,
-                sourceName: 'Obi-Wan Kenobi',
-                reportCreatedDate: '2026-10-05',
-            });
-            expect(log).toHaveBeenCalledWith(expect.stringMatching(/Parsed 249 records \(15 members, 32 skills\) from report created 2026-10-05/));
-        });
-
-        it('logs parser warnings', async () => {
-            const file = path.join(tmpDir, 'warn.pdf');
-            fs.writeFileSync(file, '%PDF-1.7\n');
-            extractTextItems.mockResolvedValue({
-                pageCount: 1,
-                pages: [makePage(1, { rows: [{ skill: 'S', names: { Oct: ['Al Gee'] } }] })],
-            });
-
-            await pdfReportPlugin.extract(configFor(file), log);
-            expect(log).toHaveBeenCalledWith(expect.stringMatching(/\[pdf-report\] Warning: .*not highlighted orange/));
-        });
-
-        it('fails clearly when the report file is missing', async () => {
-            await expect(pdfReportPlugin.extract(configFor(path.join(tmpDir, 'missing.pdf')), log))
-                .rejects.toThrow(/PDF report not found/);
-        });
-
-        it('rejects non-PDF files without parsing them', async () => {
-            const file = path.join(tmpDir, 'fake.pdf');
-            fs.writeFileSync(file, 'MZ executable');
-            await expect(pdfReportPlugin.extract(configFor(file), log)).rejects.toThrow(/not a PDF/);
-            expect(extractTextItems).not.toHaveBeenCalled();
-        });
-
-        it('propagates layout errors instead of returning partial data', async () => {
-            const file = path.join(tmpDir, 'layout.pdf');
-            fs.writeFileSync(file, '%PDF-1.7\n');
-            extractTextItems.mockResolvedValue({ pageCount: 1, pages: [makePage(1, { header: false, rows: [] })] });
-            await expect(pdfReportPlugin.extract(configFor(file), log)).rejects.toThrow(/header row/);
-        });
     });
 });

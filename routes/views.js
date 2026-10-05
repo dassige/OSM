@@ -54,6 +54,7 @@ router.get("/live-bookings.html", requirePageAccess(adminAndSuper));
 router.get("/bookings-dashboard.html", requirePageAccess(adminAndSuper));
 router.get("/statistics.html", requirePageAccess(allAuthenticated));
 router.get("/knowledgebase.html", requirePageAccess(adminAndSuper));
+router.get("/data-source.html", requirePageAccess(adminAndSuper));
 
 // Public viewer — no auth; slug is the access control
 router.get("/knowledgebase/:slug", (_req, res) => {

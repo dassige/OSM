@@ -39,6 +39,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **Web-Based Management:**
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
       * **Skills:** Configure which skills to track and mark them as Critical.
+      * **Skills Data Source:** Upload the "Skills Expiring in the Next Six Months" PDF (or let it be picked up from Google Cloud Storage / a local file), see how current it is, and keep a history of past reports.
       * **Smart Form Links:** Define Online Form URLs with dynamic placeholders (e.g., `{{member-name}}`) to pre-fill member details automatically.
       * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, Surveys, Booking Invitations, New Users, Password Resets, Forgot Password reset links, and Account Deletions.
   * **Reports Console:**
@@ -222,8 +223,20 @@ Open the `.env` file and configure the following parameters:
 
 #### **PDF Report Source** *(pdf-report plugin)*
 
-  * `PDF_LOCAL_PATH`: Path of the PDF report to read (Default: `./storage/extraction/OSM-Status-6-months.pdf`). Drop a newer report over it; it is re-read when the extraction cache expires.
+  * `PDF_SOURCE`: Where new reports are picked up automatically — `local` (default: watch `PDF_LOCAL_PATH`), `gcs` (watch `PDF_GCS_OBJECT` in `PDF_GCS_BUCKET`) or `upload` (no automatic pickup). The source is checked whenever the extraction cache expires (`SCRAPING_INTERVAL`) and on **Check Source Now**.
+  * `PDF_LOCAL_PATH`: Report file watched when `PDF_SOURCE=local` (Default: `./storage/extraction/OSM-Status-6-months.pdf`).
+  * `PDF_GCS_BUCKET` / `PDF_GCS_OBJECT`: Bucket (Default: `GCS_BUCKET_NAME`) and object name (Default: `OSM-Status-6-months.pdf`) watched when `PDF_SOURCE=gcs`. Uses the default Google credentials (Cloud Run service account). Overwrite the same object with each new report.
   * `PDF_MAX_SIZE_MB`: Largest report accepted before parsing (Default: `10`).
+  * `PDF_STALE_WARN_DAYS`: The current report is flagged **Out of date** after this many days (Default: `35`).
+
+  How reports are ingested:
+  * Every accepted report is stored as a snapshot in the database (original PDF + parsed records); the newest one is the data the app uses. The last 24 are kept and listed on **Operations → Maintenance → Skills Data Source**, where admins can also upload, download and delete reports.
+  * A report is accepted only if it parses cleanly. An identical file is ignored; a report created before the current one is refused unless the upload is forced. Imports, uploads, refusals and deletions are recorded in the Event Log.
+  * Reports can be pushed by an automation (e.g. an n8n workflow that receives the report email) with an API key:
+    ```bash
+    curl -H "X-API-Key: osm_..." -F "file=@OSM-Status-6-months.pdf" https://your-server/api/extraction/upload
+    ```
+    The response `status` is `imported` or `unchanged`; `400` means not a readable report, `409` older than the current report (add `-F force=true` to accept it), `413` too large.
 
   How the report maps onto skill expiry data:
   * The report lists only skills that are **lapsed or expire within six months**, by month only. Due dates are derived from the report's `Created:` date: *Lapsed* → last day of the previous month; the report's own month → last day of that month; next month → the 1st for names highlighted orange (expiring within a month of the report date), otherwise the report's day-of-month; later months → the 1st.
@@ -656,6 +669,8 @@ API keys **cannot** access HTML pages — those remain session-only. Endpoints r
 | `GET` | `/api/bookings/events` | List published booking events with booked/invited counts |
 | `GET` | `/api/bookings/events/{id}` | Booking event dashboard: stats, slots, roster, bookings |
 | `GET` | `/api/live-bookings/{publicId}` | Public: load a booking page (`?code=` for personal links) |
+| `GET` | `/api/extraction/status` | Skills data source status: current PDF report, staleness, last automatic check |
+| `POST` | `/api/extraction/upload` | Upload a Skills Expiring in the Next Six Months PDF report (multipart `file`) |
 | `GET` | `/api/health` | Health check (no key required) |
 | `GET` | `/api/ready` | Readiness probe — DB + WhatsApp state (no key required) |
 
@@ -1192,7 +1207,8 @@ The WhatsApp service includes built-in fault tolerance:
 ├── migrations/                 # Auto-applied SQL migrations (numeric order)
 │   ├── 001-baseline.sql
 │   ├── ...
-│   └── 027-bookings.sql        # Booking Events tables
+│   ├── 027-bookings.sql        # Booking Events tables
+│   └── 029-extraction-snapshots.sql  # Skills report snapshots (pdf-report plugin)
 ├── middleware/
 │   ├── auth.js                 # globalAuthGuard, hasRole(), ROLES, X-API-Key check
 │   └── rate-limiter.js         # apiLimiter, loginLimiter, publicSubmitLimiter, publicBookingLimiter
@@ -1203,6 +1219,7 @@ The WhatsApp service includes built-in fault tolerance:
 │       ├── api-keys.js         # API key CRUD
 │       ├── bookings.js         # Booking templates + live events (admin)
 │       ├── docs.js             # Swagger UI + OpenAPI spec (/api/docs)
+│       ├── extraction.js       # Skills data source — PDF report upload, pickup, history
 │       ├── forms.js            # Form template management
 │       ├── live-forms.js       # Form issue / submit / accept / reject
 │       ├── live-bookings.js    # Public booking page API (/api/live-bookings)
@@ -1224,6 +1241,7 @@ The WhatsApp service includes built-in fault tolerance:
 │   │   ├── backup.js           # generateSqlDump(), restoreFromSqlDump()
 │   │   ├── bookings.js         # Booking templates, events, slots, invites, bookings
 │   │   ├── events.js           # Event log CRUD
+│   │   ├── extraction-snapshots.js  # Stored skills reports (PDF + parsed records)
 │   │   ├── members.js          # Member queries
 │   │   ├── preferences.js      # System & user preferences
 │   │   ├── skills.js           # Skill queries
@@ -1248,6 +1266,7 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── mailer.js               # SMTP notification service
 │   ├── member-manager.js       # Skill expiry enrichment, status mapping, date parsing
 │   ├── migration-runner.js     # Applies migrations/NNN-*.sql in numeric order
+│   ├── pdf-report-service.js   # Skills report ingestion: upload, GCS/local pickup, snapshots
 │   ├── proxy-manager.js        # NZ proxy sourcing and verification for the scraper
 │   ├── rank-config.js          # Rank display names and ordering
 │   ├── report-service.js       # Compliance reports (7 views)
@@ -1262,6 +1281,7 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── index.html              # Dashboard
 │   ├── members.html            # Member management
 │   ├── skills.html             # Skill management
+│   ├── data-source.html        # Skills Data Source — PDF report upload + history
 │   ├── live-forms.html         # Live form tracking
 │   ├── live-surveys.html       # Live survey tracking
 │   ├── bookings-manage.html    # Booking templates (configure + publish)

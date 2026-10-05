@@ -65,9 +65,14 @@ const scrapingInterval = parseInt(process.env.SCRAPING_INTERVAL) || 60;
 const extractionPlugin = process.env.EXTRACTION_PLUGIN || 'html-scraper';
 
 // pdf-report plugin — FENZ "Skills Expiring in the Next Six Months" PDF
+// source: local (watch PDF_LOCAL_PATH) | gcs (watch a GCS object) | upload (UI/API uploads only)
 const pdfReport = {
-  localPath: process.env.PDF_LOCAL_PATH || path.join(__dirname, 'storage', 'extraction', 'OSM-Status-6-months.pdf'),
-  maxSizeMb: parseInt(process.env.PDF_MAX_SIZE_MB) || 10,
+  source:        process.env.PDF_SOURCE || 'local',
+  localPath:     process.env.PDF_LOCAL_PATH || path.join(__dirname, 'storage', 'extraction', 'OSM-Status-6-months.pdf'),
+  gcsBucket:     process.env.PDF_GCS_BUCKET || process.env.GCS_BUCKET_NAME || '',
+  gcsObject:     process.env.PDF_GCS_OBJECT || 'OSM-Status-6-months.pdf',
+  maxSizeMb:     parseInt(process.env.PDF_MAX_SIZE_MB) || 10,
+  staleWarnDays: parseInt(process.env.PDF_STALE_WARN_DAYS) || 35,
 };
 
 const transporter = nodemailer.createTransport({

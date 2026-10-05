@@ -45,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                   <ul id="submenuMaintenance" class="submenu">
                                       <li><a href="members.html" id="navManageMembers">Manage Members</a></li>
                                       <li><a href="skills.html" id="navManageSkills">Manage Skills</a></li>
+                                      <li><a href="data-source.html" id="navDataSource">Skills Data Source</a></li>
                                       <li><a href="forms-manage.html" id="navManageForms">Manage Forms</a></li>
                                       <li><a href="surveys-manage.html" id="navManageSurveys">Manage Surveys</a></li>
                                       <li><a href="quiz-games.html" id="navQuizGames">Quiz Games</a></li>
