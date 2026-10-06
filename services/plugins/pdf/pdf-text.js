@@ -27,8 +27,23 @@ const JOIN_GAP = 0.3;
 const SPACE_GAP = 0.15;
 
 let pdfjsPromise = null;
+/**
+ * Load pdf.js once. A failure here is a server setup problem (e.g. dependencies not
+ * installed in the container), not a bad file: the error is flagged `setupError`
+ * so callers don't report the PDF as unreadable, and the next call tries again.
+ */
 function loadPdfjs() {
-    if (!pdfjsPromise) pdfjsPromise = import('pdfjs-dist/legacy/build/pdf.mjs');
+    if (!pdfjsPromise) {
+        pdfjsPromise = import('pdfjs-dist/legacy/build/pdf.mjs').catch((e) => {
+            pdfjsPromise = null;
+            const err = new Error(
+                `The PDF library (pdfjs-dist) could not be loaded on the server — reinstall the dependencies ` +
+                `(npm install, or rebuild the Docker image and its node_modules volume). Cause: ${e.message}`,
+            );
+            err.setupError = true;
+            throw err;
+        });
+    }
     return pdfjsPromise;
 }
 

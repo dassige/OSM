@@ -68,6 +68,9 @@ async function parsePdfReport(buffer, { maxSizeMb, log = noop }) {
         const { pages } = await extractTextItems(buffer);
         result = parseGrid(pages);
     } catch (e) {
+        // A server setup problem (PDF library missing) is not the file's fault —
+        // pass it on as an ordinary error so it is reported as such and retried.
+        if (e.setupError) throw e;
         throw new ReportRejectedError(`Not a readable skills report: ${e.message}`);
     }
     result.warnings.forEach((w) => log(`[pdf-report] Warning: ${w}`));

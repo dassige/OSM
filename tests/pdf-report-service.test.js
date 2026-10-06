@@ -138,6 +138,12 @@ describe('parsePdfReport', () => {
             .rejects.toMatchObject({ name: 'ReportRejectedError', status: 400, message: expect.stringMatching(/Not a readable skills report: .*header row/) });
     });
 
+    it('does not blame the file when the PDF library itself is missing', async () => {
+        const setup = Object.assign(new Error('The PDF library (pdfjs-dist) could not be loaded on the server'), { setupError: true });
+        extractTextItems.mockRejectedValue(setup);
+        await expect(service.parsePdfReport(pdf(), { maxSizeMb: 1 })).rejects.toBe(setup);
+    });
+
     it('also rejects PDFs that pdf.js cannot open', async () => {
         extractTextItems.mockRejectedValue(new Error('Invalid PDF structure.'));
         await expect(service.parsePdfReport(pdf(), { maxSizeMb: 1 }))
@@ -238,6 +244,20 @@ describe('syncFromSource', () => {
             expect(await service.syncFromSource()).toMatchObject({ status: 'unchanged', snapshotId: 5 });
             expect(db.createExtractionSnapshot).not.toHaveBeenCalled();
             expect(db.logEvent).not.toHaveBeenCalled();
+        });
+
+        it('reports a missing PDF library as an error and retries the file next time', async () => {
+            writeLocalReport('setup.pdf', pdf('setup'));
+            const setup = Object.assign(new Error('The PDF library (pdfjs-dist) could not be loaded on the server'), { setupError: true });
+            extractTextItems.mockRejectedValueOnce(setup);
+
+            const first = await service.syncFromSource();
+            expect(first).toMatchObject({ status: 'error', message: expect.stringMatching(/PDF library \(pdfjs-dist\) could not be loaded/) });
+            expect(db.logEvent).not.toHaveBeenCalledWith(expect.anything(), 'System', 'Skills Report Rejected', expect.anything());
+
+            // Library fixed (e.g. container rebuilt): the same file is picked up without a manual recheck
+            expect(await service.syncFromSource()).toMatchObject({ status: 'imported' });
+            expect(extractTextItems).toHaveBeenCalledTimes(2);
         });
 
         it('rejects a bad file once and retries it only on request', async () => {
