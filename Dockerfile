@@ -8,7 +8,11 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 COPY package*.json ./
-RUN npm install --omit=dev
+# @napi-rs/canvas is an optional dependency of pdfjs-dist used only to render PDF
+# pages. The server only reads PDF text, and the package's prebuilt binary is
+# killed with SIGILL on the Raspberry Pi's ARM CPU (crashing the whole server),
+# so it is removed — services/plugins/pdf/pdf-text.js supplies what pdf.js needs.
+RUN npm install --omit=dev && rm -rf node_modules/@napi-rs
 
 # ─── Stage 2: runtime ──────────────────────────────────────────────────────
 FROM node:20-alpine

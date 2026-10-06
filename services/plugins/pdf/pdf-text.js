@@ -26,6 +26,57 @@ const TJ_SPACE_THRESHOLD = -250;
 const JOIN_GAP = 0.3;
 const SPACE_GAP = 0.15;
 
+/**
+ * Minimal 2D DOMMatrix for Node when @napi-rs/canvas is not installed.
+ *
+ * pdf.js's Node build polyfills DOMMatrix from the optional native
+ * @napi-rs/canvas package and creates one at module load. That package is
+ * deliberately left out of the Docker image (its prebuilt binary dies with
+ * SIGILL — an uncatchable crash — on the Raspberry Pi's ARM CPU). The server
+ * only reads text and drawing commands, never renders, so a plain affine
+ * matrix is all pdf.js needs here.
+ */
+class AffineDOMMatrix {
+    constructor(init) {
+        const m = init && typeof init.length === 'number' && init.length >= 6 ? init : [1, 0, 0, 1, 0, 0];
+        [this.a, this.b, this.c, this.d, this.e, this.f] = Array.from(m).slice(0, 6).map(Number);
+    }
+
+    multiply(o) {
+        return new AffineDOMMatrix([
+            this.a * o.a + this.c * o.b, this.b * o.a + this.d * o.b,
+            this.a * o.c + this.c * o.d, this.b * o.c + this.d * o.d,
+            this.a * o.e + this.c * o.f + this.e, this.b * o.e + this.d * o.f + this.f,
+        ]);
+    }
+
+    translate(tx = 0, ty = 0) { return this.multiply(new AffineDOMMatrix([1, 0, 0, 1, tx, ty])); }
+
+    scale(sx = 1, sy = sx) { return this.multiply(new AffineDOMMatrix([sx, 0, 0, sy, 0, 0])); }
+
+    inverse() {
+        const det = this.a * this.d - this.b * this.c;
+        if (!det) return new AffineDOMMatrix([NaN, NaN, NaN, NaN, NaN, NaN]);
+        return new AffineDOMMatrix([
+            this.d / det, -this.b / det, -this.c / det, this.a / det,
+            (this.c * this.f - this.d * this.e) / det, (this.b * this.e - this.a * this.f) / det,
+        ]);
+    }
+}
+
+function installDomMatrixIfCanvasMissing() {
+    if (globalThis.DOMMatrix) return;
+    try {
+        require.resolve('@napi-rs/canvas');   // locates the package without loading its native code
+    } catch {
+        globalThis.DOMMatrix = AffineDOMMatrix;
+        // Rendering-only classes: placeholders just keep pdf.js from logging
+        // "rendering may be broken" — nothing here renders.
+        if (!globalThis.Path2D) globalThis.Path2D = class Path2D {};
+        if (!globalThis.ImageData) globalThis.ImageData = class ImageData {};
+    }
+}
+
 let pdfjsPromise = null;
 /**
  * Load pdf.js once. A failure here is a server setup problem (e.g. dependencies not
@@ -34,6 +85,7 @@ let pdfjsPromise = null;
  */
 function loadPdfjs() {
     if (!pdfjsPromise) {
+        installDomMatrixIfCanvasMissing();
         pdfjsPromise = import('pdfjs-dist/legacy/build/pdf.mjs').catch((e) => {
             pdfjsPromise = null;
             const err = new Error(
