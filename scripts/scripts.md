@@ -153,7 +153,7 @@ Parses `.example.env` and serves a local web form for configuring environment va
 
 - **Load .env** — opens a file picker; the selected `.env` file is read client-side, its values are applied to all matching form fields, and any row that received a value from the file is highlighted with a teal left border so you can see at a glance what the loaded file contained.
 - **Generate .env File** — writes the current form state to `.generated.env` in the project root (existing behaviour).
-- **Save to .env** — appears after a file is loaded; writes the current form state directly to `.env` in the project root (overwrites it).
+- **Save As...** — opens the browser's Save As dialog so you can choose the folder and file name for the current form state (suggested name: the loaded file's name, else `.env`).
 
 **npm shortcut**
 
@@ -198,9 +198,9 @@ This means description prose can safely mention environment variable names like 
 1. Parses `.example.env` into sections and variables (key, default value, enabled/disabled state, description).
 2. If `.generated.env` already exists, pre-fills the form with those values. Falls back to `.env` if present, then to `.example.env` defaults.
 3. Starts a local HTTP server on port **3088** and opens the form in your default browser automatically.
-4. **Load .env** button (footer) — triggers a client-side file picker. The selected file is parsed in the browser; all matching variables have their values and enabled-state updated in the form, and each affected row gains a teal left-border highlight. The **Save to .env** button then becomes visible.
+4. **Load .env** button (footer) — triggers a client-side file picker. The selected file is parsed in the browser; all matching variables have their values and enabled-state updated in the form, and each affected row gains a teal left-border highlight. The loaded file's name becomes the suggested name for **Save As...**.
 5. **Generate .env File** button — POSTs to `/generate`; writes the current form state to `.generated.env` in the project root.
-6. **Save to .env** button (visible after Load) — POSTs to `/save-env`; writes the current form state directly to `.env` in the project root, overwriting it.
+6. **Save As...** button — POSTs to `/render`, which returns the rendered file content without writing anything server-side. In Chrome/Edge the native Save As dialog (`showSaveFilePicker`) opens so you pick the folder and file name; cancelling does nothing. In Firefox/Safari the file is downloaded instead — enable "Always ask where to save files" in the browser to get a folder prompt. Browsers may alter a suggested name that starts with a dot (e.g. `.env` → `env`); type the name in the dialog if so.
 
 **Activating the generated file**
 
