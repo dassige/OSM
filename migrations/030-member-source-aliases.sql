@@ -1,5 +1,5 @@
 -- Member name matching for extraction sources that identify members by full
--- name only (the pdf-report plugin: "Andrew Keith" instead of "QFF Keith, A").
+-- name only (the pdf-report plugin: "Luke Skywalker" instead of "QFF Skywalker, L").
 --
 -- Each row links one name as it appears in the source report to a member.
 -- source_key is the normalised name (lower case, accents and extra spaces

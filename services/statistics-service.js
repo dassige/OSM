@@ -2,7 +2,7 @@
 const extractionEngine = require('./extraction-engine');
 const db = require('./db');
 const config = require('../config');
-const { isExpiring, isExpired } = require('./member-manager');
+const { isExpiring, isExpired, getUnmatchedNames } = require('./member-manager');
 
 function getGeneratedTimestamp() {
     return new Date().toLocaleString(config.locale || 'en-NZ', {
@@ -51,6 +51,8 @@ async function getComplianceOverview(userId) {
         meta: { 
             threshold: daysThreshold, 
             totalMembers: activeMembers.length,
+            // Report names not matched to a member — not counted in either chart
+            unmatchedNames: getUnmatchedNames(scrapeData).length,
             generated: getGeneratedTimestamp()
         }
     };

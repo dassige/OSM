@@ -38,6 +38,10 @@ KnowledgeBase/
 # Guide builder — intermediate screenshots and scratch DB copies; only the
 # final PDF under docs/guides/ is committed.
 scripts/guide-builder/output/
+# ...except the PDF skills report plugin documents, which stay local
+# (regenerate with npm run guide:pdf-report).
+docs/guides/OpReady-PDF-Report-Plugin-Report.pdf
+docs/guides/OpReady-PDF-Report-Plugin-Test-Plan.pdf
 
 tmp/
 .vscode/

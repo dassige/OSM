@@ -20,8 +20,8 @@ let rybId;
 
 beforeAll(async () => {
     const db = await initDB();
-    keithId = (await db.run("INSERT INTO members (name, email, mobile, first_name, last_name) VALUES ('QFF Keith, A', '', '', 'A', 'Keith')")).lastID;
-    rybId = (await db.run("INSERT INTO members (name, email, mobile, first_name, last_name) VALUES ('FF Ryan, E', '', '', 'E', 'Ryan')")).lastID;
+    keithId = (await db.run("INSERT INTO members (name, email, mobile, first_name, last_name) VALUES ('QFF Skywalker, L', '', '', 'L', 'Skywalker')")).lastID;
+    rybId = (await db.run("INSERT INTO members (name, email, mobile, first_name, last_name) VALUES ('FF Erso, J', '', '', 'J', 'Erso')")).lastID;
 });
 
 afterAll(async () => {
@@ -33,26 +33,27 @@ afterAll(async () => {
 
 describe('member source aliases DB module', () => {
     it('saves an automatic match once and ignores repeats', async () => {
-        expect(await aliases.createAutoMemberSourceAlias({ sourceName: 'Andrew Keith', sourceKey: 'andrew keith', memberId: keithId })).toBe(true);
-        expect(await aliases.createAutoMemberSourceAlias({ sourceName: 'Andrew Keith', sourceKey: 'andrew keith', memberId: rybId })).toBe(false);
+        expect(await aliases.createAutoMemberSourceAlias({ sourceName: 'Luke Skywalker', sourceKey: 'luke skywalker', memberId: keithId })).toBe(true);
+        expect(await aliases.createAutoMemberSourceAlias({ sourceName: 'Luke Skywalker', sourceKey: 'luke skywalker', memberId: rybId })).toBe(false);
 
         const [row] = await aliases.getMemberSourceAliases();
         expect(row).toMatchObject({
-            source_name: 'Andrew Keith', source_key: 'andrew keith', member_id: keithId,
-            match_type: 'auto', created_by: 'System', member_name: 'QFF Keith, A',
+            source_name: 'Luke Skywalker', source_key: 'luke skywalker', member_id: keithId,
+            match_type: 'auto', created_by: 'System', member_name: 'QFF Skywalker, L',
         });
     });
 
     it('lets a manual match replace an automatic one', async () => {
-        const id = await aliases.saveManualMemberSourceAlias({ sourceName: 'Andrew  Keith', sourceKey: 'andrew keith', memberId: rybId, createdBy: 'Admin' });
+        const id = await aliases.saveManualMemberSourceAlias({ sourceName: 'Luke  Skywalker', sourceKey: 'luke skywalker', memberId: rybId, createdBy: 'Admin' });
         const row = await aliases.getMemberSourceAliasById(id);
-        expect(row).toMatchObject({ source_name: 'Andrew  Keith', member_id: rybId, match_type: 'manual', created_by: 'Admin', member_name: 'FF Ryan, E' });
+        expect(row).toMatchObject({ source_name: 'Luke  Skywalker', member_id: rybId, match_type: 'manual', created_by: 'Admin', member_name: 'FF Erso, J' });
         expect(await aliases.getMemberSourceAliases()).toHaveLength(1);
     });
 
     it('allows several names for one member and deletes by id', async () => {
-        const id = await aliases.saveManualMemberSourceAlias({ sourceName: 'Em Ryan', sourceKey: 'em ryan', memberId: rybId, createdBy: 'Admin' });
-        expect((await aliases.getMemberSourceAliases()).map((a) => a.source_name)).toEqual(['Andrew  Keith', 'Em Ryan']);
+        const id = await aliases.saveManualMemberSourceAlias({ sourceName: 'Em Erso', sourceKey: 'em erso', memberId: rybId, createdBy: 'Admin' });
+        // Listed alphabetically by report name
+        expect((await aliases.getMemberSourceAliases()).map((a) => a.source_name)).toEqual(['Em Erso', 'Luke  Skywalker']);
         expect(await aliases.deleteMemberSourceAlias(id)).toBe(1);
         expect(await aliases.getMemberSourceAliasById(id)).toBeUndefined();
     });
@@ -64,7 +65,7 @@ describe('member source aliases DB module', () => {
     });
 
     it('updates a member\'s first name', async () => {
-        await updateMemberFirstName(keithId, 'Andrew');
-        expect((await getMemberById(keithId)).first_name).toBe('Andrew');
+        await updateMemberFirstName(keithId, 'Luke');
+        expect((await getMemberById(keithId)).first_name).toBe('Luke');
     });
 });

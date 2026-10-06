@@ -24,6 +24,8 @@ const allAuthenticated = ["simple", "admin", "superadmin"];
 
 
 router.get("/ui-config", (req, res) => {
+  // Lazy require: the engine loads the extraction plugin, which only the running app needs.
+  const coverage = require("../services/extraction-engine").getActivePlugin().coverage;
   res.json({
     ...config.ui,
     appMode: config.appMode,
@@ -37,6 +39,8 @@ router.get("/ui-config", (req, res) => {
     ranks: RANKS,
     scheduledBackupSupported: config.scheduledBackupSupported,
     deploymentType: config.deploymentType,
+    // Months ahead the skills data source covers (null = complete data)
+    extractionWindowMonths: coverage?.windowMonths || null,
   });
 });
 

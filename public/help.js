@@ -13,6 +13,9 @@ const helpContent = {
             <ul>
                 <li><strong>Reload Data:</strong> Connects to the OSM Dashboard to fetch the latest expiry dates. By default, data is cached for <strong>60 minutes</strong> to improve speed. Clicking this button forces a live refresh.</li>
                 <li><strong>Days to Expiry:</strong> A look-ahead filter. Only skills expiring within this number of days (e.g., 30, 60, 90) will appear in the list.</li>
+                <li>When skill data comes from the six-month skills report, due dates show the month only (e.g. "Nov 2026", or "Lapsed"), and skills due more than six months ahead are never listed — a note appears if Days to Expiry goes beyond that.</li>
+                <li><strong>Report created</strong> (right of the list title) is the date printed on the skills report the data comes from — check it is recent.</li>
+                <li>A yellow banner means some names in the skills report aren't matched to a member: their skills are missing from this list and they won't be notified. Admins can match them on <strong>Skills Data Source</strong>.</li>
             </ul>
 
             <h3>2. Understanding the List</h3>
@@ -476,7 +479,9 @@ const helpContent = {
                 <li><strong>By Skill:</strong> All affected members grouped per competency. Useful for planning training blocks.</li>
                 <li><strong>Planned Sessions:</strong> A timeline of future in-person training sessions scheduled in the Training Planner.</li>
                 <li><strong>Critical Overdue:</strong> Members with expired or imminently expiring <em>Critical</em> skills — the highest-priority action list.</li>
-                <li><strong>Compliance Matrix:</strong> A full member × skill grid showing compliance status at a glance.</li>
+                <li><strong>Compliance Matrix:</strong> A full member × skill grid showing compliance status at a glance. With the six-month skills report as the data source, a skill not in the report shows <strong>6m+</strong> (not due within six months) instead of Missing.</li>
+                <li>With the six-month skills report, due dates show the month only ("Nov 2026", "Lapsed"), and a note warns when the days threshold goes beyond six months.</li>
+                <li>A red note in the report header means some names in the skills report aren't matched to a member and are left out of the report — match them on <strong>Skills Data Source</strong>.</li>
                 <li><strong>Verification History:</strong> A chronological record of completed Live Form submissions and outcomes.</li>
                 <li><strong>Training Attendance:</strong> Attendance records for past in-person training sessions.</li>
             </ul>
@@ -780,7 +785,7 @@ const helpContent = {
             </ul>
             <h3>Member Name Matching</h3>
             <ul>
-                <li>The report uses full names (e.g. "Andrew Keith"). Each name must be linked to a member — skills of an unmatched name are not counted for anyone.</li>
+                <li>The report uses full names (e.g. "Luke Skywalker"). Each name must be linked to a member — skills of an unmatched name are not counted for anyone.</li>
                 <li>Names match automatically when exactly one member has the same surname and first initial. <strong>Needs review</strong> means several members fit; <strong>Not found</strong> means none does.</li>
                 <li>Use <strong>Match</strong> / <strong>Change</strong> to pick the member. New members must be added in Manage Members first. <strong>Unlink</strong> removes your choice so automatic matching applies again.</li>
                 <li>Matches are remembered for future reports. If the member only has an initial as first name, the full first name from the report is saved.</li>

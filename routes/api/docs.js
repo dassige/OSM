@@ -84,7 +84,7 @@ const spec = {
             MemberNameMatch: {
                 type: 'object',
                 properties: {
-                    sourceName: { type: 'string', example: 'Andrew Keith', description: 'Name as it appears in the report' },
+                    sourceName: { type: 'string', example: 'Luke Skywalker', description: 'Name as it appears in the report' },
                     entryCount: { type: 'integer', example: 17, description: 'Skill entries for this name in the current report' },
                     status:     { type: 'string', enum: ['manual', 'auto', 'suggested', 'ambiguous', 'unmatched'], description: 'manual/auto = saved match; suggested = will be matched automatically; ambiguous = several possible members; unmatched = no member found' },
                     aliasId:    { type: 'integer', nullable: true, description: 'Saved match id (manual/auto)' },
@@ -96,10 +96,10 @@ const spec = {
                 type: 'object',
                 properties: {
                     id:        { type: 'integer', example: 12 },
-                    name:      { type: 'string', example: 'QFF Keith, A' },
+                    name:      { type: 'string', example: 'QFF Skywalker, L' },
                     rank:      { type: 'string', nullable: true, example: 'QFF' },
-                    firstName: { type: 'string', nullable: true, example: 'Andrew' },
-                    lastName:  { type: 'string', nullable: true, example: 'Keith' },
+                    firstName: { type: 'string', nullable: true, example: 'Luke' },
+                    lastName:  { type: 'string', nullable: true, example: 'Skywalker' },
                     enabled:   { type: 'boolean', example: true }
                 }
             },
@@ -2059,7 +2059,7 @@ const spec = {
                     }
                 ],
                 responses: {
-                    200: { description: 'Report data array or object' },
+                    200: { description: 'Report data array or object. When the skills data comes from the six-month PDF report (pdf-report plugin): skill entries carry `dueLabel` ("Nov 2026", "Lapsed") alongside the derived `dueDate`; `meta.sourceWindowMonths` is 6 (null for complete sources); and in compliance-matrix a tracked skill absent from the report has status `not-listed` (not due within the window) instead of `missing`. `meta.unmatchedNames` (by-member, by-skill, critical-overdue, compliance-matrix) counts report names not matched to a member, whose skills are left out.' },
                     401: { description: 'Not authenticated' },
                     403: { description: 'Insufficient role — admin or above required' }
                 }
@@ -2106,7 +2106,7 @@ const spec = {
                     }
                 ],
                 responses: {
-                    200: { description: 'Statistics data' }
+                    200: { description: 'Statistics data. compliance-overview `meta.unmatchedNames` counts skills-report names not matched to a member — their skills are not counted in the charts.' }
                 }
             }
         },
@@ -3480,7 +3480,7 @@ const spec = {
             get: {
                 tags: ['Skills Data Source'],
                 summary: 'How each member name in the current report is matched to a member',
-                description: 'The report names members in full ("Andrew Keith"). Names are matched automatically when exactly one member has the same surname and first initial; the rest need an admin. Read-only — automatic matches are saved when skill data is next extracted.',
+                description: 'The report names members in full ("Luke Skywalker"). Names are matched automatically when exactly one member has the same surname and first initial; the rest need an admin. Read-only — automatic matches are saved when skill data is next extracted.',
                 security: [{ sessionCookie: [] }, { xApiKey: [] }],
                 responses: { 200: { description: 'One entry per name in the current report (empty when no report has been imported)', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/MemberNameMatch' } } } } } }
             },
@@ -3495,7 +3495,7 @@ const spec = {
                         type: 'object',
                         required: ['sourceName', 'memberId'],
                         properties: {
-                            sourceName: { type: 'string', maxLength: 200, example: 'Andrew Keith' },
+                            sourceName: { type: 'string', maxLength: 200, example: 'Luke Skywalker' },
                             memberId:   { type: 'integer', example: 12 }
                         }
                     } } }
@@ -3504,7 +3504,7 @@ const spec = {
                     200: { description: 'Matched', content: { 'application/json': { schema: { type: 'object', properties: {
                         success: { type: 'boolean', example: true },
                         id: { type: 'integer', description: 'Match (alias) id' },
-                        firstNameStored: { type: 'string', nullable: true, example: 'Andrew', description: 'First name saved on the member, or null when unchanged' }
+                        firstNameStored: { type: 'string', nullable: true, example: 'Luke', description: 'First name saved on the member, or null when unchanged' }
                     } } } } },
                     400: { description: 'Missing sourceName or memberId' },
                     403: { description: 'Forbidden or demo mode' },

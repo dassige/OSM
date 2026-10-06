@@ -19,6 +19,12 @@ const DEFAULT_MAX_PAGES = 200;
 // TJ spacing adjustments are in thousandths of an em; anything wider than a
 // quarter em is rendered as a visible gap, so treat it as a word space.
 const TJ_SPACE_THRESHOLD = -250;
+// Some generators (e.g. Chromium) split a word into separate runs at kerning
+// pairs ("Darth V" + "ader"). A run starting within this fraction of the font
+// size from where the previous one ended, on the same line, continues it;
+// a gap wider than SPACE_GAP is a word space.
+const JOIN_GAP = 0.3;
+const SPACE_GAP = 0.15;
 
 let pdfjsPromise = null;
 function loadPdfjs() {
@@ -50,6 +56,16 @@ function glyphsToText(glyphs) {
     return text;
 }
 
+// Horizontal advance of a run in text space units (glyph widths are 1/1000 em).
+function glyphsAdvance(glyphs, fontSize) {
+    let thousandths = 0;
+    for (const g of glyphs || []) {
+        if (typeof g === 'number') thousandths -= g;
+        else if (g && typeof g.width === 'number') thousandths += g.width;
+    }
+    return (thousandths / 1000) * fontSize;
+}
+
 const round2 = (n) => Math.round(n * 100) / 100;
 
 /**
@@ -66,12 +82,13 @@ function walkOperatorList(opList, OPS, fontNameOf, view) {
     const [x0, , , y1] = view;
     const runs = [];
 
-    let gs = { ctm: [1, 0, 0, 1, 0, 0], fill: '#000000', font: null };
+    let gs = { ctm: [1, 0, 0, 1, 0, 0], fill: '#000000', font: null, fontSize: 0 };
     const stack = [];
     let tm = [1, 0, 0, 1, 0, 0];       // text matrix
     let lineStart = [0, 0];            // text line matrix origin
     let leading = 0;
     let moved = true;                  // has the text position changed since the last run?
+    let lastEnd = null;                // { x, y, em } of the previous run, in page coordinates
 
     const moveTo = (tx, ty) => {
         lineStart = [lineStart[0] + tx * tm[0] + ty * tm[2], lineStart[1] + tx * tm[1] + ty * tm[3]];
@@ -83,21 +100,42 @@ function walkOperatorList(opList, OPS, fontNameOf, view) {
         const text = glyphsToText(glyphs);
         if (!text) return;
         const last = runs[runs.length - 1];
-        if (!moved && last) {
-            // Same text object, no repositioning — this run continues the previous one.
-            last.text += text;
-            return;
-        }
+
         const ux = gs.ctm[0] * tm[4] + gs.ctm[2] * tm[5] + gs.ctm[4];
         const uy = gs.ctm[1] * tm[4] + gs.ctm[3] * tm[5] + gs.ctm[5];
+        const x = ux - x0;
+        const y = y1 - uy;
+        // Page-space scale of the text (unrotated text assumed, as in the report).
+        const xScale = Math.abs(tm[0] * gs.ctm[0]) || 1;
+        const em = gs.fontSize * (Math.abs(tm[3] * gs.ctm[3]) || 1);
+        const endX = x + glyphsAdvance(glyphs, gs.fontSize) * xScale;
+
+        if (last && !moved) {
+            // Same text object, no repositioning — this run continues the previous one.
+            last.text += text;
+            lastEnd = { x: endX, y, em };
+            return;
+        }
+        if (last && lastEnd && em > 0 && Math.abs(y - lastEnd.y) < 0.5) {
+            const gap = x - lastEnd.x;
+            if (gap > -JOIN_GAP * em && gap < JOIN_GAP * em) {
+                // Repositioned only for kerning/spacing — still the same word or phrase.
+                last.text += (gap > SPACE_GAP * em && !last.text.endsWith(' ') ? ' ' : '') + text;
+                lastEnd = { x: endX, y, em };
+                moved = false;
+                return;
+            }
+        }
+
         const fontName = gs.font ? fontNameOf(gs.font) || '' : '';
         runs.push({
-            x: round2(ux - x0),
-            y: round2(y1 - uy),
+            x: round2(x),
+            y: round2(y),
             text,
             bold: /bold|black|heavy/i.test(fontName),
             color: gs.fill,
         });
+        lastEnd = { x: endX, y, em };
         moved = false;
     };
 
@@ -121,6 +159,7 @@ function walkOperatorList(opList, OPS, fontNameOf, view) {
                 break;
             case OPS.setFont:
                 gs.font = a[0];
+                gs.fontSize = typeof a[1] === 'number' ? a[1] : gs.fontSize;
                 break;
             case OPS.beginText:
                 tm = [1, 0, 0, 1, 0, 0];

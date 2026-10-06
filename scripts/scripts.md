@@ -353,18 +353,22 @@ The script exits with code `1` if any page fails; all other pages are still atte
 
 ## guide-builder/ (PDF feature guides)
 
-A reusable framework for generating full PDF user guides — cover page, table of contents, written sections, and real screenshots captured by driving the actual app with Playwright. Currently has one guide (Quiz Games); see `.claude/skills/pdf-guide-builder/SKILL.md` for how to add another.
+A reusable framework for generating full PDF user guides — cover page, table of contents, written sections, tables, and real screenshots captured by driving the actual app with Playwright. Currently builds the Quiz Games guide and the two PDF Skills Report plugin documents (see [pdf-report documents](#pdf-report-documents-and-the-sample-skills-report) below); see `.claude/skills/pdf-guide-builder/SKILL.md` for how to add another.
 
-**npm shortcut**
+**npm shortcuts**
 
 ```powershell
-npm run guide:quiz
+npm run guide:quiz            # Quiz Games guide
+npm run guide:pdf-report      # PDF Skills Report plugin: implementation report + test plan
+npm run sample:skills-report  # a fictional "Skills Expiring in the Next Six Months" PDF
 ```
 
 **Direct invocation**
 
 ```powershell
 node scripts/guide-builder/build-quiz-guide.js
+node scripts/guide-builder/build-pdf-report-docs.js
+node scripts/guide-builder/pdf-report/sample-report.js --created 2026-09-05 --out report.pdf
 ```
 
 **Prerequisites**
@@ -387,14 +391,20 @@ node scripts/guide-builder/build-quiz-guide.js
 scripts/guide-builder/
   lib/
     prepare-db.js     — scratch DB copy + quiz-game seeding
-    demo-server.js    — disposable server.js bootstrap/teardown
-    guide-html.js     — shared branding, cover page, section/figure HTML helpers
+    demo-server.js    — disposable server.js bootstrap/teardown (extraEnv for e.g. EXTRACTION_PLUGIN)
+    guide-html.js     — shared branding, cover page, section/figure/table HTML helpers
     pdf-renderer.js   — HTML → PDF via a headless Chromium page.pdf()
   quiz/
     capture.js        — Playwright walkthrough + screenshot capture for the Quiz feature
     content.js         — written guide content for the Quiz feature
+  pdf-report/
+    sample-report.js  — fictional skills report generator (also renders PDF pages to PNG)
+    capture.js        — Playwright walkthrough of the pdf-report plugin
+    content-report.js — implementation report content
+    content-test-plan.js — test plan content (test cases read from UAT-TESTING-PLAN.md)
   build-quiz-guide.js  — orchestrates the above for the Quiz guide
-  output/              — gitignored: scratch DB copy, screenshots, working files
+  build-pdf-report-docs.js — orchestrates the two pdf-report plugin documents
+  output/              — gitignored: scratch DB copy, screenshots, sample reports, working files
 ```
 
 **Environment variables**
@@ -406,6 +416,31 @@ scripts/guide-builder/
 **Output**
 
 `docs/guides/OpReady-Quiz-Feature-Guide.pdf` (committed to the repo — regenerate and commit again whenever the Quiz feature's UI changes materially). Intermediate screenshots live under `scripts/guide-builder/output/` and are not committed.
+
+### pdf-report documents and the sample skills report
+
+`npm run guide:pdf-report` builds two documents for the `pdf-report` extraction plugin. Unlike the Quiz guide they are **not committed** (listed in `.gitignore`) — regenerate them locally when needed:
+
+- `docs/guides/OpReady-PDF-Report-Plugin-Report.pdf` — what was built and how the app behaves with the plugin (audience: administrators and operators).
+- `docs/guides/OpReady-PDF-Report-Plugin-Test-Plan.pdf` — the manual test plan for TST/UAT. Its test cases are read from `UAT-TESTING-PLAN.md` (sections T02, T11, T12, T13, T31), so regenerate it whenever those change; the build fails if a referenced case is missing.
+
+**What it does**
+
+1. Generates two fictional skills reports with `sample-report.js` (dated today and one month earlier) — the real FENZ report is confidential and is never used.
+2. Copies `demo.db` to a scratch file, clears any report history/name matches in the copy, and adds a second "SFF Fett, B" member so one report name is ambiguous.
+3. Starts the disposable server with `EXTRACTION_PLUGIN=pdf-report` and `PDF_SOURCE=upload`, uploads the sample through the real Skills Data Source page, loads the dashboard (automatic name matching), matches the ambiguous name by hand, tries the older report, and captures the dashboard, reports, statistics, event log and phone views.
+4. Renders both PDFs, then stops the server and deletes the scratch DB.
+
+**Sample skills report (`npm run sample:skills-report`)**
+
+Creates a PDF in the same layout as the FENZ "Skills Expiring in the Next Six Months" report — category bands, Lapsed + six month columns, orange "within one month" names, a `Created: D/M/YYYY` footer — using the demo database's Star Wars members as full names ("Luke Skywalker"; "Rey Skywalker" deliberately has no member) and real FENZ skill names. Due months are relative to the Created date.
+
+| Option | Default | Description |
+|---|---|---|
+| `--created YYYY-MM-DD` | today | The report's Created date |
+| `--out <file>` | `scripts/guide-builder/output/pdf-report/Sample-Skills-Report.pdf` | Where to write the PDF |
+
+The generated file is read back through the plugin's own parser before the script finishes; it fails if any entry or name would be read differently. Use these reports for demonstrations, screenshots and testing wherever the real report must not be shown. Requires Playwright (dev dependency); rendering pages to PNG additionally uses the optional `@napi-rs/canvas` package installed with `pdfjs-dist`.
 
 ---
 
@@ -457,8 +492,8 @@ If the brigade ever grows beyond the pool size, overflow entries receive a numer
 
 ```
 Member mapping applied:
-  [44] SO Bandy, J          →  SO Kenobi, O      o.kenobi@starwars.demo
-  [45] SO Brady, D P        →  SO Organa, L      l.organa@starwars.demo
+  [44] SO Example, A        →  SO Kenobi, O      o.kenobi@starwars.demo
+  [45] SO Sample, B C       →  SO Organa, L      l.organa@starwars.demo
   ...
 ```
 

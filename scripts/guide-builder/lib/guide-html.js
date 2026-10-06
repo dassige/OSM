@@ -40,8 +40,26 @@ function figure({ file, caption, mobile }) {
     </figure>`;
 }
 
-function section({ kicker, heading, paragraphs = [], figures = [], tips = [], pageBreakBefore = true }) {
-  const paraHtml = paragraphs.map((p) => `<p>${p}</p>`).join('\n');
+/**
+ * A data table. Cell values are inserted as HTML (escape untrusted text with esc()).
+ * `widths` are optional CSS widths per column, e.g. ['12%', '30%', ...].
+ */
+function table({ headers, rows, widths = [], className = '' }) {
+  const colgroup = widths.length ? `<colgroup>${widths.map((w) => `<col style="width:${w}">`).join('')}</colgroup>` : '';
+  return `
+    <table class="doc-table ${className}">
+      ${colgroup}
+      <thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+}
+
+/**
+ * `blocks` are extra HTML fragments (tables, lists, sub-headings) placed after
+ * the paragraphs and before the figures.
+ */
+function section({ kicker, heading, paragraphs = [], blocks = [], figures = [], tips = [], pageBreakBefore = true }) {
+  const paraHtml = paragraphs.map((p) => `<p>${p}</p>`).join('\n') + blocks.join('\n');
   const figHtml = figures.map((f) => figure(f)).join('\n');
   const tipsHtml = tips.length
     ? `<div class="tip-box"><strong>Good to know</strong><ul>${tips.map((t) => `<li>${t}</li>`).join('')}</ul></div>`
@@ -119,13 +137,28 @@ const BASE_CSS = `
   .tip-box ul { margin: 4px 0 0 0; padding-left: 18px; }
   .tip-box li { margin-bottom: 4px; }
 
-  figure.shot { margin: 16px 0; text-align: center; }
+  figure.shot { margin: 16px 0; text-align: center; page-break-inside: avoid; break-inside: avoid; }
   figure.shot figcaption { color: ${MUTED}; font-size: 0.85em; margin-top: 8px; font-style: italic; }
-  .shot-frame { display: inline-block; border: 1px solid ${BORDER}; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); overflow: hidden; }
+  /* No box-shadow: in print it spills onto the previous page when a figure moves to a new page. */
+  .shot-frame { display: inline-block; border: 1px solid ${BORDER}; border-radius: 8px; overflow: hidden; }
   .shot-frame-desktop { max-width: 92%; }
   .shot-frame-desktop img { display: block; width: 100%; height: auto; }
   .shot-frame-mobile { max-width: 260px; border-radius: 22px; border-width: 6px; border-color: #1b1b1b; }
   .shot-frame-mobile img { display: block; width: 100%; height: auto; }
+
+  h3 { color: ${TEAL}; font-size: 1.15em; margin: 16px 0 6px 0; }
+  ul.doc-list { margin: 0 0 10px 0; padding-left: 20px; }
+  ul.doc-list li { margin-bottom: 4px; }
+  code { font-family: Consolas, 'Courier New', monospace; font-size: 0.92em; background: ${PANEL}; padding: 1px 4px; border-radius: 3px; }
+  pre.doc-code { font-family: Consolas, 'Courier New', monospace; font-size: 0.9em; background: #263238; color: #eceff1; padding: 10px 12px; border-radius: 6px; white-space: pre-wrap; word-break: break-all; }
+
+  table.doc-table { width: 100%; border-collapse: collapse; margin: 8px 0 14px 0; font-size: 0.92em; }
+  table.doc-table th { background: ${TEAL}; color: #fff; text-align: left; padding: 6px 8px; font-weight: 600; }
+  table.doc-table td { border: 1px solid ${BORDER}; padding: 6px 8px; vertical-align: top; }
+  table.doc-table tbody tr:nth-child(even) td { background: ${PANEL}; }
+  table.doc-table tr { page-break-inside: avoid; }
+  table.doc-table thead { display: table-header-group; }
+  table.doc-table td.result { min-width: 70px; }
 `;
 
 function wrapDocument(bodyHtml) {
@@ -134,5 +167,5 @@ function wrapDocument(bodyHtml) {
 
 module.exports = {
   TEAL, TEAL_LIGHT, INK, MUTED, BORDER,
-  esc, figure, section, partDivider, coverPage, tableOfContents, wrapDocument,
+  esc, figure, table, section, partDivider, coverPage, tableOfContents, wrapDocument,
 };

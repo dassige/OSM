@@ -36,7 +36,9 @@
       let html = `
                 <div class="rpt-header">
                     <h1>${escHtml(uiConfig.loginTitle || "OpReady")} - Compliance Matrix</h1>
-                    <p>Generated: ${meta.generated} • Total Members: ${rows.length}</p>
+                    <p>Generated: ${meta.generated} • Total Members: ${rows.length}</p>${meta.unmatchedNames
+                      ? `<p style="color:#dc3545;">Note: ${meta.unmatchedNames} ${meta.unmatchedNames === 1 ? "name in the skills report is" : "names in the skills report are"} not matched to a member — their skills are not shown in this matrix.</p>`
+                      : ""}
                 </div>`;
 
       for (let i = 0; i < totalSkills; i += SKILLS_PER_PAGE) {
@@ -106,6 +108,10 @@
               cellStyle +=
                 "background:#f8d7da; color:#721c24; font-weight:bold;";
               content = "EXP";
+            } else if (s.status === "not-listed") {
+              // Six-month PDF source: not in the report = not due within the window
+              cellStyle += "background:#eef6f0; color:#5a7d63; font-size:9px;";
+              content = `${meta.sourceWindowMonths}m+`;
             } else {
               cellStyle += "color:#ccc;";
               content = "·";
@@ -119,7 +125,9 @@
         // [UPDATED] Key now uses meta.threshold variable
         html += `</tbody></table>
                     <div style="font-size:10px; color:#666; text-align:right; margin-top:5px;">
-                        Key: ✓ = Current, DUE = Expiring < ${meta.threshold} days, EXP = Expired, · = Missing
+                        Key: ✓ = Current, DUE = Expiring < ${meta.threshold} days, EXP = Expired, ${meta.sourceWindowMonths
+                          ? `${meta.sourceWindowMonths}m+ = Not in the ${meta.sourceWindowMonths}-month skills report (not due within ${meta.sourceWindowMonths} months)`
+                          : "· = Missing"}
                     </div>
                 </div>`;
       }

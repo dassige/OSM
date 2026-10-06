@@ -311,6 +311,21 @@ describe('syncFromSource', () => {
 // ── pdf-report plugin ───────────────────────────────────────────────────────
 
 describe('pdf-report plugin', () => {
+    it('declares its six-month, month-only coverage', () => {
+        expect(plugin.coverage).toEqual({ windowMonths: 6, monthPrecision: true });
+    });
+
+    describe('dueLabelFor', () => {
+        it.each([
+            [{ dueMonth: '2026-11', dueDate: '2026-11-05', lapsed: false }, 'en-NZ', 'Nov 2026'],
+            [{ dueMonth: '2027-03', dueDate: '2027-03-01', lapsed: false }, 'en-NZ', 'Mar 2027'],
+            [{ dueMonth: null, dueDate: '2026-09-30', lapsed: true }, 'en-NZ', 'Lapsed'],
+            [{ dueDate: '2026-12-01' }, 'en-NZ', '2026-12-01'],
+        ])('labels %p', (record, locale, expected) => {
+            expect(plugin.dueLabelFor(record, locale)).toBe(expected);
+        });
+    });
+
     describe('validateConfig', () => {
         const cfg = (pdfReport, extra = {}) => ({ appMode: 'production', pdfReport, ...extra });
 
@@ -346,14 +361,14 @@ describe('pdf-report plugin', () => {
             const kenobi = { id: 3, name: 'SO Kenobi, O', rank: 'SO', first_name: 'O', last_name: 'Kenobi', member_osm_id: null };
             db.getMembers.mockResolvedValueOnce([kenobi]);
             const records = [
-                { name: 'Obi-Wan Kenobi', sourceName: 'Obi-Wan Kenobi', skill: 'BA - Search & Rescue', dueDate: '2026-12-01' },
-                { name: 'Han Solo', sourceName: 'Han Solo', skill: 'BA - Search & Rescue', dueDate: '2027-01-01' },
+                { name: 'Obi-Wan Kenobi', sourceName: 'Obi-Wan Kenobi', skill: 'BA - Search & Rescue', dueDate: '2026-12-01', dueMonth: '2026-12', lapsed: false },
+                { name: 'Han Solo', sourceName: 'Han Solo', skill: 'BA - Search & Rescue', dueDate: '2026-09-30', dueMonth: null, lapsed: true },
             ];
             db.getLatestExtractionRecords.mockResolvedValue({ snapshot: snapshotRow(), records });
 
-            const out = await plugin.extract(config, log);
-            expect(out[0]).toMatchObject({ name: 'SO Kenobi, O', memberId: 3, firstName: 'Obi-Wan', sourceName: 'Obi-Wan Kenobi' });
-            expect(out[1]).toMatchObject({ name: 'Han Solo', unresolved: true });
+            const out = await plugin.extract({ ...config, locale: 'en-NZ' }, log);
+            expect(out[0]).toMatchObject({ name: 'SO Kenobi, O', memberId: 3, firstName: 'Obi-Wan', sourceName: 'Obi-Wan Kenobi', dueLabel: 'Dec 2026' });
+            expect(out[1]).toMatchObject({ name: 'Han Solo', unresolved: true, dueLabel: 'Lapsed' });
             expect(log).toHaveBeenCalledWith(expect.stringMatching(/Using the report created on 2026-10-05 \(249 records, 15 members, 32 skills\)/));
             expect(log).toHaveBeenCalledWith(expect.stringMatching(/Member names: 1 of 2 matched/));
         });

@@ -9,7 +9,9 @@
                 <div class="rpt-header" style="position: relative;">
                     <h1 style="margin:0; font-size:24px;">${config.loginTitle}</h1>
                     <h2 style="margin:5px 0 0 0; font-size:18px;">Compliance Dashboard</h2>
-                    <p style="color:#666;">Threshold: <strong>${data.meta.threshold} Days</strong> | Active Members: ${data.meta.totalMembers}</p>
+                    <p style="color:#666;">Threshold: <strong>${data.meta.threshold} Days</strong> | Active Members: ${data.meta.totalMembers}</p>${data.meta.unmatchedNames
+                        ? `<p style="color:#dc3545;">Note: ${data.meta.unmatchedNames} ${data.meta.unmatchedNames === 1 ? 'name in the skills report is' : 'names in the skills report are'} not matched to a member — their skills are not counted in these charts.</p>`
+                        : ''}
                     
                     <div style="position: absolute; top: 0; right: 0; text-align: right; font-size: 11px; color: #888; line-height: 1.4;">
                         Data Refreshed:<br>

@@ -1,6 +1,6 @@
 // services/member-name-resolver.js
 // Maps member names from sources that use full names (the pdf-report plugin:
-// "Andrew Keith") onto member records (name "QFF Keith, A"), and skill names
+// "Luke Skywalker") onto member records (name "QFF Skywalker, L"), and skill names
 // onto configured skills.
 //
 // Every consumer of extraction records (member-manager, report-service,

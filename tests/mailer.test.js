@@ -19,6 +19,22 @@ describe('mailer - sendNotification KB refresher link', () => {
         expect(result.html).toContain('Ladder Safety Guide');
     });
 
+    it('shows the month label instead of the derived date for month-only sources', async () => {
+        const member = {
+            ...baseMember,
+            expiringSkills: [
+                { skill: 'Ladders', dueDate: '2026-11-05', dueLabel: 'Nov 2026', url: 'https://forms.example.com/x', isCritical: false },
+                { skill: 'Pumps', dueDate: '2026-09-30', dueLabel: 'Lapsed', url: 'https://forms.example.com/y', isCritical: false },
+            ],
+        };
+
+        const result = await sendNotification(member, {}, null, true, () => {}, 'OpReady');
+
+        expect(result.html).toContain('Nov 2026');
+        expect(result.html).toContain('Lapsed');
+        expect(result.html).not.toContain('2026-11-05');
+    });
+
     it('omits the refresher block entirely when no KB document is linked', async () => {
         const member = {
             ...baseMember,

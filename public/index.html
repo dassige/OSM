@@ -100,7 +100,7 @@
         <div class="action-bar" id="controls">
             <div class="days-wrapper">
                 <label for="daysInput">Days to Expiry:</label>
-                <input type="number" id="daysInput" value="30" min="1">
+                <input type="number" id="daysInput" value="30" min="1" title="Show skills expiring within this many days">
             </div>
 
             <div class="action-group" id="controls-actions">
@@ -114,14 +114,21 @@
                 </button>
             </div>
         </div>
+        <div id="daysWindowHint" style="display:none; margin:-4px 0 12px; font-size:0.85em; color:var(--text-muted);"></div>
+        <div id="unmatchedNamesBanner" role="alert" style="display:none; margin:0 0 14px; padding:10px 14px; border-left:4px solid var(--warning); border-radius:4px; background:var(--bg-card); color:var(--text-main); box-shadow:0 1px 3px var(--shadow);"></div>
 
         <div id="tableContainer">
             <div class="section-header-flex">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <h2 style="margin: 0;">Expiring Skills List</h2>
-                    <button class="btn-legend-info" onclick="document.getElementById('legendModal').style.display='block'" title="Show legend">
-                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    </button>
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-self: stretch;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <h2 style="margin: 0;">Expiring Skills List</h2>
+                        <button class="btn-legend-info" onclick="document.getElementById('legendModal').style.display='block'" title="Show legend">
+                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        </button>
+                    </div>
+                    <!-- Shown only when skill data comes from the six-month PDF skills report -->
+                    <span id="reportCreatedLabel" style="display:none; font-size:0.9em; color:var(--text-muted); white-space:nowrap;"
+                        title="Date printed on the skills report (PDF) the data comes from">Report created: <strong id="reportCreatedDate" style="color:var(--text-main);"></strong></span>
                 </div>
                 <!-- Desktop filters: always visible, hidden on mobile (accordion below takes over) -->
                 <div class="type-toggles desktop-only-filters">

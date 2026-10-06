@@ -9,11 +9,13 @@ You are generating a full PDF user guide for an OpReady feature — written cont
 | File | Purpose |
 |---|---|
 | `prepare-db.js` | Copies `demo.db` to a scratch file (OS temp dir) and seeds fixture data into it. Never opens the real `demo.db` or `fenz.db` for writing. |
-| `demo-server.js` | Starts/stops a disposable `node server.js` instance in `APP_MODE=development` (not `demo`), pointed at the scratch DB, on its own port. `development` mode matters: it satisfies the same production-mode env-validator checks as `demo` mode without the demo-mode guard blocking mutating routes (Start Single/Teams, live hosting, etc. are all hard-blocked when `appMode === 'demo'`). SMTP is pointed at an invalid host so any real email attempt fails harmlessly. |
-| `guide-html.js` | Branding constants (OpReady teal) and HTML builders: `coverPage()`, `tableOfContents()`, `partDivider()`, `section()` (heading + paragraphs + screenshot figures + a tip box), `figure()` (embeds a PNG as a base64 data URI, with a `mobile: true` option that frames it like a phone). |
+| `demo-server.js` | Starts/stops a disposable `node server.js` instance in `APP_MODE=development` (not `demo`), pointed at the scratch DB, on its own port. `development` mode matters: it satisfies the same production-mode env-validator checks as `demo` mode without the demo-mode guard blocking mutating routes (Start Single/Teams, live hosting, etc. are all hard-blocked when `appMode === 'demo'`). SMTP is pointed at an invalid host so any real email attempt fails harmlessly. Pass `extraEnv` for feature-specific settings (e.g. `{ EXTRACTION_PLUGIN: 'pdf-report' }`). |
+| `guide-html.js` | Branding constants (OpReady teal) and HTML builders: `coverPage()`, `tableOfContents()`, `partDivider()`, `section()` (heading + paragraphs + optional `blocks` of extra HTML + screenshot figures + a tip box), `table()` (styled data table), `figure()` (embeds a PNG as a base64 data URI, with a `mobile: true` option that frames it like a phone; figures never split across pages). |
 | `pdf-renderer.js` | Renders an assembled HTML string to PDF via a headless Chromium's own `page.pdf()` — no PDF library dependency. Adds page-number footers. |
 
-A feature guide is one `<feature>/capture.js` (Playwright walkthrough) + one `<feature>/content.js` (written content) + one top-level `build-<feature>-guide.js` (orchestrator). See `scripts/guide-builder/quiz/` and `scripts/guide-builder/build-quiz-guide.js` as the reference implementation.
+A feature guide is one `<feature>/capture.js` (Playwright walkthrough) + one `<feature>/content.js` (written content) + one top-level `build-<feature>-guide.js` (orchestrator). See `scripts/guide-builder/quiz/` and `scripts/guide-builder/build-quiz-guide.js` as the reference implementation. `scripts/guide-builder/pdf-report/` + `build-pdf-report-docs.js` show two further patterns: producing more than one document from one capture run, and a test plan whose cases are read from `UAT-TESTING-PLAN.md` instead of being duplicated.
+
+**Confidential source data:** if a feature consumes a real-world document (e.g. the FENZ skills report), never capture or embed the real one — generate a fictional equivalent (see `pdf-report/sample-report.js`) and screenshot that. In element screenshots, hide the page's floating buttons (see `elementShot()` in `pdf-report/capture.js`) so they don't overlap the cropped card.
 
 ## Adding a guide for a new feature
 
@@ -33,5 +35,5 @@ A feature guide is one `<feature>/capture.js` (Playwright walkthrough) + one `<f
 ## Safety rules (non-negotiable)
 
 - Never set `DB_PATH` to the real `fenz.db`, the real `demo.db`, or any file the user might be actively using — always run through `prepare-db.js`'s scratch-copy pattern.
-- Never commit anything under `scripts/guide-builder/output/` (screenshots, scratch DB) — only the final PDF under `docs/guides/` is committed.
+- Never commit anything under `scripts/guide-builder/output/` (screenshots, scratch DB) — only the final PDF under `docs/guides/` is committed. Exception: the two pdf-report plugin documents (`OpReady-PDF-Report-Plugin-*.pdf`) are git-ignored by the owner's choice and stay local.
 - Treat `APP_MODE=development` here purely as a local automation convenience to bypass the demo-mode guard for scripted screenshot capture — it is not a suggestion to use that mode for anything else, and this skill's servers are always disposable, port-isolated, and torn down at the end of the run.

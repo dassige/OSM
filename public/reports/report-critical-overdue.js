@@ -1,6 +1,13 @@
 ﻿(function() {
     window.ReportRegistry = window.ReportRegistry || {};
-    
+
+    // Report names not matched to a member are left out — say so on the printed report.
+    function unmatchedNote(meta) {
+        const n = meta.unmatchedNames;
+        if (!n) return '';
+        return `<p style="margin:5px 0 0 0; color:#dc3545; font-weight:bold;">Note: ${n} ${n === 1 ? 'name in the skills report is' : 'names in the skills report are'} not matched to a member and not included — their skills may also be overdue.</p>`;
+    }
+
     window.ReportRegistry['critical-overdue'] = {
         title: "Critical Skills Overdue",
         description: "High-priority report listing only Critical (C) skills that have already expired. Requires immediate action.",
@@ -14,7 +21,7 @@
                 <div class="rpt-header">
                     <h1 style="margin:0; font-size:24px; color:#dc3545;">${appName}</h1>
                     <h2 style="margin:5px 0 0 0; font-size:18px;">CRITICAL OVERDUE REPORT</h2>
-                    <p style="margin:5px 0 0 0; color:#666;">Generated: ${meta.generated}</p>
+                    <p style="margin:5px 0 0 0; color:#666;">Generated: ${meta.generated}</p>${unmatchedNote(meta)}
                 </div>`;
 
             if(data.length === 0) return html + "<div style='padding:20px; text-align:center; color:green; font-weight:bold;'>No critical skills are currently overdue. Good job!</div>";
@@ -35,7 +42,7 @@
                 group.skills.forEach(skill => {
                     html += `<tr>
                         <td style="font-weight:bold;">${skill.skill}</td>
-                        <td style="color:#dc3545; font-weight:bold;">${skill.dueDate}</td>
+                        <td style="color:#dc3545; font-weight:bold;">${skill.dueLabel || skill.dueDate}</td>
                     </tr>`;
                 });
 

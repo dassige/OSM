@@ -76,6 +76,9 @@ function init() {
       if (config.appMode === "demo") {
         document.getElementById("demoBanner").style.display = "block";
       }
+      extractionWindowMonths = config.extractionWindowMonths || null;
+      uiLocale = config.locale || "en-NZ";
+      updateDaysWindowHint();
     })
     .catch((err) => console.error("Failed to load UI config:", err));
 
@@ -401,7 +404,8 @@ function renderTable() {
       skillTr.appendChild(skillTd);
 
       const dateTd = document.createElement("td");
-      dateTd.textContent = skill.dueDate;
+      dateTd.textContent = skill.dueLabel || skill.dueDate;
+      if (skill.dueLabel) dateTd.title = "The skills report gives the month only";
       dateTd.className = "date-cell";
       dateTd.setAttribute("data-label", "Due Date");
       if (isDateInPast(skill.dueDate)) dateTd.classList.add("date-expired");
@@ -505,7 +509,8 @@ function renderCardView() {
 
         const dateSpan = document.createElement("span");
         dateSpan.className = "skill-date";
-        dateSpan.textContent = skill.dueDate;
+        dateSpan.textContent = skill.dueLabel || skill.dueDate;
+        if (skill.dueLabel) dateSpan.title = "The skills report gives the month only";
         if (isDateInPast(skill.dueDate)) dateSpan.classList.add("date-expired");
         skillRow.appendChild(dateSpan);
 
@@ -681,6 +686,23 @@ sendEmailsBtn.addEventListener("click", async () => {
   }
 });
 
+// Month-window sources (the six-month PDF report) cannot show skills due further ahead.
+let extractionWindowMonths = null;
+let uiLocale = "en-NZ";
+function updateDaysWindowHint() {
+  const hint = document.getElementById("daysWindowHint");
+  if (!hint) return;
+  const days = parseInt(daysInput.value) || 30;
+  const windowDays = extractionWindowMonths ? Math.round(extractionWindowMonths * 30.4) : null;
+  if (windowDays && days > windowDays) {
+    hint.textContent = `The skills report only covers the next ${extractionWindowMonths} months — skills due later than that are not shown.`;
+    hint.style.display = "block";
+  } else {
+    hint.style.display = "none";
+  }
+}
+daysInput.addEventListener("input", updateDaysWindowHint);
+
 daysInput.addEventListener("change", (e) =>
   socket.emit("update-preference", {
     key: "daysToExpiry",
@@ -705,6 +727,7 @@ setupChipToggle("btnHideWithUrl", "hideWithUrl");
 
 socket.on("preferences-data", (prefs) => {
   if (prefs.daysToExpiry !== undefined) daysInput.value = prefs.daysToExpiry;
+  updateDaysWindowHint();
   if (prefs.hideNoSkills) btnHideNoSkills.classList.add("active");
   if (prefs.hideNoUrl) btnHideNoUrl.classList.add("active");
   if (prefs.hideWithUrl) btnHideWithUrl.classList.add("active");
@@ -765,6 +788,44 @@ socket.on("expiring-skills-data", (data) => {
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
+
+// About the skills data source (six-month PDF report; empty for the OI dashboard).
+socket.on("extraction-info", ({ unmatchedNames = 0, canFix = false, reportCreatedDate = null } = {}) => {
+  showReportCreatedDate(reportCreatedDate);
+  showUnmatchedNamesBanner(unmatchedNames, canFix);
+});
+
+// The "Created:" date from the PDF report footer, right of the list title.
+function showReportCreatedDate(isoDate) {
+  const label = document.getElementById("reportCreatedLabel");
+  if (!label) return;
+  if (!isoDate) {
+    label.style.display = "none";
+    return;
+  }
+  const [y, m, d] = isoDate.split("-").map(Number);
+  document.getElementById("reportCreatedDate").textContent = new Date(Date.UTC(y, m - 1, d))
+    .toLocaleDateString(uiLocale, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  label.style.display = "inline";
+}
+
+// Names in the skills report that aren't matched to a member are missing from the
+// list and from notifications — say so, and point admins at the fix.
+function showUnmatchedNamesBanner(unmatchedNames, canFix) {
+  const banner = document.getElementById("unmatchedNamesBanner");
+  if (!banner) return;
+  if (!unmatchedNames) {
+    banner.style.display = "none";
+    return;
+  }
+  const people = unmatchedNames === 1 ? "1 name in the skills report isn't" : `${unmatchedNames} names in the skills report aren't`;
+  banner.innerHTML =
+    `<strong>${people} matched to a member.</strong> Their expiring skills are not shown here and they won't be notified. ` +
+    (canFix
+      ? `<a href="data-source.html" title="Match report names to members">Match them on Skills Data Source</a>.`
+      : "Ask an administrator to match them on Skills Data Source.");
+  banner.style.display = "block";
+}
 
 function buildSkillHtml(skillObj, memberId) {
   let html = esc(skillObj.skill);

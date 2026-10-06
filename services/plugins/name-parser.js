@@ -62,7 +62,7 @@ function parseMemberName(rawName) {
  * surnames ("Jan van der Merwe") stay intact.  Multi-word given names are
  * ambiguous here; member matching tries every split instead of trusting this.
  *
- * @param {string} fullName  e.g. "Andrew Keith"
+ * @param {string} fullName  e.g. "Luke Skywalker"
  * @returns {{ firstName: string, lastName: string }}
  */
 function parseFullName(fullName) {

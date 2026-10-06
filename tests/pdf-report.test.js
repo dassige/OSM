@@ -84,10 +84,10 @@ describe('walkOperatorList', () => {
             [OPS.beginText, []],
             [OPS.setFont, ['F1', 11]],
             [OPS.moveText, [100, 500]],
-            [OPS.showText, [glyphs('Andrew Keith')]],
+            [OPS.showText, [glyphs('Luke Skywalker')]],
             [OPS.endText, []],
         ]);
-        expect(runs).toEqual([{ x: 110, y: 92, text: 'Andrew Keith', bold: false, color: '#000000' }]);
+        expect(runs).toEqual([{ x: 110, y: 92, text: 'Luke Skywalker', bold: false, color: '#000000' }]);
     });
 
     it('records fill colour and bold fonts, and restores colour on restore', () => {
@@ -120,6 +120,25 @@ describe('walkOperatorList', () => {
         ]);
         expect(runs).toHaveLength(1);
         expect(runs[0]).toMatchObject({ x: 40, y: 312, text: 'Hazmat- Decontamination' });
+    });
+
+    it('rejoins a word split into runs at a kerning pair, and keeps real gaps', () => {
+        // Chromium writes "Darth V", moves back slightly for the V-a kerning, then "ader".
+        const w = (s, width = 500) => [...s].map((c) => ({ unicode: c, width }));
+        const runs = walk([
+            [OPS.beginText, []],
+            [OPS.setFont, ['F1', 10]],
+            [OPS.setTextMatrix, [1, 0, 0, 1, 100, 400]],
+            [OPS.showText, [w('Darth V')]],             // advance 7 × 5 = 35
+            [OPS.moveText, [34.3, 0]],                   // kerning: starts 0.7 before the end
+            [OPS.showText, [w('ader')]],                 // ends at 134.3 + 20 = 154.3
+            [OPS.moveText, [22, 0]],                     // 2pt gap (0.2 em) → word space
+            [OPS.showText, [w('Jr')]],
+            [OPS.moveText, [60, 0]],                     // far away → another column
+            [OPS.showText, [w('Leia Organa')]],
+            [OPS.endText, []],
+        ]);
+        expect(runs.map((r) => [r.text, r.x])).toEqual([['Darth Vader Jr', 100], ['Leia Organa', 216.3]]);
     });
 
     it('handles leading-based line moves and drops whitespace-only runs', () => {
@@ -243,7 +262,7 @@ describe('parseGrid — synthetic layouts', () => {
         const page1 = makePage(1, {
             rows: [
                 { category: 'B.A' },
-                { skill: ['BA - Long skill name that', 'wraps (C)'], names: { Dec: [{ name: 'x', lines: ['Matthew', 'Walkinshaw'] }, 'Jo Bo'] } },
+                { skill: ['BA - Long skill name that', 'wraps (C)'], names: { Dec: [{ name: 'x', lines: ['Wicket', 'Warrick'] }, 'Jo Bo'] } },
             ],
         });
         const page2 = makePage(2, {
@@ -251,10 +270,16 @@ describe('parseGrid — synthetic layouts', () => {
         });
         const { records } = parseGrid([page1, page2]);
         expect(records.map((r) => [r.sourceName, r.skill, r.skillCategory, r.page])).toEqual([
-            ['Matthew Walkinshaw', 'BA - Long skill name that wraps (C)', 'B.A', 1],
+            ['Wicket Warrick', 'BA - Long skill name that wraps (C)', 'B.A', 1],
             ['Jo Bo', 'BA - Long skill name that wraps (C)', 'B.A', 1],
             ['Al Gee', 'BA - Long skill name that wraps (C)', 'B.A', 2],
         ]);
+    });
+
+    it('reads a footer where "Created:" and the date are one text run', () => {
+        const page = makePage(1, { created: null, rows: [{ skill: 'S', names: { Dec: ['Al Gee'] } }] });
+        page.items.push(item(61.4, 540.9, 'Created: 7/11/2026', { bold: true, color: '#ffffff' }));
+        expect(parseGrid([page]).createdDate).toBe('2026-11-07');
     });
 
     it('skips pages without text', () => {
@@ -321,7 +346,7 @@ describe('deriveDueDate', () => {
 
 describe('parseFullName', () => {
     it.each([
-        ['Andrew Keith', { firstName: 'Andrew', lastName: 'Keith' }],
+        ['Luke Skywalker', { firstName: 'Luke', lastName: 'Skywalker' }],
         ['  Jan van der Merwe ', { firstName: 'Jan', lastName: 'van der Merwe' }],
         ['Madonna', { firstName: '', lastName: 'Madonna' }],
         ['', { firstName: '', lastName: '' }],

@@ -1,6 +1,6 @@
 // services/db/member-source-aliases.js
 // Links between a member's name as it appears in an extraction source
-// (pdf-report: "Andrew Keith") and the member record.
+// (pdf-report: "Luke Skywalker") and the member record.
 
 const { initDB } = require('./connection');
 

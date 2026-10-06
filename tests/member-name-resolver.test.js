@@ -35,7 +35,7 @@ beforeEach(() => {
 
 describe('normaliseKey', () => {
     it.each([
-        ['  Andrew   Keith ', 'andrew keith'],
+        ['  Luke   Skywalker ', 'luke skywalker'],
         ['Zoë  Mäkinen', 'zoe makinen'],
         ['Module 1 Working Safely around Water – Level 1', 'module 1 working safely around water - level 1'],
         ['Hazmat - Emergency Decontamination  (C)', 'hazmat - emergency decontamination (c)'],
@@ -52,9 +52,9 @@ describe('analyseNames', () => {
     const analyse = (names, members, aliases = []) => resolver.analyseNames(names, members, aliases);
 
     it('matches on surname and first initial', () => {
-        const keith = member('QFF Keith, A');
-        const r = analyse(['Andrew Keith'], [keith, member('FF Keith, B'), member('FF Kerr, A')]).get('Andrew Keith');
-        expect(r).toMatchObject({ status: 'suggested', member: keith, givenName: 'Andrew' });
+        const keith = member('QFF Skywalker, L');
+        const r = analyse(['Luke Skywalker'], [keith, member('FF Skywalker, B'), member('FF Kerr, A')]).get('Luke Skywalker');
+        expect(r).toMatchObject({ status: 'suggested', member: keith, givenName: 'Luke' });
     });
 
     it('matches compound surnames and accents', () => {
@@ -66,56 +66,56 @@ describe('analyseNames', () => {
     });
 
     it('matches members without ETL name fields by parsing their name', () => {
-        const m = member('SFF Price, S', { first: null, last: null });
-        expect(analyse(['Scott Price'], [m]).get('Scott Price')).toMatchObject({ status: 'suggested', member: m });
+        const m = member('SFF Palpatine, S', { first: null, last: null });
+        expect(analyse(['Sheev Palpatine'], [m]).get('Sheev Palpatine')).toMatchObject({ status: 'suggested', member: m });
     });
 
     it('prefers the member whose full first name matches exactly', () => {
-        const mark = member('FF Edwards, Mark', { first: 'Mark' });
-        const mike = member('FF Edwards, Mike', { first: 'Michael' });
-        expect(analyse(['Mark Edwards'], [mark, mike]).get('Mark Edwards')).toMatchObject({ status: 'suggested', member: mark });
+        const mark = member('FF Calrissian, Lando', { first: 'Lando' });
+        const mike = member('FF Calrissian, Lobot', { first: 'Lobot' });
+        expect(analyse(['Lando Calrissian'], [mark, mike]).get('Lando Calrissian')).toMatchObject({ status: 'suggested', member: mark });
     });
 
     it('leaves two equally good members for an admin', () => {
-        const a = member('FF Roberts, G');
-        const b = member('QFF Roberts, G');
-        const r = analyse(['Geoff Roberts'], [a, b]).get('Geoff Roberts');
+        const a = member('FF Fett, B');
+        const b = member('QFF Fett, B');
+        const r = analyse(['Boba Fett'], [a, b]).get('Boba Fett');
         expect(r.status).toBe('ambiguous');
         expect(r.member).toBeNull();
         expect(r.candidates.map((c) => c.id).sort()).toEqual([a.id, b.id]);
     });
 
     it('reports names with no candidate, and single-word names, as unmatched', () => {
-        const res = analyse(['Emma Ryan', 'Madonna'], [member('FF Ryan, J'), member('FF Madonna, M')]);
-        expect(res.get('Emma Ryan')).toMatchObject({ status: 'unmatched', candidates: [] });
+        const res = analyse(['Jyn Erso', 'Madonna'], [member('FF Erso, K'), member('FF Madonna, M')]);
+        expect(res.get('Jyn Erso')).toMatchObject({ status: 'unmatched', candidates: [] });
         expect(res.get('Madonna')).toMatchObject({ status: 'unmatched' });
     });
 
     it('uses saved links first, reporting manual and automatic ones', () => {
-        const a = member('FF Whybrow, R');
+        const a = member('FF Solo, H');
         const b = member('FF Smith, R');
-        const res = analyse(['Rob Whybrow', 'Bob Smith'], [a, b], [alias('Rob Whybrow', a.id), alias('bob  smith', b.id, 'manual')]);
-        expect(res.get('Rob Whybrow')).toMatchObject({ status: 'auto', member: a, aliasId: 100 + a.id });
+        const res = analyse(['Han Solo', 'Bob Smith'], [a, b], [alias('Han Solo', a.id), alias('bob  smith', b.id, 'manual')]);
+        expect(res.get('Han Solo')).toMatchObject({ status: 'auto', member: a, aliasId: 100 + a.id });
         expect(res.get('Bob Smith')).toMatchObject({ status: 'manual', member: b });
     });
 
     it('never auto-matches a member already linked to a different name', () => {
-        const claudia = member('FF Hansen, S');
-        const res = analyse(['Stuart Hansen'], [claudia], [alias('Stu Hansen', claudia.id, 'manual')]);
-        expect(res.get('Stuart Hansen')).toMatchObject({ status: 'unmatched', member: null });
+        const claudia = member('FF Tano, A');
+        const res = analyse(['Ahsoka Tano'], [claudia], [alias('Ash Tano', claudia.id, 'manual')]);
+        expect(res.get('Ahsoka Tano')).toMatchObject({ status: 'unmatched', member: null });
     });
 
     it('treats two names pointing at the same member as ambiguous', () => {
-        const m = member('FF Tucker, W');
-        const res = analyse(['Warren Tucker', 'Wayne Tucker'], [m]);
-        expect(res.get('Warren Tucker')).toMatchObject({ status: 'ambiguous', member: null, candidates: [m] });
-        expect(res.get('Wayne Tucker')).toMatchObject({ status: 'ambiguous', member: null });
+        const m = member('FF Windu, M');
+        const res = analyse(['Mace Windu', 'Mara Windu'], [m]);
+        expect(res.get('Mace Windu')).toMatchObject({ status: 'ambiguous', member: null, candidates: [m] });
+        expect(res.get('Mara Windu')).toMatchObject({ status: 'ambiguous', member: null });
     });
 
     it('ignores a saved link whose member no longer exists', () => {
-        const m = member('FF Busch, G');
-        const res = analyse(['Gavin Busch'], [m], [alias('Gavin Busch', 999)]);
-        expect(res.get('Gavin Busch')).toMatchObject({ status: 'suggested', member: m });
+        const m = member('FF Dameron, P');
+        const res = analyse(['Poe Dameron'], [m], [alias('Poe Dameron', 999)]);
+        expect(res.get('Poe Dameron')).toMatchObject({ status: 'suggested', member: m });
     });
 });
 
@@ -135,11 +135,11 @@ describe('givenNameFor', () => {
 
 describe('firstNameUpgrade', () => {
     it.each([
-        ['an initial that agrees', 'A', 'Andrew', 'Andrew'],
-        ['an initial with a dot', 'A.', 'Andrew', 'Andrew'],
-        ['a blank first name', null, 'Andrew', 'Andrew'],
+        ['an initial that agrees', 'L', 'Luke', 'Luke'],
+        ['an initial with a dot', 'L.', 'Luke', 'Luke'],
+        ['a blank first name', null, 'Luke', 'Luke'],
         ['an initial that disagrees', 'R', 'Bob', null],
-        ['an existing full first name', 'Andy', 'Andrew', null],
+        ['an existing full first name', 'Andy', 'Luke', null],
         ['a given name that is only an initial', 'A', 'A', null],
         ['no given name', 'A', '', null],
     ])('handles %s', (_label, current, given, expected) => {
@@ -156,7 +156,7 @@ describe('resolveRecords', () => {
     });
 
     it('rewrites matched records to the member and skill as stored, and saves new automatic matches', async () => {
-        const keith = member('QFF Keith, A', { osm: 'osm-keith' });
+        const keith = member('QFF Skywalker, L', { osm: 'osm-keith' });
         db.getMembers.mockResolvedValue([keith]);
         db.getMemberSourceAliases.mockResolvedValue([]);
         db.getSkills.mockResolvedValue([{ id: 5, name: 'Hazmat - Emergency Decontamination (C)', skill_osm_id: null }]);
@@ -164,47 +164,47 @@ describe('resolveRecords', () => {
         const log = jest.fn();
 
         const { records, summary } = await resolver.resolveRecords(
-            [rec('Andrew Keith', 'Hazmat - Emergency Decontamination  (C)'), rec('Emma Ryan')], { log },
+            [rec('Luke Skywalker', 'Hazmat - Emergency Decontamination  (C)'), rec('Jyn Erso')], { log },
         );
 
         expect(records[0]).toMatchObject({
-            name: 'QFF Keith, A', memberId: keith.id, memberOsmId: 'osm-keith', rank: 'QFF', lastName: 'Keith', firstName: 'Andrew',
+            name: 'QFF Skywalker, L', memberId: keith.id, memberOsmId: 'osm-keith', rank: 'QFF', lastName: 'Skywalker', firstName: 'Luke',
             skill: 'Hazmat - Emergency Decontamination (C)', skillOsmId: 'Hazmat - Emergency Decontamination (C)',
-            sourceName: 'Andrew Keith', dueDate: '2026-12-01',
+            sourceName: 'Luke Skywalker', dueDate: '2026-12-01',
         });
         expect(records[0].unresolved).toBeUndefined();
-        expect(records[1]).toMatchObject({ name: 'Emma Ryan', unresolved: true, skill: 'BA - Search & Rescue' });
-        expect(summary).toEqual({ names: 2, matched: 1, unresolved: ['Emma Ryan'], autoMatched: 1 });
+        expect(records[1]).toMatchObject({ name: 'Jyn Erso', unresolved: true, skill: 'BA - Search & Rescue' });
+        expect(summary).toEqual({ names: 2, matched: 1, unresolved: ['Jyn Erso'], autoMatched: 1 });
 
-        expect(db.createAutoMemberSourceAlias).toHaveBeenCalledWith({ sourceName: 'Andrew Keith', sourceKey: 'andrew keith', memberId: keith.id });
-        expect(db.updateMemberFirstName).toHaveBeenCalledWith(keith.id, 'Andrew');
+        expect(db.createAutoMemberSourceAlias).toHaveBeenCalledWith({ sourceName: 'Luke Skywalker', sourceKey: 'luke skywalker', memberId: keith.id });
+        expect(db.updateMemberFirstName).toHaveBeenCalledWith(keith.id, 'Luke');
         expect(db.logEvent).toHaveBeenCalledWith('System', 'Member', 'Member Name Matched Automatically', {
-            sourceName: 'Andrew Keith', memberId: keith.id, memberName: 'QFF Keith, A', firstNameStored: 'Andrew',
+            sourceName: 'Luke Skywalker', memberId: keith.id, memberName: 'QFF Skywalker, L', firstNameStored: 'Luke',
         });
         expect(log).toHaveBeenCalledWith(expect.stringMatching(/1 of 2 matched \(1 newly matched automatically\) — 1 need matching/));
     });
 
     it('does not log or change the member when another request saved the match first', async () => {
-        const keith = member('QFF Keith, A');
+        const keith = member('QFF Skywalker, L');
         db.getMembers.mockResolvedValue([keith]);
         db.getMemberSourceAliases.mockResolvedValue([]);
         db.getSkills.mockResolvedValue([]);
         db.createAutoMemberSourceAlias.mockResolvedValue(false);
 
-        const { records } = await resolver.resolveRecords([rec('Andrew Keith')]);
-        expect(records[0].name).toBe('QFF Keith, A');
+        const { records } = await resolver.resolveRecords([rec('Luke Skywalker')]);
+        expect(records[0].name).toBe('QFF Skywalker, L');
         expect(db.updateMemberFirstName).not.toHaveBeenCalled();
         expect(db.logEvent).not.toHaveBeenCalled();
     });
 
     it('uses saved links without writing anything', async () => {
-        const keith = member('QFF Keith, Andrew', { first: 'Andrew' });
+        const keith = member('QFF Skywalker, Luke', { first: 'Luke' });
         db.getMembers.mockResolvedValue([keith]);
-        db.getMemberSourceAliases.mockResolvedValue([alias('Andrew Keith', keith.id)]);
+        db.getMemberSourceAliases.mockResolvedValue([alias('Luke Skywalker', keith.id)]);
         db.getSkills.mockResolvedValue([]);
 
-        const { records, summary } = await resolver.resolveRecords([rec('Andrew Keith')]);
-        expect(records[0]).toMatchObject({ name: 'QFF Keith, Andrew', memberOsmId: 'QFF Keith, Andrew' });
+        const { records, summary } = await resolver.resolveRecords([rec('Luke Skywalker')]);
+        expect(records[0]).toMatchObject({ name: 'QFF Skywalker, Luke', memberOsmId: 'QFF Skywalker, Luke' });
         expect(summary.autoMatched).toBe(0);
         expect(db.createAutoMemberSourceAlias).not.toHaveBeenCalled();
     });

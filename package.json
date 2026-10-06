@@ -20,6 +20,8 @@
     "test:all": "jest --detectOpenHandles --forceExit && playwright test",
     "screenshots": "node scripts/take-screenshots.js",
     "guide:quiz": "node scripts/guide-builder/build-quiz-guide.js",
+    "guide:pdf-report": "node scripts/guide-builder/build-pdf-report-docs.js",
+    "sample:skills-report": "node scripts/guide-builder/pdf-report/sample-report.js",
     "generate-demo-db": "node scripts/generate-demo-db.js",
     "sanitize-prod-copy": "node scripts/sanitize-prod-copy.js",
     "setup-env": "node scripts/setup-env.js",

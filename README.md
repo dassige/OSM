@@ -237,16 +237,22 @@ Open the `.env` file and configure the following parameters:
     curl -H "X-API-Key: osm_..." -F "file=@OSM-Status-6-months.pdf" https://your-server/api/extraction/upload
     ```
     The response `status` is `imported` or `unchanged`; `400` means not a readable report, `409` older than the current report (add `-F force=true` to accept it), `413` too large.
+  * **Documents:** `docs/guides/OpReady-PDF-Report-Plugin-Report.pdf` (implementation report and app behaviour) and `docs/guides/OpReady-PDF-Report-Plugin-Test-Plan.pdf` (manual test plan for TST/UAT, built from the UAT plan) are generated with real screenshots by `npm run guide:pdf-report`. They are local only (git-ignored) — run the command to produce them.
+  * **Fictional sample report:** `npm run sample:skills-report -- --created YYYY-MM-DD` writes a report in the FENZ layout with the demo database's Star Wars members — use it for demos, screenshots and testing instead of the confidential real report. See `scripts/scripts.md`.
 
   How the report maps onto skill expiry data:
   * The report lists only skills that are **lapsed or expire within six months**, by month only. Due dates are derived from the report's `Created:` date: *Lapsed* → last day of the previous month; the report's own month → last day of that month; next month → the 1st for names highlighted orange (expiring within a month of the report date), otherwise the report's day-of-month; later months → the 1st.
   * Skill categories come from the report's category bands (`B.A`, `Driving`, `Haz Subs` …).
-  * Members appear by full name without rank ("Andrew Keith"), so each name is matched to a member record (e.g. "QFF Keith, A") before the data is used:
+  * Members appear by full name without rank ("Luke Skywalker"), so each name is matched to a member record (e.g. "QFF Skywalker, L") before the data is used:
       * **Automatically** when exactly one member has the same surname and first initial (compound surnames and accents are handled). Members already linked to a different report name, and names that would land on the same member, are left for an admin.
       * **By an admin** on **Skills Data Source → Member Name Matching**, which lists every name in the current report with its status (matched automatically / by admin, will match automatically, needs review, not found) and lets you match, change or unlink.
-      * Matches are saved and reused for every future report. When a matched member only has an initial as first name, the full first name from the report is stored (display becomes "QFF Keith, Andrew"); an existing full first name is never overwritten, and an OI dashboard import never downgrades it back to the initial.
+      * Matches are saved and reused for every future report. When a matched member only has an initial as first name, the full first name from the report is stored (display becomes "QFF Skywalker, Luke"); an existing full first name is never overwritten, and an OI dashboard import never downgrades it back to the initial.
       * Skills of unmatched names are not counted for anyone until they are matched. New members must be added in **Manage Members** first.
+      * So that this is never silent, the dashboard shows a banner ("N names in the skills report aren't matched to a member…", with a link for admins), and the by-member, by-skill, critical-overdue and compliance-matrix reports and the compliance statistics show a note in their header while any name is unmatched.
   * Skill names are matched to configured skills ignoring differences in spacing, dashes and case; the configured spelling is kept.
+  * The dashboard shows **Report created: <date>** (the `Created:` date from the PDF footer) on the right of the *Expiring Skills List* title, so everyone can see how current the data is.
+  * Where dates are shown to people — dashboard, email and WhatsApp `{{date}}`, reports — the month is shown ("Nov 2026", or "Lapsed") instead of the derived day, which is only used to work out what is expired or expiring.
+  * Because the report only reaches six months ahead, the **Compliance Matrix** shows a skill that is not in the report as **6m+** (not due within six months) rather than Missing, and the dashboard and the expiring-skills reports show a note when the days-to-expiry threshold goes beyond six months.
   * The PDF is parsed with `pdfjs-dist` with script evaluation disabled; files without a `%PDF-` header or over the size limit are rejected. The report is confidential — keep it out of the repository and do not use this plugin in demo mode.
 
 #### **OSM Dashboard Connection** *(html-scraper plugin)*

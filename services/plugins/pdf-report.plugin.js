@@ -11,14 +11,18 @@
 //     a skill missing from the report means "current for more than six months".
 //   • Expiry is a month, not a date — see grid-parser.js deriveDueDate() for the
 //     agreed rules (orange names = expiring within one month of the Created date).
-//   • Members appear by full name ("Andrew Keith") with no rank, so every record
+//   • Members appear by full name ("Luke Skywalker") with no rank, so every record
 //     is resolved onto a member record by services/member-name-resolver.js before
 //     it is returned; names that cannot be matched keep the report name and are
 //     flagged `unresolved` (consumers simply find no member for them).
 //
 // Output record shape (one entry per member × skill):
 //   { name, rank, lastName, firstName, memberOsmId, skill, skillOsmId, skillCategory, dueDate,
-//     dueMonth, lapsed, withinOneMonth, sourceName, reportCreatedDate, memberId?, unresolved? }
+//     dueMonth, dueLabel, lapsed, withinOneMonth, sourceName, reportCreatedDate, memberId?, unresolved? }
+//
+// dueDate is the derived calendar date used for status/urgency calculations;
+// dueLabel ("Nov 2026", "Lapsed") is what should be shown to people, because the
+// report only gives the month.
 
 'use strict';
 
@@ -28,9 +32,19 @@ const { resolveRecords } = require('../member-name-resolver');
 
 const SOURCES = ['local', 'gcs', 'upload'];
 
+/** Display label for a record's expiry: "Lapsed", or the month ("Nov 2026") in the app locale. */
+function dueLabelFor(record, locale) {
+    if (record.lapsed) return 'Lapsed';
+    if (!record.dueMonth) return record.dueDate;
+    const [y, m] = record.dueMonth.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString(locale || 'en-NZ', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
 const plugin = {
     name: 'pdf-report',
     description: 'Parses the FENZ "Skills Expiring in the Next Six Months" PDF report',
+    // What the source can and cannot tell — consumers adapt their wording to it.
+    coverage: { windowMonths: 6, monthPrecision: true },
 
     /**
      * @param {object} config  Full application config object
@@ -71,8 +85,9 @@ const plugin = {
         log(`[pdf-report] Using the report created on ${snapshot.report_created_date} ` +
             `(${snapshot.record_count} records, ${snapshot.member_count} members, ${snapshot.skill_count} skills).`);
         const { records } = await resolveRecords(latest.records, { log });
-        return records;
+        return records.map((r) => ({ ...r, dueLabel: dueLabelFor(r, config.locale) }));
     },
 };
 
 module.exports = plugin;
+module.exports.dueLabelFor = dueLabelFor;

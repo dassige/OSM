@@ -47,12 +47,17 @@ function parseHeader(items, pageNo) {
     return { y: anchor.y, columns };
 }
 
+const CREATED_RE = /^Created:?(?:\s+(\d{1,2}\/\d{1,2}\/\d{4}))?$/;
+const DATE_RE = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
+
 function parseCreated(items) {
-    const label = items.find((i) => /^Created:?$/.test(i.text.trim()));
+    // "Created:" and the date are usually separate text runs, but may be one.
+    const label = items.find((i) => CREATED_RE.test(i.text.trim()));
     if (!label) return null;
-    const value = items.find((i) => Math.abs(i.y - label.y) < ROW_TOLERANCE && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(i.text.trim()));
+    const inline = CREATED_RE.exec(label.text.trim())[1];
+    const value = inline || items.find((i) => Math.abs(i.y - label.y) < ROW_TOLERANCE && DATE_RE.test(i.text.trim()))?.text.trim();
     if (!value) return { footerY: label.y, date: null };
-    const [d, m, y] = value.text.trim().split('/').map(Number);
+    const [d, m, y] = value.split('/').map(Number);
     const check = new Date(Date.UTC(y, m - 1, d));
     if (check.getUTCMonth() !== m - 1 || check.getUTCDate() !== d) return { footerY: label.y, date: null };
     return { footerY: label.y, date: { y, m: m - 1, d } };

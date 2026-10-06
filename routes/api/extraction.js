@@ -187,7 +187,7 @@ router.delete('/snapshots/:id', hasRole('admin'), rejectInDemo, async (req, res)
 });
 
 // ── Member name matching ───────────────────────────────────────────────────
-// The report names members by full name ("Andrew Keith"); each name must be
+// The report names members by full name ("Luke Skywalker"); each name must be
 // linked to a member record before its skills count for that member.
 
 const memberSummary = (m) => ({
