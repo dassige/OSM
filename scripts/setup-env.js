@@ -4,7 +4,8 @@
  *
  * Parses .example.env into sections, launches a local web form on port 3088,
  * pre-fills values from .generated.env or .env (if present), and writes the
- * configured result to .generated.env on form submission.
+ * configured result to .generated.env on form submission. "Save As..." lets the
+ * user save the same content to any file/folder via the browser's save dialog.
  *
  * Usage:
  *   node scripts/setup-env.js
@@ -371,8 +372,8 @@ ${body}
   <input type="file" id="envFileInput" accept=".env,text/plain" style="display:none">
   <button class="btn-load" id="btnLoad" title="Load an existing .env file and highlight its values">Load .env</button>
   <button class="btn-gen" id="btnGenerate" title="Write all values to .generated.env">Generate .env File</button>
-  <button class="btn-save" id="btnSave" style="display:none" title="Save values directly to .env (overwrites)">Save to .env</button>
-  <span class="footer-hint" id="footerHint">→ .generated.env &nbsp;&bull;&nbsp; then: cp .generated.env .env</span>
+  <button class="btn-save" id="btnSave" title="Choose a folder and file name to save the configuration to">Save As...</button>
+  <span class="footer-hint" id="footerHint">Generate → .generated.env &nbsp;&bull;&nbsp; Save As → choose location</span>
 </div>
 
 <div id="toast"></div>
@@ -416,16 +417,45 @@ async function generate() {
   } catch (e) { toast("err", "✗ " + e.message); }
 }
 
-async function saveToEnv() {
+// Suggested file name for Save As — the loaded file's name, else ".env".
+var saveAsName = ".env";
+
+async function saveAs() {
   try {
-    var res  = await fetch("/save-env", { method: "POST",
+    var res = await fetch("/render", { method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(collectPayload()) });
-    var data = await res.json();
-    if (data.ok) {
-      toast("ok", "✓ .env written successfully.");
-    } else {
+    if (!res.ok) {
+      var data = await res.json();
       toast("err", "✗ Error: " + data.error);
+      return;
+    }
+    var content = await res.text();
+
+    if (window.showSaveFilePicker) {
+      // Chromium (Chrome/Edge): native Save As dialog — user picks folder + name.
+      var handle;
+      try {
+        handle = await window.showSaveFilePicker({ suggestedName: saveAsName });
+      } catch (e) {
+        if (e.name === "AbortError") return; // user cancelled the dialog
+        throw e;
+      }
+      var writable = await handle.createWritable();
+      await writable.write(content);
+      await writable.close();
+      toast("ok", "✓ Saved as " + handle.name);
+    } else {
+      // Firefox/Safari: no File System Access API — fall back to a download.
+      var url = URL.createObjectURL(new Blob([content], { type: "text/plain" }));
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = saveAsName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      toast("ok", "✓ File downloaded.\\nTo choose the folder, enable 'Always ask where to save files' in your browser settings.");
     }
   } catch (e) { toast("err", "✗ " + e.message); }
 }
@@ -484,9 +514,9 @@ function onFileSelected(e) {
     var vals  = parseEnvContent(ev.target.result);
     var count = Object.keys(vals).length;
     applyLoadedValues(vals);
-    document.getElementById("btnSave").style.display = "inline-block";
+    saveAsName = file.name;
     document.getElementById("footerHint").textContent =
-      "Loaded: " + file.name + " (" + count + " vars highlighted)  •  Generate → .generated.env  •  Save → .env";
+      "Loaded: " + file.name + " (" + count + " vars highlighted)  •  Generate → .generated.env  •  Save As → choose location";
     toast("ok", "✓ Loaded " + count + " variables from " + file.name + "\\nHighlighted rows (teal border) have values from the file.");
   };
   reader.readAsText(file);
@@ -509,7 +539,7 @@ document.querySelectorAll(".show-hide").forEach(function(btn) {
   btn.addEventListener("click", function() { togglePwd(this); });
 });
 document.getElementById("btnGenerate").addEventListener("click", generate);
-document.getElementById("btnSave").addEventListener("click", saveToEnv);
+document.getElementById("btnSave").addEventListener("click", saveAs);
 document.getElementById("btnLoad").addEventListener("click", function() {
   document.getElementById("envFileInput").click();
 });
@@ -599,14 +629,15 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    if (req.method === 'POST' && req.url === '/save-env') {
+    // Returns the rendered file content without writing anything — the browser
+    // saves it to a user-chosen location via its Save As dialog.
+    if (req.method === 'POST' && req.url === '/render') {
         try {
             const body    = await readBody(req);
             const values  = JSON.parse(body);
             const content = generateContent(sections, values);
-            fs.writeFileSync(EXISTING_ENV, content, 'utf8');
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ ok: true, path: EXISTING_ENV }));
+            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end(content);
         } catch (e) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ ok: false, error: e.message }));

@@ -147,7 +147,7 @@ The interactive setup tool (`npm run setup-env`) is the easiest way to create or
 | **Enable/disable** | Checkbox per variable; disabled variables are written as `# KEY=value` (commented out) |
 | **Sensitive fields** | Password-type inputs with a Show/Hide toggle for keys containing `PASSWORD`, `SECRET`, `PASS`, `KEY` |
 | **Pre-fill** | Form loads with values from `.generated.env` (if it exists), then `.env`, then template defaults |
-| **Output** | Writes `.generated.env`; copy to `.env` to activate |
+| **Output** | **Generate .env File** writes `.generated.env`; copy to `.env` to activate. **Save As...** opens the browser's Save As dialog to save to any folder/file name (Chrome/Edge; other browsers download the file) |
 
 ```powershell
 npm run setup-env          # open the form
