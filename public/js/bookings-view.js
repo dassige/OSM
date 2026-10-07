@@ -53,11 +53,14 @@
       if (res.ok) uiConfig = await res.json();
     } catch { /* defaults */ }
 
+    // This page is served at /booking/<link>, so a relative asset path from the
+    // config (default "resources/background.png") must be made site-relative.
+    const siteUrl = (u) => (/^([a-z]+:|\/)/i.test(u) ? u : `/${u}`);
     const appName = uiConfig?.loginTitle || 'OpReady';
     $('brandName').textContent = appName;
-    if (uiConfig?.appLogo) $('brandLogo').src = uiConfig.appLogo;
+    if (uiConfig?.appLogo) $('brandLogo').src = siteUrl(uiConfig.appLogo);
     $('brand').style.display = 'flex';
-    if (uiConfig?.appBackground) document.body.style.backgroundImage = `url('${uiConfig.appBackground}')`;
+    if (uiConfig?.appBackground) document.body.style.backgroundImage = `url('${siteUrl(uiConfig.appBackground)}')`;
     document.title = `Book a Slot - ${appName}`;
 
     if (!UUID_RE.test(publicId)) {

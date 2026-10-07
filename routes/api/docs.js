@@ -922,6 +922,35 @@ const spec = {
                 }
             }
         },
+        '/api/bookings/templates/{id}/export': {
+            get: {
+                tags: ['Bookings'],
+                summary: 'Export a booking template as a portable JSON file',
+                description: 'Downloads the template settings, schedule and questions — no ids, creator or timestamps. The file is imported on the Manage Bookings page (Import loads it into the editor; Save stores it).',
+                security: [{ sessionCookie: [] }, { xApiKey: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                responses: {
+                    200: { description: 'JSON file (attachment)', content: { 'application/json': { schema: {
+                        type: 'object',
+                        properties: {
+                            name:              { type: 'string', example: 'Nurse Health Screening' },
+                            description:       { type: 'string', description: 'HTML' },
+                            location:          { type: 'string' },
+                            contact_info:      { type: 'string' },
+                            slot_minutes:      { type: 'integer', example: 20 },
+                            slot_capacity:     { type: 'integer', example: 1 },
+                            schedule:          { type: 'array', items: { type: 'object', properties: { date: { type: 'string', format: 'date' }, windows: { type: 'array', items: { type: 'object', properties: { start: { type: 'string', example: '09:00' }, end: { type: 'string', example: '12:00' } } } } } } },
+                            fields:            { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, label: { type: 'string' }, type: { type: 'string' }, required: { type: 'boolean' } } } },
+                            access_type:       { type: 'string', enum: ['personal', 'general'] },
+                            show_booked_names: { type: 'boolean' },
+                            allow_cancel:      { type: 'boolean' },
+                            max_bookings:      { type: 'integer', example: 1 }
+                        }
+                    } } } },
+                    404: { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }
+                }
+            }
+        },
         '/api/bookings/templates/{id}/duplicate': {
             post: {
                 tags: ['Bookings'],

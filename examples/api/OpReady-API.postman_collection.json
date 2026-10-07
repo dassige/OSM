@@ -1594,6 +1594,32 @@
                                                   }
                                   },
                                   {
+                                    "name": "Export Booking Template",
+                                    "request": {
+                                      "method": "GET",
+                                      "url": {
+                                        "raw": "{{baseUrl}}/api/bookings/templates/:id/export",
+                                        "host": [
+                                          "{{baseUrl}}"
+                                        ],
+                                        "path": [
+                                          "api",
+                                          "bookings",
+                                          "templates",
+                                          ":id",
+                                          "export"
+                                        ],
+                                        "variable": [
+                                          {
+                                            "key": "id",
+                                            "value": "1"
+                                          }
+                                        ]
+                                      },
+                                      "description": "Downloads the template as a portable JSON file (settings, schedule and questions — no ids, creator or timestamps). Import it on the Manage Bookings page, where it is loaded into the editor and saved with Save."
+                                    }
+                                  },
+                                  {
                                       "name":  "Create Booking Template",
                                       "request":  {
                                                       "method":  "POST",

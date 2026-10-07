@@ -439,6 +439,12 @@
 | T19-12 | Destructive actions blocked | Attempt any delete, purge, or restore action on a demo-mode instance. | Action is blocked with the message "Disabled in demo mode." No data is changed. |
 | T19-13 | Destructive buttons disabled | Observe destructive buttons in the UI. | Buttons are visually disabled (greyed out or marked) on demo-mode instances. |
 
+### T19-F — About Window
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T19-14 | Skill data source shown in About | Open the sidebar → click **About**. Repeat on a server using the six-month PDF skills report and on one using the OI dashboard (e.g. DEMO). | Below the version details the window shows **Skill Data Source**: "Skills Expiring in the Next Six Months PDF report (pdf-report)" on the PDF server and "OI dashboard (html-scraper)" on the other. |
+
 ---
 
 ## T20 — System Health & API (Technical Verification)
@@ -871,6 +877,9 @@ Booking Events let members pick an appointment slot — for example the annual n
 | T30-06 | Publishing defaults | Select **General link**, switch **Show names on booked slots** on and **Members can change or cancel** off → `[Save]` → reopen the template. | The settings are kept, and the list badge now shows "General link". |
 | T30-07 | Unsaved changes guard | Edit the template name without saving → click another template in the list (on mobile: click `[List]`). | A confirmation dialog warns about unsaved changes; Cancel keeps you in the editor, Confirm discards the changes. |
 | T30-08 | Duplicate a template | Open a saved template with days → click `[Duplicate]`. | ✅ A new template "<name> (Copy)" opens with **no days**, and the same details, questions and publishing defaults. Event log records **Booking Template Duplicated**. |
+| T30-55 | Export a booking template | Open a saved template → click the **Export** (download) icon in the editor toolbar. Then change a field without saving and click Export again. | A file `booking_template_export_<id>_<name>.json` downloads with the template's details, days and time windows, questions and publishing defaults. The second export contains the unsaved change. |
+| T30-56 | Import a booking template | Click `[+ Add Template]` → click the **Import** (upload) icon → choose an exported file → `[Save]`. Then open another saved template, import the same file, and click another template in the list without saving. | The editor fills with the imported details, days, questions and defaults, with the toast "Booking template imported into the editor. Click Save to keep it."; Save creates a new template. On the existing template, leaving without saving asks to discard the changes, and `[Publish]` asks you to save first — nothing changes until Save, which replaces that template. |
+| T30-57 | Import a file that is not a booking template | Click the **Import** icon and choose a quiz or survey export (or any other JSON file). | Error toast "Import failed: not a booking template file". The editor is unchanged. |
 | T30-09 | Publish requires a saved template with slots | On a new unsaved template click `[Publish]`; then save a template that has no days and click `[Publish]`. | A warning asks you to save first; then a warning asks you to add at least one day with a time window. No event is created. |
 | T30-10 | Publish with personal links | On a saved template with future slots click `[Publish]` → keep **Personal links**, **All Active Members**, tick **Email** → `[Publish]` → confirm. | ✅ The result window shows how many members were invited and how many emails were sent (or "Would have sent" in demo). Each member receives an email with their own personal link. `[Open Dashboard]` opens the event. Event log records **Booking Event Published**. |
 | T30-11 | Publish with a general link | Publish again choosing **General link**, **Specific Selection** of 3 members → `[Publish]` → confirm → click `[Copy]` in the result window. | The result window shows the shared booking link; Copy shows "Booking link copied". Only the 3 selected members are invited. |

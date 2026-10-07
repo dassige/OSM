@@ -219,7 +219,7 @@ Open the `.env` file and configure the following parameters:
 
 #### **Extraction Engine**
 
-  * `EXTRACTION_PLUGIN`: Which ETL plugin to use for fetching member skill expiry data. `html-scraper` (default) scrapes the OI HTML dashboard; `pdf-report` parses the FENZ "Skills Expiring in the Next Six Months" PDF. Additional plugins can be added as `services/plugins/<name>.plugin.js`.
+  * `EXTRACTION_PLUGIN`: Which ETL plugin to use for fetching member skill expiry data. `html-scraper` (default) scrapes the OI HTML dashboard; `pdf-report` parses the FENZ "Skills Expiring in the Next Six Months" PDF. Additional plugins can be added as `services/plugins/<name>.plugin.js`. The active plugin is shown as **Skill Data Source** in the About window.
 
 #### **PDF Report Source** *(pdf-report plugin)*
 
@@ -503,6 +503,7 @@ Slot booking for scheduled appointments — for example the annual personal heal
       * Add the **information to collect** (short text, phone, email or long text; optionally required). The member's name is always recorded.
       * Choose the **publishing defaults**: personal or general link, show names on booked slots, members can change/cancel, and **bookings per member** (default 1).
       * **Duplicate** copies everything except the dates — the quickest way to set up next year's event.
+      * **Export / Import** (download / upload icons in the editor toolbar, as on Quiz Games and Surveys) save a template as JSON and load one into the editor — e.g. to copy a template between servers. An import changes nothing until **Save**. API: `GET /api/bookings/templates/{id}/export`.
 2.  **Publish:**
       * Click **Publish**, adjust the event name/options if needed, choose all active members or a specific selection, and tick **Email** and/or **WhatsApp**. Each member is only contacted on the ticked channels their own notification preference allows (simulated in demo mode).
       * General events give you one shared link to copy; personal events give each member their own link (copyable from the dashboard).

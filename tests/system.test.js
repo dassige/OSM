@@ -30,6 +30,8 @@ describe('System API Endpoints', () => {
             expect(res.body).toHaveProperty('deploymentType');
             // null for complete sources (html-scraper), 6 for the six-month PDF report
             expect(res.body).toHaveProperty('extractionWindowMonths');
+            // Active skill data plugin, shown in the About window
+            expect(typeof res.body.extractionPlugin).toBe('string');
         });
     });
 

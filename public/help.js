@@ -735,6 +735,8 @@ const helpContent = {
             <h3>5. Re-using a template</h3>
             <ul>
                 <li><strong>Duplicate</strong> copies everything except the dates — add the new days and save.</li>
+                <li><strong>Export</strong> (download icon) saves the template — details, days, questions and publishing defaults — as a JSON file, e.g. to copy it to another OpReady server.</li>
+                <li><strong>Import</strong> (upload icon) loads such a file into the editor; nothing changes until you click <strong>Save</strong> (which replaces the open template, or creates a new one after <strong>+ Add Template</strong>).</li>
                 <li>Deleting a template never affects events already published from it.</li>
             </ul>
         `

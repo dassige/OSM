@@ -115,6 +115,45 @@ describe('Booking templates', () => {
         expect(db.getBookingTemplateById).not.toHaveBeenCalled();
     });
 
+    it('GET /templates/:id/export downloads the portable template settings', async () => {
+        db.getBookingTemplateById.mockResolvedValue({
+            ...TEMPLATE, max_bookings: 2, show_booked_names: 0, allow_cancel: 1,
+            created_by: 'Admin', created_at: '2026-10-01 01:00:00', updated_at: '2026-10-02 01:00:00',
+        });
+        const res = await request(app).get('/api/bookings/templates/1/export');
+
+        expect(res.status).toBe(200);
+        expect(res.headers['content-type']).toMatch(/application\/json/);
+        expect(res.headers['content-disposition']).toBe('attachment; filename="booking_template_export_1_nurse_check.json"');
+        expect(JSON.parse(res.text)).toEqual({
+            name: 'Nurse Check',
+            description: '',
+            location: 'Station',
+            contact_info: '',
+            slot_minutes: 30,
+            slot_capacity: 1,
+            schedule: TEMPLATE.schedule,
+            fields: TEMPLATE.fields,
+            access_type: 'personal',
+            show_booked_names: false,
+            allow_cancel: true,
+            max_bookings: 2,
+        });
+    });
+
+    it('GET /templates/:id/export returns 404 for a missing template or a bad id', async () => {
+        db.getBookingTemplateById.mockResolvedValue(undefined);
+        expect((await request(app).get('/api/bookings/templates/99/export')).status).toBe(404);
+        expect((await request(app).get('/api/bookings/templates/abc/export')).status).toBe(404);
+    });
+
+    it('GET /templates/:id/export returns 500 on a database error', async () => {
+        db.getBookingTemplateById.mockRejectedValue(new Error('db down'));
+        const res = await request(app).get('/api/bookings/templates/1/export');
+        expect(res.status).toBe(500);
+        expect(res.body).toEqual({ error: 'Failed to export booking template.' });
+    });
+
     it('POST /templates creates a normalised template and logs the event', async () => {
         db.createBookingTemplate.mockResolvedValue(5);
         const res = await request(app).post('/api/bookings/templates').send({ name: '  Nurse Check  ', slot_minutes: 20 });

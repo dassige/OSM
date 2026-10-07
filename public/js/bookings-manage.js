@@ -607,6 +607,56 @@ function loadEditor(t) {
   openMobileEditor();
 }
 
+// --- Import / Export (single template) ---
+
+// Same settings as the server export (routes/api/bookings.js TEMPLATE_EXPORT_FIELDS).
+const TEMPLATE_EXPORT_FIELDS = [
+  'name', 'description', 'location', 'contact_info', 'slot_minutes', 'slot_capacity',
+  'schedule', 'fields', 'access_type', 'show_booked_names', 'allow_cancel', 'max_bookings',
+];
+
+function exportTemplate() {
+  // A saved, unchanged template comes from the server; otherwise export what is in the editor.
+  if (currentTemplate && currentTemplate.id && !isDirty()) {
+    window.location.href = `/api/bookings/templates/${currentTemplate.id}/export`;
+    return;
+  }
+  const data = getTemplateData();
+  const filename = `booking_template_export_${(data.name || 'template').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importTemplate(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data || typeof data.name !== 'string' || !Array.isArray(data.schedule) || !Array.isArray(data.fields)) {
+        throw new Error('not a booking template file');
+      }
+      const imported = Object.fromEntries(TEMPLATE_EXPORT_FIELDS.filter((k) => k in data).map((k) => [k, data[k]]));
+      // Keep the current template's id: saving replaces the open template (or creates a new one).
+      loadEditor({ ...(currentTemplate || {}), ...imported });
+      originalState = { _imported: true };   // nothing is saved yet — leaving or publishing asks first
+      showToast('Booking template imported into the editor. Click Save to keep it.', 'success');
+    } catch (err) {
+      showToast('Import failed: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
 // --- Publishing ---
 
 async function loadActiveMembers() {

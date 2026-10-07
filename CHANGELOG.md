@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.1] - 2026/10/07
+
+- feat: add import/export functionality for booking templates and update About window to show skill data source
+
 ## [4.0.0] - 2026/10/07
 
 - new version

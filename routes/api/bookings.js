@@ -108,6 +108,30 @@ router.get("/templates/:id", hasRole("admin"), async (req, res) => {
   }
 });
 
+// Settings carried in an exported template — no ids, creator or timestamps, so the
+// file can be imported into the editor on any instance (Manage Bookings → Import).
+const TEMPLATE_EXPORT_FIELDS = [
+  "name", "description", "location", "contact_info", "slot_minutes", "slot_capacity",
+  "schedule", "fields", "access_type", "show_booked_names", "allow_cancel", "max_bookings",
+];
+
+router.get("/templates/:id/export", hasRole("admin"), async (req, res) => {
+  try {
+    const id = parseId(req.params.id);
+    const template = id && (await db.getBookingTemplateById(id));
+    if (!template) return res.status(404).json({ error: "Booking template not found." });
+    const data = Object.fromEntries(TEMPLATE_EXPORT_FIELDS.map((k) => [k, template[k]]));
+    data.show_booked_names = !!data.show_booked_names;
+    data.allow_cancel = !!data.allow_cancel;
+    const filename = `booking_template_export_${template.id}_${template.name.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.json`;
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Type", "application/json");
+    res.send(JSON.stringify(data, null, 2));
+  } catch (e) {
+    sendError(res, e, "Failed to export booking template.");
+  }
+});
+
 router.post("/templates", hasRole("admin"), async (req, res) => {
   try {
     const template = normaliseTemplate(req.body);

@@ -485,7 +485,16 @@ window.showAboutModal = async function() {
     // Create modal if it doesn't exist in DOM
     if (!modal) {
         const config = await (await fetch('/ui-config')).json();
-        
+        // Where skill expiry data comes from (the active extraction plugin)
+        const SKILL_SOURCES = {
+            'html-scraper': 'OI dashboard',
+            'pdf-report': 'Skills Expiring in the Next Six Months PDF report',
+            'rest-api': 'REST API',
+        };
+        const skillSource = config.extractionPlugin
+            ? `${SKILL_SOURCES[config.extractionPlugin] || config.extractionPlugin} <span style="color:var(--text-muted); font-family:monospace;">(${config.extractionPlugin})</span>`
+            : '';
+
         const style = document.createElement('style');
         style.innerHTML = `
             #globalAboutModal .modal-about-logo { max-width: 100px; margin: 0 auto 15px; display: block; }
@@ -507,6 +516,7 @@ window.showAboutModal = async function() {
                     <p><strong>Version:</strong> ${config.version}</p>
                     <p><strong>Version Date:</strong> ${config.deployDate}</p>
                     ${config.parentCommitId ? `<p><strong>Parent Commit:</strong> <span style="font-family:monospace;">${config.parentCommitId.slice(0, 7)}</span></p>` : ''}
+                    ${skillSource ? `<p title="The extraction plugin that supplies skill expiry data"><strong>Skill Data Source:</strong> ${skillSource}</p>` : ''}
                     <p><strong>Release Notes:</strong> <button class="btn-informative btn-sm" onclick="showReleaseNotesModal('${config.version}')" title="View release notes for v${config.version}" style="margin-left:4px;">View Release Notes</button></p>
                 </div>
                 <div class="modal-credits">
