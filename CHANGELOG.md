@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.2] - 2026/10/08
+
+- feat: implement skill sorting functionality in dashboard and update help documentation
+
 ## [4.0.1] - 2026/10/07
 
 - feat: add import/export functionality for booking templates and update About window to show skill data source

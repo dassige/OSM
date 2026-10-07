@@ -1,0 +1,56 @@
+{
+  "name": "FENZ Health Checks",
+  "description": "<p>Tests Required: Vision Lung Function, CVD, HEP &amp; PSA Bloods - 1 hour&nbsp;</p>",
+  "location": "Devonport Station",
+  "contact_info": "Nurse <name - telephone>",
+  "slot_minutes": 60,
+  "slot_capacity": 1,
+  "schedule": [
+    {
+      "date": "2026-10-05",
+      "windows": [
+        {
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "start": "15:30",
+          "end": "17:30"
+        },
+        {
+          "start": "18:00",
+          "end": "20:00"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "windows": [
+        {
+          "start": "13:00",
+          "end": "15:00"
+        },
+        {
+          "start": "15:30",
+          "end": "17:30"
+        },
+        {
+          "start": "18:00",
+          "end": "20:00"
+        }
+      ]
+    }
+  ],
+  "fields": [
+    {
+      "id": "phone",
+      "label": "Mobile phone",
+      "type": "tel",
+      "required": true
+    }
+  ],
+  "access_type": "general",
+  "show_booked_names": true,
+  "allow_cancel": true,
+  "max_bookings": 1
+}

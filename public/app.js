@@ -7,6 +7,10 @@ function esc(s) {
 
 let currentOsmData = [];
 let currentSort = { column: "name", order: "asc" };
+// Second, independent sort for the skill rows inside each member group
+// (skill name or expiry date) — it never changes the order of the members.
+let currentSkillSort = { column: "dueDate", order: "asc" };
+const SKILL_SORT_COLUMNS = ["skill", "dueDate"];
 let isWaReady = false;
 let showCompletionToast = false;
 let isJobRunning = false;
@@ -209,6 +213,60 @@ function handleSort(column) {
   applySort();
 }
 
+// Sort the skill rows within every member — the member order is left untouched.
+function handleSkillSort(column) {
+  if (!SKILL_SORT_COLUMNS.includes(column)) return;
+  if (currentSkillSort.column === column) {
+    currentSkillSort.order = currentSkillSort.order === "asc" ? "desc" : "asc";
+  } else {
+    currentSkillSort.column = column;
+    currentSkillSort.order = "asc";
+  }
+  socket.emit("update-preference", {
+    key: "dashboardSkillSort",
+    value: `${currentSkillSort.column}:${currentSkillSort.order}`,
+  });
+  applySort();
+}
+
+// Expiry as a sortable number: by the real due date (never the display text such
+// as "Nov 2026"); "Expired" sorts first, a missing/unreadable date last.
+function dueDateSortValue(skill) {
+  const date = parseDueDate(skill.dueDate);
+  if (date === "expired") return -Infinity;
+  return date ? date.getTime() : Infinity;
+}
+
+function compareSkills(a, b) {
+  const dir = currentSkillSort.order === "asc" ? 1 : -1;
+  const byName = (a.skill || "").localeCompare(b.skill || "", undefined, { sensitivity: "base" });
+  if (currentSkillSort.column === "skill") {
+    return dir * byName || dueDateSortValue(a) - dueDateSortValue(b);
+  }
+  const da = dueDateSortValue(a);
+  const db = dueDateSortValue(b);
+  if (da !== db) return dir * (da < db ? -1 : 1);
+  return byName;   // same date: alphabetical, whatever the direction
+}
+
+function updateSortIcons(columns, sortState) {
+  columns.forEach((col) => {
+    const iconSpan = document.getElementById(`icon-${col}`);
+    if (iconSpan) { iconSpan.innerHTML = ICON_NONE; iconSpan.classList.remove("active"); }
+    const mobileBtn = document.getElementById(`mobileSortBtn-${col}`);
+    if (mobileBtn) mobileBtn.classList.remove("active");
+    const mobileIcon = document.getElementById(`mobile-icon-${col}`);
+    if (mobileIcon) mobileIcon.innerHTML = ICON_NONE;
+  });
+  const icon = sortState.order === "asc" ? ICON_ASC : ICON_DESC;
+  const activeIconSpan = document.getElementById(`icon-${sortState.column}`);
+  if (activeIconSpan) { activeIconSpan.innerHTML = icon; activeIconSpan.classList.add("active"); }
+  const activeMobileBtn = document.getElementById(`mobileSortBtn-${sortState.column}`);
+  if (activeMobileBtn) activeMobileBtn.classList.add("active");
+  const activeMobileIcon = document.getElementById(`mobile-icon-${sortState.column}`);
+  if (activeMobileIcon) activeMobileIcon.innerHTML = icon;
+}
+
 function applySort() {
   currentOsmData.sort((a, b) => {
     const parsedA = parseRankAndName(a);
@@ -230,25 +288,14 @@ function applySort() {
     return 0;
   });
 
-  // Reset and apply sort icons — desktop table headers + mobile sort bar
-  ["rank", "name"].forEach((col) => {
-    const iconSpan = document.getElementById(`icon-${col}`);
-    if (iconSpan) { iconSpan.innerHTML = ICON_NONE; iconSpan.classList.remove("active"); }
-    const mobileBtn = document.getElementById(`mobileSortBtn-${col}`);
-    if (mobileBtn) mobileBtn.classList.remove("active");
-    const mobileIcon = document.getElementById(`mobile-icon-${col}`);
-    if (mobileIcon) mobileIcon.innerHTML = ICON_NONE;
+  // Skill rows are ordered inside each member only, so member grouping is kept.
+  currentOsmData.forEach((member) => {
+    if (Array.isArray(member.skills)) member.skills.sort(compareSkills);
   });
 
-  const activeIconSpan = document.getElementById(`icon-${currentSort.column}`);
-  if (activeIconSpan) {
-    activeIconSpan.innerHTML = currentSort.order === "asc" ? ICON_ASC : ICON_DESC;
-    activeIconSpan.classList.add("active");
-  }
-  const activeMobileBtn = document.getElementById(`mobileSortBtn-${currentSort.column}`);
-  if (activeMobileBtn) activeMobileBtn.classList.add("active");
-  const activeMobileIcon = document.getElementById(`mobile-icon-${currentSort.column}`);
-  if (activeMobileIcon) activeMobileIcon.innerHTML = currentSort.order === "asc" ? ICON_ASC : ICON_DESC;
+  // Desktop table headers + mobile sort bar: one active member column, one active skill column
+  updateSortIcons(["rank", "name"], currentSort);
+  updateSortIcons(SKILL_SORT_COLUMNS, currentSkillSort);
 
   renderTable();
 }
@@ -736,6 +783,12 @@ socket.on("preferences-data", (prefs) => {
   const role = document.body.getAttribute("data-user-role");
 
   if (prefs.sortSkills) currentSort = prefs.sortSkills;
+  if (typeof prefs.dashboardSkillSort === "string") {
+    const [col, dir] = prefs.dashboardSkillSort.split(":");
+    if (SKILL_SORT_COLUMNS.includes(col) && (dir === "asc" || dir === "desc")) {
+      currentSkillSort = { column: col, order: dir };
+    }
+  }
   fetchData(false);
 });
 
@@ -880,22 +933,31 @@ function buildSkillHtml(skillObj, memberId) {
   return html;
 }
 
+// Parse a skill's due date: "D/M/YYYY" or "D-M-YY" (OI dashboard), ISO "YYYY-MM-DD"
+// (PDF report), or text containing "expired". Returns a local-midnight Date,
+// the string "expired", or null when unreadable.
+function parseDueDate(dateStr) {
+  if (!dateStr) return null;
+  if (String(dateStr).toLowerCase().includes("expired")) return "expired";
+  const dmy = String(dateStr).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (dmy) {
+    const year = parseInt(dmy[3]) < 100 ? parseInt(dmy[3]) + 2000 : parseInt(dmy[3]);
+    const d = new Date(year, parseInt(dmy[2]) - 1, parseInt(dmy[1]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const iso = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return new Date(parseInt(iso[1]), parseInt(iso[2]) - 1, parseInt(iso[3]));
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function isDateInPast(dateStr) {
-  if (!dateStr) return false;
-  if (dateStr.toLowerCase().includes("expired")) return true;
+  const d = parseDueDate(dateStr);
+  if (d === "expired") return true;
+  if (!d) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const dmy = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-  if (dmy) {
-    const d = new Date(
-      parseInt(dmy[3]) < 100 ? parseInt(dmy[3]) + 2000 : parseInt(dmy[3]),
-      parseInt(dmy[2]) - 1,
-      parseInt(dmy[1]),
-    );
-    return !isNaN(d.getTime()) && d < today;
-  }
-  const d = new Date(dateStr);
-  return !isNaN(d.getTime()) && d < today;
+  return d < today;
 }
 
 window.resetCheckboxesToDefaults = function () {

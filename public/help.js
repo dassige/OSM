@@ -22,6 +22,7 @@ const helpContent = {
             <ul>
                 <li><span style="color:#dc3545; font-weight:bold;">Red Date:</span> The skill has already expired.</li>
                 <li><strong>Bold Skill Name:</strong> Marked as 'Critical' in <em>Manage Skills</em>.</li>
+                <li><strong>Sorting:</strong> <em>Rank</em> and <em>Name</em> order the members. <em>Expiring Skill</em> and <em>Expiring Date</em> order the skills <strong>within each member</strong> — members stay where they are. Date sorting uses the actual expiry date (Expired first), even when only the month is shown. Both choices are remembered.</li>
                 <li><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" style="color: #007bff; vertical-align:middle;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg> <strong>Blue Document:</strong> An online form (Internal or External) is linked to this skill.</li>
             </ul>
 

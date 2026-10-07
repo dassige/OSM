@@ -237,6 +237,12 @@
                     <button class="sort-bar-btn" id="mobileSortBtn-name" onclick="handleSort('name')" title="Sort by member name">
                         Name <span id="mobile-icon-name"></span>
                     </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-skill" onclick="handleSkillSort('skill')" title="Sort each member's skills by name">
+                        Skill <span id="mobile-icon-skill"></span>
+                    </button>
+                    <button class="sort-bar-btn" id="mobileSortBtn-dueDate" onclick="handleSkillSort('dueDate')" title="Sort each member's skills by expiry date">
+                        Date <span id="mobile-icon-dueDate"></span>
+                    </button>
                 </div>
             </div>
 
@@ -269,8 +275,14 @@
                             <div class="th-content">Name <span id="icon-name" class="sort-icon"></span></div>
                         </th>
 
-                        <th style="width: 35%">Expiring Skill</th>
-                        <th style="width: 15%">Expiring Date</th>
+                        <th style="width: 35%" class="sortable" onclick="handleSkillSort('skill')"
+                            title="Sort each member's skills by name (members stay in place)">
+                            <div class="th-content">Expiring Skill <span id="icon-skill" class="sort-icon"></span></div>
+                        </th>
+                        <th style="width: 15%" class="sortable" onclick="handleSkillSort('dueDate')"
+                            title="Sort each member's skills by expiry date (members stay in place)">
+                            <div class="th-content">Expiring Date <span id="icon-dueDate" class="sort-icon"></span></div>
+                        </th>
                         <th style="width: 25%">
                             <div class="notification-th-header">
                                 <span>Notification</span>
