@@ -2,8 +2,14 @@
 const extractionEngine = require('./extraction-engine');
 const db = require('./db');
 const config = require('../config');
-const { isExpiring, isExpired } = require('./member-manager');
+const { isExpiring, isExpired, getUnmatchedNames } = require('./member-manager');
 const { getRankPriority, formatMemberName } = require('./rank-config');
+
+// How far ahead the active extraction source can see (null = complete data).
+// The six-month PDF report only lists skills due within its window.
+function getSourceWindowMonths() {
+    return extractionEngine.getActivePlugin().coverage?.windowMonths || null;
+}
 
 function getGeneratedDate() {
     return new Date().toLocaleDateString(config.locale || 'en-NZ', {
@@ -60,17 +66,18 @@ async function getFreshData(userId, proxyUrl, daysOverride) {
                     sortName: getSortName(member),
                     skill: s.skill,
                     dueDate: s.dueDate,
+                    dueLabel: s.dueLabel || null,
                     isCritical: !!skillConfig.critical_skill
                 });
             }
         });
     });
 
-    return { reportData, daysThreshold };
+    return { reportData, daysThreshold, unmatchedNames: getUnmatchedNames(scrapeData).length };
 }
 
 async function getGroupedByMember(userId, proxyUrl, days) {
-    const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl, days);
+    const { reportData, daysThreshold, unmatchedNames } = await getFreshData(userId, proxyUrl, days);
     
     const grouped = {};
     reportData.forEach(item => {
@@ -93,12 +100,12 @@ async function getGroupedByMember(userId, proxyUrl, days) {
 
     return {
         items: sortedMembers,
-        meta: { filterDays: daysThreshold, generated: getGeneratedDate() }
+        meta: { filterDays: daysThreshold, generated: getGeneratedDate(), sourceWindowMonths: getSourceWindowMonths(), unmatchedNames }
     };
 }
 
 async function getGroupedBySkill(userId, proxyUrl, days) {
-    const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl, days);
+    const { reportData, daysThreshold, unmatchedNames } = await getFreshData(userId, proxyUrl, days);
 
     const grouped = {};
     reportData.forEach(item => {
@@ -120,7 +127,7 @@ async function getGroupedBySkill(userId, proxyUrl, days) {
 
     return {
         items: sortedSkills,
-        meta: { filterDays: daysThreshold, generated: getGeneratedDate() }
+        meta: { filterDays: daysThreshold, generated: getGeneratedDate(), sourceWindowMonths: getSourceWindowMonths(), unmatchedNames }
     };
 }
 
@@ -139,6 +146,7 @@ async function getPlannedSessions(userId, proxyUrl) {
             .map(item => ({
                 name: item.member,
                 dueDate: item.dueDate,
+                dueLabel: item.dueLabel,
                 isCritical: item.isCritical
             }))
             .sort((a, b) => a.name.localeCompare(b.name));
@@ -156,7 +164,7 @@ async function getPlannedSessions(userId, proxyUrl) {
 }
 
 async function getCriticalOverdue(userId, proxyUrl, days) {
-    const { reportData, daysThreshold } = await getFreshData(userId, proxyUrl, days);
+    const { reportData, daysThreshold, unmatchedNames } = await getFreshData(userId, proxyUrl, days);
     
     // Strict Filter: Critical AND Expired (date < today)
     const criticalItems = reportData.filter(item => item.isCritical && isExpired(item.dueDate));
@@ -169,7 +177,7 @@ async function getCriticalOverdue(userId, proxyUrl, days) {
 
     return {
         items: Object.values(grouped).sort((a, b) => a.name.localeCompare(b.name)),
-        meta: { generated: getGeneratedDate(), filterDays: daysThreshold }
+        meta: { generated: getGeneratedDate(), filterDays: daysThreshold, unmatchedNames }
     };
 }
 
@@ -194,17 +202,21 @@ async function getComplianceMatrix(userId, proxyUrl, days) {
     });
 
     const trackedSkills = dbSkills.filter(s => s.enabled).sort((a, b) => a.name.localeCompare(b.name));
+    // A window-limited source (six-month PDF report) only lists skills due within the
+    // window, so an absent skill is "not due within the window" rather than missing.
+    const sourceWindowMonths = getSourceWindowMonths();
+    const absentStatus = sourceWindowMonths ? 'not-listed' : 'missing';
 
     const matrix = activeMembers.map(member => {
         const memberRawSkills = scrapeData.filter(s => s.name === member.name);
         const skillStatuses = trackedSkills.map(skill => {
             const found = memberRawSkills.find(s => s.skill === skill.name);
-            let status = 'missing'; 
-            let date = '-';
+            let status = absentStatus;
+            let date = sourceWindowMonths ? `Not due within ${sourceWindowMonths} months` : '-';
             if (found) {
-                date = found.dueDate;
-                if (isExpired(date)) status = 'expired';
-                else if (isExpiring(date, daysThreshold)) status = 'expiring'; 
+                date = found.dueLabel || found.dueDate;
+                if (isExpired(found.dueDate)) status = 'expired';
+                else if (isExpiring(found.dueDate, daysThreshold)) status = 'expiring';
                 else status = 'ok';
             }
             return { id: skill.id, name: skill.name, status, date };
@@ -215,7 +227,7 @@ async function getComplianceMatrix(userId, proxyUrl, days) {
     return {
         headers: trackedSkills.map(s => s.name),
         rows: matrix,
-        meta: { generated: getGeneratedDate(), threshold: daysThreshold }
+        meta: { generated: getGeneratedDate(), threshold: daysThreshold, sourceWindowMonths, unmatchedNames: getUnmatchedNames(scrapeData).length }
     };
 }
 

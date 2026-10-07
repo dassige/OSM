@@ -8,7 +8,7 @@ const config = require("./config.js");
 const db = require("./services/db");
 const extractionEngine = require("./services/extraction-engine");
 const { formatMemberName } = require("./services/rank-config");
-const { processMemberSkills } = require("./services/member-manager");
+const { processMemberSkills, getUnmatchedNames } = require("./services/member-manager");
 const whatsappService = require("./services/whatsapp-service");
 const formsService = require("./services/forms-service");
 const { sendNotification } = require("./services/mailer");
@@ -44,6 +44,7 @@ const quizRoutes          = require("./routes/api/quiz");
 const liveQuizRoutes      = require("./routes/api/live-quiz");
 const bookingRoutes       = require("./routes/api/bookings");
 const liveBookingRoutes   = require("./routes/api/live-bookings");
+const extractionRoutes    = require("./routes/api/extraction");
 const authRoutes = require("./routes/auth");
 const viewRoutes = require("./routes/views");
 
@@ -206,6 +207,7 @@ app.use("/api/quiz", quizRoutes);
 app.use("/api/live-quiz", liveQuizRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/live-bookings", liveBookingRoutes);
+app.use("/api/extraction", extractionRoutes);
 app.use("/api/system/remote-backup", remoteBackupRoutes);
 
 
@@ -306,6 +308,7 @@ io.on("connection", (socket) => {
           skillId: s.skillId,
           skill: s.skill,
           dueDate: s.dueDate,
+          dueLabel: s.dueLabel || null,
           hasUrl: !!s.url,
           isCritical: !!s.isCritical,
           liveFormStatus: s.liveFormStatus,
@@ -314,6 +317,15 @@ io.on("connection", (socket) => {
       }));
 
       socket.emit("expiring-skills-data", results);
+      // About the skills data source (pdf-report plugin; both fields empty for the OI dashboard):
+      // - unmatchedNames: report names not matched to a member — their skills are missing from
+      //   the list above and from notifications; admins fix them on the Skills Data Source page
+      // - reportCreatedDate: the "Created:" date printed in the PDF report footer
+      socket.emit("extraction-info", {
+        unmatchedNames: getUnmatchedNames(rawData).length,
+        canFix: userLevel >= ROLES.admin,
+        reportCreatedDate: rawData.find((r) => r.reportCreatedDate)?.reportCreatedDate || null,
+      });
     } catch (e) {
       logger(`Error: ${e.message}`);
       socket.emit("expiring-skills-error", e.message);
@@ -431,7 +443,7 @@ async function handleQueueProcessing(socket, targets, days, logger) {
               const tpl = s.url ? waTemplate.row || "- {{skill}} {{url}}{{kb-link}}" : waTemplate.rowNoUrl || "- {{skill}}{{kb-link}}";
               // Plain-text equivalent of mailer.js's {{kb-link}} — empty when no KB document is linked.
               const kbText = s.kbLink ? ` (Refresher: ${s.kbLink})` : "";
-              row = tpl.replace("{{skill}}", s.skill).replace("{{date}}", s.dueDate).replace("{{url}}", s.url || "").replace("{{critical}}", s.isCritical ? "!" : "").replace("{{kb-link}}", kbText);
+              row = tpl.replace("{{skill}}", s.skill).replace("{{date}}", s.dueLabel || s.dueDate).replace("{{url}}", s.url || "").replace("{{critical}}", s.isCritical ? "!" : "").replace("{{kb-link}}", kbText);
             }
             msg += `\n${row}`;
           });

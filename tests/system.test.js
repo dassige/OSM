@@ -28,6 +28,8 @@ describe('System API Endpoints', () => {
             expect(res.body).toHaveProperty('appMode');
             expect(res.body).toHaveProperty('scheduledBackupSupported');
             expect(res.body).toHaveProperty('deploymentType');
+            // null for complete sources (html-scraper), 6 for the six-month PDF report
+            expect(res.body).toHaveProperty('extractionWindowMonths');
         });
     });
 

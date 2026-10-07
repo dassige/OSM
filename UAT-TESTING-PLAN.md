@@ -60,6 +60,10 @@
 | T02-07 | Send WhatsApp notification | With members selected (those with a WhatsApp number configured), click `[Send WhatsApp]`. | Messages are queued via the WhatsApp service. A success toast confirms dispatch. If WhatsApp is not connected, a clear error is shown. |
 | T02-08 | Sort table columns | Click a column header (e.g., member name). | Table rows re-sort by that column. Clicking again reverses the sort order. |
 | T02-09 | Live form status badges | Observe a member who has an outstanding live form. | A badge or icon in that skill's cell indicates a form is pending review. |
+| T02-10 | Month-only due dates (six-month skills report) | On a server using the six-month PDF skills report, open the Dashboard and look at the Due Date column (and the mobile cards). | Due dates show the month only, e.g. "Nov 2026"; lapsed skills show "Lapsed" and are highlighted as expired. Hovering a date explains that the report gives the month only. |
+| T02-11 | Days to Expiry beyond the report window | On the same server set **Days to Expiry** to 200. Then set it back to 30. | At 200 a note appears under the controls: "The skills report only covers the next 6 months — skills due later than that are not shown." At 30 the note disappears. On a server using the OI dashboard the note never appears. |
+| T02-12 | Unmatched report names banner | On a server using the six-month PDF skills report, leave at least one report name unmatched (see T31-26). Open the Dashboard as an admin, then as a simple user. Then match the name on **Skills Data Source** and reload the Dashboard. | A yellow banner reads "N names in the skills report aren't matched to a member. Their expiring skills are not shown here and they won't be notified." Admins see a link "Match them on Skills Data Source" that opens that page; simple users are asked to contact an administrator instead. Once every name is matched the banner disappears. |
+| T02-13 | Skills report date on the dashboard | On a server using the six-month PDF skills report, open the Dashboard and click `[Reload Expiring Skills]`. Then upload a newer report on **Skills Data Source** and reload the Dashboard. Finally check a server using the OI dashboard. | On the right of the "Expiring Skills List" title, in line with it, the dashboard shows "Report created: 5 Oct 2026" — the Created date printed in the PDF footer (hover explains it). After the newer upload it shows the new report's date. On a phone it wraps under the title. On a server using the OI dashboard nothing is shown there. |
 
 ---
 
@@ -252,6 +256,9 @@
 | T11-12 | Report: Survey Participation | Select "Survey Participation Overview" → click `[Run Report]`. | Table appears showing all published survey campaigns with Name, Published date, Sent, Responded, Response Rate %, Type, and Status columns. |
 | T11-13 | Report: Survey Response Log | Select "Survey Response Log" → optionally change Lookback Period → click `[Run Report]`. | Paginated log shows survey responses for the period. Anonymous survey respondents display as *Anonymous*. |
 | T11-14 | Report: Quiz Performance | Play at least one Score-based and one Timed quiz to completion (mixing some correct and some wrong answers), then select "Quiz Performance" → optionally change Lookback Period → click `[Run Report]`. | A table lists each game played in the period with its type (Score/Timed), sessions run, invited/submitted/pending counts, average score, and best/worst score. Below it, a "Most Missed Questions" section lists the lowest-scoring questions per game with their correct-answer percentage. A game with no activity in the period is not listed. |
+| T11-15 | Compliance Matrix with the six-month skills report | On a server using the six-month PDF skills report, run the **Compliance Matrix**. Hover a few cells. | Skills not in the report show a pale green **6m+** cell (hover: "Not due within 6 months") instead of the grey Missing dot. DUE/EXP cells show the month on hover (e.g. "Nov 2026" or "Lapsed"). The key below each page explains 6m+. |
+| T11-16 | Expiring skills reports with the six-month skills report | On the same server run **Grouped by Member** and **Grouped by Skill** with Days to Expiry 30, then with 200. | Due dates show the month ("Nov 2026", "Lapsed"). At 200 days the report header shows "Note: the skills report only covers the next 6 months — skills due later are not shown."; at 30 days there is no note. The note survives Print / PDF export. |
+| T11-17 | Unmatched report names in reports | With at least one report name unmatched, run **Grouped by Member**, **Grouped by Skill**, **Critical Skills Overdue** and **Compliance Matrix**. | Each report header shows a red note that N names in the skills report are not matched to a member and are not included (Critical Skills Overdue adds that their skills may also be overdue — shown even when the report otherwise says no critical skills are overdue). With every name matched, no note appears. |
 
 ---
 
@@ -265,6 +272,7 @@
 | T12-02 | Verify compliance chart | Observe the doughnut chart sections. | Segments represent Current, Expiring Soon, Overdue, Unknown proportions matching the member data. |
 | T12-03 | Skill priority breakdown | Observe the priority breakdown chart or table. | Shows distribution of members by urgency level across all skills. |
 | T12-04 | Export PDF snapshot | Click `[Export PDF]`. | A PDF snapshot of the statistics page is downloaded. |
+| T12-05 | Unmatched report names in statistics | With at least one skills-report name unmatched, open **Overall Compliance Overview**. | Under the threshold line a red note says N names in the skills report are not matched to a member and their skills are not counted in the charts. With every name matched, no note appears. |
 
 ---
 
@@ -285,6 +293,7 @@
 | T13-09 | Booking Invitations template | Open the **Booking Invitations** tab → in **Email Template** set the Subject to `Health check: {{eventName}}`, drag `{{name}}`, `{{dates}}`, `{{location}}` and `{{link}}` chips into both the **General link** and **Personal link** bodies → switch to **WhatsApp Template** and edit both bodies → click `[Save All Templates]` → publish one personal and one general booking event to yourself with Email (and WhatsApp) ticked. | Toast confirms the save and the edits are still there after a reload. The personal event's email uses the Personal-link body with your own personal link; the general event's email uses the General-link body with the shared link. All placeholders are replaced with real values; the WhatsApp messages match the WhatsApp bodies. |
 | T13-10 | Booking Invitations fall back to defaults | In the **Booking Invitations** tab clear the Subject and all four bodies → `[Save All Templates]` → publish a booking event to yourself with Email ticked. | The invitation still arrives, using the built-in wording ("Book your slot: …" with the event name, dates, location and booking link) — blank fields never produce an empty email. |
 | T13-11 | Booking Invitations export / import | In the **Booking Invitations** tab click `[Export]` → change the subject → click `[Import]` and choose the exported file → `[Save All Templates]`. Then try importing a file exported from the **Form Accepted** tab. | The exported JSON restores the original subject and bodies. Importing a file that is not a booking template shows a "not a booking invitation template" warning and changes nothing. |
+| T13-12 | Notification dates with the six-month skills report | On a server using the six-month PDF skills report, send a notification (email and, if configured, WhatsApp) to a member with an expiring and a lapsed skill. | Where the template shows `{{date}}`, the email and WhatsApp message read e.g. "Nov 2026" and "Lapsed" — not a full date. |
 
 ---
 
@@ -932,6 +941,54 @@ Booking Events let members pick an appointment slot — for example the annual n
 
 ---
 
+## T31 — Skills Data Source
+
+**Page:** `data-source.html` (**Operations → Maintenance → Skills Data Source**) — admin and superadmin only
+
+Skill expiry data can come from the **Skills Expiring in the Next Six Months** PDF report. Each accepted report is kept in a history; the newest one is the current data. Reports arrive by upload on this page, by upload through the API (e.g. an n8n workflow that receives the report email), or automatically from Google Cloud Storage or a local file, depending on the server's configuration.
+
+| ID | Action | Steps | Expected Result |
+|----|--------|-------|----------------|
+| T31-01 | Page load | Log in as an admin → navigate to **Operations → Maintenance → Skills Data Source**. | The page shows three sections: **Current Report**, **Upload a Report** and **Report History**. With no report yet, Current Report says "No report has been imported yet" and the history says "No reports imported yet". |
+| T31-02 | Access restricted to admins | Log in as a **simple** user → open `/data-source.html` directly. | You are redirected to the dashboard. The menu item is not shown to simple users. |
+| T31-03 | Note when the PDF plugin is not active | On a server whose extraction plugin is not the PDF report plugin, open the page. | A blue note says which plugin is active and that uploaded reports are kept but only used when the PDF report plugin is active. |
+| T31-04 | Upload a report | Click `[Choose PDF]` → pick the current six-month report PDF → click `[Upload Report]`. | ✅ Toast "Report from <date> imported: N entries, M members". Current Report shows the report date with "(N days ago)", "Imported … by <your name> — Upload, <file name>", the counts of entries, members and skills, and "Parser warnings: None". The history has one row with a green **Current** badge. Event log records **Skills Report Uploaded** (category System). |
+| T31-05 | Drag and drop | Drag the PDF file from your desktop onto the dashed upload area. | The area highlights while dragging; after dropping, the file name appears next to `[Choose PDF]` and `[Upload Report]` becomes enabled. |
+| T31-06 | Upload the same file again | Upload exactly the same PDF a second time. | Info toast "This report is identical to the current one — nothing changed." No new history row and no new event log entry. |
+| T31-07 | Not a PDF | Rename a text file to `test.pdf` and upload it. | Error toast "File is not a PDF (missing %PDF- header)." The current report and history are unchanged. |
+| T31-08 | A PDF that is not the report | Upload any other PDF (e.g. a Knowledge Base document). | Error toast starting "Not a readable skills report". The current report and history are unchanged. |
+| T31-09 | Older report needs confirmation | With a current report in place, upload an older six-month report. → Click **Cancel**. → Upload it again and click **Confirm**. | A confirmation dialog explains the report was created before the current one. Cancel changes nothing. Confirm imports it and it becomes the current report (Current badge moves to it). |
+| T31-10 | File too large | Upload a PDF larger than the size shown under the upload area ("PDF only, up to N MB"). | Error toast "PDF file is larger than the N MB limit." Nothing changes. |
+| T31-11 | Out-of-date warning | Make the current report one whose date is more than the configured number of days ago (default 35) — e.g. upload an old report and confirm. | Current Report shows a yellow **Out of date** badge next to the report date; hovering explains a newer report is probably available. |
+| T31-12 | Download a report | In Report History click `[Download]` on any row. | The original PDF downloads and opens normally. |
+| T31-13 | Delete an older report | Click `[Delete]` on a row that is **not** current → confirm. | ✅ Toast "Report deleted". The row disappears; the current report is unchanged. Event log records **Skills Report Deleted**. |
+| T31-14 | Delete the current report | Click `[Delete]` on the row with the **Current** badge → confirm. | The confirmation warns that the previous report will become the current data. After deleting, the previous report has the **Current** badge and Current Report shows its details. |
+| T31-15 | Automatic pickup from Google Cloud Storage (UAT/PROD) | On a server configured for Cloud Storage pickup, replace the report object in the bucket with a newer report → click `[Check Source Now]`. | Toast "Imported the report created on <date>." **Last check** shows a green **Imported** badge with the time. The new report is current and was imported by your name with source "Google Cloud Storage". Event log records **Skills Report Imported**. Without clicking the button, the same happens automatically (imported by System) the next time skill data refreshes. |
+| T31-16 | No new report at the source | Click `[Check Source Now]` again without changing the bucket object (or local file). | Info toast "No new report since the last import." Last check shows **No change**. |
+| T31-17 | Bad file at the source | Put a non-report PDF in place of the report object (or local file) → click `[Check Source Now]`. | Error toast with the reason; Last check shows a red **Rejected** badge with the reason. The current report is unchanged. Event log records **Skills Report Rejected**. Restore the real report afterwards. |
+| T31-18 | Upload-only configuration | On a server configured for upload-only (no automatic pickup), open the page. | `[Check Source Now]` is not shown; **Automatic pickup** says "Off — reports arrive by upload". |
+| T31-19 | Upload through the API (automation) | From a terminal, run `curl -H "X-API-Key: <admin key>" -F "file=@OSM-Status-6-months.pdf" <server>/api/extraction/upload` with a newer report. | The JSON response contains `"status":"imported"` and the report date. Refreshing the page shows the report as current, imported by the API key's name. Sending the same file again returns `"status":"unchanged"`. |
+| T31-20 | History table sorting and paging | With 3+ reports, click the **Report Date**, **Imported** and **Entries** headers; change **Rows per page** to 10; reload the page. | Rows re-sort with ▲/▼ indicators; after reloading, the sort and rows per page are remembered. |
+| T31-21 | Mobile layout | At 375 px width open the page. | The toolbar uses icon buttons; Current Report details stack one per line; the history shows as cards (report date title, Current badge, Download and Delete buttons) with a collapsible **Sort by** section and the pagination bar; no sideways scrolling. |
+| T31-22 | Demo mode guard | On a demo instance open **Skills Data Source**. | `[Choose PDF]`, `[Upload Report]`, `[Check Source Now]`, every `[Delete]` button and every name-matching `[Match]` / `[Change]` / `[Unlink]` button are disabled with the tooltip "Disabled in demo mode". |
+| T31-23 | Member name matching overview | With a current report in place, look at the **Member Name Matching** section. | Every member name in the report is listed once with its number of skill entries and a status: **Matched automatically**, **Matched by admin**, **Will match automatically**, **Needs review** or **Not found**. The summary line reads "N names in the current report — M matched" and, when some names need attention, a red badge with the count. Names needing attention are listed first. |
+| T31-24 | Automatic matching | Make sure a member exists as e.g. "QFF Skywalker, L" (first name "A") and the report contains "Luke Skywalker". Open the **Dashboard** (which refreshes the skill data), then return to **Skills Data Source**. | "Luke Skywalker" shows **Matched automatically** with the member "QFF Skywalker, L (Luke)". In **Manage Members** the member's first name is now "Luke". Event log records **Member Name Matched Automatically** (actor System). |
+| T31-25 | Name that needs review | Create two members with the same surname and initial (e.g. "FF Fett, B" and "QFF Fett, B") for a name in the report. Refresh the page → click `[Match]` on that name → choose the right member in **Possible matches** → `[Save Match]`. | Before matching, the name shows **Needs review** and "Possible: FF Fett, B; QFF Fett, B". After saving: toast "<name> matched — first name saved as Boba.", status **Matched by admin**. Event log records **Member Name Matched**. |
+| T31-26 | Name not found | For a report name with no matching member, click `[Match]` → pick a member from **All members** → `[Save Match]`. | The status changes to **Matched by admin** and the summary's attention count drops by one. |
+| T31-27 | Full first name is never overwritten | Give a member a full first name (e.g. "Robert") in **Manage Members**, then match a report name with a different first name (e.g. "Bob Smith") to them. | The toast does not mention a first name. The member's first name stays "Robert". |
+| T31-28 | Change a match | On a **Matched automatically** name click `[Change]` → choose a different member → `[Save Match]`. | The name now shows **Matched by admin** with the new member. |
+| T31-29 | Unlink a match | On a **Matched by admin** name click `[Unlink]` → confirm. | ✅ Toast "Match removed". The name goes back to automatic matching (**Will match automatically**, **Needs review** or **Not found**). Event log records **Member Name Match Removed**. `[Unlink]` is not offered on automatic matches. |
+| T31-30 | Matched names drive the skill data | With the PDF report plugin active, open the **Dashboard** and view expiring skills for a matched member; then for a name still **Not found**. | The matched member's expiring skills appear with due dates from the report. Nobody receives the skills of the unmatched name. |
+| T31-31 | Matches are remembered for the next report | Upload a newer report containing the same people. | Names matched before keep their match (automatic or by admin); only new names in the new report need attention. |
+| T31-32 | Mobile layout (name matching) | At 375 px width open the page. | Each name is a card with its status badge, member, entries and Match/Change/Unlink buttons; the match window fits the screen. |
+| T31-33 | Reports survive a restart or redeploy | Note the current report date and the number of history rows. Restart the server (TST: restart the container; UAT: deploy a new revision). Open **Skills Data Source** and the Dashboard again. | The same current report, history and name matches are shown, and the Dashboard shows the same skills and "Report created" date — nothing has to be uploaded again. |
+| T31-34 | Backup and restore keep reports and matches | Take a **Database only** backup (Backup & Restore). Then delete an older report and unlink a manual name match. Restore the backup. | After the restore the deleted report is back in the history and the name match is back as **Matched by admin**. |
+| T31-35 | Damaged or password-protected PDF | Upload a PDF that has been cut short (e.g. the first half of the file only), then a password-protected PDF. | Each is refused with an error starting "Not a readable skills report"; the current report, history and dashboard are unchanged. |
+| T31-36 | Switching back to the OI dashboard plugin | On TST set `EXTRACTION_PLUGIN=html-scraper` and restart. Open the Dashboard, **Skills Data Source**, the **Compliance Matrix** and **Manage Members**. Then set `EXTRACTION_PLUGIN=pdf-report` again and restart. | With html-scraper: no "Report created" label and no unmatched banner, dates are exact, the matrix shows "·" for missing skills, Skills Data Source shows the blue note that the PDF plugin is not active, and members keep their full first names. Back on pdf-report, everything from T31 works again with the same history and matches. |
+| T31-37 | Read-only API smoke checks | Run the Newman smoke collection against the server (`npm run test:api` with the environment's base URL and an admin API key). | The **Skills Data Source** requests (status, report list, member name matches) all pass: status 200, response under 5 s, valid JSON. |
+
+---
+
 ## Appendix A — Test Data Setup Checklist
 
 Before starting the UAT run, ensure the following data is in place on the UAT instance:
@@ -957,6 +1014,10 @@ Before starting the UAT run, ensure the following data is in place on the UAT in
 - [ ] At least **1 booking template** with two future days (one with a lunch break) and a required "Mobile phone" question, published once with personal links and once with a general link, with a few bookings already made (for T30-B to T30-D).
 - [ ] A second browser profile or private window, and a phone (or browser at 375 px), for testing the public booking page as a member (T30-D).
 - [ ] At least **1 booking event** published with **Bookings per member** set to 2 (for T30-50 to T30-53).
+- [ ] Two **Skills Expiring in the Next Six Months** PDF reports — the current one and an older one — plus a text file renamed to `.pdf`, an unrelated PDF and a PDF larger than the upload limit (for T31). Keep the reports out of shared folders: they contain confidential member data.
+- [ ] For T31-15 to T31-17: write access to the report object in the server's Cloud Storage bucket (UAT) or to the local report file. For T31-19: an admin-role API key.
+- [ ] Where the real report must not be used (e.g. shared screens, DEMO-like data), generate fictional reports with `npm run sample:skills-report -- --created YYYY-MM-DD` — they match the demo database's Star Wars members. For T31-35, a copy of a report cut to half its size and a password-protected PDF.
+- [ ] For T31-23 to T31-31: members named in the OI dashboard format (e.g. "QFF Skywalker, L") for most people in the report; for one name two members with the same surname and initial, one name with no member at all, and one member with a full first name already set.
 
 ---
 
@@ -966,7 +1027,7 @@ After completing the full UAT run, verify the Event Log (`event-log.html`) conta
 
 | Category | Expected entries |
 |----------|-----------------|
-| `Member` | Created, Updated, Deleted, Bulk Deleted |
+| `Member` | Created, Updated, Deleted, Bulk Deleted, Member Name Matched Automatically (actor `System`), Member Name Matched, Member Name Match Removed |
 | `Skill` | Created, Updated, Deleted |
 | `Forms` | Created, Updated, Deleted, Imported |
 | `Live Forms` | Accepted, Rejected, Archived, Deleted, Purged |
@@ -975,7 +1036,7 @@ After completing the full UAT run, verify the Event Log (`event-log.html`) conta
 | `User Mgmt` | User Created, Updated, Deleted, Password Reset |
 | `Security` | Account Unblocked (if T14-08 was run) |
 | `API Keys` | Key Created, Key Toggled, Key Deleted, API Call Log Purged |
-| `System` | Database Restored (if T23-05 or T23-06 was run), Events Pruned |
+| `System` | Database Restored (if T23-05 or T23-06 was run), Events Pruned, Skills Report Uploaded, Skills Report Imported, Skills Report Rejected, Skills Report Deleted |
 | `WhatsApp` | Client Connected, Client Disconnected |
 | `Knowledge Base` | Category Created, Category Updated, Category Deleted, Document Uploaded, Document Updated, Document Toggled, Document Deleted |
 | `Quiz` | Quiz Game Created, Quiz Game Updated, Quiz Game Toggled, Quiz Game Deleted, Quiz Session Started, Quiz Session Archived, Quiz Session Unarchived, Quiz Session Deleted, Quiz Submitted & Scored, Quiz Team Session Created, Quiz Team Session Archived, Quiz Team Session Unarchived, Quiz Team Session Deleted, Quiz Team Submitted & Scored |

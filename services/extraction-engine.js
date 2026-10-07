@@ -9,6 +9,8 @@
 //
 // Extracted record shape (contract between engine and all consumers):
 //   { name, rank, lastName, firstName, memberOsmId, skill, skillOsmId, skillCategory, dueDate }
+// Plugins may add source-specific fields (pdf-report adds dueMonth, lapsed,
+// withinOneMonth, sourceName, reportCreatedDate); consumers must not require them.
 
 'use strict';
 
@@ -95,11 +97,14 @@ function clearCache() {
 }
 
 /**
- * Return the name and description of the currently loaded plugin.
- * @returns {{ name: string, description: string }}
+ * Return the name, description and coverage of the currently loaded plugin.
+ * coverage is null for sources with complete data; otherwise e.g.
+ * { windowMonths: 6, monthPrecision: true } — only skills due within the window
+ * are known, and dates are month-only (records then carry a display `dueLabel`).
+ * @returns {{ name: string, description: string, coverage: object|null }}
  */
 function getActivePlugin() {
-    return { name: plugin.name, description: plugin.description };
+    return { name: plugin.name, description: plugin.description, coverage: plugin.coverage || null };
 }
 
 module.exports = { extractData, clearCache, getActivePlugin };

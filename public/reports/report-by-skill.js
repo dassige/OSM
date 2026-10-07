@@ -1,6 +1,20 @@
 ﻿(function() {
     window.ReportRegistry = window.ReportRegistry || {};
-    
+
+    // The six-month PDF source cannot list skills due beyond its window.
+    function windowNote(meta) {
+        const months = meta.sourceWindowMonths;
+        if (!months || meta.filterDays <= Math.round(months * 30.4)) return '';
+        return `<p style="margin:5px 0 0 0; color:#856404;">Note: the skills report only covers the next ${months} months — skills due later are not shown.</p>`;
+    }
+
+    // Report names not matched to a member are left out — say so on the printed report.
+    function unmatchedNote(meta) {
+        const n = meta.unmatchedNames;
+        if (!n) return '';
+        return `<p style="margin:5px 0 0 0; color:#dc3545;">Note: ${n} ${n === 1 ? 'name in the skills report is' : 'names in the skills report are'} not matched to a member and not included.</p>`;
+    }
+
     window.ReportRegistry['by-skill'] = {
         title: "Expiring Skills - Grouped by Skill",
         description: "Lists skills expiring within a specific timeframe. Ordered by Skill Name, Member Rank, then Member Name.",
@@ -19,7 +33,7 @@
                 <h2 style="margin:5px 0 0 0; font-size:18px;">Expiring Skills Report</h2>
                 <p style="margin:5px 0 0 0; color:#666;">
                   Grouped by Skill • Limit: <strong>${meta.filterDays} Days</strong> • Generated: ${meta.generated}
-                </p>
+                </p>${windowNote(meta)}${unmatchedNote(meta)}
               </div>`;
         },
         renderItems: function(skillGroups, dataWrapper, uiConfig) {
@@ -36,7 +50,7 @@
                 skillGroup.members.forEach(item => {
                     const dateObj = new Date(item.dueDate);
                     const tz = (uiConfig && uiConfig.timezone) || undefined;
-                    const formattedDate = isNaN(dateObj) ? item.dueDate : dateObj.toLocaleDateString(locale, { timeZone: tz });
+                    const formattedDate = item.dueLabel || (isNaN(dateObj) ? item.dueDate : dateObj.toLocaleDateString(locale, { timeZone: tz }));
                     html += `<tr><td>${item.member}</td><td>${formattedDate}</td></tr>`;
                 });
                 html += `</tbody></table></div>`;

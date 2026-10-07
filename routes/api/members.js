@@ -115,6 +115,13 @@ router.post("/bulk-delete", hasRole("admin"), async (req, res) => {
   }
 });
 
+// True when the source gives only an initial that agrees with a longer stored first name.
+function keepsFullFirstName(sourceFirst, storedFirst) {
+  const src = (sourceFirst || '').trim().replace(/\.$/, '');
+  const stored = (storedFirst || '').trim();
+  return src.length === 1 && stored.length > 1 && stored[0].toLowerCase() === src.toLowerCase();
+}
+
 router.get("/discover", hasRole("admin"), async (req, res) => {
   try {
     const rawData = await extractionEngine.extractData({ forceRefresh: true, proxyUrl: getActiveProxy() });
@@ -143,14 +150,17 @@ router.get("/discover", hasRole("admin"), async (req, res) => {
       if (!dbRow) {
         newMembers.push({ name: r.name, rank: r.rank || null, lastName: r.lastName || null, firstName: r.firstName || null, memberOsmId: r.memberOsmId });
       } else {
+        // A full first name stored from the PDF report ("Andrew") is kept when the
+        // source only has the matching initial ("A") — never downgrade it.
+        const firstName        = keepsFullFirstName(r.firstName, dbRow.first_name) ? dbRow.first_name : (r.firstName || null);
         const rankChanged      = (r.rank      || null) !== (dbRow.rank       || null);
-        const firstNameChanged = (r.firstName || null) !== (dbRow.first_name || null);
+        const firstNameChanged = (firstName   || null) !== (dbRow.first_name || null);
         const lastNameChanged  = (r.lastName  || null) !== (dbRow.last_name  || null);
         const osmIdChanged     = r.memberOsmId !== (dbRow.member_osm_id || null);
         if (rankChanged || firstNameChanged || lastNameChanged || osmIdChanged) {
           changedMembers.push({
             dbId: dbRow.id, name: r.name,
-            rank: r.rank || null, lastName: r.lastName || null, firstName: r.firstName || null, memberOsmId: r.memberOsmId,
+            rank: r.rank || null, lastName: r.lastName || null, firstName, memberOsmId: r.memberOsmId,
             currentRank: dbRow.rank || null, currentFirstName: dbRow.first_name || null, currentLastName: dbRow.last_name || null,
           });
         }

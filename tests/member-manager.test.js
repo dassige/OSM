@@ -1,4 +1,21 @@
-const { processMemberSkills } = require('../services/member-manager');
+const { processMemberSkills, getUnmatchedNames } = require('../services/member-manager');
+
+describe('Member Manager - getUnmatchedNames', () => {
+    it('lists each unmatched report name once', () => {
+        const records = [
+            { name: 'QFF Skywalker, L', sourceName: 'Luke Skywalker', skill: 'A' },
+            { name: 'Jyn Erso', sourceName: 'Jyn Erso', skill: 'A', unresolved: true },
+            { name: 'Jyn Erso', sourceName: 'Jyn Erso', skill: 'B', unresolved: true },
+            { name: 'Boba Fett', skill: 'A', unresolved: true },
+        ];
+        expect(getUnmatchedNames(records)).toEqual(['Jyn Erso', 'Boba Fett']);
+    });
+
+    it('returns nothing for sources without unmatched records', () => {
+        expect(getUnmatchedNames([{ name: 'FF Doe, J', skill: 'A' }])).toEqual([]);
+        expect(getUnmatchedNames(undefined)).toEqual([]);
+    });
+});
 
 describe('Member Manager - processMemberSkills', () => {
 

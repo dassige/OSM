@@ -42,8 +42,10 @@ function waitForHealth(port, timeoutMs = 20000) {
  * @param {string} opts.dbPath
  * @param {string} opts.username
  * @param {string} opts.password
+ * @param {object} [opts.extraEnv]  Additional environment for this capture (e.g. EXTRACTION_PLUGIN);
+ *                                  applied last, so it can override the defaults below
  */
-async function startCaptureServer({ port, dbPath, username, password }) {
+async function startCaptureServer({ port, dbPath, username, password, extraEnv = {} }) {
   const child = spawn(process.execPath, ['server.js'], {
     cwd: ROOT,
     env: {
@@ -64,6 +66,7 @@ async function startCaptureServer({ port, dbPath, username, password }) {
       SMTP_USER: 'guide-builder@invalid.local',
       SMTP_PASS: 'invalid',
       ENABLE_WHATSAPP: 'false',
+      ...extraEnv,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

@@ -7,7 +7,7 @@ const IS_DEV = self.location.hostname === 'localhost' ||
 
 // Bump whenever a SHELL_ASSETS file changes (sidebar.js, styles.css, sidebar.css, utils.js…):
 // those are served cache-first, so browsers keep the old copy until this changes.
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const SHELL_CACHE   = `opready-shell-${CACHE_VERSION}`;
 const PAGES_CACHE   = `opready-pages-${CACHE_VERSION}`;
 

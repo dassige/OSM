@@ -68,7 +68,7 @@
 
                         session.members.forEach(m => {
                             const dObj = new Date(m.dueDate);
-                            const dStr = isNaN(dObj) ? m.dueDate : dObj.toLocaleDateString(locale, { timeZone: tz });
+                            const dStr = m.dueLabel || (isNaN(dObj) ? m.dueDate : dObj.toLocaleDateString(locale, { timeZone: tz }));
                             const critStyle = m.isCritical ? 'color:#dc3545; font-weight:bold;' : '';
                             
                             html += `

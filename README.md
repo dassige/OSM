@@ -39,6 +39,7 @@ It automates the process of checking a dashboard for expiring skills, persists d
   * **Web-Based Management:**
       * **Members:** Add, edit, delete, and CSV Import/Export members directly in the browser.
       * **Skills:** Configure which skills to track and mark them as Critical.
+      * **Skills Data Source:** Upload the "Skills Expiring in the Next Six Months" PDF (or let it be picked up from Google Cloud Storage / a local file), see how current it is, keep a history of past reports, and match the report's member names to member records.
       * **Smart Form Links:** Define Online Form URLs with dynamic placeholders (e.g., `{{member-name}}`) to pre-fill member details automatically.
       * **Email Templates:** A rich-text editor with drag-and-drop variables to customize notifications for Expiring Skills, Surveys, Booking Invitations, New Users, Password Resets, Forgot Password reset links, and Account Deletions.
   * **Reports Console:**
@@ -218,7 +219,41 @@ Open the `.env` file and configure the following parameters:
 
 #### **Extraction Engine**
 
-  * `EXTRACTION_PLUGIN`: Which ETL plugin to use for fetching member skill expiry data. `html-scraper` (default) scrapes the OI HTML dashboard. Additional plugins can be added as `services/plugins/<name>.plugin.js`.
+  * `EXTRACTION_PLUGIN`: Which ETL plugin to use for fetching member skill expiry data. `html-scraper` (default) scrapes the OI HTML dashboard; `pdf-report` parses the FENZ "Skills Expiring in the Next Six Months" PDF. Additional plugins can be added as `services/plugins/<name>.plugin.js`.
+
+#### **PDF Report Source** *(pdf-report plugin)*
+
+  * `PDF_SOURCE`: Where new reports are picked up automatically — `local` (default: watch `PDF_LOCAL_PATH`), `gcs` (watch `PDF_GCS_OBJECT` in `PDF_GCS_BUCKET`) or `upload` (no automatic pickup). The source is checked whenever the extraction cache expires (`SCRAPING_INTERVAL`) and on **Check Source Now**.
+  * `PDF_LOCAL_PATH`: Report file watched when `PDF_SOURCE=local` (Default: `./storage/extraction/OSM-Status-6-months.pdf`).
+  * `PDF_GCS_BUCKET` / `PDF_GCS_OBJECT`: Bucket (Default: `GCS_BUCKET_NAME`) and object name (Default: `OSM-Status-6-months.pdf`) watched when `PDF_SOURCE=gcs`. Uses the default Google credentials (Cloud Run service account). Overwrite the same object with each new report.
+  * `PDF_MAX_SIZE_MB`: Largest report accepted before parsing (Default: `10`).
+  * `PDF_STALE_WARN_DAYS`: The current report is flagged **Out of date** after this many days (Default: `35`).
+
+  How reports are ingested:
+  * Every accepted report is stored as a snapshot in the database (original PDF + parsed records); the newest one is the data the app uses. The last 24 are kept and listed on **Operations → Maintenance → Skills Data Source**, where admins can also upload, download and delete reports.
+  * A report is accepted only if it parses cleanly. An identical file is ignored; a report created before the current one is refused unless the upload is forced. Imports, uploads, refusals and deletions are recorded in the Event Log.
+  * Reports can be pushed by an automation (e.g. an n8n workflow that receives the report email) with an API key:
+    ```bash
+    curl -H "X-API-Key: osm_..." -F "file=@OSM-Status-6-months.pdf" https://your-server/api/extraction/upload
+    ```
+    The response `status` is `imported` or `unchanged`; `400` means not a readable report, `409` older than the current report (add `-F force=true` to accept it), `413` too large.
+  * **Documents:** `docs/guides/OpReady-PDF-Report-Plugin-Report.pdf` (implementation report and app behaviour) and `docs/guides/OpReady-PDF-Report-Plugin-Test-Plan.pdf` (manual test plan for TST/UAT, built from the UAT plan) are generated with real screenshots by `npm run guide:pdf-report`. They are local only (git-ignored) — run the command to produce them.
+  * **Fictional sample report:** `npm run sample:skills-report -- --created YYYY-MM-DD` writes a report in the FENZ layout with the demo database's Star Wars members — use it for demos, screenshots and testing instead of the confidential real report. See `scripts/scripts.md`.
+
+  How the report maps onto skill expiry data:
+  * The report lists only skills that are **lapsed or expire within six months**, by month only. Due dates are derived from the report's `Created:` date: *Lapsed* → last day of the previous month; the report's own month → last day of that month; next month → the 1st for names highlighted orange (expiring within a month of the report date), otherwise the report's day-of-month; later months → the 1st.
+  * Skill categories come from the report's category bands (`B.A`, `Driving`, `Haz Subs` …).
+  * Members appear by full name without rank ("Luke Skywalker"), so each name is matched to a member record (e.g. "QFF Skywalker, L") before the data is used:
+      * **Automatically** when exactly one member has the same surname and first initial (compound surnames and accents are handled). Members already linked to a different report name, and names that would land on the same member, are left for an admin.
+      * **By an admin** on **Skills Data Source → Member Name Matching**, which lists every name in the current report with its status (matched automatically / by admin, will match automatically, needs review, not found) and lets you match, change or unlink.
+      * Matches are saved and reused for every future report. When a matched member only has an initial as first name, the full first name from the report is stored (display becomes "QFF Skywalker, Luke"); an existing full first name is never overwritten, and an OI dashboard import never downgrades it back to the initial.
+      * Skills of unmatched names are not counted for anyone until they are matched. New members must be added in **Manage Members** first.
+      * So that this is never silent, the dashboard shows a banner ("N names in the skills report aren't matched to a member…", with a link for admins), and the by-member, by-skill, critical-overdue and compliance-matrix reports and the compliance statistics show a note in their header while any name is unmatched.
+  * Skill names are matched to configured skills ignoring differences in spacing, dashes and case; the configured spelling is kept.
+  * The dashboard shows **Report created: <date>** (the `Created:` date from the PDF footer) on the right of the *Expiring Skills List* title, so everyone can see how current the data is.
+  * Where dates are shown to people — dashboard, email and WhatsApp `{{date}}`, reports — the month is shown ("Nov 2026", or "Lapsed") instead of the derived day, which is only used to work out what is expired or expiring.
+  * Because the report only reaches six months ahead, the **Compliance Matrix** shows a skill that is not in the report as **6m+** (not due within six months) rather than Missing, and the dashboard and the expiring-skills reports show a note when the days-to-expiry threshold goes beyond six months.
+  * The PDF is parsed with `pdfjs-dist` with script evaluation disabled; files without a `%PDF-` header or over the size limit are rejected. The report is confidential — keep it out of the repository and do not use this plugin in demo mode.
 
 #### **OSM Dashboard Connection** *(html-scraper plugin)*
 
@@ -645,6 +680,9 @@ API keys **cannot** access HTML pages — those remain session-only. Endpoints r
 | `GET` | `/api/bookings/events` | List published booking events with booked/invited counts |
 | `GET` | `/api/bookings/events/{id}` | Booking event dashboard: stats, slots, roster, bookings |
 | `GET` | `/api/live-bookings/{publicId}` | Public: load a booking page (`?code=` for personal links) |
+| `GET` | `/api/extraction/status` | Skills data source status: current PDF report, staleness, last automatic check |
+| `POST` | `/api/extraction/upload` | Upload a Skills Expiring in the Next Six Months PDF report (multipart `file`) |
+| `GET` | `/api/extraction/name-matches` | How each member name in the current PDF report is matched to a member |
 | `GET` | `/api/health` | Health check (no key required) |
 | `GET` | `/api/ready` | Readiness probe — DB + WhatsApp state (no key required) |
 
@@ -924,11 +962,16 @@ Newman prints a summary table: requests run, assertions passed/failed, average r
     ```bash
     docker compose up -d --build
     ```
+    **After a release that changes dependencies** (`package.json`), add `--renew-anon-volumes`:
+    ```bash
+    docker compose up -d --build --renew-anon-volumes
+    ```
+    `docker-compose.yml` keeps `/app/node_modules` in an anonymous volume, which Docker otherwise carries over to the new container — so the old packages stay in use even after `--build` (symptom: errors such as "Cannot find package 'pdfjs-dist'"). Only that volume is replaced; the database, documents and backups are bind mounts and are not affected.
 2.  **Persistence:** The `docker-compose.yml` mounts the local directory to `/app`, ensuring your `fenz.db` persists restarts.
 3.  **Health check:** The image includes a `HEALTHCHECK` that polls `GET /api/health` every 30 seconds (40-second start period, 3 retries). Docker marks the container `unhealthy` after three consecutive failures — use `docker ps` or `docker inspect` to check status.
 4.  **Graceful shutdown:** Sending `SIGTERM` or `SIGINT` to the process (e.g. `docker stop`) drains Socket.IO connections, disconnects the WhatsApp client if enabled, and closes the database cleanly before the process exits. The default `docker stop` timeout is 10 seconds — sufficient for normal shutdown.
 5.  **Database WAL mode:** The SQLite database runs in WAL (Write-Ahead Logging) mode. This creates two additional files alongside `fenz.db` (`fenz.db-wal` and `fenz.db-shm`) while the server is running. These are normal and should be included in any backup. They are automatically checkpointed and removed on clean shutdown.
-6.  **Multi-stage build:** The `Dockerfile` uses a two-stage build. The `builder` stage installs `python3`, `make`, and `g++` to compile native Node.js addons (e.g. `better-sqlite3`). The `runtime` stage copies only the pre-built `node_modules` and the app source — no build tooling is present in the final image, reducing the attack surface.
+6.  **Multi-stage build:** The `Dockerfile` uses a two-stage build. The `builder` stage installs `python3`, `make`, and `g++` to compile native Node.js addons (e.g. `better-sqlite3`). The `runtime` stage copies only the pre-built `node_modules` and the app source — no build tooling is present in the final image, reducing the attack surface. The builder also removes `@napi-rs/canvas` (an optional page-rendering dependency of `pdfjs-dist`): its prebuilt binary crashes the whole server with an illegal-instruction signal on Raspberry Pi ARM CPUs, and the PDF skills report plugin only reads text.
 7.  **Non-root execution:** The runtime image runs as the built-in `node` user (UID 1000) rather than root. This applies to Cloud Run and any deployment where the image runs without a bind mount — the `chown -R node:node /app` layer in the Dockerfile is effective in that case. The provided `docker-compose.yml` overrides this with `user: "0"` because it bind-mounts the host directory at `/app`, meaning host-file ownership governs write access rather than the image layer. The `USER node` instruction still appears in the Dockerfile so that production image deployments (no bind mount) benefit from non-root execution automatically.
 8.  **Knowledge Base document storage:** Uploaded PDFs are stored at `./storage/knowledgebase` on the host (the directory is gitignored and created automatically on first upload). The `docker-compose.yml` mounts this path explicitly at `/app/storage/knowledgebase` inside the container so files survive container recreation:
 
@@ -1181,7 +1224,9 @@ The WhatsApp service includes built-in fault tolerance:
 ├── migrations/                 # Auto-applied SQL migrations (numeric order)
 │   ├── 001-baseline.sql
 │   ├── ...
-│   └── 027-bookings.sql        # Booking Events tables
+│   ├── 027-bookings.sql        # Booking Events tables
+│   ├── 029-extraction-snapshots.sql  # Skills report snapshots (pdf-report plugin)
+│   └── 030-member-source-aliases.sql # Report name → member matches (pdf-report plugin)
 ├── middleware/
 │   ├── auth.js                 # globalAuthGuard, hasRole(), ROLES, X-API-Key check
 │   └── rate-limiter.js         # apiLimiter, loginLimiter, publicSubmitLimiter, publicBookingLimiter
@@ -1192,6 +1237,7 @@ The WhatsApp service includes built-in fault tolerance:
 │       ├── api-keys.js         # API key CRUD
 │       ├── bookings.js         # Booking templates + live events (admin)
 │       ├── docs.js             # Swagger UI + OpenAPI spec (/api/docs)
+│       ├── extraction.js       # Skills data source — PDF report upload, pickup, history
 │       ├── forms.js            # Form template management
 │       ├── live-forms.js       # Form issue / submit / accept / reject
 │       ├── live-bookings.js    # Public booking page API (/api/live-bookings)
@@ -1213,6 +1259,8 @@ The WhatsApp service includes built-in fault tolerance:
 │   │   ├── backup.js           # generateSqlDump(), restoreFromSqlDump()
 │   │   ├── bookings.js         # Booking templates, events, slots, invites, bookings
 │   │   ├── events.js           # Event log CRUD
+│   │   ├── extraction-snapshots.js  # Stored skills reports (PDF + parsed records)
+│   │   ├── member-source-aliases.js # Report name → member matches
 │   │   ├── members.js          # Member queries
 │   │   ├── preferences.js      # System & user preferences
 │   │   ├── skills.js           # Skill queries
@@ -1221,8 +1269,12 @@ The WhatsApp service includes built-in fault tolerance:
 │   │   └── users.js            # Admin user queries
 │   ├── plugins/
 │   │   ├── html-scraper.plugin.js  # Default plugin — scrapes the OI HTML dashboard
+│   │   ├── pdf-report.plugin.js    # Parses the FENZ six-month expiry PDF report
+│   │   ├── pdf/
+│   │   │   ├── pdf-text.js         # PDF → positioned text runs (pdfjs-dist, eval disabled)
+│   │   │   └── grid-parser.js      # Report grid → member × skill records + due-date rules
 │   │   ├── rest-api.plugin.js      # Stub — future REST API data source
-│   │   └── name-parser.js          # Parses raw OI name strings → rank/lastName/firstName
+│   │   └── name-parser.js          # Parses OI "RANK Last, I" and full "First Last" names
 │   ├── ai-service.js           # AI text-answer grading (Gemini, local Ollama, or TypeSafe Jev)
 │   ├── booking-notifier.js     # Booking invitations/reminders (email + WhatsApp)
 │   ├── booking-service.js      # Booking validation, slot generation, local-time helpers
@@ -1232,7 +1284,9 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── logger.js               # Winston logger
 │   ├── mailer.js               # SMTP notification service
 │   ├── member-manager.js       # Skill expiry enrichment, status mapping, date parsing
+│   ├── member-name-resolver.js # Matches report member/skill names onto member and skill records
 │   ├── migration-runner.js     # Applies migrations/NNN-*.sql in numeric order
+│   ├── pdf-report-service.js   # Skills report ingestion: upload, GCS/local pickup, snapshots
 │   ├── proxy-manager.js        # NZ proxy sourcing and verification for the scraper
 │   ├── rank-config.js          # Rank display names and ordering
 │   ├── report-service.js       # Compliance reports (7 views)
@@ -1247,6 +1301,7 @@ The WhatsApp service includes built-in fault tolerance:
 │   ├── index.html              # Dashboard
 │   ├── members.html            # Member management
 │   ├── skills.html             # Skill management
+│   ├── data-source.html        # Skills Data Source — PDF report upload + history
 │   ├── live-forms.html         # Live form tracking
 │   ├── live-surveys.html       # Live survey tracking
 │   ├── bookings-manage.html    # Booking templates (configure + publish)

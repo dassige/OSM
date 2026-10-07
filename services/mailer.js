@@ -129,16 +129,18 @@ async function sendNotification(
     const kbHtml = skill.kbLink
       ? ` <br>&#128214; Refresher material: <a href="${escapeHtml(skill.kbLink)}">${escapeHtml(skill.kbTitle || "View document")}</a>`
       : "";
+    // Month-only sources (pdf-report) provide a display label ("Nov 2026", "Lapsed")
+    const dueText = skill.dueLabel || skill.dueDate;
     let row = templateToUse
       .replace(/{{skill}}/g, escapeHtml(skill.skill))
-      .replace(/{{date}}/g, escapeHtml(skill.dueDate))
+      .replace(/{{date}}/g, escapeHtml(dueText))
       .replace(/{{critical}}/g, criticalLabel)
       .replace(/{{url}}/g, escapeHtml(fullUrl))
       .replace(/{{next-planned-dates}}/g, escapeHtml(skill.nextPlannedDates || "None"))
       .replace(/{{kb-link}}/g, kbHtml);
 
     rowsHtml += row;
-    plainTextList += `- ${skill.skill} (${skill.dueDate}) [Next: ${skill.nextPlannedDates}]\n`;
+    plainTextList += `- ${skill.skill} (${dueText}) [Next: ${skill.nextPlannedDates}]\n`;
   });
 
   const messageHtml = `

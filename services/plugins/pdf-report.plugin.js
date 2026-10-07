@@ -1,0 +1,93 @@
+// services/plugins/pdf-report.plugin.js
+// ETL plugin — extracts member skill expiry data from the FENZ
+// "Skills Expiring in the Next Six Months" PDF report.
+//
+// Reports are ingested as snapshots by services/pdf-report-service.js (upload,
+// GCS pickup or local file — see PDF_SOURCE); this plugin checks the configured
+// source for a newer report and then serves the records of the newest snapshot.
+//
+// Source limitations compared with the html-scraper:
+//   • Only skills that are lapsed or expire within six months are listed —
+//     a skill missing from the report means "current for more than six months".
+//   • Expiry is a month, not a date — see grid-parser.js deriveDueDate() for the
+//     agreed rules (orange names = expiring within one month of the Created date).
+//   • Members appear by full name ("Luke Skywalker") with no rank, so every record
+//     is resolved onto a member record by services/member-name-resolver.js before
+//     it is returned; names that cannot be matched keep the report name and are
+//     flagged `unresolved` (consumers simply find no member for them).
+//
+// Output record shape (one entry per member × skill):
+//   { name, rank, lastName, firstName, memberOsmId, skill, skillOsmId, skillCategory, dueDate,
+//     dueMonth, dueLabel, lapsed, withinOneMonth, sourceName, reportCreatedDate, memberId?, unresolved? }
+//
+// dueDate is the derived calendar date used for status/urgency calculations;
+// dueLabel ("Nov 2026", "Lapsed") is what should be shown to people, because the
+// report only gives the month.
+
+'use strict';
+
+const db = require('../db');
+const pdfReportService = require('../pdf-report-service');
+const { resolveRecords } = require('../member-name-resolver');
+
+const SOURCES = ['local', 'gcs', 'upload'];
+
+/** Display label for a record's expiry: "Lapsed", or the month ("Nov 2026") in the app locale. */
+function dueLabelFor(record, locale) {
+    if (record.lapsed) return 'Lapsed';
+    if (!record.dueMonth) return record.dueDate;
+    const [y, m] = record.dueMonth.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString(locale || 'en-NZ', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
+const plugin = {
+    name: 'pdf-report',
+    description: 'Parses the FENZ "Skills Expiring in the Next Six Months" PDF report',
+    // What the source can and cannot tell — consumers adapt their wording to it.
+    coverage: { windowMonths: 6, monthPrecision: true },
+
+    /**
+     * @param {object} config  Full application config object
+     * @returns {{ valid: boolean, errors: string[] }}
+     */
+    validateConfig(config) {
+        const errors = [];
+        const pdf = config.pdfReport || {};
+        if (!SOURCES.includes(pdf.source)) {
+            errors.push(`PDF_SOURCE must be one of ${SOURCES.join(', ')} (got "${pdf.source}")`);
+        }
+        if (pdf.source === 'local' && !pdf.localPath) errors.push('PDF_LOCAL_PATH is required when PDF_SOURCE=local');
+        if (pdf.source === 'gcs' && !pdf.gcsBucket) {
+            errors.push('PDF_GCS_BUCKET (or GCS_BUCKET_NAME) is required when PDF_SOURCE=gcs');
+        }
+        if (config.appMode === 'demo') {
+            errors.push('pdf-report reads real member data — use html-scraper in demo mode');
+        }
+        return { valid: errors.length === 0, errors };
+    },
+
+    /**
+     * @param {object}   config  Full application config object
+     * @param {Function} log     Logger function (string → void)
+     * @returns {Promise<Array>}
+     */
+    async extract(config, log) {
+        const sync = await pdfReportService.syncFromSource({ log });
+        if (['missing', 'rejected', 'error'].includes(sync.status)) {
+            log(`[pdf-report] Warning: ${sync.message}`);
+        }
+
+        const latest = await db.getLatestExtractionRecords();
+        if (!latest) {
+            throw new Error('No skills report has been imported yet — upload the latest PDF on the Skills Data Source page.');
+        }
+        const { snapshot } = latest;
+        log(`[pdf-report] Using the report created on ${snapshot.report_created_date} ` +
+            `(${snapshot.record_count} records, ${snapshot.member_count} members, ${snapshot.skill_count} skills).`);
+        const { records } = await resolveRecords(latest.records, { log });
+        return records.map((r) => ({ ...r, dueLabel: dueLabelFor(r, config.locale) }));
+    },
+};
+
+module.exports = plugin;
+module.exports.dueLabelFor = dueLabelFor;

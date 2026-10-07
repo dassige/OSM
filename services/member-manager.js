@@ -134,4 +134,12 @@ function processMemberSkills(
 
   return processedMembers;
 }
-module.exports = { processMemberSkills, isExpired, isExpiring, parseDate };
+
+// Names in the source report that could not be matched to a member (pdf-report
+// flags their records `unresolved`). Their skills count for nobody until an admin
+// matches them on the Skills Data Source page, so every view should say so.
+function getUnmatchedNames(records) {
+  return [...new Set((records || []).filter((r) => r.unresolved).map((r) => r.sourceName || r.name))];
+}
+
+module.exports = { processMemberSkills, isExpired, isExpiring, parseDate, getUnmatchedNames };

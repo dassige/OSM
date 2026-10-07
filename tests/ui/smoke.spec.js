@@ -33,6 +33,7 @@ const AUTH_PAGES = [
   { url: '/bookings-manage.html',   name: 'Bookings Manage' },
   { url: '/live-bookings.html',     name: 'Live Bookings' },
   { url: '/bookings-dashboard.html', name: 'Bookings Dashboard (no ID)' },
+  { url: '/data-source.html',       name: 'Skills Data Source' },
 ];
 
 function attachErrorListeners(page) {

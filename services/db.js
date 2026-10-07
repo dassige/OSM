@@ -14,6 +14,8 @@ const scheduledBackup = require("./db/scheduled-backup");
 const remoteBackupServers = require("./db/remote-backup-servers");
 const quiz = require("./db/quiz");
 const bookings = require("./db/bookings");
+const extractionSnapshots = require("./db/extraction-snapshots");
+const memberSourceAliases = require("./db/member-source-aliases");
 
 module.exports = {
   initDB,
@@ -33,4 +35,6 @@ module.exports = {
   ...remoteBackupServers,
   ...quiz,
   ...bookings,
+  ...extractionSnapshots,
+  ...memberSourceAliases,
 };

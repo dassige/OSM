@@ -127,6 +127,11 @@ async function updateMemberEtlFields(id, { rank, firstName, lastName, memberOsmI
   );
 }
 
+async function updateMemberFirstName(id, firstName) {
+  const db = await initDB();
+  await db.run('UPDATE members SET first_name = ? WHERE id = ?', firstName || null, id);
+}
+
 // Bulk-insert members that came from the OSM extraction — includes ETL fields.
 async function bulkAddMembersWithEtl(members) {
   const db = await initDB();
@@ -152,4 +157,4 @@ async function bulkAddMembersWithEtl(members) {
   }
 }
 
-module.exports = { getMembers, getMembersPage, getMemberById, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers, updateMemberEtlFields, bulkAddMembersWithEtl };
+module.exports = { getMembers, getMembersPage, getMemberById, addMember, bulkAddMembers, updateMember, deleteMember, bulkDeleteMembers, updateMemberEtlFields, updateMemberFirstName, bulkAddMembersWithEtl };

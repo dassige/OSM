@@ -1125,7 +1125,101 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Skills Data Source",
+      "item": [
+        {
+          "name": "Get Data Source Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/extraction/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "extraction",
+                "status"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Get Data Source Status | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Get Data Source Status | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('Get Data Source Status | Valid JSON with source', () => pm.expect(pm.response.json()).to.have.property('source'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Reports",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/extraction/snapshots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "extraction",
+                "snapshots"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List Reports | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('List Reports | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('List Reports | Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Member Name Matches",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/extraction/name-matches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "extraction",
+                "name-matches"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List Member Name Matches | Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('List Member Name Matches | Response time < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));",
+                  "pm.test('List Member Name Matches | Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
-
   ]
 }

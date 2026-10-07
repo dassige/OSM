@@ -50,7 +50,7 @@
                         session.members.forEach(m => {
                             html += `<tr>
                                 <td style="height:35px;">${m.name}</td>
-                                <td>${m.dueDate}</td>
+                                <td>${m.dueLabel || m.dueDate}</td>
                                 <td></td>
                                 <td></td>
                                 <td></td>

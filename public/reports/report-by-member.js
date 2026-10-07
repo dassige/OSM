@@ -1,6 +1,20 @@
 ﻿(function () {
   window.ReportRegistry = window.ReportRegistry || {};
 
+  // The six-month PDF source cannot list skills due beyond its window.
+  function windowNote(meta) {
+    const months = meta.sourceWindowMonths;
+    if (!months || meta.filterDays <= Math.round(months * 30.4)) return "";
+    return `<p style="margin:5px 0 0 0; color:#856404;">Note: the skills report only covers the next ${months} months — skills due later are not shown.</p>`;
+  }
+
+  // Report names not matched to a member are left out — say so on the printed report.
+  function unmatchedNote(meta) {
+    const n = meta.unmatchedNames;
+    if (!n) return "";
+    return `<p style="margin:5px 0 0 0; color:#dc3545;">Note: ${n} ${n === 1 ? "name in the skills report is" : "names in the skills report are"} not matched to a member and not included.</p>`;
+  }
+
   window.ReportRegistry["by-member"] = {
     title: "Expiring Skills - Grouped by Member",
     description:
@@ -26,7 +40,7 @@
           <h2 style="margin:5px 0 0 0; font-size:18px;">Expiring Skills Report</h2>
           <p style="margin:5px 0 0 0; color:#666;">
             Grouped by Member • Limit: <strong>${meta.filterDays} Days</strong> • Generated: ${meta.generated}
-          </p>
+          </p>${windowNote(meta)}${unmatchedNote(meta)}
         </div>`;
     },
     renderItems: function (members, dataWrapper, uiConfig) {
@@ -46,7 +60,7 @@
           const criticalText = skill.isCritical ? " (CRITICAL)" : "";
           const dateObj = new Date(skill.dueDate);
           const tz = (uiConfig && uiConfig.timezone) || undefined;
-          const formattedDate = isNaN(dateObj) ? skill.dueDate : dateObj.toLocaleDateString(locale, { timeZone: tz });
+          const formattedDate = skill.dueLabel || (isNaN(dateObj) ? skill.dueDate : dateObj.toLocaleDateString(locale, { timeZone: tz }));
           html += `<tr><td class="${criticalClass}">${skill.skill}${criticalText}</td><td>${formattedDate}</td></tr>`;
         });
         html += `</tbody></table></div>`;
