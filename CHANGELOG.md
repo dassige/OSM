@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.0] - 2026/10/07
+
+- new version
+- feat(setup-env): enhance Save As functionality for .env file generation
+- Remove @napi-rs/canvas dependency from Dockerfile and implement AffineDOMMatrix for PDF text processing without rendering
+- Handle PDF library loading errors gracefully and update tests for error reporting
+- Phase 4: Implement month-only due dates and compliance reporting for six-month skills report
+- Phase 3: implement member name matching for PDF report extraction
+- Phase 2: Add integration tests for extraction snapshots and API routes
+- Phase 1: Add comprehensive tests for pdf-report ETL plugin functionality
+- upd
+- feat(bookings): implement configurable maximum bookings per member
+- STEP 7: add booking invitations templates and public access controls
+- Step 6: add public booking page and related functionality
+- STEP 5:Add live bookings functionality with event listing and filtering
+- STEP 4: add bookings management functionality with template creation, editing, and publishing features
+- STEP 3: add public live bookings API with booking management
+- feat(bookings): add database layer and admin API for booking events
+
 ## [3.14.0] - 2026/09/30
 
 - feat: Implement AI evaluation for scoring simulator and enhance feedback
